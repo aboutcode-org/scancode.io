@@ -25,11 +25,13 @@ from pathlib import Path
 from unittest import mock
 
 from django.test import TestCase
+from django.utils import timezone
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.models import Run
 from scanpipe.pipes import purldb
 from scanpipe.tests import dependency_data2
 from scanpipe.tests import dependency_data3
@@ -38,9 +40,18 @@ from scanpipe.tests import package_data1
 
 class ScanPipePurlDBTest(TestCase):
     data_location = Path(__file__).parent.parent / "data"
+    fixtures = [data_location / "asgiref-3.3.0_fixtures.json"]
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
+        self.project_asgiref = Project.objects.get(name="asgiref")
+
+    def create_run(self, pipeline="pipeline", **kwargs):
+        return Run.objects.create(
+            project=self.project1,
+            pipeline_name=pipeline,
+            **kwargs,
+        )
 
     def test_scanpipe_pipes_purldb_get_unique_resolved_purls(self):
         DiscoveredPackage.create_from_data(self.project1, package_data1)
@@ -130,7 +141,7 @@ class ScanPipePurlDBTest(TestCase):
 
     @mock.patch("scanpipe.pipes.purldb.request_get")
     @mock.patch("scanpipe.pipes.purldb.is_available")
-    def test_scanpipe_pipes_purldb_poll_run_url_until_success(
+    def test_scanpipe_pipes_purldb_poll_run_url_status(
         self, mock_is_available, mock_request_get
     ):
         run_status = AbstractTaskFieldsModel.Status
@@ -157,7 +168,7 @@ class ScanPipePurlDBTest(TestCase):
                 "status": run_status.SUCCESS,
             },
         ]
-        return_value = purldb.poll_run_url_until_success(run_url)
+        return_value = purldb.poll_run_url_status(run_url)
         self.assertEqual(True, return_value)
 
         # Failure
@@ -186,7 +197,7 @@ class ScanPipePurlDBTest(TestCase):
             },
         ]
         with self.assertRaises(Exception) as context:
-            purldb.poll_run_url_until_success(run_url)
+            purldb.poll_run_url_status(run_url)
         self.assertTrue("failure message" in str(context.exception))
 
         # Stopped
@@ -215,7 +226,7 @@ class ScanPipePurlDBTest(TestCase):
             },
         ]
         with self.assertRaises(Exception) as context:
-            purldb.poll_run_url_until_success(run_url)
+            purldb.poll_run_url_status(run_url)
         self.assertTrue("stop message" in str(context.exception))
 
         # Stale
@@ -244,7 +255,7 @@ class ScanPipePurlDBTest(TestCase):
             },
         ]
         with self.assertRaises(Exception) as context:
-            purldb.poll_run_url_until_success(run_url)
+            purldb.poll_run_url_status(run_url)
         self.assertTrue("stale message" in str(context.exception))
 
     def test_scanpipe_pipes_purldb_map_match_results(self):
@@ -368,12 +379,82 @@ class ScanPipePurlDBTest(TestCase):
         mock_is_available.return_value = True
         expected_download_url = "https://registry.npmjs.org/asdf/-/asdf-1.0.1.tgz"
         expected_scannable_uri_uuid = "52b2930d-6e85-4b3e-ba3e-17dd9a618650"
+        expected_pipelines = ["scan_and_fingerprint_package"]
         mock_request_get.side_effect = [
             {
                 "download_url": expected_download_url,
                 "scannable_uri_uuid": expected_scannable_uri_uuid,
+                "pipelines": expected_pipelines,
             },
         ]
-        download_url, scannable_uri_uuid = purldb.get_next_job()
+        scannable_uri_uuid, download_url, pipelines = purldb.get_next_job()
         self.assertEqual(expected_download_url, download_url)
         self.assertEqual(expected_scannable_uri_uuid, scannable_uri_uuid)
+        self.assertEqual(expected_pipelines, pipelines)
+
+    def test_scanpipe_pipes_purldb_poll_run_status(self):
+        now = timezone.now()
+
+        # Test poll_run_status on individual pipelines
+        self.assertEqual(0, self.project1.runs.count())
+        self.create_run(
+            pipeline="succeed",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=0,
+        )
+        error_message = purldb.poll_run_status(project=self.project1)
+        self.assertEqual("", error_message)
+        self.project1.runs.all().delete()
+
+        self.create_run(
+            pipeline="failed",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=1,
+            log="failed",
+        )
+        error_message = purldb.poll_run_status(project=self.project1)
+        self.assertEqual("failed", error_message)
+        self.project1.runs.all().delete()
+
+        self.create_run(
+            pipeline="stopped",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=99,
+            log="stopped",
+        )
+        error_message = purldb.poll_run_status(project=self.project1)
+        self.assertEqual("stopped", error_message)
+        self.project1.runs.all().delete()
+
+        self.create_run(
+            pipeline="stale",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=88,
+            log="stale",
+        )
+        error_message = purldb.poll_run_status(project=self.project1)
+        self.assertEqual("stale", error_message)
+        self.project1.runs.all().delete()
+
+        # Test pipelines success, then failure
+        self.assertEqual(0, self.project1.runs.count())
+        self.create_run(
+            pipeline="succeed",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=0,
+        )
+        self.create_run(
+            pipeline="failed",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=1,
+            log="failed",
+        )
+        error_message = purldb.poll_run_status(project=self.project1)
+        self.assertEqual("failed", error_message)
+        self.project1.runs.all().delete()

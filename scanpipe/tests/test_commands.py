@@ -34,11 +34,11 @@ from django.test import TestCase
 from django.test import override_settings
 from django.utils import timezone
 
-from scanpipe.pipes import purldb
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import Run
+from scanpipe.pipes import purldb
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -596,6 +596,7 @@ class ScanPipeManagementCommandTest(TestCase):
         )
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-user", "--no-input", username)
+
 
 class PackageScanWorkerManagementCommandTest(TestCase):
     def test_package_scan_worker_management_command_create_project_name(self):

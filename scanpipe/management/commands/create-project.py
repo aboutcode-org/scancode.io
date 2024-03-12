@@ -21,14 +21,13 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django.core.management import CommandError
-from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from scanpipe.management.commands import AddInputCommandMixin
-from scanpipe.management.commands import create_project
+from scanpipe.management.commands import CreateProjectCommandMixin
 
 
-class Command(AddInputCommandMixin, BaseCommand):
+class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
     help = "Create a ScanPipe project."
 
     def add_arguments(self, parser):
@@ -51,15 +50,6 @@ class Command(AddInputCommandMixin, BaseCommand):
             help="Execute the pipelines right after the project creation.",
         )
         parser.add_argument(
-            "--async",
-            action="store_true",
-            help=(
-                "Add the pipeline run to the tasks queue for execution by a worker "
-                "instead of running in the current thread. "
-                "Applies only when --execute is provided."
-            ),
-        )
-        parser.add_argument(
             "--notes",
             help="Optional notes about the project.",
         )
@@ -70,27 +60,20 @@ class Command(AddInputCommandMixin, BaseCommand):
         input_files = options["input_files"]
         input_urls = options["input_urls"]
         copy_from = options["copy_codebase"]
-        execute = options["execute"]
         notes = options["notes"]
+        execute = options["execute"]
+        run_async = options["async"]
 
         if execute and not pipelines:
             raise CommandError("The --execute option requires one or more pipelines.")
 
-        project = create_project(
-            command=self,
+        self.create_project(
             name=name,
             pipelines=pipelines,
             input_files=input_files,
             input_urls=input_urls,
             copy_from=copy_from,
             notes=notes,
+            execute=execute,
+            run_async=run_async,
         )
-
-        if execute:
-            call_command(
-                "execute",
-                project=project,
-                stderr=self.stderr,
-                stdout=self.stdout,
-                **{"async": options["async"]},
-            )

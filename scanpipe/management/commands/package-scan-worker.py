@@ -21,18 +21,15 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import time
-from traceback import format_tb
 
-from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
-from scanpipe.management.commands import AddInputCommandMixin
-from scanpipe.management.commands import create_project
+from scanpipe.management.commands import CreateProjectCommandMixin
 from scanpipe.pipes import output
 from scanpipe.pipes import purldb
 
 
-class Command(AddInputCommandMixin, BaseCommand):
+class Command(CreateProjectCommandMixin, BaseCommand):
     help = "Create a ScanPipe project."
 
     def add_arguments(self, parser):
@@ -43,79 +40,57 @@ class Command(AddInputCommandMixin, BaseCommand):
             help="Number in seconds how long the loop should sleep for before polling.",
         )
 
-        parser.add_argument(
-            "--async",
-            action="store_true",
-            dest="async",
-            help=(
-                "Add the pipeline runs to the tasks queue for execution by a worker "
-                "instead of running in the current thread."
-            ),
-        )
-
     def handle(self, *args, **options):
         sleep = options["sleep"]
+        run_async = options["async"]
 
         while True:
-            try:
-                # 1. get download url from purldb
-                response = purldb.get_next_job()
-                if response:
-                    scannable_uri_uuid, download_url, pipelines = response
-                else:
-                    self.stderr.write("bad response")
-            except Exception as e:
-                traceback = get_traceback_from_exception(e)
-                self.stderr.write(f"exception occured when calling `purldb.get_next_job()`:\n\n{traceback}")
+            time.sleep(sleep)
+
+            # 1. Get download url from purldb
+            scannable_uri_uuid, download_url, pipelines, error_msg = get_next_job()
+            if error_msg:
+                self.stderr.write(error_msg)
+                continue
 
             if not download_url or not scannable_uri_uuid:
-                self.stdout.write("no new job")
+                self.stdout.write("No new job from PurlDB.")
             else:
                 try:
-                    # 2. create and run project
+                    # 2. Create and run project
                     name = purldb.create_project_name(download_url, scannable_uri_uuid)
                     input_urls = [download_url]
-                    project = create_project(
-                        self,
+                    project = self.create_project(
                         name=name,
                         pipelines=pipelines,
                         input_urls=input_urls,
+                        execute=run_async,
                     )
 
-                    # TODO: test this from the docker context
-                    # TODO: refactor execute to run project without having to call the execute command through cli
-                    call_command(
-                        "execute",
-                        project=project,
-                        stderr=self.stderr,
-                        stdout=self.stdout,
-                        **{"async": options["async"]},
-                    )
-
-                    # 3. poll project results
-                    # TODO: see if we can block waiting for a signal when the project is done running
+                    # 3. Poll project results
+                    # TODO: see if we can block waiting for a signal when the
+                    # project is done running
                     error_log = purldb.poll_run_status(
-                        command=self,
                         project=project,
                         sleep=sleep,
                     )
 
                     if error_log:
-                        # send error response to purldb
+                        # Send error response to PurlDB
                         purldb.update_status(
                             scannable_uri_uuid,
                             status="failed",
                             scan_log=error_log,
                         )
                     else:
-                        # 4. get project results and send to purldb
+                        # 4. Get project results and send to PurlDB
                         scan_output_location = output.to_json(project)
                         purldb.send_results_to_purldb(
                             scannable_uri_uuid, scan_output_location
                         )
 
                 except Exception as e:
-                    error_log = f"exception occured during scan project:\n\n{str(e)}"
+                    error_log = f"Exception occured during scan project:\n\n{str(e)}"
                     purldb.update_status(
                         scannable_uri_uuid,
                         status="failed",
@@ -123,11 +98,17 @@ class Command(AddInputCommandMixin, BaseCommand):
                     )
                     self.stderr.write(error_log)
 
-            time.sleep(sleep)
 
-
-def get_traceback_from_exception(exception):
-    traceback = ""
-    if hasattr(exception, "__traceback__"):
-        traceback = "".join(format_tb(exception.__traceback__))
-    return traceback
+def get_next_job():
+    # 1. Get download url from purldb
+    scannable_uri_uuid, download_url, pipelines = None
+    msg = ""
+    try:
+        response = purldb.get_next_job()
+        if response:
+            scannable_uri_uuid, download_url, pipelines = response
+        else:
+            msg = "Bad response from PurlDB, unable to get next job."
+    except Exception as e:
+        msg = f"Exception occured when calling `purldb.get_next_job()`:\n\n{str(e)}"
+    return scannable_uri_uuid, download_url, pipelines, msg

@@ -24,12 +24,14 @@ import shutil
 from pathlib import Path
 
 from django.apps import apps
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 from django.template.defaultfilters import pluralize
 
+from scanpipe import tasks
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
@@ -291,41 +293,105 @@ def validate_pipelines(pipelines_data):
     return pipelines_data
 
 
-def create_project(
-    command, name, pipelines=[], input_files=[], input_urls=[], copy_from="", notes=""
-):
-    project = Project(name=name)
-    if notes:
-        project.notes = notes
+class ExecuteProjectCommandMixin:
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
+        parser.add_argument(
+            "--async",
+            action="store_true",
+            dest="async",
+            help=(
+                "Add the pipeline run to the tasks queue for execution by a worker "
+                "instead of running in the current thread."
+            ),
+        )
 
-    try:
-        project.full_clean(exclude=["slug"])
-    except ValidationError as e:
-        raise CommandError("\n".join(e.messages))
+    def execute_project(self, run_async=False):
+        run = self.project.get_next_run()
 
-    # Run validation before creating the project in the database
-    pipelines_data = extract_group_from_pipelines(pipelines)
-    pipelines_data = validate_pipelines(pipelines_data)
+        if not run:
+            raise CommandError(f"No pipelines to run on project {self.project}")
 
-    input_files_data = command.extract_tag_from_input_files(input_files)
-    command.validate_input_files(input_files=input_files_data.keys())
-    validate_copy_from(copy_from)
+        if run_async:
+            if not settings.SCANCODEIO_ASYNC:
+                msg = "SCANCODEIO_ASYNC=False is not compatible with --async option."
+                raise CommandError(msg)
 
-    project.save()
-    command.project = project
-    msg = f"Project {name} created with work directory {project.work_directory}"
-    command.stdout.write(msg, command.style.SUCCESS)
+            run.start()
+            msg = f"{run.pipeline_name} added to the tasks queue for execution."
+            self.stdout.write(msg, self.style.SUCCESS)
+        else:
+            self.stdout.write(f"Start the {run.pipeline_name} pipeline execution...")
 
-    for pipeline_name, selected_groups in pipelines_data.items():
-        command.project.add_pipeline(pipeline_name, selected_groups=selected_groups)
+            try:
+                tasks.execute_pipeline_task(run.pk)
+            except KeyboardInterrupt:
+                run.set_task_stopped()
+                raise CommandError("Pipeline execution stopped.")
+            except Exception as e:
+                run.set_task_ended(exitcode=1, output=str(e))
+                raise CommandError(e)
 
-    if input_files:
-        command.handle_input_files(input_files_data)
+            run.refresh_from_db()
 
-    if input_urls:
-        command.handle_input_urls(input_urls)
+            if run.task_succeeded:
+                msg = (
+                    f"{run.pipeline_name} successfully executed on "
+                    f"project {self.project}"
+                )
+                self.stdout.write(msg, self.style.SUCCESS)
+            else:
+                msg = f"Error during {run.pipeline_name} execution:\n{run.task_output}"
+                raise CommandError(msg)
 
-    if copy_from:
-        command.handle_copy_codebase(copy_from)
 
-    return project
+class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
+    def create_project(
+        self,
+        name,
+        pipelines=[],
+        input_files=[],
+        input_urls=[],
+        copy_from="",
+        notes="",
+        execute=False,
+        run_async=False,
+    ):
+        project = Project(name=name)
+        if notes:
+            project.notes = notes
+
+        try:
+            project.full_clean(exclude=["slug"])
+        except ValidationError as e:
+            raise CommandError("\n".join(e.messages))
+
+        # Run validation before creating the project in the database
+        pipelines_data = extract_group_from_pipelines(pipelines)
+        pipelines_data = validate_pipelines(pipelines_data)
+
+        input_files_data = self.extract_tag_from_input_files(input_files)
+        self.validate_input_files(input_files=input_files_data.keys())
+        validate_copy_from(copy_from)
+
+        project.save()
+        self.project = project
+        msg = f"Project {name} created with work directory {project.work_directory}"
+        self.stdout.write(msg, self.style.SUCCESS)
+
+        for pipeline_name, selected_groups in pipelines_data.items():
+            self.project.add_pipeline(pipeline_name, selected_groups=selected_groups)
+
+        if input_files:
+            self.handle_input_files(input_files_data)
+
+        if input_urls:
+            self.handle_input_urls(input_urls)
+
+        if copy_from:
+            self.handle_copy_codebase(copy_from)
+
+        if execute:
+            self.execute_project(run_async=run_async)
+
+        return project

@@ -24,6 +24,7 @@ import json
 import logging
 
 from django.conf import settings
+from django.utils.text import slugify
 
 import requests
 from packageurl import PackageURL
@@ -355,7 +356,7 @@ def find_packages(payload):
         return response.get("results")
 
 
-def poll_run_url_until_success(run_url, sleep=10):
+def poll_run_url_status(run_url, sleep=10):
     """
     Given a URL to a scancode.io run instance, `run_url`, return True when the
     run instance has completed successfully.
@@ -363,11 +364,7 @@ def poll_run_url_until_success(run_url, sleep=10):
     Raise a PurlDBException when the run instance has failed, stopped, or gone
     stale.
     """
-    if poll_until_success(
-        check=get_run_url_status,
-        sleep=sleep,
-        run_url=run_url
-    ):
+    if poll_until_success(check=get_run_url_status, sleep=sleep, run_url=run_url):
         return True
     else:
         response = request_get(run_url)
@@ -411,6 +408,10 @@ def poll_until_success(check, sleep=10, **kwargs):
 
 
 def get_run_url_status(run_url, **kwargs):
+    """
+    Given a `run_url`, which is a URL to a ScanCode.io Project run, return its
+    status, otherwise return None.
+    """
     response = request_get(run_url)
     if response:
         status = response["status"]
@@ -523,6 +524,7 @@ def update_status(
     timeout=DEFAULT_TIMEOUT,
     api_url=PURLDB_API_URL,
 ):
+    """Update the status of a ScannableURI on a PurlDB scan queue"""
     data = {
         "scannable_uri_uuid": scannable_uri_uuid,
         "scan_status": status,
@@ -544,7 +546,7 @@ def create_project_name(download_url, scannable_uri_uuid):
     return f"{slugify(download_url)}-{scannable_uri_uuid[0:8]}"
 
 
-def poll_run_status(command, project, sleep=10):
+def poll_run_status(project, sleep=10):
     """
     Poll the status of all runs of `project`. Return the log of the run if
     the run has stopped, failed, or gone stale, otherwise return an empty
@@ -552,14 +554,8 @@ def poll_run_status(command, project, sleep=10):
     """
     runs = project.runs.all()
     for run in runs:
-        if not poll_until_success(
-            check=get_run_status,
-            sleep=sleep,
-            run=run
-        ):
-            error_log = run.log
-            command.stderr.write(error_log)
-            return error_log
+        if not poll_until_success(check=get_run_status, sleep=sleep, run=run):
+            return run.log
     return ""
 
 
