@@ -40,6 +40,7 @@ ENV PYTHONPATH $PYTHONPATH:$APP_DIR
 
 # OS requirements as per
 # https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html
+# Also install universal-ctags for symbol collection.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
        bzip2 \
@@ -58,6 +59,7 @@ RUN apt-get update \
        linux-image-amd64 \
        git \
        wait-for-it \
+       universal-ctags \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
