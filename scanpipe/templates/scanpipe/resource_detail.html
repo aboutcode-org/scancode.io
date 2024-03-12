@@ -19,7 +19,7 @@
       padding: 0 .25rem 0 .25rem;
     }
     .ace_tooltip .ace_icon {display: none;}
-    {# Full screen inspired by ace/demo/scrollable-page.html #}
+    /* Full screen inspired by ace/demo/scrollable-page.html */
     body.full-screen #resource-viewer {
       height: auto;
       width: auto;
@@ -51,7 +51,11 @@
   <div class="container is-max-widescreen">
     {% include 'scanpipe/includes/navbar_header.html' %}
     <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
-    {% include 'scanpipe/includes/breadcrumb_detail_view.html' with template_title="scanpipe/includes/resource_path_links.html" url_name="project_resources" %}
+    <section class="is-flex is-justify-content-space-between">
+      {% include 'scanpipe/includes/breadcrumb_detail_view.html' with template_title="scanpipe/includes/resource_path_links.html" url_name="project_resources" %}
+      <!-- {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" %} -->
+      <p>Press <strong>Ctrl + K</strong> or <strong>GH</strong> to go back in Codebase Resources</p>
+    </section>
     {% include 'scanpipe/tabset/tabset.html' %}
   </div>
 {% endblock %}
@@ -168,6 +172,16 @@
       let is_full_screen = body.classList.toggle("full-screen");
       editor.resize()
     });
-
+    
+    // To go back to Codebase Resources List
+    document.addEventListener('keydown', function(event) {
+      if (event.ctrlKey && event.key === 'k') { // Ctrl + K
+        window.location.href = "{% url 'project_resources' project.slug %}"; 
+      } else if (event.key === 'g') {
+        gPressed = true;
+      } else if (event.key === 'h' && gPressed) { // 'h' pressed after 'g'
+        window.location.href = "{% url 'project_resources' project.slug %}"; 
+      }
+    });
   </script>
 {% endblock %}
