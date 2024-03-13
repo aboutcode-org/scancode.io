@@ -687,10 +687,30 @@ class ScanPipeManagementCommandMixinTest(TestCase):
                     run_async=True
                 )
 
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    def test_scanpipe_management_command_package_scan_worker(self, mock_request_get, mock_request_post):
+        scannable_uri_uuid = "97627c6e-9acb-43e0-b8df-28bd92f2b7e5"
+        mock_request_get.return_value = {
+            "scannable_uri_uuid": scannable_uri_uuid,
+            "download_url": "https://registry.npmjs.org/asdf/-/asdf-1.2.2.tgz",
+            "pipelines": ["scan_codebase"]
+        }
+        mock_request_post.return_value = {
+            'status': f'scan indexed for scannable uri {scannable_uri_uuid}'
+        }
 
-class PackageScanWorkerManagementCommandTest(TestCase):
-    def test_package_scan_worker_management_command_create_project_name(self):
-        download_url = "https://registry.npmjs.org/asdf/-/asdf-1.0.1.tgz"
-        scannable_uri_uuid = "52b2930d-6e85-4b3e-ba3e-17dd9a618650"
-        project_name = purldb.create_project_name(download_url, scannable_uri_uuid)
-        self.assertEqual("httpsregistrynpmjsorgasdf-asdf-101tgz-52b2930d", project_name)
+        options = [
+            "--max-loops",
+            1,
+        ]
+        out = StringIO()
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_success):
+            call_command("package-scan-worker", *options, stdout=out)
+
+        out_value = out.getvalue()
+        self.assertIn("Project httpsregistrynpmjsorgasdf-asdf-122tgz-97627c6e created", out_value)
+        self.assertIn("File(s) downloaded to the project inputs directory:", out_value)
+        self.assertIn("asdf-1.2.2.tgz", out_value)
+        self.assertIn("scan_codebase successfully executed on project httpsregistrynpmjsorgasdf-asdf-122tgz-97627c6e", out_value)
+        mock_request_post.assert_called_once()

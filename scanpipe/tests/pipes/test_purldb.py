@@ -486,3 +486,9 @@ class ScanPipePurlDBTest(TestCase):
         error_message = purldb.poll_run_status(project=self.project1)
         self.assertEqual("failed", error_message)
         self.project1.runs.all().delete()
+
+    def test_scanpipe_pipes_purldb_create_project_name(self):
+        download_url = "https://registry.npmjs.org/asdf/-/asdf-1.0.1.tgz"
+        scannable_uri_uuid = "52b2930d-6e85-4b3e-ba3e-17dd9a618650"
+        project_name = purldb.create_project_name(download_url, scannable_uri_uuid)
+        self.assertEqual("httpsregistrynpmjsorgasdf-asdf-101tgz-52b2930d", project_name)

@@ -24,12 +24,12 @@ import time
 
 from django.core.management.base import BaseCommand
 
-from scanpipe.management.commands import CreateProjectCommandMixin
+from scanpipe.management.commands import CreateProjectCommandMixin, AddInputCommandMixin
 from scanpipe.pipes import output
 from scanpipe.pipes import purldb
 
 
-class Command(CreateProjectCommandMixin, BaseCommand):
+class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
     help = "Create a ScanPipe project."
 
     def add_arguments(self, parser):
@@ -37,14 +37,31 @@ class Command(CreateProjectCommandMixin, BaseCommand):
         parser.add_argument(
             "--sleep",
             type=int,
+            default=0,
+            action='store',
             help="Number in seconds how long the loop should sleep for before polling.",
+        )
+
+        parser.add_argument(
+            "--max-loops",
+            dest="max_loops",
+            default=0,
+            action="store",
+            help="Limit the number of loops to a maximum number. "
+                 "0 means no limit. Used only for testing."
         )
 
     def handle(self, *args, **options):
         sleep = options["sleep"]
         run_async = options["async"]
+        max_loops = options["max_loops"]
 
+        loop_count = 0
         while True:
+            if max_loops and int(loop_count) >= int(max_loops):
+                self.stdout.write("loop max reached")
+                break
+
             time.sleep(sleep)
 
             # 1. Get download url from purldb
@@ -64,7 +81,8 @@ class Command(CreateProjectCommandMixin, BaseCommand):
                         name=name,
                         pipelines=pipelines,
                         input_urls=input_urls,
-                        execute=run_async,
+                        execute=True,
+                        run_async=run_async,
                     )
 
                     # 3. Poll project results
@@ -97,3 +115,5 @@ class Command(CreateProjectCommandMixin, BaseCommand):
                         scan_log=error_log,
                     )
                     self.stderr.write(error_log)
+
+            loop_count += 1
