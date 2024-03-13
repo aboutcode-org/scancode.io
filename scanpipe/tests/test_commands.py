@@ -25,8 +25,10 @@ import uuid
 from io import StringIO
 from pathlib import Path
 from unittest import mock
-
+import sys
+from contextlib import redirect_stderr, redirect_stdout
 from django.apps import apps
+from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.core.management import CommandError
 from django.core.management import call_command
@@ -39,6 +41,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.pipes import purldb
+from scanpipe.management import commands
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -596,6 +599,93 @@ class ScanPipeManagementCommandTest(TestCase):
         )
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-user", "--no-input", username)
+
+
+class ScanPipeManagementCommandMixinTest(TestCase):
+    class CreateProjectCommand(commands.CreateProjectCommandMixin, commands.AddInputCommandMixin, BaseCommand):
+        pass
+
+    create_project_command = CreateProjectCommand()
+    pipeline_name = "analyze_docker_image"
+    pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
+
+    def test_scanpipe_management_command_mixin_create_project_command_mixin_create_project_base(self):
+        expected = "This field cannot be blank."
+        with self.assertRaisesMessage(CommandError, expected):
+            self.create_project_command.create_project(name="")
+
+        project = self.create_project_command.create_project(name="my_project")
+        self.assertTrue("my_project", project.name)
+
+        expected = "Project with this Name already exists."
+        with self.assertRaisesMessage(CommandError, expected):
+            self.create_project_command.create_project(name="my_project")
+
+    def test_scanpipe_management_command_mixin_create_project_command_mixin_create_project_notes(self):
+        notes = "Some notes about my project"
+        project = self.create_project_command.create_project(name="my_project", notes=notes)
+        self.assertEqual(notes, project.notes)
+
+    def test_scanpipe_management_command_mixin_create_project_command_mixin_create_project_pipelines(self):
+        expected = "non-existing is not a valid pipeline"
+        with self.assertRaisesMessage(CommandError, expected):
+            self.create_project_command.create_project(name="my_project", pipelines=["non-existing"])
+
+        pipelines = [
+            self.pipeline_name,
+            "analyze_root_filesystem_or_vm_image:group1,group2",
+            "scan_package",
+        ]
+        project = self.create_project_command.create_project(name="my_project", pipelines=pipelines)
+        expected = [
+            self.pipeline_name,
+            "analyze_root_filesystem_or_vm_image",
+            "scan_single_package",
+        ]
+        self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
+        run = project.runs.get(pipeline_name="analyze_root_filesystem_or_vm_image")
+        self.assertEqual(["group1", "group2"], run.selected_groups)
+
+    def test_scanpipe_management_command_mixin_create_project_command_mixin_create_project_inputs(self):
+        expected = "non-existing not found or not a file"
+        with self.assertRaisesMessage(CommandError, expected):
+            self.create_project_command.create_project(name="my_project", input_files=["non-existing"])
+
+        parent_path = Path(__file__).parent
+        input_files = [
+            str(parent_path / "test_commands.py"),
+            str(parent_path / "test_models.py:tag"),
+        ]
+        project = self.create_project_command.create_project(name="my_project", input_files=input_files)
+        expected = sorted(["test_commands.py", "test_models.py"])
+        self.assertEqual(expected, sorted(project.input_files))
+        tagged_source = project.inputsources.get(filename="test_models.py")
+        self.assertEqual("tag", tagged_source.tag)
+
+    def test_scanpipe_management_command_mixin_create_project_command_mixin_create_project_execute(self):
+        expected = "The execute argument requires one or more pipelines."
+        with self.assertRaisesMessage(CommandError, expected):
+            self.create_project_command.create_project(name="my_project", execute=True)
+
+        pipeline = "load_inventory"
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_success):
+            project = self.create_project_command.create_project(
+                name="my_project",
+                pipelines=[pipeline],
+                execute=True
+            )
+        run = project.runs.first()
+        self.assertTrue(run.task_succeeded)
+
+        expected = "SCANCODEIO_ASYNC=False is not compatible with --async option."
+        with override_settings(SCANCODEIO_ASYNC=False):
+            with self.assertRaisesMessage(CommandError, expected):
+                self.create_project_command.create_project(
+                    name="other_project",
+                    pipelines=[pipeline],
+                    execute=True,
+                    run_async=True
+                )
 
 
 class PackageScanWorkerManagementCommandTest(TestCase):

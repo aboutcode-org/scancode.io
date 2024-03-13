@@ -357,6 +357,9 @@ class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
         execute=False,
         run_async=False,
     ):
+        if execute and not pipelines:
+            raise CommandError("The execute argument requires one or more pipelines.")
+
         project = Project(name=name)
         if notes:
             project.notes = notes
