@@ -48,7 +48,7 @@ class Command(CreateProjectCommandMixin, BaseCommand):
             time.sleep(sleep)
 
             # 1. Get download url from purldb
-            scannable_uri_uuid, download_url, pipelines, error_msg = get_next_job()
+            scannable_uri_uuid, download_url, pipelines, error_msg = purldb.get_next_job()
             if error_msg:
                 self.stderr.write(error_msg)
                 continue
@@ -97,18 +97,3 @@ class Command(CreateProjectCommandMixin, BaseCommand):
                         scan_log=error_log,
                     )
                     self.stderr.write(error_log)
-
-
-def get_next_job():
-    # 1. Get download url from purldb
-    scannable_uri_uuid, download_url, pipelines = None
-    msg = ""
-    try:
-        response = purldb.get_next_job()
-        if response:
-            scannable_uri_uuid, download_url, pipelines = response
-        else:
-            msg = "Bad response from PurlDB, unable to get next job."
-    except Exception as e:
-        msg = f"Exception occured when calling `purldb.get_next_job()`:\n\n{str(e)}"
-    return scannable_uri_uuid, download_url, pipelines, msg

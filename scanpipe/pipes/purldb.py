@@ -471,10 +471,10 @@ def create_packages_from_match_results(project, match_results):
         )
 
 
-def get_next_job(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
+def _get_next_job(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
     """
-    Return the download URL and Package UUID of the next Package to be scanned
-    from PurlDB
+    Return the ScannableURI UUID, download URL, and pipelines for the next
+    Package to be scanned from PurlDB
 
     Return None if the request was not successful
     """
@@ -487,6 +487,20 @@ def get_next_job(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
         download_url = response["download_url"]
         pipelines = response["pipelines"]
         return scannable_uri_uuid, download_url, pipelines
+
+
+def get_next_job():
+    scannable_uri_uuid = download_url = pipelines = None
+    msg = ""
+    try:
+        response = _get_next_job()
+        if response:
+            scannable_uri_uuid, download_url, pipelines = response
+        else:
+            msg = "Bad response from PurlDB, unable to get next job."
+    except Exception as e:
+        msg = f"Exception occured when calling `purldb.get_next_job()`:\n\n{str(e)}"
+    return scannable_uri_uuid, download_url, pipelines, msg
 
 
 def send_results_to_purldb(

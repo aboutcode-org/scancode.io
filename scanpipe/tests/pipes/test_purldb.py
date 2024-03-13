@@ -386,11 +386,39 @@ class ScanPipePurlDBTest(TestCase):
                 "scannable_uri_uuid": expected_scannable_uri_uuid,
                 "pipelines": expected_pipelines,
             },
+            {
+                "download_url": "",
+                "scannable_uri_uuid": "",
+                "pipelines": []
+            },
+            None,
+            Exception()
         ]
-        scannable_uri_uuid, download_url, pipelines = purldb.get_next_job()
+        results = purldb.get_next_job()
+        self.assertTrue(results)
+        scannable_uri_uuid, download_url, pipelines, error_msg = results
         self.assertEqual(expected_download_url, download_url)
         self.assertEqual(expected_scannable_uri_uuid, scannable_uri_uuid)
         self.assertEqual(expected_pipelines, pipelines)
+        self.assertEqual("", error_msg)
+
+        scannable_uri_uuid, download_url, pipelines, error_msg = purldb.get_next_job()
+        self.assertFalse(scannable_uri_uuid)
+        self.assertFalse(download_url)
+        self.assertFalse(pipelines)
+        self.assertEqual("", error_msg)
+
+        scannable_uri_uuid, download_url, pipelines, error_msg = purldb.get_next_job()
+        self.assertFalse(scannable_uri_uuid)
+        self.assertFalse(download_url)
+        self.assertFalse(pipelines)
+        self.assertEqual("Bad response from PurlDB, unable to get next job.", error_msg)
+
+        scannable_uri_uuid, download_url, pipelines, error_msg = purldb.get_next_job()
+        self.assertFalse(scannable_uri_uuid)
+        self.assertFalse(download_url)
+        self.assertFalse(pipelines)
+        self.assertIn("Exception occured when calling `purldb.get_next_job()`:", error_msg)
 
     def test_scanpipe_pipes_purldb_poll_run_status(self):
         now = timezone.now()
