@@ -606,9 +606,10 @@ class ScanPipeManagementCommandTest(TestCase):
         self, mock_request_get, mock_request_post
     ):
         scannable_uri_uuid = "97627c6e-9acb-43e0-b8df-28bd92f2b7e5"
+        download_url = "https://registry.npmjs.org/asdf/-/asdf-1.2.2.tgz"
         mock_request_get.return_value = {
             "scannable_uri_uuid": scannable_uri_uuid,
-            "download_url": "https://registry.npmjs.org/asdf/-/asdf-1.2.2.tgz",
+            "download_url": download_url,
             "pipelines": ["scan_codebase"],
         }
         mock_request_post.return_value = {
@@ -634,6 +635,11 @@ class ScanPipeManagementCommandTest(TestCase):
             "httpsregistrynpmjsorgasdf-asdf-122tgz-97627c6e",
             out_value,
         )
+
+        project_name = purldb.create_project_name(download_url, scannable_uri_uuid)
+        project = Project.objects.get(name=project_name)
+        self.assertEqual(scannable_uri_uuid, project.extra_data['scannable_uri_uuid'])
+
         mock_request_post.assert_called_once()
         mock_request_post_call = mock_request_post.mock_calls[0]
         mock_request_post_call_kwargs = mock_request_post_call.kwargs
@@ -674,10 +680,10 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("Exception occured during scan project:", out_value)
         self.assertIn("Error during scan_codebase execution:", out_value)
         self.assertIn("Error log", out_value)
+
         mock_request_post.assert_called_once()
         mock_request_post_call = mock_request_post.mock_calls[0]
         mock_request_post_call_kwargs = mock_request_post_call.kwargs
-        print(mock_request_post_call_kwargs)
         self.assertEqual(
             self.purldb_update_status_url, mock_request_post_call_kwargs["url"]
         )

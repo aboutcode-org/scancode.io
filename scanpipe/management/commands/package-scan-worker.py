@@ -87,6 +87,9 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
                         execute=True,
                         run_async=run_async,
                     )
+                    project.update_extra_data(
+                        {"scannable_uri_uuid": scannable_uri_uuid}
+                    )
 
                     # 3. Poll project results
                     # TODO: see if we can block waiting for a signal when the
