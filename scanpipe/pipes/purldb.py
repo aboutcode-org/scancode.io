@@ -534,7 +534,6 @@ def update_status(
     scannable_uri_uuid,
     status,
     scan_log="",
-    scan_project_url="",
     timeout=DEFAULT_TIMEOUT,
     api_url=PURLDB_API_URL,
 ):
@@ -543,7 +542,6 @@ def update_status(
         "scannable_uri_uuid": scannable_uri_uuid,
         "scan_status": status,
         "scan_log": scan_log,
-        "scan_project_url": scan_project_url,
     }
     response = request_post(
         url=f"{api_url}scan_queue/update_status/",

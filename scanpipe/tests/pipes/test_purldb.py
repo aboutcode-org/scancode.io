@@ -386,13 +386,9 @@ class ScanPipePurlDBTest(TestCase):
                 "scannable_uri_uuid": expected_scannable_uri_uuid,
                 "pipelines": expected_pipelines,
             },
-            {
-                "download_url": "",
-                "scannable_uri_uuid": "",
-                "pipelines": []
-            },
+            {"download_url": "", "scannable_uri_uuid": "", "pipelines": []},
             None,
-            Exception()
+            Exception(),
         ]
         results = purldb.get_next_job()
         self.assertTrue(results)
@@ -418,7 +414,9 @@ class ScanPipePurlDBTest(TestCase):
         self.assertFalse(scannable_uri_uuid)
         self.assertFalse(download_url)
         self.assertFalse(pipelines)
-        self.assertIn("Exception occured when calling `purldb.get_next_job()`:", error_msg)
+        self.assertIn(
+            "Exception occured when calling `purldb.get_next_job()`:", error_msg
+        )
 
     def test_scanpipe_pipes_purldb_poll_run_status(self):
         now = timezone.now()

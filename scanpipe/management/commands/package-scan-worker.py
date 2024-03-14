@@ -24,7 +24,8 @@ import time
 
 from django.core.management.base import BaseCommand
 
-from scanpipe.management.commands import CreateProjectCommandMixin, AddInputCommandMixin
+from scanpipe.management.commands import AddInputCommandMixin
+from scanpipe.management.commands import CreateProjectCommandMixin
 from scanpipe.pipes import output
 from scanpipe.pipes import purldb
 
@@ -38,7 +39,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
             "--sleep",
             type=int,
             default=0,
-            action='store',
+            action="store",
             help="Number in seconds how long the loop should sleep for before polling.",
         )
 
@@ -48,7 +49,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
             default=0,
             action="store",
             help="Limit the number of loops to a maximum number. "
-                 "0 means no limit. Used only for testing."
+            "0 means no limit. Used only for testing.",
         )
 
     def handle(self, *args, **options):
@@ -65,7 +66,9 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
             time.sleep(sleep)
 
             # 1. Get download url from purldb
-            scannable_uri_uuid, download_url, pipelines, error_msg = purldb.get_next_job()
+            scannable_uri_uuid, download_url, pipelines, error_msg = (
+                purldb.get_next_job()
+            )
             if error_msg:
                 self.stderr.write(error_msg)
                 continue
