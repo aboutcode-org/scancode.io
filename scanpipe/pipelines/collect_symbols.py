@@ -20,7 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from source_inpector import symbols_ctags
+from source_inspector import symbols_ctags
 
 from scanpipe.pipelines import Pipeline
 
@@ -55,5 +55,5 @@ class CollectSymbols(Pipeline):
 
         for file in project_files:
             symbols = symbols_ctags.collect_symbols(file.location)
-            tags = [symbol["name"] for symbol in symbols if symbol["_type"] == "tag"]
+            tags = [symbol["name"] for symbol in symbols if "name" in symbol]
             file.update_extra_data({"symbols": tags})
