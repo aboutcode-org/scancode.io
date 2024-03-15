@@ -20,8 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from source_inpector import symbols_ctags
+
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipes import fetch
 
 
 class CollectSymbols(Pipeline):
@@ -39,7 +40,7 @@ class CollectSymbols(Pipeline):
         Collect symbols from codebase files using Ctags and store
         them in the extra data field.
         """
-        if not is_ctags_installed():
+        if not symbols_ctags.is_ctags_installed():
             self.log(
                 "``Universal Ctags`` missing."
                 "Install ``Universal Ctags`` to use this pipeline."
@@ -53,28 +54,6 @@ class CollectSymbols(Pipeline):
         )
 
         for file in project_files:
-            if symbols := extract_symbols_from_resource(file.location, self.log):
-                file.update_extra_data({"symbols": symbols})
-
-
-def extract_symbols_from_resource(location, logger):
-    """Given the location of a resource, use Universal Ctags to extract symbols."""
-    command = ["ctags", "-f", "-", location]
-
-    ctags_result = fetch.run_command_safely(command)
-    symbols = set(line.split()[0] for line in ctags_result.split("\n") if line)
-
-    return list(symbols)
-
-
-def is_ctags_installed():
-    """Check if Universal Ctags is installed."""
-    try:
-        result = fetch.run_command_safely(["ctags", "--version"])
-
-        if "universal ctags" in result.lower():
-            return True
-    except FileNotFoundError:
-        pass
-
-    return False
+            symbols = symbols_ctags.collect_symbols(file.location)
+            tags = [symbol["name"] for symbol in symbols if symbol["_type"] == "tag"]
+            file.update_extra_data({"symbols": tags})
