@@ -26,8 +26,8 @@ from django.core.management.base import BaseCommand
 
 from scanpipe.management.commands import AddInputCommandMixin
 from scanpipe.management.commands import CreateProjectCommandMixin
-from scanpipe.pipes import purldb
 from scanpipe.pipes import output
+from scanpipe.pipes import purldb
 
 
 class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
@@ -110,12 +110,18 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
                         # 4. Get project results and send to PurlDB
                         project.refresh_from_db()
                         scan_results_location = output.to_json(project)
-                        scan_summary_location = project.get_latest_output(filename="summary")
+                        scan_summary_location = project.get_latest_output(
+                            filename="summary"
+                        )
                         purldb.send_results_to_purldb(
                             scannable_uri_uuid,
                             scan_results_location,
                             scan_summary_location,
                             project.extra_data,
+                        )
+                        self.stdout.write(
+                            "Scan results and other data have been sent to PurlDB",
+                            self.style.SUCCESS,
                         )
 
                 except Exception as e:

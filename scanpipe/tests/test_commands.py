@@ -638,7 +638,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         project_name = purldb.create_project_name(download_url, scannable_uri_uuid)
         project = Project.objects.get(name=project_name)
-        self.assertEqual(scannable_uri_uuid, project.extra_data['scannable_uri_uuid'])
+        self.assertEqual(scannable_uri_uuid, project.extra_data["scannable_uri_uuid"])
 
         mock_request_post.assert_called_once()
         mock_request_post_call = mock_request_post.mock_calls[0]
