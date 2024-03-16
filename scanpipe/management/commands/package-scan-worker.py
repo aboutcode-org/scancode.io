@@ -108,10 +108,14 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
                         )
                     else:
                         # 4. Get project results and send to PurlDB
+                        project.refresh_from_db()
                         scan_results_location = output.to_json(project)
                         scan_summary_location = project.get_latest_output(filename="summary")
                         purldb.send_results_to_purldb(
-                            scannable_uri_uuid, scan_results_location, scan_summary_location
+                            scannable_uri_uuid,
+                            scan_results_location,
+                            scan_summary_location,
+                            project.extra_data,
                         )
 
                 except Exception as e:
