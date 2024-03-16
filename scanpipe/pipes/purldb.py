@@ -505,8 +505,8 @@ def get_next_job():
 
 def send_results_to_purldb(
     scannable_uri_uuid,
-    scan_file_location,
-    summary_file_location,
+    scan_results_location,
+    scan_summary_location,
     timeout=DEFAULT_TIMEOUT,
     api_url=PURLDB_API_URL,
 ):
@@ -514,15 +514,15 @@ def send_results_to_purldb(
     Send project results to purldb for the package handeled by the ScannableURI
     with uuid of `scannable_uri_uuid`
     """
-    with open(scan_file_location, "rb") as scan_file:
-        with open(summary_file_location, "rb") as summary_file:
+    with open(scan_results_location, "rb") as scan_results_file:
+        with open(scan_summary_location, "rb") as scan_summary_file:
             data = {
                 "scannable_uri_uuid": scannable_uri_uuid,
                 "scan_status": "scanned",
             }
             files = {
-                "scan_file": scan_file,
-                "summary_file": summary_file,
+                "scan_results_file": scan_results_file,
+                "scan_summary_file": scan_summary_file,
             }
             response = request_post(
                 url=f"{api_url}scan_queue/update_status/",
