@@ -20,23 +20,35 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from scanpipe.pipelines import Pipeline
+from pathlib import Path
+
+from django.test import TestCase
+
+from scanpipe import pipes
+from scanpipe.models import Project
 from scanpipe.pipes import symbols
+from scanpipe.pipes.input import copy_input
 
 
-class CollectSymbols(Pipeline):
-    """Collect symbols from codebase files and keep them in extra data field."""
+class ScanPipeSymbolsPipesTest(TestCase):
+    data_location = Path(__file__).parent.parent / "data"
 
-    download_inputs = False
-    is_addon = True
+    def setUp(self):
+        self.project1 = Project.objects.create(name="Analysis")
 
-    @classmethod
-    def steps(cls):
-        return (cls.collect_and_store_resource_symbols,)
+    def test_scanpipe_pipes_symbols_collect_and_store_resource_symbols(self):
 
-    def collect_and_store_resource_symbols(self):
-        """
-        Collect symbols from codebase files using Ctags and store
-        them in the extra data field.
-        """
-        symbols.collect_and_store_resource_symbols(self.project, self.log)
+        dir = self.project1.codebase_path / "codefile"
+        dir.mkdir(parents=True)
+
+        file_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        copy_input(file_location, dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        symbols.collect_and_store_resource_symbols(self.project1)
+
+        main_file = self.project1.codebaseresources.files()[0]
+        result_extra_data_symbols = main_file.extra_data.get("source_symbols")
+        expected_extra_data_symbols = ["generatePassword", "passwordLength", "charSet"]
+        self.assertCountEqual(expected_extra_data_symbols, result_extra_data_symbols)

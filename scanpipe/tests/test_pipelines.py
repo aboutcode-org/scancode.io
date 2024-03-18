@@ -1231,6 +1231,6 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, exitcode, msg=out)
 
         main_file = project1.codebaseresources.files()[0]
-        result_extra_data_symbols = main_file.extra_data.get("symbols")
+        result_extra_data_symbols = main_file.extra_data.get("source_symbols")
         expected_extra_data_symbols = ["generatePassword", "passwordLength", "charSet"]
         self.assertCountEqual(expected_extra_data_symbols, result_extra_data_symbols)
