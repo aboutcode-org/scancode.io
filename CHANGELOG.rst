@@ -11,6 +11,10 @@ v34.1.0 (unreleased)
   The docstring are converted from markdown to html for proper rendering.
   https://github.com/nexB/scancode.io/pull/1105
 
+- Add a new `CollectSymbols` pipeline (addon) for collecting codebase symbols using
+  Universal Ctags.
+  https://github.com/nexB/scancode.io/pull/1116
+
 v34.0.0 (2024-03-04)
 --------------------
 
