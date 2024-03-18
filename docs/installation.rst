@@ -260,7 +260,7 @@ Make sure those are installed before attempting the ScanCode.io installation::
 See also `ScanCode-toolkit Prerequisites <https://scancode-toolkit.readthedocs.io/en/
 latest/getting-started/install.html#prerequisites>`_ for more details.
 
-For the ``CollectSymbols`` pipeline, `Universal Ctags <https://github.com/universal-ctags/ctags>`_ is needed.
+For the :ref:`pipeline_collect_symbols` pipeline, `Universal Ctags <https://github.com/universal-ctags/ctags>`_ is needed.
 On **Linux** install it using::
 
     sudo apt-get install universal-ctags
