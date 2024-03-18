@@ -42,6 +42,14 @@ Analyse Docker Windows Image
     :members:
     :member-order: bysource
 
+.. _pipeline_collect_symbols:
+
+Collect Codebase Symbols (addon)
+---------------------------------
+.. autoclass:: scanpipe.pipelines.collect_symbols.CollectSymbols()
+    :members:
+    :member-order: bysource
+
 .. _pipeline_find_vulnerabilities:
 
 Find Vulnerabilities (addon)
