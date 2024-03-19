@@ -232,12 +232,10 @@ class BasePipeline:
 
     def add_error(self, exception, resource=None):
         """Create a ``ProjectMessage`` ERROR record on the current `project`."""
-        details = {}
-        if resource:
-            details["codebase_resource_path"] = resource.path
-
         self.project.add_error(
-            model=self.pipeline_name, details=details, exception=exception
+            model=self.pipeline_name,
+            exception=exception,
+            resource=resource,
         )
 
     @contextmanager

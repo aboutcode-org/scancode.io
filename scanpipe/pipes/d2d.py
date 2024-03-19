@@ -826,15 +826,13 @@ class AboutFileIndexes:
             package_data = resolve.resolve_about_package(
                 input_location=str(about_file_resource.location_path)
             )
-            error_message_details = {
-                "path": about_file_resource.path,
-                "package_data": package_data,
-            }
+            error_message_details = {"package_data": package_data}
             if not package_data:
                 project.add_error(
                     description="Cannot create package from ABOUT file",
                     model="map_about_files",
                     details=error_message_details,
+                    resource=about_file_resource,
                 )
                 continue
 
@@ -846,6 +844,7 @@ class AboutFileIndexes:
                     description="ABOUT file does not have about_resource",
                     model="map_about_files",
                     details=error_message_details,
+                    resource=about_file_resource,
                 )
                 continue
             else:

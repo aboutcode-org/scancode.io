@@ -1097,12 +1097,20 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             return self.runs.not_started().earliest("created_date")
 
     def add_message(
-        self, severity, description="", model="", details=None, exception=None
+        self,
+        severity,
+        description="",
+        model="",
+        details=None,
+        exception=None,
+        resource=None,
     ):
         """
         Create a ProjectMessage record for this Project.
 
         The ``model`` attribute can be provided as a string or as a Model class.
+        A ``resource`` can be provided to keep track of the codebase resource that was
+        analyzed when the error occurred.
         """
         if inspect.isclass(model):
             model = model.__name__
@@ -1114,29 +1122,61 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if exception and not description:
             description = str(exception)
 
+        details = details or {}
+        if resource:
+            # Do not change this field name as it has special behavior in templates.
+            details["resource_path"] = resource.path
+
         return ProjectMessage.objects.create(
             project=self,
             severity=severity,
             description=description,
             model=model,
-            details=details or {},
+            details=details,
             traceback=traceback,
         )
 
-    def add_info(self, description="", model="", details=None, exception=None):
+    def add_info(
+        self,
+        description="",
+        model="",
+        details=None,
+        exception=None,
+        resource=None,
+    ):
         """Create an INFO ProjectMessage record for this project."""
         severity = ProjectMessage.Severity.INFO
-        return self.add_message(severity, description, model, details, exception)
+        return self.add_message(
+            severity, description, model, details, exception, resource
+        )
 
-    def add_warning(self, description="", model="", details=None, exception=None):
+    def add_warning(
+        self,
+        description="",
+        model="",
+        details=None,
+        exception=None,
+        resource=None,
+    ):
         """Create a WARNING ProjectMessage record for this project."""
         severity = ProjectMessage.Severity.WARNING
-        return self.add_message(severity, description, model, details, exception)
+        return self.add_message(
+            severity, description, model, details, exception, resource
+        )
 
-    def add_error(self, description="", model="", details=None, exception=None):
+    def add_error(
+        self,
+        description="",
+        model="",
+        details=None,
+        exception=None,
+        resource=None,
+    ):
         """Create an ERROR ProjectMessage record using for this project."""
         severity = ProjectMessage.Severity.ERROR
-        return self.add_message(severity, description, model, details, exception)
+        return self.add_message(
+            severity, description, model, details, exception, resource
+        )
 
     def get_absolute_url(self):
         """Return this project's details URL."""
@@ -1409,10 +1449,15 @@ class SaveProjectMessageMixin:
         Create a ProjectMessage record using the provided ``exception`` Exception
         instance.
         """
+        resource = None
+        if isinstance(self, CodebaseResource):
+            resource = self
+
         return self.project.add_error(
             model=self.__class__,
             details=model_to_dict(self),
             exception=exception,
+            resource=resource,
         )
 
     def add_errors(self, exceptions):
@@ -2538,11 +2583,9 @@ class CodebaseResource(
         except Exception as exception:
             self.project.add_warning(
                 model=DiscoveredPackage,
-                details={
-                    "codebase_resource_path": self.path,
-                    **package_data,
-                },
+                details=package_data,
                 exception=exception,
+                resource=self,
             )
         else:
             self.add_package(package)

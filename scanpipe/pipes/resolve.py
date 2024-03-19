@@ -57,16 +57,13 @@ def get_packages(project, package_registry, manifest_resources, model=None):
         return
 
     for resource in manifest_resources:
-        if packages := get_packages_from_manifest(
-            input_location=resource.location,
-            package_registry=package_registry,
-        ):
+        if packages := get_packages_from_manifest(resource.location, package_registry):
             resolved_packages.extend(packages)
         else:
             project.add_error(
                 description="No packages could be resolved for",
                 model=model,
-                details={"path": resource.path},
+                resource=resource,
             )
 
     return resolved_packages
