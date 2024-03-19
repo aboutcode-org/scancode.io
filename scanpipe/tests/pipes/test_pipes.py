@@ -273,7 +273,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         self.assertEqual(1, project1.projectmessages.count())
         error = project1.projectmessages.get()
         self.assertEqual("assemble_package", error.model)
-        expected = {"resource": "filename.ext", "package_uid": "not_available"}
+        expected = {"resource_path": "filename.ext", "package_uid": "not_available"}
         self.assertEqual(expected, error.details)
 
         scancode.add_resource_to_package(package1.package_uid, resource1, project1)
