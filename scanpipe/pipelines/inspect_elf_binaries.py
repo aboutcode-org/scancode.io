@@ -20,9 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from elftools.common.exceptions import DWARFError
-from elftools.common.exceptions import ELFError
-
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes.elf import collect_dwarf_source_path_references
 
@@ -40,7 +37,5 @@ class InspectELFBinaries(Pipeline):
     def collect_dwarf_source_path_references(self):
         """Collect DWARF paths from ELF files and set values on the extra_data field."""
         for elf_resource in self.project.codebaseresources.elfs():
-            try:
+            with self.save_errors(Exception, resource=elf_resource):
                 collect_dwarf_source_path_references(elf_resource)
-            except (ELFError, DWARFError) as error:
-                self.add_error(error, resource=elf_resource)

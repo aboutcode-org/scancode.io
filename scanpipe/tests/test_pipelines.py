@@ -36,6 +36,7 @@ from packageurl import PackageURL
 from scancode.cli_test_utils import purl_with_fake_uuid
 
 from scanpipe import pipes
+from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipelines import InputFileError
@@ -202,6 +203,12 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual({}, message.details)
         self.assertEqual("Error message", message.description)
         self.assertIn('raise Exception("Error message")', message.traceback)
+
+        resource1 = CodebaseResource.objects.create(project=project1, path="filename")
+        with pipeline.save_errors(Exception, resource=resource1):
+            raise Exception("Error message")
+        message = project1.projectmessages.latest("created_date")
+        self.assertEqual({"resource_path": str(resource1.path)}, message.details)
 
     def test_scanpipe_pipelines_is_pipeline(self):
         self.assertFalse(is_pipeline(None))
