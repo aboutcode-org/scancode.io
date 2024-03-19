@@ -15,6 +15,14 @@ v34.1.0 (unreleased)
   Universal Ctags.
   https://github.com/nexB/scancode.io/pull/1116
 
+- Capture errors during the `inspect_elf_binaries` pipeline execution.
+  Errors on resource inspection are stored as project error message instead of global
+  pipeline failure.
+  The problematic resource path is stored in the message details and displayed in the
+  message list UI as a link to the resource details view.
+  https://github.com/nexB/scancode.io/issues/1121
+  https://github.com/nexB/scancode.io/issues/1122
+
 v34.0.0 (2024-03-04)
 --------------------
 
