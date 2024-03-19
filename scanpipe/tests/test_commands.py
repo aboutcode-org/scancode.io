@@ -63,6 +63,7 @@ def raise_interrupt(run_pk):
 
 
 class ScanPipeManagementCommandTest(TestCase):
+    data_location = Path(__file__).parent / "data"
     pipeline_name = "analyze_docker_image"
     pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
     purldb_update_status_url = f"{purldb.PURLDB_API_URL}scan_queue/update_status/"
@@ -600,21 +601,23 @@ class ScanPipeManagementCommandTest(TestCase):
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-user", "--no-input", username)
 
+    @mock.patch("scanpipe.models.Project.get_latest_output")
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.request_get")
     def test_scanpipe_management_command_package_scan_worker(
-        self, mock_request_get, mock_request_post
+        self, mock_request_get, mock_request_post, mock_get_latest_output
     ):
         scannable_uri_uuid = "97627c6e-9acb-43e0-b8df-28bd92f2b7e5"
         download_url = "https://registry.npmjs.org/asdf/-/asdf-1.2.2.tgz"
         mock_request_get.return_value = {
             "scannable_uri_uuid": scannable_uri_uuid,
             "download_url": download_url,
-            "pipelines": ["scan_codebase"],
+            "pipelines": ["scan_single_package"],
         }
         mock_request_post.return_value = {
             "status": f"scan indexed for scannable uri {scannable_uri_uuid}"
         }
+        mock_get_latest_output.return_value = self.data_location / "scancode" / "is-npm-1.0.0_summary.json"
 
         options = [
             "--max-loops",
@@ -631,7 +634,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("File(s) downloaded to the project inputs directory:", out_value)
         self.assertIn("asdf-1.2.2.tgz", out_value)
         self.assertIn(
-            "scan_codebase successfully executed on project "
+            "scan_single_package successfully executed on project "
             "httpsregistrynpmjsorgasdf-asdf-122tgz-97627c6e",
             out_value,
         )
@@ -649,9 +652,11 @@ class ScanPipeManagementCommandTest(TestCase):
         expected_data = {
             "scannable_uri_uuid": "97627c6e-9acb-43e0-b8df-28bd92f2b7e5",
             "scan_status": "scanned",
+            "project_extra_data": '{"scannable_uri_uuid": "97627c6e-9acb-43e0-b8df-28bd92f2b7e5"}'
         }
         self.assertEqual(expected_data, mock_request_post_call_kwargs["data"])
-        self.assertTrue(mock_request_post_call_kwargs["files"]["scan_file"])
+        self.assertTrue(mock_request_post_call_kwargs["files"]["scan_results_file"])
+        self.assertTrue(mock_request_post_call_kwargs["files"]["scan_summary_file"])
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.request_get")
@@ -662,7 +667,7 @@ class ScanPipeManagementCommandTest(TestCase):
         mock_request_get.return_value = {
             "scannable_uri_uuid": scannable_uri_uuid,
             "download_url": "https://registry.npmjs.org/asdf/-/asdf-1.2.2.tgz",
-            "pipelines": ["scan_codebase"],
+            "pipelines": ["scan_single_package"],
         }
         mock_request_post.return_value = {
             "status": f"scan failed for scannable uri {scannable_uri_uuid}"
@@ -678,7 +683,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         out_value = out.getvalue()
         self.assertIn("Exception occured during scan project:", out_value)
-        self.assertIn("Error during scan_codebase execution:", out_value)
+        self.assertIn("Error during scan_single_package execution:", out_value)
         self.assertIn("Error log", out_value)
 
         mock_request_post.assert_called_once()
@@ -691,7 +696,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "scannable_uri_uuid": "97627c6e-9acb-43e0-b8df-28bd92f2b7e5",
             "scan_status": "failed",
             "scan_log": "Exception occured during scan project:\n\n"
-            "Error during scan_codebase execution:\nError log",
+            "Error during scan_single_package execution:\nError log",
         }
         self.assertEqual(expected_data, mock_request_post_call_kwargs["data"])
 
@@ -706,12 +711,12 @@ class ScanPipeManagementCommandTest(TestCase):
             {
                 "scannable_uri_uuid": scannable_uri_uuid1,
                 "download_url": "https://registry.npmjs.org/asdf/-/asdf-1.2.2.tgz",
-                "pipelines": ["scan_codebase"],
+                "pipelines": ["scan_single_package"],
             },
             {
                 "scannable_uri_uuid": scannable_uri_uuid2,
                 "download_url": "https://registry.npmjs.org/asdf/-/asdf-1.2.1.tgz",
-                "pipelines": ["scan_codebase"],
+                "pipelines": ["scan_single_package"],
             },
         ]
 
@@ -741,7 +746,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("- asdf-1.2.2.tgz", out_value)
         self.assertIn("- asdf-1.2.1.tgz", out_value)
         self.assertIn("Exception occured during scan project:", out_value)
-        self.assertIn("Error during scan_codebase execution:", out_value)
+        self.assertIn("Error during scan_single_package execution:", out_value)
         self.assertIn("Error log", out_value)
 
         update_status_url = f"{purldb.PURLDB_API_URL}scan_queue/update_status/"
@@ -753,7 +758,7 @@ class ScanPipeManagementCommandTest(TestCase):
                     "scannable_uri_uuid": "97627c6e-9acb-43e0-b8df-28bd92f2b7e5",
                     "scan_status": "failed",
                     "scan_log": "Exception occured during scan project:\n\n"
-                    "Error during scan_codebase execution:\nError log",
+                    "Error during scan_single_package execution:\nError log",
                 },
             ),
             mock.call(
@@ -763,7 +768,7 @@ class ScanPipeManagementCommandTest(TestCase):
                     "scannable_uri_uuid": "0bbdcf88-ad07-4970-9272-7d5f4c82cc7b",
                     "scan_status": "failed",
                     "scan_log": "Exception occured during scan project:\n\n"
-                    "Error during scan_codebase execution:\nError log",
+                    "Error during scan_single_package execution:\nError log",
                 },
             ),
         ]

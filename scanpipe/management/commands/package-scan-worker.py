@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import traceback
 import time
 
 from django.core.management.base import BaseCommand
@@ -125,7 +126,8 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
                         )
 
                 except Exception as e:
-                    error_log = f"Exception occured during scan project:\n\n{str(e)}"
+                    tb = traceback.format_exc()
+                    error_log = f"Exception occured during scan project:\n\n{tb}"
                     purldb.update_status(
                         scannable_uri_uuid,
                         status="failed",
