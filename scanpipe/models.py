@@ -2540,7 +2540,6 @@ class CodebaseResource(
                 model=DiscoveredPackage,
                 details={
                     "codebase_resource_path": self.path,
-                    "codebase_resource_pk": self.pk,
                     **package_data,
                 },
                 exception=exception,

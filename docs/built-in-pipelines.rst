@@ -45,7 +45,7 @@ Analyse Docker Windows Image
 .. _pipeline_collect_symbols:
 
 Collect Codebase Symbols (addon)
----------------------------------
+--------------------------------
 .. autoclass:: scanpipe.pipelines.collect_symbols.CollectSymbols()
     :members:
     :member-order: bysource

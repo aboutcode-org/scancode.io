@@ -38,10 +38,10 @@
             </td>
             <td class="break-all" style="max-width: 450px;">
               <div style="max-height: 200px; overflow-y: scroll;">
-                {% if message.details.codebase_resource_pk and message.details.codebase_resource_path %}
+                {% if message.details.codebase_resource_path %}
                   <div>
-                    <strong>Codebase resource</strong>:
-                    <a href="{% url 'resource_detail' project.pk message.details.codebase_resource_pk %}" target="_blank">
+                    <strong>Resource</strong>:
+                    <a href="{% url 'resource_detail' project.slug message.details.codebase_resource_path %}" target="_blank">
                       {{ message.details.codebase_resource_path }}
                     </a>
                   </div>

@@ -230,9 +230,15 @@ class BasePipeline:
         if errors:
             raise InputFileError(errors)
 
-    def add_error(self, exception):
+    def add_error(self, exception, resource=None):
         """Create a ``ProjectMessage`` ERROR record on the current `project`."""
-        self.project.add_error(model=self.pipeline_name, exception=exception)
+        details = {}
+        if resource:
+            details["codebase_resource_path"] = resource.path
+
+        self.project.add_error(
+            model=self.pipeline_name, details=details, exception=exception
+        )
 
     @contextmanager
     def save_errors(self, *exceptions):

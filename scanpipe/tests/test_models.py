@@ -2475,6 +2475,5 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         expected_message = "value too long for type character varying(100)"
         self.assertEqual(expected_message, message.description)
         self.assertEqual(bad_data["version"], message.details["version"])
-        self.assertTrue(message.details["codebase_resource_pk"])
         self.assertEqual(resource.path, message.details["codebase_resource_path"])
         self.assertIn("in save", message.traceback)
