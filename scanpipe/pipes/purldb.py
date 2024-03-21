@@ -366,12 +366,12 @@ def poll_run_url_status(run_url, sleep=10):
     """
     if poll_until_success(check=get_run_url_status, sleep=sleep, run_url=run_url):
         return True
-    else:
-        response = request_get(run_url)
-        if response:
-            log = response["log"]
-            msg = f"Matching run has stopped:\n\n{log}"
-            raise PurlDBException(msg)
+
+    response = request_get(run_url)
+    if response:
+        log = response["log"]
+        msg = f"Matching run has stopped:\n\n{log}"
+        raise PurlDBException(msg)
 
 
 def poll_until_success(check, sleep=10, **kwargs):
@@ -385,23 +385,28 @@ def poll_until_success(check, sleep=10, **kwargs):
     function.
     """
     run_status = AbstractTaskFieldsModel.Status
+    # Continue looping if the run instance has the following statuses
+    CONTINUE_STATUSES = [
+        run_status.NOT_STARTED,
+        run_status.QUEUED,
+        run_status.RUNNING,
+    ]
+    # Return False if the run instance has the following statuses
+    FAIL_STATUSES = [
+        run_status.FAILURE,
+        run_status.STOPPED,
+        run_status.STALE,
+    ]
+
     while True:
         status = check(**kwargs)
         if status == run_status.SUCCESS:
             return True
 
-        if status in [
-            run_status.NOT_STARTED,
-            run_status.QUEUED,
-            run_status.RUNNING,
-        ]:
+        if status in CONTINUE_STATUSES:
             continue
 
-        if status in [
-            run_status.FAILURE,
-            run_status.STOPPED,
-            run_status.STALE,
-        ]:
+        if status in FAIL_STATUSES:
             return False
 
         time.sleep(sleep)

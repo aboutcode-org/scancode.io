@@ -349,9 +349,9 @@ class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
     def create_project(
         self,
         name,
-        pipelines=[],
-        input_files=[],
-        input_urls=[],
+        pipelines=(),
+        input_files=(),
+        input_urls=(),
         copy_from="",
         notes="",
         execute=False,

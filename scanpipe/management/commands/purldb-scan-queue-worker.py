@@ -93,8 +93,6 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
                     )
 
                     # 3. Poll project results
-                    # TODO: see if we can block waiting for a signal when the
-                    # project is done running
                     error_log = purldb.poll_run_status(
                         project=project,
                         sleep=sleep,
