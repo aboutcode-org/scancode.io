@@ -6,9 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}ScanCode.io{% endblock %}</title>
     <link rel="icon" href="{% static 'favicon.ico' %}">
-    <link rel="stylesheet" href="{% static 'bulma-0.9.4.min.css' %}" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'bulma-1.0.0.min.css' %}" crossorigin="anonymous">
     <link rel="stylesheet" href="{% static 'highlight-10.6.0.css' %}" crossorigin="anonymous">
     <style>
+      :root {
+        --bulma-link-h: 229deg;
+        --bulma-link-s: 53%;
+        --bulma-link-l: 53%;
+      }
+      .title {--bulma-title-weight: var(--bulma-weight-semibold);}
+      .heading {display: block; font-size: 11px; letter-spacing: 1px; margin-bottom: 5px; text-transform: uppercase;}
+
       .width-100, .select, .select select {width: 100%;}
       .width-1 {width: 1rem !important;}
       .height-1 {height: 1rem !important;}
