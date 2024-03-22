@@ -1,3 +1,9 @@
+{% if tab_data.alert_message %}
+  <div class="notification is-info is-light has-text-weight-semibold p-3 mb-4">
+    {{ tab_data.alert_message }}
+  </div>
+{% endif %}
+
 <dl>
   {% for field_name, field_data in tab_data.fields.items %}
     <dt class="has-text-weight-semibold">

@@ -89,6 +89,7 @@ from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
+from scanpipe.pipes import purldb
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -234,6 +235,7 @@ class TabSetMixin:
             "icon_class": "",
             "display_condition": <func>,
             "disable_condition": <func>,
+            "alert_message": "Message",
         }
     }
     """
@@ -269,6 +271,7 @@ class TabSetMixin:
             "verbose_name": tab_definition.get("verbose_name"),
             "icon_class": tab_definition.get("icon_class"),
             "template": tab_definition.get("template"),
+            "alert_message": tab_definition.get("alert_message"),
             "fields": fields_data,
             "disabled": is_disabled,
             "label_count": self.get_label_count(fields_data),
@@ -1890,7 +1893,59 @@ class DiscoveredPackageDetailsView(
             "verbose_name": "Extra",
             "icon_class": "fa-solid fa-database",
         },
+        "purldb": {
+            "fields": ["package_url"],
+            "verbose_name": "PurlDB",
+            "icon_class": "fa-solid fa-rocket",
+            "template": "scanpipe/tabset/tab_purldb.html",
+            "display_condition": lambda x: purldb.is_configured(),
+            "alert_message": (
+                "You are looking at the details for this software package as defined "
+                "in the PurlDB which was mined and scanned automatically from a public "
+                "source."
+            ),
+        },
     }
+
+
+class DiscoveredPackagePurlDBTabView(ConditionalLoginRequired, generic.DetailView):
+    model = DiscoveredPackage
+    slug_field = "uuid"
+    slug_url_kwarg = "uuid"
+    template_name = "scanpipe/tabset/tab_default.html"
+
+    @staticmethod
+    def get_fields_data(purldb_entry):
+        exclude = [
+            "uuid",
+            "package_sets",
+            "purl",
+            "license_detections",
+        ]
+
+        fields_data = {}
+        for field_name, value in purldb_entry.items():
+            if not value or field_name in exclude:
+                continue
+            label = field_name.capitalize().replace("_", " ")
+            fields_data[field_name] = {"label": label, "value": value}
+
+        return fields_data
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        if not purldb.is_configured():
+            raise Http404("PurlDB access is not configured.")
+
+        if purldb_entry := purldb.get_package_by_purl(self.object.package_url):
+            fields = self.get_fields_data(purldb_entry)
+        else:
+            msg = "No entries found in the PurlDB for this package."
+            fields = {"warning": {"label": "Warning", "value": msg}}
+
+        context["tab_data"] = {"fields": fields}
+        return context
 
 
 class DiscoveredDependencyDetailsView(

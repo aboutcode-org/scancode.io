@@ -47,6 +47,11 @@ urlpatterns = [
         name="project_resources",
     ),
     path(
+        "project/<slug:slug>/packages/<uuid:uuid>/purldb_tab/",
+        views.DiscoveredPackagePurlDBTabView.as_view(),
+        name="package_purldb_tab",
+    ),
+    path(
         "project/<slug:slug>/packages/<uuid:uuid>/",
         views.DiscoveredPackageDetailsView.as_view(),
         name="package_detail",
