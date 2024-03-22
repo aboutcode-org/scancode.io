@@ -314,6 +314,26 @@ you can provide the API key using ``VULNERABLECODE_API_KEY``::
 
     VULNERABLECODE_API_KEY=insert_your_api_key_here
 
+.. _scancodeio_settings_matchcodeio:
+
+MATCHCODE.IO
+^^^^^^^^^^^^
+
+There is currently no public instance of MatchCode.io.
+
+Alternatively, you can deploy your own instance of MatchCode.io by
+following the instructions provided in the documentation at
+https://purldb.readthedocs.io/.
+
+To configure your local environment, set the ``MATCHCODEIO_URL`` in your ``.env`` file::
+
+    MATCHCODEIO_URL=https://<Address to MatchCode.io host>/
+
+If authentication is enabled on your MatchCode.io instance, you can provide the
+API key using ``MATCHCODEIO_API_KEY``::
+
+    MATCHCODEIO_API_KEY=insert_your_api_key_here
+
 .. _scancodeio_settings_fetch_authentication:
 
 Fetch Authentication

@@ -26,20 +26,20 @@ from scanpipe.pipes import matchcode
 
 class MatchToMatchCode(Pipeline):
     """
-    Match the codebase resources of a project against MatchCode to identify packages.
+    Match the codebase resources of a project against MatchCode.io to identify packages.
 
     This process involves:
 
     1. Generating a JSON scan of the project codebase
-    2. Transmitting it to MatchCode and awaiting match results
+    2. Transmitting it to MatchCode.io and awaiting match results
     3. Creating discovered packages from the package data obtained
     4. Associating the codebase resources with those discovered packages
 
-    Currently, MatchCode can only match for archives, directories, and files
+    Currently, MatchCode.io can only match for archives, directories, and files
     from Maven and npm Packages.
 
-    This pipeline requires a MatchCode instance to be configured and available.
-    There is currently no public instance of MatchCode. Reach out to nexB, Inc.
+    This pipeline requires a MatchCode.io instance to be configured and available.
+    There is currently no public instance of MatchCode.io. Reach out to nexB, Inc.
     for other arrangements.
     """
 
@@ -69,7 +69,7 @@ class MatchToMatchCode(Pipeline):
             raise Exception("MatchCode.io is not available.")
 
     def send_project_json_to_matchcode(self):
-        """Create a JSON scan of the project Codebase and send it to MatchCode."""
+        """Create a JSON scan of the project Codebase and send it to MatchCode.io."""
         self.run_url = matchcode.send_project_json_to_matchcode(self.project)
 
     def poll_matching_results(self):
