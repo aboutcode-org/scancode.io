@@ -349,9 +349,9 @@ class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
     def create_project(
         self,
         name,
-        pipelines=(),
-        input_files=(),
-        input_urls=(),
+        pipelines=None,
+        input_files=None,
+        input_urls=None,
         copy_from="",
         notes="",
         execute=False,
@@ -370,22 +370,56 @@ class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
             raise CommandError("\n".join(e.messages))
 
         # Run validation before creating the project in the database
-        pipelines_data = extract_group_from_pipelines(pipelines)
-        pipelines_data = validate_pipelines(pipelines_data)
-
-        input_files_data = self.extract_tag_from_input_files(input_files)
-        self.validate_input_files(input_files=input_files_data.keys())
-        validate_copy_from(copy_from)
+        pipelines_data, input_files_data = self._validate_project_inputs(
+            pipelines=pipelines, input_files=input_files, copy_from=copy_from
+        )
 
         project.save()
         self.project = project
         msg = f"Project {name} created with work directory {project.work_directory}"
         self.stdout.write(msg, self.style.SUCCESS)
 
+        self._add_project_inputs(
+            pipelines_data=pipelines_data,
+            input_files_data=input_files_data,
+            input_urls=input_urls,
+            copy_from=copy_from,
+        )
+
+        if execute:
+            self.execute_project(run_async=run_async)
+
+        return project
+
+    def _validate_project_inputs(self, pipelines, input_files, copy_from):
+        """
+        Validate `pipelines`, `input_files`, and `copy_from`, returning a tuple
+        of dictionaries containing the pipeline data of `pipelines` and the
+        input files data from `input_files.
+        """
+        pipelines_data = {}
+        input_files_data = {}
+
+        if pipelines:
+            pipelines_data = extract_group_from_pipelines(pipelines)
+            pipelines_data = validate_pipelines(pipelines_data)
+
+        if input_files:
+            input_files_data = self.extract_tag_from_input_files(input_files)
+            self.validate_input_files(input_files=input_files_data.keys())
+
+        if copy_from:
+            validate_copy_from(copy_from)
+
+        return pipelines_data, input_files_data
+
+    def _add_project_inputs(
+        self, pipelines_data, input_files_data, input_urls, copy_from
+    ):
         for pipeline_name, selected_groups in pipelines_data.items():
             self.project.add_pipeline(pipeline_name, selected_groups=selected_groups)
 
-        if input_files:
+        if input_files_data:
             self.handle_input_files(input_files_data)
 
         if input_urls:
@@ -393,8 +427,3 @@ class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
 
         if copy_from:
             self.handle_copy_codebase(copy_from)
-
-        if execute:
-            self.execute_project(run_async=run_async)
-
-        return project

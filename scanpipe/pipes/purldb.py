@@ -476,7 +476,7 @@ def create_packages_from_match_results(project, match_results):
         )
 
 
-def _get_next_job(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
+def get_next_download_url(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
     """
     Return the ScannableURI UUID, download URL, and pipelines for the next
     Package to be scanned from PurlDB
@@ -488,24 +488,7 @@ def _get_next_job(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
         timeout=timeout,
     )
     if response:
-        scannable_uri_uuid = response["scannable_uri_uuid"]
-        download_url = response["download_url"]
-        pipelines = response["pipelines"]
-        return scannable_uri_uuid, download_url, pipelines
-
-
-def get_next_job():
-    scannable_uri_uuid = download_url = pipelines = None
-    msg = ""
-    try:
-        response = _get_next_job()
-        if response:
-            scannable_uri_uuid, download_url, pipelines = response
-        else:
-            msg = "Bad response from PurlDB, unable to get next job."
-    except Exception as e:
-        msg = f"Exception occured when calling `purldb.get_next_job()`:\n\n{str(e)}"
-    return scannable_uri_uuid, download_url, pipelines, msg
+        return response
 
 
 def send_results_to_purldb(
@@ -570,15 +553,16 @@ def create_project_name(download_url, scannable_uri_uuid):
 
 def poll_run_status(project, sleep=10):
     """
-    Poll the status of all runs of `project`. Return the log of the run if
-    the run has stopped, failed, or gone stale, otherwise return an empty
-    string.
+    Poll the status of all runs of `project`. Raise a PurlDBException with a
+    message containing the log of the run if the run has stopped, failed, or
+    gone stale, otherwise return None.
     """
     runs = project.runs.all()
     for run in runs:
         if not poll_until_success(check=get_run_status, sleep=sleep, run=run):
-            return run.log
-    return ""
+            status = get_run_status(run)
+            msg = f"Run ended with status {status}:\n\n{run.log}"
+            raise PurlDBException(msg)
 
 
 def get_run_status(run, **kwargs):

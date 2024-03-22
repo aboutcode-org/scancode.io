@@ -32,7 +32,7 @@ from scanpipe.pipes import purldb
 
 
 class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
-    help = "Create a ScanPipe project."
+    help = "Get a Package to be scanned from PurlDB and return the results"
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -65,72 +65,99 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
                 break
 
             time.sleep(sleep)
+            loop_count += 1
 
             # 1. Get download url from purldb
-            scannable_uri_uuid, download_url, pipelines, error_msg = (
-                purldb.get_next_job()
-            )
-            if error_msg:
-                self.stderr.write(error_msg)
+            response = purldb.get_next_download_url()
+            if response:
+                scannable_uri_uuid = response["scannable_uri_uuid"]
+                download_url = response["download_url"]
+                pipelines = response["pipelines"]
+            else:
+                self.stderr.write("Bad response from PurlDB: unable to get next job.")
                 continue
 
-            if not download_url or not scannable_uri_uuid:
+            if not (download_url and scannable_uri_uuid):
                 self.stdout.write("No new job from PurlDB.")
-            else:
-                try:
-                    # 2. Create and run project
-                    name = purldb.create_project_name(download_url, scannable_uri_uuid)
-                    input_urls = [download_url]
-                    project = self.create_project(
-                        name=name,
-                        pipelines=pipelines,
-                        input_urls=input_urls,
-                        execute=True,
-                        run_async=run_async,
-                    )
-                    project.update_extra_data(
-                        {"scannable_uri_uuid": scannable_uri_uuid}
-                    )
+                continue
 
-                    # 3. Poll project results
-                    error_log = purldb.poll_run_status(
-                        project=project,
-                        sleep=sleep,
-                    )
+            try:
+                # 2. Create and run project
+                project = create_scan_project(
+                    command=self,
+                    scannable_uri_uuid=scannable_uri_uuid,
+                    download_url=download_url,
+                    pipelines=pipelines,
+                    run_async=run_async,
+                )
 
-                    if error_log:
-                        # Send error response to PurlDB
-                        purldb.update_status(
-                            scannable_uri_uuid,
-                            status="failed",
-                            scan_log=error_log,
-                        )
-                    else:
-                        # 4. Get project results and send to PurlDB
-                        project.refresh_from_db()
-                        scan_results_location = output.to_json(project)
-                        scan_summary_location = project.get_latest_output(
-                            filename="summary"
-                        )
-                        purldb.send_results_to_purldb(
-                            scannable_uri_uuid,
-                            scan_results_location,
-                            scan_summary_location,
-                            project.extra_data,
-                        )
-                        self.stdout.write(
-                            "Scan results and other data have been sent to PurlDB",
-                            self.style.SUCCESS,
-                        )
+                # 3. Poll project results
+                purldb.poll_run_status(
+                    project=project,
+                    sleep=sleep,
+                )
 
-                except Exception:
-                    tb = traceback.format_exc()
-                    error_log = f"Exception occured during scan project:\n\n{tb}"
-                    purldb.update_status(
-                        scannable_uri_uuid,
-                        status="failed",
-                        scan_log=error_log,
-                    )
-                    self.stderr.write(error_log)
+                # 4. Get project results and send to PurlDB
+                send_scan_project_results(
+                    project=project, scannable_uri_uuid=scannable_uri_uuid
+                )
+                self.stdout.write(
+                    "Scan results and other data have been sent to PurlDB",
+                    self.style.SUCCESS,
+                )
 
-            loop_count += 1
+            except Exception:
+                tb = traceback.format_exc()
+                error_log = f"Exception occured during scan project:\n\n{tb}"
+                purldb.update_status(
+                    scannable_uri_uuid,
+                    status="failed",
+                    scan_log=error_log,
+                )
+                self.stderr.write(error_log)
+
+
+def create_scan_project(
+    command, scannable_uri_uuid, download_url, pipelines, run_async=False
+):
+    """
+    Create and return a Project for the scan project request with ID of
+    `scannable_uri_uuid`, where the target at `download_url` is fetched, and the
+    pipelines from `pipelines` is then run.
+
+    If `run_async` is True, the pipelines on the Project is run in a separate
+    thread.
+    """
+    name = purldb.create_project_name(download_url, scannable_uri_uuid)
+    input_urls = [download_url]
+    project = command.create_project(
+        name=name,
+        pipelines=pipelines,
+        input_urls=input_urls,
+        execute=True,
+        run_async=run_async,
+    )
+    project.update_extra_data({"scannable_uri_uuid": scannable_uri_uuid})
+    return project
+
+
+def send_scan_project_results(project, scannable_uri_uuid):
+    """
+    Send the JSON summary and results of `project` to PurlDB for the scan
+    request `scannable_uri_uuid`.
+
+    Raise a PurlDBException if there is an issue sending results to PurlDB.
+    """
+    project.refresh_from_db()
+    scan_results_location = output.to_json(project)
+    scan_summary_location = project.get_latest_output(filename="summary")
+    response = purldb.send_results_to_purldb(
+        scannable_uri_uuid,
+        scan_results_location,
+        scan_summary_location,
+        project.extra_data,
+    )
+    if not response:
+        raise purldb.PurlDBException(
+            "Bad response returned when sending results to PurlDB"
+        )
