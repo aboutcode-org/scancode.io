@@ -125,12 +125,12 @@ Map Deploy To Develop
 .. _pipeline_match_to_matchcode:
 
 Match to MatchCode (addon)
------------------------
+--------------------------
 
 .. warning::
     This pipeline requires access to a MatchCode.io service.
-    Refer to :ref:`_scancodeio_settings_matchcodeio` to configure access to MatchCode.io in your
-    ScanCode.io instance.
+    Refer to :ref:`scancodeio_settings_matchcodeio` to configure access to
+    MatchCode.io in your ScanCode.io instance.
 
 .. autoclass:: scanpipe.pipelines.match_to_matchcode.MatchToMatchCode()
     :members:

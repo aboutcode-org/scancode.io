@@ -70,10 +70,10 @@ existing data, allowing for more comprehensive analysis and insights.
   Before executing this pipeline, make sure to set up
   :ref:`PurlDB <scancodeio_settings_purldb>`.
 
-- To **match your project codebase resources to PurlDB for Package matches**,
-  utilize the :ref:`match_to_purldb <pipeline_match_to_purldb>` pipeline.
-  It's essential to set up :ref:`PurlDB <scancodeio_settings_purldb>` before executing
-  this pipeline.
+- To **match your project codebase resources to MatchCode.io for Package matches**,
+  utilize the :ref:`match_to_matchcode <pipeline_match_to_matchcode>` pipeline.
+  It's essential to set up :ref:`MatchCode.io <scancodeio_settings_matchcodeio>` before
+  executing this pipeline.
 
 What is the difference between scan_codebase and scan_single_package pipelines?
 -------------------------------------------------------------------------------
