@@ -178,6 +178,10 @@ SCAN_SUMMARY_FIELDS = [
 ]
 
 
+def purldb_is_configured(*args):
+    return purldb.is_configured()
+
+
 class PrefetchRelatedViewMixin:
     prefetch_related = []
 
@@ -1898,7 +1902,7 @@ class DiscoveredPackageDetailsView(
             "verbose_name": "PurlDB",
             "icon_class": "fa-solid fa-database",
             "template": "scanpipe/tabset/tab_purldb.html",
-            "display_condition": lambda x: purldb.is_configured(),
+            "display_condition": purldb_is_configured,
             "alert_message": (
                 "You are looking at the details for this software package as defined "
                 "in the PurlDB which was mined and scanned automatically from a public "
