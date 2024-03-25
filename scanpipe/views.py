@@ -315,9 +315,12 @@ class TabSetMixin:
         if isinstance(field_value, Manager):
             return list(field_value.all())
 
+        list_fields = ["datafile_paths", "datasource_ids"]
+
         if isinstance(field_value, list):
-            with suppress(TypeError):
-                field_value = "\n".join(field_value)
+            if field_name not in list_fields:
+                with suppress(TypeError):
+                    field_value = "\n".join(field_value)
 
         return field_value
 
@@ -1841,12 +1844,13 @@ class DiscoveredPackageDetailsView(
                 {"field_name": "sha1", "label": "SHA1"},
                 {"field_name": "sha256", "label": "SHA256"},
                 {"field_name": "sha512", "label": "SHA512"},
-                "datasource_id",
                 "file_references",
                 {"field_name": "parties", "render_func": render_as_yaml},
                 "missing_resources",
                 "modified_resources",
                 "package_uid",
+                "datasource_ids",
+                "datafile_paths",
             ],
             "icon_class": "fa-solid fa-info-circle",
         },

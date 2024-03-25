@@ -23,8 +23,21 @@ v34.1.0 (unreleased)
   https://github.com/nexB/scancode.io/issues/1121
   https://github.com/nexB/scancode.io/issues/1122
 
+- Use the `package_only` option in scancode `get_package_data` API in
+  `inspect_packages` pipeline, to skip license and copyright detection in
+  extracted license and copyright statements found in package metadata.
+  https://github.com/nexB/scancode-toolkit/pull/3689
+
 - Rename the ``match_to_purldb`` pipeline to ``match_to_matchcode``, and add
   MatchCode.io API settings to ScanCode.io settings.
+
+- In the DiscoveredPackage model, rename the "datasource_id" attribute to
+  "datasource_ids" and add a new attribute "datafile_paths". This is aligned
+  with the scancode-toolkit Package model, and package detection information
+  is now stored correctly. Also update the UI for discovered packages to
+  show the corresponding package datafiles and their datasource IDs.
+  A data migration is included to facilitate the migration of existing data.
+  https://github.com/nexB/scancode.io/issues/1099
 
 v34.0.0 (2024-03-04)
 --------------------

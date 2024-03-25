@@ -207,7 +207,12 @@
         ]
       },
       "package_uid": "pkg:alpine/alpine-baselayout@3.2.0-r18?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "alpine_installed_db"
+      ],
+      "datafile_paths": [
+        "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -439,7 +444,12 @@
         ]
       },
       "package_uid": "pkg:alpine/alpine-keys@2.4-r1?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "alpine_installed_db"
+      ],
+      "datafile_paths": [
+        "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -516,7 +526,12 @@
       ],
       "extra_data": {},
       "package_uid": "pkg:alpine/apk-tools@2.12.7-r3?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "alpine_installed_db"
+      ],
+      "datafile_paths": [
+        "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -604,7 +619,12 @@
         ]
       },
       "package_uid": "pkg:alpine/busybox@1.34.1-r5?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "alpine_installed_db"
+      ],
+      "datafile_paths": [
+        "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -692,7 +712,12 @@
         ]
       },
       "package_uid": "pkg:alpine/ca-certificates-bundle@20211220-r0?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "alpine_installed_db"
+      ],
+      "datafile_paths": [
+        "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -804,7 +829,12 @@
         ]
       },
       "package_uid": "pkg:alpine/libcrypto1.1@1.1.1n-r0?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "alpine_installed_db"
+      ],
+      "datafile_paths": [
+        "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -881,7 +911,12 @@
       ],
       "extra_data": {},
       "package_uid": "pkg:alpine/libc-utils@0.7.2-r3?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "alpine_installed_db"
+      ],
+      "datafile_paths": [
+        "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -969,7 +1004,12 @@
         ]
       },
       "package_uid": "pkg:alpine/libretls@3.3.4-r3?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "alpine_installed_db"
+      ],
+      "datafile_paths": [
+        "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -1057,7 +1097,12 @@
         ]
       },
       "package_uid": "pkg:alpine/libssl1.1@1.1.1n-r0?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "alpine_installed_db"
+      ],
+      "datafile_paths": [
+        "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -1145,7 +1190,12 @@
         ]
       },
       "package_uid": "pkg:alpine/musl@1.2.2-r7?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "alpine_installed_db"
+      ],
+      "datafile_paths": [
+        "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -1222,7 +1272,12 @@
       ],
       "extra_data": {},
       "package_uid": "pkg:alpine/musl-utils@1.2.2-r7?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "alpine_installed_db"
+      ],
+      "datafile_paths": [
+        "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -1299,7 +1354,12 @@
       ],
       "extra_data": {},
       "package_uid": "pkg:alpine/scanelf@1.3.3-r0?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "alpine_installed_db"
+      ],
+      "datafile_paths": [
+        "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -1376,7 +1436,12 @@
       ],
       "extra_data": {},
       "package_uid": "pkg:alpine/ssl_client@1.34.1-r5?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "alpine_installed_db"
+      ],
+      "datafile_paths": [
+        "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -1464,7 +1529,12 @@
         ]
       },
       "package_uid": "pkg:alpine/zlib@1.2.12-r0?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "alpine_installed_db"
+      ],
+      "datafile_paths": [
+        "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],

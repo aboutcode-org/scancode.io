@@ -2890,11 +2890,19 @@ class AbstractPackage(models.Model):
         blank=True,
         help_text=_("A notice text for this package."),
     )
-    datasource_id = models.CharField(
-        max_length=64,
+    datasource_ids = models.JSONField(
+        default=list,
         blank=True,
         help_text=_(
-            "The identifier for the datafile handler used to obtain this package."
+            "The identifiers for the datafile handlers used to obtain this package."
+        ),
+    )
+    datafile_paths = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_(
+            "A list of Resource paths for package datafiles which were "
+            "used to assemble this pacakage."
         ),
     )
     file_references = models.JSONField(

@@ -106,7 +106,12 @@
       "source_packages": [],
       "extra_data": {},
       "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "npm_package_json"
+      ],
+      "datafile_paths": [
+        "is-npm-1.0.0.tgz-extract/package/package.json"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],

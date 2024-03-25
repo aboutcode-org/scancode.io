@@ -31,24 +31,26 @@
             "distro": {
               "os": "linux",
               "architecture": null,
-              "name": "Debian GNU/Linux",
-              "version": "9 (stretch)",
-              "identifier": "debian",
-              "id_like": null,
-              "version_codename": null,
-              "version_id": "9",
-              "pretty_name": "Debian GNU/Linux 9 (stretch)",
+              "name": "Ubuntu",
+              "version": "22.04.3 LTS (Jammy Jellyfish)",
+              "identifier": "ubuntu",
+              "id_like": "debian",
+              "version_codename": "jammy",
+              "version_id": "22.04",
+              "pretty_name": "Ubuntu 22.04.3 LTS",
               "cpe_name": null,
-              "home_url": "https://www.debian.org/",
+              "home_url": "https://www.ubuntu.com/",
               "documentation_url": null,
-              "support_url": "https://www.debian.org/support",
-              "bug_report_url": "https://bugs.debian.org/",
-              "privacy_policy_url": null,
+              "support_url": "https://help.ubuntu.com/",
+              "bug_report_url": "https://bugs.launchpad.net/ubuntu/",
+              "privacy_policy_url": "https://www.ubuntu.com/legal/terms-and-policies/privacy-policy",
               "build_id": null,
               "variant": null,
               "variant_id": null,
               "logo": null,
-              "extra_data": {}
+              "extra_data": {
+                "UBUNTU_CODENAME": "jammy"
+              }
             }
           }
         ]
@@ -197,7 +199,14 @@
         "multi_arch": "same"
       },
       "package_uid": "pkg:deb/ubuntu/libncurses5@6.1-1ubuntu1.18.04?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "debian_installed_status_db",
+        "debian_copyright_in_package"
+      ],
+      "datafile_paths": [
+        "basic-rootfs.tar.gz-extract/var/lib/dpkg/status",
+        "basic-rootfs.tar.gz-extract/usr/share/doc/libncurses5/copyright"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -308,7 +317,14 @@
         "multi_arch": "same"
       },
       "package_uid": "pkg:deb/ubuntu/libndp0@1.4-2ubuntu0.16.04.1?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "debian_installed_status_db",
+        "debian_copyright_in_package"
+      ],
+      "datafile_paths": [
+        "basic-rootfs.tar.gz-extract/var/lib/dpkg/status",
+        "basic-rootfs.tar.gz-extract/usr/share/doc/libndp0/copyright"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -355,9 +371,9 @@
       "status": "ignored-not-interesting",
       "tag": "",
       "extension": "",
-      "md5": "8589b473401e7ebcca5d97204405c887",
-      "sha1": "29420ee3cb176f64209d5beddc5713133fa7c2d4",
-      "sha256": "aa6ccd5b1ade06c11f679cc781bdd3158f1007266ea391ed98a1bbf365641fd4",
+      "md5": "fd30c92c61acbdebbd205e33534ac9bc",
+      "sha1": "46d2cadf740c18ed8a1b30dbd7f5eeee521e1e8f",
+      "sha256": "4bde2c39f541afb5ac413a03c8e5f57aa99b8fab304a62386dc0b16044cc0e2d",
       "sha512": "",
       "programming_language": "",
       "is_binary": false,
