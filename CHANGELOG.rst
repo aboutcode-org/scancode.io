@@ -23,6 +23,11 @@ v34.1.0 (unreleased)
   https://github.com/nexB/scancode.io/issues/1121
   https://github.com/nexB/scancode.io/issues/1122
 
+- Use the `package_only` option in scancode `get_package_data` API in
+  `inspect_packages` pipeline, to skip license and copyright detection in
+  extracted license and copyright statements found in package metadata.
+  https://github.com/nexB/scancode-toolkit/pull/3689
+
 - Rename the ``match_to_purldb`` pipeline to ``match_to_matchcode``, and add
   MatchCode.io API settings to ScanCode.io settings.
 
