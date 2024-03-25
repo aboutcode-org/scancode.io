@@ -1631,7 +1631,7 @@ class CodebaseResourceDetailsView(
                 "tag",
                 "rootfs_path",
             ],
-            "icon_class": "fa-solid fa-info-circle",
+            "icon_class": "fa-solid fa-circle-check",
         },
         "others": {
             "fields": [
@@ -1646,7 +1646,7 @@ class CodebaseResourceDetailsView(
                 "is_key_file",
                 "is_media",
             ],
-            "icon_class": "fa-solid fa-plus-square",
+            "icon_class": "fa-solid fa-info-circle",
         },
         "viewer": {
             "icon_class": "fa-solid fa-file-code",
@@ -1692,7 +1692,7 @@ class CodebaseResourceDetailsView(
                 {"field_name": "extra_data", "render_func": render_as_yaml},
             ],
             "verbose_name": "Extra",
-            "icon_class": "fa-solid fa-database",
+            "icon_class": "fa-solid fa-plus-square",
         },
     }
 
@@ -1828,7 +1828,7 @@ class DiscoveredPackageDetailsView(
                 "description",
                 "tag",
             ],
-            "icon_class": "fa-solid fa-info-circle",
+            "icon_class": "fa-solid fa-circle-check",
         },
         "others": {
             "fields": [
@@ -1845,7 +1845,7 @@ class DiscoveredPackageDetailsView(
                 "modified_resources",
                 "package_uid",
             ],
-            "icon_class": "fa-solid fa-plus-square",
+            "icon_class": "fa-solid fa-info-circle",
         },
         "terms": {
             "fields": [
@@ -1891,12 +1891,12 @@ class DiscoveredPackageDetailsView(
                 {"field_name": "extra_data", "render_func": render_as_yaml},
             ],
             "verbose_name": "Extra",
-            "icon_class": "fa-solid fa-database",
+            "icon_class": "fa-solid fa-plus-square",
         },
         "purldb": {
             "fields": ["package_url"],
             "verbose_name": "PurlDB",
-            "icon_class": "fa-solid fa-rocket",
+            "icon_class": "fa-solid fa-database",
             "template": "scanpipe/tabset/tab_purldb.html",
             "display_condition": lambda x: purldb.is_configured(),
             "alert_message": (
@@ -1989,7 +1989,7 @@ class DiscoveredDependencyDetailsView(
                 "scope",
                 "datasource_id",
             ],
-            "icon_class": "fa-solid fa-info-circle",
+            "icon_class": "fa-solid fa-circle-check",
         },
         "others": {
             "fields": [
@@ -1999,7 +1999,7 @@ class DiscoveredDependencyDetailsView(
                 "is_optional",
                 "is_resolved",
             ],
-            "icon_class": "fa-solid fa-plus-square",
+            "icon_class": "fa-solid fa-info-circle",
         },
         "vulnerabilities": {
             "fields": ["affected_by_vulnerabilities"],
