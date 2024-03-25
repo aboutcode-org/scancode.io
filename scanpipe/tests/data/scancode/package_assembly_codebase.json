@@ -8,22 +8,22 @@
         "--package": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "start_timestamp": "2023-11-30T143408.209227",
-      "end_timestamp": "2023-11-30T143408.218677",
-      "output_format_version": "3.0.0",
-      "duration": 0.009453058242797852,
+      "start_timestamp": "2024-03-01T113357.465177",
+      "end_timestamp": "2024-03-01T113357.680774",
+      "output_format_version": "3.1.0",
+      "duration": 0.2156081199645996,
       "message": null,
       "errors": [],
       "warnings": [],
       "extra_data": {
         "system_environment": {
-          "operating_system": "mac",
+          "operating_system": "linux",
           "cpu_architecture": "64",
-          "platform": "macOS-13.3.1-arm64-arm-64bit",
-          "platform_version": "Darwin Kernel Version 22.4.0: Mon Mar  6 20:59:28 PST 2023; root:xnu-8796.101.5~3/RELEASE_ARM64_T6000",
-          "python_version": "3.10.10 (v3.10.10:aad5f6a891, Feb  7 2023, 08:47:40) [Clang 13.0.0 (clang-1300.0.29.30)]"
+          "platform": "Linux-5.15.0-94-generic-x86_64-with-glibc2.35",
+          "platform_version": "#104-Ubuntu SMP Tue Jan 9 15:25:40 UTC 2024",
+          "python_version": "3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0]"
         },
-        "spdx_license_list_version": "3.21",
+        "spdx_license_list_version": "3.23",
         "files_count": 3
       }
     }
@@ -58,17 +58,20 @@
       "license_detections": [
         {
           "license_expression": "mit",
+          "license_expression_spdx": "MIT",
           "matches": [
             {
-              "score": 100.0,
+              "license_expression": "mit",
+              "spdx_license_expression": "MIT",
+              "from_file": "package_assembly_codebase.tar.gz-extract/test/get_package_resources/package.json",
               "start_line": 1,
               "end_line": 1,
+              "matcher": "1-spdx-id",
+              "score": 100.0,
               "matched_length": 1,
               "match_coverage": 100.0,
-              "matcher": "1-spdx-id",
-              "license_expression": "mit",
-              "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
               "rule_relevance": 100,
+              "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
               "rule_url": null,
               "matched_text": "MIT"
             }
@@ -86,7 +89,7 @@
       "repository_homepage_url": "https://www.npmjs.com/package/test",
       "repository_download_url": "https://registry.npmjs.org/test/-/test-0.1.0.tgz",
       "api_data_url": "https://registry.npmjs.org/test/0.1.0",
-      "package_uid": "pkg:npm/test@0.1.0?uuid=0ea738fa-e611-494c-8d4f-13f5092b9e11",
+      "package_uid": "pkg:npm/test@0.1.0?uuid=393cff2b-c004-445c-b055-6e8b0af8a904",
       "datafile_paths": [
         "package_assembly_codebase.tar.gz-extract/test/get_package_resources/package.json"
       ],
@@ -191,7 +194,7 @@
       "md5": "b4da04c192e6366bc56087fcf9c634b7",
       "sha256": "386f5dfcc92eef62a974d8c2338e59c7d744fb5422ff5b1c63c7c2a5bbb8816b",
       "mime_type": "application/json",
-      "file_type": "JSON text data",
+      "file_type": "JSON data",
       "programming_language": null,
       "is_binary": false,
       "is_text": true,
@@ -229,17 +232,20 @@
           "license_detections": [
             {
               "license_expression": "mit",
+              "license_expression_spdx": "MIT",
               "matches": [
                 {
-                  "score": 100.0,
+                  "license_expression": "mit",
+                  "spdx_license_expression": "MIT",
+                  "from_file": "package_assembly_codebase.tar.gz-extract/test/get_package_resources/package.json",
                   "start_line": 1,
                   "end_line": 1,
+                  "matcher": "1-spdx-id",
+                  "score": 100.0,
                   "matched_length": 1,
                   "match_coverage": 100.0,
-                  "matcher": "1-spdx-id",
-                  "license_expression": "mit",
-                  "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
                   "rule_relevance": 100,
+                  "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
                   "rule_url": null,
                   "matched_text": "MIT"
                 }
@@ -264,7 +270,7 @@
         }
       ],
       "for_packages": [
-        "pkg:npm/test@0.1.0?uuid=0ea738fa-e611-494c-8d4f-13f5092b9e11"
+        "pkg:npm/test@0.1.0?uuid=393cff2b-c004-445c-b055-6e8b0af8a904"
       ],
       "files_count": 0,
       "dirs_count": 0,
@@ -293,7 +299,7 @@
       "is_script": false,
       "package_data": [],
       "for_packages": [
-        "pkg:npm/test@0.1.0?uuid=0ea738fa-e611-494c-8d4f-13f5092b9e11"
+        "pkg:npm/test@0.1.0?uuid=393cff2b-c004-445c-b055-6e8b0af8a904"
       ],
       "files_count": 0,
       "dirs_count": 0,
