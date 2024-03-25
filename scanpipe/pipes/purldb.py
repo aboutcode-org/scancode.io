@@ -285,11 +285,19 @@ def get_unique_unresolved_purls(project):
 def populate_purldb_with_discovered_packages(project, logger=logger.info):
     """Add DiscoveredPackage to PurlDB."""
     discoveredpackages = project.discoveredpackages.all()
-    packages = [{"purl": pkg.purl} for pkg in discoveredpackages]
+    packages_to_populate = []
+    for pkg in discoveredpackages:
+        package = {"purl": pkg.purl}
+        if pkg.source_packages:
+            package["source_purl"] = pkg.source_packages
+        packages_to_populate.append(package)
 
-    logger(f"Populating PurlDB with {len(packages):,d} PURLs from DiscoveredPackage")
+    logger(
+        f"Populating PurlDB with {len(packages_to_populate):,d}"
+        f" PURLs from DiscoveredPackage"
+    )
     feed_purldb(
-        packages=packages,
+        packages=packages_to_populate,
         chunk_size=100,
         logger=logger,
     )

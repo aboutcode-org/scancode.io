@@ -23,6 +23,7 @@
 import fnmatch
 import logging
 import os
+from collections import Counter
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
@@ -263,9 +264,29 @@ def scan_rootfs_for_system_packages(project, rootfs):
     logger.info(f"rootfs location: {rootfs.location}")
 
     installed_packages = rootfs.get_installed_packages(package_getter)
+
+    created_system_packages = []
+    seen_namespaces = []
     for index, (purl, package) in enumerate(installed_packages):
         logger.info(f"Creating package #{index}: {purl}")
+        created_system_packages.append(package)
+        seen_namespaces.append(package.namespace)
         _create_system_package(project, purl, package)
+
+    namespace_counts = Counter(seen_namespaces)
+    # we overwite namespace only when there are multiple
+    # namespaces in the packages
+    if not len(namespace_counts.keys()) > 1:
+        return
+
+    most_seen_namespace = max(namespace_counts)
+    # if the distro_id is different from the namespace
+    # most seen in packages, we update all the package
+    # namespaces to the distro_id
+    if most_seen_namespace != distro_id:
+        for package in created_system_packages:
+            if package.namespace != distro_id:
+                package.update(namespace=distro_id)
 
 
 def get_resource_with_md5(project, status):
