@@ -155,6 +155,14 @@ def _clean_package_data(package_data):
             if release_date.endswith("Z"):
                 release_date = release_date[:-1]
             package_data["release_date"] = datetime.fromisoformat(release_date).date()
+
+    # Strip leading "codebase/" to make path compatible with
+    # paths stored in resource database
+    cleaned_datafile_paths = [
+        path.removeprefix("codebase/")
+        for path in package_data.get("datafile_paths", [])
+    ]
+    package_data["datafile_paths"] = cleaned_datafile_paths
     return package_data
 
 

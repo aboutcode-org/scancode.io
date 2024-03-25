@@ -31,6 +31,14 @@ v34.1.0 (unreleased)
 - Rename the ``match_to_purldb`` pipeline to ``match_to_matchcode``, and add
   MatchCode.io API settings to ScanCode.io settings.
 
+- In the DiscoveredPackage model, rename the "datasource_id" attribute to
+  "datasource_ids" and add a new attribute "datafile_paths". This is aligned
+  with the scancode-toolkit Package model, and package detection information
+  is now stored correctly. Also update the UI for discovered packages to
+  show the corresponding package datafiles and their datasource IDs.
+  A data migration is included to facilitate the migration of existing data.
+  https://github.com/nexB/scancode.io/issues/1099
+
 v34.0.0 (2024-03-04)
 --------------------
 

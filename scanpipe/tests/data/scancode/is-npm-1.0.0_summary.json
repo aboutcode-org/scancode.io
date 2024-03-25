@@ -228,7 +228,12 @@
       "source_packages": [],
       "extra_data": {},
       "package_uid": "pkg:npm/is-npm@1.0.0?uuid=ba110d49-b6f2-4c86-8d89-a6fd34838ca8",
-      "datasource_id": "",
+      "datasource_ids": [
+        "npm_package_json"
+      ],
+      "datafile_paths": [
+        "package/package.json"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],

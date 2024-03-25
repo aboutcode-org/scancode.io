@@ -2065,18 +2065,26 @@ class ScanPipeModelsTest(TestCase):
             "modified_resources",
             "codebase_resources",
             "package_uid",
+            "datasource_ids",
+            "datafile_paths",
             "filename",
             "affected_by_vulnerabilities",
             "compliance_alert",
             "tag",
         ]
 
+        package_data_only_field = ["datasource_id"]
+
         discovered_package_fields = [
             field.name
             for field in DiscoveredPackage._meta.get_fields()
             if field.name not in scanpipe_only_fields
         ]
-        toolkit_package_fields = [field.name for field in PackageData.__attrs_attrs__]
+        toolkit_package_fields = [
+            field.name
+            for field in PackageData.__attrs_attrs__
+            if field.name not in package_data_only_field
+        ]
 
         for toolkit_field in toolkit_package_fields:
             self.assertIn(toolkit_field, discovered_package_fields)
