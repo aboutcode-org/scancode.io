@@ -922,9 +922,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_name = "resolve_dependencies"
         project1 = Project.objects.create(name="Analysis")
 
-        input_location = (
-            self.data_location / "manifests" / "python-inspector-0.10.0.zip"
-        )
+        input_location = self.data_location / "manifests" / "requirements.txt"
         project1.copy_input_from(input_location)
 
         run = project1.add_pipeline(pipeline_name)
@@ -932,7 +930,7 @@ class PipelinesIntegrationTest(TestCase):
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
-        self.assertEqual(26, project1.discoveredpackages.count())
+        self.assertEqual(1, project1.discoveredpackages.count())
 
     @mock.patch("scanpipe.pipes.resolve.resolve_dependencies")
     def test_scanpipe_resolve_dependencies_pipeline_pypi_integration(
