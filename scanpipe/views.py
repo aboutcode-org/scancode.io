@@ -1901,7 +1901,7 @@ class DiscoveredPackageDetailsView(
             "icon_class": "fa-solid fa-plus-square",
         },
         "purldb": {
-            "fields": ["package_url"],
+            "fields": ["uuid"],
             "verbose_name": "PurlDB",
             "icon_class": "fa-solid fa-database",
             "template": "scanpipe/tabset/tab_purldb_loader.html",
