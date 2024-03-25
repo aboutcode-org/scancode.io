@@ -979,6 +979,41 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, '<section id="tab-vulnerabilities"')
         self.assertContains(response, "VCID-cah8-awtr-aaad")
 
+    @mock.patch("scanpipe.pipes.purldb.is_configured")
+    def test_scanpipe_views_discovered_package_purldb_tab_view(self, mock_configured):
+        package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        package_url = package1.get_absolute_url()
+
+        mock_configured.return_value = False
+        response = self.client.get(package_url)
+        self.assertNotContains(response, "tab-purldb")
+        self.assertNotContains(response, '<section id="tab-purldb"')
+
+        mock_configured.return_value = True
+        response = self.client.get(package_url)
+        self.assertContains(response, "tab-purldb")
+        self.assertContains(response, '<section id="tab-purldb"')
+
+        with mock.patch("scanpipe.pipes.purldb.get_package_by_purl") as get_package:
+            get_package.return_value = None
+            purldb_tab_url = f"{package_url}purldb_tab/"
+            response = self.client.get(purldb_tab_url)
+            msg = "No entries found in the PurlDB for this package"
+            self.assertContains(response, msg)
+
+            get_package.return_value = {
+                "uuid": "9261605f-e2fb-4db9-94ab-0d82d3273cdf",
+                "filename": "abab-2.0.3.tgz",
+                "type": "npm",
+                "name": "abab",
+                "version": "2.0.3",
+                "primary_language": "JavaScript",
+            }
+            response = self.client.get(purldb_tab_url)
+            self.assertContains(response, "abab-2.0.3.tgz")
+            self.assertContains(response, "2.0.3")
+            self.assertContains(response, "JavaScript")
+
     def test_scanpipe_views_discovered_dependency_views(self):
         DiscoveredPackage.create_from_data(self.project1, package_data1)
         make_resource_file(

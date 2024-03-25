@@ -294,6 +294,10 @@ API key using ``PURLDB_API_KEY``::
 
     PURLDB_API_KEY=insert_your_api_key_here
 
+.. note::
+    Once the PurlDB is configured, a new "PurlDB" tab will be available in the
+    discovered package details view.
+
 .. _scancodeio_settings_vulnerablecode:
 
 VULNERABLECODE
