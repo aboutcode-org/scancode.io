@@ -791,6 +791,20 @@ class ScanPipeViewsTest(TestCase):
         expected = '<span class="tag is-danger">Stopped</span>'
         self.assertContains(response, expected)
 
+    def test_scanpipe_views_pipeline_help_view(self):
+        url = reverse("pipeline_help", args=["not_existing_pipeline"])
+        response = self.client.get(url)
+        self.assertEqual(404, response.status_code)
+
+        url = reverse("pipeline_help", args=["map_deploy_to_develop"])
+        response = self.client.get(url)
+        expected = "<strong>map_deploy_to_develop</strong>"
+        self.assertContains(response, expected, html=True)
+        expected = (
+            "<div>Locate the <code>from</code> and <code>to</code> input files.</div>"
+        )
+        self.assertContains(response, expected, html=True)
+
     def test_scanpipe_views_codebase_resource_details_view_tab_image(self):
         resource1 = make_resource_file(self.project1, "file1.ext")
         response = self.client.get(resource1.get_absolute_url())

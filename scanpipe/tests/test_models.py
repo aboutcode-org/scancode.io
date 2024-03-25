@@ -2312,7 +2312,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
 
     def test_scanpipe_codebase_resource_model_add_error(self):
         project1 = Project.objects.create(name="Analysis")
-        codebase_resource = CodebaseResource.objects.create(project=project1)
+        codebase_resource = CodebaseResource.objects.create(project=project1, path="a")
         error = codebase_resource.add_error(Exception("Error message"))
 
         self.assertEqual(error, ProjectMessage.objects.get())
@@ -2320,6 +2320,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertTrue(error.details)
         self.assertEqual("Error message", error.description)
         self.assertEqual("", error.traceback)
+        self.assertEqual(codebase_resource.path, error.details["resource_path"])
 
     def test_scanpipe_codebase_resource_model_add_errors(self):
         project1 = Project.objects.create(name="Analysis")
@@ -2483,6 +2484,5 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         expected_message = "value too long for type character varying(100)"
         self.assertEqual(expected_message, message.description)
         self.assertEqual(bad_data["version"], message.details["version"])
-        self.assertTrue(message.details["codebase_resource_pk"])
-        self.assertEqual(resource.path, message.details["codebase_resource_path"])
+        self.assertEqual(resource.path, message.details["resource_path"])
         self.assertIn("in save", message.traceback)

@@ -245,7 +245,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
         project = Project.objects.get(name="asgiref")
         package = project.discoveredpackages.get(
-            uuid="55d95cd9-71f9-4cbe-8574-bde9469cc6dc"
+            uuid="b2d24c22-0dff-4e3f-8332-413b4f4852a7"
         )
 
         package.other_license_expression_spdx = "Apache-2.0 AND LicenseRef-test"
@@ -264,7 +264,7 @@ class ScanPipeOutputPipesTest(TestCase):
         # Patch the tool version
         results_json = json.loads(output_file.read_text())
         results_json["metadata"]["tools"][0]["version"] = "0.0.0"
-        results_json["metadata"]["timestamp"] = ""
+        results_json["metadata"]["timestamp"] = "2024-03-07T17:05:37.329061+00:00"
         results_json["vulnerabilities"][0]["bom-ref"] = "BomRef"
         results = json.dumps(results_json, indent=2)
 

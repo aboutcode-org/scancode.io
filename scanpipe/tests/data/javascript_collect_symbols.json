@@ -1,0 +1,96 @@
+{
+  "headers": [
+    {
+      "tool_name": "scanpipe",
+      "notice": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n",
+      "input_sources": [],
+      "runs": [
+        {
+          "pipeline_name": "collect_symbols",
+          "status": "not_started",
+          "scancodeio_version": "",
+          "task_id": null,
+          "task_start_date": null,
+          "task_end_date": null,
+          "task_exitcode": null,
+          "task_output": "",
+          "execution_time": null
+        }
+      ],
+      "extra_data": {}
+    }
+  ],
+  "packages": [],
+  "dependencies": [],
+  "files": [
+    {
+      "path": "codefile",
+      "type": "directory",
+      "name": "codefile",
+      "status": "",
+      "tag": "",
+      "extension": "",
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "programming_language": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_key_file": false,
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "for_packages": [],
+      "emails": [],
+      "urls": [],
+      "extra_data": {}
+    },
+    {
+      "path": "codefile/main.js",
+      "type": "file",
+      "name": "main.js",
+      "status": "",
+      "tag": "",
+      "extension": ".js",
+      "md5": "5a6e6fa1e732b600d4c2260bc49ed73f",
+      "sha1": "d6bfcf7d1f8a00cc639b3a186a52453d37c52f61",
+      "sha256": "adf540c42cfd6b8413d7232fcd6e5df39fa990be6f280531f9ca05d92c6bc0d6",
+      "sha512": "",
+      "programming_language": "JavaScript",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_key_file": false,
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "for_packages": [],
+      "emails": [],
+      "urls": [],
+      "extra_data": {
+        "symbols": [
+          "passwordLength",
+          "generatePassword",
+          "charSet"
+        ]
+      }
+    }
+  ],
+  "relations": []
+}

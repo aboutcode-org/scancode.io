@@ -42,6 +42,14 @@ Analyse Docker Windows Image
     :members:
     :member-order: bysource
 
+.. _pipeline_collect_symbols:
+
+Collect Codebase Symbols (addon)
+--------------------------------
+.. autoclass:: scanpipe.pipelines.collect_symbols.CollectSymbols()
+    :members:
+    :member-order: bysource
+
 .. _pipeline_find_vulnerabilities:
 
 Find Vulnerabilities (addon)
@@ -114,17 +122,17 @@ Map Deploy To Develop
     :members:
     :member-order: bysource
 
-.. _pipeline_match_to_purldb:
+.. _pipeline_match_to_matchcode:
 
-Match to PurlDB (addon)
------------------------
+Match to MatchCode (addon)
+--------------------------
 
 .. warning::
-    This pipeline requires access to a PurlDB service.
-    Refer to :ref:`scancodeio_settings_purldb` to configure access to PurlDB in your
-    ScanCode.io instance.
+    This pipeline requires access to a MatchCode.io service.
+    Refer to :ref:`scancodeio_settings_matchcodeio` to configure access to
+    MatchCode.io in your ScanCode.io instance.
 
-.. autoclass:: scanpipe.pipelines.match_to_purldb.MatchToPurlDB()
+.. autoclass:: scanpipe.pipelines.match_to_matchcode.MatchToMatchCode()
     :members:
     :member-order: bysource
 

@@ -82,17 +82,20 @@
               "matcher": "1-spdx-id",
               "end_line": 1,
               "rule_url": null,
+              "from_file": "is-npm-1.0.0.tgz-extract/package/package.json",
               "start_line": 1,
               "matched_text": "MIT",
               "match_coverage": 100.0,
               "matched_length": 1,
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "spdx_license_expression": "MIT"
             }
           ],
           "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
-          "license_expression": "mit"
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
         }
       ],
       "other_license_expression": "",
@@ -348,17 +351,20 @@
                   "matcher": "1-spdx-id",
                   "end_line": 1,
                   "rule_url": null,
+                  "from_file": null,
                   "start_line": 1,
                   "matched_text": "MIT",
                   "match_coverage": 100.0,
                   "matched_length": 1,
                   "rule_relevance": 100,
                   "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
-                  "license_expression": "mit"
+                  "license_expression": "mit",
+                  "spdx_license_expression": "MIT"
                 }
               ],
               "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
             }
           ],
           "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
@@ -405,17 +411,20 @@
               "matcher": "2-aho",
               "end_line": 30,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mit_30.RULE",
+              "from_file": null,
               "start_line": 28,
               "matched_text": "## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)",
               "match_coverage": 100.0,
               "matched_length": 2,
               "rule_relevance": 100,
               "rule_identifier": "mit_30.RULE",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "spdx_license_expression": "MIT"
             }
           ],
           "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
-          "license_expression": "mit"
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
         }
       ],
       "license_clues": [],

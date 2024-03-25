@@ -391,11 +391,10 @@ def add_resource_to_package(package_uid, resource, project):
     try:
         package = project.discoveredpackages.get(package_uid=package_uid)
     except ObjectDoesNotExist as error:
-        details = {
-            "package_uid": str(package_uid),
-            "resource": str(resource),
-        }
-        project.add_error(error, model="assemble_package", details=details)
+        details = {"package_uid": str(package_uid)}
+        project.add_error(
+            error, model="assemble_package", details=details, resource=resource
+        )
         return
 
     resource.discovered_packages.add(package)

@@ -79,17 +79,20 @@
               "matcher": "1-spdx-id",
               "end_line": 1,
               "rule_url": null,
+              "from_file": "daglib-0.6.0-py3-none-any.whl",
               "start_line": 1,
               "matched_text": "MIT",
               "match_coverage": 100.0,
               "matched_length": 1,
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "spdx_license_expression": "MIT"
             }
           ],
           "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
-          "license_expression": "mit"
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
         },
         {
           "matches": [
@@ -98,17 +101,20 @@
               "matcher": "1-hash",
               "end_line": 1,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_mit_license.RULE",
+              "from_file": "daglib-0.6.0-py3-none-any.whl",
               "start_line": 1,
               "matched_text": "- 'License :: OSI Approved :: MIT License'",
               "match_coverage": 100.0,
               "matched_length": 5,
               "rule_relevance": 100,
               "rule_identifier": "pypi_mit_license.RULE",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "spdx_license_expression": "MIT"
             }
           ],
           "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
-          "license_expression": "mit"
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
         }
       ],
       "other_license_expression": "",
@@ -181,17 +187,20 @@
               "matcher": "1-spdx-id",
               "end_line": 1,
               "rule_url": null,
+              "from_file": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
               "start_line": 1,
               "matched_text": "MIT",
               "match_coverage": 100.0,
               "matched_length": 1,
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "spdx_license_expression": "MIT"
             }
           ],
           "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
-          "license_expression": "mit"
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
         },
         {
           "matches": [
@@ -200,17 +209,20 @@
               "matcher": "1-hash",
               "end_line": 1,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_mit_license.RULE",
+              "from_file": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
               "start_line": 1,
               "matched_text": "- 'License :: OSI Approved :: MIT License'",
               "match_coverage": 100.0,
               "matched_length": 5,
               "rule_relevance": 100,
               "rule_identifier": "pypi_mit_license.RULE",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "spdx_license_expression": "MIT"
             }
           ],
           "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
-          "license_expression": "mit"
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
         }
       ],
       "other_license_expression": "",
@@ -526,17 +538,20 @@
                   "matcher": "1-spdx-id",
                   "end_line": 1,
                   "rule_url": null,
+                  "from_file": null,
                   "start_line": 1,
                   "matched_text": "MIT",
                   "match_coverage": 100.0,
                   "matched_length": 1,
                   "rule_relevance": 100,
                   "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
-                  "license_expression": "mit"
+                  "license_expression": "mit",
+                  "spdx_license_expression": "MIT"
                 }
               ],
               "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
             },
             {
               "matches": [
@@ -545,17 +560,20 @@
                   "matcher": "1-hash",
                   "end_line": 1,
                   "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_mit_license.RULE",
+                  "from_file": null,
                   "start_line": 1,
                   "matched_text": "- 'License :: OSI Approved :: MIT License'",
                   "match_coverage": 100.0,
                   "matched_length": 5,
                   "rule_relevance": 100,
                   "rule_identifier": "pypi_mit_license.RULE",
-                  "license_expression": "mit"
+                  "license_expression": "mit",
+                  "spdx_license_expression": "MIT"
                 }
               ],
               "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
             }
           ],
           "repository_download_url": "https://pypi.org/packages/source/d/daglib/daglib-0.6.0.tar.gz",
@@ -695,17 +713,20 @@
               "matcher": "2-aho",
               "end_line": 19,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/mit.LICENSE",
+              "from_file": null,
               "start_line": 3,
               "matched_text": "Permission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
               "match_coverage": 100.0,
               "matched_length": 161,
               "rule_relevance": 100,
               "rule_identifier": "mit.LICENSE",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "spdx_license_expression": "MIT"
             }
           ],
           "identifier": "mit-cacd5c0c-204a-85c2-affc-e4c125b2492a",
-          "license_expression": "mit"
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
         }
       ],
       "license_clues": [],
@@ -909,17 +930,20 @@
                   "matcher": "1-spdx-id",
                   "end_line": 1,
                   "rule_url": null,
+                  "from_file": null,
                   "start_line": 1,
                   "matched_text": "MIT",
                   "match_coverage": 100.0,
                   "matched_length": 1,
                   "rule_relevance": 100,
                   "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
-                  "license_expression": "mit"
+                  "license_expression": "mit",
+                  "spdx_license_expression": "MIT"
                 }
               ],
               "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
             },
             {
               "matches": [
@@ -928,17 +952,20 @@
                   "matcher": "1-hash",
                   "end_line": 1,
                   "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_mit_license.RULE",
+                  "from_file": null,
                   "start_line": 1,
                   "matched_text": "- 'License :: OSI Approved :: MIT License'",
                   "match_coverage": 100.0,
                   "matched_length": 5,
                   "rule_relevance": 100,
                   "rule_identifier": "pypi_mit_license.RULE",
-                  "license_expression": "mit"
+                  "license_expression": "mit",
+                  "spdx_license_expression": "MIT"
                 }
               ],
               "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
             }
           ],
           "repository_download_url": "https://pypi.org/packages/source/d/daglib/daglib-0.6.0.tar.gz",

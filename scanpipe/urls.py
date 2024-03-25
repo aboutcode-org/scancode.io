@@ -117,6 +117,11 @@ urlpatterns = [
         name="run_status",
     ),
     path(
+        "pipeline/<str:pipeline_name>/help/",
+        views.pipeline_help_view,
+        name="pipeline_help",
+    ),
+    path(
         "project/<slug:slug>/results/<str:format>/",
         views.ProjectResultsView.as_view(),
         name="project_results",

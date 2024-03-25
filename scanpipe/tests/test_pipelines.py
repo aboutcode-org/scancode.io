@@ -36,6 +36,7 @@ from packageurl import PackageURL
 from scancode.cli_test_utils import purl_with_fake_uuid
 
 from scanpipe import pipes
+from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipelines import InputFileError
@@ -202,6 +203,12 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual({}, message.details)
         self.assertEqual("Error message", message.description)
         self.assertIn('raise Exception("Error message")', message.traceback)
+
+        resource1 = CodebaseResource.objects.create(project=project1, path="filename")
+        with pipeline.save_errors(Exception, resource=resource1):
+            raise Exception("Error message")
+        message = project1.projectmessages.latest("created_date")
+        self.assertEqual({"resource_path": str(resource1.path)}, message.details)
 
     def test_scanpipe_pipelines_is_pipeline(self):
         self.assertFalse(is_pipeline(None))
@@ -1211,3 +1218,26 @@ class PipelinesIntegrationTest(TestCase):
         )
         self.assertIn("1 PURLs were already present in PurlDB index queue", run.log)
         self.assertIn("Couldn't index 1 unsupported PURLs", run.log)
+
+    def test_scanpipe_collect_symbols_pipeline_integration(self):
+        pipeline_name = "collect_symbols"
+        project1 = Project.objects.create(name="Analysis")
+
+        dir = project1.codebase_path / "codefile"
+        dir.mkdir(parents=True)
+
+        file_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        copy_input(file_location, dir)
+
+        pipes.collect_and_create_codebase_resources(project1)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        main_file = project1.codebaseresources.files()[0]
+        result_extra_data_symbols = main_file.extra_data.get("source_symbols")
+        expected_extra_data_symbols = ["generatePassword", "passwordLength", "charSet"]
+        self.assertCountEqual(expected_extra_data_symbols, result_extra_data_symbols)

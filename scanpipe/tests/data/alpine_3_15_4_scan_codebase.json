@@ -146,17 +146,20 @@
               "matcher": "1-hash",
               "end_line": 1,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/spdx_license_id_gpl-2.0-only_for_gpl-2.0.RULE",
+              "from_file": "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed",
               "start_line": 1,
               "matched_text": "gpl-2.0-only",
               "match_coverage": 100.0,
               "matched_length": 4,
               "rule_relevance": 100,
               "rule_identifier": "spdx_license_id_gpl-2.0-only_for_gpl-2.0.RULE",
-              "license_expression": "gpl-2.0"
+              "license_expression": "gpl-2.0",
+              "spdx_license_expression": "GPL-2.0-only"
             }
           ],
           "identifier": "gpl_2_0-7541c21a-b2c9-c697-2794-bf0cfcdf32f9",
-          "license_expression": "gpl-2.0"
+          "license_expression": "gpl-2.0",
+          "license_expression_spdx": "GPL-2.0-only"
         }
       ],
       "other_license_expression": "",
@@ -260,17 +263,20 @@
               "matcher": "1-spdx-id",
               "end_line": 1,
               "rule_url": null,
+              "from_file": "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed",
               "start_line": 1,
               "matched_text": "mit",
               "match_coverage": 100.0,
               "matched_length": 1,
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-mit-1b937028f397e2c5fe4eb6a0abd781ab80f9eeff",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "spdx_license_expression": "MIT"
             }
           ],
           "identifier": "mit-704ced38-ea60-e53b-6c20-390fe781b1c3",
-          "license_expression": "mit"
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
         }
       ],
       "other_license_expression": "",
@@ -494,17 +500,20 @@
               "matcher": "1-hash",
               "end_line": 1,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/spdx_license_id_gpl-2.0-only_for_gpl-2.0.RULE",
+              "from_file": "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed",
               "start_line": 1,
               "matched_text": "gpl-2.0-only",
               "match_coverage": 100.0,
               "matched_length": 4,
               "rule_relevance": 100,
               "rule_identifier": "spdx_license_id_gpl-2.0-only_for_gpl-2.0.RULE",
-              "license_expression": "gpl-2.0"
+              "license_expression": "gpl-2.0",
+              "spdx_license_expression": "GPL-2.0-only"
             }
           ],
           "identifier": "gpl_2_0-7541c21a-b2c9-c697-2794-bf0cfcdf32f9",
-          "license_expression": "gpl-2.0"
+          "license_expression": "gpl-2.0",
+          "license_expression_spdx": "GPL-2.0-only"
         }
       ],
       "other_license_expression": "",
@@ -573,17 +582,20 @@
               "matcher": "1-hash",
               "end_line": 1,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/spdx_license_id_gpl-2.0-only_for_gpl-2.0.RULE",
+              "from_file": "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed",
               "start_line": 1,
               "matched_text": "gpl-2.0-only",
               "match_coverage": 100.0,
               "matched_length": 4,
               "rule_relevance": 100,
               "rule_identifier": "spdx_license_id_gpl-2.0-only_for_gpl-2.0.RULE",
-              "license_expression": "gpl-2.0"
+              "license_expression": "gpl-2.0",
+              "spdx_license_expression": "GPL-2.0-only"
             }
           ],
           "identifier": "gpl_2_0-7541c21a-b2c9-c697-2794-bf0cfcdf32f9",
-          "license_expression": "gpl-2.0"
+          "license_expression": "gpl-2.0",
+          "license_expression_spdx": "GPL-2.0-only"
         }
       ],
       "other_license_expression": "",
@@ -663,17 +675,20 @@
               "matcher": "1-spdx-id",
               "end_line": 1,
               "rule_url": null,
+              "from_file": "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed",
               "start_line": 1,
               "matched_text": "mpl-2.0 AND mit",
               "match_coverage": 100.0,
               "matched_length": 5,
               "rule_relevance": 100,
-              "rule_identifier": "spdx-license-identifier-mpl-2.0 AND mit-5514313e881fb20dc746d1ac1e3a53a643c808d7",
-              "license_expression": "mpl-2.0 AND mit"
+              "rule_identifier": "spdx-license-identifier-mpl_2_0_and_mit-5514313e881fb20dc746d1ac1e3a53a643c808d7",
+              "license_expression": "mpl-2.0 AND mit",
+              "spdx_license_expression": "MPL-2.0 AND MIT"
             }
           ],
-          "identifier": "mpl_2_0_and_mit-988cb9df-c9be-c91d-c7e4-896f96e84eb8",
-          "license_expression": "mpl-2.0 AND mit"
+          "identifier": "mpl_2_0_and_mit-0ec4a3d2-4f7b-39d7-f14f-8bb7666de6d5",
+          "license_expression": "mpl-2.0 AND mit",
+          "license_expression_spdx": "MPL-2.0 AND MIT"
         }
       ],
       "other_license_expression": "",
@@ -753,17 +768,20 @@
               "matcher": "1-spdx-id",
               "end_line": 1,
               "rule_url": null,
+              "from_file": "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed",
               "start_line": 1,
               "matched_text": "openssl",
               "match_coverage": 100.0,
               "matched_length": 1,
               "rule_relevance": 100,
-              "rule_identifier": "spdx-license-identifier-openssl-ssleay-b5dd48b21e3399670d584d4ade9a9791a24c58cd",
-              "license_expression": "openssl-ssleay"
+              "rule_identifier": "spdx-license-identifier-openssl_ssleay-b5dd48b21e3399670d584d4ade9a9791a24c58cd",
+              "license_expression": "openssl-ssleay",
+              "spdx_license_expression": "OpenSSL"
             }
           ],
-          "identifier": "openssl_ssleay-5eedc4a6-a77c-b373-2ac4-55bb8c004773",
-          "license_expression": "openssl-ssleay"
+          "identifier": "openssl_ssleay-602fb366-4d56-7dcd-cac5-129d99473599",
+          "license_expression": "openssl-ssleay",
+          "license_expression_spdx": "OpenSSL"
         }
       ],
       "other_license_expression": "",
@@ -867,17 +885,20 @@
               "matcher": "1-spdx-id",
               "end_line": 1,
               "rule_url": null,
+              "from_file": "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed",
               "start_line": 1,
               "matched_text": "bsd-2-clause AND bsd-3-clause",
               "match_coverage": 100.0,
               "matched_length": 7,
               "rule_relevance": 100,
-              "rule_identifier": "spdx-license-identifier-bsd-simplified AND bsd-new-dc707a661bb1da34ff773b7e9955e0235b3b3f74",
-              "license_expression": "bsd-simplified AND bsd-new"
+              "rule_identifier": "spdx-license-identifier-bsd_simplified_and_bsd_new-dc707a661bb1da34ff773b7e9955e0235b3b3f74",
+              "license_expression": "bsd-simplified AND bsd-new",
+              "spdx_license_expression": "BSD-2-Clause AND BSD-3-Clause"
             }
           ],
-          "identifier": "bsd_simplified_and_bsd_new-73e0acf3-001a-667e-f37b-135c6b8a5cad",
-          "license_expression": "bsd-simplified AND bsd-new"
+          "identifier": "bsd_simplified_and_bsd_new-571c460d-b906-8e23-30cd-5429d912eee3",
+          "license_expression": "bsd-simplified AND bsd-new",
+          "license_expression_spdx": "BSD-2-Clause AND BSD-3-Clause"
         }
       ],
       "other_license_expression": "",
@@ -946,17 +967,20 @@
               "matcher": "1-spdx-id",
               "end_line": 1,
               "rule_url": null,
+              "from_file": "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed",
               "start_line": 1,
               "matched_text": "isc AND (bsd-3-clause OR mit)",
               "match_coverage": 100.0,
               "matched_length": 7,
               "rule_relevance": 100,
-              "rule_identifier": "spdx-license-identifier-isc AND (bsd-new OR mit)-7471dfe24fdc3b7a8943273ac320469f644d2688",
-              "license_expression": "isc AND (bsd-new OR mit)"
+              "rule_identifier": "spdx-license-identifier-isc_and__bsd_new_or_mit-7471dfe24fdc3b7a8943273ac320469f644d2688",
+              "license_expression": "isc AND (bsd-new OR mit)",
+              "spdx_license_expression": "ISC AND (BSD-3-Clause OR MIT)"
             }
           ],
-          "identifier": "isc_and__bsd_new_or_mit-d4c1876e-a168-ee43-975a-1df35f85f171",
-          "license_expression": "isc AND (bsd-new OR mit)"
+          "identifier": "isc_and__bsd_new_or_mit-00412b1c-2d3c-5fef-ddd7-9c04aca09dd5",
+          "license_expression": "isc AND (bsd-new OR mit)",
+          "license_expression_spdx": "ISC AND (BSD-3-Clause OR MIT)"
         }
       ],
       "other_license_expression": "",
@@ -1036,17 +1060,20 @@
               "matcher": "1-spdx-id",
               "end_line": 1,
               "rule_url": null,
+              "from_file": "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed",
               "start_line": 1,
               "matched_text": "openssl",
               "match_coverage": 100.0,
               "matched_length": 1,
               "rule_relevance": 100,
-              "rule_identifier": "spdx-license-identifier-openssl-ssleay-b5dd48b21e3399670d584d4ade9a9791a24c58cd",
-              "license_expression": "openssl-ssleay"
+              "rule_identifier": "spdx-license-identifier-openssl_ssleay-b5dd48b21e3399670d584d4ade9a9791a24c58cd",
+              "license_expression": "openssl-ssleay",
+              "spdx_license_expression": "OpenSSL"
             }
           ],
-          "identifier": "openssl_ssleay-5eedc4a6-a77c-b373-2ac4-55bb8c004773",
-          "license_expression": "openssl-ssleay"
+          "identifier": "openssl_ssleay-602fb366-4d56-7dcd-cac5-129d99473599",
+          "license_expression": "openssl-ssleay",
+          "license_expression_spdx": "OpenSSL"
         }
       ],
       "other_license_expression": "",
@@ -1126,17 +1153,20 @@
               "matcher": "1-spdx-id",
               "end_line": 1,
               "rule_url": null,
+              "from_file": "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed",
               "start_line": 1,
               "matched_text": "mit",
               "match_coverage": 100.0,
               "matched_length": 1,
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-mit-1b937028f397e2c5fe4eb6a0abd781ab80f9eeff",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "spdx_license_expression": "MIT"
             }
           ],
           "identifier": "mit-704ced38-ea60-e53b-6c20-390fe781b1c3",
-          "license_expression": "mit"
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
         }
       ],
       "other_license_expression": "",
@@ -1216,17 +1246,20 @@
               "matcher": "1-spdx-id",
               "end_line": 1,
               "rule_url": null,
+              "from_file": "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed",
               "start_line": 1,
               "matched_text": "mit AND bsd-3-clause AND gpl-2.0-or-later",
               "match_coverage": 100.0,
               "matched_length": 11,
               "rule_relevance": 100,
-              "rule_identifier": "spdx-license-identifier-mit AND bsd-new AND gpl-2.0-plus-a42688b31c355df3bef97265e8ca20360250716e",
-              "license_expression": "mit AND bsd-new AND gpl-2.0-plus"
+              "rule_identifier": "spdx-license-identifier-mit_and_bsd_new_and_gpl_2_0_plus-a42688b31c355df3bef97265e8ca20360250716e",
+              "license_expression": "mit AND bsd-new AND gpl-2.0-plus",
+              "spdx_license_expression": "MIT AND BSD-3-Clause AND GPL-2.0-or-later"
             }
           ],
-          "identifier": "mit_and_bsd_new_and_gpl_2_0_plus-57deb96b-d294-ad77-12c0-3e0e3c5d55f3",
-          "license_expression": "mit AND bsd-new AND gpl-2.0-plus"
+          "identifier": "mit_and_bsd_new_and_gpl_2_0_plus-f5dc1480-e57f-fd40-8614-8d2a83cd4bb9",
+          "license_expression": "mit AND bsd-new AND gpl-2.0-plus",
+          "license_expression_spdx": "MIT AND BSD-3-Clause AND GPL-2.0-or-later"
         }
       ],
       "other_license_expression": "",
@@ -1295,17 +1328,20 @@
               "matcher": "1-hash",
               "end_line": 1,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/spdx_license_id_gpl-2.0-only_for_gpl-2.0.RULE",
+              "from_file": "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed",
               "start_line": 1,
               "matched_text": "gpl-2.0-only",
               "match_coverage": 100.0,
               "matched_length": 4,
               "rule_relevance": 100,
               "rule_identifier": "spdx_license_id_gpl-2.0-only_for_gpl-2.0.RULE",
-              "license_expression": "gpl-2.0"
+              "license_expression": "gpl-2.0",
+              "spdx_license_expression": "GPL-2.0-only"
             }
           ],
           "identifier": "gpl_2_0-7541c21a-b2c9-c697-2794-bf0cfcdf32f9",
-          "license_expression": "gpl-2.0"
+          "license_expression": "gpl-2.0",
+          "license_expression_spdx": "GPL-2.0-only"
         }
       ],
       "other_license_expression": "",
@@ -1374,17 +1410,20 @@
               "matcher": "1-hash",
               "end_line": 1,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/spdx_license_id_gpl-2.0-only_for_gpl-2.0.RULE",
+              "from_file": "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed",
               "start_line": 1,
               "matched_text": "gpl-2.0-only",
               "match_coverage": 100.0,
               "matched_length": 4,
               "rule_relevance": 100,
               "rule_identifier": "spdx_license_id_gpl-2.0-only_for_gpl-2.0.RULE",
-              "license_expression": "gpl-2.0"
+              "license_expression": "gpl-2.0",
+              "spdx_license_expression": "GPL-2.0-only"
             }
           ],
           "identifier": "gpl_2_0-7541c21a-b2c9-c697-2794-bf0cfcdf32f9",
-          "license_expression": "gpl-2.0"
+          "license_expression": "gpl-2.0",
+          "license_expression_spdx": "GPL-2.0-only"
         }
       ],
       "other_license_expression": "",
@@ -1453,17 +1492,20 @@
               "matcher": "1-spdx-id",
               "end_line": 1,
               "rule_url": null,
+              "from_file": "40e48c8ef2450e6a9e8d50b846a58ede43f1b01dd351d2bdd7dca14c5c033f20/lib/apk/db/installed",
               "start_line": 1,
               "matched_text": "zlib",
               "match_coverage": 100.0,
               "matched_length": 1,
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-zlib-2023583c09c2e5aa14d564036e304041c0f1ace3",
-              "license_expression": "zlib"
+              "license_expression": "zlib",
+              "spdx_license_expression": "Zlib"
             }
           ],
           "identifier": "zlib-f742edbd-d484-7a19-19f0-f4582738f149",
-          "license_expression": "zlib"
+          "license_expression": "zlib",
+          "license_expression_spdx": "Zlib"
         }
       ],
       "other_license_expression": "",

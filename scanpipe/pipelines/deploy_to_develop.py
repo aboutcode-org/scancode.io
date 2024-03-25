@@ -36,8 +36,8 @@ class DeployToDevelop(Pipeline):
 
     This pipeline requires a minimum of two archive files, each properly tagged with:
 
-    - "from" for archives containing the development source code.
-    - "to" for archives containing the deployment compiled code.
+    - **from** for archives containing the development source code.
+    - **to** for archives containing the deployment compiled code.
 
     When using download URLs as inputs, the "from" and "to" tags can be
     provided by adding a "#from" or "#to" fragment at the end of the download URLs.

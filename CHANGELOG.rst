@@ -1,13 +1,35 @@
 Changelog
 =========
 
-v35.0.0 (next, unreleased)
---------------------------
+v34.1.0 (unreleased)
+--------------------
+
+- Add support for importing CycloneDX SBOM 1.2, 1.3, 1.4 and 1.5 spec formats.
+  https://github.com/nexB/scancode.io/issues/1045
+
+- The pipeline help modal is now available from all project views: form, list, details.
+  The docstring are converted from markdown to html for proper rendering.
+  https://github.com/nexB/scancode.io/pull/1105
+
+- Add a new `CollectSymbols` pipeline (addon) for collecting codebase symbols using
+  Universal Ctags.
+  https://github.com/nexB/scancode.io/pull/1116
+
+- Capture errors during the `inspect_elf_binaries` pipeline execution.
+  Errors on resource inspection are stored as project error message instead of global
+  pipeline failure.
+  The problematic resource path is stored in the message details and displayed in the
+  message list UI as a link to the resource details view.
+  https://github.com/nexB/scancode.io/issues/1121
+  https://github.com/nexB/scancode.io/issues/1122
+
+- Rename the ``match_to_purldb`` pipeline to ``match_to_matchcode``, and add
+  MatchCode.io API settings to ScanCode.io settings.
 
 - In the DiscoveredPackage model, rename the "datasource_id" attribute to
-  "datasource_ids" and add a new attribute "datafile_paths", to align this
-  with the scancode-toolkit Package model, and store package detection
-  information correctly. Also update the UI for discovered packages to
+  "datasource_ids" and add a new attribute "datafile_paths". This is aligned
+  with the scancode-toolkit Package model, and package detection information
+  is now stored correctly. Also update the UI for discovered packages to
   show the corresponding package datafiles and their datasource IDs.
   A data migration is included to facilitate the migration of existing data.
   https://github.com/nexB/scancode.io/issues/1099

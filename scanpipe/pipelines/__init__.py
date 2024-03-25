@@ -31,6 +31,8 @@ from timeit import default_timer as timer
 
 from django.utils import timezone
 
+import bleach
+from markdown_it import MarkdownIt
 from pyinstrument import Profiler
 
 from scanpipe import humanize_time
@@ -53,6 +55,15 @@ def group(*groups):
         return obj
 
     return decorator
+
+
+def convert_markdown_to_html(markdown_text):
+    """Convert Markdown text to sanitized HTML."""
+    # Using the "js-default" for safety.
+    html_content = MarkdownIt("js-default").renderInline(markdown_text)
+    # Sanitize HTML using bleach.
+    sanitized_html = bleach.clean(html_content)
+    return sanitized_html
 
 
 class BasePipeline:
@@ -116,13 +127,21 @@ class BasePipeline:
         ]
 
     @classmethod
-    def get_info(cls):
+    def get_info(cls, as_html=False):
         """Get a dictionary of combined information data about this pipeline."""
         summary, description = splitdoc(cls.get_doc())
+        steps = cls.get_graph()
+
+        if as_html:
+            summary = convert_markdown_to_html(summary)
+            description = convert_markdown_to_html(description)
+            for step in steps:
+                step["doc"] = convert_markdown_to_html(step["doc"])
+
         return {
             "summary": summary,
             "description": description,
-            "steps": cls.get_graph(),
+            "steps": steps,
             "available_groups": cls.get_available_groups(),
         }
 
@@ -211,25 +230,35 @@ class BasePipeline:
         if errors:
             raise InputFileError(errors)
 
-    def add_error(self, exception):
+    def add_error(self, exception, resource=None):
         """Create a ``ProjectMessage`` ERROR record on the current `project`."""
-        self.project.add_error(model=self.pipeline_name, exception=exception)
+        self.project.add_error(
+            model=self.pipeline_name,
+            exception=exception,
+            resource=resource,
+        )
 
     @contextmanager
-    def save_errors(self, *exceptions):
+    def save_errors(self, *exceptions, **kwargs):
         """
         Context manager to save specified exceptions as ``ProjectMessage`` in the
         database.
 
-        Example in a Pipeline step:
+        - Example in a Pipeline step::
 
         with self.save_errors(rootfs.DistroNotFound):
             rootfs.scan_rootfs_for_system_packages(self.project, rfs)
+
+        - Example when iterating over resources::
+
+        for resource in self.project.codebaseresources.all():
+            with self.save_errors(Exception, resource=resource):
+                analyse(resource)
         """
         try:
             yield
         except exceptions as error:
-            self.add_error(exception=error)
+            self.add_error(exception=error, **kwargs)
 
 
 class Pipeline(BasePipeline):
