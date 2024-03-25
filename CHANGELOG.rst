@@ -39,6 +39,11 @@ v34.1.0 (unreleased)
   A data migration is included to facilitate the migration of existing data.
   https://github.com/nexB/scancode.io/issues/1099
 
+- Add PurlDB tab, displayed when the PURLDB_URL settings is configured.
+  When loading the package details view, a request is made on the PurlDB to fetch and
+  and display any available data.
+  https://github.com/nexB/scancode.io/issues/1125
+
 v34.0.0 (2024-03-04)
 --------------------
 

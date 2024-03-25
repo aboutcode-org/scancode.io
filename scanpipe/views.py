@@ -49,6 +49,7 @@ from django.template.defaultfilters import filesizeformat
 from django.urls import reverse
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
+from django.utils.text import capfirst
 from django.views import generic
 from django.views.decorators.http import require_POST
 from django.views.generic.detail import SingleObjectMixin
@@ -89,6 +90,7 @@ from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
+from scanpipe.pipes import purldb
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -175,6 +177,10 @@ SCAN_SUMMARY_FIELDS = [
     ("Other holders", "other_holders"),
     ("Other languages", "other_languages"),
 ]
+
+
+def purldb_is_configured(*args):
+    return purldb.is_configured()
 
 
 class PrefetchRelatedViewMixin:
@@ -1631,22 +1637,22 @@ class CodebaseResourceDetailsView(
                 "tag",
                 "rootfs_path",
             ],
-            "icon_class": "fa-solid fa-info-circle",
+            "icon_class": "fa-solid fa-circle-check",
         },
         "others": {
             "fields": [
                 {"field_name": "size", "render_func": filesizeformat},
-                "md5",
-                "sha1",
-                "sha256",
-                "sha512",
+                {"field_name": "md5", "label": "MD5"},
+                {"field_name": "sha1", "label": "SHA1"},
+                {"field_name": "sha256", "label": "SHA256"},
+                {"field_name": "sha512", "label": "SHA512"},
                 "is_binary",
                 "is_text",
                 "is_archive",
                 "is_key_file",
                 "is_media",
             ],
-            "icon_class": "fa-solid fa-plus-square",
+            "icon_class": "fa-solid fa-info-circle",
         },
         "viewer": {
             "icon_class": "fa-solid fa-file-code",
@@ -1692,7 +1698,7 @@ class CodebaseResourceDetailsView(
                 {"field_name": "extra_data", "render_func": render_as_yaml},
             ],
             "verbose_name": "Extra",
-            "icon_class": "fa-solid fa-database",
+            "icon_class": "fa-solid fa-plus-square",
         },
     }
 
@@ -1828,23 +1834,25 @@ class DiscoveredPackageDetailsView(
                 "description",
                 "tag",
             ],
-            "icon_class": "fa-solid fa-info-circle",
+            "icon_class": "fa-solid fa-circle-check",
         },
         "others": {
             "fields": [
                 {"field_name": "size", "render_func": filesizeformat},
                 "release_date",
-                "md5",
-                "sha1",
-                "sha256",
-                "sha512",
+                {"field_name": "md5", "label": "MD5"},
+                {"field_name": "sha1", "label": "SHA1"},
+                {"field_name": "sha256", "label": "SHA256"},
+                {"field_name": "sha512", "label": "SHA512"},
                 "file_references",
                 {"field_name": "parties", "render_func": render_as_yaml},
                 "missing_resources",
                 "modified_resources",
                 "package_uid",
+                "datasource_ids",
+                "datafile_paths",
             ],
-            "icon_class": "fa-solid fa-plus-square",
+            "icon_class": "fa-solid fa-info-circle",
         },
         "terms": {
             "fields": [
@@ -1870,14 +1878,6 @@ class DiscoveredPackageDetailsView(
             ],
             "icon_class": "fa-solid fa-file-contract",
         },
-        "detection": {
-            "fields": [
-                "datasource_ids",
-                "datafile_paths",
-            ],
-            "icon_class": "fa-solid fa-search",
-            "template": "scanpipe/tabset/tab_detections.html",
-        },
         "resources": {
             "fields": ["codebase_resources"],
             "icon_class": "fa-solid fa-folder-open",
@@ -1898,9 +1898,59 @@ class DiscoveredPackageDetailsView(
                 {"field_name": "extra_data", "render_func": render_as_yaml},
             ],
             "verbose_name": "Extra",
+            "icon_class": "fa-solid fa-plus-square",
+        },
+        "purldb": {
+            "fields": ["uuid"],
+            "verbose_name": "PurlDB",
             "icon_class": "fa-solid fa-database",
+            "template": "scanpipe/tabset/tab_purldb_loader.html",
+            "display_condition": purldb_is_configured,
         },
     }
+
+
+class DiscoveredPackagePurlDBTabView(ConditionalLoginRequired, generic.DetailView):
+    model = DiscoveredPackage
+    slug_field = "uuid"
+    slug_url_kwarg = "uuid"
+    template_name = "scanpipe/tabset/tab_purldb_content.html"
+
+    @staticmethod
+    def get_fields_data(purldb_entry):
+        exclude = [
+            "uuid",
+            "purl",
+            "license_detections",
+            "resources",
+        ]
+
+        fields_data = {}
+        for field_name, value in purldb_entry.items():
+            if not value or field_name in exclude:
+                continue
+
+            label = capfirst(
+                field_name.replace("url", "URL")
+                .replace("_", " ")
+                .replace("sha", "SHA")
+                .replace("vcs", "VCS")
+            )
+            fields_data[field_name] = {"label": label, "value": value}
+
+        return fields_data
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        if not purldb.is_configured():
+            raise Http404("PurlDB access is not configured.")
+
+        if purldb_entry := purldb.get_package_by_purl(self.object.package_url):
+            fields = self.get_fields_data(purldb_entry)
+            context["tab_data"] = {"fields": fields}
+
+        return context
 
 
 class DiscoveredDependencyDetailsView(
@@ -1944,7 +1994,7 @@ class DiscoveredDependencyDetailsView(
                 "scope",
                 "datasource_id",
             ],
-            "icon_class": "fa-solid fa-info-circle",
+            "icon_class": "fa-solid fa-circle-check",
         },
         "others": {
             "fields": [
@@ -1954,7 +2004,7 @@ class DiscoveredDependencyDetailsView(
                 "is_optional",
                 "is_resolved",
             ],
-            "icon_class": "fa-solid fa-plus-square",
+            "icon_class": "fa-solid fa-info-circle",
         },
         "vulnerabilities": {
             "fields": ["affected_by_vulnerabilities"],

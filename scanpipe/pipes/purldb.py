@@ -330,3 +330,17 @@ def populate_purldb_with_discovered_dependencies(project, logger=logger.info):
         chunk_size=10,
         logger=logger,
     )
+
+
+def get_package_by_purl(package_url):
+    """Get a Package details entry providing its `package_url`."""
+    if results := find_packages({"purl": str(package_url)}):
+        return results[0]
+
+
+def find_packages(payload):
+    """Get Packages using provided `payload` filters on the PurlDB package list."""
+    package_api_url = f"{PURLDB_API_URL}packages/"
+    response = request_get(package_api_url, payload=payload)
+    if response and response.get("count") > 0:
+        return response.get("results")
