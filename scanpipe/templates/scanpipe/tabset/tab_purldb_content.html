@@ -1,0 +1,13 @@
+{% if tab_data.fields %}
+  <div class="notification is-link is-light has-text-weight-semibold p-3 mb-4">
+    <i class="fa-solid fa-circle-info mr-1"></i>
+    You are looking at the details for this software package as defined
+    in the PurlDB which was scanned automatically from a public source.
+  </div>
+  {% include 'scanpipe/tabset/tab_default.html' %}
+{% else %}
+  <div class="notification is-warning is-light has-text-weight-semibold p-3 mb-4">
+    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+    No entries found in the PurlDB for this package.
+  </div>
+{% endif %}

@@ -49,6 +49,7 @@ from django.template.defaultfilters import filesizeformat
 from django.urls import reverse
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
+from django.utils.text import capfirst
 from django.views import generic
 from django.views.decorators.http import require_POST
 from django.views.generic.detail import SingleObjectMixin
@@ -239,7 +240,6 @@ class TabSetMixin:
             "icon_class": "",
             "display_condition": <func>,
             "disable_condition": <func>,
-            "alert_message": "Message",
         }
     }
     """
@@ -275,7 +275,6 @@ class TabSetMixin:
             "verbose_name": tab_definition.get("verbose_name"),
             "icon_class": tab_definition.get("icon_class"),
             "template": tab_definition.get("template"),
-            "alert_message": tab_definition.get("alert_message"),
             "fields": fields_data,
             "disabled": is_disabled,
             "label_count": self.get_label_count(fields_data),
@@ -1640,10 +1639,10 @@ class CodebaseResourceDetailsView(
         "others": {
             "fields": [
                 {"field_name": "size", "render_func": filesizeformat},
-                "md5",
-                "sha1",
-                "sha256",
-                "sha512",
+                {"field_name": "md5", "label": "MD5"},
+                {"field_name": "sha1", "label": "SHA1"},
+                {"field_name": "sha256", "label": "SHA256"},
+                {"field_name": "sha512", "label": "SHA512"},
                 "is_binary",
                 "is_text",
                 "is_archive",
@@ -1838,10 +1837,10 @@ class DiscoveredPackageDetailsView(
             "fields": [
                 {"field_name": "size", "render_func": filesizeformat},
                 "release_date",
-                "md5",
-                "sha1",
-                "sha256",
-                "sha512",
+                {"field_name": "md5", "label": "MD5"},
+                {"field_name": "sha1", "label": "SHA1"},
+                {"field_name": "sha256", "label": "SHA256"},
+                {"field_name": "sha512", "label": "SHA512"},
                 "datasource_id",
                 "file_references",
                 {"field_name": "parties", "render_func": render_as_yaml},
@@ -1901,13 +1900,8 @@ class DiscoveredPackageDetailsView(
             "fields": ["package_url"],
             "verbose_name": "PurlDB",
             "icon_class": "fa-solid fa-database",
-            "template": "scanpipe/tabset/tab_purldb.html",
+            "template": "scanpipe/tabset/tab_purldb_loader.html",
             "display_condition": purldb_is_configured,
-            "alert_message": (
-                "You are looking at the details for this software package as defined "
-                "in the PurlDB which was mined and scanned automatically from a public "
-                "source."
-            ),
         },
     }
 
@@ -1916,22 +1910,28 @@ class DiscoveredPackagePurlDBTabView(ConditionalLoginRequired, generic.DetailVie
     model = DiscoveredPackage
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
-    template_name = "scanpipe/tabset/tab_default.html"
+    template_name = "scanpipe/tabset/tab_purldb_content.html"
 
     @staticmethod
     def get_fields_data(purldb_entry):
         exclude = [
             "uuid",
-            "package_sets",
             "purl",
             "license_detections",
+            "resources",
         ]
 
         fields_data = {}
         for field_name, value in purldb_entry.items():
             if not value or field_name in exclude:
                 continue
-            label = field_name.capitalize().replace("_", " ")
+
+            label = capfirst(
+                field_name.replace("url", "URL")
+                .replace("_", " ")
+                .replace("sha", "SHA")
+                .replace("vcs", "VCS")
+            )
             fields_data[field_name] = {"label": label, "value": value}
 
         return fields_data
@@ -1944,11 +1944,8 @@ class DiscoveredPackagePurlDBTabView(ConditionalLoginRequired, generic.DetailVie
 
         if purldb_entry := purldb.get_package_by_purl(self.object.package_url):
             fields = self.get_fields_data(purldb_entry)
-        else:
-            msg = "No entries found in the PurlDB for this package."
-            fields = {"warning": {"label": "Warning", "value": msg}}
+            context["tab_data"] = {"fields": fields}
 
-        context["tab_data"] = {"fields": fields}
         return context
 
 

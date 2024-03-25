@@ -1,7 +1,0 @@
-{% include 'scanpipe/tabset/tab_default.html' with tab_data=tab_data %}
-
-<div hx-get="{{ object.get_absolute_url }}purldb_tab/" hx-trigger="load" hx-swap="outerHTML">
-  <div class="h5 ms-4">
-    <i class="fas fa-spinner fa-spin"></i> Fetching {{ tab_data.verbose_name }}...
-  </div>
-</div>
