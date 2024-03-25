@@ -1,6 +1,17 @@
 Changelog
 =========
 
+v35.0.0 (next, unreleased)
+--------------------------
+
+- In the DiscoveredPackage model, rename the "datasource_id" attribute to
+  "datasource_ids" and add a new attribute "datafile_paths", to align this
+  with the scancode-toolkit Package model, and store package detection
+  information correctly. Also update the UI for discovered packages to
+  show the corresponding package datafiles and their datasource IDs.
+  A data migration is included to facilitate the migration of existing data.
+  https://github.com/nexB/scancode.io/issues/1099
+
 v34.0.0 (2024-03-04)
 --------------------
 
