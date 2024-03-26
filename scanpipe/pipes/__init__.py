@@ -23,6 +23,7 @@
 import difflib
 import logging
 import sys
+import time
 import uuid
 from contextlib import suppress
 from datetime import datetime
@@ -33,6 +34,7 @@ from timeit import default_timer as timer
 from django.db.models import Count
 
 from scanpipe import humanize_time
+from scanpipe.models import AbstractTaskFieldsModel
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -411,3 +413,41 @@ def get_resource_diff_ratio(resource_a, resource_b):
             str_a=resource_a.file_content,
             str_b=resource_b.file_content,
         )
+
+
+def poll_until_success(check, sleep=10, **kwargs):
+    """
+    Given a function `check`, which returns the status of a run, return True
+    when the run instance has completed successfully.
+
+    Return False when the run instance has failed, stopped, or gone stale.
+
+    The arguments for `check` need to be provided as keyword argument into this
+    function.
+    """
+    run_status = AbstractTaskFieldsModel.Status
+    # Continue looping if the run instance has the following statuses
+    CONTINUE_STATUSES = [
+        run_status.NOT_STARTED,
+        run_status.QUEUED,
+        run_status.RUNNING,
+    ]
+    # Return False if the run instance has the following statuses
+    FAIL_STATUSES = [
+        run_status.FAILURE,
+        run_status.STOPPED,
+        run_status.STALE,
+    ]
+
+    while True:
+        status = check(**kwargs)
+        if status == run_status.SUCCESS:
+            return True
+
+        if status in CONTINUE_STATUSES:
+            continue
+
+        if status in FAIL_STATUSES:
+            return False
+
+        time.sleep(sleep)

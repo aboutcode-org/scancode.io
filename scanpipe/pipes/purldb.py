@@ -31,11 +31,8 @@ from packageurl import PackageURL
 from univers.version_range import RANGE_CLASS_BY_SCHEMES
 from univers.version_range import InvalidVersionRange
 
-from django.utils.text import slugify
-from scanpipe.models import AbstractTaskFieldsModel
 from scanpipe.pipes import LoopProgress
-from scanpipe.pipes import flag
-from scanpipe.pipes.output import to_json
+from scanpipe.pipes import poll_until_success
 
 
 class PurlDBException(Exception):
@@ -354,126 +351,6 @@ def find_packages(payload):
     response = request_get(package_api_url, payload=payload)
     if response and response.get("count") > 0:
         return response.get("results")
-
-
-def poll_run_url_status(run_url, sleep=10):
-    """
-    Given a URL to a scancode.io run instance, `run_url`, return True when the
-    run instance has completed successfully.
-
-    Raise a PurlDBException when the run instance has failed, stopped, or gone
-    stale.
-    """
-    if poll_until_success(check=get_run_url_status, sleep=sleep, run_url=run_url):
-        return True
-
-    response = request_get(run_url)
-    if response:
-        log = response["log"]
-        msg = f"Matching run has stopped:\n\n{log}"
-        raise PurlDBException(msg)
-
-
-def poll_until_success(check, sleep=10, **kwargs):
-    """
-    Given a function `check`, which returns the status of a run, return True
-    when the run instance has completed successfully.
-
-    Return False when the run instance has failed, stopped, or gone stale.
-
-    The arguments for `check` need to be provided as keyword argument into this
-    function.
-    """
-    run_status = AbstractTaskFieldsModel.Status
-    # Continue looping if the run instance has the following statuses
-    CONTINUE_STATUSES = [
-        run_status.NOT_STARTED,
-        run_status.QUEUED,
-        run_status.RUNNING,
-    ]
-    # Return False if the run instance has the following statuses
-    FAIL_STATUSES = [
-        run_status.FAILURE,
-        run_status.STOPPED,
-        run_status.STALE,
-    ]
-
-    while True:
-        status = check(**kwargs)
-        if status == run_status.SUCCESS:
-            return True
-
-        if status in CONTINUE_STATUSES:
-            continue
-
-        if status in FAIL_STATUSES:
-            return False
-
-        time.sleep(sleep)
-
-
-def get_run_url_status(run_url, **kwargs):
-    """
-    Given a `run_url`, which is a URL to a ScanCode.io Project run, return its
-    status, otherwise return None.
-    """
-    response = request_get(run_url)
-    if response:
-        status = response["status"]
-        return status
-
-
-def get_match_results(run_url):
-    """
-    Given the `run_url` for a pipeline running the matchcode matching pipeline,
-    return the match results for that run.
-    """
-    response = request_get(run_url)
-    project_url = response["project"]
-    # `project_url` can have params, such as "?format=json"
-    if "?" in project_url:
-        project_url, _ = project_url.split("?")
-    project_url = project_url.rstrip("/")
-    results_url = project_url + "/results/"
-    return request_get(results_url)
-
-
-def map_match_results(match_results):
-    """
-    Given `match_results`, which is a mapping of ScanCode.io codebase results,
-    return a defaultdict(list) where the keys are the package_uid of matched
-    packages and the value is a list containing the paths of Resources
-    associated with the package_uid.
-    """
-    resource_results = match_results.get("files", [])
-    resource_paths_by_package_uids = defaultdict(list)
-    for resource in resource_results:
-        for_packages = resource.get("for_packages", [])
-        for package_uid in for_packages:
-            resource_paths_by_package_uids[package_uid].append(resource["path"])
-    return resource_paths_by_package_uids
-
-
-def create_packages_from_match_results(project, match_results):
-    """
-    Given `match_results`, which is a mapping of ScanCode.io codebase results,
-    use the Package data from it to create DiscoveredPackages for `project` and
-    associate the proper Resources of `project` to the DiscoveredPackages.
-    """
-    from scanpipe.pipes.d2d import create_package_from_purldb_data
-
-    resource_paths_by_package_uids = map_match_results(match_results)
-    matched_packages = match_results.get("packages", [])
-    for matched_package in matched_packages:
-        package_uid = matched_package["package_uid"]
-        resource_paths = resource_paths_by_package_uids[package_uid]
-        resources = project.codebaseresources.filter(path__in=resource_paths)
-        create_package_from_purldb_data(
-            project,
-            resources=resources,
-            package_data=matched_package,
-            status=flag.MATCHED_TO_PURLDB_PACKAGE,
-        )
 
 
 def get_next_download_url(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
