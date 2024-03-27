@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.1.0 (unreleased)
+v34.1.0 (2024-03-27)
 --------------------
 
 - Add support for importing CycloneDX SBOM 1.2, 1.3, 1.4 and 1.5 spec formats.
