@@ -189,67 +189,29 @@ class AddInputCommandMixin:
 
         For example: "/path/to/file.zip:tag"
         """
-        input_files_data = {}
-        for file in input_files:
-            if ":" in file:
-                key, value = file.split(":", maxsplit=1)
-                input_files_data.update({key: value})
-            else:
-                input_files_data.update({file: ""})
-        return input_files_data
+        return extract_tag_from_input_files(input_files=input_files)
 
     def handle_input_files(self, input_files_data):
         """Copy provided `input_files` to the project's `input` directory."""
-        copied = []
-
-        for file_location, tag in input_files_data.items():
-            self.project.copy_input_from(file_location)
-            filename = Path(file_location).name
-            copied.append(filename)
-            self.project.add_input_source(
-                filename=filename,
-                is_uploaded=True,
-                tag=tag,
-            )
-
-        msg = f"File{pluralize(copied)} copied to the project inputs directory:"
-        self.stdout.write(msg, self.style.SUCCESS)
-        msg = "\n".join(["- " + filename for filename in copied])
-        self.stdout.write(msg)
+        handle_input_files(
+            project=self.project, input_files_data=input_files_data, command=self
+        )
 
     @staticmethod
     def validate_input_files(input_files):
         """Raise an error if one of the provided `input_files` entry does not exist."""
-        for file_location in input_files:
-            file_path = Path(file_location)
-            if not file_path.is_file():
-                raise CommandError(f"{file_location} not found or not a file")
+        validate_input_files(input_files=input_files)
 
     def handle_input_urls(self, input_urls):
         """
         Fetch provided `input_urls` and stores it in the project's `input`
         directory.
         """
-        downloads, errors = fetch_urls(input_urls)
-
-        if downloads:
-            self.project.add_downloads(downloads)
-            msg = "File(s) downloaded to the project inputs directory:"
-            self.stdout.write(msg, self.style.SUCCESS)
-            msg = "\n".join(["- " + downloaded.filename for downloaded in downloads])
-            self.stdout.write(msg)
-
-        if errors:
-            msg = "Could not fetch URL(s):\n"
-            msg += "\n".join(["- " + url for url in errors])
-            self.stderr.write(msg)
+        handle_input_urls(project=self.project, input_urls=input_urls, command=self)
 
     def handle_copy_codebase(self, copy_from):
         """Copy `codebase_path` tree to the project's `codebase` directory."""
-        project_codebase = self.project.codebase_path
-        msg = f"{copy_from} content copied in {project_codebase}"
-        self.stdout.write(msg, self.style.SUCCESS)
-        shutil.copytree(src=copy_from, dst=project_codebase, dirs_exist_ok=True)
+        handle_copy_codebase(project=self.project, copy_from=copy_from, command=self)
 
 
 def validate_copy_from(copy_from):
@@ -293,6 +255,210 @@ def validate_pipelines(pipelines_data):
     return pipelines_data
 
 
+def extract_tag_from_input_files(input_files):
+    """
+    Add support for the ":tag" suffix in file location.
+
+    For example: "/path/to/file.zip:tag"
+    """
+    input_files_data = {}
+    for file in input_files:
+        if ":" in file:
+            key, value = file.split(":", maxsplit=1)
+            input_files_data.update({key: value})
+        else:
+            input_files_data.update({file: ""})
+    return input_files_data
+
+
+def validate_input_files(input_files):
+    """Raise an error if one of the provided `input_files` entry does not exist."""
+    for file_location in input_files:
+        file_path = Path(file_location)
+        if not file_path.is_file():
+            raise CommandError(f"{file_location} not found or not a file")
+
+
+def validate_project_inputs(pipelines, input_files, copy_from):
+    """
+    Validate `pipelines`, `input_files`, and `copy_from`, returning a tuple
+    of dictionaries containing the pipeline data of `pipelines` and the
+    input files data from `input_files.
+    """
+    pipelines_data = {}
+    input_files_data = {}
+
+    if pipelines:
+        pipelines_data = extract_group_from_pipelines(pipelines)
+        pipelines_data = validate_pipelines(pipelines_data)
+
+    if input_files:
+        input_files_data = extract_tag_from_input_files(input_files)
+        validate_input_files(input_files=input_files_data.keys())
+
+    if copy_from:
+        validate_copy_from(copy_from)
+
+    return pipelines_data, input_files_data
+
+
+def handle_input_files(project, input_files_data, command=None):
+    """Copy provided `input_files` to the project's `input` directory."""
+    copied = []
+
+    for file_location, tag in input_files_data.items():
+        project.copy_input_from(file_location)
+        filename = Path(file_location).name
+        copied.append(filename)
+        project.add_input_source(
+            filename=filename,
+            is_uploaded=True,
+            tag=tag,
+        )
+
+    if command:
+        msg = f"File{pluralize(copied)} copied to the project inputs directory:"
+        command.stdout.write(msg, command.style.SUCCESS)
+        msg = "\n".join(["- " + filename for filename in copied])
+        command.stdout.write(msg)
+
+
+def handle_input_urls(project, input_urls, command=None):
+    """
+    Fetch provided `input_urls` and stores it in the project's `input`
+    directory.
+    """
+    downloads, errors = fetch_urls(input_urls)
+
+    if downloads:
+        project.add_downloads(downloads)
+        msg = "File(s) downloaded to the project inputs directory:"
+        if command:
+            command.stdout.write(msg, command.style.SUCCESS)
+            msg = "\n".join(["- " + downloaded.filename for downloaded in downloads])
+            command.stdout.write(msg)
+
+    if errors and command:
+        msg = "Could not fetch URL(s):\n"
+        msg += "\n".join(["- " + url for url in errors])
+        command.stderr.write(msg)
+
+
+def handle_copy_codebase(project, copy_from, command=None):
+    """Copy `codebase_path` tree to the project's `codebase` directory."""
+    project_codebase = project.codebase_path
+    if command:
+        msg = f"{copy_from} content copied in {project_codebase}"
+        command.stdout.write(msg, command.style.SUCCESS)
+    shutil.copytree(src=copy_from, dst=project_codebase, dirs_exist_ok=True)
+
+
+def add_project_inputs(
+    project, pipelines_data, input_files_data, input_urls, copy_from, command=None
+):
+    for pipeline_name, selected_groups in pipelines_data.items():
+        project.add_pipeline(pipeline_name, selected_groups=selected_groups)
+
+    if input_files_data:
+        handle_input_files(
+            project=project, input_files_data=input_files_data, command=command
+        )
+
+    if input_urls:
+        handle_input_urls(project=project, input_urls=input_urls, command=command)
+
+    if copy_from:
+        handle_copy_codebase(project=project, copy_from=copy_from, command=command)
+
+
+def execute_project(project, run_async=False, command=None):
+    run = project.get_next_run()
+
+    if not run:
+        raise CommandError(f"No pipelines to run on project {project}")
+
+    if run_async:
+        if not settings.SCANCODEIO_ASYNC:
+            msg = "SCANCODEIO_ASYNC=False is not compatible with --async option."
+            raise CommandError(msg)
+
+        run.start()
+        if command:
+            msg = f"{run.pipeline_name} added to the tasks queue for execution."
+            command.stdout.write(msg, command.style.SUCCESS)
+    else:
+        command.stdout.write(f"Start the {run.pipeline_name} pipeline execution...")
+
+        try:
+            tasks.execute_pipeline_task(run.pk)
+        except KeyboardInterrupt:
+            run.set_task_stopped()
+            raise CommandError("Pipeline execution stopped.")
+        except Exception as e:
+            run.set_task_ended(exitcode=1, output=str(e))
+            raise CommandError(e)
+
+        run.refresh_from_db()
+
+        if run.task_succeeded and command:
+            msg = f"{run.pipeline_name} successfully executed on " f"project {project}"
+            command.stdout.write(msg, command.style.SUCCESS)
+        else:
+            msg = f"Error during {run.pipeline_name} execution:\n{run.task_output}"
+            raise CommandError(msg)
+
+
+def create_project(
+    name,
+    pipelines=None,
+    input_files=None,
+    input_urls=None,
+    copy_from="",
+    notes="",
+    execute=False,
+    run_async=False,
+    command=None,
+):
+    if execute and not pipelines:
+        raise CommandError("The execute argument requires one or more pipelines.")
+
+    project = Project(name=name)
+    if notes:
+        project.notes = notes
+
+    try:
+        project.full_clean(exclude=["slug"])
+    except ValidationError as e:
+        raise CommandError("\n".join(e.messages))
+
+    # Run validation before creating the project in the database
+    pipelines_data, input_files_data = validate_project_inputs(
+        pipelines=pipelines, input_files=input_files, copy_from=copy_from
+    )
+
+    project.save()
+    if command:
+        command.project = project
+
+    if command:
+        msg = f"Project {name} created with work directory {project.work_directory}"
+        command.stdout.write(msg, command.style.SUCCESS)
+
+    add_project_inputs(
+        project=project,
+        pipelines_data=pipelines_data,
+        input_files_data=input_files_data,
+        input_urls=input_urls,
+        copy_from=copy_from,
+        command=command,
+    )
+
+    if execute:
+        execute_project(project=project, run_async=run_async, command=command)
+
+    return project
+
+
 class ExecuteProjectCommandMixin:
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -307,42 +473,7 @@ class ExecuteProjectCommandMixin:
         )
 
     def execute_project(self, run_async=False):
-        run = self.project.get_next_run()
-
-        if not run:
-            raise CommandError(f"No pipelines to run on project {self.project}")
-
-        if run_async:
-            if not settings.SCANCODEIO_ASYNC:
-                msg = "SCANCODEIO_ASYNC=False is not compatible with --async option."
-                raise CommandError(msg)
-
-            run.start()
-            msg = f"{run.pipeline_name} added to the tasks queue for execution."
-            self.stdout.write(msg, self.style.SUCCESS)
-        else:
-            self.stdout.write(f"Start the {run.pipeline_name} pipeline execution...")
-
-            try:
-                tasks.execute_pipeline_task(run.pk)
-            except KeyboardInterrupt:
-                run.set_task_stopped()
-                raise CommandError("Pipeline execution stopped.")
-            except Exception as e:
-                run.set_task_ended(exitcode=1, output=str(e))
-                raise CommandError(e)
-
-            run.refresh_from_db()
-
-            if run.task_succeeded:
-                msg = (
-                    f"{run.pipeline_name} successfully executed on "
-                    f"project {self.project}"
-                )
-                self.stdout.write(msg, self.style.SUCCESS)
-            else:
-                msg = f"Error during {run.pipeline_name} execution:\n{run.task_output}"
-                raise CommandError(msg)
+        execute_project(project=self.project, run_async=run_async, command=self)
 
 
 class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
@@ -357,73 +488,14 @@ class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
         execute=False,
         run_async=False,
     ):
-        if execute and not pipelines:
-            raise CommandError("The execute argument requires one or more pipelines.")
-
-        project = Project(name=name)
-        if notes:
-            project.notes = notes
-
-        try:
-            project.full_clean(exclude=["slug"])
-        except ValidationError as e:
-            raise CommandError("\n".join(e.messages))
-
-        # Run validation before creating the project in the database
-        pipelines_data, input_files_data = self._validate_project_inputs(
-            pipelines=pipelines, input_files=input_files, copy_from=copy_from
-        )
-
-        project.save()
-        self.project = project
-        msg = f"Project {name} created with work directory {project.work_directory}"
-        self.stdout.write(msg, self.style.SUCCESS)
-
-        self._add_project_inputs(
-            pipelines_data=pipelines_data,
-            input_files_data=input_files_data,
+        return create_project(
+            name=name,
+            pipelines=pipelines,
+            input_files=input_files,
             input_urls=input_urls,
             copy_from=copy_from,
+            notes=notes,
+            execute=execute,
+            run_async=run_async,
+            command=self,
         )
-
-        if execute:
-            self.execute_project(run_async=run_async)
-
-        return project
-
-    def _validate_project_inputs(self, pipelines, input_files, copy_from):
-        """
-        Validate `pipelines`, `input_files`, and `copy_from`, returning a tuple
-        of dictionaries containing the pipeline data of `pipelines` and the
-        input files data from `input_files.
-        """
-        pipelines_data = {}
-        input_files_data = {}
-
-        if pipelines:
-            pipelines_data = extract_group_from_pipelines(pipelines)
-            pipelines_data = validate_pipelines(pipelines_data)
-
-        if input_files:
-            input_files_data = self.extract_tag_from_input_files(input_files)
-            self.validate_input_files(input_files=input_files_data.keys())
-
-        if copy_from:
-            validate_copy_from(copy_from)
-
-        return pipelines_data, input_files_data
-
-    def _add_project_inputs(
-        self, pipelines_data, input_files_data, input_urls, copy_from
-    ):
-        for pipeline_name, selected_groups in pipelines_data.items():
-            self.project.add_pipeline(pipeline_name, selected_groups=selected_groups)
-
-        if input_files_data:
-            self.handle_input_files(input_files_data)
-
-        if input_urls:
-            self.handle_input_urls(input_urls)
-
-        if copy_from:
-            self.handle_copy_codebase(copy_from)
