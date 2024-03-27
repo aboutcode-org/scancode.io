@@ -82,7 +82,32 @@ class MatchCodePipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.matchcode.request_get")
     @mock.patch("scanpipe.pipes.matchcode.is_available")
-    def test_scanpipe_pipes_matchcode_poll_until_success(
+    def test_scanpipe_pipes_matchcode_get_run_url_status(
+        self, mock_is_available, mock_request_get
+    ):
+        mock_is_available.return_value = True
+
+        request_get_check_response_loc = (
+            self.data_location
+            / "matchcode"
+            / "match_to_matchcode"
+            / "request_get_check_response.json"
+        )
+        with open(request_get_check_response_loc, "r") as f:
+            mock_request_get_check_return = json.load(f)
+
+        mock_request_get.side_effect = [
+            mock_request_get_check_return,
+        ]
+
+        run_url = "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
+        status = matchcode.get_run_url_status(run_url)
+
+        self.assertEqual("success", status)
+
+    @mock.patch("scanpipe.pipes.matchcode.request_get")
+    @mock.patch("scanpipe.pipes.matchcode.is_available")
+    def test_scanpipe_pipes_matchcode_poll_run_url_status(
         self, mock_is_available, mock_request_get
     ):
         run_status = AbstractTaskFieldsModel.Status
@@ -109,7 +134,7 @@ class MatchCodePipesTest(TestCase):
                 "status": run_status.SUCCESS,
             },
         ]
-        return_value = matchcode.poll_until_success(run_url)
+        return_value = matchcode.poll_run_url_status(run_url)
         self.assertEqual(True, return_value)
 
         # Failure
@@ -131,9 +156,14 @@ class MatchCodePipesTest(TestCase):
                 "status": run_status.FAILURE,
                 "log": "failure message",
             },
+            {
+                "url": run_url,
+                "status": run_status.FAILURE,
+                "log": "failure message",
+            },
         ]
         with self.assertRaises(Exception) as context:
-            matchcode.poll_until_success(run_url)
+            matchcode.poll_run_url_status(run_url)
         self.assertTrue("failure message" in str(context.exception))
 
         # Stopped
@@ -155,9 +185,14 @@ class MatchCodePipesTest(TestCase):
                 "status": run_status.STOPPED,
                 "log": "stop message",
             },
+            {
+                "url": run_url,
+                "status": run_status.STOPPED,
+                "log": "stop message",
+            },
         ]
         with self.assertRaises(Exception) as context:
-            matchcode.poll_until_success(run_url)
+            matchcode.poll_run_url_status(run_url)
         self.assertTrue("stop message" in str(context.exception))
 
         # Stale
@@ -179,9 +214,14 @@ class MatchCodePipesTest(TestCase):
                 "status": run_status.STALE,
                 "log": "stale message",
             },
+            {
+                "url": run_url,
+                "status": run_status.STALE,
+                "log": "stale message",
+            },
         ]
         with self.assertRaises(Exception) as context:
-            matchcode.poll_until_success(run_url)
+            matchcode.poll_run_url_status(run_url)
         self.assertTrue("stale message" in str(context.exception))
 
     def test_scanpipe_pipes_matchcode_map_match_results(self):

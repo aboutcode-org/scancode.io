@@ -21,7 +21,6 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import logging
-import time
 from collections import defaultdict
 
 from django.conf import settings
@@ -29,9 +28,9 @@ from django.conf import settings
 import requests
 from matchcode_toolkit.fingerprinting import compute_codebase_directory_fingerprints
 
-from scanpipe.models import AbstractTaskFieldsModel
 from scanpipe.pipes import codebase
 from scanpipe.pipes import flag
+from scanpipe.pipes import poll_until_success
 from scanpipe.pipes.output import to_json
 
 
@@ -210,7 +209,18 @@ def send_project_json_to_matchcode(
     return run_url
 
 
-def poll_until_success(run_url, sleep=10):
+def get_run_url_status(run_url, **kwargs):
+    """
+    Given a `run_url`, which is a URL to a ScanCode.io Project run, return its
+    status, otherwise return None.
+    """
+    response = request_get(run_url)
+    if response:
+        status = response["status"]
+        return status
+
+
+def poll_run_url_status(run_url, sleep=10):
     """
     Given a URL to a scancode.io run instance, `run_url`, return True when the
     run instance has completed successfully.
@@ -218,31 +228,14 @@ def poll_until_success(run_url, sleep=10):
     Raise a MatchCodeIOException when the run instance has failed, stopped, or gone
     stale.
     """
-    run_status = AbstractTaskFieldsModel.Status
-    while True:
-        response = request_get(run_url)
-        if response:
-            status = response["status"]
-            if status == run_status.SUCCESS:
-                return True
+    if poll_until_success(check=get_run_url_status, sleep=sleep, run_url=run_url):
+        return True
 
-            if status in [
-                run_status.NOT_STARTED,
-                run_status.QUEUED,
-                run_status.RUNNING,
-            ]:
-                continue
-
-            if status in [
-                run_status.FAILURE,
-                run_status.STOPPED,
-                run_status.STALE,
-            ]:
-                log = response["log"]
-                msg = f"Matching run has stopped:\n\n{log}"
-                raise MatchCodeIOException(msg)
-
-        time.sleep(sleep)
+    response = request_get(run_url)
+    if response:
+        log = response["log"]
+        msg = f"Matching run has stopped:\n\n{log}"
+        raise MatchCodeIOException(msg)
 
 
 def get_match_results(run_url):

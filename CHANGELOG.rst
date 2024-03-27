@@ -44,6 +44,17 @@ v34.1.0 (unreleased)
   and display any available data.
   https://github.com/nexB/scancode.io/issues/1125
 
+- Create a new management command `purldb-scan-queue-worker`, that runs
+  scancode.io as a Package scan queue worker for PurlDB.
+  `purldb-scan-queue-worker` gets the next available Package to be scanned and
+  the list of pipeline names to be run on the Package from PurlDB, creates a
+  Project, fetches the Package, runs the specified pipelines, and returns the
+  results to PurlDB.
+  https://github.com/nexB/scancode.io/pull/1078
+  https://github.com/nexB/purldb/issues/236
+
+- Update matchcode-toolkit to v4.0.0
+
 v34.0.0 (2024-03-04)
 --------------------
 
