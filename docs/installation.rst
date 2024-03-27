@@ -236,7 +236,7 @@ Pre-installation Checklist
 
 Before you install ScanCode.io, make sure you have the following prerequisites:
 
- * **Python: versions 3.10 to 3.11** found at https://www.python.org/downloads/
+ * **Python: versions 3.10 to 3.12** found at https://www.python.org/downloads/
  * **Git**: most recent release available at https://git-scm.com/
  * **PostgreSQL**: release 11 or later found at https://www.postgresql.org/ or
    https://postgresapp.com/ on macOS
@@ -294,8 +294,8 @@ Clone and Configure
 
         softwareupdate --install-rosetta
         arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-        arch -x86_64 /usr/local/Homebrew/bin/brew install python@3.11
-        make dev PYTHON_EXE=/usr/local/bin/python3.11
+        arch -x86_64 /usr/local/Homebrew/bin/brew install python@3.12
+        make dev PYTHON_EXE=/usr/local/bin/python3.12
         (. bin/activate; pip install psycopg[binary])
 
  * Create an environment file::
