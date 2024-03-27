@@ -249,7 +249,7 @@ def update_or_create_dependency(
 def update_or_create_license_detection(
     project,
     detection_data,
-    resource_path,
+    resource_path=None,
     from_package=False,
 ):
     """
@@ -277,6 +277,14 @@ def update_or_create_license_detection(
             detection_data,
         )
 
+    if not license_detection:
+        project.add_error(
+            model="update_or_create_license_detection",
+            details=detection_data,
+            resource=resource_path,
+        )
+        return
+
     if resource_path:
         file_region = scancode.get_file_region(
             detection_data=detection_data,
@@ -290,8 +298,8 @@ def update_or_create_license_detection(
 
 def _clean_license_detection_data(detection_data):
     detection_data = detection_data.copy()
-    if "sample_matches" in detection_data:
-        matches = detection_data.pop("sample_matches")
+    if "reference_matches" in detection_data:
+        matches = detection_data.pop("reference_matches")
         detection_data["matches"] = matches
     return detection_data
 
