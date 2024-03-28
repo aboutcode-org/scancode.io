@@ -381,22 +381,22 @@ def send_results_to_purldb(
     with uuid of `scannable_uri_uuid`
     """
     with open(scan_results_location, "rb") as scan_results_file:
-        with open(scan_summary_location, "rb") as scan_summary_file:
-            data = {
-                "scannable_uri_uuid": scannable_uri_uuid,
-                "scan_status": "scanned",
-                "project_extra_data": json.dumps(project_extra_data),
-            }
-            files = {
-                "scan_results_file": scan_results_file,
-                "scan_summary_file": scan_summary_file,
-            }
-            response = request_post(
-                url=f"{api_url}scan_queue/update_status/",
-                timeout=timeout,
-                data=data,
-                files=files,
-            )
+        # with open(scan_summary_location, "rb") as scan_summary_file:
+        data = {
+            "scannable_uri_uuid": scannable_uri_uuid,
+            "scan_status": "scanned",
+            "project_extra_data": json.dumps(project_extra_data),
+        }
+        files = {
+            "scan_results_file": scan_results_file,
+            # "scan_summary_file": scan_summary_file,
+        }
+        response = request_post(
+            url=f"{api_url}scan_queue/update_status/",
+            timeout=timeout,
+            data=data,
+            files=files,
+        )
     return response
 
 

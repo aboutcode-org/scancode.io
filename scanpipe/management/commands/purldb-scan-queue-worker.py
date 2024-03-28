@@ -39,7 +39,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
         parser.add_argument(
             "--sleep",
             type=int,
-            default=0,
+            default=60,
             action="store",
             help="Number in seconds how long the loop should sleep for before polling.",
         )
@@ -69,6 +69,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
 
             # 1. Get download url from purldb
             response = purldb.get_next_download_url()
+            print(response)
             if response:
                 scannable_uri_uuid = response["scannable_uri_uuid"]
                 download_url = response["download_url"]

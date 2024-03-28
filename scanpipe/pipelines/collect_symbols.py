@@ -22,6 +22,8 @@
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import symbols
+from scanpipe.pipes.input import copy_inputs
+from scanpipe import pipes
 
 
 class CollectSymbols(Pipeline):
@@ -32,7 +34,24 @@ class CollectSymbols(Pipeline):
 
     @classmethod
     def steps(cls):
-        return (cls.collect_and_store_resource_symbols,)
+        return (
+            cls.copy_inputs_to_codebase_directory,
+            cls.extract_archives,
+            cls.collect_and_create_codebase_resources,
+            cls.flag_empty_files,
+            cls.collect_and_store_resource_symbols,
+            )
+    
+    def copy_inputs_to_codebase_directory(self):
+        """
+        Copy input files to the project's codebase/ directory.
+        The code can also be copied there prior to running the Pipeline.
+        """
+        copy_inputs(self.project.inputs(), self.project.codebase_path)
+
+    def collect_and_create_codebase_resources(self):
+        """Collect and create codebase resources."""
+        pipes.collect_and_create_codebase_resources(self.project)
 
     def collect_and_store_resource_symbols(self):
         """
