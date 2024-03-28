@@ -5,6 +5,10 @@ v34.2.0 (unreleased)
 --------------------
 
 - Add support for Python 3.12 and upgrade to Python 3.12 in the Dockerfile.
+  https://github.com/nexB/scancode.io/pull/1138
+
+- Add support for CycloneDX XML inputs.
+  https://github.com/nexB/scancode.io/issues/1136
 
 v34.1.0 (2024-03-27)
 --------------------
