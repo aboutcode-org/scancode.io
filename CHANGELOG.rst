@@ -1,6 +1,12 @@
 Changelog
 =========
 
+v34.2.0 (unreleased)
+--------------------
+
+- Add support for CycloneDX XML inputs.
+  https://github.com/nexB/scancode.io/issues/1136
+
 v34.1.0 (2024-03-27)
 --------------------
 

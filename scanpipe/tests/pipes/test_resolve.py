@@ -57,6 +57,9 @@ class ScanPipeResolvePipesTest(TestCase):
         input_location = self.data_location / "cyclonedx/missing_schema.json"
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
+        input_location = self.data_location / "cyclonedx/laravel-7.12.0/bom.1.4.xml"
+        self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
+
     def test_scanpipe_pipes_resolve_set_license_expression(self):
         extracted_license_statement = {"license": "MIT"}
         data = resolve.set_license_expression(
