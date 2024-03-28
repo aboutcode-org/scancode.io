@@ -34,7 +34,7 @@ SPDX_LICENSE_LIST_VERSION = "3.20"
 SPDX_SCHEMA_NAME = "spdx-schema-2.3.json"
 SPDX_SCHEMA_PATH = Path(__file__).parent / "schemas" / SPDX_SCHEMA_NAME
 SPDX_SCHEMA_URL = (
-    "https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/schemas/spdx-schema.json"
+    "https://github.com/spdx/spdx-spec/raw/development/v2.3.1/schemas/spdx-schema.json"
 )
 
 """
