@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.2.0 (unreleased)
+v34.2.0 (2024-03-28)
 --------------------
 
 - Add support for Python 3.12 and upgrade to Python 3.12 in the Dockerfile.
