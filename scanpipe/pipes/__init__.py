@@ -251,6 +251,7 @@ def update_or_create_license_detection(
     detection_data,
     resource_path=None,
     from_package=False,
+    count_detection=True,
 ):
     """
     Get, update or create a DiscoveredLicense object then return it.
@@ -290,7 +291,10 @@ def update_or_create_license_detection(
             detection_data=detection_data,
             resource_path=resource_path,
         )
-        license_detection.update_with_file_region(file_region)
+        license_detection.update_with_file_region(
+            file_region=file_region,
+            count_detection=count_detection,
+        )
 
     license_detection.from_package = from_package
     return license_detection
@@ -301,6 +305,16 @@ def _clean_license_detection_data(detection_data):
     if "reference_matches" in detection_data:
         matches = detection_data.pop("reference_matches")
         detection_data["matches"] = matches
+
+    updated_matches = []
+    for match_data in detection_data["matches"]:
+        from_file_path = match_data["from_file"]
+        if from_file_path:
+            match_data["from_file"] = from_file_path.removeprefix("codebase/")
+
+        updated_matches.append(match_data)
+
+    detection_data["matches"] = updated_matches
     return detection_data
 
 

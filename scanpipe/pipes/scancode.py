@@ -647,10 +647,28 @@ def create_codebase_resources(project, scanned_codebase):
         license_detections = getattr(scanned_resource, "license_detections", [])
         for detection_data in license_detections:
             detection_identifier = detection_data.get("identifier")
-            license_detection = project.discoveredlicenses.get_or_none(
-                identifier=detection_identifier
+            pipes.update_or_create_license_detection(
+                project=project,
+                detection_data=detection_data,
+                resource_path=resource_path,
+                count_detection=False,
             )
-            logger.debug(f"Add {codebase_resource} to {license_detection}")
+            logger.debug(f"Add {codebase_resource} to {detection_identifier}")
+
+        packages = getattr(scanned_resource, "package_data", [])
+        for package_data in packages:
+            license_detections = package_data.get("license_detections", [])
+            license_detections.extend(package_data.get("other_license_detections", []))
+            for detection_data in license_detections:
+                detection_identifier = detection_data.get("identifier")
+                pipes.update_or_create_license_detection(
+                    project=project,
+                    detection_data=detection_data,
+                    resource_path=resource_path,
+                    count_detection=False,
+                    from_package=True,
+                )
+                logger.debug(f"Add {codebase_resource} to {detection_identifier}")
 
 
 def create_discovered_packages(project, scanned_codebase):
@@ -661,6 +679,16 @@ def create_discovered_packages(project, scanned_codebase):
     if hasattr(scanned_codebase.attributes, "packages"):
         for package_data in scanned_codebase.attributes.packages:
             pipes.update_or_create_package(project, package_data)
+            license_detections = package_data.get("license_detections", [])
+            license_detections.extend(package_data.get("other_license_detections", []))
+
+            for license_detection in license_detections:
+                pipes.update_or_create_license_detection(
+                    project=project,
+                    detection_data=license_detection,
+                    from_package=True,
+                    count_detection=False,
+                )
 
 
 def create_discovered_dependencies(

@@ -3640,7 +3640,7 @@ class DiscoveredLicense(
         discovered_license.save(save_error=False, capture_exception=False)
         return discovered_license
 
-    def update_with_file_region(self, file_region):
+    def update_with_file_region(self, file_region, count_detection):
         """
         If the `file_region` is a new file region, include it in the
         `file_regions` list and increase the `detection_count` by 1.
@@ -3648,10 +3648,12 @@ class DiscoveredLicense(
         file_region_data = file_region.to_dict()
         if file_region_data not in self.file_regions:
             self.file_regions.append(file_region_data)
-            if not self.detection_count:
-                self.detection_count = 1
-            else:
-                self.detection_count += 1
+            if count_detection:
+                if not self.detection_count:
+                    self.detection_count = 1
+                else:
+                    self.detection_count += 1
+
             self.save(update_fields=["detection_count", "file_regions"])
 
 

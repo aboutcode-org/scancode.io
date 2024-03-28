@@ -311,7 +311,15 @@ class TabSetMixin:
         if isinstance(field_value, Manager):
             return list(field_value.all())
 
-        list_fields = ["datafile_paths", "datasource_ids"]
+        list_fields = [
+            "license_detections",
+            "other_license_detections",
+            "license_clues",
+            "urls",
+            "emails",
+            "datafile_paths",
+            "datasource_ids",
+        ]
 
         if isinstance(field_value, list):
             if field_name not in list_fields:
@@ -1701,23 +1709,24 @@ class CodebaseResourceDetailsView(
             "disable_condition": do_not_disable,
             "display_condition": is_displayable_image_type,
         },
-        "detection": {
+        "terms": {
             "fields": [
                 "detected_license_expression",
                 {
                     "field_name": "detected_license_expression_spdx",
                     "label": "Detected license expression (SPDX)",
                 },
-                {"field_name": "license_detections", "render_func": render_as_yaml},
-                {"field_name": "license_clues", "render_func": render_as_yaml},
                 "percentage_of_license_text",
                 {"field_name": "copyrights", "render_func": render_as_yaml},
                 {"field_name": "holders", "render_func": render_as_yaml},
                 {"field_name": "authors", "render_func": render_as_yaml},
-                {"field_name": "emails", "render_func": render_as_yaml},
-                {"field_name": "urls", "render_func": render_as_yaml},
             ],
+            "icon_class": "fa-solid fa-file-contract",
+        },
+        "detection": {
+            "fields": ["license_detections", "license_clues", "emails", "urls"],
             "icon_class": "fa-solid fa-search",
+            "template": "scanpipe/tabset/tab_resource_detections.html",
         },
         "packages": {
             "fields": ["discovered_packages"],
@@ -1904,11 +1913,6 @@ class DiscoveredPackageDetailsView(
                 "copyright",
                 "holder",
                 "notice_text",
-                {"field_name": "license_detections", "render_func": render_as_yaml},
-                {
-                    "field_name": "other_license_detections",
-                    "render_func": render_as_yaml,
-                },
             ],
             "icon_class": "fa-solid fa-file-contract",
         },
@@ -1916,9 +1920,11 @@ class DiscoveredPackageDetailsView(
             "fields": [
                 "datasource_ids",
                 "datafile_paths",
+                "license_detections",
+                "other_license_detections",
             ],
             "icon_class": "fa-solid fa-search",
-            "template": "scanpipe/tabset/tab_detections.html",
+            "template": "scanpipe/tabset/tab_package_detections.html",
         },
         "resources": {
             "fields": ["codebase_resources"],
@@ -2033,12 +2039,9 @@ class DiscoveredLicenseDetailsView(
             "icon_class": "fa-solid fa-info-circle",
         },
         "detection": {
-            "fields": [
-                {"field_name": "matches", "render_func": render_as_yaml},
-                {"field_name": "detection_log", "render_func": render_as_yaml},
-                {"field_name": "file_regions", "render_func": render_as_yaml},
-            ],
+            "fields": ["matches", "detection_log", "file_regions"],
             "icon_class": "fa-solid fa-search",
+            "template": "scanpipe/tabset/tab_license_detections.html",
         },
     }
 
