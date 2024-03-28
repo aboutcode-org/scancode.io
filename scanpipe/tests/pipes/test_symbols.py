@@ -20,7 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import sys
 from pathlib import Path
+from unittest import skipIf
 
 from django.test import TestCase
 
@@ -36,8 +38,8 @@ class ScanPipeSymbolsPipesTest(TestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
 
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_pipes_symbols_collect_and_store_resource_symbols(self):
-
         dir = self.project1.codebase_path / "codefile"
         dir.mkdir(parents=True)
 
