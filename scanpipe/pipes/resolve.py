@@ -264,17 +264,17 @@ def get_default_package_type(input_location):
         if handler.is_datafile(input_location):
             return handler.default_package_type
 
-        if input_location.endswith((".spdx", ".spdx.json")):
-            return "spdx"
+    if input_location.endswith((".spdx", ".spdx.json")):
+        return "spdx"
 
-        if input_location.endswith((".bom.json", ".cdx.json")):
+    if input_location.endswith(("bom.json", ".cdx.json", "bom.xml", ".cdx.xml")):
+        return "cyclonedx"
+
+    if input_location.endswith((".json", ".xml")):
+        if cyclonedx.is_cyclonedx_bom(input_location):
             return "cyclonedx"
-
-        if input_location.endswith(".json"):
-            if cyclonedx.is_cyclonedx_bom(input_location):
-                return "cyclonedx"
-            if spdx.is_spdx_document(input_location):
-                return "spdx"
+        if spdx.is_spdx_document(input_location):
+            return "spdx"
 
 
 # Mapping between `default_package_type` its related resolver functions

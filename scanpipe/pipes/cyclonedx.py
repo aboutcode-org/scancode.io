@@ -32,6 +32,7 @@ from cyclonedx.model.bom import Bom
 from cyclonedx.schema import SchemaVersion
 from cyclonedx.validation import ValidationError
 from cyclonedx.validation.json import JsonStrictValidator
+from defusedxml import ElementTree as SafeElementTree
 from packageurl import PackageURL
 
 
@@ -121,10 +122,18 @@ def validate_document(document):
 
 def is_cyclonedx_bom(input_location):
     """Return True if the file at `input_location` is a CycloneDX BOM."""
-    with suppress(Exception):
-        data = json.loads(Path(input_location).read_text())
-        if data.get("bomFormat") == "CycloneDX":
-            return True
+    if input_location.endswith(".json"):
+        with suppress(Exception):
+            data = json.loads(Path(input_location).read_text())
+            if data.get("bomFormat") == "CycloneDX":
+                return True
+
+    elif input_location.endswith(".xml"):
+        with suppress(Exception):
+            et = SafeElementTree.parse(input_location)
+            if "cyclonedx" in et.getroot().tag:
+                return True
+
     return False
 
 
@@ -177,13 +186,23 @@ def get_components(bom):
 def resolve_cyclonedx_packages(input_location):
     """Resolve the packages from the `input_location` CycloneDX document file."""
     input_path = Path(input_location)
-    cyclonedx_document = json.loads(input_path.read_text())
+    document_data = input_path.read_text()
 
-    if errors := validate_document(cyclonedx_document):
-        error_msg = f'CycloneDX document "{input_path.name}" is not valid:\n{errors}'
-        raise ValueError(error_msg)
+    if input_location.endswith(".xml"):
+        cyclonedx_document = SafeElementTree.fromstring(document_data)
+        cyclonedx_bom = Bom.from_xml(cyclonedx_document)
 
-    cyclonedx_bom = get_bom(cyclonedx_document)
+    elif input_location.endswith(".json"):
+        cyclonedx_document = json.loads(document_data)
+        if errors := validate_document(cyclonedx_document):
+            error_msg = (
+                f'CycloneDX document "{input_path.name}" is not valid:\n{errors}'
+            )
+            raise ValueError(error_msg)
+        cyclonedx_bom = get_bom(cyclonedx_document)
+
+    else:
+        return []
+
     components = get_components(cyclonedx_bom)
-
     return [cyclonedx_component_to_package_data(component) for component in components]
