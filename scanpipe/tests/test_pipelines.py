@@ -1217,6 +1217,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertIn("1 PURLs were already present in PurlDB index queue", run.log)
         self.assertIn("Couldn't index 1 unsupported PURLs", run.log)
 
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_collect_symbols_pipeline_integration(self):
         pipeline_name = "collect_symbols"
         project1 = Project.objects.create(name="Analysis")
