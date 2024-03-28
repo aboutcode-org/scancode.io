@@ -122,13 +122,13 @@ def validate_document(document):
 
 def is_cyclonedx_bom(input_location):
     """Return True if the file at `input_location` is a CycloneDX BOM."""
-    if input_location.endswith(".json"):
+    if str(input_location).endswith(".json"):
         with suppress(Exception):
             data = json.loads(Path(input_location).read_text())
             if data.get("bomFormat") == "CycloneDX":
                 return True
 
-    elif input_location.endswith(".xml"):
+    elif str(input_location).endswith(".xml"):
         with suppress(Exception):
             et = SafeElementTree.parse(input_location)
             if "cyclonedx" in et.getroot().tag:
@@ -173,11 +173,6 @@ def cyclonedx_component_to_package_data(cdx_component):
     }
 
 
-def get_bom(cyclonedx_document):
-    """Return CycloneDX BOM object."""
-    return Bom.from_json(data=cyclonedx_document)
-
-
 def get_components(bom):
     """Return list of components from CycloneDX BOM."""
     return list(bom._get_all_components())
@@ -188,18 +183,18 @@ def resolve_cyclonedx_packages(input_location):
     input_path = Path(input_location)
     document_data = input_path.read_text()
 
-    if input_location.endswith(".xml"):
+    if str(input_location).endswith(".xml"):
         cyclonedx_document = SafeElementTree.fromstring(document_data)
         cyclonedx_bom = Bom.from_xml(cyclonedx_document)
 
-    elif input_location.endswith(".json"):
+    elif str(input_location).endswith(".json"):
         cyclonedx_document = json.loads(document_data)
         if errors := validate_document(cyclonedx_document):
             error_msg = (
                 f'CycloneDX document "{input_path.name}" is not valid:\n{errors}'
             )
             raise ValueError(error_msg)
-        cyclonedx_bom = get_bom(cyclonedx_document)
+        cyclonedx_bom = Bom.from_json(data=cyclonedx_document)
 
     else:
         return []
