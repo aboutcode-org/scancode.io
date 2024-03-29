@@ -58,10 +58,12 @@ def get_packages(project, package_registry, manifest_resources, model=None):
 
     for resource in manifest_resources:
         if packages := get_packages_from_manifest(resource.location, package_registry):
+            for package_data in packages:
+                package_data["codebase_resources"] = [resource]
             resolved_packages.extend(packages)
         else:
             project.add_error(
-                description="No packages could be resolved for",
+                description="No packages could be resolved",
                 model=model,
                 resource=resource,
             )
@@ -80,7 +82,8 @@ def create_packages_and_dependencies(project, packages, resolved=False):
     for package_data in packages:
         package_data = set_license_expression(package_data)
         dependencies = package_data.pop("dependencies", [])
-        update_or_create_package(project, package_data)
+        codebase_resources = package_data.pop("codebase_resources", [])
+        update_or_create_package(project, package_data, codebase_resources)
 
         for dependency_data in dependencies:
             if resolved:

@@ -915,7 +915,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(1, project1.projectmessages.count())
         message = project1.projectmessages.get()
         self.assertEqual("get_packages_from_manifest", message.model)
-        expected = "No packages could be resolved for"
+        expected = "No packages could be resolved"
         self.assertIn(expected, message.description)
 
     def test_scanpipe_resolve_dependencies_pipeline_integration_misc(self):
