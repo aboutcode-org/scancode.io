@@ -192,7 +192,7 @@ def update_or_create_package(project, package_data, codebase_resources=None):
     else:
         package = DiscoveredPackage.create_from_data(project, package_data)
 
-    if codebase_resources:
+    if package and codebase_resources:
         package.add_resources(codebase_resources)
 
     return package

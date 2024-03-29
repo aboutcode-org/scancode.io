@@ -1,6 +1,12 @@
 Changelog
 =========
 
+v34.3.0 (unreleased)
+--------------------
+
+- Associate resolved packages with their source codebase resource.
+  https://github.com/nexB/scancode.io/issues/1140
+
 v34.2.0 (2024-03-28)
 --------------------
 
