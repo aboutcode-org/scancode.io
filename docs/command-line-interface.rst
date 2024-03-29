@@ -3,13 +3,24 @@
 Command Line Interface
 ======================
 
-A ``scanpipe`` command can be executed through the ``docker compose`` command line
-interface with::
+The ``scanpipe`` command can be executed using the Docker Compose command line interface.
+
+If the Docker Compose stack is already running, you can execute the command as follows:
+
+.. code-block:: shell
 
     docker compose exec -it web scanpipe COMMAND
 
-Alternatively, you can start a ``bash`` session in a new Docker container to execute
-multiple ``scanpipe`` commands::
+If the ScanCode.io services are not currently running, you can use the following command:
+
+.. code-block:: shell
+
+    docker compose run --rm web scanpipe COMMAND
+
+Additionally, you can start a new Docker container and execute multiple
+``scanpipe`` commands within a ``bash`` session:
+
+.. code-block:: shell
 
     docker compose run web bash
     scanpipe COMMAND
@@ -244,6 +255,8 @@ Optional arguments:
   compatible with the XLSX and CSV formats.
   It cannot be used when multiple formats are provided.
 
+Refer to :ref:`Mount projects workspace <mount_projects_workspace_volume>` to access
+your outputs on the host machine when running with Docker.
 
 `$ scanpipe archive-project --project PROJECT`
 ----------------------------------------------
