@@ -39,7 +39,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
         parser.add_argument(
             "--sleep",
             type=int,
-            default=60,
+            default=6,
             action="store",
             help="Number in seconds how long the loop should sleep for before polling.",
         )
