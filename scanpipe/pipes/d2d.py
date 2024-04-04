@@ -38,10 +38,10 @@ from django.db.models.functions import Concat
 from django.template.defaultfilters import pluralize
 
 from commoncode.paths import common_prefix
+from elf_inspector.dwarf import get_dwarf_paths
 from extractcode import EXTRACT_SUFFIX
 from packagedcode.npm import NpmPackageJsonHandler
 from summarycode.classify import LEGAL_STARTS_ENDS
-from elf_inspector.dwarf import get_dwarf_paths
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
@@ -1666,7 +1666,10 @@ def _match_purldb_resources_post_process(
 
 
 def _map_dwarf_path_resource(
-    to_resource, from_resources, from_resources_index, logger=None,
+    to_resource,
+    from_resources,
+    from_resources_index,
+    logger=None,
 ):
     """
     Map DWARF dwarf_paths found in the ``to_resource`` extra_data to
@@ -1705,7 +1708,9 @@ def _map_dwarf_path_resource(
             matched_from_resources = [
                 from_resources.get(id=rid) for rid in match.resource_ids
             ]
-            matched_from_resources.sort(key=lambda res: (len(res.path.strip("/").split("/")), res.path))
+            matched_from_resources.sort(
+                key=lambda res: (len(res.path.strip("/").split("/")), res.path)
+            )
             winning_from_resource = matched_from_resources[0]
 
             # Do not count the "to/" segment as it is not "matchable"
@@ -1740,7 +1745,10 @@ def _map_dwarf_path_resource(
         # save the "dwarf dwarf_paths not mapped"
         to_resource.save()
         if logger:
-            logger(f"WARNING: DWARF paths NOT mapped for: {to_resource.path!r}: " + ", ".join(map(repr, dpnm)))
+            logger(
+                f"WARNING: DWARF paths NOT mapped for: {to_resource.path!r}: "
+                + ", ".join(map(repr, dpnm))
+            )
 
 
 def map_elf(project, logger=None):
@@ -1764,9 +1772,7 @@ def map_elf(project, logger=None):
     )
 
     if logger:
-        logger(
-            f"Done building from/ resources index."
-        )
+        logger(f"Done building from/ resources index.")
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
     progress = LoopProgress(resource_count, logger)
