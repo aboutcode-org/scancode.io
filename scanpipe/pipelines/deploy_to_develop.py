@@ -188,6 +188,13 @@ class DeployToDevelop(Pipeline):
         to its source.
         """
         d2d.map_javascript(project=self.project, logger=self.log)
+    
+    @group("Elf")
+    def map_elf(self):
+        """
+        Map DWARF paths using similarities of path suffixes. 
+        """
+        d2d.map_elf(project=self.project, logger=self.log)
 
     def match_directories_to_purldb(self):
         """Match selected directories in PurlDB."""

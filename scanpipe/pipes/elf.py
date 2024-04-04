@@ -21,7 +21,9 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from elf_inspector.dwarf import get_dwarf_paths
-
+from scanpipe.pipes import LoopProgress, pathmap
+from scanpipe.models import CodebaseRelation
+from scanpipe import pipes
 
 def collect_dwarf_source_path_references(resource):
     """Collect and store the DWARF debug paths of the provided ELF ``resource``."""
