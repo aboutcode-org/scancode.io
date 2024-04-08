@@ -2008,18 +2008,16 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
                 | Q(file_type__icontains="shared object")
             )
         )
-    
+
     def win_exes(self):
         """
         Resources that are ``files`` and their filetype contains "for ms windows" or
         starts with "pe32".
         Keep sync with the content type implementation at ``typecode.contenttype``.
         """
-        return (
-            self.files()
-            .filter(
-                Q(file_type__icontains="for ms windows") | Q(filetype_file__istartswith='pe32')
-            )
+        return self.files().filter(
+            Q(file_type__icontains="for ms windows")
+            | Q(filetype_file__istartswith="pe32")
         )
 
     def mach_os(self):
@@ -2028,14 +2026,11 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         contains "application/x-mach-binary".
         Keep sync with the content type implementation at ``typecode.contenttype``.
         """
-        return (
-            self.files()
-            .filter(
-                models.Q(filetype__icontains="mach-o") |
-                models.Q(mimetype__icontains="application/x-mach-binary")
-            )
+        return self.files().filter(
+            models.Q(filetype__icontains="mach-o")
+            | models.Q(mimetype__icontains="application/x-mach-binary")
         )
-    
+
     def is_executable_binary(self):
         return self.elfs().union(self.win_exes(), self.mach_os())
 
