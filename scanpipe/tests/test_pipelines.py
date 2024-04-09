@@ -1240,3 +1240,30 @@ class PipelinesIntegrationTest(TestCase):
         result_extra_data_symbols = main_file.extra_data.get("source_symbols")
         expected_extra_data_symbols = ["generatePassword", "passwordLength", "charSet"]
         self.assertCountEqual(expected_extra_data_symbols, result_extra_data_symbols)
+
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
+    def test_scanpipe_collect_source_strings_pipeline_integration(self):
+        pipeline_name = "collect_source_strings"
+        project1 = Project.objects.create(name="Analysis")
+
+        dir = project1.codebase_path / "codefile"
+        dir.mkdir(parents=True)
+
+        file_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        copy_input(file_location, dir)
+
+        pipes.collect_and_create_codebase_resources(project1)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        main_file = project1.codebaseresources.files()[0]
+        result_extra_data_strings = main_file.extra_data.get("source_strings")
+        expected_extra_data_strings = [
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()_-+=",  # noqa
+            "Enter the desired length of your password:",
+        ]
+        self.assertCountEqual(expected_extra_data_strings, result_extra_data_strings)

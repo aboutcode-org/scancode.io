@@ -36,8 +36,7 @@ def collect_and_store_resource_strings(project, logger=None):
     """
     if not strings_xgettext.is_xgettext_installed():
         raise XgettextNotFound(
-            "``xgettext`` not found."
-            "Install ``gettext`` to use this pipeline."
+            "``xgettext`` not found. Install ``gettext`` to use this pipeline."
         )
 
     project_files = project.codebaseresources.files()
