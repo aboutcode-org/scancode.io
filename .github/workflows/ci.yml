@@ -44,6 +44,9 @@ jobs:
 
       - name: Install universal ctags
         run: sudo apt-get install -y universal-ctags
+    
+      - name: Install xgettext
+        run: sudo apt-get install -y gettext
 
       - name: Install dependencies
         run: make dev envfile
