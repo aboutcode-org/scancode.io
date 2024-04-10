@@ -27,6 +27,7 @@ from django.conf import settings
 
 import requests
 from matchcode_toolkit.fingerprinting import compute_codebase_directory_fingerprints
+from matchcode_toolkit.fingerprinting import get_file_fingerprint_hashes
 
 from scanpipe.pipes import codebase
 from scanpipe.pipes import flag
@@ -186,6 +187,42 @@ def fingerprint_codebase_directories(project, to_codebase_only=False):
     virtual_codebase = compute_codebase_directory_fingerprints(virtual_codebase)
     save_directory_fingerprints(
         project, virtual_codebase, to_codebase_only=to_codebase_only
+    )
+
+
+def fingerprint_codebase_resources(project, to_codebase_only=False):
+    """
+    Compute fingerprints for the resources and directories of the to/ codebase
+    from `project`.
+
+    These directory fingerprints are used for matching purposes on matchcode.
+    """
+    # Bulk update Directories with new fingerprints.
+    # Code adapted from
+    # scanpipe.migrations.0031_scancode_toolkit_v32_data_updates
+    queryset = project.codebaseresources.files()
+    if to_codebase_only:
+        queryset = queryset.to_codebase()
+
+    object_count = queryset.count()
+    logger.info(f"\nUpdating resource fingerprints for {object_count:,} resources.")
+    chunk_size = 2000
+    iterator = queryset.iterator(chunk_size=chunk_size)
+
+    unsaved_objects = []
+    for index, resource in enumerate(iterator, start=1):
+        file_fingerprint_hashes = get_file_fingerprint_hashes(location=resource.location)
+        resource.extra_data.update(file_fingerprint_hashes)
+        unsaved_objects.append(resource)
+
+        if not (index % chunk_size) and unsaved_objects:
+            logger.info(f"  {index:,} / {object_count:,} resources processed")
+
+    logger.info("Updating resource DB objects...")
+    project.codebaseresources.bulk_update(
+        objs=unsaved_objects,
+        fields=["extra_data"],
+        batch_size=1000,
     )
 
 
