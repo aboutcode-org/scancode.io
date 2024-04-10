@@ -7,6 +7,10 @@ v34.3.0 (unreleased)
 - Associate resolved packages with their source codebase resource.
   https://github.com/nexB/scancode.io/issues/1140
 
+- Add a new `CollectSourceStrings` pipeline (addon) for collecting source string using
+  xgettext.
+  https://github.com/nexB/scancode.io/pull/1160
+
 v34.2.0 (2024-03-28)
 --------------------
 

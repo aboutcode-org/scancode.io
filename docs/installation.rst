@@ -261,13 +261,24 @@ See also `ScanCode-toolkit Prerequisites <https://scancode-toolkit.readthedocs.i
 latest/getting-started/install.html#prerequisites>`_ for more details.
 
 For the :ref:`pipeline_collect_symbols` pipeline, `Universal Ctags <https://github.com/universal-ctags/ctags>`_ is needed.
-On **Linux** install it using::
 
-    sudo apt-get install universal-ctags
+    * On **Linux** install it using::
 
-On **MacOS** install Universal Ctags using Homebrew::
+        sudo apt-get install universal-ctags
 
-    brew install universal-ctags
+    * On **MacOS** install Universal Ctags using Homebrew::
+
+        brew install universal-ctags
+
+For the :ref:`pipeline_collect_source_strings` pipeline, `gettext <https://www.gnu.org/software/gettext/>`_ is needed.
+
+    * On **Linux** install it using::
+
+        sudo apt-get install gettext
+
+    * On **MacOS** install gettext using Homebrew::
+
+        brew install gettext
 
 Clone and Configure
 ^^^^^^^^^^^^^^^^^^^
