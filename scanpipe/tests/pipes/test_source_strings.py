@@ -38,7 +38,7 @@ class ScanPipeSourceStringsPipesTest(TestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
 
-    @skipIf(sys.platform == "darwin", "Not supported on macOS")
+    @skipIf(sys.platform != "linux", "Only supported on Linux")
     def test_scanpipe_pipes_symbols_collect_and_store_resource_strings(self):
         dir = self.project1.codebase_path / "codefile"
         dir.mkdir(parents=True)
