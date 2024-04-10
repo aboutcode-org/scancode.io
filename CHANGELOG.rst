@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.3.0 (unreleased)
+v34.3.0 (2024-04-10)
 --------------------
 
 - Associate resolved packages with their source codebase resource.
