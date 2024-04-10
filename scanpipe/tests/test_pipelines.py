@@ -1241,7 +1241,7 @@ class PipelinesIntegrationTest(TestCase):
         expected_extra_data_symbols = ["generatePassword", "passwordLength", "charSet"]
         self.assertCountEqual(expected_extra_data_symbols, result_extra_data_symbols)
 
-    @skipIf(sys.platform == "darwin", "Not supported on macOS")
+    @skipIf(sys.platform != "linux", "Only supported on Linux")
     def test_scanpipe_collect_source_strings_pipeline_integration(self):
         pipeline_name = "collect_source_strings"
         project1 = Project.objects.create(name="Analysis")
