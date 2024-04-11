@@ -175,10 +175,12 @@ def save_directory_fingerprints(project, virtual_codebase, to_codebase_only=Fals
 
 def fingerprint_codebase_directories(project, to_codebase_only=False):
     """
-    Compute directory fingerprints for the directories of the to/ codebase from
-    `project`.
+    Compute directory fingerprints for the directories from `project`.
 
     These directory fingerprints are used for matching purposes on matchcode.
+
+    If `to_codebase_only` is True, the only directories from the `to/` codebase
+    are computed.
     """
     resources = project.codebaseresources.all()
     if to_codebase_only:
@@ -192,15 +194,17 @@ def fingerprint_codebase_directories(project, to_codebase_only=False):
 
 def fingerprint_codebase_resources(project, to_codebase_only=False):
     """
-    Compute fingerprints for the resources and directories of the to/ codebase
-    from `project`.
+    Compute fingerprints for the resources from `project`.
 
-    These directory fingerprints are used for matching purposes on matchcode.
+    These resource fingerprints are used for matching purposes on matchcode.
+
+    If `to_codebase_only` is True, the only resources from the `to/` codebase
+    are computed.
     """
-    # Bulk update Directories with new fingerprints.
+    # Bulk update Resources with new fingerprints.
     # Code adapted from
     # scanpipe.migrations.0031_scancode_toolkit_v32_data_updates
-    queryset = project.codebaseresources.files()
+    queryset = project.codebaseresources.filter(is_text=True)
     if to_codebase_only:
         queryset = queryset.to_codebase()
 
@@ -212,6 +216,8 @@ def fingerprint_codebase_resources(project, to_codebase_only=False):
     unsaved_objects = []
     for index, resource in enumerate(iterator, start=1):
         file_fingerprint_hashes = get_file_fingerprint_hashes(location=resource.location)
+        if not file_fingerprint_hashes:
+            continue
         resource.extra_data.update(file_fingerprint_hashes)
         unsaved_objects.append(resource)
 
