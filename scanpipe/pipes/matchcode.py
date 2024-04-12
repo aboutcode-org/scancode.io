@@ -215,7 +215,9 @@ def fingerprint_codebase_resources(project, to_codebase_only=False):
 
     unsaved_objects = []
     for index, resource in enumerate(iterator, start=1):
-        file_fingerprint_hashes = get_file_fingerprint_hashes(location=resource.location)
+        file_fingerprint_hashes = get_file_fingerprint_hashes(
+            location=resource.location
+        )
         if not file_fingerprint_hashes:
             continue
         resource.extra_data.update(file_fingerprint_hashes)
