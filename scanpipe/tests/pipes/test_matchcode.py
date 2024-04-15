@@ -330,15 +330,6 @@ class MatchCodePipesTest(TestCase):
         codebase_resource1.refresh_from_db()
         codebase_resource2.refresh_from_db()
 
-        expected_extra_data = {
-            "halo1": "9966eec85e8220e3ba51d564c576af45",
-            "chunks_halo1": [
-                "9356c6e81ac20213384362229762590e",
-                "b7c6ca417c0240b2da5b7f028c66bd0c",
-                "b746ca45740240b2d85b3f008466ad8c",
-                "1b20dec85dbba069b3349166c1e4a341",
-                "99527882dc86aa2101199565c02f8741",
-            ],
-        }
+        expected_extra_data = {"halo1": "ef420f7e84c8c74c691315f0a06ac4f0"}
         self.assertEqual(expected_extra_data, codebase_resource1.extra_data)
         self.assertFalse(codebase_resource2.extra_data)

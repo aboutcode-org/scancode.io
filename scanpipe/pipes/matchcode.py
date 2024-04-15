@@ -28,11 +28,14 @@ from django.conf import settings
 import requests
 from matchcode_toolkit.fingerprinting import compute_codebase_directory_fingerprints
 from matchcode_toolkit.fingerprinting import get_file_fingerprint_hashes
+from scancode import Scanner
 
 from scanpipe.pipes import codebase
 from scanpipe.pipes import flag
 from scanpipe.pipes import poll_until_success
 from scanpipe.pipes.output import to_json
+from scanpipe.pipes.scancode import _scan_resource
+from scanpipe.pipes.scancode import scan_resources
 
 
 class MatchCodeIOException(Exception):
@@ -192,45 +195,60 @@ def fingerprint_codebase_directories(project, to_codebase_only=False):
     )
 
 
-def fingerprint_codebase_resources(project, to_codebase_only=False):
+def fingerprint_codebase_resource(location, with_threading=True, **kwargs):
+    """
+    Compute fingerprints for the resource at `location` using the
+    scancode-toolkit direct API.
+
+    Return a dictionary of scan `results` and a list of `errors`.
+    """
+    scanners = [
+        Scanner("fingerprints", get_file_fingerprint_hashes),
+    ]
+    return _scan_resource(location, scanners, with_threading=with_threading)
+
+
+def save_resource_fingerprints(resource, scan_results, scan_errors=None):
+    """
+    Save computed fingerprints from `scan_results` to `resource.extra_data`.
+    Create project errors if any occurred during the scan.
+    """
+    resource.extra_data.update(scan_results)
+    resource.save()
+
+    if scan_errors:
+        resource.add_errors(scan_errors)
+        resource.update(status=flag.SCANNED_WITH_ERROR)
+
+
+def fingerprint_codebase_resources(
+    project, resource_qs=None, progress_logger=None, to_codebase_only=False
+):
     """
     Compute fingerprints for the resources from `project`.
 
     These resource fingerprints are used for matching purposes on matchcode.
 
+    Multiprocessing is enabled by default on this pipe, the number of processes can be
+    controlled through the SCANCODEIO_PROCESSES setting.
+
     If `to_codebase_only` is True, the only resources from the `to/` codebase
     are computed.
     """
-    # Bulk update Resources with new fingerprints.
-    # Code adapted from
-    # scanpipe.migrations.0031_scancode_toolkit_v32_data_updates
-    queryset = project.codebaseresources.filter(is_text=True)
+    # Checking for None to make the distinction with an empty resource_qs queryset
+    if resource_qs is None:
+        resource_qs = project.codebaseresources.filter(is_text=True)
+
     if to_codebase_only:
-        queryset = queryset.to_codebase()
+        resource_qs = resource_qs.to_codebase()
 
-    object_count = queryset.count()
-    logger.info(f"\nUpdating resource fingerprints for {object_count:,} resources.")
-    chunk_size = 2000
-    iterator = queryset.iterator(chunk_size=chunk_size)
-
-    unsaved_objects = []
-    for index, resource in enumerate(iterator, start=1):
-        file_fingerprint_hashes = get_file_fingerprint_hashes(
-            location=resource.location
-        )
-        if not file_fingerprint_hashes:
-            continue
-        resource.extra_data.update(file_fingerprint_hashes)
-        unsaved_objects.append(resource)
-
-        if not (index % chunk_size) and unsaved_objects:
-            logger.info(f"  {index:,} / {object_count:,} resources processed")
-
-    logger.info("Updating resource DB objects...")
-    project.codebaseresources.bulk_update(
-        objs=unsaved_objects,
-        fields=["extra_data"],
-        batch_size=1000,
+    scan_func_kwargs = {}
+    scan_resources(
+        resource_qs=resource_qs,
+        scan_func=fingerprint_codebase_resource,
+        save_func=save_resource_fingerprints,
+        scan_func_kwargs=scan_func_kwargs,
+        progress_logger=progress_logger,
     )
 
 
