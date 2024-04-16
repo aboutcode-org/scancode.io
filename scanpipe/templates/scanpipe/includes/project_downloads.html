@@ -10,9 +10,29 @@
     <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'spdx' %}">
       SPDX <span class="icon ml-1"><i class="fa-solid fa-download"></i></span>
     </a>
-    <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'cyclonedx' %}">
-      CycloneDX <span class="icon ml-1"><i class="fa-solid fa-download"></i></span>
-    </a>
+    <div class="dropdown is-hoverable">
+      <div class="dropdown-trigger">
+        <button class="button tag is-success is-medium" aria-haspopup="true" aria-controls="dropdown-menu-cyclonedx">
+          <span>CycloneDX</span>
+          <span class="icon">
+            <i class="fa-solid fa-download" aria-hidden="true"></i>
+          </span>
+        </button>
+      </div>
+      <div class="dropdown-menu" id="dropdown-menu-cyclonedx" role="menu">
+        <div class="dropdown-content">
+          <a href="{% url 'project_results' project.slug 'cyclonedx' '1.6' %}" class="dropdown-item has-text-weight-semibold">
+            Spec 1.6 <span class="tag is-link is-light ml-1">Latest</span>
+          </a>
+          <a href="{% url 'project_results' project.slug 'cyclonedx' '1.5' %}" class="dropdown-item">
+            Spec 1.5
+          </a>
+          <a href="{% url 'project_results' project.slug 'cyclonedx' '1.4' %}" class="dropdown-item">
+            Spec 1.4
+          </a>
+        </div>
+      </div>
+    </div>
     <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'attribution' %}">
       Attribution <span class="icon ml-1"><i class="fa-solid fa-download"></i></span>
     </a>

@@ -712,12 +712,13 @@ def sort_bom_with_schema_ordering(bom_as_dict, schema_version):
     return json.dumps(ordered_dict, indent=2)
 
 
-def to_cyclonedx(project, schema_version=SchemaVersion.V1_5):
+def to_cyclonedx(project, version="1.6"):
     """
     Generate output for the provided ``project`` in CycloneDX BOM format.
     The output file is created in the ``project`` "output/" directory.
     Return the path of the generated output file.
     """
+    schema_version = SchemaVersion.from_version(version)
     output_file = project.get_output_file_path("results", "cdx.json")
 
     bom = get_cyclonedx_bom(project)

@@ -1281,6 +1281,8 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
         self.object = self.get_object()
         project = self.object
         format = self.kwargs["format"]
+        version = self.kwargs.get("version")
+        output_kwargs = {}
 
         if format == "json":
             return project_results_json_response(project, as_attachment=True)
@@ -1289,7 +1291,9 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
         elif format == "spdx":
             output_file = output.to_spdx(project)
         elif format == "cyclonedx":
-            output_file = output.to_cyclonedx(project)
+            if version:
+                output_kwargs["version"] = version
+            output_file = output.to_cyclonedx(project, **output_kwargs)
         elif format == "attribution":
             output_file = output.to_attribution(project)
         else:

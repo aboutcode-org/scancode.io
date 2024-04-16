@@ -540,6 +540,18 @@ class ScanPipeAPITest(TransactionTestCase):
         results = json.loads(response_value)
         self.assertIn("$schema", sorted(results.keys()))
 
+        data = {
+            "output_format": "cyclonedx",
+            "version": "1.5",
+        }
+        response = self.csrf_client.get(url, data=data)
+        response_value = response.getvalue()
+        results = json.loads(response_value)
+        self.assertEqual(
+            "http://cyclonedx.org/schema/bom-1.5.schema.json", results["$schema"]
+        )
+        self.assertEqual("1.5", results["specVersion"])
+
         data = {"output_format": "xlsx"}
         response = self.csrf_client.get(url, data=data)
         expected = [
