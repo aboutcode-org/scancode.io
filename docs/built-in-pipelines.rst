@@ -45,7 +45,7 @@ Analyse Docker Windows Image
 .. _pipeline_collect_source_strings:
 
 Collect Source Strings (addon)
---------------------------------
+------------------------------
 .. autoclass:: scanpipe.pipelines.collect_source_strings.CollectSourceStrings()
     :members:
     :member-order: bysource
