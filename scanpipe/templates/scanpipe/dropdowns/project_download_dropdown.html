@@ -18,9 +18,14 @@
       <a href="{% url 'project_results' project.slug 'spdx' %}" class="dropdown-item">
         <strong>SPDX</strong>
       </a>
-      <a href="{% url 'project_results' project.slug 'cyclonedx' %}" class="dropdown-item">
+      <div class="dropdown-item">
         <strong>CycloneDX</strong>
-      </a>
+        <div class="has-text-weight-semibold">
+          <a href="{% url 'project_results' project.slug 'cyclonedx' '1.6' %}" class="tag is-link is-light mr-1">1.6</a>
+          <a href="{% url 'project_results' project.slug 'cyclonedx' '1.5' %}" class="tag is-link is-light mr-1">1.5</a>
+          <a href="{% url 'project_results' project.slug 'cyclonedx' '1.4' %}" class="tag is-link is-light">1.4</a>
+        </div>
+      </div>
       <a href="{% url 'project_results' project.slug 'attribution' %}" class="dropdown-item">
         <strong>Attribution</strong>
       </a>
