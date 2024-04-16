@@ -11,6 +11,11 @@ v34.4.0 (unreleased)
   Also, the CycloneDX outputs can be downloaded as 1.6, 1.5, and 1.4 spec versions.
   https://github.com/nexB/scancode.io/pull/1165
 
+- Add a new function
+  `scanpipe.pipes.matchcode.fingerprint_codebase_resources()`, which computes
+  approximate file matching fingerprints for text files using the new
+  `get_file_fingerprint_hashes` function from matchcode-toolkit.
+
 v34.3.0 (2024-04-10)
 --------------------
 
@@ -20,11 +25,6 @@ v34.3.0 (2024-04-10)
 - Add a new `CollectSourceStrings` pipeline (addon) for collecting source string using
   xgettext.
   https://github.com/nexB/scancode.io/pull/1160
-
-- Add a new function
-  `scanpipe.pipes.matchcode.fingerprint_codebase_resources()`, which computes
-  approximate file matching fingerprints for text files using the new
-  `get_file_fingerprint_hashes` function from matchcode-toolkit.
 
 v34.2.0 (2024-03-28)
 --------------------
