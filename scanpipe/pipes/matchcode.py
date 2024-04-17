@@ -242,12 +242,10 @@ def fingerprint_codebase_resources(
     if to_codebase_only:
         resource_qs = resource_qs.to_codebase()
 
-    scan_func_kwargs = {}
     scan_resources(
         resource_qs=resource_qs,
         scan_func=fingerprint_codebase_resource,
         save_func=save_resource_fingerprints,
-        scan_func_kwargs=scan_func_kwargs,
         progress_logger=progress_logger,
     )
 
