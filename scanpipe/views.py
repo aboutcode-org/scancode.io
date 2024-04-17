@@ -497,6 +497,14 @@ class PaginatedFilterView(FilterView):
         query_dict.pop(PAGE_VAR, None)
         context["url_params_without_page"] = query_dict.urlencode()
 
+        context["searchable_fields"] = sorted(
+            [
+                field.name
+                for field in self.model._meta.get_fields()
+                if not field.is_relation
+            ]
+        )
+
         return context
 
 

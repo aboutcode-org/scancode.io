@@ -4,8 +4,12 @@ Changelog
 v34.4.0 (unreleased)
 --------------------
 
+- Display the list of fields available for the advanced search syntax in the modal UI.
+  https://github.com/nexB/scancode.io/issues/1164
+
 - Add support for CycloneDX 1.6 outputs and inputs.
   Also, the CycloneDX outputs can be downloaded as 1.6, 1.5, and 1.4 spec versions.
+  https://github.com/nexB/scancode.io/pull/1165
 
 v34.3.0 (2024-04-10)
 --------------------
