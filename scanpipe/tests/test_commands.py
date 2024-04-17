@@ -627,7 +627,7 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
         out = StringIO()
         with mock.patch("scanpipe.tasks.execute_pipeline_task", task_success):
-            call_command("purldb-scan-queue-worker", *options, stdout=out)
+            call_command("purldb-scan-worker", *options, stdout=out)
 
         out_value = out.getvalue()
         self.assertIn(
@@ -682,7 +682,7 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
         out = StringIO()
         with mock.patch("scanpipe.tasks.execute_pipeline_task", task_failure):
-            call_command("purldb-scan-queue-worker", *options, stdout=out, stderr=out)
+            call_command("purldb-scan-worker", *options, stdout=out, stderr=out)
 
         out_value = out.getvalue()
         self.assertIn("Exception occured during scan project:", out_value)
@@ -739,7 +739,7 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
         out = StringIO()
         with mock.patch("scanpipe.tasks.execute_pipeline_task", task_failure):
-            call_command("purldb-scan-queue-worker", *options, stdout=out, stderr=out)
+            call_command("purldb-scan-worker", *options, stdout=out, stderr=out)
 
         out_value = out.getvalue()
         self.assertIn(
