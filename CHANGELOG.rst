@@ -18,6 +18,11 @@ v34.4.0 (unreleased)
   approximate file matching fingerprints for text files using the new
   `get_file_fingerprint_hashes` function from matchcode-toolkit.
 
+- Rename the `purldb-scan-queue-worker` management command to `purldb-scan-worker`.
+
+- Add `docker-compose.purldb-scan-worker.yml` to run ScanCode.io as a PurlDB
+  scan worker service.
+
 v34.3.0 (2024-04-10)
 --------------------
 
