@@ -22,11 +22,6 @@
 
 from elf_inspector.dwarf import get_dwarf_paths
 
-from scanpipe import pipes
-from scanpipe.models import CodebaseRelation
-from scanpipe.pipes import LoopProgress
-from scanpipe.pipes import pathmap
-
 
 def collect_dwarf_source_path_references(resource):
     """Collect and store the DWARF debug paths of the provided ELF ``resource``."""

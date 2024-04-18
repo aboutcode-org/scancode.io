@@ -195,7 +195,7 @@ class DeployToDevelop(Pipeline):
         Map DWARF paths using similarities of path suffixes.
         """
         d2d.map_elfs(project=self.project, logger=self.log)
-    
+
     @group("Go")
     def map_go(self):
         """

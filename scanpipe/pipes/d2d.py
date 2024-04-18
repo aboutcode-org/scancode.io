@@ -24,7 +24,6 @@ from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
 from dataclasses import dataclass
-from functools import partial
 from pathlib import Path
 from re import match as regex_match
 
@@ -39,9 +38,9 @@ from django.db.models.functions import Concat
 from django.template.defaultfilters import pluralize
 
 from commoncode.paths import common_prefix
-from go_inspector.plugin import collect_and_parse_symbols
 from elf_inspector.dwarf import get_dwarf_paths
 from extractcode import EXTRACT_SUFFIX
+from go_inspector.plugin import collect_and_parse_symbols
 from packagedcode.npm import NpmPackageJsonHandler
 from summarycode.classify import LEGAL_STARTS_ENDS
 
@@ -1667,46 +1666,30 @@ def _match_purldb_resources_post_process(
     return interesting_codebase_resources.count()
 
 
-def _map_dwarf_path_resource(
-    to_resource,
-    from_resources,
-    from_resources_index,
-    logger=None,
+def _map_paths_resource(
+    to_resource, from_resources, from_resources_index, map_types, logger=None
 ):
     """
-    Map DWARF dwarf_paths found in the ``to_resource`` extra_data to
-    dwarf_paths of the ``from_resources`` CodebaseResource queryset using the
-    precomputed ``from_resources_index`` path index.
+    Map paths found in the ``to_resource`` extra_data to paths of the ``from_resources``
+    CodebaseResource queryset using the precomputed ``from_resources_index`` path index.
     """
-    compiled_paths = to_resource.extra_data.get("compiled_paths") or []
-    included_paths = to_resource.extra_data.get("included_paths") or []
-    dwarf_paths_and_map_type = [
-        (compiled_paths, "dwarf_compiled_paths"),
-        (included_paths, "dwarf_included_paths"),
-    ]
-
-    dpnm = to_resource.extra_data["dwarf_paths_not_mapped"] = []
     relations = {}
 
-    for dwarf_paths, map_type in dwarf_paths_and_map_type:
-        for dwarf_path in dwarf_paths:
+    for map_type in map_types:
+        paths = to_resource.extra_data.get(map_type, [])
+        not_mapped_paths = to_resource.extra_data[f"{map_type}_not_mapped"] = []
 
-            match = pathmap.find_paths(dwarf_path, from_resources_index)
+        for path in paths:
+            match = pathmap.find_paths(path, from_resources_index)
             if not match:
-                dpnm.append(dwarf_path)
+                not_mapped_paths.append(path)
                 continue
 
-            # short dwarf path matched more than once is treated as not mapped for now
             matched_path_length = match.matched_path_length
-
             if matched_path_length == 1 and len(match.resource_ids) != 1:
-                dpnm.append(dwarf_path)
+                not_mapped_paths.append(path)
                 continue
 
-            # Sort match by most similar to the From/ side dwarf_path e.g. if we match
-            # some/foo/bar/baz.c and this/other/foo/bar/baz.c and the From is
-            # that/foo/bar/baz.c, some/foo/bar/baz.c has the most segments
-            # matched wins, e.g., the shortest From/ path wins.
             matched_from_resources = [
                 from_resources.get(id=rid) for rid in match.resource_ids
             ]
@@ -1715,13 +1698,10 @@ def _map_dwarf_path_resource(
             )
             winning_from_resource = matched_from_resources[0]
 
-            # Do not count the "to/" segment as it is not "matchable"
-            # always strip leading segment ("to" or from" first segment)
-            dwarf_path_length = len(dwarf_path.strip("/").split("/")) - 1
-
+            path_length = len(path.strip("/").split("/")) - 1
             extra_data = {
-                "path_score": f"{matched_path_length}/{dwarf_path_length}",
-                "dwarf_path": dwarf_path,
+                "path_score": f"{matched_path_length}/{path_length}",
+                map_type: path,
             }
 
             rel_key = (winning_from_resource.path, to_resource.path, map_type)
@@ -1738,23 +1718,29 @@ def _map_dwarf_path_resource(
     if relations:
         rels = CodebaseRelation.objects.bulk_create(relations.values())
         if logger:
-            logger(f"Created {len(rels)} mapping using DWARF for: {to_resource.path!r}")
+            logger(
+                f"Created {len(rels)} mappings using {', '.join(map_types).upper()} for: {to_resource.path!r}"
+            )
     else:
         if logger:
-            logger(f"No mapping using DWARF for: {to_resource.path!r}")
-
-    if dpnm:
-        # save the "dwarf dwarf_paths not mapped"
-        to_resource.save()
-        if logger:
             logger(
-                f"WARNING: DWARF paths NOT mapped for: {to_resource.path!r}: "
-                + ", ".join(map(repr, dpnm))
+                f"No mappings using {', '.join(map_types).upper()} for: {to_resource.path!r}"
             )
 
+    for map_type in map_types:
+        if to_resource.extra_data[f"{map_type}_not_mapped"]:
+            to_resource.save()
+            if logger:
+                logger(
+                    f"WARNING: {map_type.upper()} paths NOT mapped for: {to_resource.path!r}: "
+                    + ", ".join(
+                        map(repr, to_resource.extra_data[f"{map_type}_not_mapped"])
+                    )
+                )
 
-def map_paths(project, file_type, collect_paths_func, logger=None):
-    """Map DWARF paths using similarities of path suffixes."""
+
+def map_paths(project, file_type, collect_paths_func, map_types, logger=None):
+    """Map paths using similarities of path suffixes."""
     project_files = getattr(project.codebaseresources, file_type)()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
@@ -1779,17 +1765,31 @@ def map_paths(project, file_type, collect_paths_func, logger=None):
     resource_iterator = to_resources.iterator(chunk_size=2000)
     progress = LoopProgress(resource_count, logger)
     for to_resource in progress.iter(resource_iterator):
-        _map_dwarf_path_resource(
+        _map_paths_resource(
             to_resource,
             from_resources,
             from_resources_index,
+            map_types=map_types,
             logger=logger,
         )
 
+
 def map_elfs(project, logger=None):
-    map_paths(project, "elfs", get_dwarf_paths, logger)
+    map_paths(
+        project,
+        "elfs",
+        get_dwarf_paths,
+        ["dwarf_compiled_paths", "dwarf_included_paths"],
+        logger,
+    )
+
+
+def get_go_file_paths(location):
+    go_symbols = (
+        collect_and_parse_symbols(location, check_type=False).get("go_symbols") or {}
+    )
+    return {"file_paths": go_symbols.get("file_paths") or []}
 
 
 def map_go_paths(project, logger=None):
-    collect_and_parse_symbols_partial = partial(collect_and_parse_symbols, check_type=False)
-    map_paths(project, "executable_binaries", collect_and_parse_symbols_partial, logger)
+    map_paths(project, "executable_binaries", get_go_file_paths, ["file_paths"], logger)
