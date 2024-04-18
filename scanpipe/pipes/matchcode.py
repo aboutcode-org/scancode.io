@@ -27,11 +27,15 @@ from django.conf import settings
 
 import requests
 from matchcode_toolkit.fingerprinting import compute_codebase_directory_fingerprints
+from matchcode_toolkit.fingerprinting import get_file_fingerprint_hashes
+from scancode import Scanner
 
 from scanpipe.pipes import codebase
 from scanpipe.pipes import flag
 from scanpipe.pipes import poll_until_success
 from scanpipe.pipes.output import to_json
+from scanpipe.pipes.scancode import _scan_resource
+from scanpipe.pipes.scancode import scan_resources
 
 
 class MatchCodeIOException(Exception):
@@ -174,10 +178,12 @@ def save_directory_fingerprints(project, virtual_codebase, to_codebase_only=Fals
 
 def fingerprint_codebase_directories(project, to_codebase_only=False):
     """
-    Compute directory fingerprints for the directories of the to/ codebase from
-    `project`.
+    Compute directory fingerprints for the directories from `project`.
 
     These directory fingerprints are used for matching purposes on matchcode.
+
+    If `to_codebase_only` is True, the only directories from the `to/` codebase
+    are computed.
     """
     resources = project.codebaseresources.all()
     if to_codebase_only:
@@ -186,6 +192,61 @@ def fingerprint_codebase_directories(project, to_codebase_only=False):
     virtual_codebase = compute_codebase_directory_fingerprints(virtual_codebase)
     save_directory_fingerprints(
         project, virtual_codebase, to_codebase_only=to_codebase_only
+    )
+
+
+def fingerprint_codebase_resource(location, with_threading=True, **kwargs):
+    """
+    Compute fingerprints for the resource at `location` using the
+    scancode-toolkit direct API.
+
+    Return a dictionary of scan `results` and a list of `errors`.
+    """
+    scanners = [
+        Scanner("fingerprints", get_file_fingerprint_hashes),
+    ]
+    return _scan_resource(location, scanners, with_threading=with_threading)
+
+
+def save_resource_fingerprints(resource, scan_results, scan_errors=None):
+    """
+    Save computed fingerprints from `scan_results` to `resource.extra_data`.
+    Create project errors if any occurred during the scan.
+    """
+    resource.extra_data.update(scan_results)
+    resource.save()
+
+    if scan_errors:
+        resource.add_errors(scan_errors)
+        resource.update(status=flag.SCANNED_WITH_ERROR)
+
+
+def fingerprint_codebase_resources(
+    project, resource_qs=None, progress_logger=None, to_codebase_only=False
+):
+    """
+    Compute fingerprints for the resources from `project`.
+
+    These resource fingerprints are used for matching purposes on matchcode.
+
+    Multiprocessing is enabled by default on this pipe, the number of processes can be
+    controlled through the SCANCODEIO_PROCESSES setting.
+
+    If `to_codebase_only` is True, the only resources from the `to/` codebase
+    are computed.
+    """
+    # Checking for None to make the distinction with an empty resource_qs queryset
+    if resource_qs is None:
+        resource_qs = project.codebaseresources.filter(is_text=True)
+
+    if to_codebase_only:
+        resource_qs = resource_qs.to_codebase()
+
+    scan_resources(
+        resource_qs=resource_qs,
+        scan_func=fingerprint_codebase_resource,
+        save_func=save_resource_fingerprints,
+        progress_logger=progress_logger,
     )
 
 

@@ -11,6 +11,13 @@ v34.4.0 (unreleased)
   Also, the CycloneDX outputs can be downloaded as 1.6, 1.5, and 1.4 spec versions.
   https://github.com/nexB/scancode.io/pull/1165
 
+- Update matchcode-toolkit to v4.1.0
+
+- Add a new function
+  `scanpipe.pipes.matchcode.fingerprint_codebase_resources()`, which computes
+  approximate file matching fingerprints for text files using the new
+  `get_file_fingerprint_hashes` function from matchcode-toolkit.
+
 - Rename the `purldb-scan-queue-worker` management command to `purldb-scan-worker`.
 
 - Add `docker-compose.purldb-scan-worker.yml` to run ScanCode.io as a PurlDB
