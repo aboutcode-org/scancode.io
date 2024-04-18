@@ -11,6 +11,11 @@ v34.4.0 (unreleased)
   Also, the CycloneDX outputs can be downloaded as 1.6, 1.5, and 1.4 spec versions.
   https://github.com/nexB/scancode.io/pull/1165
 
+- Rename the `purldb-scan-queue-worker` management command to `purldb-scan-worker`.
+
+- Add `docker-compose.purldb-scan-worker.yml` to run ScanCode.io as a PurlDB
+  scan worker service.
+
 v34.3.0 (2024-04-10)
 --------------------
 
