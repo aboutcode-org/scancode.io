@@ -24,6 +24,7 @@ from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 from re import match as regex_match
 
@@ -1788,5 +1789,7 @@ def map_paths(project, file_type, collect_paths_func, logger=None):
 def map_elfs(project, logger=None):
     map_paths(project, "elfs", get_dwarf_paths, logger)
 
+
 def map_go_paths(project, logger=None):
-    map_paths(project, "executable_binaries", collect_and_parse_symbols, logger)
+    collect_and_parse_symbols_partial = partial(collect_and_parse_symbols, check_type=False)
+    map_paths(project, "executable_binaries", collect_and_parse_symbols_partial, logger)
