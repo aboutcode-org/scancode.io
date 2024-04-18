@@ -2031,8 +2031,8 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
             | models.Q(mimetype__icontains="application/x-mach-binary")
         )
 
-    def is_executable_binary(self):
-        return self.elfs().union(self.win_exes(), self.mach_os())
+    def executable_binaries(self):
+        return self.union(self.win_exes(), self.mach_os(), self.elfs())
 
 
 class ScanFieldsModelMixin(models.Model):

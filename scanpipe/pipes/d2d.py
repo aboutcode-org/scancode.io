@@ -38,6 +38,7 @@ from django.db.models.functions import Concat
 from django.template.defaultfilters import pluralize
 
 from commoncode.paths import common_prefix
+from go_inspector.plugin import collect_and_parse_symbols
 from elf_inspector.dwarf import get_dwarf_paths
 from extractcode import EXTRACT_SUFFIX
 from packagedcode.npm import NpmPackageJsonHandler
@@ -1751,19 +1752,19 @@ def _map_dwarf_path_resource(
             )
 
 
-def map_elf(project, logger=None):
+def map_paths(project, file_type, collect_paths_func, logger=None):
     """Map DWARF paths using similarities of path suffixes."""
-    project_files = project.codebaseresources.elfs().no_status()
+    project_files = getattr(project.codebaseresources, file_type)()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
     for resource in to_resources:
-        dwarf_paths = get_dwarf_paths(resource.location_path)
-        resource.update_extra_data(dwarf_paths)
+        paths = collect_paths_func(resource.location_path)
+        resource.update_extra_data(paths)
     resource_count = to_resources.count()
 
     if logger:
         logger(
-            f"Mapping {resource_count:,d} to/ resources using DWARF paths "
+            f"Mapping {resource_count:,d} to/ resources using paths "
             f"with {from_resources.count():,d} from/ resources."
         )
 
@@ -1783,3 +1784,9 @@ def map_elf(project, logger=None):
             from_resources_index,
             logger=logger,
         )
+
+def map_elfs(project, logger=None):
+    map_paths(project, "elfs", get_dwarf_paths, logger)
+
+def map_go_paths(project, logger=None):
+    map_paths(project, "executable_binaries", collect_and_parse_symbols, logger)
