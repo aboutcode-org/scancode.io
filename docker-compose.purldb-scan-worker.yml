@@ -1,5 +1,3 @@
-version: "3"
-
 include:
   - docker-compose.yml
 
