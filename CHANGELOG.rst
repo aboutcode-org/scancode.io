@@ -1,8 +1,10 @@
 Changelog
 =========
 
-v34.4.0 (unreleased)
+v34.4.0 (2024-04-22)
 --------------------
+
+- Upgrade Gunicorn to v22.0.0 security release.
 
 - Display the list of fields available for the advanced search syntax in the modal UI.
   https://github.com/nexB/scancode.io/issues/1164
