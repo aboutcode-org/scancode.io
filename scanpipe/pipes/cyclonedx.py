@@ -178,6 +178,27 @@ def get_components(bom):
     return list(bom._get_all_components())
 
 
+def delete_tools(cyclonedx_document_json):
+    """
+    Remove the ``tools`` section, if defined, from the SBOM as it can
+    be in the way of loading a SBOM that is valid regarding the spec, but fails the
+    deserialization.
+
+    The ``metadata.tools`` as an array was deprecated in 1.5 and replaced by an
+    object structure where you can define a list of ``components`` and ``services``.
+
+    The new structure is not yet supported by the cyclonedx-python-lib, neither for
+    serialization (output) nor deserialization (input).
+
+    The tools are not used anyway in the context of loading the SBOM component data as
+    packages.
+    """
+    if "tools" in cyclonedx_document_json.get("metadata", {}):
+        del cyclonedx_document_json["metadata"]["tools"]
+
+    return cyclonedx_document_json
+
+
 def resolve_cyclonedx_packages(input_location):
     """Resolve the packages from the `input_location` CycloneDX document file."""
     input_path = Path(input_location)
@@ -194,6 +215,7 @@ def resolve_cyclonedx_packages(input_location):
                 f'CycloneDX document "{input_path.name}" is not valid:\n{errors}'
             )
             raise ValueError(error_msg)
+        cyclonedx_document = delete_tools(cyclonedx_document)
         cyclonedx_bom = Bom.from_json(data=cyclonedx_document)
 
     else:
