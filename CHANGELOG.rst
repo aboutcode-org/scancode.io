@@ -1,6 +1,12 @@
 Changelog
 =========
 
+v34.5.0 (unreleased)
+--------------------
+
+- Display the current path location in the "Codebase" panel as a navigation breadcrumbs.
+  https://github.com/nexB/scancode.io/issues/1158
+
 v34.4.0 (2024-04-22)
 --------------------
 

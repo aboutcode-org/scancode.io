@@ -1033,6 +1033,19 @@ class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
 
         return tree
 
+    @staticmethod
+    def get_breadcrumbs(current_dir):
+        breadcrumbs = {}
+        path_segments = current_dir.removeprefix("./").split("/")
+        last_path = ""
+
+        for segment in path_segments:
+            if segment:
+                last_path += f"{segment}/"
+                breadcrumbs[segment] = last_path
+
+        return breadcrumbs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         current_dir = self.request.GET.get("current_dir") or "."
@@ -1046,6 +1059,9 @@ class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
 
         context["current_dir"] = current_dir
         context["codebase_tree"] = codebase_tree
+        context["codebase_breadcrumbs"] = self.get_breadcrumbs(current_dir)
+        context["project_details_url"] = self.object.get_absolute_url()
+
         return context
 
 
