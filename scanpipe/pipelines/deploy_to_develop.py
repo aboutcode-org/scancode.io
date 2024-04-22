@@ -191,16 +191,12 @@ class DeployToDevelop(Pipeline):
 
     @group("Elf")
     def map_elf(self):
-        """
-        Map DWARF paths using similarities of path suffixes.
-        """
+        """Map DWARF paths using similarities of path suffixes."""
         d2d.map_elfs(project=self.project, logger=self.log)
 
     @group("Go")
     def map_go(self):
-        """
-        Map DWARF paths using similarities of path suffixes.
-        """
+        """Map GO file paths using similarities of path suffixes."""
         d2d.map_go_paths(project=self.project, logger=self.log)
 
     def match_directories_to_purldb(self):

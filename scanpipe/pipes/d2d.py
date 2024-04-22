@@ -1686,7 +1686,7 @@ def _map_paths_resource(
                 continue
 
             matched_path_length = match.matched_path_length
-            if matched_path_length == 1 and len(match.resource_ids) != 1:
+            if check_match(match, matched_path_length):
                 not_mapped_paths.append(path)
                 continue
 
@@ -1717,26 +1717,28 @@ def _map_paths_resource(
 
     if relations:
         rels = CodebaseRelation.objects.bulk_create(relations.values())
-        if logger:
-            logger(
-                f"Created {len(rels)} mappings using {', '.join(map_types).upper()} for: {to_resource.path!r}"
-            )
+        logger(
+            f"""Created {len(rels)} mappings using
+                {', '.join(map_types).upper()} for: {to_resource.path!r}"""
+        )
     else:
-        if logger:
-            logger(
-                f"No mappings using {', '.join(map_types).upper()} for: {to_resource.path!r}"
-            )
+        logger(
+            f"""No mappings using {', '.join(map_types).upper()} for:
+                {to_resource.path!r}"""
+        )
 
     for map_type in map_types:
-        if to_resource.extra_data[f"{map_type}_not_mapped"]:
+        if to_resource.extra_data.get(f"{map_type}_not_mapped"):
             to_resource.save()
-            if logger:
-                logger(
-                    f"WARNING: {map_type.upper()} paths NOT mapped for: {to_resource.path!r}: "
-                    + ", ".join(
-                        map(repr, to_resource.extra_data[f"{map_type}_not_mapped"])
-                    )
-                )
+            logger(
+                f"""WARNING: {map_type.upper()} paths NOT mapped for:
+                    {to_resource.path!r}: """
+                + ", ".join(map(repr, to_resource.extra_data[f"{map_type}_not_mapped"]))
+            )
+
+
+def check_match(match, matched_path_length):
+    return matched_path_length == 1 and len(match.resource_ids) != 1
 
 
 def map_paths(project, file_type, collect_paths_func, map_types, logger=None):
@@ -1760,7 +1762,7 @@ def map_paths(project, file_type, collect_paths_func, map_types, logger=None):
     )
 
     if logger:
-        logger(f"Done building from/ resources index.")
+        logger("Done building from/ resources index.")
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
     progress = LoopProgress(resource_count, logger)

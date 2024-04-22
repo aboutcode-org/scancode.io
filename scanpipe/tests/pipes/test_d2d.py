@@ -1485,14 +1485,15 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         pipes.collect_and_create_codebase_resources(self.project1)
         print(self.project1.codebaseresources.files().from_codebase())
-        d2d.map_elfs(project=self.project1, logger=None)
-        assert (
+        buffer = io.StringIO()
+        d2d.map_elfs(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            1,
             CodebaseRelation.objects.filter(
                 project=self.project1, map_type="dwarf_included_paths"
-            ).count()
-            == 1
+            ).count(),
         )
-    
+
     def test_scanpipe_pipes_d2d_map_go_paths(self):
         input_dir = self.project1.input_path
         input_resources = [
@@ -1514,11 +1515,11 @@ class ScanPipeD2DPipesTest(TestCase):
             recurse=True,
         )
         pipes.collect_and_create_codebase_resources(self.project1)
-
-        d2d.map_go_paths(project=self.project1, logger=None)
-        assert (
+        buffer = io.StringIO()
+        d2d.map_go_paths(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            1,
             CodebaseRelation.objects.filter(
                 project=self.project1, map_type="go_file_paths"
-            ).count()
-            == 1
+            ).count(),
         )

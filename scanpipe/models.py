@@ -2016,8 +2016,7 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         Keep sync with the content type implementation at ``typecode.contenttype``.
         """
         return self.files().filter(
-            Q(file_type__icontains="for ms windows")
-            | Q(file_type__istartswith="pe32")
+            Q(file_type__icontains="for ms windows") | Q(file_type__istartswith="pe32")
         )
 
     def mach_os(self):
