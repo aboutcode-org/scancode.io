@@ -1741,9 +1741,9 @@ def _map_paths_resource(
 
 def map_paths(project, file_type, collect_paths_func, map_types, logger=None):
     """Map paths using similarities of path suffixes."""
-    project_files = getattr(project.codebaseresources, file_type)()
-    from_resources = project_files.from_codebase()
-    to_resources = project_files.to_codebase().has_no_relation()
+    from_resources = project.codebaseresources.files().from_codebase()
+    to_resources = project.codebaseresources.files().to_codebase().has_no_relation()
+    to_resources = getattr(to_resources, file_type)()
     for resource in to_resources:
         paths = collect_paths_func(resource.location_path)
         resource.update_extra_data(paths)
@@ -1776,20 +1776,34 @@ def map_paths(project, file_type, collect_paths_func, map_types, logger=None):
 
 def map_elfs(project, logger=None):
     map_paths(
-        project,
-        "elfs",
-        get_dwarf_paths,
-        ["dwarf_compiled_paths", "dwarf_included_paths"],
-        logger,
+        project=project,
+        file_type="elfs",
+        collect_paths_func=get_elf_file_dwarf_paths,
+        map_types=["dwarf_compiled_paths", "dwarf_included_paths"],
+        logger=logger,
     )
+
+
+def get_elf_file_dwarf_paths(location):
+    paths = get_dwarf_paths(location)
+    return {
+        "dwarf_compiled_paths": paths.get("compiled_paths") or [],
+        "dwarf_included_paths": paths.get("included_paths") or [],
+    }
 
 
 def get_go_file_paths(location):
     go_symbols = (
         collect_and_parse_symbols(location, check_type=False).get("go_symbols") or {}
     )
-    return {"file_paths": go_symbols.get("file_paths") or []}
+    return {"go_file_paths": go_symbols.get("file_paths") or []}
 
 
 def map_go_paths(project, logger=None):
-    map_paths(project, "executable_binaries", get_go_file_paths, ["file_paths"], logger)
+    map_paths(
+        project=project,
+        file_type="executable_binaries",
+        collect_paths_func=get_go_file_paths,
+        map_types=["go_file_paths"],
+        logger=logger,
+    )

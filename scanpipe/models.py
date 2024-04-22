@@ -2017,7 +2017,7 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         """
         return self.files().filter(
             Q(file_type__icontains="for ms windows")
-            | Q(filetype_file__istartswith="pe32")
+            | Q(file_type__istartswith="pe32")
         )
 
     def mach_os(self):
@@ -2027,8 +2027,8 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         Keep sync with the content type implementation at ``typecode.contenttype``.
         """
         return self.files().filter(
-            models.Q(filetype__icontains="mach-o")
-            | models.Q(mimetype__icontains="application/x-mach-binary")
+            models.Q(file_type__icontains="mach-o")
+            | models.Q(mime_type__icontains="application/x-mach-binary")
         )
 
     def executable_binaries(self):
