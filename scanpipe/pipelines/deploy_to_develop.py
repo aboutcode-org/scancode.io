@@ -70,6 +70,8 @@ class DeployToDevelop(Pipeline):
             cls.map_java_to_class,
             cls.map_jar_to_source,
             cls.map_javascript,
+            cls.map_elf,
+            cls.map_go,
             cls.match_directories_to_purldb,
             cls.match_resources_to_purldb,
             cls.map_javascript_post_purldb_match,

@@ -1666,78 +1666,155 @@ def _match_purldb_resources_post_process(
     return interesting_codebase_resources.count()
 
 
-def _map_paths_resource(
+def map_paths_resource(
     to_resource, from_resources, from_resources_index, map_types, logger=None
 ):
     """
     Map paths found in the ``to_resource`` extra_data to paths of the ``from_resources``
     CodebaseResource queryset using the precomputed ``from_resources_index`` path index.
+
+    Args:
+        to_resource (CodebaseResource): The resource to map paths for.
+        from_resources (QuerySet): The queryset of from resources.
+        from_resources_index (dict): Index of from resources.
+        map_types (list): List of types of mapping.
+        logger (function, optional): Logger function to log messages.
+
+    Returns
+    -------
+        None
+
     """
     relations = {}
 
     for map_type in map_types:
         paths = to_resource.extra_data.get(map_type, [])
         not_mapped_paths = to_resource.extra_data[f"{map_type}_not_mapped"] = []
-
-        for path in paths:
-            match = pathmap.find_paths(path, from_resources_index)
-            if not match:
-                not_mapped_paths.append(path)
-                continue
-
-            matched_path_length = match.matched_path_length
-            if check_match(match, matched_path_length):
-                not_mapped_paths.append(path)
-                continue
-
-            matched_from_resources = [
-                from_resources.get(id=rid) for rid in match.resource_ids
-            ]
-            matched_from_resources.sort(
-                key=lambda res: (len(res.path.strip("/").split("/")), res.path)
-            )
-            winning_from_resource = matched_from_resources[0]
-
-            path_length = len(path.strip("/").split("/")) - 1
-            extra_data = {
-                "path_score": f"{matched_path_length}/{path_length}",
-                map_type: path,
-            }
-
-            rel_key = (winning_from_resource.path, to_resource.path, map_type)
-            if rel_key not in relations:
-                relation = CodebaseRelation(
-                    project=winning_from_resource.project,
-                    from_resource=winning_from_resource,
-                    to_resource=to_resource,
-                    map_type=map_type,
-                    extra_data=extra_data,
-                )
-                relations[rel_key] = relation
+        process_relations(
+            to_resource,
+            from_resources,
+            from_resources_index,
+            relations,
+            map_type,
+            paths,
+            not_mapped_paths,
+        )
 
     if relations:
         rels = CodebaseRelation.objects.bulk_create(relations.values())
         logger(
-            f"""Created {len(rels)} mappings using
-                {', '.join(map_types).upper()} for: {to_resource.path!r}"""
+            f"Created {len(rels)} mappings using "
+            f"{', '.join(map_types).upper()} for: {to_resource.path!r}"
         )
     else:
         logger(
-            f"""No mappings using {', '.join(map_types).upper()} for:
-                {to_resource.path!r}"""
+            f"No mappings using {', '.join(map_types).upper()} for: "
+            f"{to_resource.path!r}"
         )
 
     for map_type in map_types:
         if to_resource.extra_data.get(f"{map_type}_not_mapped"):
             to_resource.save()
             logger(
-                f"""WARNING: {map_type.upper()} paths NOT mapped for:
-                    {to_resource.path!r}: """
+                f"WARNING: {map_type.upper()} paths NOT mapped for: "
+                f"{to_resource.path!r}: "
                 + ", ".join(map(repr, to_resource.extra_data[f"{map_type}_not_mapped"]))
             )
 
 
-def check_match(match, matched_path_length):
+def process_relations(
+    to_resource,
+    from_resources,
+    from_resources_index,
+    relations,
+    map_type,
+    paths,
+    not_mapped_paths,
+):
+    """
+    Process relations between resources.
+
+    Args:
+        to_resource (CodebaseResource): The resource to map paths for.
+        from_resources (QuerySet): The queryset of from resources.
+        from_resources_index (dict): Index of from resources.
+        relations (dict): Dictionary to store relations.
+        map_type (str): Type of mapping.
+        paths (list): List of paths to map.
+        not_mapped_paths (list): List of not mapped paths.
+
+    Returns
+    -------
+        None
+
+    """
+    for path in paths:
+        match = pathmap.find_paths(path, from_resources_index)
+        if not match:
+            not_mapped_paths.append(path)
+            continue
+
+        matched_path_length = match.matched_path_length
+        if is_invalid_match(match, matched_path_length):
+            not_mapped_paths.append(path)
+            continue
+
+        matched_from_resources = [
+            from_resources.get(id=rid) for rid in match.resource_ids
+        ]
+        matched_from_resources = sort_matched_from_resources(matched_from_resources)
+        winning_from_resource = matched_from_resources[0]
+
+        path_length = len(path.strip("/").split("/")) - 1
+        extra_data = {
+            "path_score": f"{matched_path_length}/{path_length}",
+            map_type: path,
+        }
+
+        rel_key = (winning_from_resource.path, to_resource.path, map_type)
+        if rel_key not in relations:
+            relation = CodebaseRelation(
+                project=winning_from_resource.project,
+                from_resource=winning_from_resource,
+                to_resource=to_resource,
+                map_type=map_type,
+                extra_data=extra_data,
+            )
+            relations[rel_key] = relation
+
+
+def sort_matched_from_resources(matched_from_resources):
+    """
+    Sort the list of matched from resources based on path length and path.
+
+    Args:
+        matched_from_resources (list): List of matched CodebaseResource objects.
+
+    Returns
+    -------
+        list: Sorted list of CodebaseResource objects.
+
+    """
+    return sorted(
+        matched_from_resources,
+        key=lambda res: (len(res.path.strip("/").split("/")), res.path),
+    )
+
+
+def is_invalid_match(match, matched_path_length):
+    """
+    Check if the match is invalid based on the matched path length and the number
+    of resource IDs.
+
+    Args:
+        match (PathMatch): The path match object.
+        matched_path_length (int): The length of the matched path.
+
+    Returns
+    -------
+        bool: True if the match is invalid, False otherwise.
+
+    """
     return matched_path_length == 1 and len(match.resource_ids) != 1
 
 
@@ -1746,10 +1823,14 @@ def map_paths(project, file_type, collect_paths_func, map_types, logger=None):
     from_resources = project.codebaseresources.files().from_codebase()
     to_resources = project.codebaseresources.files().to_codebase().has_no_relation()
     to_resources = getattr(to_resources, file_type)()
+    resource_count = 0
     for resource in to_resources:
-        paths = collect_paths_func(resource.location_path)
-        resource.update_extra_data(paths)
-    resource_count = to_resources.count()
+        try:
+            paths = collect_paths_func(resource.location_path)
+            resource.update_extra_data(paths)
+            resource_count += 1
+        except Exception as e:
+            logger(f"Can not parse {resource.location_path!r} {e!r}")
 
     if logger:
         logger(
@@ -1767,7 +1848,7 @@ def map_paths(project, file_type, collect_paths_func, map_types, logger=None):
     resource_iterator = to_resources.iterator(chunk_size=2000)
     progress = LoopProgress(resource_count, logger)
     for to_resource in progress.iter(resource_iterator):
-        _map_paths_resource(
+        map_paths_resource(
             to_resource,
             from_resources,
             from_resources_index,
@@ -1777,6 +1858,18 @@ def map_paths(project, file_type, collect_paths_func, map_types, logger=None):
 
 
 def map_elfs(project, logger=None):
+    """
+    Map ELF file paths in a project.
+
+    Args:
+        project (Project): The project to map ELF files for.
+        logger (function, optional): Log messages.
+
+    Returns
+    -------
+        None
+
+    """
     map_paths(
         project=project,
         file_type="elfs",
@@ -1787,6 +1880,17 @@ def map_elfs(project, logger=None):
 
 
 def get_elf_file_dwarf_paths(location):
+    """
+    Retrieve dwarf paths for ELF files.
+
+    Args:
+        location (str): The location of the ELF file.
+
+    Returns
+    -------
+        dict: Dictionary containing dwarf paths.
+
+    """
     paths = get_dwarf_paths(location)
     return {
         "dwarf_compiled_paths": paths.get("compiled_paths") or [],
@@ -1795,6 +1899,17 @@ def get_elf_file_dwarf_paths(location):
 
 
 def get_go_file_paths(location):
+    """
+    Retrieve Go file paths.
+
+    Args:
+        location (str): The location of the Go file.
+
+    Returns
+    -------
+        dict: Dictionary containing Go file paths.
+
+    """
     go_symbols = (
         collect_and_parse_symbols(location, check_type=False).get("go_symbols") or {}
     )
@@ -1802,6 +1917,18 @@ def get_go_file_paths(location):
 
 
 def map_go_paths(project, logger=None):
+    """
+    Map Go file paths in a project.
+
+    Args:
+        project (Project): The project to map Go files for.
+        logger (function, optional): Log messages.
+
+    Returns
+    -------
+        None
+
+    """
     map_paths(
         project=project,
         file_type="executable_binaries",
