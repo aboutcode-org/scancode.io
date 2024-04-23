@@ -1484,7 +1484,6 @@ class ScanPipeD2DPipesTest(TestCase):
             recurse=True,
         )
         pipes.collect_and_create_codebase_resources(self.project1)
-        print(self.project1.codebaseresources.files().from_codebase())
         buffer = io.StringIO()
         d2d.map_elfs(project=self.project1, logger=buffer.write)
         self.assertEqual(

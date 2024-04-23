@@ -1870,13 +1870,40 @@ def map_elfs(project, logger=None):
         None
 
     """
-    map_paths(
-        project=project,
-        file_type="elfs",
-        collect_paths_func=get_elf_file_dwarf_paths,
-        map_types=["dwarf_compiled_paths", "dwarf_included_paths"],
-        logger=logger,
+    from_resources = project.codebaseresources.files().from_codebase()
+    to_resources = (
+        project.codebaseresources.files().to_codebase().has_no_relation().elfs()
     )
+    for resource in to_resources:
+        try:
+            paths = get_elf_file_dwarf_paths(resource.location_path)
+            resource.update_extra_data(paths)
+        except Exception as e:
+            logger(f"Can not parse {resource.location_path!r} {e!r}")
+
+    if logger:
+        logger(
+            f"Mapping {to_resources.count():,d} to/ resources using paths "
+            f"with {from_resources.count():,d} from/ resources."
+        )
+
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
+    )
+
+    if logger:
+        logger("Done building from/ resources index.")
+
+    resource_iterator = to_resources.iterator(chunk_size=2000)
+    progress = LoopProgress(to_resources.count(), logger)
+    for to_resource in progress.iter(resource_iterator):
+        map_paths_resource(
+            to_resource,
+            from_resources,
+            from_resources_index,
+            map_types=["dwarf_compiled_paths", "dwarf_included_paths"],
+            logger=logger,
+        )
 
 
 def get_elf_file_dwarf_paths(location):
@@ -1929,10 +1956,40 @@ def map_go_paths(project, logger=None):
         None
 
     """
-    map_paths(
-        project=project,
-        file_type="executable_binaries",
-        collect_paths_func=get_go_file_paths,
-        map_types=["go_file_paths"],
-        logger=logger,
+    from_resources = project.codebaseresources.files().from_codebase()
+    to_resources = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .has_no_relation()
+        .executable_binaries()
     )
+    for resource in to_resources:
+        try:
+            paths = get_go_file_paths(resource.location_path)
+            resource.update_extra_data(paths)
+        except Exception as e:
+            logger(f"Can not parse {resource.location_path!r} {e!r}")
+
+    if logger:
+        logger(
+            f"Mapping {to_resources.count():,d} to/ resources using paths "
+            f"with {from_resources.count():,d} from/ resources."
+        )
+
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
+    )
+
+    if logger:
+        logger("Done building from/ resources index.")
+
+    resource_iterator = to_resources.iterator(chunk_size=2000)
+    progress = LoopProgress(to_resources.count(), logger)
+    for to_resource in progress.iter(resource_iterator):
+        map_paths_resource(
+            to_resource,
+            from_resources,
+            from_resources_index,
+            map_types=["go_file_paths"],
+            logger=logger,
+        )
