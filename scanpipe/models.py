@@ -1993,8 +1993,7 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
 
     def elfs(self):
         """
-        Resources that are ``files`` and their filetype starts with "ELF" and
-        contains any of these "executable", "relocatable", "shared object".
+        ELF executable and shared object Resources.
         Keep sync with the content type implementation at ``typecode.contenttype``.
         """
         return (
@@ -2011,18 +2010,16 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
 
     def win_exes(self):
         """
-        Resources that are ``files`` and their filetype contains "for ms windows" or
-        starts with "pe32".
+        Windows executable and DLL Resources.
         Keep sync with the content type implementation at ``typecode.contenttype``.
         """
         return self.files().filter(
             Q(file_type__icontains="for ms windows") | Q(file_type__istartswith="pe32")
         )
 
-    def mach_os(self):
+    def macho_binaries(self):
         """
-        Resources that are ``files`` and their filetype contains "for ms mach-o" or
-        contains "application/x-mach-binary".
+        Mach-O binary Resources.
         Keep sync with the content type implementation at ``typecode.contenttype``.
         """
         return self.files().filter(
@@ -2031,7 +2028,7 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         )
 
     def executable_binaries(self):
-        return self.union(self.win_exes(), self.mach_os(), self.elfs())
+        return self.union(self.win_exes(), self.macho_binaries(), self.elfs())
 
 
 class ScanFieldsModelMixin(models.Model):

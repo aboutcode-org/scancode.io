@@ -1673,62 +1673,65 @@ def map_paths_resource(
     Map paths found in the ``to_resource`` extra_data to paths of the ``from_resources``
     CodebaseResource queryset using the precomputed ``from_resources_index`` path index.
     """
-    relations = {}
+    # Accumulate unique relation objects for bulk creation
+    relations_to_create = {}
 
     for map_type in map_types:
-        paths = to_resource.extra_data.get(map_type, [])
-        not_mapped_paths = to_resource.extra_data[f"{map_type}_not_mapped"] = []
-        process_relations(
-            to_resource,
-            from_resources,
-            from_resources_index,
-            relations,
-            map_type,
-            paths,
-            not_mapped_paths,
-        )
+        paths_in_binary = to_resource.extra_data.get(map_type, [])
+        paths_not_mapped = to_resource.extra_data[f"{map_type}_not_mapped"] = []
+        for item in process_paths_in_binary(
+            to_resource=to_resource,
+            from_resources=from_resources,
+            from_resources_index=from_resources_index,
+            map_type=map_type,
+            paths_in_binary=paths_in_binary,
+        ):
+            if isinstance(item, Path):
+                paths_not_mapped.append(item)
+            else:
+                rel_key, relation = item
+                if rel_key not in relations_to_create:
+                    relations_to_create[rel_key] = relation
+        if paths_not_mapped:
+            to_resource.save()
+            logger(
+                f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT mapped for: "
+                f"{to_resource.path!r}"
+            )
 
-    if relations:
-        rels = CodebaseRelation.objects.bulk_create(relations.values())
+    if relations_to_create:
+        rels = CodebaseRelation.objects.bulk_create(relations_to_create.values())
         logger(
             f"Created {len(rels)} mappings using "
-            f"{', '.join(map_types).upper()} for: {to_resource.path!r}"
+            f"{', '.join(map_types)} for: {to_resource.path!r}"
         )
     else:
         logger(
-            f"No mappings using {', '.join(map_types).upper()} for: "
-            f"{to_resource.path!r}"
+            f"No mappings using {', '.join(map_types)} for: " f"{to_resource.path!r}"
         )
 
-    for map_type in map_types:
-        if to_resource.extra_data.get(f"{map_type}_not_mapped"):
-            to_resource.save()
-            logger(
-                f"WARNING: {map_type.upper()} paths NOT mapped for: "
-                f"{to_resource.path!r}: "
-                + ", ".join(map(repr, to_resource.extra_data[f"{map_type}_not_mapped"]))
-            )
 
-
-def process_relations(
+def process_paths_in_binary(
     to_resource,
     from_resources,
     from_resources_index,
-    relations,
     map_type,
-    paths,
-    not_mapped_paths,
+    paths_in_binary,
 ):
-    """Process relations between resources."""
-    for path in paths:
+    """
+    Process list of paths in binary and Yield either:
+    - a tuple of (unique key for a relationship, ``CodebaseRelation`` object)
+    - Or a path if it was not mapped
+    """
+    for path in paths_in_binary:
         match = pathmap.find_paths(path, from_resources_index)
         if not match:
-            not_mapped_paths.append(path)
+            yield path
             continue
 
         matched_path_length = match.matched_path_length
         if is_invalid_match(match, matched_path_length):
-            not_mapped_paths.append(path)
+            yield path
             continue
 
         matched_from_resources = [
@@ -1744,15 +1747,14 @@ def process_relations(
         }
 
         rel_key = (winning_from_resource.path, to_resource.path, map_type)
-        if rel_key not in relations:
-            relation = CodebaseRelation(
-                project=winning_from_resource.project,
-                from_resource=winning_from_resource,
-                to_resource=to_resource,
-                map_type=map_type,
-                extra_data=extra_data,
-            )
-            relations[rel_key] = relation
+        relation = CodebaseRelation(
+            project=winning_from_resource.project,
+            from_resource=winning_from_resource,
+            to_resource=to_resource,
+            map_type=map_type,
+            extra_data=extra_data,
+        )
+        yield rel_key, relation
 
 
 def sort_matched_from_resources(matched_from_resources):
@@ -1814,7 +1816,7 @@ def map_paths(project, file_type, collect_paths_func, map_types, logger=None):
 
 
 def map_elfs(project, logger=None):
-    """Map ELF file paths in a ``project``."""
+    """Map ELF binaries to their sources in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
     to_resources = (
         project.codebaseresources.files().to_codebase().has_no_relation().elfs()
@@ -1877,7 +1879,7 @@ def get_go_file_paths(location):
 
 
 def map_go_paths(project, logger=None):
-    """Map Go file paths in a project."""
+    """Map Go binaries to their source in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
     to_resources = (
         project.codebaseresources.files()
