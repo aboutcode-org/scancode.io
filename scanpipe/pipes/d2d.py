@@ -1741,7 +1741,7 @@ def process_paths_in_binary(
         matched_from_resources = sort_matched_from_resources(matched_from_resources)
         winning_from_resource = matched_from_resources[0]
 
-        path_length = len(path.strip("/").split("/")) - 1
+        path_length = count_path_segments(path) - 1
         extra_data = {
             "path_score": f"{matched_path_length}/{path_length}",
             map_type: path,
@@ -1758,15 +1758,21 @@ def process_paths_in_binary(
         yield rel_key, relation
 
 
+def count_path_segments(path):
+    """Return the number of path segments in POSIX ``path`` string"""
+    return len(path.strip("/").split("/"))
+
+
 def sort_matched_from_resources(matched_from_resources):
     """
     Return the sorted list of ``matched_from_resources``
     based on path length and path.
     """
-    return sorted(
-        matched_from_resources,
-        key=lambda res: (len(res.path.strip("/").split("/")), res.path),
-    )
+
+    def sorter(res):
+        return count_path_segments(res.path), res.path
+
+    return sorted(matched_from_resources, key=sorter)
 
 
 def is_invalid_match(match, matched_path_length):
@@ -1775,45 +1781,6 @@ def is_invalid_match(match, matched_path_length):
     of resource IDs.
     """
     return matched_path_length == 1 and len(match.resource_ids) != 1
-
-
-def map_paths(project, file_type, collect_paths_func, map_types, logger=None):
-    """Map paths using similarities of path suffixes."""
-    from_resources = project.codebaseresources.files().from_codebase()
-    to_resources = project.codebaseresources.files().to_codebase().has_no_relation()
-    to_resources = getattr(to_resources, file_type)()
-    resource_count = 0
-    for resource in to_resources:
-        try:
-            paths = collect_paths_func(resource.location_path)
-            resource.update_extra_data(paths)
-            resource_count += 1
-        except Exception as e:
-            logger(f"Can not parse {resource.location_path!r} {e!r}")
-
-    if logger:
-        logger(
-            f"Mapping {resource_count:,d} to/ resources using paths "
-            f"with {from_resources.count():,d} from/ resources."
-        )
-
-    from_resources_index = pathmap.build_index(
-        from_resources.values_list("id", "path"), with_subpaths=True
-    )
-
-    if logger:
-        logger("Done building from/ resources index.")
-
-    resource_iterator = to_resources.iterator(chunk_size=2000)
-    progress = LoopProgress(resource_count, logger)
-    for to_resource in progress.iter(resource_iterator):
-        map_paths_resource(
-            to_resource,
-            from_resources,
-            from_resources_index,
-            map_types=map_types,
-            logger=logger,
-        )
 
 
 def map_elfs(project, logger=None):
