@@ -29,6 +29,7 @@ from unittest import mock
 from django.test import TestCase
 
 from scanpipe import pipes
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import d2d
@@ -1461,3 +1462,63 @@ class ScanPipeD2DPipesTest(TestCase):
 
         self.assertEqual(2, package1_resource_count)
         self.assertEqual(0, package2_resource_count)
+
+    def test_scanpipe_pipes_d2d_map_elfs(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data_location / "d2d-elfs/to-data.zip",
+            self.data_location / "d2d-elfs/from-data.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_elfs(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            1,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="dwarf_included_paths"
+            ).count(),
+        )
+
+    def test_scanpipe_pipes_d2d_map_go_paths(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data_location / "d2d-go/to-data.zip",
+            self.data_location / "d2d-go/from-data.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_go_paths(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            1,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="go_file_paths"
+            ).count(),
+        )
