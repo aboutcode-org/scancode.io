@@ -1854,10 +1854,14 @@ def map_elfs(project, logger=None):
 def get_elf_file_dwarf_paths(location):
     """Retrieve dwarf paths for ELF files."""
     paths = get_dwarf_paths(location)
-    return {
-        "dwarf_compiled_paths": paths.get("compiled_paths") or [],
-        "dwarf_included_paths": paths.get("included_paths") or [],
-    }
+    compiled_paths = paths.get("compiled_paths") or []
+    included_paths = (paths.get("included_paths") or [],)
+    dwarf_paths = {}
+    if compiled_paths:
+        dwarf_paths["dwarf_compiled_paths"] = compiled_paths
+    if included_paths:
+        dwarf_paths["dwarf_included_paths"] = included_paths
+    return dwarf_paths
 
 
 def get_go_file_paths(location):
@@ -1865,7 +1869,11 @@ def get_go_file_paths(location):
     go_symbols = (
         collect_and_parse_symbols(location, check_type=False).get("go_symbols") or {}
     )
-    return {"go_file_paths": go_symbols.get("file_paths") or []}
+    file_paths = {}
+    go_file_paths = go_symbols.get("file_paths") or []
+    if go_file_paths:
+        file_paths["go_file_paths"] = go_file_paths
+    return file_paths
 
 
 def map_go_paths(project, logger=None):
