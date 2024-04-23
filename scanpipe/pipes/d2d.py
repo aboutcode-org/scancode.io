@@ -1677,6 +1677,7 @@ def map_paths_resource(
     relations_to_create = {}
 
     for map_type in map_types:
+        # These are of type string
         paths_in_binary = to_resource.extra_data.get(map_type, [])
         paths_not_mapped = to_resource.extra_data[f"{map_type}_not_mapped"] = []
         for item in process_paths_in_binary(
@@ -1686,7 +1687,7 @@ def map_paths_resource(
             map_type=map_type,
             paths_in_binary=paths_in_binary,
         ):
-            if isinstance(item, Path):
+            if isinstance(item, str):
                 paths_not_mapped.append(item)
             else:
                 rel_key, relation = item
