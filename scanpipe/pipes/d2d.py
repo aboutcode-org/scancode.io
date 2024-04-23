@@ -1855,7 +1855,7 @@ def get_elf_file_dwarf_paths(location):
     """Retrieve dwarf paths for ELF files."""
     paths = get_dwarf_paths(location)
     compiled_paths = paths.get("compiled_paths") or []
-    included_paths = (paths.get("included_paths") or [],)
+    included_paths = paths.get("included_paths") or []
     dwarf_paths = {}
     if compiled_paths:
         dwarf_paths["dwarf_compiled_paths"] = compiled_paths
