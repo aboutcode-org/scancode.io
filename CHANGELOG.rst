@@ -7,6 +7,10 @@ v34.5.0 (unreleased)
 - Display the current path location in the "Codebase" panel as a navigation breadcrumbs.
   https://github.com/nexB/scancode.io/issues/1158
 
+- Fix a rendering issue in the dependency details view when for_package or
+  datafile_resource fields do not have a value.
+  https://github.com/nexB/scancode.io/issues/1177
+
 v34.4.0 (2024-04-22)
 --------------------
 

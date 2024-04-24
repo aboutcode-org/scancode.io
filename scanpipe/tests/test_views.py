@@ -1023,12 +1023,13 @@ class ScanPipeViewsTest(TestCase):
         dep1 = DiscoveredDependency.create_from_data(self.project1, dependency_data1)
         DiscoveredDependency.create_from_data(self.project1, dependency_data2)
 
-        url = reverse("project_dependencies", args=[self.project1.slug])
+        list_view_url = reverse("project_dependencies", args=[self.project1.slug])
         with self.assertNumQueries(10):
-            self.client.get(url)
+            self.client.get(list_view_url)
 
+        details_url = dep1.get_absolute_url()
         with self.assertNumQueries(6):
-            self.client.get(dep1.get_absolute_url())
+            self.client.get(details_url)
 
     def test_scanpipe_views_codebase_relation_views(self):
         CodebaseRelation.objects.create(
