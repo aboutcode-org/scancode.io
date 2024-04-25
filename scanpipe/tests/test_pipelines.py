@@ -613,6 +613,16 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(1, project1.discoveredpackages.count())
         self.assertEqual(1, project1.discovereddependencies.count())
 
+        package = project1.discoveredpackages.get()
+        dependency = project1.discovereddependencies.get()
+
+        self.assertEqual(1, package.codebase_resources.count())
+        self.assertEqual("pkg:npm/is-npm@1.0.0", dependency.for_package.purl)
+        self.assertEqual(package.datasource_ids, [dependency.datasource_id])
+        self.assertEqual(
+            package.codebase_resources.get().path, dependency.datafile_resource.path
+        )
+
     def test_scanpipe_inspect_packages_creates_packages_pypi(self):
         pipeline_name = "inspect_packages"
         project1 = Project.objects.create(name="Analysis")

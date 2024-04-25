@@ -11,6 +11,10 @@ v34.5.0 (unreleased)
   datafile_resource fields do not have a value.
   https://github.com/nexB/scancode.io/issues/1177
 
+- Fix `inspect_packages` pipeline to properly link discovered packages and dependencies to
+  codebase resources of package manifests where they were found. Also correctly assign
+  the datasource_ids atrribute for packages and dependencies. 
+
 v34.4.0 (2024-04-22)
 --------------------
 
