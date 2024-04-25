@@ -1267,7 +1267,7 @@ class PipelinesIntegrationTest(TestCase):
             "Enter the desired length of your password:",
         ]
         self.assertCountEqual(expected_extra_data_strings, result_extra_data_strings)
-    
+
     def test_scanpipe_collect_pygments_symbols_pipeline_integration(self):
         pipeline_name = "collect_pygments_symbols"
         project1 = Project.objects.create(name="Analysis")
