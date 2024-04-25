@@ -32,7 +32,7 @@ class CollectPygmentsSymbolsAndStrings(Pipeline):
     """
 
     download_inputs = False
-    is_addon = False
+    is_addon = True
 
     @classmethod
     def steps(cls):
