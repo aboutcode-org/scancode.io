@@ -58,6 +58,14 @@ Collect Codebase Symbols (addon)
     :members:
     :member-order: bysource
 
+.. _collect_tree_sitter_symbols:
+
+Collect Tree-Sitter Source Symbols (addon)
+------------------------------------------
+.. autoclass:: scanpipe.pipelines.collect_tree_sitter_symbols.CollectTreeSitterSymbolsAndStrings()
+    :members:
+    :member-order: bysource
+
 .. _pipeline_find_vulnerabilities:
 
 Find Vulnerabilities (addon)
