@@ -1,0 +1,25 @@
+{
+  "source_strings": [
+    "10",
+    "5",
+    "\"",
+    "Testing dummy functions:",
+    "\\n",
+    "\"",
+    "\"",
+    "Addition: %d + %d = %d",
+    "\\n",
+    "\"",
+    "\"",
+    "Subtraction: %d - %d = %d",
+    "\\n",
+    "\"",
+    "0"
+  ],
+  "source_symbols": [
+    "add",
+    "subtract",
+    "main"
+  ],
+  "source_comments": []
+}
