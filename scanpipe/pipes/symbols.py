@@ -96,6 +96,10 @@ def _collect_and_store_pygments_symbols_and_strings(resource):
     them in the extra data field.
     """
     result = symbols_pygments.get_pygments_symbols(resource.location)
-    resource.update_extra_data({"source_symbols": result.get("source_symbols")})
-    resource.update_extra_data({"source_strings": result.get("source_strings")})
-    resource.update_extra_data({"source_comments": result.get("source_comments")})
+    resource.update_extra_data(
+        {
+            "source_symbols": result.get("source_symbols"),
+            "source_strings": result.get("source_strings"),
+            "source_comments": result.get("source_comments"),
+        }
+    )
