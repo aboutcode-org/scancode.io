@@ -56,7 +56,7 @@ class ScanPipeSymbolsPipesTest(TestCase):
         expected_extra_data_symbols = ["generatePassword", "passwordLength", "charSet"]
         self.assertCountEqual(expected_extra_data_symbols, result_extra_data_symbols)
 
-    def test_scanpipe_pipes_collect_and_store_tree_sitter_symbols_and_strings(self):
+    def test_scanpipe_pipes_collect_and_store_pygments_symbols_and_strings(self):
         dir = self.project1.codebase_path / "codefile"
         dir.mkdir(parents=True)
 
@@ -65,16 +65,14 @@ class ScanPipeSymbolsPipesTest(TestCase):
 
         pipes.collect_and_create_codebase_resources(self.project1)
 
-        symbols.collect_and_store_tree_sitter_symbols_and_strings(self.project1)
+        symbols.collect_and_store_pygments_symbols_and_strings(self.project1)
 
         main_file = self.project1.codebaseresources.files()[0]
 
         result_extra_data = main_file.extra_data
 
         expected_extra_data = (
-            self.data_location
-            / "source-inspector"
-            / "test3.cpp-tree-sitter-expected.json"
+            self.data_location / "source-inspector" / "test3.cpp-pygments-expected.json"
         )
 
         with open(expected_extra_data) as f:

@@ -23,7 +23,7 @@
 from django.db.models import Q
 
 from source_inspector import symbols_ctags
-from source_inspector import symbols_tree_sitter
+from source_inspector import symbols_pygments
 
 from scanpipe.pipes import LoopProgress
 
@@ -70,23 +70,18 @@ def _collect_and_store_resource_symbols(resource):
     resource.update_extra_data({"source_symbols": tags})
 
 
-def collect_and_store_tree_sitter_symbols_and_strings(project, logger=None):
+def collect_and_store_pygments_symbols_and_strings(project, logger=None):
     """
-    Collect symbols from codebase files using tree-sitter and store
+    Collect symbols, strings and comments from codebase files using pygments and store
     them in the extra data field.
     """
     project_files = project.codebaseresources.files()
-
-    language_qs = Q()
-
-    for language in symbols_tree_sitter.TS_LANGUAGE_WHEELS.keys():
-        language_qs |= Q(programming_language__iexact=language)
 
     resources = project_files.filter(
         is_binary=False,
         is_archive=False,
         is_media=False,
-    ).filter(language_qs)
+    )
 
     resources_count = resources.count()
 
@@ -94,18 +89,19 @@ def collect_and_store_tree_sitter_symbols_and_strings(project, logger=None):
     progress = LoopProgress(resources_count, logger)
 
     for resource in progress.iter(resource_iterator):
-        _collect_and_store_tree_sitter_symbols_and_strings(resource)
+        _collect_and_store_pygments_symbols_and_strings(resource)
 
 
-def _collect_and_store_tree_sitter_symbols_and_strings(resource):
+def _collect_and_store_pygments_symbols_and_strings(resource):
     """
-    Collect symbols ans string from a resource using tree-sitter and store
+    Collect symbols, strings and comments from a resource using pygments and store
     them in the extra data field.
     """
-    result = symbols_tree_sitter.get_treesitter_symbols(resource.location)
+    result = symbols_pygments.get_pygments_symbols(resource.location)
     resource.update_extra_data(
         {
             "source_symbols": result.get("source_symbols"),
             "source_strings": result.get("source_strings"),
+            "source_comments": result.get("source_comments"),
         }
     )

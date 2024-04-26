@@ -24,15 +24,11 @@ from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import symbols
 
 
-class CollectTreeSitterSymbolsAndStrings(Pipeline):
+class CollectPygmentsSymbolsAndStrings(Pipeline):
     """
-    Collect codebase symbols using tree-sitter and keep them in extra data field.
+    Collect codebase symbols using pygments and keep them in extra data field.
 
-<<<<<<< HEAD
-    Also collect strings.
-=======
     Also collect strings and comments.
->>>>>>> origin/main
     """
 
     download_inputs = False
@@ -40,17 +36,11 @@ class CollectTreeSitterSymbolsAndStrings(Pipeline):
 
     @classmethod
     def steps(cls):
-        return (cls.collect_and_store_tree_sitter_symbols_and_strings,)
+        return (cls.collect_and_store_pygments_symbols_and_strings,)
 
-    def collect_and_store_tree_sitter_symbols_and_strings(self):
+    def collect_and_store_pygments_symbols_and_strings(self):
         """
-<<<<<<< HEAD
-        Collect symbols and strings from codebase files using tree-sitter
-=======
-        Collect symbols, strings and comments from codebase files using tree-sitter
->>>>>>> origin/main
+        Collect symbols, strings and comments from codebase files using pygments
         and store them in the extra data field.
         """
-        symbols.collect_and_store_tree_sitter_symbols_and_strings(
-            self.project, self.log
-        )
+        symbols.collect_and_store_pygments_symbols_and_strings(self.project, self.log)

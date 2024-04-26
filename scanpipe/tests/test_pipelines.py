@@ -900,7 +900,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(1, project1.projectmessages.count())
         message = project1.projectmessages.get()
         self.assertEqual("get_packages_from_manifest", message.model)
-        expected = "No resources found with package data"
+        expected = "No resources containing package data found in codebase."
         self.assertIn(expected, message.description)
 
     def test_scanpipe_resolve_dependencies_pipeline_integration_empty_manifest(self):
@@ -1268,8 +1268,8 @@ class PipelinesIntegrationTest(TestCase):
         ]
         self.assertCountEqual(expected_extra_data_strings, result_extra_data_strings)
 
-    def test_scanpipe_collect_tree_sitter_symbols_pipeline_integration(self):
-        pipeline_name = "collect_tree_sitter_symbols"
+    def test_scanpipe_collect_pygments_symbols_pipeline_integration(self):
+        pipeline_name = "collect_pygments_symbols"
         project1 = Project.objects.create(name="Analysis")
 
         dir = project1.codebase_path / "codefile"
@@ -1290,9 +1290,7 @@ class PipelinesIntegrationTest(TestCase):
         result_extra_data = main_file.extra_data
 
         expected_extra_data = (
-            self.data_location
-            / "source-inspector"
-            / "test3.cpp-tree-sitter-expected.json"
+            self.data_location / "source-inspector" / "test3.cpp-pygments-expected.json"
         )
 
         with open(expected_extra_data) as f:
