@@ -900,7 +900,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(1, project1.projectmessages.count())
         message = project1.projectmessages.get()
         self.assertEqual("get_packages_from_manifest", message.model)
-        expected = "No resources found with package data"
+        expected = "No resources containing package data found in codebase."
         self.assertIn(expected, message.description)
 
     def test_scanpipe_resolve_dependencies_pipeline_integration_empty_manifest(self):
