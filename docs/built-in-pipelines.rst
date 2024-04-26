@@ -42,6 +42,14 @@ Analyse Docker Windows Image
     :members:
     :member-order: bysource
 
+.. _collect_pygments_symbols:
+
+Collect Pygments Source Symbols (addon)
+---------------------------------------
+.. autoclass:: scanpipe.pipelines.collect_pygments_symbols.CollectPygmentsSymbolsAndStrings()
+    :members:
+    :member-order: bysource
+
 .. _pipeline_collect_source_strings:
 
 Collect Source Strings (addon)
