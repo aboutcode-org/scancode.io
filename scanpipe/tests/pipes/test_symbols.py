@@ -79,3 +79,29 @@ class ScanPipeSymbolsPipesTest(TestCase):
             expected_extra_data = json.load(f)
 
         self.assertDictEqual(expected_extra_data, result_extra_data)
+
+    def test_scanpipe_pipes_collect_and_store_tree_sitter_symbols_and_strings(self):
+        dir = self.project1.codebase_path / "codefile"
+        dir.mkdir(parents=True)
+
+        file_location = self.data_location / "source-inspector" / "test3.cpp"
+        copy_input(file_location, dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        symbols.collect_and_store_tree_sitter_symbols_and_strings(self.project1)
+
+        main_file = self.project1.codebaseresources.files()[0]
+
+        result_extra_data = main_file.extra_data
+
+        expected_extra_data = (
+            self.data_location
+            / "source-inspector"
+            / "test3.cpp-tree-sitter-expected.json"
+        )
+
+        with open(expected_extra_data) as f:
+            expected_extra_data = json.load(f)
+
+        self.assertDictEqual(expected_extra_data, result_extra_data)

@@ -28,11 +28,7 @@ class CollectTreeSitterSymbolsAndStrings(Pipeline):
     """
     Collect codebase symbols using tree-sitter and keep them in extra data field.
 
-<<<<<<< HEAD
     Also collect strings.
-=======
-    Also collect strings and comments.
->>>>>>> origin/main
     """
 
     download_inputs = False
@@ -44,11 +40,7 @@ class CollectTreeSitterSymbolsAndStrings(Pipeline):
 
     def collect_and_store_tree_sitter_symbols_and_strings(self):
         """
-<<<<<<< HEAD
         Collect symbols and strings from codebase files using tree-sitter
-=======
-        Collect symbols, strings and comments from codebase files using tree-sitter
->>>>>>> origin/main
         and store them in the extra data field.
         """
         symbols.collect_and_store_tree_sitter_symbols_and_strings(

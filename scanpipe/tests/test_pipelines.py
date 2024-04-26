@@ -1297,3 +1297,35 @@ class PipelinesIntegrationTest(TestCase):
             expected_extra_data = json.load(f)
 
         self.assertDictEqual(expected_extra_data, result_extra_data)
+
+    def test_scanpipe_collect_tree_sitter_symbols_pipeline_integration(self):
+        pipeline_name = "collect_tree_sitter_symbols"
+        project1 = Project.objects.create(name="Analysis")
+
+        dir = project1.codebase_path / "codefile"
+        dir.mkdir(parents=True)
+
+        file_location = self.data_location / "source-inspector" / "test3.cpp"
+        copy_input(file_location, dir)
+
+        pipes.collect_and_create_codebase_resources(project1)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        main_file = project1.codebaseresources.files()[0]
+        result_extra_data = main_file.extra_data
+
+        expected_extra_data = (
+            self.data_location
+            / "source-inspector"
+            / "test3.cpp-tree-sitter-expected.json"
+        )
+
+        with open(expected_extra_data) as f:
+            expected_extra_data = json.load(f)
+
+        self.assertDictEqual(expected_extra_data, result_extra_data)
