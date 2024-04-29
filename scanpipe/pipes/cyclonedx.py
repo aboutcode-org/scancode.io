@@ -189,12 +189,37 @@ def delete_tools(cyclonedx_document_json):
 
     The new structure is not yet supported by the cyclonedx-python-lib, neither for
     serialization (output) nor deserialization (input).
+    https://github.com/CycloneDX/cyclonedx-python-lib/issues/578
 
     The tools are not used anyway in the context of loading the SBOM component data as
     packages.
     """
     if "tools" in cyclonedx_document_json.get("metadata", {}):
         del cyclonedx_document_json["metadata"]["tools"]
+
+    return cyclonedx_document_json
+
+
+def delete_empty_dict_property(cyclonedx_document_json):
+    """
+    Remove dict entry where keys are defined but no values are set, such as
+    ``{"name": ""}``.
+
+    Class like cyclonedx.model.contact.OrganizationalEntity raise a
+    NoPropertiesProvidedException while it is not enforced in the spec.
+
+    See https://github.com/CycloneDX/cyclonedx-python-lib/issues/600
+    """
+    entries_to_delete = []
+
+    for component in cyclonedx_document_json["components"]:
+        for property_name, property_value in component.items():
+            if isinstance(property_value, dict) and not any(property_value.values()):
+                entries_to_delete.append((component, property_name))
+
+    # Now delete the keys outside the loop
+    for component, property_name in entries_to_delete:
+        del component[property_name]
 
     return cyclonedx_document_json
 
@@ -215,7 +240,9 @@ def resolve_cyclonedx_packages(input_location):
                 f'CycloneDX document "{input_path.name}" is not valid:\n{errors}'
             )
             raise ValueError(error_msg)
+
         cyclonedx_document = delete_tools(cyclonedx_document)
+        cyclonedx_document = delete_empty_dict_property(cyclonedx_document)
         cyclonedx_bom = Bom.from_json(data=cyclonedx_document)
 
     else:

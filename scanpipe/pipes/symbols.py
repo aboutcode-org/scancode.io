@@ -20,7 +20,11 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from django.db.models import Q
+
 from source_inspector import symbols_ctags
+from source_inspector import symbols_pygments
+from source_inspector import symbols_tree_sitter
 
 from scanpipe.pipes import LoopProgress
 
@@ -65,3 +69,81 @@ def _collect_and_store_resource_symbols(resource):
     symbols = symbols_ctags.collect_symbols(resource.location)
     tags = [symbol["name"] for symbol in symbols if "name" in symbol]
     resource.update_extra_data({"source_symbols": tags})
+
+
+def collect_and_store_pygments_symbols_and_strings(project, logger=None):
+    """
+    Collect symbols, strings and comments from codebase files using pygments and store
+    them in the extra data field.
+    """
+    project_files = project.codebaseresources.files()
+
+    resources = project_files.filter(
+        is_binary=False,
+        is_archive=False,
+        is_media=False,
+    )
+
+    resources_count = resources.count()
+
+    resource_iterator = resources.iterator(chunk_size=2000)
+    progress = LoopProgress(resources_count, logger)
+
+    for resource in progress.iter(resource_iterator):
+        _collect_and_store_pygments_symbols_and_strings(resource)
+
+
+def _collect_and_store_pygments_symbols_and_strings(resource):
+    """
+    Collect symbols, strings and comments from a resource using pygments and store
+    them in the extra data field.
+    """
+    result = symbols_pygments.get_pygments_symbols(resource.location)
+    resource.update_extra_data(
+        {
+            "source_symbols": result.get("source_symbols"),
+            "source_strings": result.get("source_strings"),
+            "source_comments": result.get("source_comments"),
+        }
+    )
+
+
+def collect_and_store_tree_sitter_symbols_and_strings(project, logger=None):
+    """
+    Collect symbols from codebase files using tree-sitter and store
+    them in the extra data field.
+    """
+    project_files = project.codebaseresources.files()
+
+    language_qs = Q()
+
+    for language in symbols_tree_sitter.TS_LANGUAGE_WHEELS.keys():
+        language_qs |= Q(programming_language__iexact=language)
+
+    resources = project_files.filter(
+        is_binary=False,
+        is_archive=False,
+        is_media=False,
+    ).filter(language_qs)
+
+    resources_count = resources.count()
+
+    resource_iterator = resources.iterator(chunk_size=2000)
+    progress = LoopProgress(resources_count, logger)
+
+    for resource in progress.iter(resource_iterator):
+        _collect_and_store_tree_sitter_symbols_and_strings(resource)
+
+
+def _collect_and_store_tree_sitter_symbols_and_strings(resource):
+    """
+    Collect symbols ans string from a resource using tree-sitter and store
+    them in the extra data field.
+    """
+    result = symbols_tree_sitter.get_treesitter_symbols(resource.location)
+    resource.update_extra_data(
+        {
+            "source_symbols": result.get("source_symbols"),
+            "source_strings": result.get("source_strings"),
+        }
+    )

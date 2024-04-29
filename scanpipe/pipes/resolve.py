@@ -42,6 +42,16 @@ Resolve packages from manifest, lockfile, and SBOM.
 """
 
 
+def resolve_manifest_resources(resource, package_registry):
+    """Get package data from resource."""
+    packages = get_packages_from_manifest(resource.location, package_registry) or []
+
+    for package_data in packages:
+        package_data["codebase_resources"] = [resource]
+
+    return packages
+
+
 def get_packages(project, package_registry, manifest_resources, model=None):
     """
     Get package data from package manifests/lockfiles/SBOMs or
@@ -51,15 +61,13 @@ def get_packages(project, package_registry, manifest_resources, model=None):
 
     if not manifest_resources.exists():
         project.add_warning(
-            description="No resources found with package data",
+            description="No resources containing package data found in codebase.",
             model=model,
         )
-        return
+        return []
 
     for resource in manifest_resources:
-        if packages := get_packages_from_manifest(resource.location, package_registry):
-            for package_data in packages:
-                package_data["codebase_resources"] = [resource]
+        if packages := resolve_manifest_resources(resource, package_registry):
             resolved_packages.extend(packages)
         else:
             project.add_error(
