@@ -66,8 +66,18 @@ services:
       - web
     restart: always
 
+  clamav:
+    image: clamav/clamav
+    volumes:
+      - clamav_data:/var/lib/clamav
+      - workspace:/var/scancodeio/workspace/
+    ports:
+      - "3310:3310"
+    restart: always
+
 volumes:
   db_data:
   redis_data:
+  clamav_data:
   static:
   workspace:
