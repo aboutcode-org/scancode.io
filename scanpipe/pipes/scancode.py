@@ -85,7 +85,7 @@ def get_max_workers(keep_available):
                 f" exceeds the number of available CPUs on this machine."
                 f" {max_workers} CPUs will be used instead for multiprocessing."
             )
-            warnings.warn(msg, RuntimeWarning)
+            warnings.warn(msg, ResourceWarning)
 
     return max_workers
 
