@@ -74,8 +74,8 @@ An overview of the web application usage is available at :ref:`user_interface`.
 
     **Make sure to allow enough memory to support each CPU processes**.
 
-    A good rule of thumb is to allow **1 GB of memory per CPU**.
-    For example, if Docker is configured for 8 CPUs, a minimum of 8 GB of memory is
+    A good rule of thumb is to allow **2 GB of memory per CPU**.
+    For example, if Docker is configured for 8 CPUs, a minimum of 16 GB of memory is
     required.
 
 .. tip::
