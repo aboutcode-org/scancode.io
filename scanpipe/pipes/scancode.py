@@ -26,6 +26,7 @@ import logging
 import multiprocessing
 import os
 import shlex
+import warnings
 from collections import defaultdict
 from functools import partial
 from pathlib import Path
@@ -67,16 +68,25 @@ def get_max_workers(keep_available):
     but for example "spawn", such as on macOS, multiprocessing and threading are
     disabled by default returning -1 `max_workers`.
     """
-    processes = settings.SCANCODEIO_PROCESSES
-    if processes is not None:
-        return processes
-
     if multiprocessing.get_start_method() != "fork":
         return -1
 
     max_workers = os.cpu_count() - keep_available
     if max_workers < 1:
         return 1
+
+    processes_from_settings = settings.SCANCODEIO_PROCESSES
+    if processes_from_settings is not None:
+        if processes_from_settings <= max_workers:
+            return processes_from_settings
+        else:
+            msg = (
+                f"The value {processes_from_settings} specified in SCANCODEIO_PROCESSES"
+                f" exceeds the number of available CPUs on this machine."
+                f" {max_workers} CPUs will be used instead for multiprocessing."
+            )
+            warnings.warn(msg, RuntimeWarning)
+
     return max_workers
 
 
