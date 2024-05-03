@@ -180,7 +180,7 @@ def update_or_create_package(project, package_data, codebase_resources=None):
     package_data = _clean_package_data(package_data)
     # No values for package_uid requires to be empty string for proper queryset lookup
     package_uid = package_data.get("package_uid") or ""
-    datasource_id = package_data.get("datasource_id")
+    datasource_id = package_data.get("datasource_id") or ""
 
     package = DiscoveredPackage.objects.get_or_none(
         project=project,
@@ -195,7 +195,9 @@ def update_or_create_package(project, package_data, codebase_resources=None):
 
     if package:
         if datasource_id and datasource_id not in package.datasource_ids:
-            package.update(datasource_ids=[datasource_id])
+            datasource_ids = package.datasource_ids.copy()
+            datasource_ids.append(datasource_id)
+            package.update(datasource_ids=datasource_ids)
 
         if codebase_resources:
             package.add_resources(codebase_resources)
