@@ -34,6 +34,7 @@ class DockerWindows(Docker):
         return (
             cls.extract_images,
             cls.extract_layers,
+            cls.extract_archives,
             cls.find_images_os_and_distro,
             cls.collect_images_information,
             cls.collect_and_create_codebase_resources,
@@ -45,6 +46,7 @@ class DockerWindows(Docker):
             cls.flag_ignored_resources,
             cls.scan_for_application_packages,
             cls.scan_for_files,
+            cls.scan_package_files,
             cls.analyze_scanned_files,
             cls.flag_data_files_with_no_clues,
             cls.flag_not_analyzed_codebase_resources,

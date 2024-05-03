@@ -1909,6 +1909,17 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
             return self.filter(~Q(status=status))
         return self.filter(status="")
 
+    def package_files(self):
+        """
+        Filter for CodebaseResources which are part of either an application
+        package or a system package.
+        """
+        from scanpipe.pipes import flag
+
+        return self.filter(
+            Q(status=flag.APPLICATION_PACKAGE) | Q(status=flag.SYSTEM_PACKAGE)
+        )
+
     def empty(self):
         return self.filter(Q(size__isnull=True) | Q(size=0))
 

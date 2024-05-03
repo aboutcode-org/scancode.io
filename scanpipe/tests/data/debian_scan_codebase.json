@@ -635,20 +635,229 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "detected_license_expression": "",
-      "detected_license_expression_spdx": "",
-      "license_detections": [],
+      "detected_license_expression": "x11-fsf AND x11-xconsortium AND bsd-new",
+      "detected_license_expression_spdx": "X11-distribute-modifications-variant AND X11 AND BSD-3-Clause",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 45,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/x11-fsf.LICENSE",
+              "from_file": null,
+              "start_line": 23,
+              "matched_text": "Permission is hereby granted, free of charge, to any person obtaining a\ncopy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, distribute with modifications, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included\nin all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS\nOR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE ABOVE COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,\nDAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR\nOTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR\nTHE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\nExcept as contained in this notice, the name(s) of the above copyright\nholders shall not be used in advertising or otherwise to promote the\nsale, use or other dealings in this Software without prior written\nauthorization.",
+              "match_coverage": 100.0,
+              "matched_length": 200,
+              "rule_relevance": 100,
+              "rule_identifier": "x11-fsf.LICENSE",
+              "license_expression": "x11-fsf",
+              "spdx_license_expression": "X11-distribute-modifications-variant"
+            }
+          ],
+          "identifier": "x11_fsf-5f3d72c2-fa6a-2f7b-b859-17e7567c1724",
+          "license_expression": "x11-fsf",
+          "license_expression_spdx": "X11-distribute-modifications-variant"
+        },
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 70,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/x11-xconsortium_2.RULE",
+              "from_file": null,
+              "start_line": 50,
+              "matched_text": "Permission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to\ndeal in the Software without restriction, including without limitation the\nrights to use, copy, modify, merge, publish, distribute, sublicense, and/or\nsell copies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE\nX CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN\nAN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNEC-\nTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\nExcept as contained in this notice, the name of the X Consortium shall not\nbe used in advertising or otherwise to promote the sale, use or other deal-\nings in this Software without prior written authorization from the X Consor-\ntium.",
+              "match_coverage": 100.0,
+              "matched_length": 201,
+              "rule_relevance": 100,
+              "rule_identifier": "x11-xconsortium_2.RULE",
+              "license_expression": "x11-xconsortium",
+              "spdx_license_expression": "X11"
+            }
+          ],
+          "identifier": "x11_xconsortium-8bc3e205-5f29-ecad-90bc-2f492c65be46",
+          "license_expression": "x11-xconsortium",
+          "license_expression_spdx": "X11"
+        },
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 98,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/bsd-new_19.RULE",
+              "from_file": null,
+              "start_line": 76,
+              "matched_text": "Redistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions\nare met:\n1. Redistributions of source code must retain the above copyright\n   notice, this list of conditions and the following disclaimer.\n2. Redistributions in binary form must reproduce the above copyright\n   notice, this list of conditions and the following disclaimer in the\n   documentation and/or other materials provided with the distribution.\n3. Neither the name of the University nor the names of its contributors\n   may be used to endorse or promote products derived from this software\n   without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE\nARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS\nOR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)\nHOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT\nLIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY\nOUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF\nSUCH DAMAGE.",
+              "match_coverage": 100.0,
+              "matched_length": 213,
+              "rule_relevance": 100,
+              "rule_identifier": "bsd-new_19.RULE",
+              "license_expression": "bsd-new",
+              "spdx_license_expression": "BSD-3-Clause"
+            }
+          ],
+          "identifier": "bsd_new-ccc98c3a-92d4-e7a3-e0ba-798328cb6b98",
+          "license_expression": "bsd-new",
+          "license_expression_spdx": "BSD-3-Clause"
+        },
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 127,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/x11-xconsortium_41.RULE",
+              "from_file": null,
+              "start_line": 105,
+              "matched_text": "Permission is hereby granted, free of charge, to any person obtaining a\ncopy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be included\nin all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS\nOR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE ABOVE LISTED COPYRIGHT HOLDER(S) BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\nExcept as contained in this notice, the name(s) of the above copyright\nholders shall not be used in advertising or otherwise to promote the\nsale, use or other dealings in this Software without prior written\nauthorization.",
+              "match_coverage": 100.0,
+              "matched_length": 199,
+              "rule_relevance": 100,
+              "rule_identifier": "x11-xconsortium_41.RULE",
+              "license_expression": "x11-xconsortium",
+              "spdx_license_expression": "X11"
+            }
+          ],
+          "identifier": "x11_xconsortium-4a366de0-e107-017e-0783-8145953fe45e",
+          "license_expression": "x11-xconsortium",
+          "license_expression_spdx": "X11"
+        }
+      ],
       "license_clues": [],
-      "percentage_of_license_text": null,
-      "copyrights": [],
-      "holders": [],
-      "authors": [],
+      "percentage_of_license_text": 81.54,
+      "copyrights": [
+        {
+          "end_line": 20,
+          "copyright": "Copyright (c) 1998-2016 Free Software Foundation, Inc.",
+          "start_line": 20
+        },
+        {
+          "end_line": 21,
+          "copyright": "Copyright (c) 2001 by Pradeep Padala",
+          "start_line": 21
+        },
+        {
+          "end_line": 48,
+          "copyright": "Copyright (c) 1994 X Consortium",
+          "start_line": 48
+        },
+        {
+          "end_line": 74,
+          "copyright": "Copyright (c) 1980, 1991, 1992, 1993 The Regents of the University of California",
+          "start_line": 73
+        },
+        {
+          "end_line": 101,
+          "copyright": "Copyright 1996-2007 by Thomas E. Dickey",
+          "start_line": 101
+        }
+      ],
+      "holders": [
+        {
+          "holder": "Free Software Foundation, Inc.",
+          "end_line": 20,
+          "start_line": 20
+        },
+        {
+          "holder": "Pradeep Padala",
+          "end_line": 21,
+          "start_line": 21
+        },
+        {
+          "holder": "X Consortium",
+          "end_line": 48,
+          "start_line": 48
+        },
+        {
+          "holder": "The Regents of the University of California",
+          "end_line": 74,
+          "start_line": 74
+        },
+        {
+          "holder": "Thomas E. Dickey",
+          "end_line": 101,
+          "start_line": 101
+        }
+      ],
+      "authors": [
+        {
+          "author": "Pavel Curtis and Zeyd M. Ben-Halim <zmbenhal@netcom.com>",
+          "end_line": 3,
+          "start_line": 3
+        }
+      ],
       "package_data": [],
       "for_packages": [
         "pkg:deb/ubuntu/libncurses5@6.1-1ubuntu1.18.04?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
-      "emails": [],
-      "urls": [],
+      "emails": [
+        {
+          "email": "zmbenhal@netcom.com",
+          "end_line": 3,
+          "start_line": 3
+        },
+        {
+          "email": "vaidhy@debian.org",
+          "end_line": 7,
+          "start_line": 7
+        },
+        {
+          "email": "espy@debian.org",
+          "end_line": 7,
+          "start_line": 7
+        },
+        {
+          "email": "Bruce@Pixar.com",
+          "end_line": 12,
+          "start_line": 12
+        },
+        {
+          "email": "david@elo.ods.com",
+          "end_line": 13,
+          "start_line": 13
+        },
+        {
+          "email": "mdorman@debian.org",
+          "end_line": 14,
+          "start_line": 14
+        },
+        {
+          "email": "dark@xs4all.nl",
+          "end_line": 14,
+          "start_line": 14
+        },
+        {
+          "email": "jjtroup@comp.brad.ac.uk",
+          "end_line": 15,
+          "start_line": 15
+        },
+        {
+          "email": "jdassen@wi.LeidenUniv.nl",
+          "end_line": 16,
+          "start_line": 16
+        },
+        {
+          "email": "galenh@micron.net",
+          "end_line": 16,
+          "start_line": 16
+        }
+      ],
+      "urls": [
+        {
+          "url": "ftp://ftp.gnu.org/gnu/ncurses/ncurses-5.0.tar.gz",
+          "end_line": 8,
+          "start_line": 8
+        },
+        {
+          "url": "ftp://invisible-island.net/ncurses",
+          "end_line": 10,
+          "start_line": 10
+        }
+      ],
       "extra_data": {}
     },
     {
@@ -699,20 +908,147 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "detected_license_expression": "",
-      "detected_license_expression_spdx": "",
-      "license_detections": [],
+      "detected_license_expression": "lgpl-2.1-plus AND lgpl-2.1",
+      "detected_license_expression_spdx": "LGPL-2.1-or-later AND LGPL-2.1-only",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 7,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-2.1-plus_108.RULE",
+              "from_file": null,
+              "start_line": 7,
+              "matched_text": "License: LGPL-2.1+",
+              "match_coverage": 100.0,
+              "matched_length": 4,
+              "rule_relevance": 100,
+              "rule_identifier": "lgpl-2.1-plus_108.RULE",
+              "license_expression": "lgpl-2.1-plus",
+              "spdx_license_expression": "LGPL-2.1-or-later"
+            },
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 11,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-2.1-plus_108.RULE",
+              "from_file": null,
+              "start_line": 11,
+              "matched_text": "License: LGPL-2.1+",
+              "match_coverage": 100.0,
+              "matched_length": 4,
+              "rule_relevance": 100,
+              "rule_identifier": "lgpl-2.1-plus_108.RULE",
+              "license_expression": "lgpl-2.1-plus",
+              "spdx_license_expression": "LGPL-2.1-or-later"
+            },
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 13,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-2.1-plus_108.RULE",
+              "from_file": null,
+              "start_line": 13,
+              "matched_text": "License: LGPL-2.1+",
+              "match_coverage": 100.0,
+              "matched_length": 4,
+              "rule_relevance": 100,
+              "rule_identifier": "lgpl-2.1-plus_108.RULE",
+              "license_expression": "lgpl-2.1-plus",
+              "spdx_license_expression": "LGPL-2.1-or-later"
+            },
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 26,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-2.1-plus_93.RULE",
+              "from_file": null,
+              "start_line": 14,
+              "matched_text": " This program is free software; you can redistribute it and/or modify it\n under the terms of the GNU Lesser General Public License as published\n by the Free Software Foundation; either version 2.1 of the License, or\n (at your option) any later version.\n .\n This program is distributed in the hope that it will be useful,\n but WITHOUT ANY WARRANTY; without even the implied warranty of\n MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser\n General Public License for more details.\n .\n You should have received a copy of the GNU Lesser General Public License\n along with this program; if not, write to the Free Software Foundation,\n Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA",
+              "match_coverage": 100.0,
+              "matched_length": 117,
+              "rule_relevance": 100,
+              "rule_identifier": "lgpl-2.1-plus_93.RULE",
+              "license_expression": "lgpl-2.1-plus",
+              "spdx_license_expression": "LGPL-2.1-or-later"
+            },
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 30,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-2.1_314.RULE",
+              "from_file": null,
+              "start_line": 24,
+              "matched_text": " You should have received a copy of the GNU Lesser General Public License\n along with this program; if not, write to the Free Software Foundation,\n Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA\n .\n On Debian systems, the full text of the GNU Lesser General Public\n License version 2.1 can be found in the file\n `/usr/share/common-licenses/LGPL-2.1'.",
+              "match_coverage": 100.0,
+              "matched_length": 64,
+              "rule_relevance": 100,
+              "rule_identifier": "lgpl-2.1_314.RULE",
+              "license_expression": "lgpl-2.1",
+              "spdx_license_expression": "LGPL-2.1-only"
+            }
+          ],
+          "identifier": "lgpl_2_1_plus_and_lgpl_2_1-6a4d01fd-fa99-80b1-0c2c-a69c91c2ad96",
+          "license_expression": "lgpl-2.1-plus AND lgpl-2.1",
+          "license_expression_spdx": "LGPL-2.1-or-later AND LGPL-2.1-only"
+        }
+      ],
       "license_clues": [],
-      "percentage_of_license_text": null,
-      "copyrights": [],
-      "holders": [],
+      "percentage_of_license_text": 79.8,
+      "copyrights": [
+        {
+          "end_line": 6,
+          "copyright": "Copyright 2013 Jiri Pirko <jiri@resnulli.us>",
+          "start_line": 6
+        },
+        {
+          "end_line": 10,
+          "copyright": "Copyright 2014 Andrew Ayer <agwa@andrewayer.name>",
+          "start_line": 10
+        }
+      ],
+      "holders": [
+        {
+          "holder": "Jiri Pirko",
+          "end_line": 6,
+          "start_line": 6
+        },
+        {
+          "holder": "Andrew Ayer",
+          "end_line": 10,
+          "start_line": 10
+        }
+      ],
       "authors": [],
       "package_data": [],
       "for_packages": [
         "pkg:deb/ubuntu/libndp0@1.4-2ubuntu0.16.04.1?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
-      "emails": [],
-      "urls": [],
+      "emails": [
+        {
+          "email": "jiri@resnulli.us",
+          "end_line": 6,
+          "start_line": 6
+        },
+        {
+          "email": "agwa@andrewayer.name",
+          "end_line": 10,
+          "start_line": 10
+        }
+      ],
+      "urls": [
+        {
+          "url": "http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/",
+          "end_line": 1,
+          "start_line": 1
+        },
+        {
+          "url": "https://github.com/jpirko/libndp",
+          "end_line": 3,
+          "start_line": 3
+        }
+      ],
       "extra_data": {}
     },
     {
