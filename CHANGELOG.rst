@@ -31,6 +31,15 @@ v34.5.0 (unreleased)
 - Add "Product name" and "Product version" as new project settings.
   https://github.com/nexB/scancode.io/issues/1197
 
+- Add "Product name" and "Product version" as new project settings.
+  https://github.com/nexB/scancode.io/issues/1197
+
+- Raise the minimum RAM required per CPU code in the docs.
+  A good rule of thumb is to allow **2 GB of memory per CPU**.
+  For example, if Docker is configured for 8 CPUs, a minimum of 16 GB of memory is
+  required.
+  https://github.com/nexB/scancode.io/issues/1191
+
 v34.4.0 (2024-04-22)
 --------------------
 

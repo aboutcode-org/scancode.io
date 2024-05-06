@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import json
+import multiprocessing
 import os
 import sys
 import tempfile
@@ -434,10 +435,11 @@ class ScanPipeScancodePipesTest(TestCase):
             run_scan_kwargs = mock_run_scan.call_args.kwargs
             self.assertEqual(10, run_scan_kwargs.get("timeout"))
 
-        with override_settings(SCANCODEIO_PROCESSES=10):
+        expected_processes = -1 if multiprocessing.get_start_method() != "fork" else 2
+        with override_settings(SCANCODEIO_PROCESSES=2):
             scancode.run_scan(location=None, output_file=output_file, run_scan_args={})
             run_scan_kwargs = mock_run_scan.call_args.kwargs
-            self.assertEqual(10, run_scan_kwargs.get("processes"))
+            self.assertEqual(expected_processes, run_scan_kwargs.get("processes"))
 
     def test_scanpipe_pipes_scancode_make_results_summary(self, regen=FIXTURES_REGEN):
         # Ensure the policies index is empty to avoid any side effect on results
