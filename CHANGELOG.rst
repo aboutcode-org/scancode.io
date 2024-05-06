@@ -40,6 +40,10 @@ v34.5.0 (unreleased)
   required.
   https://github.com/nexB/scancode.io/issues/1191
 
+- Add value validation for the search complex query syntax.
+  https://github.com/nexB/scancode.io/issues/1183
+
+
 v34.4.0 (2024-04-22)
 --------------------
 
