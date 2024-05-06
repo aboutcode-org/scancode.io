@@ -613,6 +613,16 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(1, project1.discoveredpackages.count())
         self.assertEqual(1, project1.discovereddependencies.count())
 
+        package = project1.discoveredpackages.get()
+        dependency = project1.discovereddependencies.get()
+
+        self.assertEqual(1, package.codebase_resources.count())
+        self.assertEqual("pkg:npm/is-npm@1.0.0", dependency.for_package.purl)
+        self.assertEqual(package.datasource_ids, [dependency.datasource_id])
+        self.assertEqual(
+            package.codebase_resources.get().path, dependency.datafile_resource.path
+        )
+
     def test_scanpipe_inspect_packages_creates_packages_pypi(self):
         pipeline_name = "inspect_packages"
         project1 = Project.objects.create(name="Analysis")
@@ -1268,6 +1278,7 @@ class PipelinesIntegrationTest(TestCase):
         ]
         self.assertCountEqual(expected_extra_data_strings, result_extra_data_strings)
 
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_collect_pygments_symbols_pipeline_integration(self):
         pipeline_name = "collect_pygments_symbols"
         project1 = Project.objects.create(name="Analysis")
@@ -1298,6 +1309,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertDictEqual(expected_extra_data, result_extra_data)
 
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_collect_tree_sitter_symbols_pipeline_integration(self):
         pipeline_name = "collect_tree_sitter_symbols"
         project1 = Project.objects.create(name="Analysis")

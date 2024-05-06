@@ -488,11 +488,23 @@ def process_package_data(project):
 
             package_data = pd.to_dict()
             dependencies = package_data.pop("dependencies")
-            for dep in dependencies:
-                pipes.update_or_create_dependency(project, dep)
 
+            package = None
             if pd.purl:
-                pipes.update_or_create_package(project, package_data)
+                package = pipes.update_or_create_package(
+                    project=project,
+                    package_data=package_data,
+                    codebase_resources=[resource],
+                )
+
+            for dep in dependencies:
+                pipes.update_or_create_dependency(
+                    project=project,
+                    dependency_data=dep,
+                    for_package=package,
+                    datafile_resource=resource,
+                    datasource_id=pd.datasource_id,
+                )
 
 
 def get_packages_with_purl_from_resources(project):

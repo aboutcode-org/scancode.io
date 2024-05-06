@@ -94,6 +94,30 @@
             </div>
 
             <div class="panel">
+              <p id="dejacode" class="panel-heading py-2 is-size-6">DejaCode</p>
+              <div class="panel-block is-block px-4">
+                <div class="field">
+                  <label class="label" for="{{ form.product_name.id_for_label }}">
+                    Product name
+                  </label>
+                  <div class="control">
+                    {{ form.product_name }}
+                  </div>
+                  <p class="help">{{ form.product_name.help_text }}</p>
+                </div>
+                <div class="field">
+                  <label class="label" for="{{ form.product_version.id_for_label }}">
+                    Product version
+                  </label>
+                  <div class="control">
+                    {{ form.product_version }}
+                  </div>
+                  <p class="help">{{ form.product_version.help_text }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
               <p id="attribution" class="panel-heading py-2 is-size-6">Attribution</p>
               <div class="panel-block is-block px-4">
                 <div class="field">
