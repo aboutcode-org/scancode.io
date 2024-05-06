@@ -23,8 +23,6 @@
 from django.db.models import Q
 
 from source_inspector import symbols_ctags
-from source_inspector import symbols_pygments
-from source_inspector import symbols_tree_sitter
 
 from scanpipe.pipes import LoopProgress
 
@@ -98,6 +96,8 @@ def _collect_and_store_pygments_symbols_and_strings(resource):
     Collect symbols, strings and comments from a resource using pygments and store
     them in the extra data field.
     """
+    from source_inspector import symbols_pygments
+
     result = symbols_pygments.get_pygments_symbols(resource.location)
     resource.update_extra_data(
         {
@@ -113,6 +113,8 @@ def collect_and_store_tree_sitter_symbols_and_strings(project, logger=None):
     Collect symbols from codebase files using tree-sitter and store
     them in the extra data field.
     """
+    from source_inspector import symbols_tree_sitter
+
     project_files = project.codebaseresources.files()
 
     language_qs = Q()
@@ -137,9 +139,11 @@ def collect_and_store_tree_sitter_symbols_and_strings(project, logger=None):
 
 def _collect_and_store_tree_sitter_symbols_and_strings(resource):
     """
-    Collect symbols ans string from a resource using tree-sitter and store
+    Collect symbols and string from a resource using tree-sitter and store
     them in the extra data field.
     """
+    from source_inspector import symbols_tree_sitter
+
     result = symbols_tree_sitter.get_treesitter_symbols(resource.location)
     resource.update_extra_data(
         {
