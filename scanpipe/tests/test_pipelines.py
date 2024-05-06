@@ -1278,6 +1278,7 @@ class PipelinesIntegrationTest(TestCase):
         ]
         self.assertCountEqual(expected_extra_data_strings, result_extra_data_strings)
 
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_collect_pygments_symbols_pipeline_integration(self):
         pipeline_name = "collect_pygments_symbols"
         project1 = Project.objects.create(name="Analysis")
@@ -1308,6 +1309,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertDictEqual(expected_extra_data, result_extra_data)
 
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_collect_tree_sitter_symbols_pipeline_integration(self):
         pipeline_name = "collect_tree_sitter_symbols"
         project1 = Project.objects.create(name="Analysis")

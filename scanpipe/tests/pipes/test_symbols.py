@@ -33,13 +33,13 @@ from scanpipe.pipes import symbols
 from scanpipe.pipes.input import copy_input
 
 
+@skipIf(sys.platform == "darwin", "Not supported on macOS")
 class ScanPipeSymbolsPipesTest(TestCase):
     data_location = Path(__file__).parent.parent / "data"
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
 
-    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_pipes_symbols_collect_and_store_resource_symbols(self):
         dir = self.project1.codebase_path / "codefile"
         dir.mkdir(parents=True)
