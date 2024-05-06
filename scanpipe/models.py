@@ -435,7 +435,7 @@ class UpdateMixin:
 
     def update(self, **kwargs):
         """
-        Update this resource with the provided ``kwargs`` values.
+        Update this instance with the provided ``kwargs`` values.
         The full ``save()`` process will be triggered, including signals, and the
         ``update_fields`` is automatically set.
         """
@@ -1648,7 +1648,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         help_text=_("Identify a registered Pipeline class."),
     )
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
-    scancodeio_version = models.CharField(max_length=30, blank=True)
+    scancodeio_version = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True)
     current_step = models.CharField(max_length=256, blank=True)
     selected_groups = models.JSONField(
@@ -3404,6 +3404,7 @@ class DiscoveredDependency(
         dependency_data,
         for_package=None,
         datafile_resource=None,
+        datasource_id=None,
         strip_datafile_path_root=False,
     ):
         """
@@ -3448,6 +3449,9 @@ class DiscoveredDependency(
                     segments = datafile_path.split("/")
                     datafile_path = "/".join(segments[1:])
                 datafile_resource = project.codebaseresources.get(path=datafile_path)
+
+        if datasource_id:
+            dependency_data["datasource_id"] = datasource_id
 
         # Set purl fields from `purl`
         purl = dependency_data.get("purl")

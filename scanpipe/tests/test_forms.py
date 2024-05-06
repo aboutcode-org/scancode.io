@@ -136,6 +136,8 @@ class ScanPipeFormsTest(TestCase):
         expected = {
             "extract_recursively": False,
             "ignored_patterns": ["*.ext", "dir/*"],
+            "product_name": "",
+            "product_version": "",
             "attribution_template": "",
             "scancode_license_score": 10,
         }

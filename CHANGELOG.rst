@@ -23,6 +23,14 @@ v34.5.0 (unreleased)
   symbol and string using tree-sitter.
   https://github.com/nexB/scancode.io/pull/1181
 
+- Fix `inspect_packages` pipeline to properly link discovered packages and dependencies to
+  codebase resources of package manifests where they were found. Also correctly assign
+  the datasource_ids attribute for packages and dependencies.
+  https://github.com/nexB/scancode.io/pull/1180
+
+- Add "Product name" and "Product version" as new project settings.
+  https://github.com/nexB/scancode.io/issues/1197
+
 v34.4.0 (2024-04-22)
 --------------------
 

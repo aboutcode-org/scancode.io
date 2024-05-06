@@ -281,6 +281,8 @@ class ProjectSettingsForm(forms.ModelForm):
         "ignored_patterns",
         "scancode_license_score",
         "attribution_template",
+        "product_name",
+        "product_version",
     ]
     extract_recursively = forms.BooleanField(
         label="Extract recursively",
@@ -317,6 +319,16 @@ class ProjectSettingsForm(forms.ModelForm):
         required=False,
         help_text="Custom attribution template.",
         widget=forms.Textarea(attrs={"class": "textarea is-dynamic", "rows": 3}),
+    )
+    product_name = forms.CharField(
+        label="Product name",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "input"}),
+    )
+    product_version = forms.CharField(
+        label="Product version",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "input"}),
     )
 
     class Meta:
