@@ -805,6 +805,13 @@ class ScanPipeViewsTest(TestCase):
         )
         self.assertContains(response, expected, html=True)
 
+    def test_scanpipe_views_codebase_resource_list_view_bad_search_query(self):
+        url = reverse("project_resources", args=[self.project1.slug])
+        data = {"search": "'"}  # No closing quotation
+        response = self.client.get(url, data=data)
+        expected_error = "The provided search value is invalid: No closing quotation"
+        self.assertContains(response, expected_error)
+
     def test_scanpipe_views_codebase_resource_details_view_tab_image(self):
         resource1 = make_resource_file(self.project1, "file1.ext")
         response = self.client.get(resource1.get_absolute_url())
