@@ -13,7 +13,8 @@ def update_package_datasource_ids(apps, schema_editor):
     queryset = DiscoveredPackage.objects.filter(~Q(datasource_id=""))
 
     object_count = queryset.count()
-    print(f"\nCompute datasource_ids for {object_count:,} packages.")
+    if object_count:
+        print(f"\nCompute datasource_ids for {object_count:,} packages.")
 
     chunk_size = 2000
     iterator = queryset.iterator(chunk_size=chunk_size)
@@ -27,7 +28,6 @@ def update_package_datasource_ids(apps, schema_editor):
         if not (index % chunk_size) and unsaved_objects:
             print(f"  {index:,} / {object_count:,} computed")
 
-    print("Updating DB objects...")
     DiscoveredPackage.objects.bulk_update(
         objs=unsaved_objects,
         fields=["datasource_ids"],
