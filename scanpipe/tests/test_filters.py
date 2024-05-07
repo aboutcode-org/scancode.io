@@ -320,3 +320,12 @@ class ScanPipeFilterTest(TestCase):
         data = {"search": "path^:dir"}
         filterset = ResourceFilterSet(data=data)
         self.assertEqual(2, len(filterset.qs))
+
+        data = {"search": "'"}  # No closing quotation
+        filterset = ResourceFilterSet(data=data)
+        self.assertFalse(filterset.is_valid())
+        expected_errors = {
+            "search": ["The provided search value is invalid: No closing quotation"]
+        }
+        self.assertEqual(expected_errors, filterset.errors)
+        self.assertEqual(2, len(filterset.qs))
