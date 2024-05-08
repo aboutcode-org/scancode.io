@@ -19,13 +19,13 @@ Ctags Symbols
 
 - Open any existing projects containing a few resources.
 
-- Click on the **"Add pipeline"** button and select the **"collect_symbols"**
+- Click on the **"Add pipeline"** button and select the **"collect_symbols_ctags"**
   pipeline from the dropdown list.
   Check the **"Execute pipeline now"** option and validate with the **"Add pipeline"**
   button.
 
 .. warning::
-    The ``collect_symbols`` pipeline requires ``universal-ctags``, please refer
+    The ``collect_symbols_ctags`` pipeline requires ``universal-ctags``, please refer
     to the :ref:`system_dependencies`.
 
 - Once the pipeline run completes with success, you can reach the **Resources** list view
@@ -42,13 +42,13 @@ Xgettext Strings
 
 - Open any existing projects containing a few resources.
 
-- Click on the **"Add pipeline"** button and select the **"collect_source_strings"**
+- Click on the **"Add pipeline"** button and select the **"collect_strings_gettext"**
   pipeline from the dropdown list.
   Check the **"Execute pipeline now"** option and validate with the **"Add pipeline"**
   button.
 
 .. warning::
-    The ``collect_source_strings`` pipeline requires ``gettext``, please refer
+    The ``collect_strings_gettext`` pipeline requires ``gettext``, please refer
     to the :ref:`system_dependencies`.
 
 - Once the pipeline run completes with success, you can reach the **Resources** list view
@@ -63,7 +63,7 @@ Tree-Sitter Symbols and Strings
 
 - Open any existing projects containing a few resources.
 
-- Click on the **"Add pipeline"** button and select the **"collect_tree_sitter_symbols"**
+- Click on the **"Add pipeline"** button and select the **"collect_symbols_tree_sitter"**
   pipeline from the dropdown list.
   Check the **"Execute pipeline now"** option and validate with the **"Add pipeline"**
   button.
@@ -80,7 +80,7 @@ Pygments Symbols and Strings
 
 - Open any existing projects containing a few resources.
 
-- Click on the **"Add pipeline"** button and select the **"collect_pygments_symbols"**
+- Click on the **"Add pipeline"** button and select the **"collect_symbols_pygments"**
   pipeline from the dropdown list.
   Check the **"Execute pipeline now"** option and validate with the **"Add pipeline"**
   button.

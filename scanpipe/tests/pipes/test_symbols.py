@@ -40,7 +40,7 @@ class ScanPipeSymbolsPipesTest(TestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
 
-    def test_scanpipe_pipes_symbols_collect_and_store_resource_symbols(self):
+    def test_scanpipe_pipes_symbols_collect_and_store_resource_symbols_ctags(self):
         dir = self.project1.codebase_path / "codefile"
         dir.mkdir(parents=True)
 
@@ -49,7 +49,7 @@ class ScanPipeSymbolsPipesTest(TestCase):
 
         pipes.collect_and_create_codebase_resources(self.project1)
 
-        symbols.collect_and_store_resource_symbols(self.project1)
+        symbols.collect_and_store_resource_symbols_ctags(self.project1)
 
         main_file = self.project1.codebaseresources.files()[0]
         result_extra_data_symbols = main_file.extra_data.get("source_symbols")

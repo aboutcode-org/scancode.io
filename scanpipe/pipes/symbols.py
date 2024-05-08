@@ -31,7 +31,7 @@ class UniversalCtagsNotFound(Exception):
     pass
 
 
-def collect_and_store_resource_symbols(project, logger=None):
+def collect_and_store_resource_symbols_ctags(project, logger=None):
     """
     Collect symbols from codebase files using Ctags and store
     them in the extra data field.
@@ -56,10 +56,10 @@ def collect_and_store_resource_symbols(project, logger=None):
     progress = LoopProgress(resources_count, logger)
 
     for resource in progress.iter(resource_iterator):
-        _collect_and_store_resource_symbols(resource)
+        _collect_and_store_resource_symbols_ctags(resource)
 
 
-def _collect_and_store_resource_symbols(resource):
+def _collect_and_store_resource_symbols_ctags(resource):
     """
     Collect symbols from a resource using Ctags and store
     them in the extra data field.
