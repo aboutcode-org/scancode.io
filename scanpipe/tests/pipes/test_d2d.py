@@ -1522,3 +1522,9 @@ class ScanPipeD2DPipesTest(TestCase):
                 project=self.project1, map_type="go_file_paths"
             ).count(),
         )
+        self.assertEqual(
+            1,
+            CodebaseResource.objects.filter(
+                project=self.project1, status="requires-review"
+            ).count(),
+        )
