@@ -209,3 +209,18 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         input_location = self.data_location / "laravel-7.12.0" / "bom.1.4.xml"
         packages = cyclonedx.resolve_cyclonedx_packages(input_location)
         self.assertEqual(63, len(packages))
+
+    def test_scanpipe_cyclonedx_delete_empty_properties(self):
+        cyclonedx_document_json = {
+            "components": [
+                {
+                    "bom-ref": "pkg:type/name",
+                    # Problematic entries for validation
+                    "supplier": {"name": ""},
+                    "licenses": [{}],
+                }
+            ]
+        }
+        results = cyclonedx.delete_empty_properties(cyclonedx_document_json)
+        expected = {"components": [{"bom-ref": "pkg:type/name"}]}
+        self.assertEqual(expected, results)

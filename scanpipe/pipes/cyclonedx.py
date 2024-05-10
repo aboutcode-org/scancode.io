@@ -200,10 +200,10 @@ def delete_tools(cyclonedx_document_json):
     return cyclonedx_document_json
 
 
-def delete_empty_dict_property(cyclonedx_document_json):
+def delete_empty_properties(cyclonedx_document_json):
     """
-    Remove dict entry where keys are defined but no values are set, such as
-    ``{"name": ""}``.
+    Remove entries for which no values are set, such as ``{"name": ""}`` or
+    ``"licenses":[{}]``.
 
     Class like cyclonedx.model.contact.OrganizationalEntity raise a
     NoPropertiesProvidedException while it is not enforced in the spec.
@@ -212,12 +212,18 @@ def delete_empty_dict_property(cyclonedx_document_json):
     """
     entries_to_delete = []
 
+    def is_empty(value):
+        if isinstance(value, dict) and not any(value.values()):
+            return True
+        elif isinstance(value, list) and not any(value):
+            return True
+
     for component in cyclonedx_document_json["components"]:
         for property_name, property_value in component.items():
-            if isinstance(property_value, dict) and not any(property_value.values()):
+            if is_empty(property_value):
                 entries_to_delete.append((component, property_name))
 
-    # Now delete the keys outside the loop
+    # Delete the keys outside the main check loop
     for component, property_name in entries_to_delete:
         del component[property_name]
 
@@ -235,14 +241,17 @@ def resolve_cyclonedx_packages(input_location):
 
     elif str(input_location).endswith(".json"):
         cyclonedx_document = json.loads(document_data)
+
+        # Apply a few fixes pre-validation for maximum compatibility
+        cyclonedx_document = delete_tools(cyclonedx_document)
+        cyclonedx_document = delete_empty_properties(cyclonedx_document)
+
         if errors := validate_document(cyclonedx_document):
             error_msg = (
                 f'CycloneDX document "{input_path.name}" is not valid:\n{errors}'
             )
             raise ValueError(error_msg)
 
-        cyclonedx_document = delete_tools(cyclonedx_document)
-        cyclonedx_document = delete_empty_dict_property(cyclonedx_document)
         cyclonedx_bom = Bom.from_json(data=cyclonedx_document)
 
     else:
