@@ -28,7 +28,7 @@ from django.test import TestCase
 
 from scanpipe import pipes
 from scanpipe.models import Project
-from scanpipe.pipes import source_strings
+from scanpipe.pipes import strings
 from scanpipe.pipes.input import copy_input
 
 
@@ -48,7 +48,7 @@ class ScanPipeSourceStringsPipesTest(TestCase):
 
         pipes.collect_and_create_codebase_resources(self.project1)
 
-        source_strings.collect_and_store_resource_strings(self.project1)
+        strings.collect_and_store_resource_strings(self.project1)
 
         main_file = self.project1.codebaseresources.files()[0]
         result_extra_data_strings = main_file.extra_data.get("source_strings")

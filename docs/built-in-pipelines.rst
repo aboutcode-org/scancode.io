@@ -42,35 +42,35 @@ Analyse Docker Windows Image
     :members:
     :member-order: bysource
 
-.. _collect_pygments_symbols:
+.. _pipeline_collect_strings_gettext:
 
-Collect Pygments Source Symbols (addon)
----------------------------------------
-.. autoclass:: scanpipe.pipelines.collect_pygments_symbols.CollectPygmentsSymbolsAndStrings()
+Collect string with Xgettext (addon)
+---------------------------------------------
+.. autoclass:: scanpipe.pipelines.collect_strings_gettext.CollectStringsGettext()
     :members:
     :member-order: bysource
 
-.. _pipeline_collect_source_strings:
+.. _pipeline_collect_symbols_ctags:
 
-Collect Source Strings (addon)
-------------------------------
-.. autoclass:: scanpipe.pipelines.collect_source_strings.CollectSourceStrings()
+Collect symbols with Ctags (addon)
+----------------------------------
+.. autoclass:: scanpipe.pipelines.collect_symbols_ctags.CollectSymbolsCtags()
     :members:
     :member-order: bysource
 
-.. _pipeline_collect_symbols:
+.. _pipeline_collect_symbols_pygments:
 
-Collect Codebase Symbols (addon)
---------------------------------
-.. autoclass:: scanpipe.pipelines.collect_symbols.CollectSymbols()
+Collect symbols, string and comments with Pygments (addon)
+----------------------------------------------------------
+.. autoclass:: scanpipe.pipelines.collect_symbols_pygments.CollectSymbolsPygments()
     :members:
     :member-order: bysource
 
-.. _collect_tree_sitter_symbols:
+.. _pipeline_collect_symbols_tree_sitter:
 
-Collect Tree-Sitter Source Symbols (addon)
-------------------------------------------
-.. autoclass:: scanpipe.pipelines.collect_tree_sitter_symbols.CollectTreeSitterSymbolsAndStrings()
+Collect symbols and string with Tree-Sitter (addon)
+---------------------------------------------------
+.. autoclass:: scanpipe.pipelines.collect_symbols_tree_sitter.CollectSymbolsTreeSitter()
     :members:
     :member-order: bysource
 

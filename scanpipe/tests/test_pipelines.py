@@ -1228,8 +1228,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertIn("Couldn't index 1 unsupported PURLs", run.log)
 
     @skipIf(sys.platform == "darwin", "Not supported on macOS")
-    def test_scanpipe_collect_symbols_pipeline_integration(self):
-        pipeline_name = "collect_symbols"
+    def test_scanpipe_collect_symbols_ctags_pipeline_integration(self):
+        pipeline_name = "collect_symbols_ctags"
         project1 = Project.objects.create(name="Analysis")
 
         dir = project1.codebase_path / "codefile"
@@ -1252,8 +1252,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertCountEqual(expected_extra_data_symbols, result_extra_data_symbols)
 
     @skipIf(sys.platform != "linux", "Only supported on Linux")
-    def test_scanpipe_collect_source_strings_pipeline_integration(self):
-        pipeline_name = "collect_source_strings"
+    def test_scanpipe_collect_strings_gettext_pipeline_integration(self):
+        pipeline_name = "collect_strings_gettext"
         project1 = Project.objects.create(name="Analysis")
 
         dir = project1.codebase_path / "codefile"
@@ -1279,8 +1279,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertCountEqual(expected_extra_data_strings, result_extra_data_strings)
 
     @skipIf(sys.platform == "darwin", "Not supported on macOS")
-    def test_scanpipe_collect_pygments_symbols_pipeline_integration(self):
-        pipeline_name = "collect_pygments_symbols"
+    def test_scanpipe_collect_symbols_pygments_pipeline_integration(self):
+        pipeline_name = "collect_symbols_pygments"
         project1 = Project.objects.create(name="Analysis")
 
         dir = project1.codebase_path / "codefile"
@@ -1310,8 +1310,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertDictEqual(expected_extra_data, result_extra_data)
 
     @skipIf(sys.platform == "darwin", "Not supported on macOS")
-    def test_scanpipe_collect_tree_sitter_symbols_pipeline_integration(self):
-        pipeline_name = "collect_tree_sitter_symbols"
+    def test_scanpipe_collect_symbols_tree_sitter_pipeline_integration(self):
+        pipeline_name = "collect_symbols_tree_sitter"
         project1 = Project.objects.create(name="Analysis")
 
         dir = project1.codebase_path / "codefile"

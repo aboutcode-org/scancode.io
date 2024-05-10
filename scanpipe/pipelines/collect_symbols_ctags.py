@@ -24,8 +24,8 @@ from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import symbols
 
 
-class CollectSymbols(Pipeline):
-    """Collect symbols from codebase files and keep them in extra data field."""
+class CollectSymbolsCtags(Pipeline):
+    """Collect source symbols with Ctags."""
 
     download_inputs = False
     is_addon = True
@@ -39,4 +39,4 @@ class CollectSymbols(Pipeline):
         Collect symbols from codebase files using Ctags and store
         them in the extra data field.
         """
-        symbols.collect_and_store_resource_symbols(self.project, self.log)
+        symbols.collect_and_store_resource_symbols_ctags(self.project, self.log)
