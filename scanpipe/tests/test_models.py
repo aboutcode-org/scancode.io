@@ -49,7 +49,6 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from packagedcode.models import PackageData
-from packageurl import PackageURL
 from requests.exceptions import RequestException
 from rq.job import JobStatus
 
@@ -1940,8 +1939,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(package_data1["version"], cyclonedx_component.version)
         bom_ref = package.package_uid
         self.assertEqual(bom_ref, str(cyclonedx_component.bom_ref))
-        package_url = PackageURL.from_string(package_data1["package_uid"])
-        self.assertEqual(package_url, cyclonedx_component.purl)
+        self.assertEqual(package.package_url, str(cyclonedx_component.purl))
         self.assertEqual(1, len(cyclonedx_component.licenses))
         self.assertEqual(
             package_data1["declared_license_expression_spdx"],

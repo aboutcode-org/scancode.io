@@ -3230,14 +3230,6 @@ class DiscoveredPackage(
             if (url := getattr(self, field_name)) and field_name not in property_fields
         ]
 
-        # Always use the package_uid when available to ensure having unique
-        # package_url in the BOM when several instances of the same DiscoveredPackage
-        # (i.e. same purl) are present in the project.
-        try:
-            package_url = PackageURL.from_string(self.package_uid)
-        except ValueError:
-            package_url = self.get_package_url()
-
         evidence = None
         if self.other_license_expression_spdx:
             evidence = cyclonedx_component.ComponentEvidence(
@@ -3248,11 +3240,17 @@ class DiscoveredPackage(
                 ],
             )
 
+        package_url = self.get_package_url()
+        # Use the package_uid when available to ensure having unique bom_ref
+        # in the SBOM when several instances of the same DiscoveredPackage
+        # (i.e. same purl) are present in the project.
+        bom_ref = self.package_uid or str(package_url)
+
         return cyclonedx_component.Component(
             name=self.name,
             version=self.version,
-            bom_ref=str(package_url),
-            purl=package_url,
+            bom_ref=bom_ref,
+            purl=package_url,  # Warning: Use the real purl and not package_uid here.
             licenses=licenses,
             copyright=self.copyright,
             description=self.description,
