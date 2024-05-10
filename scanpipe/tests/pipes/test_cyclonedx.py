@@ -27,7 +27,9 @@ from django.test import TestCase
 
 from cyclonedx.model import license as cdx_license_model
 from cyclonedx.model.bom import Bom
+from cyclonedx.model.component import Component
 from cyclonedx.validation import ValidationError
+from packageurl import PackageURL
 
 from scanpipe.pipes import cyclonedx
 
@@ -170,6 +172,14 @@ class ScanPipeCycloneDXPipesTest(TestCase):
             "homepage_url": "https://cyclonedx.org/website",
         }
         package_data = cyclonedx.cyclonedx_component_to_package_data(self.component1)
+        self.assertEqual(expected, package_data)
+
+    def test_scanpipe_cyclonedx_component_to_package_data_encoded_purl_name(self):
+        # The purl contains encoded special chars
+        purl = PackageURL.from_string("pkg:type/a%3A%2Fb%3Aname@1.0")
+        component = Component(name="name", purl=purl)
+        package_data = cyclonedx.cyclonedx_component_to_package_data(component)
+        expected = {"name": "a:/b:name", "version": "1.0", "type": "type"}
         self.assertEqual(expected, package_data)
 
     def test_scanpipe_cyclonedx_resolve_cyclonedx_packages(self):

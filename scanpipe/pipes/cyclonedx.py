@@ -33,7 +33,6 @@ from cyclonedx.schema import SchemaVersion
 from cyclonedx.validation import ValidationError
 from cyclonedx.validation.json import JsonStrictValidator
 from defusedxml import ElementTree as SafeElementTree
-from packageurl import PackageURL
 
 
 def resolve_license(license):
@@ -143,9 +142,7 @@ def cyclonedx_component_to_package_data(cdx_component):
 
     package_url_dict = {}
     if cdx_component.purl:
-        package_url_dict = PackageURL.from_string(str(cdx_component.purl)).to_dict(
-            encode=True
-        )
+        package_url_dict = cdx_component.purl.to_dict(encode=True)
 
     declared_license = get_declared_licenses(licenses=cdx_component.licenses)
 
