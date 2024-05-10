@@ -1694,6 +1694,7 @@ def map_paths_resource(
                 if rel_key not in relations_to_create:
                     relations_to_create[rel_key] = relation
         if paths_not_mapped:
+            to_resource.status = flag.REQUIRES_REVIEW
             to_resource.save()
             logger(
                 f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT mapped for: "
