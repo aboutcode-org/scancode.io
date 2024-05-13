@@ -373,7 +373,7 @@ def send_results_to_purldb(
     scan_results_location,
     scan_summary_location,
     project_extra_data,
-    timeout=DEFAULT_TIMEOUT*15,
+    timeout=DEFAULT_TIMEOUT * 15,
     api_url=PURLDB_API_URL,
 ):
     """

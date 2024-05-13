@@ -20,10 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import symbols
 from scanpipe.pipes.input import copy_inputs
-from scanpipe import pipes
 
 
 class CollectSymbolsCtags(Pipeline):
@@ -40,8 +40,8 @@ class CollectSymbolsCtags(Pipeline):
             cls.collect_and_create_codebase_resources,
             cls.flag_empty_files,
             cls.collect_and_store_resource_symbols,
-            )
-    
+        )
+
     def copy_inputs_to_codebase_directory(self):
         """
         Copy input files to the project's codebase/ directory.

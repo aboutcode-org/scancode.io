@@ -20,19 +20,38 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import symbols
+from scanpipe.pipes.input import copy_inputs
 
 
 class CollectSymbolsPygments(Pipeline):
     """Collect source symbols, string literals and comments with Pygments."""
 
-    download_inputs = False
-    is_addon = True
+    download_inputs = True
+    is_addon = False
 
     @classmethod
     def steps(cls):
-        return (cls.collect_and_store_pygments_symbols_and_strings,)
+        return (
+            cls.copy_inputs_to_codebase_directory,
+            cls.extract_archives,
+            cls.collect_and_create_codebase_resources,
+            cls.flag_empty_files,
+            cls.collect_and_store_pygments_symbols_and_strings,
+        )
+
+    def copy_inputs_to_codebase_directory(self):
+        """
+        Copy input files to the project's codebase/ directory.
+        The code can also be copied there prior to running the Pipeline.
+        """
+        copy_inputs(self.project.inputs(), self.project.codebase_path)
+
+    def collect_and_create_codebase_resources(self):
+        """Collect and create codebase resources."""
+        pipes.collect_and_create_codebase_resources(self.project)
 
     def collect_and_store_pygments_symbols_and_strings(self):
         """
