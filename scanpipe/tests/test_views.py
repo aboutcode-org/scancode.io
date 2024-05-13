@@ -805,6 +805,13 @@ class ScanPipeViewsTest(TestCase):
         )
         self.assertContains(response, expected, html=True)
 
+    def test_scanpipe_views_codebase_resource_list_view_bad_search_query(self):
+        url = reverse("project_resources", args=[self.project1.slug])
+        data = {"search": "'"}  # No closing quotation
+        response = self.client.get(url, data=data)
+        expected_error = "The provided search value is invalid: No closing quotation"
+        self.assertContains(response, expected_error)
+
     def test_scanpipe_views_codebase_resource_details_view_tab_image(self):
         resource1 = make_resource_file(self.project1, "file1.ext")
         response = self.client.get(resource1.get_absolute_url())
@@ -1023,12 +1030,13 @@ class ScanPipeViewsTest(TestCase):
         dep1 = DiscoveredDependency.create_from_data(self.project1, dependency_data1)
         DiscoveredDependency.create_from_data(self.project1, dependency_data2)
 
-        url = reverse("project_dependencies", args=[self.project1.slug])
+        list_view_url = reverse("project_dependencies", args=[self.project1.slug])
         with self.assertNumQueries(10):
-            self.client.get(url)
+            self.client.get(list_view_url)
 
+        details_url = dep1.get_absolute_url()
         with self.assertNumQueries(6):
-            self.client.get(dep1.get_absolute_url())
+            self.client.get(details_url)
 
     def test_scanpipe_views_codebase_relation_views(self):
         CodebaseRelation.objects.create(

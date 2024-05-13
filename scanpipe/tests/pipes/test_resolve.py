@@ -57,6 +57,9 @@ class ScanPipeResolvePipesTest(TestCase):
         input_location = self.data_location / "cyclonedx/missing_schema.json"
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
+        input_location = self.data_location / "cyclonedx/laravel-7.12.0/bom.1.4.xml"
+        self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
+
     def test_scanpipe_pipes_resolve_set_license_expression(self):
         extracted_license_statement = {"license": "MIT"}
         data = resolve.set_license_expression(
@@ -193,7 +196,10 @@ class ScanPipeResolvePipesTest(TestCase):
             resources,
         )
         self.assertEqual(1, len(packages))
-        self.assertEqual("toml", packages[0]["name"])
+        package = packages[0]
+        self.assertEqual("toml", package["name"])
+        resource1 = project1.codebaseresources.get(name="toml.spdx.json")
+        self.assertEqual([resource1], package.get("codebase_resources"))
 
     def test_scanpipe_resolve_create_packages_and_dependencies(self):
         project1 = Project.objects.create(name="Analysis")
@@ -211,3 +217,7 @@ class ScanPipeResolvePipesTest(TestCase):
         resolve.create_packages_and_dependencies(project1, packages)
         self.assertEqual(1, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
+
+        resource1 = project1.codebaseresources.get(name="toml.spdx.json")
+        package = project1.discoveredpackages.get()
+        self.assertEqual(resource1, package.codebase_resources.get())

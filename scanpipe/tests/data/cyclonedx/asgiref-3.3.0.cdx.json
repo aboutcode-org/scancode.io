@@ -1,7 +1,7 @@
 {
-  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
   "bomFormat": "CycloneDX",
-  "specVersion": "1.5",
+  "specVersion": "1.6",
   "serialNumber": "urn:uuid:b74fe5df-e965-415e-ba65-f38421a0695d",
   "version": 1,
   "metadata": {
@@ -59,7 +59,7 @@
           "value": "Python"
         }
       ],
-      "purl": "pkg:pypi/asgiref@3.3.0?uuid=90cd6d93-1c46-477a-bd4a-47aa6b3ce773",
+      "purl": "pkg:pypi/asgiref@3.3.0",
       "type": "library",
       "version": "3.3.0"
     },
@@ -104,7 +104,7 @@
           "value": "Python"
         }
       ],
-      "purl": "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c",
+      "purl": "pkg:pypi/asgiref@3.3.0",
       "type": "library",
       "version": "3.3.0"
     }

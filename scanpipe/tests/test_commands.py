@@ -603,9 +603,14 @@ class ScanPipeManagementCommandTest(TestCase):
 
     @mock.patch("scanpipe.models.Project.get_latest_output")
     @mock.patch("scanpipe.pipes.purldb.request_post")
+    @mock.patch("requests.sessions.Session.get")
     @mock.patch("scanpipe.pipes.purldb.request_get")
     def test_scanpipe_management_command_purldb_scan_queue_worker(
-        self, mock_request_get, mock_request_post, mock_get_latest_output
+        self,
+        mock_request_get,
+        mock_download_get,
+        mock_request_post,
+        mock_get_latest_output,
     ):
         scannable_uri_uuid = "97627c6e-9acb-43e0-b8df-28bd92f2b7e5"
         download_url = "https://registry.npmjs.org/asdf/-/asdf-1.2.2.tgz"
@@ -620,6 +625,12 @@ class ScanPipeManagementCommandTest(TestCase):
         mock_get_latest_output.return_value = (
             self.data_location / "scancode" / "is-npm-1.0.0_summary.json"
         )
+        mock_download_get.return_value = mock.Mock(
+            content=b"\x00",
+            headers={},
+            status_code=200,
+            url=download_url,
+        )
 
         options = [
             "--max-loops",
@@ -627,7 +638,7 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
         out = StringIO()
         with mock.patch("scanpipe.tasks.execute_pipeline_task", task_success):
-            call_command("purldb-scan-queue-worker", *options, stdout=out)
+            call_command("purldb-scan-worker", *options, stdout=out)
 
         out_value = out.getvalue()
         self.assertIn(
@@ -662,19 +673,27 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertTrue(mock_request_post_call_kwargs["files"]["scan_summary_file"])
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
+    @mock.patch("requests.sessions.Session.get")
     @mock.patch("scanpipe.pipes.purldb.request_get")
     def test_scanpipe_management_command_purldb_scan_queue_worker_failure(
-        self, mock_request_get, mock_request_post
+        self, mock_request_get, mock_download_get, mock_request_post
     ):
+        download_url = "https://registry.npmjs.org/asdf/-/asdf-1.2.2.tgz"
         scannable_uri_uuid = "97627c6e-9acb-43e0-b8df-28bd92f2b7e5"
         mock_request_get.return_value = {
             "scannable_uri_uuid": scannable_uri_uuid,
-            "download_url": "https://registry.npmjs.org/asdf/-/asdf-1.2.2.tgz",
+            "download_url": download_url,
             "pipelines": ["scan_single_package"],
         }
         mock_request_post.return_value = {
             "status": f"scan failed for scannable uri {scannable_uri_uuid}"
         }
+        mock_download_get.return_value = mock.Mock(
+            content=b"\x00",
+            headers={},
+            status_code=200,
+            url=download_url,
+        )
 
         options = [
             "--max-loops",
@@ -682,7 +701,7 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
         out = StringIO()
         with mock.patch("scanpipe.tasks.execute_pipeline_task", task_failure):
-            call_command("purldb-scan-queue-worker", *options, stdout=out, stderr=out)
+            call_command("purldb-scan-worker", *options, stdout=out, stderr=out)
 
         out_value = out.getvalue()
         self.assertIn("Exception occured during scan project:", out_value)
@@ -706,23 +725,41 @@ class ScanPipeManagementCommandTest(TestCase):
         )
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
+    @mock.patch("requests.sessions.Session.get")
     @mock.patch("scanpipe.pipes.purldb.request_get")
     def test_scanpipe_management_command_purldb_scan_queue_worker_continue_after_fail(
-        self, mock_request_get, mock_request_post
+        self, mock_request_get, mock_download_get, mock_request_post
     ):
         scannable_uri_uuid1 = "97627c6e-9acb-43e0-b8df-28bd92f2b7e5"
         scannable_uri_uuid2 = "0bbdcf88-ad07-4970-9272-7d5f4c82cc7b"
+        download_url1 = "https://registry.npmjs.org/asdf/-/asdf-1.2.2.tgz"
+        download_url2 = "https://registry.npmjs.org/asdf/-/asdf-1.2.1.tgz"
         mock_request_get.side_effect = [
             {
                 "scannable_uri_uuid": scannable_uri_uuid1,
-                "download_url": "https://registry.npmjs.org/asdf/-/asdf-1.2.2.tgz",
+                "download_url": download_url1,
                 "pipelines": ["scan_single_package"],
             },
             {
                 "scannable_uri_uuid": scannable_uri_uuid2,
-                "download_url": "https://registry.npmjs.org/asdf/-/asdf-1.2.1.tgz",
+                "download_url": download_url2,
                 "pipelines": ["scan_single_package"],
             },
+        ]
+
+        mock_download_get.side_effect = [
+            mock.Mock(
+                content=b"\x00",
+                headers={},
+                status_code=200,
+                url=download_url1,
+            ),
+            mock.Mock(
+                content=b"\x00",
+                headers={},
+                status_code=200,
+                url=download_url2,
+            ),
         ]
 
         mock_request_post.side_effect = [
@@ -739,7 +776,7 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
         out = StringIO()
         with mock.patch("scanpipe.tasks.execute_pipeline_task", task_failure):
-            call_command("purldb-scan-queue-worker", *options, stdout=out, stderr=out)
+            call_command("purldb-scan-worker", *options, stdout=out, stderr=out)
 
         out_value = out.getvalue()
         self.assertIn(

@@ -29,8 +29,10 @@ from django.core.management import call_command
 from django.test import TestCase
 
 from scanpipe.models import AbstractTaskFieldsModel
+from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import matchcode
+from scanpipe.pipes.input import copy_input
 from scanpipe.tests import make_resource_file
 
 
@@ -311,3 +313,23 @@ class MatchCodePipesTest(TestCase):
         match_results = matchcode.get_match_results(run_url)
 
         self.assertEqual(mock_request_get_results_return, match_results)
+
+    def test_scanpipe_pipes_matchcode_fingerprint_codebase_resources(self):
+        copy_input(self.data_location / "notice.NOTICE", self.project1.codebase_path)
+        codebase_resource1 = CodebaseResource.objects.create(
+            project=self.project1, path="notice.NOTICE", is_text=True
+        )
+
+        # This resource should not have a fingerprint
+        copy_input(self.data_location / "is-npm-1.0.0.tgz", self.project1.codebase_path)
+        codebase_resource2 = CodebaseResource.objects.create(
+            project=self.project1, path="is-npm-1.0.0.tgz"
+        )
+
+        matchcode.fingerprint_codebase_resources(self.project1)
+        codebase_resource1.refresh_from_db()
+        codebase_resource2.refresh_from_db()
+
+        expected_extra_data = {"halo1": "000000b8ef420f7e84c8c74c691315f0a06ac4f0"}
+        self.assertEqual(expected_extra_data, codebase_resource1.extra_data)
+        self.assertFalse(codebase_resource2.extra_data)

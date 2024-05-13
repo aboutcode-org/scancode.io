@@ -1,0 +1,33 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "scancodeio_asgiref",
+  "documentNamespace": "https://scancode.io/spdxdocs/8d3058f3-ec1f-487d-8c5f-b2d3b26cda3e",
+  "creationInfo": {
+    "created": "2000-01-01T01:02:03Z",
+    "creators": [
+      "Tool: ScanCode.io-31.0.0"
+    ],
+    "licenseListVersion": "3.20"
+  },
+  "packages": [
+    {
+      "name": "asgiref",
+      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-b6ef7c90-e3d4-4008-8b67-63f086cea2da",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "filesAnalyzed": false,
+      "versionInfo": "3.3.0",
+      "licenseDeclared": "BSD-3-Clause",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/asgiref@3.3.0"
+        }
+      ]
+    }
+  ]
+}

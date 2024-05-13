@@ -497,6 +497,12 @@ class PaginatedFilterView(FilterView):
         query_dict.pop(PAGE_VAR, None)
         context["url_params_without_page"] = query_dict.urlencode()
 
+        context["searchable_fields"] = sorted(
+            field.name
+            for field in self.model._meta.get_fields()
+            if not field.is_relation
+        )
+
         return context
 
 
@@ -1025,6 +1031,19 @@ class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
 
         return tree
 
+    @staticmethod
+    def get_breadcrumbs(current_dir):
+        breadcrumbs = {}
+        path_segments = current_dir.removeprefix("./").split("/")
+        last_path = ""
+
+        for segment in path_segments:
+            if segment:
+                last_path += f"{segment}/"
+                breadcrumbs[segment] = last_path
+
+        return breadcrumbs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         current_dir = self.request.GET.get("current_dir") or "."
@@ -1038,6 +1057,9 @@ class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
 
         context["current_dir"] = current_dir
         context["codebase_tree"] = codebase_tree
+        context["codebase_breadcrumbs"] = self.get_breadcrumbs(current_dir)
+        context["project_details_url"] = self.object.get_absolute_url()
+
         return context
 
 
@@ -1281,6 +1303,8 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
         self.object = self.get_object()
         project = self.object
         format = self.kwargs["format"]
+        version = self.kwargs.get("version")
+        output_kwargs = {}
 
         if format == "json":
             return project_results_json_response(project, as_attachment=True)
@@ -1289,7 +1313,9 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
         elif format == "spdx":
             output_file = output.to_spdx(project)
         elif format == "cyclonedx":
-            output_file = output.to_cyclonedx(project)
+            if version:
+                output_kwargs["version"] = version
+            output_file = output.to_cyclonedx(project, **output_kwargs)
         elif format == "attribution":
             output_file = output.to_attribution(project)
         else:

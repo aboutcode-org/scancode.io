@@ -104,6 +104,11 @@ migrate:
 	@echo "-> Apply database migrations"
 	${MANAGE} migrate
 
+upgrade:
+	@echo "-> Upgrade local git checkout"
+	@git pull
+	@$(MAKE) migrate
+
 postgresdb:
 	@echo "-> Configure PostgreSQL database"
 	@echo "-> Create database user ${SCANCODEIO_DB_NAME}"
@@ -158,4 +163,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install check bandit valid isort check-deploy clean migrate postgresdb sqlitedb backupdb run test docs bump docker-images offline-package
+.PHONY: virtualenv conf dev envfile install check bandit valid isort check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run test docs bump docker-images offline-package

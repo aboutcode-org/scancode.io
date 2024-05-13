@@ -1,6 +1,102 @@
 Changelog
 =========
 
+v34.5.0 (unreleased)
+--------------------
+
+- Display the current path location in the "Codebase" panel as a navigation breadcrumbs.
+  https://github.com/nexB/scancode.io/issues/1158
+
+- Fix a rendering issue in the dependency details view when for_package or
+  datafile_resource fields do not have a value.
+  https://github.com/nexB/scancode.io/issues/1177
+
+- Add a new `CollectPygmentsSymbolsAndStrings` pipeline (addon) for collecting source
+  symbol, string and comments using Pygments.
+  https://github.com/nexB/scancode.io/pull/1179
+
+- Workaround an issue with the cyclonedx-python-lib that does not allow to load
+  SBOMs that contains properties with no values.
+  https://github.com/nexB/scancode.io/issues/1185
+
+- Add a new `CollectTreeSitterSymbolsAndStrings` pipeline (addon) for collecting source
+  symbol and string using tree-sitter.
+  https://github.com/nexB/scancode.io/pull/1181
+
+- Fix `inspect_packages` pipeline to properly link discovered packages and dependencies to
+  codebase resources of package manifests where they were found. Also correctly assign
+  the datasource_ids attribute for packages and dependencies.
+  https://github.com/nexB/scancode.io/pull/1180
+
+- Add "Product name" and "Product version" as new project settings.
+  https://github.com/nexB/scancode.io/issues/1197
+
+- Add "Product name" and "Product version" as new project settings.
+  https://github.com/nexB/scancode.io/issues/1197
+
+- Raise the minimum RAM required per CPU code in the docs.
+  A good rule of thumb is to allow **2 GB of memory per CPU**.
+  For example, if Docker is configured for 8 CPUs, a minimum of 16 GB of memory is
+  required.
+  https://github.com/nexB/scancode.io/issues/1191
+
+- Add value validation for the search complex query syntax.
+  https://github.com/nexB/scancode.io/issues/1183
+
+- Bump matchcode-toolkit version to v5.0.0.
+
+- Fix the content of the ``package_url`` field in CycloneDX outputs.
+  https://github.com/nexB/scancode.io/issues/1224
+
+- Enhance support for encoded ``package_url`` during the conversion to model fields.
+  https://github.com/nexB/scancode.io/issues/1171
+
+v34.4.0 (2024-04-22)
+--------------------
+
+- Upgrade Gunicorn to v22.0.0 security release.
+
+- Display the list of fields available for the advanced search syntax in the modal UI.
+  https://github.com/nexB/scancode.io/issues/1164
+
+- Add support for CycloneDX 1.6 outputs and inputs.
+  Also, the CycloneDX outputs can be downloaded as 1.6, 1.5, and 1.4 spec versions.
+  https://github.com/nexB/scancode.io/pull/1165
+
+- Update matchcode-toolkit to v4.1.0
+
+- Add a new function
+  `scanpipe.pipes.matchcode.fingerprint_codebase_resources()`, which computes
+  approximate file matching fingerprints for text files using the new
+  `get_file_fingerprint_hashes` function from matchcode-toolkit.
+
+- Rename the `purldb-scan-queue-worker` management command to `purldb-scan-worker`.
+
+- Add `docker-compose.purldb-scan-worker.yml` to run ScanCode.io as a PurlDB
+  scan worker service.
+
+v34.3.0 (2024-04-10)
+--------------------
+
+- Associate resolved packages with their source codebase resource.
+  https://github.com/nexB/scancode.io/issues/1140
+
+- Add a new `CollectSourceStrings` pipeline (addon) for collecting source string using
+  xgettext.
+  https://github.com/nexB/scancode.io/pull/1160
+
+v34.2.0 (2024-03-28)
+--------------------
+
+- Add support for Python 3.12 and upgrade to Python 3.12 in the Dockerfile.
+  https://github.com/nexB/scancode.io/pull/1138
+
+- Add support for CycloneDX XML inputs.
+  https://github.com/nexB/scancode.io/issues/1136
+
+- Upgrade the SPDX schema to v2.3.1
+  https://github.com/nexB/scancode.io/issues/1130
+
 v34.1.0 (2024-03-27)
 --------------------
 

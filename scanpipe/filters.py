@@ -22,6 +22,7 @@
 
 import shlex
 
+from django import forms
 from django.apps import apps
 from django.core.exceptions import FieldError
 from django.core.validators import EMPTY_VALUES
@@ -260,8 +261,24 @@ def parse_query_string_to_lookups(query_string, default_lookup_expr, default_fie
     return lookups
 
 
+class QuerySearchField(forms.CharField):
+    """Add value validation for the search complex query syntax."""
+
+    def validate(self, value):
+        super().validate(value)
+
+        try:
+            shlex.split(value)
+        except ValueError as error:
+            raise forms.ValidationError(
+                f"The provided search value is invalid: {error}", code="invalid"
+            )
+
+
 class QuerySearchFilter(django_filters.CharFilter):
     """Add support for complex query syntax in search filter."""
+
+    field_class = QuerySearchField
 
     def filter(self, qs, value):
         if not value:
@@ -409,6 +426,9 @@ MAP_TYPE_CHOICES = (
     ("js_path", "js path"),
     ("path", "path"),
     ("sha1", "sha1"),
+    ("dwarf_included_paths", "dwarf_included_paths"),
+    ("dwarf_compiled_paths", "dwarf_compiled_paths"),
+    ("go_file_paths", "go_file_paths"),
 )
 
 

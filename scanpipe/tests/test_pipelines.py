@@ -613,6 +613,16 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(1, project1.discoveredpackages.count())
         self.assertEqual(1, project1.discovereddependencies.count())
 
+        package = project1.discoveredpackages.get()
+        dependency = project1.discovereddependencies.get()
+
+        self.assertEqual(1, package.codebase_resources.count())
+        self.assertEqual("pkg:npm/is-npm@1.0.0", dependency.for_package.purl)
+        self.assertEqual(package.datasource_ids, [dependency.datasource_id])
+        self.assertEqual(
+            package.codebase_resources.get().path, dependency.datafile_resource.path
+        )
+
     def test_scanpipe_inspect_packages_creates_packages_pypi(self):
         pipeline_name = "inspect_packages"
         project1 = Project.objects.create(name="Analysis")
@@ -900,7 +910,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(1, project1.projectmessages.count())
         message = project1.projectmessages.get()
         self.assertEqual("get_packages_from_manifest", message.model)
-        expected = "No resources found with package data"
+        expected = "No resources containing package data found in codebase."
         self.assertIn(expected, message.description)
 
     def test_scanpipe_resolve_dependencies_pipeline_integration_empty_manifest(self):
@@ -915,7 +925,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(1, project1.projectmessages.count())
         message = project1.projectmessages.get()
         self.assertEqual("get_packages_from_manifest", message.model)
-        expected = "No packages could be resolved for"
+        expected = "No packages could be resolved"
         self.assertIn(expected, message.description)
 
     def test_scanpipe_resolve_dependencies_pipeline_integration_misc(self):
@@ -1217,8 +1227,9 @@ class PipelinesIntegrationTest(TestCase):
         self.assertIn("1 PURLs were already present in PurlDB index queue", run.log)
         self.assertIn("Couldn't index 1 unsupported PURLs", run.log)
 
-    def test_scanpipe_collect_symbols_pipeline_integration(self):
-        pipeline_name = "collect_symbols"
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
+    def test_scanpipe_collect_symbols_ctags_pipeline_integration(self):
+        pipeline_name = "collect_symbols_ctags"
         project1 = Project.objects.create(name="Analysis")
 
         dir = project1.codebase_path / "codefile"
@@ -1239,3 +1250,94 @@ class PipelinesIntegrationTest(TestCase):
         result_extra_data_symbols = main_file.extra_data.get("source_symbols")
         expected_extra_data_symbols = ["generatePassword", "passwordLength", "charSet"]
         self.assertCountEqual(expected_extra_data_symbols, result_extra_data_symbols)
+
+    @skipIf(sys.platform != "linux", "Only supported on Linux")
+    def test_scanpipe_collect_strings_gettext_pipeline_integration(self):
+        pipeline_name = "collect_strings_gettext"
+        project1 = Project.objects.create(name="Analysis")
+
+        dir = project1.codebase_path / "codefile"
+        dir.mkdir(parents=True)
+
+        file_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        copy_input(file_location, dir)
+
+        pipes.collect_and_create_codebase_resources(project1)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        main_file = project1.codebaseresources.files()[0]
+        result_extra_data_strings = main_file.extra_data.get("source_strings")
+        expected_extra_data_strings = [
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()_-+=",  # noqa
+            "Enter the desired length of your password:",
+        ]
+        self.assertCountEqual(expected_extra_data_strings, result_extra_data_strings)
+
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
+    def test_scanpipe_collect_symbols_pygments_pipeline_integration(self):
+        pipeline_name = "collect_symbols_pygments"
+        project1 = Project.objects.create(name="Analysis")
+
+        dir = project1.codebase_path / "codefile"
+        dir.mkdir(parents=True)
+
+        file_location = self.data_location / "source-inspector" / "test3.cpp"
+        copy_input(file_location, dir)
+
+        pipes.collect_and_create_codebase_resources(project1)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        main_file = project1.codebaseresources.files()[0]
+        result_extra_data = main_file.extra_data
+
+        expected_extra_data = (
+            self.data_location / "source-inspector" / "test3.cpp-pygments-expected.json"
+        )
+
+        with open(expected_extra_data) as f:
+            expected_extra_data = json.load(f)
+
+        self.assertDictEqual(expected_extra_data, result_extra_data)
+
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
+    def test_scanpipe_collect_symbols_tree_sitter_pipeline_integration(self):
+        pipeline_name = "collect_symbols_tree_sitter"
+        project1 = Project.objects.create(name="Analysis")
+
+        dir = project1.codebase_path / "codefile"
+        dir.mkdir(parents=True)
+
+        file_location = self.data_location / "source-inspector" / "test3.cpp"
+        copy_input(file_location, dir)
+
+        pipes.collect_and_create_codebase_resources(project1)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        main_file = project1.codebaseresources.files()[0]
+        result_extra_data = main_file.extra_data
+
+        expected_extra_data = (
+            self.data_location
+            / "source-inspector"
+            / "test3.cpp-tree-sitter-expected.json"
+        )
+
+        with open(expected_extra_data) as f:
+            expected_extra_data = json.load(f)
+
+        self.assertDictEqual(expected_extra_data, result_extra_data)

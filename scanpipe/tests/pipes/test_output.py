@@ -274,6 +274,13 @@ class ScanPipeOutputPipesTest(TestCase):
 
         self.assertJSONEqual(results, expected_location.read_text())
 
+        output_file = output.to_cyclonedx(project=project, version="1.5")
+        results_json = json.loads(output_file.read_text())
+        self.assertEqual(
+            "http://cyclonedx.org/schema/bom-1.5.schema.json", results_json["$schema"]
+        )
+        self.assertEqual("1.5", results_json["specVersion"])
+
     def test_scanpipe_pipes_outputs_to_spdx(self):
         fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})

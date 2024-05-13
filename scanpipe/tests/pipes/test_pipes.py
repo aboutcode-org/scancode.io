@@ -116,6 +116,9 @@ class ScanPipePipesTest(TestCase):
         self.assertIn(package2, resource1.discovered_packages.all())
         self.assertIn(package2, resource2.discovered_packages.all())
 
+        # Make sure the following does not raise an exception
+        self.assertIsNone(pipes.update_or_create_package(p1, {}, [resource1]))
+
     def test_scanpipe_pipes_update_or_create_package_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")
         resource1 = make_resource_file(project=p1, path="filename.ext")

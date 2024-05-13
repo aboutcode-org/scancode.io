@@ -32,7 +32,7 @@ from cyclonedx.model.bom import Bom
 from cyclonedx.schema import SchemaVersion
 from cyclonedx.validation import ValidationError
 from cyclonedx.validation.json import JsonStrictValidator
-from packageurl import PackageURL
+from defusedxml import ElementTree as SafeElementTree
 
 
 def resolve_license(license):
@@ -121,10 +121,18 @@ def validate_document(document):
 
 def is_cyclonedx_bom(input_location):
     """Return True if the file at `input_location` is a CycloneDX BOM."""
-    with suppress(Exception):
-        data = json.loads(Path(input_location).read_text())
-        if data.get("bomFormat") == "CycloneDX":
-            return True
+    if str(input_location).endswith(".json"):
+        with suppress(Exception):
+            data = json.loads(Path(input_location).read_text())
+            if data.get("bomFormat") == "CycloneDX":
+                return True
+
+    elif str(input_location).endswith(".xml"):
+        with suppress(Exception):
+            et = SafeElementTree.parse(input_location)
+            if "cyclonedx" in et.getroot().tag:
+                return True
+
     return False
 
 
@@ -134,9 +142,7 @@ def cyclonedx_component_to_package_data(cdx_component):
 
     package_url_dict = {}
     if cdx_component.purl:
-        package_url_dict = PackageURL.from_string(str(cdx_component.purl)).to_dict(
-            encode=True
-        )
+        package_url_dict = cdx_component.purl.to_dict(encode=True)
 
     declared_license = get_declared_licenses(licenses=cdx_component.licenses)
 
@@ -164,26 +170,89 @@ def cyclonedx_component_to_package_data(cdx_component):
     }
 
 
-def get_bom(cyclonedx_document):
-    """Return CycloneDX BOM object."""
-    return Bom.from_json(data=cyclonedx_document)
-
-
 def get_components(bom):
     """Return list of components from CycloneDX BOM."""
     return list(bom._get_all_components())
 
 
+def delete_tools(cyclonedx_document_json):
+    """
+    Remove the ``tools`` section, if defined, from the SBOM as it can
+    be in the way of loading a SBOM that is valid regarding the spec, but fails the
+    deserialization.
+
+    The ``metadata.tools`` as an array was deprecated in 1.5 and replaced by an
+    object structure where you can define a list of ``components`` and ``services``.
+
+    The new structure is not yet supported by the cyclonedx-python-lib, neither for
+    serialization (output) nor deserialization (input).
+    https://github.com/CycloneDX/cyclonedx-python-lib/issues/578
+
+    The tools are not used anyway in the context of loading the SBOM component data as
+    packages.
+    """
+    if "tools" in cyclonedx_document_json.get("metadata", {}):
+        del cyclonedx_document_json["metadata"]["tools"]
+
+    return cyclonedx_document_json
+
+
+def delete_empty_properties(cyclonedx_document_json):
+    """
+    Remove entries for which no values are set, such as ``{"name": ""}`` or
+    ``"licenses":[{}]``.
+
+    Class like cyclonedx.model.contact.OrganizationalEntity raise a
+    NoPropertiesProvidedException while it is not enforced in the spec.
+
+    See https://github.com/CycloneDX/cyclonedx-python-lib/issues/600
+    """
+    entries_to_delete = []
+
+    def is_empty(value):
+        if isinstance(value, dict) and not any(value.values()):
+            return True
+        elif isinstance(value, list) and not any(value):
+            return True
+
+    for component in cyclonedx_document_json["components"]:
+        for property_name, property_value in component.items():
+            if is_empty(property_value):
+                entries_to_delete.append((component, property_name))
+
+    # Delete the keys outside the main check loop
+    for component, property_name in entries_to_delete:
+        del component[property_name]
+
+    return cyclonedx_document_json
+
+
 def resolve_cyclonedx_packages(input_location):
     """Resolve the packages from the `input_location` CycloneDX document file."""
     input_path = Path(input_location)
-    cyclonedx_document = json.loads(input_path.read_text())
+    document_data = input_path.read_text()
 
-    if errors := validate_document(cyclonedx_document):
-        error_msg = f'CycloneDX document "{input_path.name}" is not valid:\n{errors}'
-        raise ValueError(error_msg)
+    if str(input_location).endswith(".xml"):
+        cyclonedx_document = SafeElementTree.fromstring(document_data)
+        cyclonedx_bom = Bom.from_xml(cyclonedx_document)
 
-    cyclonedx_bom = get_bom(cyclonedx_document)
+    elif str(input_location).endswith(".json"):
+        cyclonedx_document = json.loads(document_data)
+
+        # Apply a few fixes pre-validation for maximum compatibility
+        cyclonedx_document = delete_tools(cyclonedx_document)
+        cyclonedx_document = delete_empty_properties(cyclonedx_document)
+
+        if errors := validate_document(cyclonedx_document):
+            error_msg = (
+                f'CycloneDX document "{input_path.name}" is not valid:\n{errors}'
+            )
+            raise ValueError(error_msg)
+
+        cyclonedx_bom = Bom.from_json(data=cyclonedx_document)
+
+    else:
+        return []
+
     components = get_components(cyclonedx_bom)
-
     return [cyclonedx_component_to_package_data(component) for component in components]

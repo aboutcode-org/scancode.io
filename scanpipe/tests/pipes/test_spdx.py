@@ -20,12 +20,15 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from pathlib import Path
 from unittest import TestCase
 
 from scanpipe.pipes import spdx
 
 
 class ScanPipeSPDXPipesTest(TestCase):
+    data_location = Path(__file__).parent.parent / "data"
+
     def setUp(self):
         self.schema = spdx.SPDX_SCHEMA_PATH.read_text()
 
@@ -372,6 +375,10 @@ class ScanPipeSPDXPipesTest(TestCase):
     def test_spdx_validate_document(self):
         document = spdx.Document(**self.document_data)
         spdx.validate_document(document, self.schema)
+
+        # Testing support for "PACKAGE_MANAGER" in place of "PACKAGE-MANAGER"
+        document_location = self.data_location / "spdx" / "example-2.3.1.json"
+        spdx.validate_document(document_location.read_text(), self.schema)
 
         with self.assertRaises(Exception):
             spdx.validate_document({}, self.schema)

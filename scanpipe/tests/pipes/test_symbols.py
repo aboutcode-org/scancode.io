@@ -20,7 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
+import sys
 from pathlib import Path
+from unittest import skipIf
 
 from django.test import TestCase
 
@@ -30,14 +33,14 @@ from scanpipe.pipes import symbols
 from scanpipe.pipes.input import copy_input
 
 
+@skipIf(sys.platform == "darwin", "Not supported on macOS")
 class ScanPipeSymbolsPipesTest(TestCase):
     data_location = Path(__file__).parent.parent / "data"
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
 
-    def test_scanpipe_pipes_symbols_collect_and_store_resource_symbols(self):
-
+    def test_scanpipe_pipes_symbols_collect_and_store_resource_symbols_ctags(self):
         dir = self.project1.codebase_path / "codefile"
         dir.mkdir(parents=True)
 
@@ -46,9 +49,59 @@ class ScanPipeSymbolsPipesTest(TestCase):
 
         pipes.collect_and_create_codebase_resources(self.project1)
 
-        symbols.collect_and_store_resource_symbols(self.project1)
+        symbols.collect_and_store_resource_symbols_ctags(self.project1)
 
         main_file = self.project1.codebaseresources.files()[0]
         result_extra_data_symbols = main_file.extra_data.get("source_symbols")
         expected_extra_data_symbols = ["generatePassword", "passwordLength", "charSet"]
         self.assertCountEqual(expected_extra_data_symbols, result_extra_data_symbols)
+
+    def test_scanpipe_pipes_collect_and_store_pygments_symbols_and_strings(self):
+        dir = self.project1.codebase_path / "codefile"
+        dir.mkdir(parents=True)
+
+        file_location = self.data_location / "source-inspector" / "test3.cpp"
+        copy_input(file_location, dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        symbols.collect_and_store_pygments_symbols_and_strings(self.project1)
+
+        main_file = self.project1.codebaseresources.files()[0]
+
+        result_extra_data = main_file.extra_data
+
+        expected_extra_data = (
+            self.data_location / "source-inspector" / "test3.cpp-pygments-expected.json"
+        )
+
+        with open(expected_extra_data) as f:
+            expected_extra_data = json.load(f)
+
+        self.assertDictEqual(expected_extra_data, result_extra_data)
+
+    def test_scanpipe_pipes_collect_and_store_tree_sitter_symbols_and_strings(self):
+        dir = self.project1.codebase_path / "codefile"
+        dir.mkdir(parents=True)
+
+        file_location = self.data_location / "source-inspector" / "test3.cpp"
+        copy_input(file_location, dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        symbols.collect_and_store_tree_sitter_symbols_and_strings(self.project1)
+
+        main_file = self.project1.codebaseresources.files()[0]
+
+        result_extra_data = main_file.extra_data
+
+        expected_extra_data = (
+            self.data_location
+            / "source-inspector"
+            / "test3.cpp-tree-sitter-expected.json"
+        )
+
+        with open(expected_extra_data) as f:
+            expected_extra_data = json.load(f)
+
+        self.assertDictEqual(expected_extra_data, result_extra_data)

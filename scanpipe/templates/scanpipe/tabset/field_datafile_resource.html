@@ -1,1 +1,1 @@
-<pre class="break-all wrap is-small"><a href="{% url 'resource_detail' project.slug field_data.value.path %}">{{ field_data.value|default:''|default_if_none:'' }}</a></pre>
+<pre class="break-all wrap is-small">{% if field_data.value %}<a href="{% url 'resource_detail' project.slug field_data.value.path %}">{{ field_data.value }}</a>{% endif %}</pre>

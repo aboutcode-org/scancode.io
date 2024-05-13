@@ -435,7 +435,7 @@ class UpdateMixin:
 
     def update(self, **kwargs):
         """
-        Update this resource with the provided ``kwargs`` values.
+        Update this instance with the provided ``kwargs`` values.
         The full ``save()`` process will be triggered, including signals, and the
         ``update_fields`` is automatically set.
         """
@@ -1648,7 +1648,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         help_text=_("Identify a registered Pipeline class."),
     )
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
-    scancodeio_version = models.CharField(max_length=30, blank=True)
+    scancodeio_version = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True)
     current_step = models.CharField(max_length=256, blank=True)
     selected_groups = models.JSONField(
@@ -1993,8 +1993,7 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
 
     def elfs(self):
         """
-        Resources that are ``files`` and their filetype starts with "ELF" and
-        contains any of these "executable", "relocatable", "shared object".
+        ELF executable and shared object Resources.
         Keep sync with the content type implementation at ``typecode.contenttype``.
         """
         return (
@@ -2008,6 +2007,28 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
                 | Q(file_type__icontains="shared object")
             )
         )
+
+    def win_exes(self):
+        """
+        Windows executable and DLL Resources.
+        Keep sync with the content type implementation at ``typecode.contenttype``.
+        """
+        return self.files().filter(
+            Q(file_type__icontains="for ms windows") | Q(file_type__istartswith="pe32")
+        )
+
+    def macho_binaries(self):
+        """
+        Mach-O binary Resources.
+        Keep sync with the content type implementation at ``typecode.contenttype``.
+        """
+        return self.files().filter(
+            models.Q(file_type__icontains="mach-o")
+            | models.Q(mime_type__icontains="application/x-mach-binary")
+        )
+
+    def executable_binaries(self):
+        return self.union(self.win_exes(), self.macho_binaries(), self.elfs())
 
 
 class ScanFieldsModelMixin(models.Model):
@@ -3209,14 +3230,6 @@ class DiscoveredPackage(
             if (url := getattr(self, field_name)) and field_name not in property_fields
         ]
 
-        # Always use the package_uid when available to ensure having unique
-        # package_url in the BOM when several instances of the same DiscoveredPackage
-        # (i.e. same purl) are present in the project.
-        try:
-            package_url = PackageURL.from_string(self.package_uid)
-        except ValueError:
-            package_url = self.get_package_url()
-
         evidence = None
         if self.other_license_expression_spdx:
             evidence = cyclonedx_component.ComponentEvidence(
@@ -3227,11 +3240,17 @@ class DiscoveredPackage(
                 ],
             )
 
+        package_url = self.get_package_url()
+        # Use the package_uid when available to ensure having unique bom_ref
+        # in the SBOM when several instances of the same DiscoveredPackage
+        # (i.e. same purl) are present in the project.
+        bom_ref = self.package_uid or str(package_url)
+
         return cyclonedx_component.Component(
             name=self.name,
             version=self.version,
-            bom_ref=str(package_url),
-            purl=package_url,
+            bom_ref=bom_ref,
+            purl=package_url,  # Warning: Use the real purl and not package_uid here.
             licenses=licenses,
             copyright=self.copyright,
             description=self.description,
@@ -3383,6 +3402,7 @@ class DiscoveredDependency(
         dependency_data,
         for_package=None,
         datafile_resource=None,
+        datasource_id=None,
         strip_datafile_path_root=False,
     ):
         """
@@ -3427,6 +3447,9 @@ class DiscoveredDependency(
                     segments = datafile_path.split("/")
                     datafile_path = "/".join(segments[1:])
                 datafile_resource = project.codebaseresources.get(path=datafile_path)
+
+        if datasource_id:
+            dependency_data["datasource_id"] = datasource_id
 
         # Set purl fields from `purl`
         purl = dependency_data.get("purl")

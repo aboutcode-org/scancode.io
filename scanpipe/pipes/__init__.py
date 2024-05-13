@@ -180,6 +180,7 @@ def update_or_create_package(project, package_data, codebase_resources=None):
     package_data = _clean_package_data(package_data)
     # No values for package_uid requires to be empty string for proper queryset lookup
     package_uid = package_data.get("package_uid") or ""
+    datasource_id = package_data.get("datasource_id") or ""
 
     package = DiscoveredPackage.objects.get_or_none(
         project=project,
@@ -192,8 +193,14 @@ def update_or_create_package(project, package_data, codebase_resources=None):
     else:
         package = DiscoveredPackage.create_from_data(project, package_data)
 
-    if codebase_resources:
-        package.add_resources(codebase_resources)
+    if package:
+        if datasource_id and datasource_id not in package.datasource_ids:
+            datasource_ids = package.datasource_ids.copy()
+            datasource_ids.append(datasource_id)
+            package.update(datasource_ids=datasource_ids)
+
+        if codebase_resources:
+            package.add_resources(codebase_resources)
 
     return package
 
@@ -210,7 +217,12 @@ def create_local_files_package(project, defaults, codebase_resources=None):
 
 
 def update_or_create_dependency(
-    project, dependency_data, for_package=None, strip_datafile_path_root=False
+    project,
+    dependency_data,
+    for_package=None,
+    datafile_resource=None,
+    datasource_id=None,
+    strip_datafile_path_root=False,
 ):
     """
     Get, update or create a DiscoveredDependency then returns it.
@@ -241,6 +253,8 @@ def update_or_create_dependency(
             project,
             dependency_data,
             for_package=for_package,
+            datafile_resource=datafile_resource,
+            datasource_id=datasource_id,
             strip_datafile_path_root=strip_datafile_path_root,
         )
 
