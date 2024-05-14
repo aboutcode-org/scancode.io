@@ -53,6 +53,7 @@ class CollectSymbolsPygments(Pipeline):
         """Collect and create codebase resources."""
         pipes.collect_and_create_codebase_resources(self.project)
 
+
     def collect_and_store_pygments_symbols_and_strings(self):
         """
         Collect symbols, strings and comments from codebase files using pygments
