@@ -73,7 +73,9 @@
                   <div class="control">
                     {{ form.ignored_patterns }}
                   </div>
-                  <p class="help">{{ form.ignored_patterns.help_text }}</p>
+                  <div class="help">
+                    {{ form.ignored_patterns.help_text|safe|linebreaksbr }}
+                  </div>
                 </div>
               </div>
             </div>

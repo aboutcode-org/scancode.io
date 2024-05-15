@@ -29,6 +29,7 @@ from taggit.forms import TagField
 from taggit.forms import TagWidget
 
 from scanpipe.models import Project
+from scanpipe.pipelines import convert_markdown_to_html
 from scanpipe.pipes import fetch
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -275,6 +276,26 @@ class ListTextarea(forms.CharField):
         return value
 
 
+ignored_patterns_help_markdown = """
+Provide one or more path patterns to be ignored, one per line.
+
+Each pattern should follow the syntax of Unix shell-style wildcards:
+- Use ``*`` to match multiple characters.
+- Use ``?`` to match a single character.
+
+Here are some examples:
+- To ignore all files with a ".tmp" extension, use: ``*.tmp``
+- To ignore all files in a "tests" directory, use: ``tests/*``
+- To ignore specific files or directories, provide their exact names or paths, such as:
+  ``example/file_to_ignore.txt`` or ``folder_to_ignore/*``
+
+You can also use regular expressions for more complex matching.
+Remember that these patterns will be applied recursively to all files and directories
+within the project.
+Be cautious when specifying patterns to avoid unintended exclusions.
+"""
+
+
 class ProjectSettingsForm(forms.ModelForm):
     settings_fields = [
         "extract_recursively",
@@ -294,12 +315,12 @@ class ProjectSettingsForm(forms.ModelForm):
     ignored_patterns = ListTextarea(
         label="Ignored patterns",
         required=False,
-        help_text="Provide one or more path patterns to be ignored, one per line.",
+        help_text=convert_markdown_to_html(ignored_patterns_help_markdown.strip()),
         widget=forms.Textarea(
             attrs={
                 "class": "textarea is-dynamic",
                 "rows": 3,
-                "placeholder": "*.xml\ntests/*\n*docs/*.rst",
+                "placeholder": "*.tmp\ntests/*\n*docs/*.rst",
             },
         ),
     )
