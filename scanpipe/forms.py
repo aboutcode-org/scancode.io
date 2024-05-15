@@ -313,17 +313,33 @@ class ProjectSettingsForm(forms.ModelForm):
     attribution_template = forms.CharField(
         label="Attribution template",
         required=False,
-        help_text="Custom attribution template.",
+        help_text=(
+            "Customize the attribution template to personalize the generated "
+            "attribution for your needs."
+            "\nThe default template can be found at "
+            "https://raw.githubusercontent.com/nexB/scancode.io/main/scanpipe/"
+            "templates/scanpipe/attribution.html"
+            "\nFeel free to modify its content according to your preferences and paste "
+            "the entire HTML code into this field."
+        ),
         widget=forms.Textarea(attrs={"class": "textarea is-dynamic", "rows": 3}),
     )
     product_name = forms.CharField(
         label="Product name",
         required=False,
+        help_text=(
+            "The product name of this project, as specified within the DejaCode "
+            "application."
+        ),
         widget=forms.TextInput(attrs={"class": "input"}),
     )
     product_version = forms.CharField(
         label="Product version",
         required=False,
+        help_text=(
+            "The product version of this project, as specified within the DejaCode "
+            "application."
+        ),
         widget=forms.TextInput(attrs={"class": "input"}),
     )
 

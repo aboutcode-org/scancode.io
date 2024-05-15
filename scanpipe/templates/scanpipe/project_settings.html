@@ -137,7 +137,9 @@
                   <div class="control">
                     {{ form.attribution_template }}
                   </div>
-                  <p class="help">{{ form.attribution_template.help_text }}</p>
+                  <p class="help">
+                    {{ form.attribution_template.help_text|urlize|linebreaksbr }}
+                  </p>
                 </div>
               </div>
             </div>
