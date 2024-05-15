@@ -308,10 +308,6 @@ class ProjectSettingsForm(forms.ModelForm):
         min_value=0,
         max_value=100,
         required=False,
-        help_text=(
-            "Do not return license matches with a score lower than this score. "
-            "A number between 0 and 100."
-        ),
         widget=forms.NumberInput(attrs={"class": "input"}),
     )
     attribution_template = forms.CharField(
