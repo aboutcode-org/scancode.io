@@ -132,6 +132,24 @@
               </div>
             </div>
 
+            <div class="panel">
+              <p id="notifications" class="panel-heading py-2 is-size-6">Notifications</p>
+              <div class="panel-block is-block px-4">
+                <p class="mb-2">
+                  Define email addresses to receive notifications on pipeline completion.
+                </p>
+                <div class="field">
+                  <label class="label" for="{{ form.email_notification_address.id_for_label }}">
+                    {{ form.email_notification_address.label }}
+                  </label>
+                  <div class="control">
+                    {{ form.email_notification_address }}
+                  </div>
+                  <p class="help">{{ form.email_notification_address.help_text }}</p>
+                </div>
+              </div>
+            </div>
+
             <div class="columns mt-4 mb-5 is-variable is-1">
               <div class="column is-one-third">
                 <a href="{% url 'project_detail' project.slug %}" class="button is-fullwidth">Cancel</a>

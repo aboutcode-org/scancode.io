@@ -24,6 +24,7 @@ from django import forms
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 
 from taggit.forms import TagField
 from taggit.forms import TagWidget
@@ -275,6 +276,35 @@ class ListTextarea(forms.CharField):
         return value
 
 
+class EmailListField(forms.CharField):
+    def to_python(self, value):
+        if not value:
+            return []
+        return [email.strip() for email in value.split(",")]
+
+    def prepare_value(self, value):
+        if isinstance(value, list):
+            return ", ".join(value)
+        return value
+
+    @staticmethod
+    def validate_email_list(value):
+        for email in value:
+            try:
+                validate_email(email)
+            except ValidationError:
+                raise ValidationError(f"{email} is not a valid email address")
+
+    def validate(self, value):
+        super().validate(value)
+        self.validate_email_list(value)
+
+    def clean(self, value):
+        value = self.to_python(value)
+        self.validate(value)
+        return value
+
+
 class ProjectSettingsForm(forms.ModelForm):
     settings_fields = [
         "extract_recursively",
@@ -283,6 +313,7 @@ class ProjectSettingsForm(forms.ModelForm):
         "attribution_template",
         "product_name",
         "product_version",
+        "email_notification_address",
     ]
     extract_recursively = forms.BooleanField(
         label="Extract recursively",
@@ -328,6 +359,12 @@ class ProjectSettingsForm(forms.ModelForm):
     product_version = forms.CharField(
         label="Product version",
         required=False,
+        widget=forms.TextInput(attrs={"class": "input"}),
+    )
+    email_notification_address = EmailListField(
+        label="Email addresses",
+        required=False,
+        help_text="Comma separated email addresses.",
         widget=forms.TextInput(attrs={"class": "input"}),
     )
 
