@@ -278,14 +278,43 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "detected_license_expression": "",
-      "detected_license_expression_spdx": "",
-      "license_detections": [],
+      "detected_license_expression": "mit",
+      "detected_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 5,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mit_30.RULE",
+              "from_file": null,
+              "start_line": 5,
+              "matched_text": "  \"license\": \"MIT\",",
+              "match_coverage": 100.0,
+              "matched_length": 2,
+              "rule_relevance": 100,
+              "rule_identifier": "mit_30.RULE",
+              "license_expression": "mit",
+              "spdx_license_expression": "MIT"
+            }
+          ],
+          "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
+        }
+      ],
       "license_clues": [],
-      "percentage_of_license_text": null,
+      "percentage_of_license_text": 3.33,
       "copyrights": [],
       "holders": [],
-      "authors": [],
+      "authors": [
+        {
+          "author": "Sindre Sorhus",
+          "end_line": 8,
+          "start_line": 7
+        }
+      ],
       "package_data": [
         {
           "md5": null,
@@ -380,8 +409,20 @@
       "for_packages": [
         "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
-      "emails": [],
-      "urls": [],
+      "emails": [
+        {
+          "email": "sindresorhus@gmail.com",
+          "end_line": 9,
+          "start_line": 9
+        }
+      ],
+      "urls": [
+        {
+          "url": "http://sindresorhus.com/",
+          "end_line": 10,
+          "start_line": 10
+        }
+      ],
       "extra_data": {}
     },
     {

@@ -252,7 +252,9 @@ def scan_for_package_data(location, with_threading=True, package_only=False, **k
     return _scan_resource(location, scanners, with_threading=with_threading)
 
 
-def save_scan_file_results(codebase_resource, scan_results, scan_errors):
+def save_scan_file_results(
+    codebase_resource, scan_results, scan_errors, update_status=True, **kwargs
+):
     """
     Save the resource scan file results in the database.
     Create project errors if any occurred during the scan.
@@ -262,6 +264,9 @@ def save_scan_file_results(codebase_resource, scan_results, scan_errors):
     if scan_errors:
         codebase_resource.add_errors(scan_errors)
         status = flag.SCANNED_WITH_ERROR
+
+    if not update_status:
+        status = None
 
     codebase_resource.set_scan_results(scan_results, status)
 
@@ -283,7 +288,12 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
 
 
 def scan_resources(
-    resource_qs, scan_func, save_func, scan_func_kwargs=None, progress_logger=None
+    resource_qs,
+    scan_func,
+    save_func,
+    scan_func_kwargs=None,
+    save_func_kwargs=None,
+    progress_logger=None,
 ):
     """
     Run the `scan_func` on the codebase resources of the provided `resource_qs`.
@@ -303,6 +313,9 @@ def scan_resources(
     if not scan_func_kwargs:
         scan_func_kwargs = {}
 
+    if not save_func_kwargs:
+        save_func_kwargs = {}
+
     resource_count = resource_qs.count()
     logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")
     resource_iterator = resource_qs.iterator(chunk_size=2000)
@@ -317,7 +330,7 @@ def scan_resources(
             scan_results, scan_errors = scan_func(
                 resource.location, with_threading, **scan_func_kwargs
             )
-            save_func(resource, scan_results, scan_errors)
+            save_func(resource, scan_results, scan_errors, **save_func_kwargs)
         return
 
     logger.info(f"Starting ProcessPoolExecutor with {max_workers} max_workers")
@@ -344,10 +357,10 @@ def scan_resources(
                     "CPU core for successful execution."
                 )
                 raise broken_pool_error from InsufficientResourcesError(message)
-            save_func(resource, scan_results, scan_errors)
+            save_func(resource, scan_results, scan_errors, **save_func_kwargs)
 
 
-def scan_for_files(project, resource_qs=None, progress_logger=None):
+def scan_for_files(project, resource_qs=None, progress_logger=None, update_status=True):
     """
     Run a license, copyright, email, and url scan on files without a status for
     a `project`.
@@ -363,12 +376,39 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
     if license_score := project.get_env("scancode_license_score"):
         scan_func_kwargs["min_license_score"] = license_score
 
+    save_func_kwargs = {
+        "update_status": update_status,
+    }
+
     scan_resources(
         resource_qs=resource_qs,
         scan_func=scan_file,
         save_func=save_scan_file_results,
         scan_func_kwargs=scan_func_kwargs,
+        save_func_kwargs=save_func_kwargs,
         progress_logger=progress_logger,
+    )
+
+
+def scan_package_files(
+    project,
+    progress_logger=None,
+    update_status=False,
+):
+    """
+    Scan files which are part of a package, for copyright, license, email
+    and urls.
+
+    If `update_status` is False, the status field of codebase resources is not
+    updated to `scanned` (which is a side-effect of scanning files), but rather
+    keep the old status intact.
+    """
+    package_files = project.codebaseresources.package_files()
+    scan_for_files(
+        project=project,
+        resource_qs=package_files,
+        progress_logger=progress_logger,
+        update_status=update_status,
     )
 
 

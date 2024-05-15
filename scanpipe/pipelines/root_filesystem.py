@@ -35,6 +35,7 @@ class RootFS(Pipeline):
     def steps(cls):
         return (
             cls.extract_input_files_to_codebase_directory,
+            cls.extract_archives,
             cls.find_root_filesystems,
             cls.collect_rootfs_information,
             cls.collect_and_create_codebase_resources,
@@ -45,6 +46,7 @@ class RootFS(Pipeline):
             cls.scan_for_application_packages,
             cls.match_not_analyzed_to_system_packages,
             cls.scan_for_files,
+            cls.scan_package_files,
             cls.analyze_scanned_files,
             cls.flag_not_analyzed_codebase_resources,
         )
@@ -89,7 +91,7 @@ class RootFS(Pipeline):
                 rootfs.scan_rootfs_for_system_packages(self.project, rfs)
 
     def flag_uninteresting_codebase_resources(self):
-        """Flag files—not worth tracking—that don’t belong to any system packages."""
+        """Flag files—not worth tracking—that do not belong to any system packages."""
         rootfs.flag_uninteresting_codebase_resources(self.project)
 
     def scan_for_application_packages(self):
@@ -122,6 +124,13 @@ class RootFS(Pipeline):
     def scan_for_files(self):
         """Scan unknown resources for copyrights, licenses, emails, and urls."""
         scancode.scan_for_files(self.project, progress_logger=self.log)
+
+    def scan_package_files(self):
+        """
+        Scan files which are part of a package, for copyright, license, email
+        and urls.
+        """
+        scancode.scan_package_files(self.project, progress_logger=self.log)
 
     def analyze_scanned_files(self):
         """Analyze single file scan results for completeness."""

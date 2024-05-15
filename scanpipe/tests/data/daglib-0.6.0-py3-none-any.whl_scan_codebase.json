@@ -771,14 +771,65 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "detected_license_expression": "",
-      "detected_license_expression_spdx": "",
-      "license_detections": [],
+      "detected_license_expression": "mit",
+      "detected_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 6,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mit_30.RULE",
+              "from_file": null,
+              "start_line": 6,
+              "matched_text": "License: MIT",
+              "match_coverage": 100.0,
+              "matched_length": 2,
+              "rule_relevance": 100,
+              "rule_identifier": "mit_30.RULE",
+              "license_expression": "mit",
+              "spdx_license_expression": "MIT"
+            }
+          ],
+          "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
+        },
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 11,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_mit_license.RULE",
+              "from_file": null,
+              "start_line": 11,
+              "matched_text": "Classifier: License :: OSI Approved :: MIT License",
+              "match_coverage": 100.0,
+              "matched_length": 5,
+              "rule_relevance": 100,
+              "rule_identifier": "pypi_mit_license.RULE",
+              "license_expression": "mit",
+              "spdx_license_expression": "MIT"
+            }
+          ],
+          "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
+        }
+      ],
       "license_clues": [],
-      "percentage_of_license_text": null,
+      "percentage_of_license_text": 1.13,
       "copyrights": [],
       "holders": [],
-      "authors": [],
+      "authors": [
+        {
+          "author": "Michael Harris Author-email mharris@luabase.com",
+          "end_line": 8,
+          "start_line": 7
+        }
+      ],
       "package_data": [
         {
           "md5": null,
@@ -981,8 +1032,80 @@
       "for_packages": [
         "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
-      "emails": [],
-      "urls": [],
+      "emails": [
+        {
+          "email": "mharris@luabase.com",
+          "end_line": 8,
+          "start_line": 8
+        }
+      ],
+      "urls": [
+        {
+          "url": "https://github.com/mharrisb1/daglib",
+          "end_line": 5,
+          "start_line": 5
+        },
+        {
+          "url": "https://mharrisb1.github.io/daglib/",
+          "end_line": 20,
+          "start_line": 20
+        },
+        {
+          "url": "https://badge.fury.io/py/daglib.svg",
+          "end_line": 26,
+          "start_line": 26
+        },
+        {
+          "url": "https://badge.fury.io/py/daglib",
+          "end_line": 26,
+          "start_line": 26
+        },
+        {
+          "url": "https://img.shields.io/pypi/dm/daglib",
+          "end_line": 27,
+          "start_line": 27
+        },
+        {
+          "url": "https://pypi.org/project/daglib",
+          "end_line": 27,
+          "start_line": 27
+        },
+        {
+          "url": "https://img.shields.io/pypi/pyversions/daglib.svg",
+          "end_line": 28,
+          "start_line": 28
+        },
+        {
+          "url": "https://img.shields.io/badge/code%20style-black-000000.svg",
+          "end_line": 29,
+          "start_line": 29
+        },
+        {
+          "url": "https://github.com/ambv/black",
+          "end_line": 29,
+          "start_line": 29
+        },
+        {
+          "url": "https://img.shields.io/badge/mypy-checked-blue.svg",
+          "end_line": 30,
+          "start_line": 30
+        },
+        {
+          "url": "https://mypy.readthedocs.io/en/stable",
+          "end_line": 30,
+          "start_line": 30
+        },
+        {
+          "url": "https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white",
+          "end_line": 31,
+          "start_line": 31
+        },
+        {
+          "url": "https://github.com/pre-commit/pre-commit",
+          "end_line": 31,
+          "start_line": 31
+        }
+      ],
       "extra_data": {}
     },
     {
