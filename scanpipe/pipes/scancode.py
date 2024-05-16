@@ -359,15 +359,10 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
     if resource_qs is None:
         resource_qs = project.codebaseresources.no_status()
 
-    scan_func_kwargs = {}
-    if license_score := project.get_env("scancode_license_score"):
-        scan_func_kwargs["min_license_score"] = license_score
-
     scan_resources(
         resource_qs=resource_qs,
         scan_func=scan_file,
         save_func=save_scan_file_results,
-        scan_func_kwargs=scan_func_kwargs,
         progress_logger=progress_logger,
     )
 
