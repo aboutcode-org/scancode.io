@@ -171,36 +171,53 @@ def cyclonedx_component_to_package_data(cdx_component):
 
 
 def get_components(bom):
-    """Return list of components from CycloneDX BOM."""
-    return list(bom._get_all_components())
+    """Return components from CycloneDX BOM except for the metadata.component."""
+    for component in bom.components:
+        yield from component.get_all_nested_components(include_self=True)
 
 
-def delete_tools(cyclonedx_document_json):
+def delete_ignored_root_properties(cyclonedx_document_json):
     """
-    Remove the ``tools`` section, if defined, from the SBOM as it can
-    be in the way of loading a SBOM that is valid regarding the spec, but fails the
-    deserialization.
+    Remove root properties from the CycloneDX document that are irrelevant
+    when loading SBOM component data as packages.
 
-    The ``metadata.tools`` as an array was deprecated in 1.5 and replaced by an
-    object structure where you can define a list of ``components`` and ``services``.
+    This function aims to maximize compatibility by excluding unsupported SPEC
+    definitions while utilizing the cyclonedx-python-lib library.
 
-    The new structure is not yet supported by the cyclonedx-python-lib, neither for
-    serialization (output) nor deserialization (input).
+    The data contained in these properties is unnecessary for loading components
+    from the SBOM and can be safely disregarded.
+
     https://github.com/CycloneDX/cyclonedx-python-lib/issues/578
-
-    The tools are not used anyway in the context of loading the SBOM component data as
-    packages.
     """
-    if "tools" in cyclonedx_document_json.get("metadata", {}):
-        del cyclonedx_document_json["metadata"]["tools"]
+    ignored_root_properties = [
+        "metadata",
+        "services",
+        "externalReferences",
+        "compositions",
+        "vulnerabilities",
+        "annotations",
+        "formulation",
+        "declarations",
+        "definitions",
+        "properties",
+    ]
 
-    return cyclonedx_document_json
+    cleaned_document = {
+        key: value
+        for key, value in cyclonedx_document_json.items()
+        if key not in ignored_root_properties
+    }
+
+    return cleaned_document
 
 
-def delete_empty_properties(cyclonedx_document_json):
+def cleanup_components_properties(cyclonedx_document_json):
     """
     Remove entries for which no values are set, such as ``{"name": ""}`` or
     ``"licenses":[{}]``.
+
+    Also remove the properties that are not used in the context of loading packages
+    from SBOM and that  may be unsupported by the cyclonedx-python-lib library.
 
     Class like cyclonedx.model.contact.OrganizationalEntity raise a
     NoPropertiesProvidedException while it is not enforced in the spec.
@@ -208,6 +225,19 @@ def delete_empty_properties(cyclonedx_document_json):
     See https://github.com/CycloneDX/cyclonedx-python-lib/issues/600
     """
     entries_to_delete = []
+    ignored_properties = [
+        "evidence",
+        "omniborId",
+        "swhid",
+        "swid",
+        "modified",
+        "pedigree",
+        "releaseNotes",
+        "modelCard",
+        "data",
+        "cryptoProperties",
+        "signature",
+    ]
 
     def is_empty(value):
         if isinstance(value, dict) and not any(value.values()):
@@ -217,7 +247,7 @@ def delete_empty_properties(cyclonedx_document_json):
 
     for component in cyclonedx_document_json["components"]:
         for property_name, property_value in component.items():
-            if is_empty(property_value):
+            if is_empty(property_value) or property_name in ignored_properties:
                 entries_to_delete.append((component, property_name))
 
     # Delete the keys outside the main check loop
@@ -240,8 +270,8 @@ def resolve_cyclonedx_packages(input_location):
         cyclonedx_document = json.loads(document_data)
 
         # Apply a few fixes pre-validation for maximum compatibility
-        cyclonedx_document = delete_tools(cyclonedx_document)
-        cyclonedx_document = delete_empty_properties(cyclonedx_document)
+        cyclonedx_document = delete_ignored_root_properties(cyclonedx_document)
+        cyclonedx_document = cleanup_components_properties(cyclonedx_document)
 
         if errors := validate_document(cyclonedx_document):
             error_msg = (
