@@ -1,0 +1,35 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:b74fe5df-e965-415e-ba65-f38421a0695d",
+  "version": 1,
+  "metadata": {
+    "lifecycles": [
+      {
+        "phase": "build"
+      }
+    ]
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:pypi/asgiref@3.3.0",
+      "name": "asgiref",
+      "type": "library",
+      "supplier": {
+        "name": ""
+      },
+      "licenses": [
+        {}
+      ],
+      "evidence": {
+        "identity": [
+          {
+            "field": "purl",
+            "confidence": 1
+          }
+        ]
+      }
+    }
+  ]
+}

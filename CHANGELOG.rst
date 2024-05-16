@@ -17,7 +17,10 @@ v34.5.0 (unreleased)
 
 - Workaround an issue with the cyclonedx-python-lib that does not allow to load
   SBOMs that contains properties with no values.
+  Also, a few fixes pre-validation are applyed before deserializing thr SBOM for
+  maximum compatibility.
   https://github.com/nexB/scancode.io/issues/1185
+  https://github.com/nexB/scancode.io/issues/1230
 
 - Add a new `CollectTreeSitterSymbolsAndStrings` pipeline (addon) for collecting source
   symbol and string using tree-sitter.
