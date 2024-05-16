@@ -57,6 +57,9 @@ v34.5.0 (unreleased)
 - Remove the ``scancode_license_score`` option from the Project configuration.
   https://github.com/nexB/scancode.io/issues/1231
 
+- Add support for a ``ignored_dependency_scopes`` field on the Project configuration.
+  https://github.com/nexB/scancode.io/issues/1197
+
 v34.4.0 (2024-04-22)
 --------------------
 

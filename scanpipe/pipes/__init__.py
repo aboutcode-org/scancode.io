@@ -25,6 +25,7 @@ import logging
 import sys
 import time
 import uuid
+from collections import defaultdict
 from contextlib import suppress
 from datetime import datetime
 from itertools import islice
@@ -216,6 +217,29 @@ def create_local_files_package(project, defaults, codebase_resources=None):
     return update_or_create_package(project, package_data, codebase_resources)
 
 
+def ignore_dependency_scope(project, dependency_data):
+    """
+    Return True if the dependency should be ignored, i.e.: not created.
+    The ignored scopes are defined on the project ``ignored_dependency_scopes`` setting
+    field.
+    """
+    ignored_dependency_scopes = project.get_env(field_name="ignored_dependency_scopes")
+    if not ignored_dependency_scopes:
+        return False
+
+    ignored_scope_index = defaultdict(list)
+    for entry in ignored_dependency_scopes:
+        ignored_scope_index[entry.get("package_type")].append(entry.get("scope"))
+
+    dependency_package_type = dependency_data.get("package_type")
+    dependency_scope = dependency_data.get("scope")
+    if dependency_package_type and dependency_scope:
+        if dependency_scope in ignored_scope_index.get(dependency_package_type, []):
+            return True  # Do not create the DiscoveredDependency record.
+
+    return False
+
+
 def update_or_create_dependency(
     project,
     dependency_data,
@@ -238,6 +262,9 @@ def update_or_create_dependency(
     """
     dependency = None
     dependency_uid = dependency_data.get("dependency_uid")
+
+    if ignore_dependency_scope(project, dependency_data):
+        return  # Do not create the DiscoveredDependency record.
 
     if not dependency_uid:
         dependency_data["dependency_uid"] = uuid.uuid4()
