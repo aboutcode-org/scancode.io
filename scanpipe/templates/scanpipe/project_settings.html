@@ -73,7 +73,9 @@
                   <div class="control">
                     {{ form.ignored_patterns }}
                   </div>
-                  <p class="help">{{ form.ignored_patterns.help_text }}</p>
+                  <div class="help">
+                    {{ form.ignored_patterns.help_text|safe|linebreaksbr }}
+                  </div>
                 </div>
               </div>
             </div>
@@ -88,7 +90,17 @@
                   <div class="control">
                     {{ form.scancode_license_score }}
                   </div>
-                  <p class="help">{{ form.scancode_license_score.help_text }}</p>
+                  <div class="help content">
+                    Adjust license matching strictness with this option by providing
+                    an integer from 0 to 100:
+                    <ul class="my-2">
+                      <li><code>0</code>: All matches reported <strong>(default)</strong>.</li>
+                      <li><code>100</code>: Highest strictness: only precise matches reported.</li>
+                    </ul>
+                    Higher scores mean stricter matching, with a higher threshold for matches.<br>
+                    Visit the <a href="https://scancode-toolkit.readthedocs.io/en/stable/cli-reference/basic-options.html#license-score-option" target="_blank">ScanCode toolkit documentation</a>
+                    for comprehensive details on the license score option.
+                  </div>
                 </div>
               </div>
             </div>
@@ -127,7 +139,9 @@
                   <div class="control">
                     {{ form.attribution_template }}
                   </div>
-                  <p class="help">{{ form.attribution_template.help_text }}</p>
+                  <p class="help">
+                    {{ form.attribution_template.help_text|urlize|linebreaksbr }}
+                  </p>
                 </div>
               </div>
             </div>

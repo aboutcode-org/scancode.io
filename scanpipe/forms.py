@@ -29,6 +29,7 @@ from taggit.forms import TagField
 from taggit.forms import TagWidget
 
 from scanpipe.models import Project
+from scanpipe.pipelines import convert_markdown_to_html
 from scanpipe.pipes import fetch
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -275,6 +276,26 @@ class ListTextarea(forms.CharField):
         return value
 
 
+ignored_patterns_help_markdown = """
+Provide one or more path patterns to be ignored, one per line.
+
+Each pattern should follow the syntax of Unix shell-style wildcards:
+- Use ``*`` to match multiple characters.
+- Use ``?`` to match a single character.
+
+Here are some examples:
+- To ignore all files with a ".tmp" extension, use: ``*.tmp``
+- To ignore all files in a "tests" directory, use: ``tests/*``
+- To ignore specific files or directories, provide their exact names or paths, such as:
+  ``example/file_to_ignore.txt`` or ``folder_to_ignore/*``
+
+You can also use regular expressions for more complex matching.
+Remember that these patterns will be applied recursively to all files and directories
+within the project.
+Be cautious when specifying patterns to avoid unintended exclusions.
+"""
+
+
 class ProjectSettingsForm(forms.ModelForm):
     settings_fields = [
         "extract_recursively",
@@ -294,12 +315,12 @@ class ProjectSettingsForm(forms.ModelForm):
     ignored_patterns = ListTextarea(
         label="Ignored patterns",
         required=False,
-        help_text="Provide one or more path patterns to be ignored, one per line.",
+        help_text=convert_markdown_to_html(ignored_patterns_help_markdown.strip()),
         widget=forms.Textarea(
             attrs={
                 "class": "textarea is-dynamic",
                 "rows": 3,
-                "placeholder": "*.xml\ntests/*\n*docs/*.rst",
+                "placeholder": "*.tmp\ntests/*\n*docs/*.rst",
             },
         ),
     )
@@ -308,26 +329,38 @@ class ProjectSettingsForm(forms.ModelForm):
         min_value=0,
         max_value=100,
         required=False,
-        help_text=(
-            "Do not return license matches with a score lower than this score. "
-            "A number between 0 and 100."
-        ),
         widget=forms.NumberInput(attrs={"class": "input"}),
     )
     attribution_template = forms.CharField(
         label="Attribution template",
         required=False,
-        help_text="Custom attribution template.",
+        help_text=(
+            "Customize the attribution template to personalize the generated "
+            "attribution for your needs."
+            "\nThe default template can be found at "
+            "https://raw.githubusercontent.com/nexB/scancode.io/main/scanpipe/"
+            "templates/scanpipe/attribution.html"
+            "\nFeel free to modify its content according to your preferences and paste "
+            "the entire HTML code into this field."
+        ),
         widget=forms.Textarea(attrs={"class": "textarea is-dynamic", "rows": 3}),
     )
     product_name = forms.CharField(
         label="Product name",
         required=False,
+        help_text=(
+            "The product name of this project, as specified within the DejaCode "
+            "application."
+        ),
         widget=forms.TextInput(attrs={"class": "input"}),
     )
     product_version = forms.CharField(
         label="Product version",
         required=False,
+        help_text=(
+            "The product version of this project, as specified within the DejaCode "
+            "application."
+        ),
         widget=forms.TextInput(attrs={"class": "input"}),
     )
 
