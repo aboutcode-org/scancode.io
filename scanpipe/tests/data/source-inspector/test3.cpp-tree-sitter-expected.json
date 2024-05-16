@@ -1,8 +1,8 @@
 {
   "source_strings": [
-    "Testing dummy functions:\n",
-    "Addition: %d + %d = %d\n",
-    "Subtraction: %d - %d = %d\n"
+    "\"Testing dummy functions:\\n\"",
+    "\"Addition: %d + %d = %d\\n\"",
+    "\"Subtraction: %d - %d = %d\\n\""
   ],
   "source_symbols": [
     "add",
