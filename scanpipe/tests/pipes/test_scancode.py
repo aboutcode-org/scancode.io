@@ -292,20 +292,6 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual("", resource3.detected_license_expression)
         self.assertEqual(["copy"], resource3.copyrights)
 
-    @mock.patch("scanpipe.pipes.scancode.scan_resources")
-    def test_scanpipe_pipes_scancode_scan_for_files_scancode_license_score(
-        self, mock_scan_resources
-    ):
-        project1 = Project.objects.create(
-            name="Analysis",
-            settings={"scancode_license_score": 99},
-        )
-
-        scancode.scan_for_files(project1)
-        expected = {"min_license_score": 99}
-        call = mock_scan_resources.call_args_list[-1]
-        self.assertEqual(expected, call.kwargs["scan_func_kwargs"])
-
     def test_scanpipe_pipes_scancode_scan_for_package_data_timeout(self):
         input_location = str(self.data_location / "notice.NOTICE")
 

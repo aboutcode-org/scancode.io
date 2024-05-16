@@ -300,7 +300,6 @@ class ProjectSettingsForm(forms.ModelForm):
     settings_fields = [
         "extract_recursively",
         "ignored_patterns",
-        "scancode_license_score",
         "attribution_template",
         "product_name",
         "product_version",
@@ -323,13 +322,6 @@ class ProjectSettingsForm(forms.ModelForm):
                 "placeholder": "*.tmp\ntests/*\n*docs/*.rst",
             },
         ),
-    )
-    scancode_license_score = forms.IntegerField(
-        label="License score",
-        min_value=0,
-        max_value=100,
-        required=False,
-        widget=forms.NumberInput(attrs={"class": "input"}),
     )
     attribution_template = forms.CharField(
         label="Attribution template",

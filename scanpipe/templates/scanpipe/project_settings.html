@@ -81,31 +81,6 @@
             </div>
 
             <div class="panel">
-              <p id="scancode" class="panel-heading py-2 is-size-6">ScanCode</p>
-              <div class="panel-block is-block px-4">
-                <div class="field">
-                  <label class="label" for="{{ form.scancode_license_score.id_for_label }}">
-                    {{ form.scancode_license_score.label }}
-                  </label>
-                  <div class="control">
-                    {{ form.scancode_license_score }}
-                  </div>
-                  <div class="help content">
-                    Adjust license matching strictness with this option by providing
-                    an integer from 0 to 100:
-                    <ul class="my-2">
-                      <li><code>0</code>: All matches reported <strong>(default)</strong>.</li>
-                      <li><code>100</code>: Highest strictness: only precise matches reported.</li>
-                    </ul>
-                    Higher scores mean stricter matching, with a higher threshold for matches.<br>
-                    Visit the <a href="https://scancode-toolkit.readthedocs.io/en/stable/cli-reference/basic-options.html#license-score-option" target="_blank">ScanCode toolkit documentation</a>
-                    for comprehensive details on the license score option.
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel">
               <p id="dejacode" class="panel-heading py-2 is-size-6">DejaCode</p>
               <div class="panel-block is-block px-4">
                 <div class="field">
