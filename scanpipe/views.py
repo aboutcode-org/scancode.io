@@ -1835,7 +1835,7 @@ class DiscoveredPackageDetailsView(
                 "project_id",
             ),
         ),
-        "dependencies__project",
+        "declared_dependencies__project",
     ]
     tabset = {
         "essentials": {
@@ -1910,7 +1910,7 @@ class DiscoveredPackageDetailsView(
             "template": "scanpipe/tabset/tab_resources.html",
         },
         "dependencies": {
-            "fields": ["dependencies"],
+            "fields": ["declared_dependencies"],
             "icon_class": "fa-solid fa-layer-group",
             "template": "scanpipe/tabset/tab_dependencies.html",
         },
