@@ -2069,9 +2069,11 @@ class ScanPipeModelsTest(TestCase):
             "affected_by_vulnerabilities",
             "compliance_alert",
             "tag",
+            "declared_dependencies",
+            "resolved_dependencies",
         ]
 
-        package_data_only_field = ["datasource_id"]
+        package_data_only_field = ["datasource_id", "dependencies"]
 
         discovered_package_fields = [
             field.name

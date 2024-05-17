@@ -1506,6 +1506,9 @@ class DiscoveredDependencyListView(
             "for_package", queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS)
         ),
         Prefetch(
+            "resolved_to", queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS)
+        ),
+        Prefetch(
             "datafile_resource", queryset=CodebaseResource.objects.only("path", "name")
         ),
     ]
@@ -1519,11 +1522,11 @@ class DiscoveredDependencyListView(
             "label": "Package type",
             "filter_fieldname": "type",
         },
-        "extracted_requirement",
         {
             "field_name": "scope",
             "filter_fieldname": "scope",
         },
+        "extracted_requirement",
         {
             "field_name": "is_runtime",
             "filter_fieldname": "is_runtime",
@@ -1537,6 +1540,7 @@ class DiscoveredDependencyListView(
             "filter_fieldname": "is_resolved",
         },
         "for_package",
+        "resolved_to",
         "datafile_resource",
         {
             "field_name": "datasource_id",
@@ -1835,7 +1839,7 @@ class DiscoveredPackageDetailsView(
                 "project_id",
             ),
         ),
-        "dependencies__project",
+        "declared_dependencies__project",
     ]
     tabset = {
         "essentials": {
@@ -1910,7 +1914,7 @@ class DiscoveredPackageDetailsView(
             "template": "scanpipe/tabset/tab_resources.html",
         },
         "dependencies": {
-            "fields": ["dependencies"],
+            "fields": ["declared_dependencies"],
             "icon_class": "fa-solid fa-layer-group",
             "template": "scanpipe/tabset/tab_dependencies.html",
         },
@@ -1999,6 +2003,12 @@ class DiscoveredDependencyDetailsView(
             ),
         ),
         Prefetch(
+            "resolved_to",
+            queryset=DiscoveredPackage.objects.only(
+                "uuid", *PURL_FIELDS, "package_uid", "project_id"
+            ),
+        ),
+        Prefetch(
             "datafile_resource",
             queryset=CodebaseResource.objects.only("path", "name", "project_id"),
         ),
@@ -2009,7 +2019,11 @@ class DiscoveredDependencyDetailsView(
                 "package_url",
                 {
                     "field_name": "for_package",
-                    "template": "scanpipe/tabset/field_for_package.html",
+                    "template": "scanpipe/tabset/field_related_package.html",
+                },
+                {
+                    "field_name": "resolved_to",
+                    "template": "scanpipe/tabset/field_related_package.html",
                 },
                 {
                     "field_name": "datafile_resource",
@@ -2026,6 +2040,7 @@ class DiscoveredDependencyDetailsView(
             "fields": [
                 "dependency_uid",
                 "for_package_uid",
+                "resolved_to_uid",
                 "is_runtime",
                 "is_optional",
                 "is_resolved",

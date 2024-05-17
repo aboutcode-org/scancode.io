@@ -3290,6 +3290,8 @@ class DiscoveredDependency(
     """
     A project's Discovered Dependencies are records of the dependencies used by
     system and application packages discovered in the code under analysis.
+    Dependencies are usually collected from parsed package data such as a package
+    manifest or lockfile.
     """
 
     # Overrides the `project` field from `ProjectRelatedModel` to set the proper
@@ -3306,15 +3308,32 @@ class DiscoveredDependency(
     )
     for_package = models.ForeignKey(
         DiscoveredPackage,
-        related_name="dependencies",
+        related_name="declared_dependencies",
+        help_text=_("The package that declares this dependency."),
         on_delete=models.CASCADE,
+        editable=False,
+        blank=True,
+        null=True,
+    )
+    resolved_to = models.ForeignKey(
+        DiscoveredPackage,
+        related_name="resolved_dependencies",
+        help_text=_(
+            "The resolved package for this dependency. "
+            "If empty, it indicates the dependency is unresolved."
+        ),
+        on_delete=models.SET_NULL,
         editable=False,
         blank=True,
         null=True,
     )
     datafile_resource = models.ForeignKey(
         CodebaseResource,
-        related_name="dependencies",
+        related_name="declared_dependencies",
+        help_text=_(
+            "The codebase resource (e.g., manifest or lockfile) that declares this "
+            "dependency."
+        ),
         on_delete=models.CASCADE,
         editable=False,
         blank=True,
@@ -3389,6 +3408,11 @@ class DiscoveredDependency(
     def for_package_uid(self):
         if self.for_package:
             return self.for_package.package_uid
+
+    @cached_property
+    def resolved_to_uid(self):
+        if self.resolved_to:
+            return self.resolved_to.package_uid
 
     @cached_property
     def datafile_path(self):

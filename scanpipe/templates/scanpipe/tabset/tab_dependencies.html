@@ -9,7 +9,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for dependency in tab_data.fields.dependencies.value %}
+      {% for dependency in tab_data.fields.declared_dependencies.value %}
         <tr>
           <td title="{{ dependency.dependency_uid }}">
             <a href="{{ dependency.get_absolute_url }}">{{ dependency.purl }}</a>
