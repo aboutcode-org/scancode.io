@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 blank=True,
                 editable=False,
-                help_text="The package that this dependency resolves to. If empty, it indicates the dependency is unresolved.",
+                help_text="The resolved package for this dependency. If empty, it indicates the dependency is unresolved.",
                 null=True,
                 on_delete=django.db.models.deletion.SET_NULL,
                 related_name="resolved_dependencies",

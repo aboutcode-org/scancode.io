@@ -3319,7 +3319,7 @@ class DiscoveredDependency(
         DiscoveredPackage,
         related_name="resolved_dependencies",
         help_text=_(
-            "The package that this dependency resolves to. "
+            "The resolved package for this dependency. "
             "If empty, it indicates the dependency is unresolved."
         ),
         on_delete=models.SET_NULL,
