@@ -25,6 +25,7 @@ from pathlib import Path
 
 from django.test import TestCase
 
+from cyclonedx.model import Property
 from cyclonedx.model import license as cdx_license_model
 from cyclonedx.model.bom import Bom
 from cyclonedx.model.component import Component
@@ -130,6 +131,21 @@ class ScanPipeCycloneDXPipesTest(TestCase):
             "filename": "package.zip",
             "homepage_url": "https://home.page",
             "primary_language": "Python",
+        }
+        self.assertEqual(expected, properties_data)
+
+        resolved_url_property = Property(
+            name="ResolvedUrl", value="https://download.url/resolved.tar.gz"
+        )
+        self.component3.properties.add(resolved_url_property)
+        properties_data = cyclonedx.get_properties_data(self.component3)
+        # Same result as the "aboutcode:download_url" takes precedence.
+        self.assertEqual(expected, properties_data)
+
+        self.component3.properties = {resolved_url_property}
+        properties_data = cyclonedx.get_properties_data(self.component3)
+        expected = {
+            "download_url": "https://download.url/resolved.tar.gz",
         }
         self.assertEqual(expected, properties_data)
 
