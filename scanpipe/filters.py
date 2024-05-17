@@ -740,6 +740,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_optional",
             "is_resolved",
             "for_package",
+            "resolved_to",
             "datafile_resource",
             "datasource_id",
         ],

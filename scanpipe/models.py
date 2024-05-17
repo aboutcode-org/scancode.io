@@ -3410,6 +3410,11 @@ class DiscoveredDependency(
             return self.for_package.package_uid
 
     @cached_property
+    def resolved_to_uid(self):
+        if self.resolved_to:
+            return self.resolved_to.package_uid
+
+    @cached_property
     def datafile_path(self):
         if self.datafile_resource:
             return self.datafile_resource.path
