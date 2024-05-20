@@ -753,12 +753,35 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
     def get_input_config_file(self):
         """
-        Return the ``scancode-config.yml`` file from the input/ directory if
-        available.
+        Return the ``scancode-config.yml`` file from the input/ directory
+        or from the codebase/ immediate subdirectories.
+
+        Priority order:
+        1. If a config file exists directly in the input/ directory, return it.
+        2. If exactly one config file exists in a codebase/ immediate subdirectory,
+           return it.
+        3. If multiple config files are found in subdirectories, report an error.
         """
-        config_file = self.input_path / settings.SCANCODEIO_CONFIG_FILE
-        if config_file.exists():
-            return config_file
+        config_filename = settings.SCANCODEIO_CONFIG_FILE
+
+        # Check for the config file in the root of the input/ directory.
+        root_config_file = self.input_path / config_filename
+        if root_config_file.exists():
+            return root_config_file
+
+        # Search for config files in immediate codebase/ subdirectories.
+        subdir_config_files = list(self.codebase_path.glob(f"*/{config_filename}"))
+
+        # If exactly one config file is found in codebase/ subdirectories, return it.
+        if len(subdir_config_files) == 1:
+            return subdir_config_files[0]
+
+        # If multiple config files are found, report an error.
+        if len(subdir_config_files) > 1:
+            self.add_error(
+                f"More than one {config_filename} found. "
+                f"Could not determine which one to use."
+            )
 
     def get_settings_as_yml(self):
         """Return the ``settings`` file content as yml, suitable for a config file."""
@@ -774,8 +797,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
     def get_env(self, field_name=None):
         """
-        Return the project environment loaded from the ``.scancode/config.yml`` config
-        file, when available, and overriden by the ``settings`` model field.
+        Return the project environment loaded from the ``scancode-config.yml`` config
+        file, when available, and overridden by the ``settings`` model field.
 
         ``field_name`` can be provided to get a single entry from the env.
         """
@@ -783,8 +806,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         # 1. Load settings from config file when available.
         if config_file := self.get_input_config_file():
-            with suppress(saneyaml.YAMLError):
+            logger.info(f"Loading env from {config_file}")
+            try:
                 env = saneyaml.load(config_file.read_text())
+            except saneyaml.YAMLError:
+                self.add_error(
+                    f'Failed to load configuration from "{config_file}". '
+                    f"The file format is invalid."
+                )
 
         # 2. Update with defined values from the Project ``settings`` field.
         env.update(self.get_enabled_settings())

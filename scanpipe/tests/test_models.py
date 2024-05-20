@@ -595,10 +595,43 @@ class ScanPipeModelsTest(TestCase):
 
     def test_scanpipe_project_get_input_config_file(self):
         self.assertIsNone(self.project1.get_input_config_file())
+
         config_file = self.project1.input_path / settings.SCANCODEIO_CONFIG_FILE
         config_file.touch()
         config_file_location = str(self.project1.get_input_config_file())
         self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
+
+        dir1_path = self.project1.codebase_path / "dir1"
+        dir1_path.mkdir(parents=True, exist_ok=True)
+        dir1_config_file = dir1_path / settings.SCANCODEIO_CONFIG_FILE
+        dir1_config_file.touch()
+        # If a config file exists directly in the input directory, return it.
+        config_file_location = str(self.project1.get_input_config_file())
+        self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
+
+        config_file.unlink()
+        config_file_location = str(self.project1.get_input_config_file())
+        self.assertTrue(
+            config_file_location.endswith("codebase/dir1/scancode-config.yml")
+        )
+
+        dir2_path = self.project1.codebase_path / "dir2"
+        dir2_path.mkdir(parents=True, exist_ok=True)
+        dir2_config_file = dir2_path / settings.SCANCODEIO_CONFIG_FILE
+        dir2_config_file.touch()
+        # If multiple config files are found, report an error.
+        self.assertIsNone(self.project1.get_input_config_file())
+        error = self.project1.projectmessages.get()
+        self.assertIn("More than one scancode-config.yml found", error.description)
+
+        dir1_config_file.unlink()
+        dir2_config_file.unlink()
+        sub_dir1_path = self.project1.codebase_path / "dir1" / "subdir1"
+        sub_dir1_path.mkdir(parents=True, exist_ok=True)
+        sub_dir1_config_file = sub_dir1_path / settings.SCANCODEIO_CONFIG_FILE
+        sub_dir1_config_file.touch()
+        # Search for config files *ONLY* in immediate codebase/ subdirectories.
+        self.assertIsNone(self.project1.get_input_config_file())
 
     def test_scanpipe_project_get_settings_as_yml(self):
         self.assertEqual("{}\n", self.project1.get_settings_as_yml())
@@ -656,6 +689,10 @@ class ScanPipeModelsTest(TestCase):
         config_file_location = str(self.project1.get_input_config_file())
         self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
         self.assertEqual({}, self.project1.get_env())
+
+        error = self.project1.projectmessages.get()
+        self.assertIn("Failed to load configuration from", error.description)
+        self.assertIn("The file format is invalid.", error.description)
 
     def test_scanpipe_project_model_labels(self):
         self.project1.labels.add("label1", "label2")
