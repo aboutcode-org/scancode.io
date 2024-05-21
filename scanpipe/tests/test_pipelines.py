@@ -57,6 +57,8 @@ from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
 
 
 class ScanPipePipelinesTest(TestCase):
+    data_location = Path(__file__).parent / "data"
+
     def test_scanpipe_pipeline_class_pipeline_name_attribute(self):
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("do_nothing")
@@ -159,7 +161,7 @@ class ScanPipePipelinesTest(TestCase):
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
 
-        file_location = Path(__file__).parent / "data" / "notice.NOTICE"
+        file_location = self.data_location / "notice.NOTICE"
         input_source = project1.add_input_source(
             filename=file_location.name, is_uploaded=True
         )
@@ -301,6 +303,27 @@ class ScanPipePipelinesTest(TestCase):
         config_file.write_text("product_name: Product")
         pipeline = run.make_pipeline_instance()
         self.assertEqual({"product_name": "Product"}, pipeline.env)
+
+    def test_scanpipe_pipelines_class_env_reloaded_after_extraction(self):
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data_location / "settings/archived-scancode-config.zip"
+        project1.copy_input_from(input_location)
+        run = project1.add_pipeline("scan_codebase")
+        pipeline = run.make_pipeline_instance()
+        self.assertEqual({}, pipeline.env)
+
+        # Manually run steps, env is reload from the scancode-config.yml contained in
+        # the archive
+        pipeline.copy_inputs_to_codebase_directory()
+        pipeline.extract_archives()
+
+        expected = {
+            "product_name": "My Product Name",
+            "product_version": "1.0",
+            "ignored_patterns": ["*.tmp", "tests/*"],
+        }
+        self.assertEqual(expected, pipeline.env)
 
     def test_scanpipe_pipelines_class_flag_ignored_resources(self):
         project1 = Project.objects.create(name="Analysis")
