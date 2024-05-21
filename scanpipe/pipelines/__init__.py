@@ -301,6 +301,10 @@ class Pipeline(BasePipeline):
         if extract_errors:
             self.add_error("\n".join(extract_errors))
 
+        # Reload the project env post-extraction as the scancode-config.yml file
+        # may be located in one of the extracted archives.
+        self.env = self.project.get_env()
+
 
 def is_pipeline(obj):
     """

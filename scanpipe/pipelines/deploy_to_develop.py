@@ -135,6 +135,10 @@ class DeployToDevelop(Pipeline):
         if errors:
             self.add_error("\n".join(errors))
 
+        # Reload the project env post-extraction as the scancode-config.yml file
+        # may be located in one of the extracted archives.
+        self.env = self.project.get_env()
+
     def collect_and_create_codebase_resources(self):
         """Collect and create codebase resources."""
         pipes.collect_and_create_codebase_resources(self.project)

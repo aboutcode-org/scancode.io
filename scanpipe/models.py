@@ -778,9 +778,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         # If multiple config files are found, report an error.
         if len(subdir_config_files) > 1:
-            self.add_error(
+            self.add_warning(
                 f"More than one {config_filename} found. "
-                f"Could not determine which one to use."
+                f"Could not determine which one to use.",
+                model="Project",
+                details={
+                    "resources": [
+                        str(path.relative_to(self.work_path))
+                        for path in subdir_config_files
+                    ]
+                },
             )
 
     def get_settings_as_yml(self):
@@ -806,7 +813,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         # 1. Load settings from config file when available.
         if config_file := self.get_input_config_file():
-            logger.info(f"Loading env from {config_file}")
+            logger.info(f"Loading env from {config_file.relative_to(self.work_path)}")
             try:
                 env = saneyaml.load(config_file.read_text())
             except saneyaml.YAMLError:
