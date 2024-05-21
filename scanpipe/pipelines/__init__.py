@@ -295,11 +295,15 @@ class Pipeline(BasePipeline):
 
         extract_errors = scancode.extract_archives(
             location=self.project.codebase_path,
-            recurse=self.env.get("extract_recursively", True),
+            recurse=True,
         )
 
         if extract_errors:
             self.add_error("\n".join(extract_errors))
+
+        # Reload the project env post-extraction as the scancode-config.yml file
+        # may be located in one of the extracted archives.
+        self.env = self.project.get_env()
 
 
 def is_pipeline(obj):

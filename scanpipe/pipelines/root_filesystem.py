@@ -63,6 +63,10 @@ class RootFS(Pipeline):
         if errors:
             self.add_error("\n".join(errors))
 
+        # Reload the project env post-extraction as the scancode-config.yml file
+        # may be located in one of the extracted archives.
+        self.env = self.project.get_env()
+
     def find_root_filesystems(self):
         """Find root filesystems in the project's codebase/."""
         self.root_filesystems = list(rootfs.RootFs.from_project_codebase(self.project))

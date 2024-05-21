@@ -298,19 +298,11 @@ Be cautious when specifying patterns to avoid unintended exclusions.
 
 class ProjectSettingsForm(forms.ModelForm):
     settings_fields = [
-        "extract_recursively",
         "ignored_patterns",
         "attribution_template",
         "product_name",
         "product_version",
     ]
-    extract_recursively = forms.BooleanField(
-        label="Extract recursively",
-        required=False,
-        initial=True,
-        help_text="Extract nested archives-in-archives recursively",
-        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
-    )
     ignored_patterns = ListTextarea(
         label="Ignored patterns",
         required=False,
