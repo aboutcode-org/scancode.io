@@ -298,9 +298,9 @@ class ScanPipePipelinesTest(TestCase):
         pipeline = run.make_pipeline_instance()
         self.assertEqual({}, pipeline.env)
 
-        config_file.write_text("extract_recursively: true")
+        config_file.write_text("product_name: Product")
         pipeline = run.make_pipeline_instance()
-        self.assertEqual({"extract_recursively": True}, pipeline.env)
+        self.assertEqual({"product_name": "Product"}, pipeline.env)
 
     def test_scanpipe_pipelines_class_flag_ignored_resources(self):
         project1 = Project.objects.create(name="Analysis")

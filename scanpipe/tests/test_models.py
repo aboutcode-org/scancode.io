@@ -225,7 +225,7 @@ class ScanPipeModelsTest(TestCase):
         self.project1.add_input_source(
             filename="file2", download_url="https://download.url"
         )
-        self.project1.update(settings={"extract_recursively": True})
+        self.project1.update(settings={"product_name": "My Product"})
         new_file_path1 = self.project1.input_path / "file.zip"
         new_file_path1.touch()
         run1 = self.project1.add_pipeline("analyze_docker_image", selected_groups=["g"])
@@ -669,16 +669,14 @@ class ScanPipeModelsTest(TestCase):
 
         expected = {
             "ignored_patterns": ["*.img", "docs/*", "*/tests/*"],
-            "extract_recursively": False,
         }
         self.assertEqual(expected, self.project1.get_env())
 
-        config = {"extract_recursively": True, "ignored_patterns": None}
+        config = {"ignored_patterns": None}
         self.project1.settings = config
         self.project1.save()
         expected = {
             "ignored_patterns": ["*.img", "docs/*", "*/tests/*"],
-            "extract_recursively": True,
         }
         self.assertEqual(expected, self.project1.get_env())
 

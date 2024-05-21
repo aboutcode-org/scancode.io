@@ -111,21 +111,20 @@ class ScanPipeFormsTest(TestCase):
 
     def test_scanpipe_forms_project_settings_form_set_initial_from_settings_field(self):
         form = ProjectSettingsForm()
-        self.assertTrue(form.fields["extract_recursively"].initial)
+        self.assertIsNone(form.fields["product_name"].initial)
 
         self.assertEqual({}, self.project1.settings)
         form = ProjectSettingsForm(instance=self.project1)
-        self.assertTrue(form.fields["extract_recursively"].initial)
+        self.assertIsNone(form.fields["product_name"].initial)
 
-        self.project1.settings = {"extract_recursively": False}
+        self.project1.settings = {"product_name": "Product"}
         self.project1.save()
         form = ProjectSettingsForm(instance=self.project1)
-        self.assertFalse(form.fields["extract_recursively"].initial)
+        self.assertEqual("Product", form.fields["product_name"].initial)
 
     def test_scanpipe_forms_project_settings_form_update_project_settings(self):
         data = {
             "name": self.project1.name,
-            "extract_recursively": False,
             "ignored_patterns": "*.ext\ndir/*",
         }
         form = ProjectSettingsForm(data=data, instance=self.project1)
@@ -133,7 +132,6 @@ class ScanPipeFormsTest(TestCase):
         project = form.save()
 
         expected = {
-            "extract_recursively": False,
             "ignored_patterns": ["*.ext", "dir/*"],
             "product_name": "",
             "product_version": "",
@@ -141,7 +139,6 @@ class ScanPipeFormsTest(TestCase):
         }
         self.assertEqual(expected, project.settings)
         expected = {
-            "extract_recursively": False,
             "ignored_patterns": ["*.ext", "dir/*"],
         }
         self.assertEqual(expected, project.get_env())

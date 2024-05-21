@@ -38,7 +38,6 @@ Content of a ``scancode-config.yml`` file:
 
     product_name: My Product Name
     product_version: '1.0'
-    extract_recursively: yes
     ignored_patterns:
       - '*.tmp'
       - tests/*
@@ -65,15 +64,6 @@ product_version
 ^^^^^^^^^^^^^^^
 
 The product version of this project, as specified within the DejaCode application.
-
-extract_recursively
-^^^^^^^^^^^^^^^^^^^
-
-Extract nested archives-in-archives recursively.
-**This is enabled by default on new projects.**
-
-You can turn off this behavior in favor of a shallow extraction using
-``extract_recursively: no`` in your configuration file.
 
 ignored_patterns
 ^^^^^^^^^^^^^^^^

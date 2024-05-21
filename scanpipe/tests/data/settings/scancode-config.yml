@@ -1,4 +1,3 @@
-extract_recursively: no
 ignored_patterns:
   - "*.img"
   - "docs/*"

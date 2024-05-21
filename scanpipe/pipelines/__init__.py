@@ -295,7 +295,7 @@ class Pipeline(BasePipeline):
 
         extract_errors = scancode.extract_archives(
             location=self.project.codebase_path,
-            recurse=self.env.get("extract_recursively", True),
+            recurse=True,
         )
 
         if extract_errors:
