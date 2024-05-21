@@ -648,7 +648,6 @@ class ScanPipeViewsTest(TestCase):
             "id_notes",
             "id_uuid",
             "id_work_directory",
-            "id_extract_recursively",
             "id_ignored_patterns",
             "id_attribution_template",
             'id="modal-archive"',
@@ -667,11 +666,11 @@ class ScanPipeViewsTest(TestCase):
 
     def test_scanpipe_views_project_settings_view_download_config_file(self):
         url = reverse("project_settings", args=[self.project1.slug])
-        self.project1.settings = {"extract_recursively": False}
+        self.project1.settings = {"product_name": "Product"}
         self.project1.save()
 
         response = self.client.get(url, data={"download": 1})
-        self.assertEqual(b"extract_recursively: no\n", response.getvalue())
+        self.assertEqual(b"product_name: Product\n", response.getvalue())
         self.assertEqual("application/x-yaml", response.headers["Content-Type"])
 
     def test_scanpipe_views_project_views(self):

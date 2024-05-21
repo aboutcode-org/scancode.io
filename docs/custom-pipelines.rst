@@ -124,9 +124,6 @@ the file's directory in the :ref:`scancodeio_settings_pipelines_dirs`.
                 cls.report_licenses_with_resources,
             )
 
-        # Set to True to extract recursively nested archives in archives.
-        extract_recursively = False
-
         # See https://jinja.palletsprojects.com/en/3.0.x/templates/ for documentation
         report_template = """
         {% for matched_text, paths in resources.items() -%}
