@@ -759,7 +759,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Priority order:
         1. If a config file exists directly in the input/ directory, return it.
         2. If exactly one config file exists in a codebase/ immediate subdirectory,
-           return it.
+        return it.
         3. If multiple config files are found in subdirectories, report an error.
         """
         config_filename = settings.SCANCODEIO_CONFIG_FILE

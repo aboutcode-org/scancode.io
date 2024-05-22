@@ -67,6 +67,9 @@ autodoc_default_options = {
 # a list of builtin themes.
 html_theme = "sphinx_rtd_theme"
 
+# The style name to use for Pygments highlighting of source code.
+pygments_style = "emacs"
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".

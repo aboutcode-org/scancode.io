@@ -668,16 +668,26 @@ class ScanPipeModelsTest(TestCase):
         copy_input(test_config_file, self.project1.input_path)
 
         expected = {
-            "ignored_patterns": ["*.img", "docs/*", "*/tests/*"],
+            "product_name": "My Product Name",
+            "product_version": "1.0",
+            "ignored_patterns": ["*.tmp", "tests/*"],
+            "ignored_dependency_scopes": [
+                {"package_type": "npm", "scope": "devDependencies"},
+                {"package_type": "pypi", "scope": "tests"},
+            ],
         }
         self.assertEqual(expected, self.project1.get_env())
 
         config = {"ignored_patterns": None}
         self.project1.settings = config
         self.project1.save()
-        expected = {
-            "ignored_patterns": ["*.img", "docs/*", "*/tests/*"],
-        }
+        self.assertEqual(expected, self.project1.get_env())
+
+        config = {"ignored_patterns": ["*.txt"], "product_name": "Product1"}
+        self.project1.settings = config
+        self.project1.save()
+        expected["product_name"] = "Product1"
+        expected["ignored_patterns"] = ["*.txt"]
         self.assertEqual(expected, self.project1.get_env())
 
     def test_scanpipe_project_get_env_invalid_yml_content(self):
