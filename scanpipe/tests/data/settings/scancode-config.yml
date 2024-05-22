@@ -1,4 +1,10 @@
+product_name: My Product Name
+product_version: '1.0'
 ignored_patterns:
-  - "*.img"
-  - "docs/*"
-  - "*/tests/*"
+  - '*.tmp'
+  - 'tests/*'
+ignored_dependency_scopes:
+ - package_type: npm
+   scope: devDependencies
+ - package_type: pypi
+   scope: tests

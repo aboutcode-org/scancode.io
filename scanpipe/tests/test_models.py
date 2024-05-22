@@ -668,16 +668,26 @@ class ScanPipeModelsTest(TestCase):
         copy_input(test_config_file, self.project1.input_path)
 
         expected = {
-            "ignored_patterns": ["*.img", "docs/*", "*/tests/*"],
+            "product_name": "My Product Name",
+            "product_version": "1.0",
+            "ignored_patterns": ["*.tmp", "tests/*"],
+            "ignored_dependency_scopes": [
+                {"package_type": "npm", "scope": "devDependencies"},
+                {"package_type": "pypi", "scope": "tests"},
+            ],
         }
         self.assertEqual(expected, self.project1.get_env())
 
         config = {"ignored_patterns": None}
         self.project1.settings = config
         self.project1.save()
-        expected = {
-            "ignored_patterns": ["*.img", "docs/*", "*/tests/*"],
-        }
+        self.assertEqual(expected, self.project1.get_env())
+
+        config = {"ignored_patterns": ["*.txt"], "product_name": "Product1"}
+        self.project1.settings = config
+        self.project1.save()
+        expected["product_name"] = "Product1"
+        expected["ignored_patterns"] = ["*.txt"]
         self.assertEqual(expected, self.project1.get_env())
 
     def test_scanpipe_project_get_env_invalid_yml_content(self):
@@ -691,6 +701,27 @@ class ScanPipeModelsTest(TestCase):
         error = self.project1.projectmessages.get()
         self.assertIn("Failed to load configuration from", error.description)
         self.assertIn("The file format is invalid.", error.description)
+
+    def test_scanpipe_project_get_ignored_dependency_scopes_index(self):
+        self.project1.settings = {
+            "ignored_dependency_scopes": [{"package_type": "pypi", "scope": "tests"}]
+        }
+        expected = {"pypi": ["tests"]}
+        self.assertEqual(expected, self.project1.ignored_dependency_scopes_index)
+        self.assertEqual(expected, self.project1.get_ignored_dependency_scopes_index())
+
+        self.project1.settings = {
+            "ignored_dependency_scopes": [
+                {"package_type": "pypi", "scope": "tests"},
+                {"package_type": "pypi", "scope": "build"},
+                {"package_type": "npm", "scope": "devDependencies"},
+            ]
+        }
+        # Since this is a cache property, it still returns the previous value
+        self.assertEqual(expected, self.project1.ignored_dependency_scopes_index)
+        # The following function call always build and return the index
+        expected = {"npm": ["devDependencies"], "pypi": ["tests", "build"]}
+        self.assertEqual(expected, self.project1.get_ignored_dependency_scopes_index())
 
     def test_scanpipe_project_model_labels(self):
         self.project1.labels.add("label1", "label2")

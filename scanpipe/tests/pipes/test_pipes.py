@@ -192,6 +192,30 @@ class ScanPipePipesTest(TestCase):
         dependency = pipes.update_or_create_dependency(p1, dependency_data)
         self.assertEqual("install", dependency.scope)
 
+    def test_scanpipe_pipes_update_or_create_dependency_ignored_dependency_scopes(self):
+        p1 = Project.objects.create(name="Analysis")
+        make_resource_file(p1, "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO")
+        pipes.update_or_create_package(p1, package_data1)
+
+        p1.settings = {
+            "ignored_dependency_scopes": [{"package_type": "pypi", "scope": "tests"}]
+        }
+        p1.save()
+
+        dependency_data = dict(dependency_data1)
+        self.assertFalse(pipes.ignore_dependency_scope(p1, dependency_data))
+        dependency = pipes.update_or_create_dependency(p1, dependency_data)
+        for field_name, value in dependency_data.items():
+            self.assertEqual(value, getattr(dependency, field_name), msg=field_name)
+        dependency.delete()
+
+        # Matching the ignored setting
+        dependency_data["package_type"] = "pypi"
+        dependency_data["scope"] = "tests"
+        self.assertTrue(pipes.ignore_dependency_scope(p1, dependency_data))
+        dependency = pipes.update_or_create_dependency(p1, dependency_data)
+        self.assertIsNone(dependency)
+
     def test_scanpipe_pipes_get_or_create_relation(self):
         p1 = Project.objects.create(name="Analysis")
         from1 = make_resource_file(p1, "from/a.txt")

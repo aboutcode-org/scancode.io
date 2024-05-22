@@ -27,6 +27,7 @@ import re
 import shutil
 import uuid
 from collections import Counter
+from collections import defaultdict
 from contextlib import suppress
 from itertools import groupby
 from operator import itemgetter
@@ -759,7 +760,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Priority order:
         1. If a config file exists directly in the input/ directory, return it.
         2. If exactly one config file exists in a codebase/ immediate subdirectory,
-           return it.
+        return it.
         3. If multiple config files are found in subdirectories, report an error.
         """
         config_filename = settings.SCANCODEIO_CONFIG_FILE
@@ -829,6 +830,29 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             return env.get(field_name)
 
         return env
+
+    def get_ignored_dependency_scopes_index(self):
+        """
+        Return a dictionary index of the ``ignored_dependency_scopes`` setting values
+        defined in this Project env.
+        """
+        ignored_dependency_scopes = self.get_env(field_name="ignored_dependency_scopes")
+        if not ignored_dependency_scopes:
+            return {}
+
+        ignored_scope_index = defaultdict(list)
+        for entry in ignored_dependency_scopes:
+            ignored_scope_index[entry.get("package_type")].append(entry.get("scope"))
+
+        return dict(ignored_scope_index)
+
+    @cached_property
+    def ignored_dependency_scopes_index(self):
+        """
+        Return the computed value of get_ignored_dependency_scopes_index.
+        The value is only generated once and cached for further calls.
+        """
+        return self.get_ignored_dependency_scopes_index()
 
     def clear_tmp_directory(self):
         """

@@ -40,7 +40,12 @@ Content of a ``scancode-config.yml`` file:
     product_version: '1.0'
     ignored_patterns:
       - '*.tmp'
-      - tests/*
+      - 'tests/*'
+    ignored_dependency_scopes:
+     - package_type: npm
+       scope: devDependencies
+     - package_type: pypi
+       scope: tests
 
 See the :ref:`project_configuration_settings` section for the details about each
 setting.
@@ -48,7 +53,6 @@ setting.
 .. tip::
     You can generate the project configuration file from the
     :ref:`user_interface_project_settings` UI.
-
 
 .. _project_configuration_settings:
 
@@ -86,3 +90,41 @@ within the project.
 
 .. warning::
     Be cautious when specifying patterns to avoid unintended exclusions.
+
+ignored_dependency_scopes
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Specify certain dependency scopes to be ignored for a given package type.
+This allows you to exclude dependencies from being created or resolved based on their
+scope.
+
+**Guidelines:**
+
+- **Exact Matches Only:** The scope names must be specified exactly as they appear.
+  Wildcards and partial matches are not supported.
+- **Scope Specification:** List each scope name you wish to ignore.
+
+**Examples:**
+
+To exclude all ``devDependencies`` for ``npm`` packages and ``tests`` for ``pypi``
+packages, define the following in your ``scancode-config.yml`` configuration file:
+
+.. code-block:: yaml
+
+    ignored_dependency_scopes:
+      - package_type: npm
+        scope: devDependencies
+      - package_type: pypi
+        scope: tests
+
+If you prefer to use the :ref:`user_interface_project_settings` form, list each
+ignored scope using the `package_type:scope` syntax, **one per line**, such as:
+
+.. code-block:: text
+
+    npm:devDependencies
+    pypi:tests
+
+.. warning::
+    Be precise when listing scope names to avoid unintended exclusions.
+    Ensure the scope names are correct and reflect your project requirements.

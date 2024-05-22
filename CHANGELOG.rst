@@ -60,6 +60,9 @@ v34.5.0 (unreleased)
 - Remove the ``extract_recursively`` option from the Project configuration.
   https://github.com/nexB/scancode.io/issues/1236
 
+- Add support for a ``ignored_dependency_scopes`` field on the Project configuration.
+  https://github.com/nexB/scancode.io/issues/1197
+
 - Add support for storing the scancode-config.yml file in codebase.
   The scancode-config.yml file can be provided as a project input, or can be located
   in the codebase/ immediate subdirectories. This allows to provide the configuration

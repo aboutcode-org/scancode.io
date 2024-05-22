@@ -276,7 +276,68 @@ class ListTextarea(forms.CharField):
         return value
 
 
-ignored_patterns_help_markdown = """
+class KeyValueListField(forms.CharField):
+    """
+    A Django form field that displays as a textarea and converts each line of
+    "key:value" input into a list of dictionaries with customizable keys.
+
+    Each line of the textarea input is split into key-value pairs,
+    removing leading/trailing whitespace and empty lines. The resulting list of
+    dictionaries is then stored as the field value.
+    """
+
+    widget = forms.Textarea
+
+    def __init__(self, *args, key_name="key", value_name="value", **kwargs):
+        """Initialize the KeyValueListField with custom key and value names."""
+        self.key_name = key_name
+        self.value_name = value_name
+        super().__init__(*args, **kwargs)
+
+    def to_python(self, value):
+        """
+        Split the textarea input into lines, convert each line to a dictionary,
+        and remove empty lines.
+        """
+        if not value:
+            return None
+
+        items = []
+        for line in value.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split(":", 1)
+            if len(parts) != 2:
+                raise ValidationError(
+                    f"Invalid input line: '{line}'. "
+                    f"Each line must contain exactly one ':' character."
+                )
+            key, value = parts
+            key = key.strip()
+            value = value.strip()
+            if not key or not value:
+                raise ValidationError(
+                    f"Invalid input line: '{line}'. "
+                    f"Both key and value must be non-empty."
+                )
+            items.append({self.key_name: key, self.value_name: value})
+
+        return items
+
+    def prepare_value(self, value):
+        """
+        Join the list of dictionaries into a string with newlines,
+        using the "key:value" format.
+        """
+        if value is not None and isinstance(value, list):
+            value = "\n".join(
+                f"{item[self.key_name]}:{item[self.value_name]}" for item in value
+            )
+        return value
+
+
+ignored_patterns_help = """
 Provide one or more path patterns to be ignored, one per line.
 
 Each pattern should follow the syntax of Unix shell-style wildcards:
@@ -295,10 +356,19 @@ within the project.
 Be cautious when specifying patterns to avoid unintended exclusions.
 """
 
+ignored_dependency_scopes_help = """
+Specify certain dependency scopes to be ignored for a given package type.
+
+This allows you to exclude dependencies from being created or resolved based on their
+scope using the `package_type:scope` syntax, **one per line**.
+For example: `npm:devDependencies`
+"""
+
 
 class ProjectSettingsForm(forms.ModelForm):
     settings_fields = [
         "ignored_patterns",
+        "ignored_dependency_scopes",
         "attribution_template",
         "product_name",
         "product_version",
@@ -306,7 +376,7 @@ class ProjectSettingsForm(forms.ModelForm):
     ignored_patterns = ListTextarea(
         label="Ignored patterns",
         required=False,
-        help_text=convert_markdown_to_html(ignored_patterns_help_markdown.strip()),
+        help_text=convert_markdown_to_html(ignored_patterns_help.strip()),
         widget=forms.Textarea(
             attrs={
                 "class": "textarea is-dynamic",
@@ -314,6 +384,20 @@ class ProjectSettingsForm(forms.ModelForm):
                 "placeholder": "*.tmp\ntests/*\n*docs/*.rst",
             },
         ),
+    )
+    ignored_dependency_scopes = KeyValueListField(
+        label="Ignored dependency scopes",
+        required=False,
+        help_text=convert_markdown_to_html(ignored_dependency_scopes_help.strip()),
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea is-dynamic",
+                "rows": 2,
+                "placeholder": "npm:devDependencies\npypi:tests",
+            },
+        ),
+        key_name="package_type",
+        value_name="scope",
     )
     attribution_template = forms.CharField(
         label="Attribution template",
