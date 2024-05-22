@@ -22,8 +22,6 @@
 
 from django.db.models import Q
 
-from source_inspector import symbols_ctags
-
 from scanpipe.pipes import LoopProgress
 
 
@@ -36,6 +34,8 @@ def collect_and_store_resource_symbols_ctags(project, logger=None):
     Collect symbols from codebase files using Ctags and store
     them in the extra data field.
     """
+    from source_inspector import symbols_ctags
+
     if not symbols_ctags.is_ctags_installed():
         raise UniversalCtagsNotFound(
             "``Universal Ctags`` not found."
@@ -64,6 +64,8 @@ def _collect_and_store_resource_symbols_ctags(resource):
     Collect symbols from a resource using Ctags and store
     them in the extra data field.
     """
+    from source_inspector import symbols_ctags
+
     symbols = symbols_ctags.collect_symbols(resource.location)
     tags = [symbol["name"] for symbol in symbols if "name" in symbol]
     resource.update_extra_data({"source_symbols": tags})

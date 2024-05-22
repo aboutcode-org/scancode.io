@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.5.0 (unreleased)
+v34.5.0 (2024-05-22)
 --------------------
 
 - Display the current path location in the "Codebase" panel as a navigation breadcrumbs.
@@ -17,7 +17,7 @@ v34.5.0 (unreleased)
 
 - Workaround an issue with the cyclonedx-python-lib that does not allow to load
   SBOMs that contains properties with no values.
-  Also, a few fixes pre-validation are applyed before deserializing thr SBOM for
+  Also, a few fixes pre-validation are applied before deserializing thr SBOM for
   maximum compatibility.
   https://github.com/nexB/scancode.io/issues/1185
   https://github.com/nexB/scancode.io/issues/1230

@@ -20,8 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from source_inspector import strings_xgettext
-
 from scanpipe.pipes import LoopProgress
 
 
@@ -34,6 +32,8 @@ def collect_and_store_resource_strings(project, logger=None):
     Collect source strings from codebase files using xgettext and store
     them in the extra data field.
     """
+    from source_inspector import strings_xgettext
+
     if not strings_xgettext.is_xgettext_installed():
         raise XgettextNotFound(
             "``xgettext`` not found. Install ``gettext`` to use this pipeline."
@@ -61,6 +61,8 @@ def _collect_and_store_resource_strings(resource):
     Collect strings from a resource using xgettext and store
     them in the extra data field.
     """
+    from source_inspector import strings_xgettext
+
     result = strings_xgettext.collect_strings(resource.location)
     strings = [item["string"] for item in result if "string" in item]
     resource.update_extra_data({"source_strings": strings})
