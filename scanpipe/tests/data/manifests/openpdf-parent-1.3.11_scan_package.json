@@ -116,6 +116,8 @@
       "source_packages": [
         "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?classifier=sources"
       ],
+      "is_private": false,
+      "is_virtual": false,
       "extra_data": {},
       "repository_homepage_url": "https://repo1.maven.org/maven2/com/github/librepdf/openpdf-parent/1.3.11/",
       "repository_download_url": "https://repo1.maven.org/maven2/com/github/librepdf/openpdf-parent/1.3.11/openpdf-parent-1.3.11.jar",
@@ -138,6 +140,7 @@
       "is_runtime": false,
       "is_optional": true,
       "is_resolved": true,
+      "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
       "dependency_uid": "pkg:maven/org.assertj/assertj-core@3.12.1?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -152,6 +155,7 @@
       "is_runtime": false,
       "is_optional": true,
       "is_resolved": true,
+      "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
       "dependency_uid": "pkg:maven/org.junit.jupiter/junit-jupiter-api@5.5.1?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -166,6 +170,7 @@
       "is_runtime": false,
       "is_optional": true,
       "is_resolved": true,
+      "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
       "dependency_uid": "pkg:maven/org.junit.jupiter/junit-jupiter-params@5.5.1?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -180,6 +185,7 @@
       "is_runtime": false,
       "is_optional": true,
       "is_resolved": true,
+      "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
       "dependency_uid": "pkg:maven/org.junit.jupiter/junit-jupiter-engine@5.5.1?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -194,6 +200,7 @@
       "is_runtime": false,
       "is_optional": true,
       "is_resolved": true,
+      "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
       "dependency_uid": "pkg:maven/org.mockito/mockito-core@2.25.1?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -208,6 +215,7 @@
       "is_runtime": false,
       "is_optional": true,
       "is_resolved": true,
+      "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
       "dependency_uid": "pkg:maven/org.hamcrest/hamcrest-library@2.1?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -222,6 +230,7 @@
       "is_runtime": false,
       "is_optional": true,
       "is_resolved": true,
+      "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
       "dependency_uid": "pkg:maven/org.hamcrest/hamcrest-core@2.1?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -236,6 +245,7 @@
       "is_runtime": false,
       "is_optional": false,
       "is_resolved": true,
+      "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
       "dependency_uid": "pkg:maven/org.bouncycastle/bcprov-jdk15on@1.63?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -250,6 +260,7 @@
       "is_runtime": false,
       "is_optional": false,
       "is_resolved": true,
+      "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
       "dependency_uid": "pkg:maven/org.bouncycastle/bcpkix-jdk15on@1.63?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -264,6 +275,7 @@
       "is_runtime": false,
       "is_optional": false,
       "is_resolved": true,
+      "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
       "dependency_uid": "pkg:maven/com.github.spotbugs/spotbugs@3.1.12?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -440,6 +452,8 @@
             "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?classifier=sources"
           ],
           "file_references": [],
+          "is_private": false,
+          "is_virtual": false,
           "extra_data": {},
           "dependencies": [
             {
@@ -449,6 +463,7 @@
               "is_runtime": false,
               "is_optional": true,
               "is_resolved": true,
+              "is_direct": true,
               "resolved_package": {},
               "extra_data": {}
             },
@@ -459,6 +474,7 @@
               "is_runtime": false,
               "is_optional": true,
               "is_resolved": true,
+              "is_direct": true,
               "resolved_package": {},
               "extra_data": {}
             },
@@ -469,6 +485,7 @@
               "is_runtime": false,
               "is_optional": true,
               "is_resolved": true,
+              "is_direct": true,
               "resolved_package": {},
               "extra_data": {}
             },
@@ -479,6 +496,7 @@
               "is_runtime": false,
               "is_optional": true,
               "is_resolved": true,
+              "is_direct": true,
               "resolved_package": {},
               "extra_data": {}
             },
@@ -489,6 +507,7 @@
               "is_runtime": false,
               "is_optional": true,
               "is_resolved": true,
+              "is_direct": true,
               "resolved_package": {},
               "extra_data": {}
             },
@@ -499,6 +518,7 @@
               "is_runtime": false,
               "is_optional": true,
               "is_resolved": true,
+              "is_direct": true,
               "resolved_package": {},
               "extra_data": {}
             },
@@ -509,6 +529,7 @@
               "is_runtime": false,
               "is_optional": true,
               "is_resolved": true,
+              "is_direct": true,
               "resolved_package": {},
               "extra_data": {}
             },
@@ -519,6 +540,7 @@
               "is_runtime": false,
               "is_optional": false,
               "is_resolved": true,
+              "is_direct": true,
               "resolved_package": {},
               "extra_data": {}
             },
@@ -529,6 +551,7 @@
               "is_runtime": false,
               "is_optional": false,
               "is_resolved": true,
+              "is_direct": true,
               "resolved_package": {},
               "extra_data": {}
             },
@@ -539,6 +562,7 @@
               "is_runtime": false,
               "is_optional": false,
               "is_resolved": true,
+              "is_direct": true,
               "resolved_package": {},
               "extra_data": {}
             }

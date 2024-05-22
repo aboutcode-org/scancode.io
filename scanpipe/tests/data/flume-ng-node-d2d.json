@@ -72,6 +72,8 @@
       "source_packages": [],
       "extra_data": {},
       "package_uid": "",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [],
       "datafile_paths": [],
       "file_references": [],

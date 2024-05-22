@@ -247,7 +247,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
         project = Project.objects.get(name="asgiref")
         package = project.discoveredpackages.get(
-            uuid="b2d24c22-0dff-4e3f-8332-413b4f4852a7"
+            uuid="27357e59-c16d-40f1-8cd2-0f11b7376cdb"
         )
 
         package.other_license_expression_spdx = "Apache-2.0 AND LicenseRef-test"

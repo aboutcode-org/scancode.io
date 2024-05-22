@@ -1003,6 +1003,19 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """Return files and directories path of the codebase/ directory recursively."""
         return self.codebase_path.rglob("*")
 
+    def get_resource(self, path):
+        """
+        Return the codebase resource present for a given path,
+        or None the resource with that path does not exist.
+        This path is relative to the scan location.
+        This is same as the Codebase.get_resource() function.
+        """
+        # We don't want to raise an exception if there is no resource
+        # as this function is also called from the SCTK side
+        resource = self.codebaseresources.get_or_none(path=path)
+        if resource:
+            return resource
+
     @cached_property
     def can_change_inputs(self):
         """
@@ -2971,6 +2984,8 @@ class AbstractPackage(models.Model):
         blank=True,
         help_text=_("A notice text for this package."),
     )
+    is_private = models.BooleanField(default=False)
+    is_virtual = models.BooleanField(default=False)
     datasource_ids = models.JSONField(
         default=list,
         blank=True,
@@ -3432,6 +3447,7 @@ class DiscoveredDependency(
     is_runtime = models.BooleanField(default=False)
     is_optional = models.BooleanField(default=False)
     is_resolved = models.BooleanField(default=False)
+    is_direct = models.BooleanField(default=False)
 
     objects = DiscoveredDependencyQuerySet.as_manager()
 
@@ -3452,6 +3468,7 @@ class DiscoveredDependency(
             models.Index(fields=["is_runtime"]),
             models.Index(fields=["is_optional"]),
             models.Index(fields=["is_resolved"]),
+            models.Index(fields=["is_direct"]),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -3498,6 +3515,7 @@ class DiscoveredDependency(
         project,
         dependency_data,
         for_package=None,
+        resolved_to_package=None,
         datafile_resource=None,
         datasource_id=None,
         strip_datafile_path_root=False,
@@ -3537,6 +3555,13 @@ class DiscoveredDependency(
                     package_uid=for_package_uid
                 )
 
+        if not resolved_to_package:
+            resolved_to_uid = dependency_data.get("resolved_to_uid")
+            if resolved_to_uid:
+                resolved_to_package = project.discoveredpackages.get(
+                    package_uid=resolved_to_uid
+                )
+
         if not datafile_resource:
             datafile_path = dependency_data.get("datafile_path")
             if datafile_path:
@@ -3562,9 +3587,35 @@ class DiscoveredDependency(
         return cls.objects.create(
             project=project,
             for_package=for_package,
+            resolved_to_package=resolved_to_package,
             datafile_resource=datafile_resource,
             **cleaned_data,
         )
+
+    @classmethod
+    def extract_purl_data(cls, dependency_data, ignore_nulls=False):
+        purl_mapping = PackageURL.from_string(
+            purl=dependency_data.get("purl"),
+        ).to_dict()
+        purl_data = {}
+
+        for field_name in PURL_FIELDS:
+            value = purl_mapping.get(field_name)
+            if field_name == "qualifiers":
+                value = normalize_qualifiers(value, encode=True)
+            if not ignore_nulls:
+                purl_data[field_name] = value or ""
+            else:
+                if value:
+                    purl_data[field_name] = value or ""
+
+        return purl_data
+
+    @classmethod
+    def populate_dependency_uuid(cls, dependency_data):
+        purl = PackageURL.from_string(purl=dependency_data.get("purl"))
+        purl.qualifiers["uuid"] = str(uuid.uuid4())
+        dependency_data["dependency_uid"] = purl.to_string()
 
     @property
     def spdx_id(self):

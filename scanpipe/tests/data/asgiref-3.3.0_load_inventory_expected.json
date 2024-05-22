@@ -136,6 +136,8 @@
         "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
       },
       "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [
         "pypi_wheel"
       ],
@@ -255,6 +257,8 @@
         "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
       },
       "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [
         "pypi_wheel_metadata"
       ],
@@ -275,6 +279,7 @@
       "is_runtime": true,
       "is_optional": true,
       "is_resolved": false,
+      "is_direct": true,
       "dependency_uid": "pkg:pypi/pytest?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "resolved_to_package_uid": null,
@@ -290,6 +295,7 @@
       "is_runtime": true,
       "is_optional": true,
       "is_resolved": false,
+      "is_direct": true,
       "dependency_uid": "pkg:pypi/pytest?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "resolved_to_package_uid": null,
@@ -305,6 +311,7 @@
       "is_runtime": true,
       "is_optional": true,
       "is_resolved": false,
+      "is_direct": true,
       "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "resolved_to_package_uid": null,
@@ -320,6 +327,7 @@
       "is_runtime": true,
       "is_optional": true,
       "is_resolved": false,
+      "is_direct": true,
       "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "resolved_to_package_uid": null,
@@ -398,6 +406,8 @@
             "Documentation": "https://asgi.readthedocs.io/",
             "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
           },
+          "is_private": false,
+          "is_virtual": false,
           "qualifiers": {},
           "notice_text": null,
           "api_data_url": "https://pypi.org/pypi/asgiref/3.3.0/json",
@@ -405,6 +415,7 @@
             {
               "purl": "pkg:pypi/pytest",
               "scope": "tests",
+              "is_direct": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
@@ -415,6 +426,7 @@
             {
               "purl": "pkg:pypi/pytest-asyncio",
               "scope": "tests",
+              "is_direct": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
@@ -885,6 +897,8 @@
             "Documentation": "https://asgi.readthedocs.io/",
             "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
           },
+          "is_private": false,
+          "is_virtual": false,
           "qualifiers": {},
           "notice_text": null,
           "api_data_url": "https://pypi.org/pypi/asgiref/3.3.0/json",
@@ -892,6 +906,7 @@
             {
               "purl": "pkg:pypi/pytest",
               "scope": "tests",
+              "is_direct": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
@@ -902,6 +917,7 @@
             {
               "purl": "pkg:pypi/pytest-asyncio",
               "scope": "tests",
+              "is_direct": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,

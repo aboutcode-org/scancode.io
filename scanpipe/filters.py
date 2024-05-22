@@ -727,6 +727,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "is_runtime",
         "is_optional",
         "is_resolved",
+        "is_direct",
         "datasource_id",
         "is_vulnerable",
     ]
@@ -747,6 +748,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_runtime",
             "is_optional",
             "is_resolved",
+            "is_direct",
             "for_package",
             "resolved_to_package",
             "datafile_resource",
@@ -761,6 +763,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     is_runtime = StrictBooleanFilter()
     is_optional = StrictBooleanFilter()
     is_resolved = StrictBooleanFilter()
+    is_direct = StrictBooleanFilter()
     is_vulnerable = IsVulnerable(field_name="affected_by_vulnerabilities")
 
     class Meta:
@@ -779,6 +782,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_runtime",
             "is_optional",
             "is_resolved",
+            "is_direct",
             "datasource_id",
             "is_vulnerable",
         ]

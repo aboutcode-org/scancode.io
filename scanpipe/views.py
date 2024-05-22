@@ -1543,6 +1543,10 @@ class DiscoveredDependencyListView(
             "field_name": "is_resolved",
             "filter_fieldname": "is_resolved",
         },
+        {
+            "field_name": "is_direct",
+            "filter_fieldname": "is_direct",
+        },
         "for_package",
         "resolved_to_package",
         "datafile_resource",
@@ -1730,6 +1734,7 @@ class CodebaseResourceDetailsView(
         "extra_data": {
             "fields": [
                 {"field_name": "extra_data", "render_func": render_as_yaml},
+                {"field_name": "package_data", "render_func": render_as_yaml},
             ],
             "verbose_name": "Extra",
             "icon_class": "fa-solid fa-plus-square",
@@ -1883,6 +1888,8 @@ class DiscoveredPackageDetailsView(
                 "missing_resources",
                 "modified_resources",
                 "package_uid",
+                "is_private",
+                "is_virtual",
                 "datasource_ids",
                 "datafile_paths",
             ],
@@ -2048,6 +2055,7 @@ class DiscoveredDependencyDetailsView(
                 "is_runtime",
                 "is_optional",
                 "is_resolved",
+                "is_direct",
             ],
             "icon_class": "fa-solid fa-info-circle",
         },

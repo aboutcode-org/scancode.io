@@ -243,8 +243,14 @@
       "extracted_license_statement": "- MIT\n",
       "notice_text": "",
       "source_packages": [],
-      "extra_data": {},
+      "extra_data": {
+        "engines": {
+          "node": ">=0.10.0"
+        }
+      },
       "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [
         "npm_package_json"
       ],

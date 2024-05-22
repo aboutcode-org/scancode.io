@@ -168,7 +168,12 @@ def _clean_package_data(package_data):
     return package_data
 
 
-def update_or_create_package(project, package_data, codebase_resources=None):
+def update_or_create_package(
+    project,
+    package_data,
+    codebase_resources=None,
+    is_virtual=False,
+):
     """
     Get, update or create a DiscoveredPackage then return it.
     Use the `project` and `package_data` mapping to lookup and creates the
@@ -194,6 +199,9 @@ def update_or_create_package(project, package_data, codebase_resources=None):
         package = DiscoveredPackage.create_from_data(project, package_data)
 
     if package:
+        if is_virtual:
+            package.update(is_virtual=is_virtual)
+
         if datasource_id and datasource_id not in package.datasource_ids:
             datasource_ids = package.datasource_ids.copy()
             datasource_ids.append(datasource_id)
@@ -239,6 +247,7 @@ def update_or_create_dependency(
     project,
     dependency_data,
     for_package=None,
+    resolved_to_package=None,
     datafile_resource=None,
     datasource_id=None,
     strip_datafile_path_root=False,
@@ -254,27 +263,44 @@ def update_or_create_dependency(
     corresponding CodebaseResource for `datafile_path`. This is used in the case
     where Dependency data is imported from a scancode-toolkit scan, where the
     root path segments are not stripped for `datafile_path`.
+    If the dependency is resolved and a resolved package is created, we have the
+    corresponsing package_uid at `resolved_to`.
     """
     dependency = None
     dependency_uid = dependency_data.get("dependency_uid")
+    extracted_requirement = dependency_data.get("extracted_requirement")
 
     if ignore_dependency_scope(project, dependency_data):
         return  # Do not create the DiscoveredDependency record.
 
     if not dependency_uid:
-        dependency_data["dependency_uid"] = uuid.uuid4()
+        purl_data = DiscoveredDependency.extract_purl_data(dependency_data)
+        dependency = DiscoveredDependency.objects.get_or_none(
+            project=project,
+            extracted_requirement=extracted_requirement,
+            **purl_data,
+        )
     else:
-        dependency = project.discovereddependencies.get_or_none(
+        dependency = DiscoveredDependency.objects.get_or_none(
+            project=project,
             dependency_uid=dependency_uid,
         )
 
     if dependency:
         dependency.update_from_data(dependency_data)
+        if resolved_to_package and not dependency.resolved_to_package:
+            dependency.update(resolved_to_package=resolved_to_package)
     else:
+        is_direct = dependency_data.get("is_direct")
+        if not is_direct:
+            pass
+
+        DiscoveredDependency.populate_dependency_uuid(dependency_data)
         dependency = DiscoveredDependency.create_from_data(
             project,
             dependency_data,
             for_package=for_package,
+            resolved_to_package=resolved_to_package,
             datafile_resource=datafile_resource,
             datasource_id=datasource_id,
             strip_datafile_path_root=strip_datafile_path_root,

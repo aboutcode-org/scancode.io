@@ -226,8 +226,14 @@
       "compliance_alert": "",
       "notice_text": "",
       "source_packages": [],
-      "extra_data": {},
+      "extra_data": {
+        "engines": {
+          "node": ">=0.10.0"
+        }
+      },
       "package_uid": "pkg:npm/is-npm@1.0.0?uuid=ba110d49-b6f2-4c86-8d89-a6fd34838ca8",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [
         "npm_package_json"
       ],

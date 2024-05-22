@@ -639,11 +639,14 @@ class PipelinesIntegrationTest(TestCase):
         package = project1.discoveredpackages.get()
         dependency = project1.discovereddependencies.get()
 
-        self.assertEqual(1, package.codebase_resources.count())
+        self.assertEqual(3, package.codebase_resources.count())
         self.assertEqual("pkg:npm/is-npm@1.0.0", dependency.for_package.purl)
         self.assertEqual(package.datasource_ids, [dependency.datasource_id])
         self.assertEqual(
-            package.codebase_resources.get().path, dependency.datafile_resource.path
+            package.codebase_resources.get(
+                path="is-npm-1.0.0.tgz-extract/package/package.json"
+            ).path,
+            dependency.datafile_resource.path,
         )
 
     def test_scanpipe_inspect_packages_creates_packages_pypi(self):
@@ -663,6 +666,33 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(6, project1.codebaseresources.count())
         self.assertEqual(0, project1.discoveredpackages.count())
         self.assertEqual(26, project1.discovereddependencies.count())
+
+    def test_scanpipe_inspect_packages_with_resolved_dependencies(self):
+        pipeline_name = "inspect_packages"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = (
+            self.data_location / "dependencies" / "resolved_dependencies.zip"
+        )
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(
+            pipeline_name=pipeline_name,
+            selected_groups=["Static Resolver"],
+        )
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+        self.assertEqual(4, project1.codebaseresources.count())
+        self.assertEqual(7, project1.discoveredpackages.count())
+        self.assertEqual(6, project1.discovereddependencies.count())
+
+        result_file = output.to_json(project1)
+        expected_file = (
+            self.data_location / "resolved_dependencies_inspect_packages.json"
+        )
+        self.assertPipelineResultEqual(expected_file, result_file, regen=True)
 
     def test_scanpipe_scan_codebase_can_process_wheel(self):
         pipeline_name = "scan_codebase"
