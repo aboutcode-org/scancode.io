@@ -25,7 +25,6 @@ import logging
 import sys
 import time
 import uuid
-from collections import defaultdict
 from contextlib import suppress
 from datetime import datetime
 from itertools import islice
@@ -223,19 +222,15 @@ def ignore_dependency_scope(project, dependency_data):
     The ignored scopes are defined on the project ``ignored_dependency_scopes`` setting
     field.
     """
-    ignored_dependency_scopes = project.get_env(field_name="ignored_dependency_scopes")
-    if not ignored_dependency_scopes:
+    ignored_scope_index = project.ignored_dependency_scopes_index
+    if not ignored_scope_index:
         return False
-
-    ignored_scope_index = defaultdict(list)
-    for entry in ignored_dependency_scopes:
-        ignored_scope_index[entry.get("package_type")].append(entry.get("scope"))
 
     dependency_package_type = dependency_data.get("package_type")
     dependency_scope = dependency_data.get("scope")
     if dependency_package_type and dependency_scope:
         if dependency_scope in ignored_scope_index.get(dependency_package_type, []):
-            return True  # Do not create the DiscoveredDependency record.
+            return True  # Ignore this dependency entry.
 
     return False
 

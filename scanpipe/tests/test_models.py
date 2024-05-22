@@ -702,6 +702,27 @@ class ScanPipeModelsTest(TestCase):
         self.assertIn("Failed to load configuration from", error.description)
         self.assertIn("The file format is invalid.", error.description)
 
+    def test_scanpipe_project_get_ignored_dependency_scopes_index(self):
+        self.project1.settings = {
+            "ignored_dependency_scopes": [{"package_type": "pypi", "scope": "tests"}]
+        }
+        expected = {"pypi": ["tests"]}
+        self.assertEqual(expected, self.project1.ignored_dependency_scopes_index)
+        self.assertEqual(expected, self.project1.get_ignored_dependency_scopes_index())
+
+        self.project1.settings = {
+            "ignored_dependency_scopes": [
+                {"package_type": "pypi", "scope": "tests"},
+                {"package_type": "pypi", "scope": "build"},
+                {"package_type": "npm", "scope": "devDependencies"},
+            ]
+        }
+        # Since this is a cache property, it still returns the previous value
+        self.assertEqual(expected, self.project1.ignored_dependency_scopes_index)
+        # The following function call always build and return the index
+        expected = {"npm": ["devDependencies"], "pypi": ["tests", "build"]}
+        self.assertEqual(expected, self.project1.get_ignored_dependency_scopes_index())
+
     def test_scanpipe_project_model_labels(self):
         self.project1.labels.add("label1", "label2")
         self.assertEqual(2, UUIDTaggedItem.objects.count())
