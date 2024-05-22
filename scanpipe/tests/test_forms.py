@@ -133,6 +133,7 @@ class ScanPipeFormsTest(TestCase):
 
         expected = {
             "ignored_patterns": ["*.ext", "dir/*"],
+            "ignored_dependency_scopes": None,
             "product_name": "",
             "product_version": "",
             "attribution_template": "",
