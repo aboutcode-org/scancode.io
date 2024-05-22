@@ -25,6 +25,19 @@ file. That file will have to be uploaded as one of the Project inputs:
   configuration file as part of the project inputs with the ``--input-file`` option.
 - In the :ref:`rest_api`: Using the ``upload_file`` or ``input_urls`` fields.
 
+Template
+^^^^^^^^
+
+To simplify the configuration process, we provide a template for the
+``scancode-config.yml`` file. You can download it from the following link:
+`download scancode-config.yml template <https://raw.githubusercontent.com/nexB/scancode.io/main/docs/scancode-config.yml>`_
+
+Once downloaded, follow these steps:
+
+1. **Open** the downloaded ``scancode-config.yml`` file in a text editor.
+2. **Uncomment and set the values** for the settings that are relevant to your project.
+3. **Save** the changes to the file.
+
 Example
 ^^^^^^^
 

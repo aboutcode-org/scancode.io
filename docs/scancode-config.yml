@@ -1,0 +1,20 @@
+# The product name of this project, as specified within the DejaCode application.
+#product_name: My Product Name
+
+# The product version of this project, as specified within the DejaCode application.
+#product_version: '1.0'
+
+# Provide one or more path patterns to be ignored.
+# Each pattern should follow the syntax of Unix shell-style wildcards:
+# - Use ``*`` to match multiple characters.
+# - Use ``?`` to match a single character.
+#ignored_patterns:
+#  - '*.tmp'
+#  - 'tests/*'
+
+# Specify certain dependency scopes to be ignored for a given package type.
+#ignored_dependency_scopes:
+# - package_type: npm
+#   scope: devDependencies
+# - package_type: pypi
+#   scope: tests
