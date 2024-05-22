@@ -143,6 +143,60 @@ class ScanPipeFormsTest(TestCase):
         }
         self.assertEqual(expected, project.get_env())
 
+    def test_scanpipe_forms_project_settings_form_ignored_dependency_scopes(self):
+        data = {
+            "name": self.project1.name,
+            "ignored_dependency_scopes": "",
+        }
+        form = ProjectSettingsForm(data=data, instance=self.project1)
+        self.assertTrue(form.is_valid())
+
+        data["ignored_dependency_scopes"] = "bad"
+        form = ProjectSettingsForm(data=data, instance=self.project1)
+        self.assertFalse(form.is_valid())
+        expected = {
+            "ignored_dependency_scopes": [
+                "Invalid input line: 'bad'. Each line must contain exactly one ':' "
+                "character."
+            ]
+        }
+        self.assertEqual(expected, form.errors)
+
+        data["ignored_dependency_scopes"] = "npm:"
+        form = ProjectSettingsForm(data=data, instance=self.project1)
+        self.assertFalse(form.is_valid())
+
+        expected = {
+            "ignored_dependency_scopes": [
+                "Invalid input line: 'npm:'. Both key and value must be non-empty."
+            ]
+        }
+        self.assertEqual(expected, form.errors)
+
+        data["ignored_dependency_scopes"] = "npm:devDependencies\npypi:tests"
+        form = ProjectSettingsForm(data=data, instance=self.project1)
+        self.assertTrue(form.is_valid())
+
+        project = form.save()
+        expected = {
+            "ignored_patterns": None,
+            "ignored_dependency_scopes": [
+                {"package_type": "npm", "scope": "devDependencies"},
+                {"package_type": "pypi", "scope": "tests"},
+            ],
+            "attribution_template": "",
+            "product_name": "",
+            "product_version": "",
+        }
+        self.assertEqual(expected, project.settings)
+        expected = {
+            "ignored_dependency_scopes": [
+                {"package_type": "npm", "scope": "devDependencies"},
+                {"package_type": "pypi", "scope": "tests"},
+            ]
+        }
+        self.assertEqual(expected, project.get_env())
+
     def test_scanpipe_forms_edit_input_source_tag_form(self):
         data = {}
         form = EditInputSourceTagForm(data=data)

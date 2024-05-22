@@ -64,6 +64,18 @@
                     {{ form.ignored_patterns.help_text|safe|linebreaksbr }}
                   </div>
                 </div>
+
+                <div class="field">
+                  <label class="label" for="{{ form.ignored_dependency_scopes.id_for_label }}">
+                    {{ form.ignored_dependency_scopes.label }}
+                  </label>
+                  <div class="control">
+                    {{ form.ignored_dependency_scopes }}
+                  </div>
+                  <div class="help">
+                    {{ form.ignored_dependency_scopes.help_text|safe|linebreaksbr }}
+                  </div>
+                </div>
               </div>
             </div>
 
