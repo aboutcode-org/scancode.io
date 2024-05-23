@@ -476,6 +476,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "status",
         "type",
+        "tag",
         "compliance_alert",
         "in_package",
         "relation_map_type",
@@ -509,6 +510,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     )
     in_package = InPackageFilter(label="In a package")
     status = StatusFilter()
+    tag = django_filters.ChoiceFilter()
     relation_map_type = RelationMapTypeFilter(
         label="Relation map type",
         field_name="related_from__map_type",
@@ -556,13 +558,13 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if status_filter := self.filters.get("status"):
-            status_filter.extra.update(
-                {
-                    "choices": status_filter.get_status_choices(
-                        self.queryset, include_any=True
-                    )
-                }
+            status_filter.extra["choices"] = status_filter.get_status_choices(
+                self.queryset, include_any=True
             )
+
+        tags = self.queryset.order_by("tag").values_list("tag", flat=True).distinct()
+        tag_choices = [(tag, tag) for tag in tags if tag]
+        self.filters["tag"].extra["choices"] = tag_choices
 
         license_expression_filer = self.filters["detected_license_expression"]
         license_expression_filer.extra["widget"] = HasValueDropdownWidget()
@@ -838,6 +840,4 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         if project:
             status_filter = self.filters.get("status")
             qs = CodebaseResource.objects.filter(project=project)
-            status_filter.extra.update(
-                {"choices": status_filter.get_status_choices(qs)}
-            )
+            status_filter.extra["choices"] = status_filter.get_status_choices(qs)

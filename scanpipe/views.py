@@ -1384,7 +1384,10 @@ class CodebaseResourceListView(
         "extension",
         "programming_language",
         "mime_type",
-        "tag",
+        {
+            "field_name": "tag",
+            "filter_fieldname": "tag",
+        },
         {
             "field_name": "detected_license_expression",
             "filter_fieldname": "detected_license_expression",
