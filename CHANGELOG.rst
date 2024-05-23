@@ -1,6 +1,12 @@
 Changelog
 =========
 
+v34.6.0 (unreleased)
+--------------------
+
+- Add ability to filter by tag on the resource list view.
+  https://github.com/nexB/scancode.io/issues/1217
+
 v34.5.0 (2024-05-22)
 --------------------
 

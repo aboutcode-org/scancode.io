@@ -133,6 +133,30 @@ class ScanPipeFilterTest(TestCase):
         filterset = ResourceFilterSet(data=data)
         self.assertEqual([resource2], list(filterset.qs))
 
+    def test_scanpipe_filters_resource_filterset_tag(self):
+        resource1 = CodebaseResource.objects.create(
+            project=self.project1,
+            path="r1",
+            tag="tag1",
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=self.project1,
+            path="r2",
+            tag="tag2",
+        )
+
+        data = {"tag": ""}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([resource1, resource2], list(filterset.qs))
+
+        data = {"tag": "tag1"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([resource1], list(filterset.qs))
+
+        data = {"tag": "tag2"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([resource2], list(filterset.qs))
+
     def test_scanpipe_filters_params_for_search(self):
         data = {
             "status": "succeed",
