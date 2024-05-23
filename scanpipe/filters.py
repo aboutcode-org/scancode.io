@@ -52,17 +52,52 @@ ANY_VAR = "_ANY_"
 OTHER_VAR = "_OTHER_"
 
 
-class ParentAllValuesFilter(django_filters.ChoiceFilter):
+class ModelFieldValuesFilter(django_filters.ChoiceFilter):
     """
-    Similar to ``django_filters.AllValuesFilter`` but using the queryset of the parent
-    ``FilterSet``.
+    A filter that provides dynamic choices for a specified model field.
+
+    This filter dynamically generates its choices based on the unique values
+    of a specified CharField in the model's queryset.
     """
+
+    def __init__(self, include_empty=False, include_any=False, *args, **kwargs):
+        self.include_empty = include_empty
+        self.include_any = include_any
+        super().__init__(*args, **kwargs)
+
+    def filter(self, qs, value):
+        if value == "any":
+            return qs
+        return super().filter(qs, value)
 
     @property
     def field(self):
-        qs = self.parent.queryset.distinct()
-        qs = qs.order_by(self.field_name).values_list(self.field_name, flat=True)
-        self.extra["choices"] = [(o, o) for o in qs]
+        """
+        Override the field property to dynamically set the choices for this filter
+        based on unique values from the parent FilterSet's queryset.
+
+        This method retrieves all distinct values for the specified field from the
+        parent FilterSet's queryset.
+        """
+        qs = self.parent.queryset
+        field_name = self.field_name
+        field = qs.model._meta.get_field(field_name)
+
+        choices = []
+        if self.include_empty:
+            choices.append((EMPTY_VAR, f"No {field.verbose_name}"))
+        if self.include_any:
+            choices.append(("any", f"Any {field.verbose_name}"))
+
+        # Retrieve distinct values for the specified field.
+        field_values = (
+            qs.order_by(field_name).values_list(field_name, flat=True).distinct()
+        )
+        value_choices = [
+            (value, value) for value in field_values if value not in EMPTY_VALUES
+        ]
+
+        self.extra["choices"] = choices + value_choices
         return super().field
 
 
@@ -452,30 +487,11 @@ class RelationMapTypeFilter(django_filters.ChoiceFilter):
         return super().filter(qs, value)
 
 
-class StatusFilter(django_filters.ChoiceFilter):
-    def filter(self, qs, value):
-        if value == "any":
-            return qs.status()
-        return super().filter(qs, value)
-
-    @staticmethod
-    def get_status_choices(qs, include_any=False):
-        """Return the list of unique status for resources in ``project``."""
-        default_choices = [(EMPTY_VAR, "No status")]
-        if include_any:
-            default_choices.append(("any", "Any status"))
-
-        status_values = (
-            qs.order_by("status").values_list("status", flat=True).distinct()
-        )
-        value_choices = [(status, status) for status in status_values if status]
-        return default_choices + value_choices
-
-
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "status",
         "type",
+        "tag",
         "compliance_alert",
         "in_package",
         "relation_map_type",
@@ -508,7 +524,8 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         choices=[(EMPTY_VAR, "None")] + CodebaseResource.Compliance.choices,
     )
     in_package = InPackageFilter(label="In a package")
-    status = StatusFilter()
+    status = ModelFieldValuesFilter(include_empty=True, include_any=True)
+    tag = ModelFieldValuesFilter(include_empty=True, include_any=True)
     relation_map_type = RelationMapTypeFilter(
         label="Relation map type",
         field_name="related_from__map_type",
@@ -555,15 +572,6 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if status_filter := self.filters.get("status"):
-            status_filter.extra.update(
-                {
-                    "choices": status_filter.get_status_choices(
-                        self.queryset, include_any=True
-                    )
-                }
-            )
-
         license_expression_filer = self.filters["detected_license_expression"]
         license_expression_filer.extra["widget"] = HasValueDropdownWidget()
 
@@ -747,9 +755,9 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         grouped_fields={"package_url": ["type", "namespace", "name", "version"]},
     )
     purl = PackageURLFilter(label="Package URL")
-    type = ParentAllValuesFilter()
-    scope = ParentAllValuesFilter()
-    datasource_id = ParentAllValuesFilter()
+    type = ModelFieldValuesFilter()
+    scope = ModelFieldValuesFilter()
+    datasource_id = ModelFieldValuesFilter()
     is_runtime = StrictBooleanFilter()
     is_optional = StrictBooleanFilter()
     is_resolved = StrictBooleanFilter()
@@ -802,6 +810,26 @@ class ProjectMessageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         self.filters["severity"].extra["widget"] = BulmaDropdownWidget()
 
 
+class StatusFilter(django_filters.ChoiceFilter):
+    def filter(self, qs, value):
+        if value == "any":
+            return qs.status()
+        return super().filter(qs, value)
+
+    @staticmethod
+    def get_status_choices(qs, include_any=False):
+        """Return the list of unique status for resources in ``project``."""
+        default_choices = [(EMPTY_VAR, "No status")]
+        if include_any:
+            default_choices.append(("any", "Any status"))
+
+        status_values = (
+            qs.order_by("status").values_list("status", flat=True).distinct()
+        )
+        value_choices = [(status, status) for status in status_values if status]
+        return default_choices + value_choices
+
+
 class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "status",
@@ -836,8 +864,6 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         project = kwargs.pop("project")
         super().__init__(*args, **kwargs)
         if project:
-            status_filter = self.filters.get("status")
             qs = CodebaseResource.objects.filter(project=project)
-            status_filter.extra.update(
-                {"choices": status_filter.get_status_choices(qs)}
-            )
+            status_filter = self.filters["status"]
+            status_filter.extra["choices"] = status_filter.get_status_choices(qs)

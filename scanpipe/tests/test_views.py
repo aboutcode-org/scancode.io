@@ -918,7 +918,7 @@ class ScanPipeViewsTest(TestCase):
         package1.add_resources([resource1, resource2])
 
         url = reverse("project_resources", args=[self.project1.slug])
-        with self.assertNumQueries(7):
+        with self.assertNumQueries(8):
             self.client.get(url)
 
         with self.assertNumQueries(7):
