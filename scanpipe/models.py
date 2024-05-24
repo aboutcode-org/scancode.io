@@ -2333,7 +2333,7 @@ class CodebaseResource(
     )
     status = models.CharField(
         blank=True,
-        max_length=30,
+        max_length=50,
         help_text=_("Analysis status for this resource."),
     )
     size = models.BigIntegerField(
