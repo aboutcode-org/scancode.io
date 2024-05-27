@@ -111,41 +111,90 @@ class ScanPipeFormsTest(TestCase):
 
     def test_scanpipe_forms_project_settings_form_set_initial_from_settings_field(self):
         form = ProjectSettingsForm()
-        self.assertTrue(form.fields["extract_recursively"].initial)
+        self.assertIsNone(form.fields["product_name"].initial)
 
         self.assertEqual({}, self.project1.settings)
         form = ProjectSettingsForm(instance=self.project1)
-        self.assertTrue(form.fields["extract_recursively"].initial)
+        self.assertIsNone(form.fields["product_name"].initial)
 
-        self.project1.settings = {"extract_recursively": False}
+        self.project1.settings = {"product_name": "Product"}
         self.project1.save()
         form = ProjectSettingsForm(instance=self.project1)
-        self.assertFalse(form.fields["extract_recursively"].initial)
+        self.assertEqual("Product", form.fields["product_name"].initial)
 
     def test_scanpipe_forms_project_settings_form_update_project_settings(self):
         data = {
             "name": self.project1.name,
-            "extract_recursively": False,
             "ignored_patterns": "*.ext\ndir/*",
-            "scancode_license_score": 10,
         }
         form = ProjectSettingsForm(data=data, instance=self.project1)
         self.assertTrue(form.is_valid())
         project = form.save()
 
         expected = {
-            "extract_recursively": False,
             "ignored_patterns": ["*.ext", "dir/*"],
+            "ignored_dependency_scopes": None,
             "product_name": "",
             "product_version": "",
             "attribution_template": "",
-            "scancode_license_score": 10,
         }
         self.assertEqual(expected, project.settings)
         expected = {
-            "extract_recursively": False,
             "ignored_patterns": ["*.ext", "dir/*"],
-            "scancode_license_score": 10,
+        }
+        self.assertEqual(expected, project.get_env())
+
+    def test_scanpipe_forms_project_settings_form_ignored_dependency_scopes(self):
+        data = {
+            "name": self.project1.name,
+            "ignored_dependency_scopes": "",
+        }
+        form = ProjectSettingsForm(data=data, instance=self.project1)
+        self.assertTrue(form.is_valid())
+
+        data["ignored_dependency_scopes"] = "bad"
+        form = ProjectSettingsForm(data=data, instance=self.project1)
+        self.assertFalse(form.is_valid())
+        expected = {
+            "ignored_dependency_scopes": [
+                "Invalid input line: 'bad'. Each line must contain exactly one ':' "
+                "character."
+            ]
+        }
+        self.assertEqual(expected, form.errors)
+
+        data["ignored_dependency_scopes"] = "npm:"
+        form = ProjectSettingsForm(data=data, instance=self.project1)
+        self.assertFalse(form.is_valid())
+
+        expected = {
+            "ignored_dependency_scopes": [
+                "Invalid input line: 'npm:'. Both key and value must be non-empty."
+            ]
+        }
+        self.assertEqual(expected, form.errors)
+
+        data["ignored_dependency_scopes"] = "npm:devDependencies\npypi:tests"
+        form = ProjectSettingsForm(data=data, instance=self.project1)
+        self.assertTrue(form.is_valid())
+
+        project = form.save()
+        expected = {
+            "ignored_patterns": None,
+            "ignored_dependency_scopes": [
+                {"package_type": "npm", "scope": "devDependencies"},
+                {"package_type": "pypi", "scope": "tests"},
+            ],
+            "attribution_template": "",
+            "product_name": "",
+            "product_version": "",
+        }
+        self.assertEqual(expected, project.settings)
+        expected = {
+            "ignored_dependency_scopes": [
+                {"package_type": "npm", "scope": "devDependencies"},
+                {"package_type": "pypi", "scope": "tests"},
+            ]
         }
         self.assertEqual(expected, project.get_env())
 

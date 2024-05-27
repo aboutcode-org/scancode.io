@@ -11,3 +11,8 @@
     </div>
   {% endfor %}
 </div>
+{% if filterset.errors %}
+  <div class="mb-2">
+    {% include 'scanpipe/includes/form_errors.html' with form=filterset %}
+  </div>
+{% endif %}

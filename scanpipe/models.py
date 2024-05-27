@@ -27,6 +27,7 @@ import re
 import shutil
 import uuid
 from collections import Counter
+from collections import defaultdict
 from contextlib import suppress
 from itertools import groupby
 from operator import itemgetter
@@ -753,12 +754,42 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
     def get_input_config_file(self):
         """
-        Return the ``scancode-config.yml`` file from the input/ directory if
-        available.
+        Return the ``scancode-config.yml`` file from the input/ directory
+        or from the codebase/ immediate subdirectories.
+
+        Priority order:
+        1. If a config file exists directly in the input/ directory, return it.
+        2. If exactly one config file exists in a codebase/ immediate subdirectory,
+        return it.
+        3. If multiple config files are found in subdirectories, report an error.
         """
-        config_file = self.input_path / settings.SCANCODEIO_CONFIG_FILE
-        if config_file.exists():
-            return config_file
+        config_filename = settings.SCANCODEIO_CONFIG_FILE
+
+        # Check for the config file in the root of the input/ directory.
+        root_config_file = self.input_path / config_filename
+        if root_config_file.exists():
+            return root_config_file
+
+        # Search for config files in immediate codebase/ subdirectories.
+        subdir_config_files = list(self.codebase_path.glob(f"*/{config_filename}"))
+
+        # If exactly one config file is found in codebase/ subdirectories, return it.
+        if len(subdir_config_files) == 1:
+            return subdir_config_files[0]
+
+        # If multiple config files are found, report an error.
+        if len(subdir_config_files) > 1:
+            self.add_warning(
+                f"More than one {config_filename} found. "
+                f"Could not determine which one to use.",
+                model="Project",
+                details={
+                    "resources": [
+                        str(path.relative_to(self.work_path))
+                        for path in subdir_config_files
+                    ]
+                },
+            )
 
     def get_settings_as_yml(self):
         """Return the ``settings`` file content as yml, suitable for a config file."""
@@ -774,8 +805,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
     def get_env(self, field_name=None):
         """
-        Return the project environment loaded from the ``.scancode/config.yml`` config
-        file, when available, and overriden by the ``settings`` model field.
+        Return the project environment loaded from the ``scancode-config.yml`` config
+        file, when available, and overridden by the ``settings`` model field.
 
         ``field_name`` can be provided to get a single entry from the env.
         """
@@ -783,8 +814,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         # 1. Load settings from config file when available.
         if config_file := self.get_input_config_file():
-            with suppress(saneyaml.YAMLError):
+            logger.info(f"Loading env from {config_file.relative_to(self.work_path)}")
+            try:
                 env = saneyaml.load(config_file.read_text())
+            except saneyaml.YAMLError:
+                self.add_error(
+                    f'Failed to load configuration from "{config_file}". '
+                    f"The file format is invalid."
+                )
 
         # 2. Update with defined values from the Project ``settings`` field.
         env.update(self.get_enabled_settings())
@@ -793,6 +830,29 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             return env.get(field_name)
 
         return env
+
+    def get_ignored_dependency_scopes_index(self):
+        """
+        Return a dictionary index of the ``ignored_dependency_scopes`` setting values
+        defined in this Project env.
+        """
+        ignored_dependency_scopes = self.get_env(field_name="ignored_dependency_scopes")
+        if not ignored_dependency_scopes:
+            return {}
+
+        ignored_scope_index = defaultdict(list)
+        for entry in ignored_dependency_scopes:
+            ignored_scope_index[entry.get("package_type")].append(entry.get("scope"))
+
+        return dict(ignored_scope_index)
+
+    @cached_property
+    def ignored_dependency_scopes_index(self):
+        """
+        Return the computed value of get_ignored_dependency_scopes_index.
+        The value is only generated once and cached for further calls.
+        """
+        return self.get_ignored_dependency_scopes_index()
 
     def clear_tmp_directory(self):
         """
@@ -2273,7 +2333,7 @@ class CodebaseResource(
     )
     status = models.CharField(
         blank=True,
-        max_length=30,
+        max_length=50,
         help_text=_("Analysis status for this resource."),
     )
     size = models.BigIntegerField(
@@ -3230,14 +3290,6 @@ class DiscoveredPackage(
             if (url := getattr(self, field_name)) and field_name not in property_fields
         ]
 
-        # Always use the package_uid when available to ensure having unique
-        # package_url in the BOM when several instances of the same DiscoveredPackage
-        # (i.e. same purl) are present in the project.
-        try:
-            package_url = PackageURL.from_string(self.package_uid)
-        except ValueError:
-            package_url = self.get_package_url()
-
         evidence = None
         if self.other_license_expression_spdx:
             evidence = cyclonedx_component.ComponentEvidence(
@@ -3248,11 +3300,17 @@ class DiscoveredPackage(
                 ],
             )
 
+        package_url = self.get_package_url()
+        # Use the package_uid when available to ensure having unique bom_ref
+        # in the SBOM when several instances of the same DiscoveredPackage
+        # (i.e. same purl) are present in the project.
+        bom_ref = self.package_uid or str(package_url)
+
         return cyclonedx_component.Component(
             name=self.name,
             version=self.version,
-            bom_ref=str(package_url),
-            purl=package_url,
+            bom_ref=bom_ref,
+            purl=package_url,  # Warning: Use the real purl and not package_uid here.
             licenses=licenses,
             copyright=self.copyright,
             description=self.description,
@@ -3292,6 +3350,8 @@ class DiscoveredDependency(
     """
     A project's Discovered Dependencies are records of the dependencies used by
     system and application packages discovered in the code under analysis.
+    Dependencies are usually collected from parsed package data such as a package
+    manifest or lockfile.
     """
 
     # Overrides the `project` field from `ProjectRelatedModel` to set the proper
@@ -3308,15 +3368,32 @@ class DiscoveredDependency(
     )
     for_package = models.ForeignKey(
         DiscoveredPackage,
-        related_name="dependencies",
+        related_name="declared_dependencies",
+        help_text=_("The package that declares this dependency."),
         on_delete=models.CASCADE,
+        editable=False,
+        blank=True,
+        null=True,
+    )
+    resolved_to = models.ForeignKey(
+        DiscoveredPackage,
+        related_name="resolved_dependencies",
+        help_text=_(
+            "The resolved package for this dependency. "
+            "If empty, it indicates the dependency is unresolved."
+        ),
+        on_delete=models.SET_NULL,
         editable=False,
         blank=True,
         null=True,
     )
     datafile_resource = models.ForeignKey(
         CodebaseResource,
-        related_name="dependencies",
+        related_name="declared_dependencies",
+        help_text=_(
+            "The codebase resource (e.g., manifest or lockfile) that declares this "
+            "dependency."
+        ),
         on_delete=models.CASCADE,
         editable=False,
         blank=True,
@@ -3391,6 +3468,11 @@ class DiscoveredDependency(
     def for_package_uid(self):
         if self.for_package:
             return self.for_package.package_uid
+
+    @cached_property
+    def resolved_to_uid(self):
+        if self.resolved_to:
+            return self.resolved_to.package_uid
 
     @cached_property
     def datafile_path(self):

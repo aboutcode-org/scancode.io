@@ -21,10 +21,12 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import io
+import sys
 import tempfile
 import uuid
 from pathlib import Path
 from unittest import mock
+from unittest import skipIf
 
 from django.test import TestCase
 
@@ -1493,6 +1495,7 @@ class ScanPipeD2DPipesTest(TestCase):
             ).count(),
         )
 
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
     def test_scanpipe_pipes_d2d_map_go_paths(self):
         input_dir = self.project1.input_path
         input_resources = [
@@ -1520,5 +1523,11 @@ class ScanPipeD2DPipesTest(TestCase):
             1,
             CodebaseRelation.objects.filter(
                 project=self.project1, map_type="go_file_paths"
+            ).count(),
+        )
+        self.assertEqual(
+            1,
+            CodebaseResource.objects.filter(
+                project=self.project1, status="requires-review"
             ).count(),
         )

@@ -168,6 +168,19 @@ class BasePipeline:
         logger.info(message)
         self.run.append_to_log(message)
 
+    @staticmethod
+    def output_from_exception(exception):
+        """Return a formatted error message including the traceback."""
+        output = f"{exception}\n\n"
+
+        if exception.__cause__ and str(exception.__cause__) != str(exception):
+            output += f"Cause: {exception.__cause__}\n\n"
+
+        traceback_formatted = "".join(traceback.format_tb(exception.__traceback__))
+        output += f"Traceback:\n{traceback_formatted}"
+
+        return output
+
     def execute(self):
         """Execute each steps in the order defined on this pipeline class."""
         self.log(f"Pipeline [{self.pipeline_name}] starting")
@@ -189,10 +202,9 @@ class BasePipeline:
 
             try:
                 step(self)
-            except Exception as e:
+            except Exception as exception:
                 self.log("Pipeline failed")
-                tb = "".join(traceback.format_tb(e.__traceback__))
-                return 1, f"{e}\n\nTraceback:\n{tb}"
+                return 1, self.output_from_exception(exception)
 
             step_run_time = timer() - step_start_time
             self.log(f"Step [{step_name}] completed in {humanize_time(step_run_time)}")
@@ -283,11 +295,15 @@ class Pipeline(BasePipeline):
 
         extract_errors = scancode.extract_archives(
             location=self.project.codebase_path,
-            recurse=self.env.get("extract_recursively", True),
+            recurse=True,
         )
 
         if extract_errors:
             self.add_error("\n".join(extract_errors))
+
+        # Reload the project env post-extraction as the scancode-config.yml file
+        # may be located in one of the extracted archives.
+        self.env = self.project.get_env()
 
 
 def is_pipeline(obj):

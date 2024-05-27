@@ -179,6 +179,10 @@ class ScanPipeConfig(AppConfig):
             "deploy_to_develop": "map_deploy_to_develop",
             "scan_package": "scan_single_package",
             "scan_codebase_packages": "inspect_packages",
+            "collect_pygments_symbols": "collect_symbols_pygments",
+            "collect_source_strings": "collect_strings_gettext",
+            "collect_symbols": "collect_symbols_ctags",
+            "collect_tree_sitter_symbols": "collect_symbols_tree_sitter",
         }
         if new_name := pipeline_old_names_mapping.get(pipeline_name):
             warnings.warn(

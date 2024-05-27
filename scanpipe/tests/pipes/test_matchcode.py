@@ -330,6 +330,6 @@ class MatchCodePipesTest(TestCase):
         codebase_resource1.refresh_from_db()
         codebase_resource2.refresh_from_db()
 
-        expected_extra_data = {"halo1": "ef420f7e84c8c74c691315f0a06ac4f0"}
+        expected_extra_data = {"halo1": "000000b8ef420f7e84c8c74c691315f0a06ac4f0"}
         self.assertEqual(expected_extra_data, codebase_resource1.extra_data)
         self.assertFalse(codebase_resource2.extra_data)

@@ -21,22 +21,22 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipes import source_strings
+from scanpipe.pipes import symbols
 
 
-class CollectSourceStrings(Pipeline):
-    """Collect source strings from codebase files and keep them in extra data field."""
+class CollectSymbolsPygments(Pipeline):
+    """Collect source symbols, string literals and comments with Pygments."""
 
     download_inputs = False
     is_addon = True
 
     @classmethod
     def steps(cls):
-        return (cls.collect_and_store_resource_strings,)
+        return (cls.collect_and_store_pygments_symbols_and_strings,)
 
-    def collect_and_store_resource_strings(self):
+    def collect_and_store_pygments_symbols_and_strings(self):
         """
-        Collect source strings from codebase files using gettext and store
-        them in the extra data field.
+        Collect symbols, strings and comments from codebase files using pygments
+        and store them in the extra data field.
         """
-        source_strings.collect_and_store_resource_strings(self.project, self.log)
+        symbols.collect_and_store_pygments_symbols_and_strings(self.project, self.log)

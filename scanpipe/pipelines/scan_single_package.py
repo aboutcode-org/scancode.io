@@ -101,19 +101,19 @@ class ScanSinglePackage(Pipeline):
         if extract_errors:
             self.add_error("\n".join(extract_errors))
 
+        # Reload the project env post-extraction as the scancode-config.yml file
+        # may be located in one of the extracted archives.
+        self.env = self.project.get_env()
+
     def run_scan(self):
         """Scan extracted codebase/ content."""
         scan_output_path = self.project.get_output_file_path("scancode", "json")
         self.scan_output_location = str(scan_output_path.absolute())
 
-        run_scan_args = self.scancode_run_scan_args.copy()
-        if license_score := self.project.get_env("scancode_license_score"):
-            run_scan_args["license_score"] = license_score
-
         scanning_errors = scancode.run_scan(
             location=str(self.project.codebase_path),
             output_file=self.scan_output_location,
-            run_scan_args=run_scan_args,
+            run_scan_args=self.scancode_run_scan_args.copy(),
         )
 
         for resource_path, errors in scanning_errors.items():

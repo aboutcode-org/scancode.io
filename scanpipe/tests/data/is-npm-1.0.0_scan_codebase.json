@@ -128,6 +128,7 @@
       "is_resolved": false,
       "dependency_uid": "pkg:npm/ava?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "resolved_to_uid": null,
       "datafile_path": "is-npm-1.0.0.tgz-extract/package/package.json",
       "datasource_id": "npm_package_json",
       "package_type": "npm",

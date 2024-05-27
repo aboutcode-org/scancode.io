@@ -57,6 +57,8 @@ from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
 
 
 class ScanPipePipelinesTest(TestCase):
+    data_location = Path(__file__).parent / "data"
+
     def test_scanpipe_pipeline_class_pipeline_name_attribute(self):
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("do_nothing")
@@ -159,7 +161,7 @@ class ScanPipePipelinesTest(TestCase):
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
 
-        file_location = Path(__file__).parent / "data" / "notice.NOTICE"
+        file_location = self.data_location / "notice.NOTICE"
         input_source = project1.add_input_source(
             filename=file_location.name, is_uploaded=True
         )
@@ -298,9 +300,30 @@ class ScanPipePipelinesTest(TestCase):
         pipeline = run.make_pipeline_instance()
         self.assertEqual({}, pipeline.env)
 
-        config_file.write_text("extract_recursively: true")
+        config_file.write_text("product_name: Product")
         pipeline = run.make_pipeline_instance()
-        self.assertEqual({"extract_recursively": True}, pipeline.env)
+        self.assertEqual({"product_name": "Product"}, pipeline.env)
+
+    def test_scanpipe_pipelines_class_env_reloaded_after_extraction(self):
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data_location / "settings/archived-scancode-config.zip"
+        project1.copy_input_from(input_location)
+        run = project1.add_pipeline("scan_codebase")
+        pipeline = run.make_pipeline_instance()
+        self.assertEqual({}, pipeline.env)
+
+        # Manually run steps, env is reload from the scancode-config.yml contained in
+        # the archive
+        pipeline.copy_inputs_to_codebase_directory()
+        pipeline.extract_archives()
+
+        expected = {
+            "product_name": "My Product Name",
+            "product_version": "1.0",
+            "ignored_patterns": ["*.tmp", "tests/*"],
+        }
+        self.assertEqual(expected, pipeline.env)
 
     def test_scanpipe_pipelines_class_flag_ignored_resources(self):
         project1 = Project.objects.create(name="Analysis")
@@ -1228,8 +1251,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertIn("Couldn't index 1 unsupported PURLs", run.log)
 
     @skipIf(sys.platform == "darwin", "Not supported on macOS")
-    def test_scanpipe_collect_symbols_pipeline_integration(self):
-        pipeline_name = "collect_symbols"
+    def test_scanpipe_collect_symbols_ctags_pipeline_integration(self):
+        pipeline_name = "collect_symbols_ctags"
         project1 = Project.objects.create(name="Analysis")
 
         dir = project1.codebase_path / "codefile"
@@ -1252,8 +1275,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertCountEqual(expected_extra_data_symbols, result_extra_data_symbols)
 
     @skipIf(sys.platform != "linux", "Only supported on Linux")
-    def test_scanpipe_collect_source_strings_pipeline_integration(self):
-        pipeline_name = "collect_source_strings"
+    def test_scanpipe_collect_strings_gettext_pipeline_integration(self):
+        pipeline_name = "collect_strings_gettext"
         project1 = Project.objects.create(name="Analysis")
 
         dir = project1.codebase_path / "codefile"
@@ -1279,8 +1302,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertCountEqual(expected_extra_data_strings, result_extra_data_strings)
 
     @skipIf(sys.platform == "darwin", "Not supported on macOS")
-    def test_scanpipe_collect_pygments_symbols_pipeline_integration(self):
-        pipeline_name = "collect_pygments_symbols"
+    def test_scanpipe_collect_symbols_pygments_pipeline_integration(self):
+        pipeline_name = "collect_symbols_pygments"
         project1 = Project.objects.create(name="Analysis")
 
         dir = project1.codebase_path / "codefile"
@@ -1310,8 +1333,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertDictEqual(expected_extra_data, result_extra_data)
 
     @skipIf(sys.platform == "darwin", "Not supported on macOS")
-    def test_scanpipe_collect_tree_sitter_symbols_pipeline_integration(self):
-        pipeline_name = "collect_tree_sitter_symbols"
+    def test_scanpipe_collect_symbols_tree_sitter_pipeline_integration(self):
+        pipeline_name = "collect_symbols_tree_sitter"
         project1 = Project.objects.create(name="Analysis")
 
         dir = project1.codebase_path / "codefile"

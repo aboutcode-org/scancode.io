@@ -24,12 +24,8 @@ from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import symbols
 
 
-class CollectTreeSitterSymbolsAndStrings(Pipeline):
-    """
-    Collect codebase symbols using tree-sitter and keep them in extra data field.
-
-    Also collect strings.
-    """
+class CollectSymbolsTreeSitter(Pipeline):
+    """Collect source symbols and string literals with Tree-sitter."""
 
     download_inputs = False
     is_addon = True

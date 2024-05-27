@@ -648,7 +648,6 @@ class ScanPipeViewsTest(TestCase):
             "id_notes",
             "id_uuid",
             "id_work_directory",
-            "id_extract_recursively",
             "id_ignored_patterns",
             "id_attribution_template",
             'id="modal-archive"',
@@ -667,11 +666,11 @@ class ScanPipeViewsTest(TestCase):
 
     def test_scanpipe_views_project_settings_view_download_config_file(self):
         url = reverse("project_settings", args=[self.project1.slug])
-        self.project1.settings = {"extract_recursively": False}
+        self.project1.settings = {"product_name": "Product"}
         self.project1.save()
 
         response = self.client.get(url, data={"download": 1})
-        self.assertEqual(b"extract_recursively: no\n", response.getvalue())
+        self.assertEqual(b"product_name: Product\n", response.getvalue())
         self.assertEqual("application/x-yaml", response.headers["Content-Type"])
 
     def test_scanpipe_views_project_views(self):
@@ -805,6 +804,13 @@ class ScanPipeViewsTest(TestCase):
         )
         self.assertContains(response, expected, html=True)
 
+    def test_scanpipe_views_codebase_resource_list_view_bad_search_query(self):
+        url = reverse("project_resources", args=[self.project1.slug])
+        data = {"search": "'"}  # No closing quotation
+        response = self.client.get(url, data=data)
+        expected_error = "The provided search value is invalid: No closing quotation"
+        self.assertContains(response, expected_error)
+
     def test_scanpipe_views_codebase_resource_details_view_tab_image(self):
         resource1 = make_resource_file(self.project1, "file1.ext")
         response = self.client.get(resource1.get_absolute_url())
@@ -912,7 +918,7 @@ class ScanPipeViewsTest(TestCase):
         package1.add_resources([resource1, resource2])
 
         url = reverse("project_resources", args=[self.project1.slug])
-        with self.assertNumQueries(7):
+        with self.assertNumQueries(8):
             self.client.get(url)
 
         with self.assertNumQueries(7):

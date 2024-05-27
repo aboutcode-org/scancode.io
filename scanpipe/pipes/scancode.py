@@ -20,13 +20,14 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import concurrent.futures
 import json
 import logging
 import multiprocessing
 import os
 import shlex
+import warnings
 from collections import defaultdict
+from concurrent import futures
 from functools import partial
 from pathlib import Path
 
@@ -57,6 +58,10 @@ Utilities to deal with ScanCode toolkit features and objects.
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
+class InsufficientResourcesError(Exception):
+    pass
+
+
 def get_max_workers(keep_available):
     """
     Return the `SCANCODEIO_PROCESSES` if defined in the setting,
@@ -67,9 +72,9 @@ def get_max_workers(keep_available):
     but for example "spawn", such as on macOS, multiprocessing and threading are
     disabled by default returning -1 `max_workers`.
     """
-    processes = settings.SCANCODEIO_PROCESSES
-    if processes is not None:
-        return processes
+    processes_from_settings = settings.SCANCODEIO_PROCESSES
+    if processes_from_settings in [-1, 0, 1]:
+        return processes_from_settings
 
     if multiprocessing.get_start_method() != "fork":
         return -1
@@ -77,6 +82,18 @@ def get_max_workers(keep_available):
     max_workers = os.cpu_count() - keep_available
     if max_workers < 1:
         return 1
+
+    if processes_from_settings is not None:
+        if processes_from_settings <= max_workers:
+            return processes_from_settings
+        else:
+            msg = (
+                f"The value {processes_from_settings} specified in SCANCODEIO_PROCESSES"
+                f" exceeds the number of available CPUs on this machine."
+                f" {max_workers} CPUs will be used instead for multiprocessing."
+            )
+            warnings.warn(msg, ResourceWarning)
+
     return max_workers
 
 
@@ -305,20 +322,28 @@ def scan_resources(
 
     logger.info(f"Starting ProcessPoolExecutor with {max_workers} max_workers")
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers) as executor:
+    with futures.ProcessPoolExecutor(max_workers) as executor:
         future_to_resource = {
             executor.submit(scan_func, resource.location): resource
             for resource in resource_iterator
         }
 
         # Iterate over the Futures as they complete (finished or cancelled)
-        future_as_completed = concurrent.futures.as_completed(future_to_resource)
+        future_as_completed = futures.as_completed(future_to_resource)
 
         for future in progress.iter(future_as_completed):
             resource = future_to_resource[future]
             progress.log_progress()
             logger.debug(f"{scan_func.__name__} pk={resource.pk}")
-            scan_results, scan_errors = future.result()
+            try:
+                scan_results, scan_errors = future.result()
+            except futures.process.BrokenProcessPool as broken_pool_error:
+                message = (
+                    "You may not have enough resources to complete this operation. "
+                    "Please ensure that there is at least 2 GB of available memory per "
+                    "CPU core for successful execution."
+                )
+                raise broken_pool_error from InsufficientResourcesError(message)
             save_func(resource, scan_results, scan_errors)
 
 
@@ -334,15 +359,10 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
     if resource_qs is None:
         resource_qs = project.codebaseresources.no_status()
 
-    scan_func_kwargs = {}
-    if license_score := project.get_env("scancode_license_score"):
-        scan_func_kwargs["min_license_score"] = license_score
-
     scan_resources(
         resource_qs=resource_qs,
         scan_func=scan_file,
         save_func=save_scan_file_results,
-        scan_func_kwargs=scan_func_kwargs,
         progress_logger=progress_logger,
     )
 
