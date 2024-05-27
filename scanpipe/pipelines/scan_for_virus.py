@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from pathlib import Path
+
 from django.conf import settings
 
 from scanpipe.pipelines import Pipeline
@@ -36,7 +38,7 @@ class ScanForVirus(Pipeline):
         return (cls.scan_for_virus,)
 
     def scan_for_virus(self):
-        """TODO."""
+        """Run a ClamAV scan to detect virus infection."""
         import clamd
 
         if settings.CLAMD_USE_TCP:
@@ -50,4 +52,17 @@ class ScanForVirus(Pipeline):
             raise Exception(f"Error with the ClamAV service: {e}")
 
         for resource_location, results in scan_response.items():
-            print(resource_location, results)
+            status, reason = results
+            resource_path = Path(resource_location).relative_to(
+                self.project.codebase_path
+            )
+            details = {
+                "status": status,
+                "reason": reason,
+                "resource_path": str(resource_path),
+            }
+            self.project.add_error(
+                description="Virus detected",
+                model="ScanForVirus",
+                details=details,
+            )
