@@ -182,6 +182,14 @@ Scan Codebase
     :members:
     :member-order: bysource
 
+.. _pipeline_scan_for_virus:
+
+Scan For Virus
+--------------
+.. autoclass:: scanpipe.pipelines.scan_for_virus.ScanForVirus()
+    :members:
+    :member-order: bysource
+
 .. _pipeline_scan_single_package:
 
 Scan Single Package

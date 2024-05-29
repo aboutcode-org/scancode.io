@@ -28,7 +28,7 @@ from scanpipe.pipelines import Pipeline
 
 
 class ScanForVirus(Pipeline):
-    """Run a ClamAV scan on the uploaded file to detect virus infection."""
+    """Run a ClamAV scan on the codebase directory to detect virus infection."""
 
     download_inputs = False
     is_addon = True
