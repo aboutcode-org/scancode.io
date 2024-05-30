@@ -8,6 +8,11 @@ Generic
 .. automodule:: scanpipe.pipes
     :members:
 
+ClamAV
+------
+.. automodule:: scanpipe.pipes.clamav
+    :members:
+
 Codebase
 --------
 .. automodule:: scanpipe.pipes.codebase
