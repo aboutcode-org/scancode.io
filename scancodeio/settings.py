@@ -364,6 +364,10 @@ if not SCANCODEIO_ASYNC:
     for queue_config in RQ_QUEUES.values():
         queue_config["ASYNC"] = False
 
+# ClamAV virus scan
+CLAMD_USE_TCP = env.bool("CLAMD_USE_TCP", default=True)
+CLAMD_TCP_ADDR = env.str("CLAMD_TCP_ADDR", default="clamav")
+
 # Django restframework
 
 REST_FRAMEWORK = {

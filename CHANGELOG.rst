@@ -4,6 +4,9 @@ Changelog
 v34.6.0 (unreleased)
 --------------------
 
+- Add a new ``scan_for_virus`` add-on pipeline based on ClamAV scan.
+  https://github.com/nexB/scancode.io/issues/1182
+
 - Add ability to filter by tag on the resource list view.
   https://github.com/nexB/scancode.io/issues/1217
 
