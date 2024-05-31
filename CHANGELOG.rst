@@ -5,6 +5,8 @@ v34.6.0 (unreleased)
 --------------------
 
 - Add a new ``scan_for_virus`` add-on pipeline based on ClamAV scan.
+  Found viruses are stored as "error" Project messages and on their related codebase
+  resource instance using the ``extra_data`` field.
   https://github.com/nexB/scancode.io/issues/1182
 
 - Add ability to filter by tag on the resource list view.
