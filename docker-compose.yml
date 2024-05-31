@@ -71,8 +71,6 @@ services:
     volumes:
       - clamav_data:/var/lib/clamav
       - workspace:/var/scancodeio/workspace/
-    ports:
-      - "3310:3310"
     restart: always
 
 volumes:
