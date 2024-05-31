@@ -30,7 +30,8 @@ import clamd
 def scan_for_virus(project):
     """
     Run a ClamAV scan to detect virus infection.
-    Create one Project error message per found virus.
+    Create one Project error message per found virus and store the detection data
+    on the related codebase resource ``extra_data`` field.
     """
     if settings.CLAMD_USE_TCP:
         clamd_socket = clamd.ClamdNetworkSocket(settings.CLAMD_TCP_ADDR)
@@ -45,13 +46,22 @@ def scan_for_virus(project):
     for resource_location, results in scan_response.items():
         status, reason = results
         resource_path = Path(resource_location).relative_to(project.codebase_path)
-        details = {
-            "status": status,
-            "reason": reason,
-            "resource_path": str(resource_path),
+
+        resource = project.codebaseresources.get(path=resource_path)
+        virus_report = {
+            "calmav": {
+                "status": status,
+                "reason": reason,
+            }
         }
+        resource.update_extra_data({"virus_report": virus_report})
+
         project.add_error(
             description="Virus detected",
             model="ScanForVirus",
-            details=details,
+            details={
+                "status": status,
+                "reason": reason,
+                "resource_path": str(resource_path),
+            },
         )
