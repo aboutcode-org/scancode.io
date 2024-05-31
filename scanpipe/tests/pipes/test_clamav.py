@@ -56,3 +56,14 @@ class ScanPipeClamAVPipesTest(TestCase):
             "resource_path": "eicar.zip",
         }
         self.assertEqual(expected_details, error_message.details)
+
+        resource1 = project.codebaseresources.first()
+        expected_virus_report_extra_data = {
+            "virus_report": {
+                "calmav": {
+                    "status": "FOUND",
+                    "reason": "Win.Test.EICAR_HDB-1",
+                }
+            }
+        }
+        self.assertEqual(expected_virus_report_extra_data, resource1.extra_data)

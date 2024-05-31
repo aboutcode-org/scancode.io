@@ -45,6 +45,16 @@ def scan_for_virus(project):
     for resource_location, results in scan_response.items():
         status, reason = results
         resource_path = Path(resource_location).relative_to(project.codebase_path)
+
+        resource = project.codebaseresources.get(path=resource_path)
+        virus_report = {
+            "calmav": {
+                "status": status,
+                "reason": reason,
+            }
+        }
+        resource.update_extra_data({"virus_report": virus_report})
+
         details = {
             "status": status,
             "reason": reason,
