@@ -12,6 +12,11 @@ v34.6.0 (unreleased)
 - Add ability to filter by tag on the resource list view.
   https://github.com/nexB/scancode.io/issues/1217
 
+- Use "unknown" as the Package URL default type when no values are provided for that
+  field. This allows to create a discovered package instance instead of raising a
+  Project error message.
+  https://github.com/nexB/scancode.io/issues/1249
+
 v34.5.0 (2024-05-22)
 --------------------
 

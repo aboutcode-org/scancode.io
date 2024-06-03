@@ -3106,26 +3106,24 @@ class DiscoveredPackage(
     @classmethod
     def create_from_data(cls, project, package_data):
         """
-        Create and returns a DiscoveredPackage for a `project` from the `package_data`.
-        If one of the values of the required fields is not available, a "ProjectMessage"
-        is created instead of a new DiscoveredPackage instance.
+        Create and return a DiscoveredPackage for a given `project` based on
+        `package_data`.
+
+        If the required `name` field is missing in `package_data`, a `ProjectMessage`
+        is created instead of a DiscoveredPackage instance.
+
+        If the `type` field is missing in `package_data`, it defaults to "unknown"
+        before creating the DiscoveredPackage.
         """
         package_data = package_data.copy()
-        required_fields = ["type", "name"]
-        missing_values = [
-            field_name
-            for field_name in required_fields
-            if not package_data.get(field_name)
-        ]
 
-        if missing_values:
-            message = (
-                f"No values for the following required fields: "
-                f"{', '.join(missing_values)}"
-            )
-
+        if not package_data.get("name"):
+            message = 'No values provided for the required "name" field.'
             project.add_warning(description=message, model=cls, details=package_data)
             return
+
+        if not package_data.get("type"):
+            package_data["type"] = "unknown"
 
         qualifiers = package_data.get("qualifiers")
         if qualifiers:
