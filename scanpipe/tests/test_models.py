@@ -2447,7 +2447,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
         error = project1.projectmessages.latest("created_date")
         self.assertEqual("DiscoveredPackage", error.model)
-        expected_message = "No values for the following required fields: name"
+        expected_message = 'No values provided for the required "name" field.'
         self.assertEqual(expected_message, error.description)
         self.assertEqual(package_data1["purl"], error.details["purl"])
         self.assertEqual("", error.details["name"])
@@ -2465,6 +2465,17 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
 
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
         self.assertEqual(project_message_count, ProjectMessage.objects.count())
+
+    def test_scanpipe_discovered_package_model_create_from_data_missing_type(self):
+        project1 = Project.objects.create(name="Analysis")
+
+        incomplete_data = dict(package_data1)
+        incomplete_data["type"] = ""
+
+        package = DiscoveredPackage.create_from_data(project1, incomplete_data)
+        self.assertEqual(project1, package.project)
+        self.assertEqual("pkg:unknown/debian/adduser@3.118?arch=all", str(package))
+        self.assertEqual("unknown", package.type)
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_discovered_dependency_model_create_from_data(self):
