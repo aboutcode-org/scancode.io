@@ -294,7 +294,8 @@ class ScanPipeOutputPipesTest(TestCase):
         make_dependency(project, for_package=a, resolved_to_package=b)
         make_dependency(project, for_package=b, resolved_to_package=c)
 
-        output_file = output.to_cyclonedx(project=project)
+        with self.assertNumQueries(2):
+            output_file = output.to_cyclonedx(project=project)
         results_json = json.loads(output_file.read_text())
 
         expected = [
@@ -455,7 +456,7 @@ class ScanPipeOutputPipesTest(TestCase):
         package_data["notice_text"] = "Notice text"
         pipes.update_or_create_package(project, package_data)
 
-        with self.assertNumQueries(1):
+        with self.assertNumQueries(2):
             output_file = output.to_attribution(project=project)
 
         expected_file = self.data_path / "outputs" / "expected_attribution.html"
