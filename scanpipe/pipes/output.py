@@ -675,23 +675,20 @@ def get_cyclonedx_bom(project):
         ],
     )
 
-    components = []
     vulnerabilities = []
-    for package in get_queryset(project, "discoveredpackage"):
+
+    package_qs = get_queryset(project, "discoveredpackage")
+    package_qs = package_qs.prefetch_related("children_packages")
+
+    for package in package_qs:
         component = package.as_cyclonedx()
-        components.append(component)
+        bom.components.add(component)
+        bom.register_dependency(project_as_root_component, [component])
 
         for vulnerability_data in package.affected_by_vulnerabilities:
             vulnerabilities.append(
-                vulnerability_as_cyclonedx(
-                    vulnerability_data=vulnerability_data,
-                    component_bom_ref=component.bom_ref,
-                )
+                vulnerability_as_cyclonedx(vulnerability_data, component.bom_ref)
             )
-
-    for component in components:
-        bom.components.add(component)
-        bom.register_dependency(project_as_root_component, [component])
 
     bom.vulnerabilities = vulnerabilities
 

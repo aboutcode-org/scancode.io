@@ -3339,13 +3339,11 @@ class DiscoveredDependencyQuerySet(
         `DiscoveredDependencySerializer`.
         Only the fields required by the serializer are fetched on the relations.
         """
+        manager = DiscoveredPackage.objects
         return self.prefetch_related(
-            Prefetch(
-                "for_package", queryset=DiscoveredPackage.objects.only("package_uid")
-            ),
-            Prefetch(
-                "datafile_resource", queryset=CodebaseResource.objects.only("path")
-            ),
+            Prefetch("for_package", queryset=manager.only("package_uid")),
+            Prefetch("resolved_to_package", queryset=manager.only("package_uid")),
+            Prefetch("datafile_resource", queryset=manager.only("path")),
         )
 
 

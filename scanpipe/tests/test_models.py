@@ -2165,6 +2165,8 @@ class ScanPipeModelsTest(TestCase):
             "tag",
             "declared_dependencies",
             "resolved_from_dependencies",
+            "parent_packages",
+            "children_packages",
         ]
 
         package_data_only_field = ["datasource_id", "dependencies"]
