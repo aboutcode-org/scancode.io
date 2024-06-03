@@ -55,9 +55,9 @@
               {% endif %}
             </td>
             <td>
-              {% if dependency.resolved_to %}
+              {% if dependency.resolved_to_package %}
                 {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
-                <a href="{% url 'package_detail' project.slug dependency.for_package.uuid %}" title="{{ dependency.resolved_to.purl }}">{{ dependency.resolved_to.purl }}</a>
+                <a href="{% url 'package_detail' project.slug dependency.resolved_to_package.uuid %}" title="{{ dependency.resolved_to_package.purl }}">{{ dependency.resolved_to_package.purl }}</a>
               {% endif %}
             </td>
             <td>
