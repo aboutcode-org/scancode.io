@@ -2124,7 +2124,7 @@ class ScanPipeModelsTest(TestCase):
         a_b = make_dependency(project, for_package=a, resolved_to_package=b)
         b_c = make_dependency(project, for_package=b, resolved_to_package=c)
 
-        # *_packages fields return Package QuerySet
+        # *_packages fields return DiscoveredPackage QuerySet
         self.assertEqual([b], list(a.children_packages.all()))
         self.assertEqual([], list(a.parent_packages.all()))
         self.assertEqual([c], list(b.children_packages.all()))
@@ -2132,13 +2132,13 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual([], list(c.children_packages.all()))
         self.assertEqual([b], list(c.parent_packages.all()))
 
-        # *_dependencies fields return Dependency QuerySet
+        # *_dependencies fields return DiscoveredDependency QuerySet
         self.assertEqual([a_b], list(a.declared_dependencies.all()))
-        self.assertEqual([], list(a.resolved_dependencies.all()))
+        self.assertEqual([], list(a.resolved_from_dependencies.all()))
         self.assertEqual([b_c], list(b.declared_dependencies.all()))
-        self.assertEqual([a_b], list(b.resolved_dependencies.all()))
+        self.assertEqual([a_b], list(b.resolved_from_dependencies.all()))
         self.assertEqual([], list(c.declared_dependencies.all()))
-        self.assertEqual([b_c], list(c.resolved_dependencies.all()))
+        self.assertEqual([b_c], list(c.resolved_from_dependencies.all()))
 
     def test_scanpipe_discovered_dependency_model_is_vulnerable_property(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
@@ -2164,7 +2164,7 @@ class ScanPipeModelsTest(TestCase):
             "compliance_alert",
             "tag",
             "declared_dependencies",
-            "resolved_dependencies",
+            "resolved_from_dependencies",
         ]
 
         package_data_only_field = ["datasource_id", "dependencies"]

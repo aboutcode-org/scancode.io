@@ -3386,7 +3386,7 @@ class DiscoveredDependency(
     )
     resolved_to_package = models.ForeignKey(
         DiscoveredPackage,
-        related_name="resolved_dependencies",
+        related_name="resolved_from_dependencies",
         help_text=_(
             "The resolved package for this dependency. "
             "If empty, it indicates the dependency is unresolved."
