@@ -34,6 +34,7 @@ from urllib.parse import urlparse
 
 from django.conf import settings
 
+import git
 import requests
 from commoncode import command
 from commoncode.hash import multi_checksums
@@ -321,6 +322,9 @@ SCHEME_TO_FETCHER_MAPPING = {
 
 def get_fetcher(url):
     """Return the fetcher function based on the provided `url` scheme."""
+    if url.startswith("git@"):
+        return fetch_git_repo
+
     # Not using `urlparse(url).scheme` for the scheme as it converts to lower case.
     scheme = url.split("://")[0]
 
@@ -383,3 +387,22 @@ def check_urls_availability(urls):
             errors.append(url)
 
     return errors
+
+
+def fetch_git_repo(url, to=None):
+    """Fetch provided git ``url`` as a clone and return a ``Download`` object."""
+    download_directory = to or tempfile.mkdtemp()
+    filename = url.split("/")[-1]
+    to_path = Path(download_directory) / filename
+
+    git.Repo.clone_from(url=url, to_path=to_path, depth=1)
+
+    return Download(
+        uri=url,
+        directory=download_directory,
+        filename=filename,
+        path=to_path,
+        size="",
+        sha1="",
+        md5="",
+    )
