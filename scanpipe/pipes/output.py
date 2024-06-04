@@ -675,23 +675,36 @@ def get_cyclonedx_bom(project):
         ],
     )
 
-    components = []
     vulnerabilities = []
-    for package in get_queryset(project, "discoveredpackage"):
+    dependencies = {}
+
+    package_qs = get_queryset(project, "discoveredpackage")
+    package_qs = package_qs.prefetch_related("children_packages")
+
+    for package in package_qs:
         component = package.as_cyclonedx()
-        components.append(component)
+        bom.components.add(component)
+        bom.register_dependency(project_as_root_component, [component])
+
+        # Store the component dependencies to be added later since all components need
+        # to be added on the BOM first.
+        dependencies[component] = [
+            package.cyclonedx_bom_ref for package in package.children_packages.all()
+        ]
 
         for vulnerability_data in package.affected_by_vulnerabilities:
             vulnerabilities.append(
-                vulnerability_as_cyclonedx(
-                    vulnerability_data=vulnerability_data,
-                    component_bom_ref=component.bom_ref,
-                )
+                vulnerability_as_cyclonedx(vulnerability_data, component.bom_ref)
             )
 
-    for component in components:
-        bom.components.add(component)
-        bom.register_dependency(project_as_root_component, [component])
+    for component, depends_on_bom_refs in dependencies.items():
+        if not depends_on_bom_refs:
+            continue
+        # Craft disposable Component instances for registering dependencies
+        dependencies = [
+            cdx_component.Component(name="", bom_ref=ref) for ref in depends_on_bom_refs
+        ]
+        bom.register_dependency(component, dependencies)
 
     bom.vulnerabilities = vulnerabilities
 

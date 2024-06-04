@@ -1509,7 +1509,8 @@ class DiscoveredDependencyListView(
             "for_package", queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS)
         ),
         Prefetch(
-            "resolved_to", queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS)
+            "resolved_to_package",
+            queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS),
         ),
         Prefetch(
             "datafile_resource", queryset=CodebaseResource.objects.only("path", "name")
@@ -1543,7 +1544,7 @@ class DiscoveredDependencyListView(
             "filter_fieldname": "is_resolved",
         },
         "for_package",
-        "resolved_to",
+        "resolved_to_package",
         "datafile_resource",
         {
             "field_name": "datasource_id",
@@ -2006,7 +2007,7 @@ class DiscoveredDependencyDetailsView(
             ),
         ),
         Prefetch(
-            "resolved_to",
+            "resolved_to_package",
             queryset=DiscoveredPackage.objects.only(
                 "uuid", *PURL_FIELDS, "package_uid", "project_id"
             ),
@@ -2025,7 +2026,7 @@ class DiscoveredDependencyDetailsView(
                     "template": "scanpipe/tabset/field_related_package.html",
                 },
                 {
-                    "field_name": "resolved_to",
+                    "field_name": "resolved_to_package",
                     "template": "scanpipe/tabset/field_related_package.html",
                 },
                 {
@@ -2043,7 +2044,7 @@ class DiscoveredDependencyDetailsView(
             "fields": [
                 "dependency_uid",
                 "for_package_uid",
-                "resolved_to_uid",
+                "resolved_to_package_uid",
                 "is_runtime",
                 "is_optional",
                 "is_resolved",

@@ -3034,6 +3034,13 @@ class DiscoveredPackage(
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
     )
+    children_packages = models.ManyToManyField(
+        "self",
+        through="DiscoveredDependency",
+        symmetrical=False,
+        related_name="parent_packages",
+        through_fields=("for_package", "resolved_to_package"),
+    )
     missing_resources = models.JSONField(default=list, blank=True)
     modified_resources = models.JSONField(default=list, blank=True)
     package_uid = models.CharField(
@@ -3232,6 +3239,15 @@ class DiscoveredPackage(
             external_refs=external_refs,
         )
 
+    @property
+    def cyclonedx_bom_ref(self):
+        """
+        Use the package_uid when available to ensure having unique bom_ref
+        in the SBOM when several instances of the same DiscoveredPackage
+        (i.e. same purl) are present in the project.
+        """
+        return self.package_uid or str(self.get_package_url())
+
     def as_cyclonedx(self):
         """Return this DiscoveredPackage as an CycloneDX Component entry."""
         licenses = []
@@ -3298,17 +3314,12 @@ class DiscoveredPackage(
                 ],
             )
 
-        package_url = self.get_package_url()
-        # Use the package_uid when available to ensure having unique bom_ref
-        # in the SBOM when several instances of the same DiscoveredPackage
-        # (i.e. same purl) are present in the project.
-        bom_ref = self.package_uid or str(package_url)
-
         return cyclonedx_component.Component(
             name=self.name,
             version=self.version,
-            bom_ref=bom_ref,
-            purl=package_url,  # Warning: Use the real purl and not package_uid here.
+            bom_ref=self.cyclonedx_bom_ref,
+            # Warning: Use the real purl and not package_uid here.
+            purl=self.get_package_url(),
             licenses=licenses,
             copyright=self.copyright,
             description=self.description,
@@ -3331,6 +3342,10 @@ class DiscoveredDependencyQuerySet(
         return self.prefetch_related(
             Prefetch(
                 "for_package", queryset=DiscoveredPackage.objects.only("package_uid")
+            ),
+            Prefetch(
+                "resolved_to_package",
+                queryset=DiscoveredPackage.objects.only("package_uid"),
             ),
             Prefetch(
                 "datafile_resource", queryset=CodebaseResource.objects.only("path")
@@ -3373,9 +3388,9 @@ class DiscoveredDependency(
         blank=True,
         null=True,
     )
-    resolved_to = models.ForeignKey(
+    resolved_to_package = models.ForeignKey(
         DiscoveredPackage,
-        related_name="resolved_dependencies",
+        related_name="resolved_from_dependencies",
         help_text=_(
             "The resolved package for this dependency. "
             "If empty, it indicates the dependency is unresolved."
@@ -3468,9 +3483,9 @@ class DiscoveredDependency(
             return self.for_package.package_uid
 
     @cached_property
-    def resolved_to_uid(self):
-        if self.resolved_to:
-            return self.resolved_to.package_uid
+    def resolved_to_package_uid(self):
+        if self.resolved_to_package:
+            return self.resolved_to_package.package_uid
 
     @cached_property
     def datafile_path(self):

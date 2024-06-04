@@ -70,6 +70,8 @@ from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import dependency_data2
 from scanpipe.tests import license_policies_index
+from scanpipe.tests import make_dependency
+from scanpipe.tests import make_package
 from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
@@ -2112,6 +2114,32 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(["scope"], updated_fields)
         self.assertEqual(new_data["scope"], dependency.scope)
 
+    def test_scanpipe_discovered_dependency_model_many_to_many(self):
+        project = Project.objects.create(name="project")
+
+        a = make_package(project, "pkg:type/a")
+        b = make_package(project, "pkg:type/b")
+        c = make_package(project, "pkg:type/c")
+        # A -> B -> C
+        a_b = make_dependency(project, for_package=a, resolved_to_package=b)
+        b_c = make_dependency(project, for_package=b, resolved_to_package=c)
+
+        # *_packages fields return DiscoveredPackage QuerySet
+        self.assertEqual([b], list(a.children_packages.all()))
+        self.assertEqual([], list(a.parent_packages.all()))
+        self.assertEqual([c], list(b.children_packages.all()))
+        self.assertEqual([a], list(b.parent_packages.all()))
+        self.assertEqual([], list(c.children_packages.all()))
+        self.assertEqual([b], list(c.parent_packages.all()))
+
+        # *_dependencies fields return DiscoveredDependency QuerySet
+        self.assertEqual([a_b], list(a.declared_dependencies.all()))
+        self.assertEqual([], list(a.resolved_from_dependencies.all()))
+        self.assertEqual([b_c], list(b.declared_dependencies.all()))
+        self.assertEqual([a_b], list(b.resolved_from_dependencies.all()))
+        self.assertEqual([], list(c.declared_dependencies.all()))
+        self.assertEqual([b_c], list(c.resolved_from_dependencies.all()))
+
     def test_scanpipe_discovered_dependency_model_is_vulnerable_property(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
         self.assertFalse(package.is_vulnerable)
@@ -2136,7 +2164,9 @@ class ScanPipeModelsTest(TestCase):
             "compliance_alert",
             "tag",
             "declared_dependencies",
-            "resolved_dependencies",
+            "resolved_from_dependencies",
+            "parent_packages",
+            "children_packages",
         ]
 
         package_data_only_field = ["datasource_id", "dependencies"]

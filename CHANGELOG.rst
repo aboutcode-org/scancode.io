@@ -17,6 +17,14 @@ v34.6.0 (unreleased)
   Project error message.
   https://github.com/nexB/scancode.io/issues/1249
 
+- Rename DiscoveredDependency ``resolved_to`` to ``resolved_to_package``, and
+  ``resolved_dependencies`` to ``resolved_from_dependencies`` for clarity and
+  consistency.
+  Add ``children_packages`` and ``parent_packages`` ManyToMany field on the
+  DiscoveredPackage model.
+  Add full dependency tree in the CycloneDX output.
+  https://github.com/nexB/scancode.io/issues/1066
+
 v34.5.0 (2024-05-22)
 --------------------
 

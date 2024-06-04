@@ -44,6 +44,8 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.pipes import output
 from scanpipe.tests import FIXTURES_REGEN
+from scanpipe.tests import make_dependency
+from scanpipe.tests import make_package
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
@@ -281,6 +283,32 @@ class ScanPipeOutputPipesTest(TestCase):
         )
         self.assertEqual("1.5", results_json["specVersion"])
 
+    def test_scanpipe_pipes_outputs_get_cyclonedx_bom_dependency_tree(self):
+        project = Project.objects.create(name="project")
+
+        a = make_package(project, "pkg:type/a")
+        b = make_package(project, "pkg:type/b")
+        c = make_package(project, "pkg:type/c")
+
+        # A -> B -> C
+        make_dependency(project, for_package=a, resolved_to_package=b)
+        make_dependency(project, for_package=b, resolved_to_package=c)
+
+        with self.assertNumQueries(2):
+            output_file = output.to_cyclonedx(project=project)
+        results_json = json.loads(output_file.read_text())
+
+        expected = [
+            {
+                "dependsOn": ["pkg:type/a", "pkg:type/b", "pkg:type/c"],
+                "ref": str(project.uuid),
+            },
+            {"dependsOn": ["pkg:type/b"], "ref": "pkg:type/a"},
+            {"dependsOn": ["pkg:type/c"], "ref": "pkg:type/b"},
+            {"ref": "pkg:type/c"},
+        ]
+        self.assertEqual(expected, results_json["dependencies"])
+
     def test_scanpipe_pipes_outputs_to_spdx(self):
         fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
@@ -428,7 +456,7 @@ class ScanPipeOutputPipesTest(TestCase):
         package_data["notice_text"] = "Notice text"
         pipes.update_or_create_package(project, package_data)
 
-        with self.assertNumQueries(1):
+        with self.assertNumQueries(2):
             output_file = output.to_attribution(project=project)
 
         expected_file = self.data_path / "outputs" / "expected_attribution.html"
