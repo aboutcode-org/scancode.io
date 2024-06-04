@@ -217,3 +217,16 @@ class ScanPipeFetchPipesTest(TestCase):
         with override_settings(SCANCODEIO_FETCH_HEADERS=headers):
             session = fetch.get_request_session(url)
             self.assertEqual("token TOKEN", session.headers.get("Authorization"))
+
+    @mock.patch("git.repo.base.Repo.clone_from")
+    def test_scanpipe_pipes_fetch_git_repo(self, mock_clone_from):
+        mock_clone_from.return_value = None
+        url = "git@github.com:nexB/scancode.io.git"
+        download = fetch.fetch_git_repo(url)
+
+        self.assertEqual(url, download.uri)
+        self.assertEqual("scancode.io.git", download.filename)
+        self.assertTrue(str(download.path).endswith("scancode.io.git"))
+        self.assertEqual("", download.size)
+        self.assertEqual("", download.sha1)
+        self.assertEqual("", download.md5)
