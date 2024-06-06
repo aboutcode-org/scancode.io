@@ -25,6 +25,9 @@ v34.6.0 (unreleased)
   Add full dependency tree in the CycloneDX output.
   https://github.com/nexB/scancode.io/issues/1066
 
+- Add a new ``run`` entry point for executing pipeline as a single command.
+  https://github.com/nexB/scancode.io/pull/1256
+
 v34.5.0 (2024-05-22)
 --------------------
 

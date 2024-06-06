@@ -21,7 +21,9 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import datetime
+import json
 import uuid
+from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 from unittest import mock
@@ -82,6 +84,12 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = "Project with this Name already exists."
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-project", "my_project")
+
+    def test_scanpipe_management_command_create_project_verbosity(self):
+        out = StringIO()
+        call_command("create-project", "my_project", verbosity=0, stdout=out)
+        self.assertEqual("", out.getvalue())
+        self.assertTrue(Project.objects.get(name="my_project"))
 
     def test_scanpipe_management_command_create_project_notes(self):
         out = StringIO()
@@ -601,6 +609,29 @@ class ScanPipeManagementCommandTest(TestCase):
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-user", "--no-input", username)
 
+    def test_scanpipe_management_command_run(self):
+        expected = (
+            "Error: the following arguments are required: pipelines, input_location"
+        )
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("run")
+
+        expected = "wrong_pipeline is not a valid pipeline."
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("run", "wrong_pipeline", str(self.data_location))
+
+        expected = "bad_location not found."
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("run", "scan_single_package", "bad_location")
+
+        out = StringIO()
+        input_location = self.data_location / "codebase"
+        with redirect_stdout(out):
+            call_command("run", "inspect_packages", input_location)
+
+        json_data = json.loads(out.getvalue())
+        self.assertEqual(3, len(json_data["files"]))
+
     @mock.patch("scanpipe.models.Project.get_latest_output")
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("requests.sessions.Session.get")
@@ -824,15 +855,13 @@ class ScanPipeManagementCommandMixinTest(TestCase):
     class CreateProjectCommand(
         commands.CreateProjectCommandMixin, commands.AddInputCommandMixin, BaseCommand
     ):
-        pass
+        verbosity = 0
 
     create_project_command = CreateProjectCommand()
     pipeline_name = "analyze_docker_image"
     pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
 
-    def test_scanpipe_management_command_mixin_create_project_base(
-        self,
-    ):
+    def test_scanpipe_management_command_mixin_create_project_base(self):
         expected = "This field cannot be blank."
         with self.assertRaisesMessage(CommandError, expected):
             self.create_project_command.create_project(name="")
@@ -844,18 +873,14 @@ class ScanPipeManagementCommandMixinTest(TestCase):
         with self.assertRaisesMessage(CommandError, expected):
             self.create_project_command.create_project(name="my_project")
 
-    def test_scanpipe_management_command_mixin_create_project_notes(
-        self,
-    ):
+    def test_scanpipe_management_command_mixin_create_project_notes(self):
         notes = "Some notes about my project"
         project = self.create_project_command.create_project(
             name="my_project", notes=notes
         )
         self.assertEqual(notes, project.notes)
 
-    def test_scanpipe_management_command_mixin_create_project_pipelines(
-        self,
-    ):
+    def test_scanpipe_management_command_mixin_create_project_pipelines(self):
         expected = "non-existing is not a valid pipeline"
         with self.assertRaisesMessage(CommandError, expected):
             self.create_project_command.create_project(
@@ -879,9 +904,7 @@ class ScanPipeManagementCommandMixinTest(TestCase):
         run = project.runs.get(pipeline_name="analyze_root_filesystem_or_vm_image")
         self.assertEqual(["group1", "group2"], run.selected_groups)
 
-    def test_scanpipe_management_command_mixin_create_project_inputs(
-        self,
-    ):
+    def test_scanpipe_management_command_mixin_create_project_inputs(self):
         expected = "non-existing not found or not a file"
         with self.assertRaisesMessage(CommandError, expected):
             self.create_project_command.create_project(
@@ -901,9 +924,7 @@ class ScanPipeManagementCommandMixinTest(TestCase):
         tagged_source = project.inputsources.get(filename="test_models.py")
         self.assertEqual("tag", tagged_source.tag)
 
-    def test_scanpipe_management_command_mixin_create_project_execute(
-        self,
-    ):
+    def test_scanpipe_management_command_mixin_create_project_execute(self):
         expected = "The execute argument requires one or more pipelines."
         with self.assertRaisesMessage(CommandError, expected):
             self.create_project_command.create_project(name="my_project", execute=True)

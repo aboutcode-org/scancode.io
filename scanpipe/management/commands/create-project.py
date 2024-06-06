@@ -29,6 +29,7 @@ from scanpipe.management.commands import CreateProjectCommandMixin
 
 class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
     help = "Create a ScanPipe project."
+    verbosity = 1
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -55,6 +56,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
         )
 
     def handle(self, *args, **options):
+        self.verbosity = options["verbosity"]
         name = options["name"]
         pipelines = options["pipelines"]
         input_files = options["input_files"]
