@@ -74,5 +74,5 @@ class Command(ProjectCommand):
 
             if options["print"]:
                 self.stdout.write(output_file.read_text())
-            else:
+            elif self.verbosity > 0:
                 self.stdout.write(str(output_file), self.style.SUCCESS)
