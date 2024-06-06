@@ -237,6 +237,15 @@ def extract_group_from_pipelines(pipelines):
     return pipelines_data
 
 
+def validate_pipeline(pipeline_name):
+    """Raise an error if the ``pipeline_name`` is not available."""
+    if pipeline_name not in scanpipe_app.pipelines:
+        raise CommandError(
+            f"{pipeline_name} is not a valid pipeline. \n"
+            f"Available: {', '.join(scanpipe_app.pipelines.keys())}"
+        )
+
+
 def validate_pipelines(pipelines_data):
     """Raise an error if one of the `pipeline_names` is not available."""
     # Backward compatibility with old pipeline names.
@@ -246,11 +255,7 @@ def validate_pipelines(pipelines_data):
     }
 
     for pipeline_name in pipelines_data.keys():
-        if pipeline_name not in scanpipe_app.pipelines:
-            raise CommandError(
-                f"{pipeline_name} is not a valid pipeline. \n"
-                f"Available: {', '.join(scanpipe_app.pipelines.keys())}"
-            )
+        validate_pipeline(pipeline_name)
 
     return pipelines_data
 
