@@ -27,7 +27,7 @@ from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 from django.utils.crypto import get_random_string
 
-from scanpipe.management.commands import validate_pipeline
+from scanpipe.pipes.fetch import SCHEME_TO_FETCHER_MAPPING
 
 
 class Command(BaseCommand):
@@ -35,8 +35,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
-        parser.add_argument("pipeline", help="Pipeline name to run.")
-        parser.add_argument("codebase_location", help="Codebase location.")
+        parser.add_argument("pipelines", help="Pipelines to run, comma-separated.")
+        parser.add_argument(
+            "input_location", help="Input location: file, directory, and URL supported."
+        )
         parser.add_argument("--project", required=False, help="Project name.")
         parser.add_argument(
             "--format",
@@ -46,24 +48,33 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        pipeline = options["pipeline"]
-        codebase_location = options["codebase_location"]
+        pipelines = options["pipelines"]
+        pipelines = [pipeline_name.strip() for pipeline_name in pipelines.split(",")]
+        input_location = options["input_location"]
         output_format = options["format"]
         # Generate a random name for the project if not provided
-        project_name = options.get("project") or get_random_string(10)
+        project_name = options["project"] or get_random_string(10)
 
-        validate_pipeline(pipeline)
-        if not Path(codebase_location).exists():
-            raise CommandError(f"{codebase_location} not found.")
+        create_project_options = {
+            "pipeline": pipelines,
+            "execute": True,
+            "verbosity": 0,
+        }
+
+        if input_location.startswith(tuple(SCHEME_TO_FETCHER_MAPPING.keys())):
+            create_project_options["input_urls"] = [input_location]
+        else:
+            input_path = Path(input_location)
+            if not input_path.exists():
+                raise CommandError(f"{input_location} not found.")
+            if input_path.is_file():
+                create_project_options["input_files"] = [input_location]
+            else:
+                create_project_options["copy_codebase"] = input_location
 
         # Run the database migrations in case the database is not created or outdated.
         call_command("migrate", verbosity=0, interactive=False)
-        call_command(
-            "create-project",
-            project_name,
-            copy_codebase=codebase_location,
-            pipeline=[pipeline],
-            execute=True,
-            verbosity=0,
-        )
+        # Create a project with proper inputs and execute the pipeline(s)
+        call_command("create-project", project_name, **create_project_options)
+        # Print the results for the specified format on stdout
         call_command("output", project=project_name, format=[output_format], print=True)

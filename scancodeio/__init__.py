@@ -115,6 +115,7 @@ def combined_run():
     os.environ.setdefault("SECRET_KEY", secret_key)
     os.environ.setdefault("SCANCODEIO_DB_ENGINE", "django.db.backends.sqlite3")
     os.environ.setdefault("SCANCODEIO_DB_NAME", "scancodeio.sqlite3")
+    os.environ.setdefault("SCANCODEIO_PROCESSES", "0")  # Disable multiprocessing
 
     sys.argv.insert(1, "run")
     execute_from_command_line(sys.argv)
