@@ -855,7 +855,7 @@ class ScanPipeManagementCommandMixinTest(TestCase):
     class CreateProjectCommand(
         commands.CreateProjectCommandMixin, commands.AddInputCommandMixin, BaseCommand
     ):
-        verbosity = 1
+        verbosity = 0
 
     create_project_command = CreateProjectCommand()
     pipeline_name = "analyze_docker_image"
