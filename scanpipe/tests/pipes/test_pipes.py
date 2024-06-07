@@ -157,25 +157,42 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(expected_purl, local_package.purl)
         self.assertEqual("mit", local_package.declared_license_expression)
         self.assertEqual("Copyright", local_package.copyright)
-        self.assertEqual([expected_purl], resource1.for_packages)
+        self.assertEqual(
+            [f"{expected_purl}?uuid={forced_uuid}"], resource1.for_packages
+        )
 
     def test_scanpipe_pipes_update_or_create_package_package_uid(self):
         p1 = Project.objects.create(name="Analysis")
         package_data = dict(package_data1)
 
         package_data["package_uid"] = None
-        pipes.update_or_create_package(p1, package_data)
-        pipes.update_or_create_package(p1, package_data)
+        package1 = pipes.update_or_create_package(p1, package_data)
+        self.assertTrue(package1.package_uid)
 
         package_data["package_uid"] = ""
-        pipes.update_or_create_package(p1, package_data)
+        package2 = pipes.update_or_create_package(p1, package_data)
+        self.assertTrue(package2.package_uid)
 
         del package_data["package_uid"]
-        pipes.update_or_create_package(p1, package_data)
+        package3 = pipes.update_or_create_package(p1, package_data)
+        self.assertTrue(package3.package_uid)
 
-        # Make sure only 1 package was created, then properly found in the db regardless
-        # of the empty/none package_uid.
-        self.assertEqual(1, DiscoveredPackage.objects.count())
+        self.assertNotEqual(package1.package_uid, package2.package_uid)
+        self.assertNotEqual(package2.package_uid, package3.package_uid)
+
+        # A `package_uid` value is generated when not provided, making each
+        # package instance unique.
+        self.assertEqual(3, DiscoveredPackage.objects.count())
+
+        # In that case, there is a match in the db, the object is updated
+        package_data["package_uid"] = package1.package_uid
+        package_data["sha1"] = "sha1"
+        # We need to use an empty field since override=False in update_from_data
+        self.assertEqual("", package1.sha1)
+        pipes.update_or_create_package(p1, package_data)
+        package1.refresh_from_db()
+        self.assertEqual("sha1", package1.sha1)
+        self.assertEqual(3, DiscoveredPackage.objects.count())
 
     def test_scanpipe_pipes_update_or_create_dependency(self):
         p1 = Project.objects.create(name="Analysis")
