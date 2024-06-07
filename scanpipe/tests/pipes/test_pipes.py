@@ -111,6 +111,7 @@ class ScanPipePipesTest(TestCase):
 
         # Make sure we can assign a package to multiple Resources calling
         # update_or_create_package() several times.
+        package_data2["package_uid"] = package2.package_uid
         resource2 = make_resource_file(project=p1, path="filename2.ext")
         package2 = pipes.update_or_create_package(p1, package_data2, [resource2])
         self.assertIn(package2, resource1.discovered_packages.all())

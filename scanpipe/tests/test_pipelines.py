@@ -1107,10 +1107,15 @@ class PipelinesIntegrationTest(TestCase):
             self.assertEqual(expected["filename"], package.filename)
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
-    def test_scanpipe_deploy_to_develop_pipeline_integration(self, mock_request):
+    @mock.patch("uuid.uuid4")
+    def test_scanpipe_deploy_to_develop_pipeline_integration(
+        self, mock_uuid4, mock_request
+    ):
+        forced_uuid = "b74fe5df-e965-415e-ba65-f38421a0695d"
+        mock_uuid4.return_value = forced_uuid
         mock_request.return_value = None
         pipeline_name = "map_deploy_to_develop"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = Project.objects.create(name="Analysis", uuid=forced_uuid)
 
         jar_location = self.data_location / "d2d" / "jars"
         project1.copy_input_from(jar_location / "from-flume-ng-node-1.9.0.zip")
@@ -1132,10 +1137,15 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, result_file)
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
-    def test_scanpipe_deploy_to_develop_pipeline_with_about_file(self, mock_request):
+    @mock.patch("uuid.uuid4")
+    def test_scanpipe_deploy_to_develop_pipeline_with_about_file(
+        self, mock_uuid4, mock_request
+    ):
+        forced_uuid = "90cb6382-431c-4187-be76-d4f1a2199a2f"
+        mock_uuid4.return_value = forced_uuid
         mock_request.return_value = None
         pipeline_name = "map_deploy_to_develop"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = Project.objects.create(name="Analysis", uuid=forced_uuid)
 
         data_dir = self.data_location / "d2d" / "about_files"
         project1.copy_input_from(data_dir / "from-with-about-file.zip")
