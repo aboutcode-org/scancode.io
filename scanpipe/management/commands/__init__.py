@@ -22,6 +22,7 @@
 
 import shutil
 import sys
+import traceback
 from pathlib import Path
 
 from django.apps import apps
@@ -405,9 +406,10 @@ def execute_project(project, run_async=False, command=None):  # noqa: C901
     except KeyboardInterrupt:
         run.set_task_stopped()
         raise CommandError("Pipeline execution stopped.")
-    except Exception as e:
-        run.set_task_ended(exitcode=1, output=str(e))
-        raise CommandError(e)
+    except Exception:
+        traceback_str = traceback.format_exc()
+        run.set_task_ended(exitcode=1, output=traceback_str)
+        raise CommandError(traceback_str)
 
     run.refresh_from_db()
 

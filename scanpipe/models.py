@@ -804,6 +804,21 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             if value not in EMPTY_VALUES
         }
 
+    def get_env_from_config_file(self):
+        """Return ``env`` dict loaded from the ``scancode-config.yml`` config file."""
+        config_file = self.get_input_config_file()
+        if not config_file:
+            return
+
+        logger.info(f"Loading env from {config_file.relative_to(self.work_path)}")
+        try:
+            return saneyaml.load(config_file.read_text())
+        except (saneyaml.YAMLError, Exception):
+            self.add_error(
+                f'Failed to load configuration from "{config_file}". '
+                f"The file format is invalid."
+            )
+
     def get_env(self, field_name=None):
         """
         Return the project environment loaded from the ``scancode-config.yml`` config
@@ -814,15 +829,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         env = {}
 
         # 1. Load settings from config file when available.
-        if config_file := self.get_input_config_file():
-            logger.info(f"Loading env from {config_file.relative_to(self.work_path)}")
-            try:
-                env = saneyaml.load(config_file.read_text())
-            except saneyaml.YAMLError:
-                self.add_error(
-                    f'Failed to load configuration from "{config_file}". '
-                    f"The file format is invalid."
-                )
+        if env_from_config_file := self.get_env_from_config_file():
+            env = env_from_config_file
 
         # 2. Update with defined values from the Project ``settings`` field.
         env.update(self.get_enabled_settings())
@@ -1173,6 +1181,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         A ``resource`` can be provided to keep track of the codebase resource that was
         analyzed when the error occurred.
         """
+        logger.info(f"[{severity}] {description}")
+
         if inspect.isclass(model):
             model = model.__name__
 
