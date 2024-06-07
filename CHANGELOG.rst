@@ -5,6 +5,9 @@ v34.6.1 (2024-06-07)
 --------------------
 
 - Remove print statements from migration files.
+- Display full traceback on error in the ``execute`` management command.
+- Log the Project message creation.
+- Refactor the ``get_env_from_config_file`` to support empty config file.
 
 v34.6.0 (2024-06-07)
 --------------------
