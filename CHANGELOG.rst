@@ -1,6 +1,11 @@
 Changelog
 =========
 
+v34.6.1 (2024-06-07)
+--------------------
+
+- Remove print statements from migration files.
+
 v34.6.0 (2024-06-07)
 --------------------
 
