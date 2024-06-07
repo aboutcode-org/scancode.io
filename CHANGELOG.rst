@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.6.0 (unreleased)
+v34.6.0 (2024-06-07)
 --------------------
 
 - Add a new ``scan_for_virus`` add-on pipeline based on ClamAV scan.
