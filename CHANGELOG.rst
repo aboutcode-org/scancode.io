@@ -28,6 +28,9 @@ v34.6.0 (unreleased)
 - Add a new ``run`` entry point for executing pipeline as a single command.
   https://github.com/nexB/scancode.io/pull/1256
 
+- Generate a DiscoveredPackage.package_uid in create_from_data when not provided.
+  https://github.com/nexB/scancode.io/issues/1256
+
 v34.5.0 (2024-05-22)
 --------------------
 

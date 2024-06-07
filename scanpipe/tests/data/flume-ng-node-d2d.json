@@ -71,7 +71,7 @@
       "notice_text": "",
       "source_packages": [],
       "extra_data": {},
-      "package_uid": "",
+      "package_uid": "pkg:local-files/analysis-b74fe5df/b74fe5df-e965-415e-ba65-f38421a0695d?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datasource_ids": [],
       "datafile_paths": [],
       "file_references": [],
@@ -411,7 +411,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -602,7 +602,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -666,7 +666,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -730,7 +730,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -794,7 +794,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -858,7 +858,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -922,7 +922,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -986,7 +986,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -1050,7 +1050,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -1114,7 +1114,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -1178,7 +1178,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -1242,7 +1242,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [

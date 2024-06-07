@@ -73,6 +73,7 @@ from extractcode import EXTRACT_SUFFIX
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licensing
 from matchcode_toolkit.fingerprinting import IGNORED_DIRECTORY_FINGERPRINTS
+from packagedcode.models import build_package_uid
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLMixin
@@ -3143,6 +3144,17 @@ class DiscoveredPackage(
         }
 
         discovered_package = cls(project=project, **cleaned_data)
+
+        # The ``package_uid`` field is not defined as required on the model,
+        # but it is essential for retrieving the Package object from the database
+        # in various places, such as in the ``update_or_create_resource`` function.
+        # If ``package_uid`` is not provided in the ``package_data``, a value is
+        # generated using the ``build_package_uid`` function from the ``packagedcode``
+        # module.
+        if not package_data.get("package_uid"):
+            package_uid = build_package_uid(discovered_package.package_url)
+            discovered_package.package_uid = package_uid
+
         # Using save_error=False to not capture potential errors at this level but
         # rather in the CodebaseResource.create_and_add_package method so resource data
         # can be injected in the ProjectMessage record.
