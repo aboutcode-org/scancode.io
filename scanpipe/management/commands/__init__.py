@@ -396,7 +396,7 @@ def execute_project(project, run_async=False, command=None):  # noqa: C901
         if verbosity > 0:
             msg = f"{run.pipeline_name} added to the tasks queue for execution."
             command.stdout.write(msg, command.style.SUCCESS)
-        sys.exit(0)
+        return
 
     if verbosity > 0:
         command.stdout.write(f"Start the {run.pipeline_name} pipeline execution...")
