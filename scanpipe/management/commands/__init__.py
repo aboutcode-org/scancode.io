@@ -21,7 +21,6 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import shutil
-import sys
 import traceback
 from pathlib import Path
 

@@ -375,6 +375,33 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertTrue(run3.task_stopped)
         self.assertEqual("", run3.task_output)
 
+    def test_scanpipe_management_command_execute_project_function(self):
+        project = Project.objects.create(name="my_project")
+
+        expected = "No pipelines to run on project my_project"
+        with self.assertRaisesMessage(CommandError, expected):
+            commands.execute_project(project)
+
+        run1 = project.add_pipeline(self.pipeline_name)
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_success):
+            returned_value = commands.execute_project(project, run_async=False)
+        self.assertIsNone(returned_value)
+        run1.refresh_from_db()
+        self.assertTrue(run1.task_succeeded)
+        run1.delete()
+
+        project.add_pipeline(self.pipeline_name)
+        expected = "SCANCODEIO_ASYNC=False is not compatible with --async option."
+        with override_settings(SCANCODEIO_ASYNC=False):
+            with self.assertRaisesMessage(CommandError, expected):
+                commands.execute_project(project, run_async=True)
+
+        with override_settings(SCANCODEIO_ASYNC=True):
+            with mock.patch("scanpipe.models.Run.start") as mock_start:
+                returned_value = commands.execute_project(project, run_async=True)
+                mock_start.assert_called_once()
+        self.assertIsNone(returned_value)
+
     def test_scanpipe_management_command_status(self):
         project = Project.objects.create(name="my_project")
         run = project.add_pipeline(self.pipeline_name)
