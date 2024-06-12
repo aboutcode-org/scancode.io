@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v34.6.2 (unreleased)
+--------------------
+
+- Store SBOMs headers in the `Project.extra_data` field during the load_sboms
+  pipeline.
+  https://github.com/nexB/scancode.io/issues/1253
+
 v34.6.1 (2024-06-07)
 --------------------
 
