@@ -9,10 +9,25 @@ our frequently asked questions.
 How can I run a scan?
 ---------------------
 
-You simply start by creating a :ref:`new project <user_interface_create_new_project>`
+Once you've completed the ScanCode.io app installation,
+you simply start by creating a :ref:`new project <user_interface_create_new_project>`
 and run the appropriate pipeline.
 
-ScanCode.io offers several :ref:`built_in_pipelines` depending on your input, see above.
+ScanCode.io offers several :ref:`built_in_pipelines` depending on your input, see
+the :ref:`faq_which_pipeline` bellow.
+
+As an alternative, I you simply which to run a pipeline without installing ScanCode.io
+you may use the Docker image to run pipelines as a single command:
+
+.. code-block:: bash
+
+  docker run --rm \
+    -v "$(pwd)":/codedrop \
+    ghcr.io/nexb/scancode.io:latest \
+    sh -c "run scan_codebase /codedrop" \
+    > results.json
+
+Refer to the :ref:`cli_run` section for more about this approach.
 
 .. _faq_which_pipeline:
 

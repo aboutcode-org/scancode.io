@@ -65,7 +65,7 @@ class Command(BaseCommand):
         user = self.UserModel._default_manager.create_user(username, password=password)
         token, _ = Token._default_manager.get_or_create(user=user)
 
-        if options["verbosity"] >= 1:
+        if options["verbosity"] > 0:
             msg = f"User {username} created with API key: {token.key}"
             self.stdout.write(msg, self.style.SUCCESS)
 

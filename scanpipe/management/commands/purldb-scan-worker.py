@@ -54,6 +54,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
         )
 
     def handle(self, *args, **options):
+        self.verbosity = options["verbosity"]
         sleep = options["sleep"]
         run_async = options["async"]
         max_loops = options["max_loops"]

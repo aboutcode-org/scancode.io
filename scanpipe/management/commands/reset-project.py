@@ -27,7 +27,7 @@ from scanpipe.management.commands import ProjectCommand
 
 class Command(ProjectCommand):
     help = (
-        "Reset a project removing all database entrie and all data on disks "
+        "Reset a project removing all database entries and all data on disks "
         "except for the input/ directory."
     )
 
@@ -52,13 +52,15 @@ class Command(ProjectCommand):
                 f"Type 'yes' to continue, or 'no' to cancel: "
             )
             if confirm != "yes":
-                self.stdout.write("Reset cancelled.")
+                if self.verbosity > 0:
+                    self.stdout.write("Reset cancelled.")
                 sys.exit(0)
 
         self.project.reset(keep_input=True)
 
-        msg = (
-            f"All data, except inputs, for the {self.project} project have been "
-            f"removed."
-        )
-        self.stdout.write(msg, self.style.SUCCESS)
+        if self.verbosity > 0:
+            msg = (
+                f"All data, except inputs, for the {self.project} project have been "
+                f"removed."
+            )
+            self.stdout.write(msg, self.style.SUCCESS)

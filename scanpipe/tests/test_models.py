@@ -2569,9 +2569,11 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         package_data_no_uid = package_data1.copy()
         package_data_no_uid.pop("package_uid")
         package2 = DiscoveredPackage.create_from_data(project1, package_data_no_uid)
-        self.assertFalse(package2.package_uid)
+        self.assertTrue(package2.package_uid)
+        self.assertNotEqual(package.package_uid, package2.package_uid)
         package3 = DiscoveredPackage.create_from_data(project1, package_data_no_uid)
-        self.assertFalse(package3.package_uid)
+        self.assertTrue(package3.package_uid)
+        self.assertNotEqual(package.package_uid, package3.package_uid)
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_codebase_resource_create_and_add_package_warnings(self):

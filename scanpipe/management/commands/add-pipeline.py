@@ -49,8 +49,10 @@ class Command(ProjectCommand):
             self.project.add_pipeline(pipeline_name, selected_groups=selected_groups)
 
         pipeline_names = pipelines_data.keys()
-        msg = (
-            f"Pipeline{pluralize(pipeline_names)} {', '.join(pipeline_names)} "
-            f"added to the project"
-        )
-        self.stdout.write(msg, self.style.SUCCESS)
+
+        if self.verbosity > 0:
+            msg = (
+                f"Pipeline{pluralize(pipeline_names)} {', '.join(pipeline_names)} "
+                f"added to the project"
+            )
+            self.stdout.write(msg, self.style.SUCCESS)

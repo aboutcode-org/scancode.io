@@ -48,10 +48,12 @@ class Command(ProjectCommand):
                 f"Type 'yes' to continue, or 'no' to cancel: "
             )
             if confirm != "yes":
-                self.stdout.write("Deletion cancelled.")
+                if self.verbosity > 0:
+                    self.stdout.write("Deletion cancelled.")
                 sys.exit(0)
 
         self.project.delete()
 
-        msg = f"All the {self.project} project data have been removed."
-        self.stdout.write(msg, self.style.SUCCESS)
+        if self.verbosity > 0:
+            msg = f"All the {self.project} project data have been removed."
+            self.stdout.write(msg, self.style.SUCCESS)

@@ -73,6 +73,7 @@ from extractcode import EXTRACT_SUFFIX
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licensing
 from matchcode_toolkit.fingerprinting import IGNORED_DIRECTORY_FINGERPRINTS
+from packagedcode.models import build_package_uid
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLMixin
@@ -803,6 +804,21 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             if value not in EMPTY_VALUES
         }
 
+    def get_env_from_config_file(self):
+        """Return ``env`` dict loaded from the ``scancode-config.yml`` config file."""
+        config_file = self.get_input_config_file()
+        if not config_file:
+            return
+
+        logger.info(f"Loading env from {config_file.relative_to(self.work_path)}")
+        try:
+            return saneyaml.load(config_file.read_text())
+        except (saneyaml.YAMLError, Exception):
+            self.add_error(
+                f'Failed to load configuration from "{config_file}". '
+                f"The file format is invalid."
+            )
+
     def get_env(self, field_name=None):
         """
         Return the project environment loaded from the ``scancode-config.yml`` config
@@ -813,15 +829,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         env = {}
 
         # 1. Load settings from config file when available.
-        if config_file := self.get_input_config_file():
-            logger.info(f"Loading env from {config_file.relative_to(self.work_path)}")
-            try:
-                env = saneyaml.load(config_file.read_text())
-            except saneyaml.YAMLError:
-                self.add_error(
-                    f'Failed to load configuration from "{config_file}". '
-                    f"The file format is invalid."
-                )
+        if env_from_config_file := self.get_env_from_config_file():
+            env = env_from_config_file
 
         # 2. Update with defined values from the Project ``settings`` field.
         env.update(self.get_enabled_settings())
@@ -1185,6 +1194,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         A ``resource`` can be provided to keep track of the codebase resource that was
         analyzed when the error occurred.
         """
+        logger.info(f"[{severity}] {description}")
+
         if inspect.isclass(model):
             model = model.__name__
 
@@ -3158,6 +3169,17 @@ class DiscoveredPackage(
         }
 
         discovered_package = cls(project=project, **cleaned_data)
+
+        # The ``package_uid`` field is not defined as required on the model,
+        # but it is essential for retrieving the Package object from the database
+        # in various places, such as in the ``update_or_create_resource`` function.
+        # If ``package_uid`` is not provided in the ``package_data``, a value is
+        # generated using the ``build_package_uid`` function from the ``packagedcode``
+        # module.
+        if not package_data.get("package_uid"):
+            package_uid = build_package_uid(discovered_package.package_url)
+            discovered_package.package_uid = package_uid
+
         # Using save_error=False to not capture potential errors at this level but
         # rather in the CodebaseResource.create_and_add_package method so resource data
         # can be injected in the ProjectMessage record.

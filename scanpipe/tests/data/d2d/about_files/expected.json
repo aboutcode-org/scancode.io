@@ -71,9 +71,9 @@
       "notice_text": "",
       "source_packages": [],
       "extra_data": {},
-      "package_uid": "",
       "is_private": false,
       "is_virtual": false,
+      "package_uid": "pkg:local-files/analysis-90cb6382/90cb6382-431c-4187-be76-d4f1a2199a2f?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datasource_ids": [],
       "datafile_paths": [],
       "file_references": [],
@@ -124,9 +124,9 @@
           "*flume-ng-node-*.jar-extract/org/apache/flume/node/ConfigurationProvider.class"
         ]
       },
-      "package_uid": "",
       "is_private": false,
       "is_virtual": false,
+      "package_uid": "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datasource_ids": [],
       "datafile_paths": [],
       "file_references": [],
@@ -559,7 +559,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=90cb6382-431c-4187-be76-d4f1a2199a2f"
       ],
       "emails": [],
       "urls": [
