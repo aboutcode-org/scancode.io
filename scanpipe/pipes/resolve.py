@@ -58,6 +58,7 @@ def get_packages(project, package_registry, manifest_resources, model=None):
     get package data for resolved packages from package requirements.
     """
     resolved_packages = []
+    sboms_headers = {}
 
     if not manifest_resources.exists():
         project.add_warning(
@@ -69,12 +70,17 @@ def get_packages(project, package_registry, manifest_resources, model=None):
     for resource in manifest_resources:
         if packages := resolve_manifest_resources(resource, package_registry):
             resolved_packages.extend(packages)
+            if headers := get_manifest_headers(resource):
+                sboms_headers[resource.name] = headers
         else:
             project.add_error(
                 description="No packages could be resolved",
                 model=model,
                 resource=resource,
             )
+
+    if sboms_headers:
+        project.update_extra_data({"sboms_headers": sboms_headers})
 
     return resolved_packages
 
@@ -320,3 +326,49 @@ def set_license_expression(package_data):
             package_data["declared_license_expression"] = license_expression
 
     return package_data
+
+
+def get_manifest_headers(resource):
+    """Extract headers from a manifest file based on its package type."""
+    input_location = resource.location
+    package_type = get_default_package_type(input_location)
+    extract_fields = []
+
+    if package_type == "cyclonedx":
+        extract_fields = [
+            "bomFormat",
+            "specVersion",
+            "serialNumber",
+            "version",
+            "metadata",
+        ]
+    elif package_type == "spdx":
+        extract_fields = [
+            "spdxVersion",
+            "dataLicense",
+            "SPDXID",
+            "name",
+            "documentNamespace",
+            "creationInfo",
+            "comment",
+        ]
+
+    if extract_fields:
+        return extract_headers(input_location, extract_fields)
+
+
+def extract_headers(input_location, extract_fields):
+    """Read a file from the given location and extracts specified fields."""
+    input_path = Path(input_location)
+    document_data = input_path.read_text()
+
+    if str(input_location).endswith(".json"):
+        cyclonedx_document = json.loads(document_data)
+        extracted_headers = {
+            field: value
+            for field, value in cyclonedx_document.items()
+            if field in extract_fields
+        }
+        return extracted_headers
+
+    return {}
