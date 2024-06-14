@@ -31,4 +31,16 @@ class Migration(migrations.Migration):
                 fields=["is_direct"], name="scanpipe_di_is_dire_6dc594_idx"
             ),
         ),
+        migrations.AddIndex(
+            model_name="discoveredpackage",
+            index=models.Index(
+                fields=["is_private"], name="scanpipe_di_is_priv_9ffd1a_idx"
+            ),
+        ),
+        migrations.AddIndex(
+            model_name="discoveredpackage",
+            index=models.Index(
+                fields=["is_virtual"], name="scanpipe_di_is_virt_c5c176_idx"
+            ),
+        ),
     ]

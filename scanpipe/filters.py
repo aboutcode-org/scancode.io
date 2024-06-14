@@ -684,6 +684,8 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     declared_license_expression = django_filters.filters.CharFilter(
         widget=HasValueDropdownWidget
     )
+    is_private = StrictBooleanFilter()
+    is_virtual = StrictBooleanFilter()
 
     class Meta:
         model = DiscoveredPackage
@@ -717,6 +719,8 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_vulnerable",
             "compliance_alert",
             "tag",
+            "is_private",
+            "is_virtual",
         ]
 
 

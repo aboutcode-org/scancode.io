@@ -470,7 +470,13 @@ class PipelinesIntegrationTest(TestCase):
                 if isinstance(value, (list, dict)):
                     value = self._normalize_package_uids(value)
                 if (
-                    key in ("package_uid", "dependency_uid", "for_package_uid")
+                    key
+                    in (
+                        "package_uid",
+                        "dependency_uid",
+                        "for_package_uid",
+                        "resolved_to_package_uid",
+                    )
                     and value
                 ):
                     value = purl_with_fake_uuid(value)
@@ -692,7 +698,7 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = (
             self.data_location / "resolved_dependencies_inspect_packages.json"
         )
-        self.assertPipelineResultEqual(expected_file, result_file, regen=True)
+        self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_scan_codebase_can_process_wheel(self):
         pipeline_name = "scan_codebase"

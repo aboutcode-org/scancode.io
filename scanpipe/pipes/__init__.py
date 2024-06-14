@@ -199,9 +199,6 @@ def update_or_create_package(
         package = DiscoveredPackage.create_from_data(project, package_data)
 
     if package:
-        if is_virtual:
-            package.update(is_virtual=is_virtual)
-
         if datasource_id and datasource_id not in package.datasource_ids:
             datasource_ids = package.datasource_ids.copy()
             datasource_ids.append(datasource_id)
@@ -291,10 +288,6 @@ def update_or_create_dependency(
         if resolved_to_package and not dependency.resolved_to_package:
             dependency.update(resolved_to_package=resolved_to_package)
     else:
-        is_direct = dependency_data.get("is_direct")
-        if not is_direct:
-            pass
-
         DiscoveredDependency.populate_dependency_uuid(dependency_data)
         dependency = DiscoveredDependency.create_from_data(
             project,

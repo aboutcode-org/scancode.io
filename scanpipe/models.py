@@ -3099,6 +3099,8 @@ class DiscoveredPackage(
             models.Index(fields=["sha512"]),
             models.Index(fields=["compliance_alert"]),
             models.Index(fields=["tag"]),
+            models.Index(fields=["is_private"]),
+            models.Index(fields=["is_virtual"]),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -3126,15 +3128,7 @@ class DiscoveredPackage(
 
     @classmethod
     def extract_purl_data(cls, package_data):
-        purl_data = {}
-
-        for field_name in PURL_FIELDS:
-            value = package_data.get(field_name)
-            if field_name == "qualifiers":
-                value = normalize_qualifiers(value, encode=True)
-            purl_data[field_name] = value or ""
-
-        return purl_data
+        return normalize_package_url_data(package_data)
 
     @classmethod
     def create_from_data(cls, project, package_data):
@@ -3619,19 +3613,8 @@ class DiscoveredDependency(
         purl_mapping = PackageURL.from_string(
             purl=dependency_data.get("purl"),
         ).to_dict()
-        purl_data = {}
 
-        for field_name in PURL_FIELDS:
-            value = purl_mapping.get(field_name)
-            if field_name == "qualifiers":
-                value = normalize_qualifiers(value, encode=True)
-            if not ignore_nulls:
-                purl_data[field_name] = value or ""
-            else:
-                if value:
-                    purl_data[field_name] = value or ""
-
-        return purl_data
+        return normalize_package_url_data(purl_mapping, ignore_nulls)
 
     @classmethod
     def populate_dependency_uuid(cls, dependency_data):
@@ -3664,6 +3647,25 @@ class DiscoveredDependency(
             version=self.version,
             external_refs=external_refs,
         )
+
+
+def normalize_package_url_data(purl_mapping, ignore_nulls=False):
+    """
+    Normalize a mapping of purl data so database queries with
+    purl data can be executed.
+    """
+    normalized_purl_mapping = {}
+    for field_name in PURL_FIELDS:
+        value = purl_mapping.get(field_name)
+        if field_name == "qualifiers":
+            value = normalize_qualifiers(value, encode=True)
+        if not ignore_nulls:
+            normalized_purl_mapping[field_name] = value or ""
+        else:
+            if value:
+                normalized_purl_mapping[field_name] = value or ""
+
+    return normalized_purl_mapping
 
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
