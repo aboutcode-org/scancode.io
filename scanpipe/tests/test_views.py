@@ -981,6 +981,7 @@ class ScanPipeViewsTest(TestCase):
             affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
         )
         response = self.client.get(package1.get_absolute_url())
+        # print(response.content.decode())
         self.assertContains(response, "tab-vulnerabilities")
         self.assertContains(response, '<section id="tab-vulnerabilities"')
         self.assertContains(response, "VCID-cah8-awtr-aaad")
