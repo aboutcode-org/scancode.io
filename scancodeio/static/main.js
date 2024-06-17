@@ -60,7 +60,13 @@ function setupCloseModalButtons() {
 
 // Tabs
 
-function activateTab(tabLink, tabs, tabContents, storeInHash) {
+function activateTab(tabLink) {
+  const tabsContainer = tabLink.closest('.tabs');
+  if (!tabsContainer) return; // Safety check
+
+  const tabs = tabsContainer.querySelectorAll('li');
+  const tabContents = tabsContainer.parentNode.querySelectorAll('.tab-content');
+
   // Deactivate all tabs
   tabs.forEach(item => item.classList.remove('is-active'));
   // Deactivate all tab contents
@@ -68,12 +74,13 @@ function activateTab(tabLink, tabs, tabContents, storeInHash) {
 
   tabLink.parentNode.classList.add('is-active');
   const targetId = tabLink.getAttribute('data-target');
-  const targetContent = tabLink.closest('.tabs').parentNode.querySelector(`#${targetId}`);
+  const targetContent = tabsContainer.parentNode.querySelector(`#${targetId}`);
   if (targetContent) {
     targetContent.classList.add('is-active');
   }
 
-  // Conditionally update the URL hash based on the class on tabsContainer
+  // Conditionally update the URL hash
+  const storeInHash = !tabsContainer.classList.contains('disable-hash-storage');
   if (storeInHash) {
     document.location.hash = targetId.replace('tab-', '');
   }
@@ -83,19 +90,21 @@ function setupTabs() {
   const tabsContainers = document.querySelectorAll('.tabs');
 
   tabsContainers.forEach(tabsContainer => {
-    const tabs = tabsContainer.querySelectorAll('li');
     const tabLinks = tabsContainer.querySelectorAll('a[data-target]');
-    const tabContents = tabsContainer.parentNode.querySelectorAll('.tab-content');
-    // Check if the tabs container has a class to enable/disable hash storage
-    const storeInHash = !tabsContainer.classList.contains('disable-hash-storage');
 
     tabLinks.forEach(tabLink => {
       tabLink.addEventListener('click', (event) => {
         event.preventDefault(); // Prevent the default behavior of the anchor tag
-        activateTab(tabLink, tabs, tabContents, storeInHash);
+        activateTab(tabLink);
       });
     });
   });
+
+  // Activate the related tab if hash is present in the URL on page loading
+  // activateTabFromHash();
+  // Enable tab history navigation (using previous/next browser button for example)
+  // by detecting URL hash changes.
+  // window.addEventListener("hashchange", () => {activateTabFromHash()});
 }
 
 // Menu
