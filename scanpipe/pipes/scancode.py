@@ -602,6 +602,7 @@ def match_and_resolve_dependencies(project):
             dependency_data={"purl": dependency.purl},
             ignore_nulls=True,
         )
+
         matched_dependencies = DiscoveredDependency.objects.filter(
             project=project,
             extracted_requirement=dependency.extracted_requirement,
@@ -611,6 +612,22 @@ def match_and_resolve_dependencies(project):
         other_dependencies = [
             dep for dep in matched_dependencies if dep.purl != dependency.purl
         ]
+        if not other_dependencies:
+            # We also have cases where multiple dependency requirements have one
+            # resolved package and the extracted requirements field is combined
+            matched_dependencies = DiscoveredDependency.objects.filter(
+                project=project,
+                **purl_data,
+            )
+            other_dependencies = [
+                dep
+                for dep in matched_dependencies
+                if (
+                    dep.purl != dependency.purl
+                    and dependency.extracted_requirement in dep.extracted_requirement
+                )
+            ]
+
         if other_dependencies:
             resolved_dependency = other_dependencies.pop()
             dependency.update(
