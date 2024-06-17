@@ -25,7 +25,7 @@ def compute_package_declared_license_expression_spdx(apps, schema_editor):
     ).only("declared_license_expression")
 
     object_count = queryset.count()
-    logger.info(f"\nCompute declared_license_expression_spdx for {object_count:,} packages.")
+    logger.info(f"Compute declared_license_expression_spdx for {object_count:,} packages.")
 
     chunk_size = 2000
     iterator = queryset.iterator(chunk_size=chunk_size)
@@ -65,7 +65,7 @@ def compute_resource_detected_license_expression(apps, schema_editor):
     )
 
     object_count = queryset.count()
-    logger.info(f"\nCompute detected_license_expression for {object_count:,} resources.")
+    logger.info(f"Compute detected_license_expression for {object_count:,} resources.")
 
     chunk_size = 2000
     iterator = queryset.iterator(chunk_size=chunk_size)
@@ -168,7 +168,7 @@ def compute_resource_license_detections(apps, schema_editor):
     queryset = CodebaseResource.objects.filter(~Q(licenses=[])).only("licenses")
 
     object_count = queryset.count()
-    logger.info(f"\nCompute license_detections for {object_count:,} resources.")
+    logger.info(f"Compute license_detections for {object_count:,} resources.")
 
     chunk_size = 2000
     iterator = queryset.iterator(chunk_size=chunk_size)
