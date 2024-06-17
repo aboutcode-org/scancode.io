@@ -38,6 +38,9 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual(fetch.fetch_http, fetch.get_fetcher("http://a.b/f.z"))
         self.assertEqual(fetch.fetch_http, fetch.get_fetcher("https://a.b/f.z"))
         self.assertEqual(fetch.fetch_docker_image, fetch.get_fetcher("docker://image"))
+        git_http_url = "https://github.com/nexB/scancode.io.git"
+        self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(git_http_url))
+        self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(git_http_url + "/"))
 
         with self.assertRaises(ValueError) as cm:
             fetch.get_fetcher("")
@@ -57,6 +60,11 @@ class ScanPipeFetchPipesTest(TestCase):
         with self.assertRaises(ValueError) as cm:
             fetch.get_fetcher("DOCKER://image")
         expected = "URL scheme 'DOCKER' is not supported. Did you mean: 'docker'?"
+        self.assertEqual(expected, str(cm.exception))
+
+        with self.assertRaises(ValueError) as cm:
+            fetch.get_fetcher("git@github.com:nexB/scancode.io.git")
+        expected = "SSH 'git@' URLs are not supported. Use https:// instead."
         self.assertEqual(expected, str(cm.exception))
 
     @mock.patch("requests.sessions.Session.get")
@@ -221,7 +229,7 @@ class ScanPipeFetchPipesTest(TestCase):
     @mock.patch("git.repo.base.Repo.clone_from")
     def test_scanpipe_pipes_fetch_git_repo(self, mock_clone_from):
         mock_clone_from.return_value = None
-        url = "git@github.com:nexB/scancode.io.git"
+        url = "https://github.com/nexB/scancode.io.git"
         download = fetch.fetch_git_repo(url)
 
         self.assertEqual(url, download.uri)

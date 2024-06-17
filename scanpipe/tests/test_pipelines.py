@@ -197,7 +197,7 @@ class ScanPipePipelinesTest(TestCase):
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
 
-        download_url = "git@github.com:nexB/scancode.io.git"
+        download_url = "https://github.com/nexB/scancode.io.git"
         input_source = project1.add_input_source(download_url=download_url)
 
         def mock_make_to_path(**kwargs):
@@ -209,7 +209,7 @@ class ScanPipePipelinesTest(TestCase):
 
         pipeline.download_missing_inputs()
         self.assertIn(
-            "Fetching input from git@github.com:nexB/scancode.io.git", run.log
+            "Fetching input from https://github.com/nexB/scancode.io.git", run.log
         )
         input_source.refresh_from_db()
         self.assertEqual("scancode.io.git", input_source.filename)

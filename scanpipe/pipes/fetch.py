@@ -313,6 +313,26 @@ def fetch_docker_image(docker_url, to=None):
     )
 
 
+def fetch_git_repo(url, to=None):
+    """Fetch provided git ``url`` as a clone and return a ``Download`` object."""
+    download_directory = to or tempfile.mkdtemp()
+    url = url.rstrip("/")
+    filename = url.split("/")[-1]
+    to_path = Path(download_directory) / filename
+
+    git.Repo.clone_from(url=url, to_path=to_path, depth=1)
+
+    return Download(
+        uri=url,
+        directory=download_directory,
+        filename=filename,
+        path=to_path,
+        size="",
+        sha1="",
+        md5="",
+    )
+
+
 SCHEME_TO_FETCHER_MAPPING = {
     "http": fetch_http,
     "https": fetch_http,
@@ -323,6 +343,9 @@ SCHEME_TO_FETCHER_MAPPING = {
 def get_fetcher(url):
     """Return the fetcher function based on the provided `url` scheme."""
     if url.startswith("git@"):
+        raise ValueError("SSH 'git@' URLs are not supported. Use https:// instead.")
+
+    if url.rstrip("/").endswith(".git"):
         return fetch_git_repo
 
     # Not using `urlparse(url).scheme` for the scheme as it converts to lower case.
@@ -387,22 +410,3 @@ def check_urls_availability(urls):
             errors.append(url)
 
     return errors
-
-
-def fetch_git_repo(url, to=None):
-    """Fetch provided git ``url`` as a clone and return a ``Download`` object."""
-    download_directory = to or tempfile.mkdtemp()
-    filename = url.split("/")[-1]
-    to_path = Path(download_directory) / filename
-
-    git.Repo.clone_from(url=url, to_path=to_path, depth=1)
-
-    return Download(
-        uri=url,
-        directory=download_directory,
-        filename=filename,
-        path=to_path,
-        size="",
-        sha1="",
-        md5="",
-    )
