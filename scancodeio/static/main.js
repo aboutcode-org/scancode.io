@@ -60,50 +60,42 @@ function setupCloseModalButtons() {
 
 // Tabs
 
-function setupTabs() {
-  const $tabLinks = getAll('.tabs a');
+function activateTab(tabLink, tabs, tabContents, storeInHash) {
+  // Deactivate all tabs
+  tabs.forEach(item => item.classList.remove('is-active'));
+  // Deactivate all tab contents
+  tabContents.forEach(content => content.classList.remove('is-active'));
 
-  function activateTab($tabLink) {
-    const activeLink = document.querySelector('.tabs .is-active');
-    const activeTabContent = document.querySelector('.tab-content.is-active');
-    const targetId = $tabLink.dataset.target;
-    const targetTabContent = document.getElementById(targetId);
+  tabLink.parentNode.classList.add('is-active');
+  const targetId = tabLink.getAttribute('data-target');
+  const targetContent = tabLink.closest('.tabs').parentNode.querySelector(`#${targetId}`);
+  if (targetContent) {
+    targetContent.classList.add('is-active');
+  }
 
-    activeLink.classList.remove('is-active');
-    $tabLink.parentNode.classList.add('is-active');
-    if (activeTabContent) activeTabContent.classList.remove('is-active');
-    if (targetTabContent) targetTabContent.classList.add('is-active');
-
-    // Set the active tab in the URL hash. The "tab-" prefix is removed to avoid
-    // un-wanted scrolling to the related "id" element
+  // Conditionally update the URL hash based on the class on tabsContainer
+  if (storeInHash) {
     document.location.hash = targetId.replace('tab-', '');
   }
+}
 
-  // Activate the related tab using the current URL hash
-  function activateTabFromHash() {
-    let tabLink;
+function setupTabs() {
+  const tabsContainers = document.querySelectorAll('.tabs');
 
-    if (document.location.hash !== "") {
-      let tabName = document.location.hash.slice(1);
-      tabLink = document.querySelector(`a[data-target="tab-${tabName}"]`);
-    }
-    else if ($tabLinks.length) {
-      tabLink = $tabLinks[0];
-    }
-    if (tabLink) activateTab(tabLink);
-  }
+  tabsContainers.forEach(tabsContainer => {
+    const tabs = tabsContainer.querySelectorAll('li');
+    const tabLinks = tabsContainer.querySelectorAll('a[data-target]');
+    const tabContents = tabsContainer.parentNode.querySelectorAll('.tab-content');
+    // Check if the tabs container has a class to enable/disable hash storage
+    const storeInHash = !tabsContainer.classList.contains('disable-hash-storage');
 
-  $tabLinks.forEach(function ($el) {
-    $el.addEventListener('click', function () {
-      activateTab($el)
+    tabLinks.forEach(tabLink => {
+      tabLink.addEventListener('click', (event) => {
+        event.preventDefault(); // Prevent the default behavior of the anchor tag
+        activateTab(tabLink, tabs, tabContents, storeInHash);
+      });
     });
   });
-
-  // Activate the related tab if hash is present in the URL on page loading
-  activateTabFromHash();
-  // Enable tab history navigation (using previous/next browser button for example)
-  // by detecting URL hash changes.
-  window.addEventListener("hashchange", () => {activateTabFromHash()});
 }
 
 // Menu
