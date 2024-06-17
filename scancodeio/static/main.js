@@ -86,6 +86,16 @@ function activateTab(tabLink) {
   }
 }
 
+function activateTabFromHash() {
+  const hashValue = document.location.hash.slice(1); // Remove the '#' from the hash
+  if (!hashValue) return;
+
+  const tabLink = document.querySelector(`a[data-target="tab-${hashValue}"]`);
+  if (tabLink) {
+    activateTab(tabLink);
+  }
+}
+
 function setupTabs() {
   const tabsContainers = document.querySelectorAll('.tabs');
 
@@ -101,10 +111,10 @@ function setupTabs() {
   });
 
   // Activate the related tab if hash is present in the URL on page loading
-  // activateTabFromHash();
+   activateTabFromHash();
   // Enable tab history navigation (using previous/next browser button for example)
   // by detecting URL hash changes.
-  // window.addEventListener("hashchange", () => {activateTabFromHash()});
+   window.addEventListener("hashchange", activateTabFromHash);
 }
 
 // Menu
