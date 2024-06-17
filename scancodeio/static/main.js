@@ -147,12 +147,18 @@ function setupHighlightControls() {
   const $highlightShows = getAll(".is-more-show");
 
   $highlightShows.forEach(function ($el) {
-    $el.addEventListener("click", function () {
-      let text = $el.querySelector("strong").textContent;
-      let newText = text === "Show all" ? "Hide" : "Show all";
-      $el.querySelector("strong").textContent = newText;
-      $el.parentNode.classList.toggle("is-more-clipped");
-    });
+    const parentDiv = $el.parentNode;
+
+    if (parentDiv.scrollHeight <= 250) {
+      $el.style.display = "none";
+    } else {
+      $el.addEventListener("click", function () {
+        let text = $el.querySelector("strong").textContent;
+        let newText = text === "Show all" ? "Hide" : "Show all";
+        $el.querySelector("strong").textContent = newText;
+        $el.parentNode.classList.toggle("is-more-clipped");
+      });
+    }
   });
 }
 
