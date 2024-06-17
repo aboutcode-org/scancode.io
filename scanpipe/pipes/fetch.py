@@ -319,8 +319,10 @@ def fetch_git_repo(url, to=None):
     url = url.rstrip("/")
     filename = url.split("/")[-1]
     to_path = Path(download_directory) / filename
+    # Disable any prompt, especially for credentials
+    git_env = {"GIT_TERMINAL_PROMPT": "0"}
 
-    git.Repo.clone_from(url=url, to_path=to_path, depth=1)
+    git.Repo.clone_from(url=url, to_path=to_path, depth=1, env=git_env)
 
     return Download(
         uri=url,
