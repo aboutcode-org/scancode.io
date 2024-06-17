@@ -306,7 +306,13 @@ class TabSetMixin:
         return fields_data
 
     def get_field_value(self, field_name, render_func=None):
-        """Return the formatted value for the given `field_name` of the object."""
+        """
+        Return the formatted value of the specified `field_name` from the object.
+
+        By default, JSON types (list and dict) are rendered as YAML.
+        If a `render_func` is provided, it will take precedence and be used for
+        rendering the value.
+        """
         field_value = getattr(self.object, field_name, None)
 
         if field_value and render_func:
@@ -315,12 +321,9 @@ class TabSetMixin:
         if isinstance(field_value, Manager):
             return list(field_value.all())
 
-        list_fields = ["datafile_paths", "datasource_ids"]
-
-        if isinstance(field_value, list):
-            if field_name not in list_fields:
-                with suppress(TypeError):
-                    field_value = "\n".join(field_value)
+        if isinstance(field_value, (list, dict)):
+            with suppress(Exception):
+                field_value = render_as_yaml(field_value)
 
         return field_value
 
@@ -1706,14 +1709,14 @@ class CodebaseResourceDetailsView(
                     "field_name": "detected_license_expression_spdx",
                     "label": "Detected license expression (SPDX)",
                 },
-                {"field_name": "license_detections", "render_func": render_as_yaml},
-                {"field_name": "license_clues", "render_func": render_as_yaml},
+                "license_detections",
+                "license_clues",
                 "percentage_of_license_text",
-                {"field_name": "copyrights", "render_func": render_as_yaml},
-                {"field_name": "holders", "render_func": render_as_yaml},
-                {"field_name": "authors", "render_func": render_as_yaml},
-                {"field_name": "emails", "render_func": render_as_yaml},
-                {"field_name": "urls", "render_func": render_as_yaml},
+                "copyrights",
+                "holders",
+                "authors",
+                "emails",
+                "urls",
             ],
             "icon_class": "fa-solid fa-search",
         },
@@ -1728,9 +1731,7 @@ class CodebaseResourceDetailsView(
             "template": "scanpipe/tabset/tab_relations.html",
         },
         "extra_data": {
-            "fields": [
-                {"field_name": "extra_data", "render_func": render_as_yaml},
-            ],
+            "fields": ["extra_data"],
             "verbose_name": "Extra",
             "icon_class": "fa-solid fa-plus-square",
         },
@@ -1879,7 +1880,7 @@ class DiscoveredPackageDetailsView(
                 {"field_name": "sha256", "label": "SHA256"},
                 {"field_name": "sha512", "label": "SHA512"},
                 "file_references",
-                {"field_name": "parties", "render_func": render_as_yaml},
+                "parties",
                 "missing_resources",
                 "modified_resources",
                 "package_uid",
@@ -1904,11 +1905,8 @@ class DiscoveredPackageDetailsView(
                 "copyright",
                 "holder",
                 "notice_text",
-                {"field_name": "license_detections", "render_func": render_as_yaml},
-                {
-                    "field_name": "other_license_detections",
-                    "render_func": render_as_yaml,
-                },
+                "license_detections",
+                "other_license_detections",
             ],
             "icon_class": "fa-solid fa-file-contract",
         },
@@ -1923,14 +1921,14 @@ class DiscoveredPackageDetailsView(
             "template": "scanpipe/tabset/tab_dependencies.html",
         },
         "vulnerabilities": {
-            "fields": ["affected_by_vulnerabilities"],
+            "fields": [
+                {"field_name": "affected_by_vulnerabilities", "render_func": list},
+            ],
             "icon_class": "fa-solid fa-bug",
             "template": "scanpipe/tabset/tab_vulnerabilities.html",
         },
         "extra_data": {
-            "fields": [
-                {"field_name": "extra_data", "render_func": render_as_yaml},
-            ],
+            "fields": ["extra_data"],
             "verbose_name": "Extra",
             "icon_class": "fa-solid fa-plus-square",
         },
@@ -2052,7 +2050,9 @@ class DiscoveredDependencyDetailsView(
             "icon_class": "fa-solid fa-info-circle",
         },
         "vulnerabilities": {
-            "fields": ["affected_by_vulnerabilities"],
+            "fields": [
+                {"field_name": "affected_by_vulnerabilities", "render_func": list},
+            ],
             "icon_class": "fa-solid fa-bug",
             "template": "scanpipe/tabset/tab_vulnerabilities.html",
         },

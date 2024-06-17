@@ -1,7 +1,25 @@
 Changelog
 =========
 
-v34.6.0 (unreleased)
+v34.6.2 (unreleased)
+--------------------
+
+- Store SBOMs headers in the `Project.extra_data` field during the load_sboms
+  pipeline.
+  https://github.com/nexB/scancode.io/issues/1253
+
+- Add support for fetching Git repository as Project input.
+  https://github.com/nexB/scancode.io/issues/921
+
+v34.6.1 (2024-06-07)
+--------------------
+
+- Remove print statements from migration files.
+- Display full traceback on error in the ``execute`` management command.
+- Log the Project message creation.
+- Refactor the ``get_env_from_config_file`` to support empty config file.
+
+v34.6.0 (2024-06-07)
 --------------------
 
 - Add a new ``scan_for_virus`` add-on pipeline based on ClamAV scan.
@@ -25,8 +43,11 @@ v34.6.0 (unreleased)
   Add full dependency tree in the CycloneDX output.
   https://github.com/nexB/scancode.io/issues/1066
 
-- Add support for fetching Git repository as Project input.
-  https://github.com/nexB/scancode.io/issues/921
+- Add a new ``run`` entry point for executing pipeline as a single command.
+  https://github.com/nexB/scancode.io/pull/1256
+
+- Generate a DiscoveredPackage.package_uid in create_from_data when not provided.
+  https://github.com/nexB/scancode.io/issues/1256
 
 v34.5.0 (2024-05-22)
 --------------------

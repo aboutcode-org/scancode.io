@@ -243,6 +243,7 @@ Displays status information about the ``PROJECT`` project.
     The full logs of each pipeline execution are displayed by default.
     This can be disabled providing the ``--verbosity 0`` option.
 
+.. _cli_output:
 
 `$ scanpipe output --project PROJECT --format {json,csv,xlsx,spdx,cyclonedx,attribution}`
 -----------------------------------------------------------------------------------------
@@ -329,3 +330,52 @@ API key.
 Optional arguments:
 
 - ``--no-input`` Does not prompt the user for input of any kind.
+
+.. _cli_run:
+
+`$ run PIPELINE_NAME INPUT_LOCATION`
+------------------------------------
+
+A ``run`` command is available for executing pipelines and printing the results
+without providing any configuration. This can be useful for running a pipeline to get
+the results without the need to persist the data in the database or access the UI to
+review the results.
+
+.. tip:: You can run multiple pipelines by providing their names, comma-separated,
+  such as `pipeline1,pipeline2`.
+
+Optional arguments:
+
+- ``--project PROJECT_NAME``: Provide a project name; otherwise, a random value is
+  generated.
+- ``--format {json,spdx,cyclonedx,attribution}``: Specify the output format.
+  **The default format is JSON**.
+
+For example, running the ``inspect_packages`` pipeline on a manifest file:
+
+.. code-block:: bash
+
+    $ run inspect_packages path/to/package.json > results.json
+
+In the following example, running the ``scan_codebase`` followed by the
+``find_vulnerabilities`` pipelines on a codebase directory:
+
+.. code-block:: bash
+
+    $ run scan_codebase,find_vulnerabilities path/to/codebase/ > results.json
+
+Using a URL as input is also supported:
+
+.. code-block:: bash
+
+    $ run scan_single_package https://url.com/package.zip > results.json
+    $ run analyze_docker_image docker://postgres:16 > results.json
+
+In the last example, the ``--format`` option is used to generate a CycloneDX SBOM
+instead of the default JSON output.
+
+.. code-block:: bash
+
+    $ run scan_codebase codebase/ --format cyclonedx > bom.json
+
+See the :ref:`cli_output` for more information about supported output formats.

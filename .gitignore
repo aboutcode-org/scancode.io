@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 
 *.db
+*.sqlite3
 .installed.cfg
 parts
 develop-eggs

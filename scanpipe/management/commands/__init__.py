@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import shutil
+import traceback
 from pathlib import Path
 
 from django.apps import apps
@@ -45,16 +46,18 @@ scanpipe_app = apps.get_app_config("scanpipe")
 class ProjectCommand(BaseCommand):
     """
     Base class for management commands that take a mandatory --project argument.
-    The project is retrieved from the database and stored on the intance as
+    The project is retrieved from the database and stored on the instance as
     `self.project`.
     """
 
     project = None
+    verbosity = 1
 
     def add_arguments(self, parser):
         parser.add_argument("--project", required=True, help="Project name.")
 
     def handle(self, *args, **options):
+        self.verbosity = options["verbosity"]
         project_name = options["project"]
         try:
             self.project = Project.objects.get(name=project_name)
@@ -237,6 +240,15 @@ def extract_group_from_pipelines(pipelines):
     return pipelines_data
 
 
+def validate_pipeline(pipeline_name):
+    """Raise an error if the ``pipeline_name`` is not available."""
+    if pipeline_name not in scanpipe_app.pipelines:
+        raise CommandError(
+            f"{pipeline_name} is not a valid pipeline. \n"
+            f"Available: {', '.join(scanpipe_app.pipelines.keys())}"
+        )
+
+
 def validate_pipelines(pipelines_data):
     """Raise an error if one of the `pipeline_names` is not available."""
     # Backward compatibility with old pipeline names.
@@ -246,11 +258,7 @@ def validate_pipelines(pipelines_data):
     }
 
     for pipeline_name in pipelines_data.keys():
-        if pipeline_name not in scanpipe_app.pipelines:
-            raise CommandError(
-                f"{pipeline_name} is not a valid pipeline. \n"
-                f"Available: {', '.join(scanpipe_app.pipelines.keys())}"
-            )
+        validate_pipeline(pipeline_name)
 
     return pipelines_data
 
@@ -316,7 +324,7 @@ def handle_input_files(project, input_files_data, command=None):
             tag=tag,
         )
 
-    if command:
+    if command and command.verbosity > 0:
         msg = f"File{pluralize(copied)} copied to the project inputs directory:"
         command.stdout.write(msg, command.style.SUCCESS)
         msg = "\n".join(["- " + filename for filename in copied])
@@ -333,7 +341,7 @@ def handle_input_urls(project, input_urls, command=None):
     if downloads:
         project.add_downloads(downloads)
         msg = "File(s) downloaded to the project inputs directory:"
-        if command:
+        if command and command.verbosity > 0:
             command.stdout.write(msg, command.style.SUCCESS)
             msg = "\n".join(["- " + downloaded.filename for downloaded in downloads])
             command.stdout.write(msg)
@@ -347,7 +355,7 @@ def handle_input_urls(project, input_urls, command=None):
 def handle_copy_codebase(project, copy_from, command=None):
     """Copy `codebase_path` tree to the project's `codebase` directory."""
     project_codebase = project.codebase_path
-    if command:
+    if command and command.verbosity > 0:
         msg = f"{copy_from} content copied in {project_codebase}"
         command.stdout.write(msg, command.style.SUCCESS)
     shutil.copytree(src=copy_from, dst=project_codebase, dirs_exist_ok=True)
@@ -371,7 +379,8 @@ def add_project_inputs(
         handle_copy_codebase(project=project, copy_from=copy_from, command=command)
 
 
-def execute_project(project, run_async=False, command=None):
+def execute_project(project, run_async=False, command=None):  # noqa: C901
+    verbosity = getattr(command, "verbosity", 1) if command else 0
     run = project.get_next_run()
 
     if not run:
@@ -383,29 +392,32 @@ def execute_project(project, run_async=False, command=None):
             raise CommandError(msg)
 
         run.start()
-        if command:
+        if verbosity > 0:
             msg = f"{run.pipeline_name} added to the tasks queue for execution."
             command.stdout.write(msg, command.style.SUCCESS)
-    else:
+        return
+
+    if verbosity > 0:
         command.stdout.write(f"Start the {run.pipeline_name} pipeline execution...")
 
-        try:
-            tasks.execute_pipeline_task(run.pk)
-        except KeyboardInterrupt:
-            run.set_task_stopped()
-            raise CommandError("Pipeline execution stopped.")
-        except Exception as e:
-            run.set_task_ended(exitcode=1, output=str(e))
-            raise CommandError(e)
+    try:
+        tasks.execute_pipeline_task(run.pk)
+    except KeyboardInterrupt:
+        run.set_task_stopped()
+        raise CommandError("Pipeline execution stopped.")
+    except Exception:
+        traceback_str = traceback.format_exc()
+        run.set_task_ended(exitcode=1, output=traceback_str)
+        raise CommandError(traceback_str)
 
-        run.refresh_from_db()
+    run.refresh_from_db()
 
-        if run.task_succeeded and command:
-            msg = f"{run.pipeline_name} successfully executed on " f"project {project}"
-            command.stdout.write(msg, command.style.SUCCESS)
-        else:
-            msg = f"Error during {run.pipeline_name} execution:\n{run.task_output}"
-            raise CommandError(msg)
+    if not run.task_succeeded:
+        msg = f"Error during {run.pipeline_name} execution:\n{run.task_output}"
+        raise CommandError(msg)
+    elif verbosity > 0:
+        msg = f"{run.pipeline_name} successfully executed on " f"project {project}"
+        command.stdout.write(msg, command.style.SUCCESS)
 
 
 def create_project(
@@ -419,6 +431,8 @@ def create_project(
     run_async=False,
     command=None,
 ):
+    verbosity = getattr(command, "verbosity", 1)
+
     if execute and not pipelines:
         raise CommandError("The execute argument requires one or more pipelines.")
 
@@ -440,7 +454,7 @@ def create_project(
     if command:
         command.project = project
 
-    if command:
+    if command and verbosity > 0:
         msg = f"Project {name} created with work directory {project.work_directory}"
         command.stdout.write(msg, command.style.SUCCESS)
 
