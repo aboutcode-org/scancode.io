@@ -188,8 +188,13 @@ You can also provide URLs of files to be downloaded to the foo project
     $ [...] --input-url docker://postgres:13
     $ [...] --input-url docker://docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.2
 
-See https://docs.docker.com/engine/reference/builder/ for more details about
-references.
+    See https://docs.docker.com/engine/reference/builder/ for more details about
+    references.
+
+.. note:: Git repositories are supported as input using their Git clone URL in the
+    ``https://<host>[:<port>]/<path-to-git-repo>.git`` syntax. For example::
+
+    $ [...] --input-url https://github.com/nexB/scancode.io.git
 
 
 `$ scanpipe add-pipeline --project PROJECT PIPELINE_NAME [PIPELINE_NAME ...]`

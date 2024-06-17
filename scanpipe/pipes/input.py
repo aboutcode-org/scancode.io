@@ -40,9 +40,16 @@ from scanpipe.pipes.output import mappings_key_by_fieldname
 
 
 def copy_input(input_location, dest_path):
-    """Copy the ``input_location`` to the ``dest_path``."""
-    destination = dest_path / Path(input_location).name
-    return shutil.copyfile(input_location, destination)
+    """Copy the ``input_location`` (file or directory) to the ``dest_path``."""
+    input_path = Path(input_location)
+    destination = Path(dest_path) / input_path.name
+
+    if input_path.is_dir():
+        shutil.copytree(input_location, destination)
+    else:
+        shutil.copyfile(input_location, destination)
+
+    return destination
 
 
 def copy_inputs(input_locations, dest_path):

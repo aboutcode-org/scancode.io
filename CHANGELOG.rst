@@ -8,6 +8,9 @@ v34.6.2 (unreleased)
   pipeline.
   https://github.com/nexB/scancode.io/issues/1253
 
+- Add support for fetching Git repository as Project input.
+  https://github.com/nexB/scancode.io/issues/921
+
 v34.6.1 (2024-06-07)
 --------------------
 

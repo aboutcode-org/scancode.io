@@ -191,6 +191,30 @@ class ScanPipePipelinesTest(TestCase):
         self.assertTrue(input_source2.exists())
         mock_get.assert_called_once()
 
+    @mock.patch("git.repo.base.Repo.clone_from")
+    def test_scanpipe_pipeline_class_download_missing_inputs_git_repo(self, mock_clone):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("do_nothing")
+        pipeline = run.make_pipeline_instance()
+
+        download_url = "https://github.com/nexB/scancode.io.git"
+        input_source = project1.add_input_source(download_url=download_url)
+
+        def mock_make_to_path(**kwargs):
+            to_path = kwargs.get("to_path")
+            to_path.touch()
+
+        mock_clone.side_effect = mock_make_to_path
+        mock_clone.return_value = None
+
+        pipeline.download_missing_inputs()
+        self.assertIn(
+            "Fetching input from https://github.com/nexB/scancode.io.git", run.log
+        )
+        input_source.refresh_from_db()
+        self.assertEqual("scancode.io.git", input_source.filename)
+        self.assertTrue(input_source.exists())
+
     def test_scanpipe_pipeline_class_save_errors_context_manager(self):
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("do_nothing")

@@ -52,7 +52,7 @@ class ScanCodebase(Pipeline):
         Copy input files to the project's codebase/ directory.
         The code can also be copied there prior to running the Pipeline.
         """
-        copy_inputs(self.project.inputs(), self.project.codebase_path)
+        copy_inputs(self.project.inputs("*"), self.project.codebase_path)
 
     def collect_and_create_codebase_resources(self):
         """Collect and create codebase resources."""

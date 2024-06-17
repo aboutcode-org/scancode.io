@@ -70,7 +70,7 @@ class ScanSinglePackage(Pipeline):
     def get_package_input(self):
         """Locate the package input in the project's input/ directory."""
         input_files = self.project.input_files
-        inputs = list(self.project.inputs())
+        inputs = list(self.project.inputs("*"))
 
         if len(inputs) != 1 or len(input_files) != 1:
             raise Exception("Only 1 input file supported")

@@ -939,7 +939,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
                     "tag": input_source.tag,
                     # Properties
                     "size": input_source.size,
-                    "is_file": True,
+                    "is_file": input_source.is_file(),
                     # Methods
                     "exists": input_source.exists(),
                 }
@@ -1627,9 +1627,26 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
         return False
 
     def delete_file(self):
-        """Delete the file on disk."""
+        """Delete the file or directory on disk."""
         if path := self.path:
-            path.unlink(missing_ok=True)
+            if path.is_dir():
+                shutil.rmtree(path)
+            else:
+                path.unlink(missing_ok=True)
+
+    def is_file(self):
+        """
+        Check if this InputSource path is a file.
+
+        Returns True if the path does not exist to maintain backward compatibility
+        with the behavior when downloaded InputSources were always files.
+
+        This method now accounts for the possibility of directories, such as in the
+        case of a git clone.
+        """
+        if self.exists():
+            return self.path.is_file()
+        return True
 
     @property
     def size(self):

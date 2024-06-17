@@ -233,3 +233,19 @@ Example for GitHub private repository files::
 Example for Docker private repository::
 
     SCANCODEIO_SKOPEO_CREDENTIALS="registry.com=user:password"
+
+Can I use a git repository as project input?
+--------------------------------------------
+
+Yes, as an alternative to an uploaded file, or an download URL targeting an archive,
+you may directly provide the URL to a git repository.
+The repository will be cloned in the project inputs, fetching only the latest commit
+history, at the start of a pipeline execution.
+
+Note that only the HTTPS type of URL is supported::
+
+    https://<host>[:<port>]/<path-to-git-repo>.git`
+
+A GitHub repository URL example::
+
+    https://github.com/username/repository.git
