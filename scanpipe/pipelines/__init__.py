@@ -247,7 +247,6 @@ class BasePipeline:
                 input_source.fetch()
             except Exception as error:
                 traceback_str = traceback.format_exc()
-                self.log(str(error))
                 logger.error(traceback_str)
                 self.log(f"{input_source.download_url} could not be fetched.")
                 error_tracebacks.append((str(error), traceback_str))
