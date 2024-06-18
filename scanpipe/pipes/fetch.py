@@ -63,15 +63,22 @@ def run_command_safely(command_args):
     sure to sanitize and validate the input to prevent any malicious commands from
     being executed.
 
-    As ``check`` is True, if the exit code is non-zero, it raises a CalledProcessError.
+    Raise a SubprocessError if the exit code was non-zero.
     """
-    result = subprocess.run(  # nosec
+    completed_process = subprocess.run(  # nosec
         command_args,
         capture_output=True,
         text=True,
-        check=True,
     )
-    return result.stdout
+
+    if completed_process.returncode:
+        error_msg = (
+            f'Error while executing cmd="{completed_process.args}": '
+            f'"{completed_process.stderr.strip()}"'
+        )
+        raise subprocess.SubprocessError(error_msg)
+
+    return completed_process.stdout
 
 
 def get_request_session(uri):
