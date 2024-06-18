@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.6.2 (unreleased)
+v34.6.2 (2024-06-18)
 --------------------
 
 - Store SBOMs headers in the `Project.extra_data` field during the load_sboms
