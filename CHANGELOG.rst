@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v34.6.3 (unreleased)
+--------------------
+
+- Use the ``--option=value`` syntax for args entries in place of ``--option value``
+  for fetching Docker images using skopeo through ``run_command_safely`` calls.
+  https://github.com/nexB/scancode.io/issues/1257
+
 v34.6.2 (2024-06-18)
 --------------------
 
