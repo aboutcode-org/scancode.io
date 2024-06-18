@@ -11,6 +11,9 @@ v34.6.2 (unreleased)
 - Add support for fetching Git repository as Project input.
   https://github.com/nexB/scancode.io/issues/921
 
+- Enhance the logging and reporting of input fetch exceptions.
+  https://github.com/nexB/scancode.io/issues/1257
+
 v34.6.1 (2024-06-07)
 --------------------
 
