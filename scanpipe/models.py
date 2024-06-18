@@ -27,6 +27,7 @@ import re
 import shutil
 import uuid
 from collections import Counter
+from collections import defaultdict
 from contextlib import suppress
 from itertools import groupby
 from operator import itemgetter
@@ -72,6 +73,7 @@ from extractcode import EXTRACT_SUFFIX
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licensing
 from matchcode_toolkit.fingerprinting import IGNORED_DIRECTORY_FINGERPRINTS
+from packagedcode.models import build_package_uid
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLMixin
@@ -435,7 +437,7 @@ class UpdateMixin:
 
     def update(self, **kwargs):
         """
-        Update this resource with the provided ``kwargs`` values.
+        Update this instance with the provided ``kwargs`` values.
         The full ``save()`` process will be triggered, including signals, and the
         ``update_fields`` is automatically set.
         """
@@ -753,12 +755,42 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
     def get_input_config_file(self):
         """
-        Return the ``scancode-config.yml`` file from the input/ directory if
-        available.
+        Return the ``scancode-config.yml`` file from the input/ directory
+        or from the codebase/ immediate subdirectories.
+
+        Priority order:
+        1. If a config file exists directly in the input/ directory, return it.
+        2. If exactly one config file exists in a codebase/ immediate subdirectory,
+        return it.
+        3. If multiple config files are found in subdirectories, report an error.
         """
-        config_file = self.input_path / settings.SCANCODEIO_CONFIG_FILE
-        if config_file.exists():
-            return config_file
+        config_filename = settings.SCANCODEIO_CONFIG_FILE
+
+        # Check for the config file in the root of the input/ directory.
+        root_config_file = self.input_path / config_filename
+        if root_config_file.exists():
+            return root_config_file
+
+        # Search for config files in immediate codebase/ subdirectories.
+        subdir_config_files = list(self.codebase_path.glob(f"*/{config_filename}"))
+
+        # If exactly one config file is found in codebase/ subdirectories, return it.
+        if len(subdir_config_files) == 1:
+            return subdir_config_files[0]
+
+        # If multiple config files are found, report an error.
+        if len(subdir_config_files) > 1:
+            self.add_warning(
+                f"More than one {config_filename} found. "
+                f"Could not determine which one to use.",
+                model="Project",
+                details={
+                    "resources": [
+                        str(path.relative_to(self.work_path))
+                        for path in subdir_config_files
+                    ]
+                },
+            )
 
     def get_settings_as_yml(self):
         """Return the ``settings`` file content as yml, suitable for a config file."""
@@ -772,19 +804,33 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             if value not in EMPTY_VALUES
         }
 
+    def get_env_from_config_file(self):
+        """Return ``env`` dict loaded from the ``scancode-config.yml`` config file."""
+        config_file = self.get_input_config_file()
+        if not config_file:
+            return
+
+        logger.info(f"Loading env from {config_file.relative_to(self.work_path)}")
+        try:
+            return saneyaml.load(config_file.read_text())
+        except (saneyaml.YAMLError, Exception):
+            self.add_error(
+                f'Failed to load configuration from "{config_file}". '
+                f"The file format is invalid."
+            )
+
     def get_env(self, field_name=None):
         """
-        Return the project environment loaded from the ``.scancode/config.yml`` config
-        file, when available, and overriden by the ``settings`` model field.
+        Return the project environment loaded from the ``scancode-config.yml`` config
+        file, when available, and overridden by the ``settings`` model field.
 
         ``field_name`` can be provided to get a single entry from the env.
         """
         env = {}
 
         # 1. Load settings from config file when available.
-        if config_file := self.get_input_config_file():
-            with suppress(saneyaml.YAMLError):
-                env = saneyaml.load(config_file.read_text())
+        if env_from_config_file := self.get_env_from_config_file():
+            env = env_from_config_file
 
         # 2. Update with defined values from the Project ``settings`` field.
         env.update(self.get_enabled_settings())
@@ -793,6 +839,29 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             return env.get(field_name)
 
         return env
+
+    def get_ignored_dependency_scopes_index(self):
+        """
+        Return a dictionary index of the ``ignored_dependency_scopes`` setting values
+        defined in this Project env.
+        """
+        ignored_dependency_scopes = self.get_env(field_name="ignored_dependency_scopes")
+        if not ignored_dependency_scopes:
+            return {}
+
+        ignored_scope_index = defaultdict(list)
+        for entry in ignored_dependency_scopes:
+            ignored_scope_index[entry.get("package_type")].append(entry.get("scope"))
+
+        return dict(ignored_scope_index)
+
+    @cached_property
+    def ignored_dependency_scopes_index(self):
+        """
+        Return the computed value of get_ignored_dependency_scopes_index.
+        The value is only generated once and cached for further calls.
+        """
+        return self.get_ignored_dependency_scopes_index()
 
     def clear_tmp_directory(self):
         """
@@ -870,7 +939,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
                     "tag": input_source.tag,
                     # Properties
                     "size": input_source.size,
-                    "is_file": True,
+                    "is_file": input_source.is_file(),
                     # Methods
                     "exists": input_source.exists(),
                 }
@@ -1112,6 +1181,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         A ``resource`` can be provided to keep track of the codebase resource that was
         analyzed when the error occurred.
         """
+        logger.info(f"[{severity}] {description}")
+
         if inspect.isclass(model):
             model = model.__name__
 
@@ -1556,9 +1627,26 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
         return False
 
     def delete_file(self):
-        """Delete the file on disk."""
+        """Delete the file or directory on disk."""
         if path := self.path:
-            path.unlink(missing_ok=True)
+            if path.is_dir():
+                shutil.rmtree(path)
+            else:
+                path.unlink(missing_ok=True)
+
+    def is_file(self):
+        """
+        Check if this InputSource path is a file.
+
+        Returns True if the path does not exist to maintain backward compatibility
+        with the behavior when downloaded InputSources were always files.
+
+        This method now accounts for the possibility of directories, such as in the
+        case of a git clone.
+        """
+        if self.exists():
+            return self.path.is_file()
+        return True
 
     @property
     def size(self):
@@ -1648,7 +1736,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         help_text=_("Identify a registered Pipeline class."),
     )
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
-    scancodeio_version = models.CharField(max_length=30, blank=True)
+    scancodeio_version = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True)
     current_step = models.CharField(max_length=256, blank=True)
     selected_groups = models.JSONField(
@@ -1993,8 +2081,7 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
 
     def elfs(self):
         """
-        Resources that are ``files`` and their filetype starts with "ELF" and
-        contains any of these "executable", "relocatable", "shared object".
+        ELF executable and shared object Resources.
         Keep sync with the content type implementation at ``typecode.contenttype``.
         """
         return (
@@ -2008,6 +2095,28 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
                 | Q(file_type__icontains="shared object")
             )
         )
+
+    def win_exes(self):
+        """
+        Windows executable and DLL Resources.
+        Keep sync with the content type implementation at ``typecode.contenttype``.
+        """
+        return self.files().filter(
+            Q(file_type__icontains="for ms windows") | Q(file_type__istartswith="pe32")
+        )
+
+    def macho_binaries(self):
+        """
+        Mach-O binary Resources.
+        Keep sync with the content type implementation at ``typecode.contenttype``.
+        """
+        return self.files().filter(
+            models.Q(file_type__icontains="mach-o")
+            | models.Q(mime_type__icontains="application/x-mach-binary")
+        )
+
+    def executable_binaries(self):
+        return self.union(self.win_exes(), self.macho_binaries(), self.elfs())
 
 
 class ScanFieldsModelMixin(models.Model):
@@ -2252,7 +2361,7 @@ class CodebaseResource(
     )
     status = models.CharField(
         blank=True,
-        max_length=30,
+        max_length=50,
         help_text=_("Analysis status for this resource."),
     )
     size = models.BigIntegerField(
@@ -2890,11 +2999,19 @@ class AbstractPackage(models.Model):
         blank=True,
         help_text=_("A notice text for this package."),
     )
-    datasource_id = models.CharField(
-        max_length=64,
+    datasource_ids = models.JSONField(
+        default=list,
         blank=True,
         help_text=_(
-            "The identifier for the datafile handler used to obtain this package."
+            "The identifiers for the datafile handlers used to obtain this package."
+        ),
+    )
+    datafile_paths = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_(
+            "A list of Resource paths for package datafiles which were "
+            "used to assemble this pacakage."
         ),
     )
     file_references = models.JSONField(
@@ -2944,6 +3061,13 @@ class DiscoveredPackage(
     )
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
+    )
+    children_packages = models.ManyToManyField(
+        "self",
+        through="DiscoveredDependency",
+        symmetrical=False,
+        related_name="parent_packages",
+        through_fields=("for_package", "resolved_to_package"),
     )
     missing_resources = models.JSONField(default=list, blank=True)
     modified_resources = models.JSONField(default=list, blank=True)
@@ -3017,26 +3141,24 @@ class DiscoveredPackage(
     @classmethod
     def create_from_data(cls, project, package_data):
         """
-        Create and returns a DiscoveredPackage for a `project` from the `package_data`.
-        If one of the values of the required fields is not available, a "ProjectMessage"
-        is created instead of a new DiscoveredPackage instance.
+        Create and return a DiscoveredPackage for a given `project` based on
+        `package_data`.
+
+        If the required `name` field is missing in `package_data`, a `ProjectMessage`
+        is created instead of a DiscoveredPackage instance.
+
+        If the `type` field is missing in `package_data`, it defaults to "unknown"
+        before creating the DiscoveredPackage.
         """
         package_data = package_data.copy()
-        required_fields = ["type", "name"]
-        missing_values = [
-            field_name
-            for field_name in required_fields
-            if not package_data.get(field_name)
-        ]
 
-        if missing_values:
-            message = (
-                f"No values for the following required fields: "
-                f"{', '.join(missing_values)}"
-            )
-
+        if not package_data.get("name"):
+            message = 'No values provided for the required "name" field.'
             project.add_warning(description=message, model=cls, details=package_data)
             return
+
+        if not package_data.get("type"):
+            package_data["type"] = "unknown"
 
         qualifiers = package_data.get("qualifiers")
         if qualifiers:
@@ -3049,6 +3171,17 @@ class DiscoveredPackage(
         }
 
         discovered_package = cls(project=project, **cleaned_data)
+
+        # The ``package_uid`` field is not defined as required on the model,
+        # but it is essential for retrieving the Package object from the database
+        # in various places, such as in the ``update_or_create_resource`` function.
+        # If ``package_uid`` is not provided in the ``package_data``, a value is
+        # generated using the ``build_package_uid`` function from the ``packagedcode``
+        # module.
+        if not package_data.get("package_uid"):
+            package_uid = build_package_uid(discovered_package.package_url)
+            discovered_package.package_uid = package_uid
+
         # Using save_error=False to not capture potential errors at this level but
         # rather in the CodebaseResource.create_and_add_package method so resource data
         # can be injected in the ProjectMessage record.
@@ -3145,6 +3278,15 @@ class DiscoveredPackage(
             external_refs=external_refs,
         )
 
+    @property
+    def cyclonedx_bom_ref(self):
+        """
+        Use the package_uid when available to ensure having unique bom_ref
+        in the SBOM when several instances of the same DiscoveredPackage
+        (i.e. same purl) are present in the project.
+        """
+        return self.package_uid or str(self.get_package_url())
+
     def as_cyclonedx(self):
         """Return this DiscoveredPackage as an CycloneDX Component entry."""
         licenses = []
@@ -3201,14 +3343,6 @@ class DiscoveredPackage(
             if (url := getattr(self, field_name)) and field_name not in property_fields
         ]
 
-        # Always use the package_uid when available to ensure having unique
-        # package_url in the BOM when several instances of the same DiscoveredPackage
-        # (i.e. same purl) are present in the project.
-        try:
-            package_url = PackageURL.from_string(self.package_uid)
-        except ValueError:
-            package_url = self.get_package_url()
-
         evidence = None
         if self.other_license_expression_spdx:
             evidence = cyclonedx_component.ComponentEvidence(
@@ -3222,8 +3356,9 @@ class DiscoveredPackage(
         return cyclonedx_component.Component(
             name=self.name,
             version=self.version,
-            bom_ref=str(package_url),
-            purl=package_url,
+            bom_ref=self.cyclonedx_bom_ref,
+            # Warning: Use the real purl and not package_uid here.
+            purl=self.get_package_url(),
             licenses=licenses,
             copyright=self.copyright,
             description=self.description,
@@ -3248,6 +3383,10 @@ class DiscoveredDependencyQuerySet(
                 "for_package", queryset=DiscoveredPackage.objects.only("package_uid")
             ),
             Prefetch(
+                "resolved_to_package",
+                queryset=DiscoveredPackage.objects.only("package_uid"),
+            ),
+            Prefetch(
                 "datafile_resource", queryset=CodebaseResource.objects.only("path")
             ),
         )
@@ -3263,6 +3402,8 @@ class DiscoveredDependency(
     """
     A project's Discovered Dependencies are records of the dependencies used by
     system and application packages discovered in the code under analysis.
+    Dependencies are usually collected from parsed package data such as a package
+    manifest or lockfile.
     """
 
     # Overrides the `project` field from `ProjectRelatedModel` to set the proper
@@ -3279,15 +3420,32 @@ class DiscoveredDependency(
     )
     for_package = models.ForeignKey(
         DiscoveredPackage,
-        related_name="dependencies",
+        related_name="declared_dependencies",
+        help_text=_("The package that declares this dependency."),
         on_delete=models.CASCADE,
+        editable=False,
+        blank=True,
+        null=True,
+    )
+    resolved_to_package = models.ForeignKey(
+        DiscoveredPackage,
+        related_name="resolved_from_dependencies",
+        help_text=_(
+            "The resolved package for this dependency. "
+            "If empty, it indicates the dependency is unresolved."
+        ),
+        on_delete=models.SET_NULL,
         editable=False,
         blank=True,
         null=True,
     )
     datafile_resource = models.ForeignKey(
         CodebaseResource,
-        related_name="dependencies",
+        related_name="declared_dependencies",
+        help_text=_(
+            "The codebase resource (e.g., manifest or lockfile) that declares this "
+            "dependency."
+        ),
         on_delete=models.CASCADE,
         editable=False,
         blank=True,
@@ -3364,6 +3522,11 @@ class DiscoveredDependency(
             return self.for_package.package_uid
 
     @cached_property
+    def resolved_to_package_uid(self):
+        if self.resolved_to_package:
+            return self.resolved_to_package.package_uid
+
+    @cached_property
     def datafile_path(self):
         if self.datafile_resource:
             return self.datafile_resource.path
@@ -3375,6 +3538,7 @@ class DiscoveredDependency(
         dependency_data,
         for_package=None,
         datafile_resource=None,
+        datasource_id=None,
         strip_datafile_path_root=False,
     ):
         """
@@ -3419,6 +3583,9 @@ class DiscoveredDependency(
                     segments = datafile_path.split("/")
                     datafile_path = "/".join(segments[1:])
                 datafile_resource = project.codebaseresources.get(path=datafile_path)
+
+        if datasource_id:
+            dependency_data["datasource_id"] = datasource_id
 
         # Set purl fields from `purl`
         purl = dependency_data.get("purl")

@@ -33,11 +33,11 @@
             <td>
               <a href="?type={{ dependency.type }}" class="is-black-link">{{ dependency.type }}</a>
             </td>
-            <td>
-              {{ dependency.extracted_requirement }}
-            </td>
             <td class="break-normal">
               <a href="?scope={{ dependency.scope }}" class="is-black-link">{{ dependency.scope }}</a>
+            </td>
+            <td>
+              {{ dependency.extracted_requirement }}
             </td>
             <td>
               <a href="?is_runtime={{ dependency.is_runtime }}" class="is-black-link">{{ dependency.is_runtime }}</a>
@@ -52,6 +52,12 @@
               {% if dependency.for_package %}
                 {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
                 <a href="{% url 'package_detail' project.slug dependency.for_package.uuid %}" title="{{ dependency.for_package.purl }}">{{ dependency.for_package.purl }}</a>
+              {% endif %}
+            </td>
+            <td>
+              {% if dependency.resolved_to_package %}
+                {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+                <a href="{% url 'package_detail' project.slug dependency.resolved_to_package.uuid %}" title="{{ dependency.resolved_to_package.purl }}">{{ dependency.resolved_to_package.purl }}</a>
               {% endif %}
             </td>
             <td>

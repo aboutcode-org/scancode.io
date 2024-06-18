@@ -86,17 +86,20 @@
               "matcher": "1-hash",
               "end_line": 1,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/bsd-new_89.RULE",
+              "from_file": "codebase/asgiref-3.3.0-py3-none-any.whl",
               "start_line": 1,
               "matched_text": "license BSD",
               "match_coverage": 100.0,
               "matched_length": 2,
               "rule_relevance": 99,
               "rule_identifier": "bsd-new_89.RULE",
-              "license_expression": "bsd-new"
+              "license_expression": "bsd-new",
+              "spdx_license_expression": "BSD-3-Clause"
             }
           ],
           "identifier": "bsd_new-261898a0-0118-87c4-7092-14e4ff134882",
-          "license_expression": "bsd-new"
+          "license_expression": "bsd-new",
+          "license_expression_spdx": "BSD-3-Clause"
         },
         {
           "matches": [
@@ -105,17 +108,20 @@
               "matcher": "1-hash",
               "end_line": 1,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_bsd_license.RULE",
+              "from_file": "codebase/asgiref-3.3.0-py3-none-any.whl",
               "start_line": 1,
               "matched_text": "- 'License :: OSI Approved :: BSD License'",
               "match_coverage": 100.0,
               "matched_length": 5,
               "rule_relevance": 99,
               "rule_identifier": "pypi_bsd_license.RULE",
-              "license_expression": "bsd-new"
+              "license_expression": "bsd-new",
+              "spdx_license_expression": "BSD-3-Clause"
             }
           ],
           "identifier": "bsd_new-f4e99f86-00ab-18d9-a65d-a3a12767dcf5",
-          "license_expression": "bsd-new"
+          "license_expression": "bsd-new",
+          "license_expression_spdx": "BSD-3-Clause"
         }
       ],
       "other_license_expression": "",
@@ -130,7 +136,12 @@
         "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
       },
       "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "pypi_wheel"
+      ],
+      "datafile_paths": [
+        "asgiref-3.3.0-py3-none-any.whl"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -194,17 +205,20 @@
               "matcher": "1-hash",
               "end_line": 1,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/bsd-new_89.RULE",
+              "from_file": "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
               "start_line": 1,
               "matched_text": "license BSD",
               "match_coverage": 100.0,
               "matched_length": 2,
               "rule_relevance": 99,
               "rule_identifier": "bsd-new_89.RULE",
-              "license_expression": "bsd-new"
+              "license_expression": "bsd-new",
+              "spdx_license_expression": "BSD-3-Clause"
             }
           ],
           "identifier": "bsd_new-261898a0-0118-87c4-7092-14e4ff134882",
-          "license_expression": "bsd-new"
+          "license_expression": "bsd-new",
+          "license_expression_spdx": "BSD-3-Clause"
         },
         {
           "matches": [
@@ -213,17 +227,20 @@
               "matcher": "1-hash",
               "end_line": 1,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_bsd_license.RULE",
+              "from_file": "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
               "start_line": 1,
               "matched_text": "- 'License :: OSI Approved :: BSD License'",
               "match_coverage": 100.0,
               "matched_length": 5,
               "rule_relevance": 99,
               "rule_identifier": "pypi_bsd_license.RULE",
-              "license_expression": "bsd-new"
+              "license_expression": "bsd-new",
+              "spdx_license_expression": "BSD-3-Clause"
             }
           ],
           "identifier": "bsd_new-f4e99f86-00ab-18d9-a65d-a3a12767dcf5",
-          "license_expression": "bsd-new"
+          "license_expression": "bsd-new",
+          "license_expression_spdx": "BSD-3-Clause"
         }
       ],
       "other_license_expression": "",
@@ -238,7 +255,12 @@
         "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
       },
       "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "pypi_wheel_metadata"
+      ],
+      "datafile_paths": [
+        "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -255,6 +277,7 @@
       "is_resolved": false,
       "dependency_uid": "pkg:pypi/pytest?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "resolved_to_package_uid": null,
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
       "package_type": "pypi",
@@ -269,6 +292,7 @@
       "is_resolved": false,
       "dependency_uid": "pkg:pypi/pytest?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "resolved_to_package_uid": null,
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
       "package_type": "pypi",
@@ -283,6 +307,7 @@
       "is_resolved": false,
       "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "resolved_to_package_uid": null,
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
       "package_type": "pypi",
@@ -297,6 +322,7 @@
       "is_resolved": false,
       "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "resolved_to_package_uid": null,
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
       "package_type": "pypi",
@@ -527,17 +553,20 @@
                   "matcher": "1-hash",
                   "end_line": 1,
                   "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/bsd-new_89.RULE",
+                  "from_file": "codebase/asgiref-3.3.0-py3-none-any.whl",
                   "start_line": 1,
                   "matched_text": "license BSD",
                   "match_coverage": 100.0,
                   "matched_length": 2,
                   "rule_relevance": 99,
                   "rule_identifier": "bsd-new_89.RULE",
-                  "license_expression": "bsd-new"
+                  "license_expression": "bsd-new",
+                  "spdx_license_expression": "BSD-3-Clause"
                 }
               ],
               "identifier": "bsd_new-261898a0-0118-87c4-7092-14e4ff134882",
-              "license_expression": "bsd-new"
+              "license_expression": "bsd-new",
+              "license_expression_spdx": "BSD-3-Clause"
             },
             {
               "matches": [
@@ -546,17 +575,20 @@
                   "matcher": "1-hash",
                   "end_line": 1,
                   "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_bsd_license.RULE",
+                  "from_file": "codebase/asgiref-3.3.0-py3-none-any.whl",
                   "start_line": 1,
                   "matched_text": "- 'License :: OSI Approved :: BSD License'",
                   "match_coverage": 100.0,
                   "matched_length": 5,
                   "rule_relevance": 99,
                   "rule_identifier": "pypi_bsd_license.RULE",
-                  "license_expression": "bsd-new"
+                  "license_expression": "bsd-new",
+                  "spdx_license_expression": "BSD-3-Clause"
                 }
               ],
               "identifier": "bsd_new-f4e99f86-00ab-18d9-a65d-a3a12767dcf5",
-              "license_expression": "bsd-new"
+              "license_expression": "bsd-new",
+              "license_expression_spdx": "BSD-3-Clause"
             }
           ],
           "repository_download_url": "https://pypi.org/packages/source/a/asgiref/asgiref-3.3.0.tar.gz",
@@ -696,16 +728,19 @@
               "matcher": "2-aho",
               "end_line": 27,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/bsd-new_683.RULE",
+              "from_file": "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
               "start_line": 4,
               "match_coverage": 100.0,
               "matched_length": 214,
               "rule_relevance": 100,
               "rule_identifier": "bsd-new_683.RULE",
-              "license_expression": "bsd-new"
+              "license_expression": "bsd-new",
+              "spdx_license_expression": "BSD-3-Clause"
             }
           ],
           "identifier": "bsd_new-72cae3bc-4423-3a9e-be84-ee8bb5120a4d",
-          "license_expression": "bsd-new"
+          "license_expression": "bsd-new",
+          "license_expression_spdx": "BSD-3-Clause"
         }
       ],
       "license_clues": [],
@@ -760,16 +795,19 @@
               "matcher": "2-aho",
               "end_line": 8,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/bsd-new_89.RULE",
+              "from_file": "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
               "start_line": 8,
               "match_coverage": 100.0,
               "matched_length": 2,
               "rule_relevance": 99,
               "rule_identifier": "bsd-new_89.RULE",
-              "license_expression": "bsd-new"
+              "license_expression": "bsd-new",
+              "spdx_license_expression": "BSD-3-Clause"
             }
           ],
           "identifier": "bsd_new-261898a0-0118-87c4-7092-14e4ff134882",
-          "license_expression": "bsd-new"
+          "license_expression": "bsd-new",
+          "license_expression_spdx": "BSD-3-Clause"
         },
         {
           "matches": [
@@ -778,16 +816,19 @@
               "matcher": "2-aho",
               "end_line": 16,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_bsd_license.RULE",
+              "from_file": "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
               "start_line": 16,
               "match_coverage": 100.0,
               "matched_length": 5,
               "rule_relevance": 99,
               "rule_identifier": "pypi_bsd_license.RULE",
-              "license_expression": "bsd-new"
+              "license_expression": "bsd-new",
+              "spdx_license_expression": "BSD-3-Clause"
             }
           ],
           "identifier": "bsd_new-f4e99f86-00ab-18d9-a65d-a3a12767dcf5",
-          "license_expression": "bsd-new"
+          "license_expression": "bsd-new",
+          "license_expression_spdx": "BSD-3-Clause"
         }
       ],
       "license_clues": [],
@@ -999,17 +1040,20 @@
                   "matcher": "1-hash",
                   "end_line": 1,
                   "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/bsd-new_89.RULE",
+                  "from_file": "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
                   "start_line": 1,
                   "matched_text": "license BSD",
                   "match_coverage": 100.0,
                   "matched_length": 2,
                   "rule_relevance": 99,
                   "rule_identifier": "bsd-new_89.RULE",
-                  "license_expression": "bsd-new"
+                  "license_expression": "bsd-new",
+                  "spdx_license_expression": "BSD-3-Clause"
                 }
               ],
               "identifier": "bsd_new-261898a0-0118-87c4-7092-14e4ff134882",
-              "license_expression": "bsd-new"
+              "license_expression": "bsd-new",
+              "license_expression_spdx": "BSD-3-Clause"
             },
             {
               "matches": [
@@ -1018,17 +1062,20 @@
                   "matcher": "1-hash",
                   "end_line": 1,
                   "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_bsd_license.RULE",
+                  "from_file": "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
                   "start_line": 1,
                   "matched_text": "- 'License :: OSI Approved :: BSD License'",
                   "match_coverage": 100.0,
                   "matched_length": 5,
                   "rule_relevance": 99,
                   "rule_identifier": "pypi_bsd_license.RULE",
-                  "license_expression": "bsd-new"
+                  "license_expression": "bsd-new",
+                  "spdx_license_expression": "BSD-3-Clause"
                 }
               ],
               "identifier": "bsd_new-f4e99f86-00ab-18d9-a65d-a3a12767dcf5",
-              "license_expression": "bsd-new"
+              "license_expression": "bsd-new",
+              "license_expression_spdx": "BSD-3-Clause"
             }
           ],
           "repository_download_url": "https://pypi.org/packages/source/a/asgiref/asgiref-3.3.0.tar.gz",
@@ -1405,16 +1452,19 @@
               "matcher": "2-aho",
               "end_line": 2,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_174.RULE",
+              "from_file": "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
               "start_line": 2,
               "match_coverage": 100.0,
               "matched_length": 6,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_174.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-5a90b5fa-5d10-5a98-d2a7-ef089c46a900",
-          "license_expression": "apache-2.0"
+          "license_expression": "apache-2.0",
+          "license_expression_spdx": "Apache-2.0"
         }
       ],
       "license_clues": [],

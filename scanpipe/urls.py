@@ -47,6 +47,11 @@ urlpatterns = [
         name="project_resources",
     ),
     path(
+        "project/<slug:slug>/packages/<uuid:uuid>/purldb_tab/",
+        views.DiscoveredPackagePurlDBTabView.as_view(),
+        name="package_purldb_tab",
+    ),
+    path(
         "project/<slug:slug>/packages/<uuid:uuid>/",
         views.DiscoveredPackageDetailsView.as_view(),
         name="package_detail",
@@ -120,6 +125,11 @@ urlpatterns = [
         "pipeline/<str:pipeline_name>/help/",
         views.pipeline_help_view,
         name="pipeline_help",
+    ),
+    path(
+        "project/<slug:slug>/results/<str:format>/<str:version>/",
+        views.ProjectResultsView.as_view(),
+        name="project_results",
     ),
     path(
         "project/<slug:slug>/results/<str:format>/",

@@ -111,10 +111,14 @@ class ScanPipePipesTest(TestCase):
 
         # Make sure we can assign a package to multiple Resources calling
         # update_or_create_package() several times.
+        package_data2["package_uid"] = package2.package_uid
         resource2 = make_resource_file(project=p1, path="filename2.ext")
         package2 = pipes.update_or_create_package(p1, package_data2, [resource2])
         self.assertIn(package2, resource1.discovered_packages.all())
         self.assertIn(package2, resource2.discovered_packages.all())
+
+        # Make sure the following does not raise an exception
+        self.assertIsNone(pipes.update_or_create_package(p1, {}, [resource1]))
 
     def test_scanpipe_pipes_update_or_create_package_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")
@@ -154,25 +158,42 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(expected_purl, local_package.purl)
         self.assertEqual("mit", local_package.declared_license_expression)
         self.assertEqual("Copyright", local_package.copyright)
-        self.assertEqual([expected_purl], resource1.for_packages)
+        self.assertEqual(
+            [f"{expected_purl}?uuid={forced_uuid}"], resource1.for_packages
+        )
 
     def test_scanpipe_pipes_update_or_create_package_package_uid(self):
         p1 = Project.objects.create(name="Analysis")
         package_data = dict(package_data1)
 
         package_data["package_uid"] = None
-        pipes.update_or_create_package(p1, package_data)
-        pipes.update_or_create_package(p1, package_data)
+        package1 = pipes.update_or_create_package(p1, package_data)
+        self.assertTrue(package1.package_uid)
 
         package_data["package_uid"] = ""
-        pipes.update_or_create_package(p1, package_data)
+        package2 = pipes.update_or_create_package(p1, package_data)
+        self.assertTrue(package2.package_uid)
 
         del package_data["package_uid"]
-        pipes.update_or_create_package(p1, package_data)
+        package3 = pipes.update_or_create_package(p1, package_data)
+        self.assertTrue(package3.package_uid)
 
-        # Make sure only 1 package was created, then properly found in the db regardless
-        # of the empty/none package_uid.
-        self.assertEqual(1, DiscoveredPackage.objects.count())
+        self.assertNotEqual(package1.package_uid, package2.package_uid)
+        self.assertNotEqual(package2.package_uid, package3.package_uid)
+
+        # A `package_uid` value is generated when not provided, making each
+        # package instance unique.
+        self.assertEqual(3, DiscoveredPackage.objects.count())
+
+        # In that case, there is a match in the db, the object is updated
+        package_data["package_uid"] = package1.package_uid
+        package_data["sha1"] = "sha1"
+        # We need to use an empty field since override=False in update_from_data
+        self.assertEqual("", package1.sha1)
+        pipes.update_or_create_package(p1, package_data)
+        package1.refresh_from_db()
+        self.assertEqual("sha1", package1.sha1)
+        self.assertEqual(3, DiscoveredPackage.objects.count())
 
     def test_scanpipe_pipes_update_or_create_dependency(self):
         p1 = Project.objects.create(name="Analysis")
@@ -188,6 +209,30 @@ class ScanPipePipesTest(TestCase):
         dependency_data["scope"] = "install"
         dependency = pipes.update_or_create_dependency(p1, dependency_data)
         self.assertEqual("install", dependency.scope)
+
+    def test_scanpipe_pipes_update_or_create_dependency_ignored_dependency_scopes(self):
+        p1 = Project.objects.create(name="Analysis")
+        make_resource_file(p1, "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO")
+        pipes.update_or_create_package(p1, package_data1)
+
+        p1.settings = {
+            "ignored_dependency_scopes": [{"package_type": "pypi", "scope": "tests"}]
+        }
+        p1.save()
+
+        dependency_data = dict(dependency_data1)
+        self.assertFalse(pipes.ignore_dependency_scope(p1, dependency_data))
+        dependency = pipes.update_or_create_dependency(p1, dependency_data)
+        for field_name, value in dependency_data.items():
+            self.assertEqual(value, getattr(dependency, field_name), msg=field_name)
+        dependency.delete()
+
+        # Matching the ignored setting
+        dependency_data["package_type"] = "pypi"
+        dependency_data["scope"] = "tests"
+        self.assertTrue(pipes.ignore_dependency_scope(p1, dependency_data))
+        dependency = pipes.update_or_create_dependency(p1, dependency_data)
+        self.assertIsNone(dependency)
 
     def test_scanpipe_pipes_get_or_create_relation(self):
         p1 = Project.objects.create(name="Analysis")

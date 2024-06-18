@@ -3,13 +3,24 @@
 Command Line Interface
 ======================
 
-A ``scanpipe`` command can be executed through the ``docker compose`` command line
-interface with::
+The ``scanpipe`` command can be executed using the Docker Compose command line interface.
+
+If the Docker Compose stack is already running, you can execute the command as follows:
+
+.. code-block:: shell
 
     docker compose exec -it web scanpipe COMMAND
 
-Alternatively, you can start a ``bash`` session in a new Docker container to execute
-multiple ``scanpipe`` commands::
+If the ScanCode.io services are not currently running, you can use the following command:
+
+.. code-block:: shell
+
+    docker compose run --rm web scanpipe COMMAND
+
+Additionally, you can start a new Docker container and execute multiple
+``scanpipe`` commands within a ``bash`` session:
+
+.. code-block:: shell
 
     docker compose run web bash
     scanpipe COMMAND
@@ -177,8 +188,13 @@ You can also provide URLs of files to be downloaded to the foo project
     $ [...] --input-url docker://postgres:13
     $ [...] --input-url docker://docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.2
 
-See https://docs.docker.com/engine/reference/builder/ for more details about
-references.
+    See https://docs.docker.com/engine/reference/builder/ for more details about
+    references.
+
+.. note:: Git repositories are supported as input using their Git clone URL in the
+    ``https://<host>[:<port>]/<path-to-git-repo>.git`` syntax. For example::
+
+    $ [...] --input-url https://github.com/nexB/scancode.io.git
 
 
 `$ scanpipe add-pipeline --project PROJECT PIPELINE_NAME [PIPELINE_NAME ...]`
@@ -227,6 +243,7 @@ Displays status information about the ``PROJECT`` project.
     The full logs of each pipeline execution are displayed by default.
     This can be disabled providing the ``--verbosity 0`` option.
 
+.. _cli_output:
 
 `$ scanpipe output --project PROJECT --format {json,csv,xlsx,spdx,cyclonedx,attribution}`
 -----------------------------------------------------------------------------------------
@@ -244,6 +261,8 @@ Optional arguments:
   compatible with the XLSX and CSV formats.
   It cannot be used when multiple formats are provided.
 
+Refer to :ref:`Mount projects workspace <mount_projects_workspace_volume>` to access
+your outputs on the host machine when running with Docker.
 
 `$ scanpipe archive-project --project PROJECT`
 ----------------------------------------------
@@ -311,3 +330,52 @@ API key.
 Optional arguments:
 
 - ``--no-input`` Does not prompt the user for input of any kind.
+
+.. _cli_run:
+
+`$ run PIPELINE_NAME INPUT_LOCATION`
+------------------------------------
+
+A ``run`` command is available for executing pipelines and printing the results
+without providing any configuration. This can be useful for running a pipeline to get
+the results without the need to persist the data in the database or access the UI to
+review the results.
+
+.. tip:: You can run multiple pipelines by providing their names, comma-separated,
+  such as `pipeline1,pipeline2`.
+
+Optional arguments:
+
+- ``--project PROJECT_NAME``: Provide a project name; otherwise, a random value is
+  generated.
+- ``--format {json,spdx,cyclonedx,attribution}``: Specify the output format.
+  **The default format is JSON**.
+
+For example, running the ``inspect_packages`` pipeline on a manifest file:
+
+.. code-block:: bash
+
+    $ run inspect_packages path/to/package.json > results.json
+
+In the following example, running the ``scan_codebase`` followed by the
+``find_vulnerabilities`` pipelines on a codebase directory:
+
+.. code-block:: bash
+
+    $ run scan_codebase,find_vulnerabilities path/to/codebase/ > results.json
+
+Using a URL as input is also supported:
+
+.. code-block:: bash
+
+    $ run scan_single_package https://url.com/package.zip > results.json
+    $ run analyze_docker_image docker://postgres:16 > results.json
+
+In the last example, the ``--format`` option is used to generate a CycloneDX SBOM
+instead of the default JSON output.
+
+.. code-block:: bash
+
+    $ run scan_codebase codebase/ --format cyclonedx > bom.json
+
+See the :ref:`cli_output` for more information about supported output formats.

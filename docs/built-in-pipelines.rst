@@ -42,11 +42,35 @@ Analyse Docker Windows Image
     :members:
     :member-order: bysource
 
-.. _pipeline_collect_symbols:
+.. _pipeline_collect_strings_gettext:
 
-Collect Codebase Symbols (addon)
---------------------------------
-.. autoclass:: scanpipe.pipelines.collect_symbols.CollectSymbols()
+Collect string with Xgettext (addon)
+---------------------------------------------
+.. autoclass:: scanpipe.pipelines.collect_strings_gettext.CollectStringsGettext()
+    :members:
+    :member-order: bysource
+
+.. _pipeline_collect_symbols_ctags:
+
+Collect symbols with Ctags (addon)
+----------------------------------
+.. autoclass:: scanpipe.pipelines.collect_symbols_ctags.CollectSymbolsCtags()
+    :members:
+    :member-order: bysource
+
+.. _pipeline_collect_symbols_pygments:
+
+Collect symbols, string and comments with Pygments (addon)
+----------------------------------------------------------
+.. autoclass:: scanpipe.pipelines.collect_symbols_pygments.CollectSymbolsPygments()
+    :members:
+    :member-order: bysource
+
+.. _pipeline_collect_symbols_tree_sitter:
+
+Collect symbols and string with Tree-Sitter (addon)
+---------------------------------------------------
+.. autoclass:: scanpipe.pipelines.collect_symbols_tree_sitter.CollectSymbolsTreeSitter()
     :members:
     :member-order: bysource
 
@@ -122,17 +146,17 @@ Map Deploy To Develop
     :members:
     :member-order: bysource
 
-.. _pipeline_match_to_purldb:
+.. _pipeline_match_to_matchcode:
 
-Match to PurlDB (addon)
------------------------
+Match to MatchCode (addon)
+--------------------------
 
 .. warning::
-    This pipeline requires access to a PurlDB service.
-    Refer to :ref:`scancodeio_settings_purldb` to configure access to PurlDB in your
-    ScanCode.io instance.
+    This pipeline requires access to a MatchCode.io service.
+    Refer to :ref:`scancodeio_settings_matchcodeio` to configure access to
+    MatchCode.io in your ScanCode.io instance.
 
-.. autoclass:: scanpipe.pipelines.match_to_purldb.MatchToPurlDB()
+.. autoclass:: scanpipe.pipelines.match_to_matchcode.MatchToMatchCode()
     :members:
     :member-order: bysource
 
@@ -155,6 +179,14 @@ Populate PurlDB (addon)
 Scan Codebase
 -------------
 .. autoclass:: scanpipe.pipelines.scan_codebase.ScanCodebase()
+    :members:
+    :member-order: bysource
+
+.. _pipeline_scan_for_virus:
+
+Scan For Virus
+--------------
+.. autoclass:: scanpipe.pipelines.scan_for_virus.ScanForVirus()
     :members:
     :member-order: bysource
 

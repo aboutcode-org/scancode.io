@@ -380,7 +380,8 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
             "source_packages",
             "extra_data",
             "package_uid",
-            "datasource_id",
+            "datasource_ids",
+            "datafile_paths",
             "file_references",
             "missing_resources",
             "modified_resources",
@@ -391,6 +392,7 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
 class DiscoveredDependencySerializer(serializers.ModelSerializer):
     purl = serializers.ReadOnlyField()
     for_package_uid = serializers.ReadOnlyField()
+    resolved_to_package_uid = serializers.ReadOnlyField()
     datafile_path = serializers.ReadOnlyField()
     package_type = serializers.ReadOnlyField(source="type")
 
@@ -405,6 +407,7 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
             "is_resolved",
             "dependency_uid",
             "for_package_uid",
+            "resolved_to_package_uid",
             "datafile_path",
             "datasource_id",
             "package_type",

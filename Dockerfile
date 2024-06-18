@@ -20,7 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-FROM --platform=linux/amd64 python:3.11-slim
+FROM --platform=linux/amd64 python:3.12-slim
 
 LABEL org.opencontainers.image.source="https://github.com/nexB/scancode.io"
 LABEL org.opencontainers.image.description="ScanCode.io"
@@ -40,7 +40,7 @@ ENV PYTHONPATH $PYTHONPATH:$APP_DIR
 
 # OS requirements as per
 # https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html
-# Also install universal-ctags for symbol collection.
+# Also install universal-ctags and xgettext for symbol and string collection.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
        bzip2 \
@@ -60,6 +60,7 @@ RUN apt-get update \
        git \
        wait-for-it \
        universal-ctags \
+       gettext \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

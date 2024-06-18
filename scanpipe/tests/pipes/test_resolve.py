@@ -24,6 +24,8 @@ from pathlib import Path
 
 from django.test import TestCase
 
+import mock
+
 from scanpipe import pipes
 from scanpipe.models import Project
 from scanpipe.pipes import resolve
@@ -55,6 +57,9 @@ class ScanPipeResolvePipesTest(TestCase):
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
         input_location = self.data_location / "cyclonedx/missing_schema.json"
+        self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
+
+        input_location = self.data_location / "cyclonedx/laravel-7.12.0/bom.1.4.xml"
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
     def test_scanpipe_pipes_resolve_set_license_expression(self):
@@ -193,7 +198,24 @@ class ScanPipeResolvePipesTest(TestCase):
             resources,
         )
         self.assertEqual(1, len(packages))
-        self.assertEqual("toml", packages[0]["name"])
+        package = packages[0]
+        self.assertEqual("toml", package["name"])
+        resource1 = project1.codebaseresources.get(name="toml.spdx.json")
+        self.assertEqual([resource1], package.get("codebase_resources"))
+
+        self.assertEqual(["sboms_headers"], list(project1.extra_data.keys()))
+        sboms_headers = project1.extra_data["sboms_headers"]
+        self.assertEqual(["toml.spdx.json"], list(sboms_headers.keys()))
+        expected = [
+            "spdxVersion",
+            "dataLicense",
+            "SPDXID",
+            "name",
+            "documentNamespace",
+            "creationInfo",
+            "comment",
+        ]
+        self.assertEqual(expected, list(sboms_headers["toml.spdx.json"].keys()))
 
     def test_scanpipe_resolve_create_packages_and_dependencies(self):
         project1 = Project.objects.create(name="Analysis")
@@ -211,3 +233,22 @@ class ScanPipeResolvePipesTest(TestCase):
         resolve.create_packages_and_dependencies(project1, packages)
         self.assertEqual(1, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
+
+        resource1 = project1.codebaseresources.get(name="toml.spdx.json")
+        package = project1.discoveredpackages.get()
+        self.assertEqual(resource1, package.codebase_resources.get())
+
+    def test_scanpipe_resolve_get_manifest_headers(self):
+        input_location = self.data_location / "manifests" / "toml.spdx.json"
+        resource = mock.Mock(location=input_location)
+        expected = [
+            "spdxVersion",
+            "dataLicense",
+            "SPDXID",
+            "name",
+            "documentNamespace",
+            "creationInfo",
+            "comment",
+        ]
+        headers = resolve.get_manifest_headers(resource)
+        self.assertEqual(expected, list(headers.keys()))

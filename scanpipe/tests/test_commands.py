@@ -21,7 +21,9 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import datetime
+import json
 import uuid
+from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 from unittest import mock
@@ -30,14 +32,17 @@ from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.management import CommandError
 from django.core.management import call_command
+from django.core.management.base import BaseCommand
 from django.test import TestCase
 from django.test import override_settings
 from django.utils import timezone
 
+from scanpipe.management import commands
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import Run
+from scanpipe.pipes import purldb
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -60,8 +65,10 @@ def raise_interrupt(run_pk):
 
 
 class ScanPipeManagementCommandTest(TestCase):
+    data_location = Path(__file__).parent / "data"
     pipeline_name = "analyze_docker_image"
     pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
+    purldb_update_status_url = f"{purldb.PURLDB_API_URL}scan_queue/update_status/"
 
     def test_scanpipe_management_command_create_project_base(self):
         out = StringIO()
@@ -77,6 +84,12 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = "Project with this Name already exists."
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-project", "my_project")
+
+    def test_scanpipe_management_command_create_project_verbosity(self):
+        out = StringIO()
+        call_command("create-project", "my_project", verbosity=0, stdout=out)
+        self.assertEqual("", out.getvalue())
+        self.assertTrue(Project.objects.get(name="my_project"))
 
     def test_scanpipe_management_command_create_project_notes(self):
         out = StringIO()
@@ -362,6 +375,33 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertTrue(run3.task_stopped)
         self.assertEqual("", run3.task_output)
 
+    def test_scanpipe_management_command_execute_project_function(self):
+        project = Project.objects.create(name="my_project")
+
+        expected = "No pipelines to run on project my_project"
+        with self.assertRaisesMessage(CommandError, expected):
+            commands.execute_project(project)
+
+        run1 = project.add_pipeline(self.pipeline_name)
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_success):
+            returned_value = commands.execute_project(project, run_async=False)
+        self.assertIsNone(returned_value)
+        run1.refresh_from_db()
+        self.assertTrue(run1.task_succeeded)
+        run1.delete()
+
+        project.add_pipeline(self.pipeline_name)
+        expected = "SCANCODEIO_ASYNC=False is not compatible with --async option."
+        with override_settings(SCANCODEIO_ASYNC=False):
+            with self.assertRaisesMessage(CommandError, expected):
+                commands.execute_project(project, run_async=True)
+
+        with override_settings(SCANCODEIO_ASYNC=True):
+            with mock.patch("scanpipe.models.Run.start") as mock_start:
+                returned_value = commands.execute_project(project, run_async=True)
+                mock_start.assert_called_once()
+        self.assertIsNone(returned_value)
+
     def test_scanpipe_management_command_status(self):
         project = Project.objects.create(name="my_project")
         run = project.add_pipeline(self.pipeline_name)
@@ -595,3 +635,341 @@ class ScanPipeManagementCommandTest(TestCase):
         )
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-user", "--no-input", username)
+
+    def test_scanpipe_management_command_run(self):
+        expected = (
+            "Error: the following arguments are required: pipelines, input_location"
+        )
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("run")
+
+        expected = "wrong_pipeline is not a valid pipeline."
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("run", "wrong_pipeline", str(self.data_location))
+
+        expected = "bad_location not found."
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("run", "scan_single_package", "bad_location")
+
+        out = StringIO()
+        input_location = self.data_location / "codebase"
+        with redirect_stdout(out):
+            call_command("run", "inspect_packages", input_location)
+
+        json_data = json.loads(out.getvalue())
+        self.assertEqual(3, len(json_data["files"]))
+
+    @mock.patch("scanpipe.models.Project.get_latest_output")
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    @mock.patch("requests.sessions.Session.get")
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    def test_scanpipe_management_command_purldb_scan_queue_worker(
+        self,
+        mock_request_get,
+        mock_download_get,
+        mock_request_post,
+        mock_get_latest_output,
+    ):
+        scannable_uri_uuid = "97627c6e-9acb-43e0-b8df-28bd92f2b7e5"
+        download_url = "https://registry.npmjs.org/asdf/-/asdf-1.2.2.tgz"
+        mock_request_get.return_value = {
+            "scannable_uri_uuid": scannable_uri_uuid,
+            "download_url": download_url,
+            "pipelines": ["scan_single_package"],
+        }
+        mock_request_post.return_value = {
+            "status": f"scan indexed for scannable uri {scannable_uri_uuid}"
+        }
+        mock_get_latest_output.return_value = (
+            self.data_location / "scancode" / "is-npm-1.0.0_summary.json"
+        )
+        mock_download_get.return_value = mock.Mock(
+            content=b"\x00",
+            headers={},
+            status_code=200,
+            url=download_url,
+        )
+
+        options = [
+            "--max-loops",
+            1,
+        ]
+        out = StringIO()
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_success):
+            call_command("purldb-scan-worker", *options, stdout=out)
+
+        out_value = out.getvalue()
+        self.assertIn(
+            "Project httpsregistrynpmjsorgasdf-asdf-122tgz-97627c6e created", out_value
+        )
+        self.assertIn("File(s) downloaded to the project inputs directory:", out_value)
+        self.assertIn("asdf-1.2.2.tgz", out_value)
+        self.assertIn(
+            "scan_single_package successfully executed on project "
+            "httpsregistrynpmjsorgasdf-asdf-122tgz-97627c6e",
+            out_value,
+        )
+
+        project_name = purldb.create_project_name(download_url, scannable_uri_uuid)
+        project = Project.objects.get(name=project_name)
+        self.assertEqual(scannable_uri_uuid, project.extra_data["scannable_uri_uuid"])
+
+        mock_request_post.assert_called_once()
+        mock_request_post_call = mock_request_post.mock_calls[0]
+        mock_request_post_call_kwargs = mock_request_post_call.kwargs
+        self.assertEqual(
+            self.purldb_update_status_url, mock_request_post_call_kwargs["url"]
+        )
+        expected_data = {
+            "scannable_uri_uuid": "97627c6e-9acb-43e0-b8df-28bd92f2b7e5",
+            "scan_status": "scanned",
+            "project_extra_data": '{"scannable_uri_uuid": '
+            '"97627c6e-9acb-43e0-b8df-28bd92f2b7e5"}',
+        }
+        self.assertEqual(expected_data, mock_request_post_call_kwargs["data"])
+        self.assertTrue(mock_request_post_call_kwargs["files"]["scan_results_file"])
+        self.assertTrue(mock_request_post_call_kwargs["files"]["scan_summary_file"])
+
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    @mock.patch("requests.sessions.Session.get")
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    def test_scanpipe_management_command_purldb_scan_queue_worker_failure(
+        self, mock_request_get, mock_download_get, mock_request_post
+    ):
+        download_url = "https://registry.npmjs.org/asdf/-/asdf-1.2.2.tgz"
+        scannable_uri_uuid = "97627c6e-9acb-43e0-b8df-28bd92f2b7e5"
+        mock_request_get.return_value = {
+            "scannable_uri_uuid": scannable_uri_uuid,
+            "download_url": download_url,
+            "pipelines": ["scan_single_package"],
+        }
+        mock_request_post.return_value = {
+            "status": f"scan failed for scannable uri {scannable_uri_uuid}"
+        }
+        mock_download_get.return_value = mock.Mock(
+            content=b"\x00",
+            headers={},
+            status_code=200,
+            url=download_url,
+        )
+
+        options = [
+            "--max-loops",
+            1,
+        ]
+        out = StringIO()
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_failure):
+            call_command("purldb-scan-worker", *options, stdout=out, stderr=out)
+
+        out_value = out.getvalue()
+        self.assertIn("Exception occured during scan project:", out_value)
+        self.assertIn("Error during scan_single_package execution:", out_value)
+        self.assertIn("Error log", out_value)
+
+        mock_request_post.assert_called_once()
+        mock_request_post_call = mock_request_post.mock_calls[0]
+        mock_request_post_call_kwargs = mock_request_post_call.kwargs
+        self.assertEqual(
+            self.purldb_update_status_url, mock_request_post_call_kwargs["url"]
+        )
+        self.assertEqual(
+            "97627c6e-9acb-43e0-b8df-28bd92f2b7e5",
+            mock_request_post_call_kwargs["data"]["scannable_uri_uuid"],
+        )
+        self.assertEqual("failed", mock_request_post_call_kwargs["data"]["scan_status"])
+        self.assertIn(
+            "Exception occured during scan project:",
+            mock_request_post_call_kwargs["data"]["scan_log"],
+        )
+
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    @mock.patch("requests.sessions.Session.get")
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    def test_scanpipe_management_command_purldb_scan_queue_worker_continue_after_fail(
+        self, mock_request_get, mock_download_get, mock_request_post
+    ):
+        scannable_uri_uuid1 = "97627c6e-9acb-43e0-b8df-28bd92f2b7e5"
+        scannable_uri_uuid2 = "0bbdcf88-ad07-4970-9272-7d5f4c82cc7b"
+        download_url1 = "https://registry.npmjs.org/asdf/-/asdf-1.2.2.tgz"
+        download_url2 = "https://registry.npmjs.org/asdf/-/asdf-1.2.1.tgz"
+        mock_request_get.side_effect = [
+            {
+                "scannable_uri_uuid": scannable_uri_uuid1,
+                "download_url": download_url1,
+                "pipelines": ["scan_single_package"],
+            },
+            {
+                "scannable_uri_uuid": scannable_uri_uuid2,
+                "download_url": download_url2,
+                "pipelines": ["scan_single_package"],
+            },
+        ]
+
+        mock_download_get.side_effect = [
+            mock.Mock(
+                content=b"\x00",
+                headers={},
+                status_code=200,
+                url=download_url1,
+            ),
+            mock.Mock(
+                content=b"\x00",
+                headers={},
+                status_code=200,
+                url=download_url2,
+            ),
+        ]
+
+        mock_request_post.side_effect = [
+            {
+                "status": f"updated scannable uri {scannable_uri_uuid1} "
+                "scan_status to failed"
+            },
+            {"status": f"scan indexed for scannable uri {scannable_uri_uuid2}"},
+        ]
+
+        options = [
+            "--max-loops",
+            2,
+        ]
+        out = StringIO()
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_failure):
+            call_command("purldb-scan-worker", *options, stdout=out, stderr=out)
+
+        out_value = out.getvalue()
+        self.assertIn(
+            "Project httpsregistrynpmjsorgasdf-asdf-122tgz-97627c6e created", out_value
+        )
+        self.assertIn(
+            "Project httpsregistrynpmjsorgasdf-asdf-121tgz-0bbdcf88 created", out_value
+        )
+        self.assertIn("- asdf-1.2.2.tgz", out_value)
+        self.assertIn("- asdf-1.2.1.tgz", out_value)
+        self.assertIn("Exception occured during scan project:", out_value)
+        self.assertIn("Error during scan_single_package execution:", out_value)
+        self.assertIn("Error log", out_value)
+
+        update_status_url = f"{purldb.PURLDB_API_URL}scan_queue/update_status/"
+        mocked_post_calls = mock_request_post.call_args_list
+        self.assertEqual(2, len(mocked_post_calls))
+
+        mock_post_call1 = mocked_post_calls[0]
+        self.assertEqual(update_status_url, mock_post_call1.kwargs["url"])
+        self.assertEqual(
+            "97627c6e-9acb-43e0-b8df-28bd92f2b7e5",
+            mock_post_call1.kwargs["data"]["scannable_uri_uuid"],
+        )
+        self.assertEqual("failed", mock_post_call1.kwargs["data"]["scan_status"])
+        self.assertIn(
+            "Exception occured during scan project:",
+            mock_post_call1.kwargs["data"]["scan_log"],
+        )
+
+        mock_post_call2 = mocked_post_calls[1]
+        self.assertEqual(update_status_url, mock_post_call2.kwargs["url"])
+        self.assertEqual(
+            "0bbdcf88-ad07-4970-9272-7d5f4c82cc7b",
+            mock_post_call2.kwargs["data"]["scannable_uri_uuid"],
+        )
+        self.assertEqual("failed", mock_post_call1.kwargs["data"]["scan_status"])
+        self.assertIn(
+            "Exception occured during scan project:",
+            mock_post_call2.kwargs["data"]["scan_log"],
+        )
+
+
+class ScanPipeManagementCommandMixinTest(TestCase):
+    class CreateProjectCommand(
+        commands.CreateProjectCommandMixin, commands.AddInputCommandMixin, BaseCommand
+    ):
+        verbosity = 0
+
+    create_project_command = CreateProjectCommand()
+    pipeline_name = "analyze_docker_image"
+    pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
+
+    def test_scanpipe_management_command_mixin_create_project_base(self):
+        expected = "This field cannot be blank."
+        with self.assertRaisesMessage(CommandError, expected):
+            self.create_project_command.create_project(name="")
+
+        project = self.create_project_command.create_project(name="my_project")
+        self.assertTrue("my_project", project.name)
+
+        expected = "Project with this Name already exists."
+        with self.assertRaisesMessage(CommandError, expected):
+            self.create_project_command.create_project(name="my_project")
+
+    def test_scanpipe_management_command_mixin_create_project_notes(self):
+        notes = "Some notes about my project"
+        project = self.create_project_command.create_project(
+            name="my_project", notes=notes
+        )
+        self.assertEqual(notes, project.notes)
+
+    def test_scanpipe_management_command_mixin_create_project_pipelines(self):
+        expected = "non-existing is not a valid pipeline"
+        with self.assertRaisesMessage(CommandError, expected):
+            self.create_project_command.create_project(
+                name="my_project", pipelines=["non-existing"]
+            )
+
+        pipelines = [
+            self.pipeline_name,
+            "analyze_root_filesystem_or_vm_image:group1,group2",
+            "scan_package",
+        ]
+        project = self.create_project_command.create_project(
+            name="my_project", pipelines=pipelines
+        )
+        expected = [
+            self.pipeline_name,
+            "analyze_root_filesystem_or_vm_image",
+            "scan_single_package",
+        ]
+        self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
+        run = project.runs.get(pipeline_name="analyze_root_filesystem_or_vm_image")
+        self.assertEqual(["group1", "group2"], run.selected_groups)
+
+    def test_scanpipe_management_command_mixin_create_project_inputs(self):
+        expected = "non-existing not found or not a file"
+        with self.assertRaisesMessage(CommandError, expected):
+            self.create_project_command.create_project(
+                name="my_project", input_files=["non-existing"]
+            )
+
+        parent_path = Path(__file__).parent
+        input_files = [
+            str(parent_path / "test_commands.py"),
+            str(parent_path / "test_models.py:tag"),
+        ]
+        project = self.create_project_command.create_project(
+            name="my_project", input_files=input_files
+        )
+        expected = sorted(["test_commands.py", "test_models.py"])
+        self.assertEqual(expected, sorted(project.input_files))
+        tagged_source = project.inputsources.get(filename="test_models.py")
+        self.assertEqual("tag", tagged_source.tag)
+
+    def test_scanpipe_management_command_mixin_create_project_execute(self):
+        expected = "The execute argument requires one or more pipelines."
+        with self.assertRaisesMessage(CommandError, expected):
+            self.create_project_command.create_project(name="my_project", execute=True)
+
+        pipeline = "load_inventory"
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_success):
+            project = self.create_project_command.create_project(
+                name="my_project", pipelines=[pipeline], execute=True
+            )
+        run = project.runs.first()
+        self.assertTrue(run.task_succeeded)
+
+        expected = "SCANCODEIO_ASYNC=False is not compatible with --async option."
+        with override_settings(SCANCODEIO_ASYNC=False):
+            with self.assertRaisesMessage(CommandError, expected):
+                self.create_project_command.create_project(
+                    name="other_project",
+                    pipelines=[pipeline],
+                    execute=True,
+                    run_async=True,
+                )

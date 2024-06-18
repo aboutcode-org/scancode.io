@@ -29,6 +29,7 @@ from taggit.forms import TagField
 from taggit.forms import TagWidget
 
 from scanpipe.models import Project
+from scanpipe.pipelines import convert_markdown_to_html
 from scanpipe.pipes import fetch
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -275,48 +276,160 @@ class ListTextarea(forms.CharField):
         return value
 
 
+class KeyValueListField(forms.CharField):
+    """
+    A Django form field that displays as a textarea and converts each line of
+    "key:value" input into a list of dictionaries with customizable keys.
+
+    Each line of the textarea input is split into key-value pairs,
+    removing leading/trailing whitespace and empty lines. The resulting list of
+    dictionaries is then stored as the field value.
+    """
+
+    widget = forms.Textarea
+
+    def __init__(self, *args, key_name="key", value_name="value", **kwargs):
+        """Initialize the KeyValueListField with custom key and value names."""
+        self.key_name = key_name
+        self.value_name = value_name
+        super().__init__(*args, **kwargs)
+
+    def to_python(self, value):
+        """
+        Split the textarea input into lines, convert each line to a dictionary,
+        and remove empty lines.
+        """
+        if not value:
+            return None
+
+        items = []
+        for line in value.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split(":", 1)
+            if len(parts) != 2:
+                raise ValidationError(
+                    f"Invalid input line: '{line}'. "
+                    f"Each line must contain exactly one ':' character."
+                )
+            key, value = parts
+            key = key.strip()
+            value = value.strip()
+            if not key or not value:
+                raise ValidationError(
+                    f"Invalid input line: '{line}'. "
+                    f"Both key and value must be non-empty."
+                )
+            items.append({self.key_name: key, self.value_name: value})
+
+        return items
+
+    def prepare_value(self, value):
+        """
+        Join the list of dictionaries into a string with newlines,
+        using the "key:value" format.
+        """
+        if value is not None and isinstance(value, list):
+            value = "\n".join(
+                f"{item[self.key_name]}:{item[self.value_name]}" for item in value
+            )
+        return value
+
+
+ignored_patterns_help = """
+Provide one or more path patterns to be ignored, one per line.
+
+Each pattern should follow the syntax of Unix shell-style wildcards:
+- Use ``*`` to match multiple characters.
+- Use ``?`` to match a single character.
+
+Here are some examples:
+- To ignore all files with a ".tmp" extension, use: ``*.tmp``
+- To ignore all files in a "tests" directory, use: ``tests/*``
+- To ignore specific files or directories, provide their exact names or paths, such as:
+  ``example/file_to_ignore.txt`` or ``folder_to_ignore/*``
+
+You can also use regular expressions for more complex matching.
+Remember that these patterns will be applied recursively to all files and directories
+within the project.
+Be cautious when specifying patterns to avoid unintended exclusions.
+"""
+
+ignored_dependency_scopes_help = """
+Specify certain dependency scopes to be ignored for a given package type.
+
+This allows you to exclude dependencies from being created or resolved based on their
+scope using the `package_type:scope` syntax, **one per line**.
+For example: `npm:devDependencies`
+"""
+
+
 class ProjectSettingsForm(forms.ModelForm):
     settings_fields = [
-        "extract_recursively",
         "ignored_patterns",
-        "scancode_license_score",
+        "ignored_dependency_scopes",
         "attribution_template",
+        "product_name",
+        "product_version",
     ]
-    extract_recursively = forms.BooleanField(
-        label="Extract recursively",
-        required=False,
-        initial=True,
-        help_text="Extract nested archives-in-archives recursively",
-        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
-    )
     ignored_patterns = ListTextarea(
         label="Ignored patterns",
         required=False,
-        help_text="Provide one or more path patterns to be ignored, one per line.",
+        help_text=convert_markdown_to_html(ignored_patterns_help.strip()),
         widget=forms.Textarea(
             attrs={
                 "class": "textarea is-dynamic",
                 "rows": 3,
-                "placeholder": "*.xml\ntests/*\n*docs/*.rst",
+                "placeholder": "*.tmp\ntests/*\n*docs/*.rst",
             },
         ),
     )
-    scancode_license_score = forms.IntegerField(
-        label="License score",
-        min_value=0,
-        max_value=100,
+    ignored_dependency_scopes = KeyValueListField(
+        label="Ignored dependency scopes",
         required=False,
-        help_text=(
-            "Do not return license matches with a score lower than this score. "
-            "A number between 0 and 100."
+        help_text=convert_markdown_to_html(ignored_dependency_scopes_help.strip()),
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea is-dynamic",
+                "rows": 2,
+                "placeholder": "npm:devDependencies\npypi:tests",
+            },
         ),
-        widget=forms.NumberInput(attrs={"class": "input"}),
+        key_name="package_type",
+        value_name="scope",
     )
     attribution_template = forms.CharField(
         label="Attribution template",
         required=False,
-        help_text="Custom attribution template.",
+        help_text=(
+            "Customize the attribution template to personalize the generated "
+            "attribution for your needs."
+            "\nThe default template can be found at "
+            "https://raw.githubusercontent.com/nexB/scancode.io/main/scanpipe/"
+            "templates/scanpipe/attribution.html"
+            "\nFeel free to modify its content according to your preferences and paste "
+            "the entire HTML code into this field."
+        ),
         widget=forms.Textarea(attrs={"class": "textarea is-dynamic", "rows": 3}),
+    )
+    product_name = forms.CharField(
+        label="Product name",
+        required=False,
+        help_text=(
+            "The product name of this project, as specified within the DejaCode "
+            "application."
+        ),
+        widget=forms.TextInput(attrs={"class": "input"}),
+    )
+    product_version = forms.CharField(
+        label="Product version",
+        required=False,
+        help_text=(
+            "The product version of this project, as specified within the DejaCode "
+            "application."
+        ),
+        widget=forms.TextInput(attrs={"class": "input"}),
     )
 
     class Meta:

@@ -21,12 +21,103 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import logging
+from collections import defaultdict
 
+from django.conf import settings
+
+import requests
 from matchcode_toolkit.fingerprinting import compute_codebase_directory_fingerprints
+from matchcode_toolkit.fingerprinting import get_file_fingerprint_hashes
+from scancode import Scanner
 
 from scanpipe.pipes import codebase
+from scanpipe.pipes import flag
+from scanpipe.pipes import poll_until_success
+from scanpipe.pipes.output import to_json
+from scanpipe.pipes.scancode import _scan_resource
+from scanpipe.pipes.scancode import scan_resources
 
+
+class MatchCodeIOException(Exception):
+    pass
+
+
+label = "MatchCode"
 logger = logging.getLogger(__name__)
+session = requests.Session()
+
+# Only MATCHCODEIO_URL can be provided through setting
+MATCHCODEIO_API_URL = None
+MATCHCODEIO_URL = settings.MATCHCODEIO_URL
+if MATCHCODEIO_URL:
+    MATCHCODEIO_API_URL = f'{MATCHCODEIO_URL.rstrip("/")}/api/'
+
+# Basic Authentication
+MATCHCODEIO_USER = settings.MATCHCODEIO_USER
+MATCHCODEIO_PASSWORD = settings.MATCHCODEIO_PASSWORD
+basic_auth_enabled = MATCHCODEIO_USER and MATCHCODEIO_PASSWORD
+if basic_auth_enabled:
+    session.auth = (MATCHCODEIO_USER, MATCHCODEIO_PASSWORD)
+
+# Authentication with single API key
+MATCHCODEIO_API_KEY = settings.MATCHCODEIO_API_KEY
+if MATCHCODEIO_API_KEY:
+    session.headers.update({"Authorization": f"Token {MATCHCODEIO_API_KEY}"})
+
+DEFAULT_TIMEOUT = 60
+
+
+def is_configured():
+    """Return True if the required MatchCode.io settings have been set."""
+    if MATCHCODEIO_API_URL:
+        return True
+    return False
+
+
+def is_available():
+    """Return True if the configured MatchCode.io server is available."""
+    if not is_configured():
+        return False
+
+    try:
+        response = session.head(MATCHCODEIO_API_URL)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as request_exception:
+        logger.debug(f"{label} is_available() error: {request_exception}")
+        return False
+
+    return response.status_code == requests.codes.ok
+
+
+def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
+    """Wrap the HTTP request calls on the API."""
+    if not url:
+        return
+
+    params = {}
+    if "format=json" not in url:
+        params.update({"format": "json"})
+    if payload:
+        params.update(payload)
+
+    logger.debug(f"{label}: url={url} params={params}")
+    try:
+        response = session.get(url, params=params, timeout=timeout)
+        response.raise_for_status()
+        return response.json()
+    except (requests.RequestException, ValueError, TypeError) as exception:
+        logger.debug(f"{label} [Exception] {exception}")
+
+
+def request_post(url, data=None, headers=None, files=None, timeout=DEFAULT_TIMEOUT):
+    try:
+        response = session.post(
+            url, data=data, timeout=timeout, headers=headers, files=files
+        )
+        response.raise_for_status()
+        return response.json()
+    except (requests.RequestException, ValueError, TypeError) as exception:
+        logger.debug(f"{label} [Exception] {exception}")
 
 
 def save_directory_fingerprints(project, virtual_codebase, to_codebase_only=False):
@@ -87,10 +178,12 @@ def save_directory_fingerprints(project, virtual_codebase, to_codebase_only=Fals
 
 def fingerprint_codebase_directories(project, to_codebase_only=False):
     """
-    Compute directory fingerprints for the directories of the to/ codebase from
-    `project`.
+    Compute directory fingerprints for the directories from `project`.
 
     These directory fingerprints are used for matching purposes on matchcode.
+
+    If `to_codebase_only` is True, the only directories from the `to/` codebase
+    are computed.
     """
     resources = project.codebaseresources.all()
     if to_codebase_only:
@@ -100,3 +193,160 @@ def fingerprint_codebase_directories(project, to_codebase_only=False):
     save_directory_fingerprints(
         project, virtual_codebase, to_codebase_only=to_codebase_only
     )
+
+
+def fingerprint_codebase_resource(location, with_threading=True, **kwargs):
+    """
+    Compute fingerprints for the resource at `location` using the
+    scancode-toolkit direct API.
+
+    Return a dictionary of scan `results` and a list of `errors`.
+    """
+    scanners = [
+        Scanner("fingerprints", get_file_fingerprint_hashes),
+    ]
+    return _scan_resource(location, scanners, with_threading=with_threading)
+
+
+def save_resource_fingerprints(resource, scan_results, scan_errors=None):
+    """
+    Save computed fingerprints from `scan_results` to `resource.extra_data`.
+    Create project errors if any occurred during the scan.
+    """
+    resource.extra_data.update(scan_results)
+    resource.save()
+
+    if scan_errors:
+        resource.add_errors(scan_errors)
+        resource.update(status=flag.SCANNED_WITH_ERROR)
+
+
+def fingerprint_codebase_resources(
+    project, resource_qs=None, progress_logger=None, to_codebase_only=False
+):
+    """
+    Compute fingerprints for the resources from `project`.
+
+    These resource fingerprints are used for matching purposes on matchcode.
+
+    Multiprocessing is enabled by default on this pipe, the number of processes can be
+    controlled through the SCANCODEIO_PROCESSES setting.
+
+    If `to_codebase_only` is True, the only resources from the `to/` codebase
+    are computed.
+    """
+    # Checking for None to make the distinction with an empty resource_qs queryset
+    if resource_qs is None:
+        resource_qs = project.codebaseresources.filter(is_text=True)
+
+    if to_codebase_only:
+        resource_qs = resource_qs.to_codebase()
+
+    scan_resources(
+        resource_qs=resource_qs,
+        scan_func=fingerprint_codebase_resource,
+        save_func=save_resource_fingerprints,
+        progress_logger=progress_logger,
+    )
+
+
+def send_project_json_to_matchcode(
+    project, timeout=DEFAULT_TIMEOUT, api_url=MATCHCODEIO_API_URL
+):
+    """
+    Given a `project`, create a JSON scan of the `project` CodebaseResources and
+    send it to MatchCode.io for matching. Return a tuple containing strings of the url
+    to the particular match run and the url to the match results.
+    """
+    scan_output_location = to_json(project)
+    with open(scan_output_location, "rb") as f:
+        files = {"upload_file": f}
+        response = request_post(
+            url=f"{api_url}matching/",
+            timeout=timeout,
+            files=files,
+        )
+    run_url = response["runs"][0]["url"]
+    return run_url
+
+
+def get_run_url_status(run_url, **kwargs):
+    """
+    Given a `run_url`, which is a URL to a ScanCode.io Project run, return its
+    status, otherwise return None.
+    """
+    response = request_get(run_url)
+    if response:
+        status = response["status"]
+        return status
+
+
+def poll_run_url_status(run_url, sleep=10):
+    """
+    Given a URL to a scancode.io run instance, `run_url`, return True when the
+    run instance has completed successfully.
+
+    Raise a MatchCodeIOException when the run instance has failed, stopped, or gone
+    stale.
+    """
+    if poll_until_success(check=get_run_url_status, sleep=sleep, run_url=run_url):
+        return True
+
+    response = request_get(run_url)
+    if response:
+        log = response["log"]
+        msg = f"Matching run has stopped:\n\n{log}"
+        raise MatchCodeIOException(msg)
+
+
+def get_match_results(run_url):
+    """
+    Given the `run_url` for a pipeline running the matchcode matching pipeline,
+    return the match results for that run.
+    """
+    response = request_get(run_url)
+    project_url = response["project"]
+    # `project_url` can have params, such as "?format=json"
+    if "?" in project_url:
+        project_url, _ = project_url.split("?")
+    project_url = project_url.rstrip("/")
+    results_url = project_url + "/results/"
+    return request_get(results_url)
+
+
+def map_match_results(match_results):
+    """
+    Given `match_results`, which is a mapping of ScanCode.io codebase results,
+    return a defaultdict(list) where the keys are the package_uid of matched
+    packages and the value is a list containing the paths of Resources
+    associated with the package_uid.
+    """
+    resource_results = match_results.get("files", [])
+    resource_paths_by_package_uids = defaultdict(list)
+    for resource in resource_results:
+        for_packages = resource.get("for_packages", [])
+        for package_uid in for_packages:
+            resource_paths_by_package_uids[package_uid].append(resource["path"])
+    return resource_paths_by_package_uids
+
+
+def create_packages_from_match_results(project, match_results):
+    """
+    Given `match_results`, which is a mapping of ScanCode.io codebase results,
+    use the Package data from it to create DiscoveredPackages for `project` and
+    associate the proper Resources of `project` to the DiscoveredPackages.
+    """
+    from scanpipe.pipes.d2d import create_package_from_purldb_data
+
+    resource_paths_by_package_uids = map_match_results(match_results)
+    matched_packages = match_results.get("packages", [])
+    for matched_package in matched_packages:
+        package_uid = matched_package["package_uid"]
+        resource_paths = resource_paths_by_package_uids[package_uid]
+        resources = project.codebaseresources.filter(path__in=resource_paths)
+        create_package_from_purldb_data(
+            project,
+            resources=resources,
+            package_data=matched_package,
+            status=flag.MATCHED_TO_PURLDB_PACKAGE,
+        )

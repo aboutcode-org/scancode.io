@@ -21,30 +21,37 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import io
-import json
-from collections import defaultdict
 from pathlib import Path
 from unittest import mock
 
 from django.test import TestCase
+from django.utils import timezone
 
-from scanpipe.models import AbstractTaskFieldsModel
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.models import Run
 from scanpipe.pipes import purldb
 from scanpipe.tests import dependency_data2
 from scanpipe.tests import dependency_data3
-from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 
 
 class ScanPipePurlDBTest(TestCase):
     data_location = Path(__file__).parent.parent / "data"
+    fixtures = [data_location / "asgiref-3.3.0_fixtures.json"]
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
+        self.project_asgiref = Project.objects.get(name="asgiref")
+
+    def create_run(self, pipeline="pipeline", **kwargs):
+        return Run.objects.create(
+            project=self.project1,
+            pipeline_name=pipeline,
+            **kwargs,
+        )
 
     def test_scanpipe_pipes_purldb_get_unique_resolved_purls(self):
         DiscoveredPackage.create_from_data(self.project1, package_data1)
@@ -107,219 +114,123 @@ class ScanPipePurlDBTest(TestCase):
             "1 PURLs were already present in PurlDB index queue", expected_log
         )
 
-    @mock.patch("scanpipe.pipes.purldb.request_post")
-    @mock.patch("scanpipe.pipes.purldb.is_available")
-    def test_scanpipe_pipes_purldb_send_project_json_to_matchcode(
-        self, mock_is_available, mock_request_post
-    ):
-        mock_is_available.return_value = True
-
-        def mock_request_post_return(url, files, timeout):
-            request_post_response_loc = (
-                self.data_location
-                / "purldb"
-                / "match_to_purldb"
-                / "request_post_response.json"
-            )
-            with open(request_post_response_loc, "r") as f:
-                return json.load(f)
-
-        mock_request_post.side_effect = mock_request_post_return
-
-        run_url = purldb.send_project_json_to_matchcode(self.project1)
-        expected_run_url = (
-            "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
-        )
-        self.assertEqual(expected_run_url, run_url)
-
     @mock.patch("scanpipe.pipes.purldb.request_get")
     @mock.patch("scanpipe.pipes.purldb.is_available")
-    def test_scanpipe_pipes_purldb_poll_until_success(
-        self, mock_is_available, mock_request_get
-    ):
-        run_status = AbstractTaskFieldsModel.Status
-
-        mock_is_available.return_value = True
-
-        # Success
-        run_url = "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
-        mock_request_get.side_effect = [
-            {
-                "url": run_url,
-                "status": run_status.NOT_STARTED,
-            },
-            {
-                "url": run_url,
-                "status": run_status.QUEUED,
-            },
-            {
-                "url": run_url,
-                "status": run_status.RUNNING,
-            },
-            {
-                "url": run_url,
-                "status": run_status.SUCCESS,
-            },
-        ]
-        return_value = purldb.poll_until_success(run_url)
-        self.assertEqual(True, return_value)
-
-        # Failure
-        mock_request_get.side_effect = [
-            {
-                "url": run_url,
-                "status": run_status.NOT_STARTED,
-            },
-            {
-                "url": run_url,
-                "status": run_status.QUEUED,
-            },
-            {
-                "url": run_url,
-                "status": run_status.RUNNING,
-            },
-            {
-                "url": run_url,
-                "status": run_status.FAILURE,
-                "log": "failure message",
-            },
-        ]
-        with self.assertRaises(Exception) as context:
-            purldb.poll_until_success(run_url)
-        self.assertTrue("failure message" in str(context.exception))
-
-        # Stopped
-        mock_request_get.side_effect = [
-            {
-                "url": run_url,
-                "status": run_status.NOT_STARTED,
-            },
-            {
-                "url": run_url,
-                "status": run_status.QUEUED,
-            },
-            {
-                "url": run_url,
-                "status": run_status.RUNNING,
-            },
-            {
-                "url": run_url,
-                "status": run_status.STOPPED,
-                "log": "stop message",
-            },
-        ]
-        with self.assertRaises(Exception) as context:
-            purldb.poll_until_success(run_url)
-        self.assertTrue("stop message" in str(context.exception))
-
-        # Stale
-        mock_request_get.side_effect = [
-            {
-                "url": run_url,
-                "status": run_status.NOT_STARTED,
-            },
-            {
-                "url": run_url,
-                "status": run_status.QUEUED,
-            },
-            {
-                "url": run_url,
-                "status": run_status.RUNNING,
-            },
-            {
-                "url": run_url,
-                "status": run_status.STALE,
-                "log": "stale message",
-            },
-        ]
-        with self.assertRaises(Exception) as context:
-            purldb.poll_until_success(run_url)
-        self.assertTrue("stale message" in str(context.exception))
-
-    def test_scanpipe_pipes_purldb_map_match_results(self):
-        request_post_response_loc = (
-            self.data_location
-            / "purldb"
-            / "match_to_purldb"
-            / "request_get_results_response.json"
-        )
-        with open(request_post_response_loc, "r") as f:
-            match_results = json.load(f)
-
-        resource_paths_by_package_uids = purldb.map_match_results(match_results)
-        expected = defaultdict(list)
-        expected_package_uid = (
-            "pkg:maven/org.elasticsearch/elasticsearch-x-content@7.17.9"
-            "?classifier=sources&uuid=a8814800-8120-4f50-ba4f-08c443ccda8e"
-        )
-        expected[expected_package_uid].append(
-            "elasticsearch-x-content-7.17.9-sources.jar"
-        )
-        self.assertEqual(expected, resource_paths_by_package_uids)
-
-    def test_scanpipe_pipes_purldb_create_packages_from_match_results(self):
-        r1 = make_resource_file(
-            self.project1,
-            path="elasticsearch-x-content-7.17.9-sources.jar",
-            sha1="30d21add57abe04beece3f28a079671dbc9043e4",
-        )
-        r2 = make_resource_file(
-            self.project1,
-            path="something-else.json",
-            sha1="deadbeef",
-        )
-
-        request_get_results_response_loc = (
-            self.data_location
-            / "purldb"
-            / "match_to_purldb"
-            / "request_get_results_response.json"
-        )
-        with open(request_get_results_response_loc, "r") as f:
-            match_results = json.load(f)
-
-        self.assertEqual(0, self.project1.discoveredpackages.all().count())
-        self.assertFalse(0, len(r1.for_packages))
-        self.assertFalse(0, len(r2.for_packages))
-
-        purldb.create_packages_from_match_results(self.project1, match_results)
-
-        self.assertEqual(1, self.project1.discoveredpackages.all().count())
-        package = self.project1.discoveredpackages.first()
-        self.assertEqual([package.package_uid], r1.for_packages)
-        # This resource should not have a Package match
-        self.assertFalse(0, len(r2.for_packages))
-
-    @mock.patch("scanpipe.pipes.purldb.request_get")
-    @mock.patch("scanpipe.pipes.purldb.is_available")
-    def test_scanpipe_pipes_purldb_get_match_results(
+    def test_scanpipe_pipes_purldb_get_next_download_url(
         self, mock_is_available, mock_request_get
     ):
         mock_is_available.return_value = True
-
-        request_get_check_response_loc = (
-            self.data_location
-            / "purldb"
-            / "match_to_purldb"
-            / "request_get_check_response.json"
-        )
-        with open(request_get_check_response_loc, "r") as f:
-            mock_request_get_check_return = json.load(f)
-
-        request_get_results_response_loc = (
-            self.data_location
-            / "purldb"
-            / "match_to_purldb"
-            / "request_get_results_response.json"
-        )
-        with open(request_get_results_response_loc, "r") as f:
-            mock_request_get_results_return = json.load(f)
+        expected_download_url = "https://registry.npmjs.org/asdf/-/asdf-1.0.1.tgz"
+        expected_scannable_uri_uuid = "52b2930d-6e85-4b3e-ba3e-17dd9a618650"
+        expected_pipelines = ["scan_and_fingerprint_package"]
         mock_request_get.side_effect = [
-            mock_request_get_check_return,
-            mock_request_get_results_return,
+            {
+                "download_url": expected_download_url,
+                "scannable_uri_uuid": expected_scannable_uri_uuid,
+                "pipelines": expected_pipelines,
+            },
+            {"download_url": "", "scannable_uri_uuid": "", "pipelines": []},
+            None,
         ]
 
-        run_url = "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
-        match_results = purldb.get_match_results(run_url)
+        results = purldb.get_next_download_url()
+        self.assertTrue(results)
+        self.assertEqual(expected_scannable_uri_uuid, results["scannable_uri_uuid"])
+        self.assertEqual(expected_download_url, results["download_url"])
+        self.assertEqual(expected_pipelines, results["pipelines"])
 
-        self.assertEqual(mock_request_get_results_return, match_results)
+        results = purldb.get_next_download_url()
+        self.assertTrue(results)
+        self.assertFalse(results["scannable_uri_uuid"])
+        self.assertFalse(results["download_url"])
+        self.assertFalse(results["pipelines"])
+
+        results = purldb.get_next_download_url()
+        self.assertFalse(results)
+
+    def test_scanpipe_pipes_purldb_get_run_status(self):
+        now = timezone.now()
+        run = self.create_run(
+            pipeline="succeed",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=0,
+        )
+        status = purldb.get_run_status(run=run)
+        self.assertEqual("success", status)
+
+    def test_scanpipe_pipes_purldb_poll_run_status(self):
+        now = timezone.now()
+
+        # Test poll_run_status on individual pipelines
+        self.assertEqual(0, self.project1.runs.count())
+        self.create_run(
+            pipeline="succeed",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=0,
+        )
+        purldb.poll_run_status(project=self.project1)
+        self.project1.runs.all().delete()
+
+        self.create_run(
+            pipeline="failed",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=1,
+            log="failed",
+        )
+        with self.assertRaises(purldb.PurlDBException) as context:
+            purldb.poll_run_status(project=self.project1)
+            self.assertIn("failed", context.exception)
+        self.project1.runs.all().delete()
+
+        self.create_run(
+            pipeline="stopped",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=99,
+            log="stopped",
+        )
+        with self.assertRaises(purldb.PurlDBException) as context:
+            purldb.poll_run_status(project=self.project1)
+            self.assertIn("stopped", context.exception)
+        self.project1.runs.all().delete()
+
+        self.create_run(
+            pipeline="stale",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=88,
+            log="stale",
+        )
+        with self.assertRaises(purldb.PurlDBException) as context:
+            purldb.poll_run_status(project=self.project1)
+            self.assertIn("stale", context.exception)
+        self.project1.runs.all().delete()
+
+        # Test pipelines success, then failure
+        self.assertEqual(0, self.project1.runs.count())
+        self.create_run(
+            pipeline="succeed",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=0,
+        )
+        self.create_run(
+            pipeline="failed",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=1,
+            log="failed",
+        )
+        with self.assertRaises(purldb.PurlDBException) as context:
+            purldb.poll_run_status(project=self.project1)
+            self.assertIn("failed", context.exception)
+        self.project1.runs.all().delete()
+
+    def test_scanpipe_pipes_purldb_create_project_name(self):
+        download_url = "https://registry.npmjs.org/asdf/-/asdf-1.0.1.tgz"
+        scannable_uri_uuid = "52b2930d-6e85-4b3e-ba3e-17dd9a618650"
+        project_name = purldb.create_project_name(download_url, scannable_uri_uuid)
+        self.assertEqual("httpsregistrynpmjsorgasdf-asdf-101tgz-52b2930d", project_name)

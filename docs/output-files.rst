@@ -30,6 +30,28 @@ the output file format with the ``–-format`` option:
     ``PROJECT``'s :guilabel:`output/` directory. By default, JSON output
     files are created when no file format is given.
 
+.. _mount_projects_workspace_volume:
+
+.. warning::
+    When running with Docker, ensure that the output files workspace is assigned
+    to a volume to be accessible on the host machine.
+
+    To add local input files to a project using the :ref:`command_line_interface`,
+    additional arguments need to be passed to the ``docker compose`` command.
+
+    For example, using the following command will mount and make available the
+    projects workspace on the host at ``~/projects/``:
+
+    .. code-block:: bash
+
+        mkdir ~/projects/
+        docker compose run --volume ~/projects/:/var/scancodeio/workspace/projects/ \
+            web scanpipe output --project my_project --format json
+
+    Alternatively, you can also locate the Docker volumes directory on your host
+    machine. For instance, on Linux, it's typically found at:
+    ``/var/lib/docker/volumes/``.
+
 Web UI
 ^^^^^^
 When using the ScanCode.io web application, you can download the results of your

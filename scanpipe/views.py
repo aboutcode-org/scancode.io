@@ -49,6 +49,7 @@ from django.template.defaultfilters import filesizeformat
 from django.urls import reverse
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
+from django.utils.text import capfirst
 from django.views import generic
 from django.views.decorators.http import require_POST
 from django.views.generic.detail import SingleObjectMixin
@@ -89,6 +90,7 @@ from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
+from scanpipe.pipes import purldb
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -175,6 +177,10 @@ SCAN_SUMMARY_FIELDS = [
     ("Other holders", "other_holders"),
     ("Other languages", "other_languages"),
 ]
+
+
+def purldb_is_configured(*args):
+    return purldb.is_configured()
 
 
 class PrefetchRelatedViewMixin:
@@ -300,7 +306,13 @@ class TabSetMixin:
         return fields_data
 
     def get_field_value(self, field_name, render_func=None):
-        """Return the formatted value for the given `field_name` of the object."""
+        """
+        Return the formatted value of the specified `field_name` from the object.
+
+        By default, JSON types (list and dict) are rendered as YAML.
+        If a `render_func` is provided, it will take precedence and be used for
+        rendering the value.
+        """
         field_value = getattr(self.object, field_name, None)
 
         if field_value and render_func:
@@ -309,9 +321,9 @@ class TabSetMixin:
         if isinstance(field_value, Manager):
             return list(field_value.all())
 
-        if isinstance(field_value, list):
-            with suppress(TypeError):
-                field_value = "\n".join(field_value)
+        if isinstance(field_value, (list, dict)):
+            with suppress(Exception):
+                field_value = render_as_yaml(field_value)
 
         return field_value
 
@@ -487,6 +499,12 @@ class PaginatedFilterView(FilterView):
         query_dict = self.request.GET.copy()
         query_dict.pop(PAGE_VAR, None)
         context["url_params_without_page"] = query_dict.urlencode()
+
+        context["searchable_fields"] = sorted(
+            field.name
+            for field in self.model._meta.get_fields()
+            if not field.is_relation
+        )
 
         return context
 
@@ -1016,6 +1034,19 @@ class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
 
         return tree
 
+    @staticmethod
+    def get_breadcrumbs(current_dir):
+        breadcrumbs = {}
+        path_segments = current_dir.removeprefix("./").split("/")
+        last_path = ""
+
+        for segment in path_segments:
+            if segment:
+                last_path += f"{segment}/"
+                breadcrumbs[segment] = last_path
+
+        return breadcrumbs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         current_dir = self.request.GET.get("current_dir") or "."
@@ -1029,6 +1060,9 @@ class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
 
         context["current_dir"] = current_dir
         context["codebase_tree"] = codebase_tree
+        context["codebase_breadcrumbs"] = self.get_breadcrumbs(current_dir)
+        context["project_details_url"] = self.object.get_absolute_url()
+
         return context
 
 
@@ -1272,6 +1306,8 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
         self.object = self.get_object()
         project = self.object
         format = self.kwargs["format"]
+        version = self.kwargs.get("version")
+        output_kwargs = {}
 
         if format == "json":
             return project_results_json_response(project, as_attachment=True)
@@ -1280,7 +1316,9 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
         elif format == "spdx":
             output_file = output.to_spdx(project)
         elif format == "cyclonedx":
-            output_file = output.to_cyclonedx(project)
+            if version:
+                output_kwargs["version"] = version
+            output_file = output.to_cyclonedx(project, **output_kwargs)
         elif format == "attribution":
             output_file = output.to_attribution(project)
         else:
@@ -1349,7 +1387,10 @@ class CodebaseResourceListView(
         "extension",
         "programming_language",
         "mime_type",
-        "tag",
+        {
+            "field_name": "tag",
+            "filter_fieldname": "tag",
+        },
         {
             "field_name": "detected_license_expression",
             "filter_fieldname": "detected_license_expression",
@@ -1471,6 +1512,10 @@ class DiscoveredDependencyListView(
             "for_package", queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS)
         ),
         Prefetch(
+            "resolved_to_package",
+            queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS),
+        ),
+        Prefetch(
             "datafile_resource", queryset=CodebaseResource.objects.only("path", "name")
         ),
     ]
@@ -1484,11 +1529,11 @@ class DiscoveredDependencyListView(
             "label": "Package type",
             "filter_fieldname": "type",
         },
-        "extracted_requirement",
         {
             "field_name": "scope",
             "filter_fieldname": "scope",
         },
+        "extracted_requirement",
         {
             "field_name": "is_runtime",
             "filter_fieldname": "is_runtime",
@@ -1502,6 +1547,7 @@ class DiscoveredDependencyListView(
             "filter_fieldname": "is_resolved",
         },
         "for_package",
+        "resolved_to_package",
         "datafile_resource",
         {
             "field_name": "datasource_id",
@@ -1628,22 +1674,22 @@ class CodebaseResourceDetailsView(
                 "tag",
                 "rootfs_path",
             ],
-            "icon_class": "fa-solid fa-info-circle",
+            "icon_class": "fa-solid fa-circle-check",
         },
         "others": {
             "fields": [
                 {"field_name": "size", "render_func": filesizeformat},
-                "md5",
-                "sha1",
-                "sha256",
-                "sha512",
+                {"field_name": "md5", "label": "MD5"},
+                {"field_name": "sha1", "label": "SHA1"},
+                {"field_name": "sha256", "label": "SHA256"},
+                {"field_name": "sha512", "label": "SHA512"},
                 "is_binary",
                 "is_text",
                 "is_archive",
                 "is_key_file",
                 "is_media",
             ],
-            "icon_class": "fa-solid fa-plus-square",
+            "icon_class": "fa-solid fa-info-circle",
         },
         "viewer": {
             "icon_class": "fa-solid fa-file-code",
@@ -1663,14 +1709,14 @@ class CodebaseResourceDetailsView(
                     "field_name": "detected_license_expression_spdx",
                     "label": "Detected license expression (SPDX)",
                 },
-                {"field_name": "license_detections", "render_func": render_as_yaml},
-                {"field_name": "license_clues", "render_func": render_as_yaml},
+                "license_detections",
+                "license_clues",
                 "percentage_of_license_text",
-                {"field_name": "copyrights", "render_func": render_as_yaml},
-                {"field_name": "holders", "render_func": render_as_yaml},
-                {"field_name": "authors", "render_func": render_as_yaml},
-                {"field_name": "emails", "render_func": render_as_yaml},
-                {"field_name": "urls", "render_func": render_as_yaml},
+                "copyrights",
+                "holders",
+                "authors",
+                "emails",
+                "urls",
             ],
             "icon_class": "fa-solid fa-search",
         },
@@ -1685,11 +1731,9 @@ class CodebaseResourceDetailsView(
             "template": "scanpipe/tabset/tab_relations.html",
         },
         "extra_data": {
-            "fields": [
-                {"field_name": "extra_data", "render_func": render_as_yaml},
-            ],
+            "fields": ["extra_data"],
             "verbose_name": "Extra",
-            "icon_class": "fa-solid fa-database",
+            "icon_class": "fa-solid fa-plus-square",
         },
     }
 
@@ -1800,7 +1844,7 @@ class DiscoveredPackageDetailsView(
                 "project_id",
             ),
         ),
-        "dependencies__project",
+        "declared_dependencies__project",
     ]
     tabset = {
         "essentials": {
@@ -1825,24 +1869,25 @@ class DiscoveredPackageDetailsView(
                 "description",
                 "tag",
             ],
-            "icon_class": "fa-solid fa-info-circle",
+            "icon_class": "fa-solid fa-circle-check",
         },
         "others": {
             "fields": [
                 {"field_name": "size", "render_func": filesizeformat},
                 "release_date",
-                "md5",
-                "sha1",
-                "sha256",
-                "sha512",
-                "datasource_id",
+                {"field_name": "md5", "label": "MD5"},
+                {"field_name": "sha1", "label": "SHA1"},
+                {"field_name": "sha256", "label": "SHA256"},
+                {"field_name": "sha512", "label": "SHA512"},
                 "file_references",
-                {"field_name": "parties", "render_func": render_as_yaml},
+                "parties",
                 "missing_resources",
                 "modified_resources",
                 "package_uid",
+                "datasource_ids",
+                "datafile_paths",
             ],
-            "icon_class": "fa-solid fa-plus-square",
+            "icon_class": "fa-solid fa-info-circle",
         },
         "terms": {
             "fields": [
@@ -1860,11 +1905,8 @@ class DiscoveredPackageDetailsView(
                 "copyright",
                 "holder",
                 "notice_text",
-                {"field_name": "license_detections", "render_func": render_as_yaml},
-                {
-                    "field_name": "other_license_detections",
-                    "render_func": render_as_yaml,
-                },
+                "license_detections",
+                "other_license_detections",
             ],
             "icon_class": "fa-solid fa-file-contract",
         },
@@ -1874,23 +1916,73 @@ class DiscoveredPackageDetailsView(
             "template": "scanpipe/tabset/tab_resources.html",
         },
         "dependencies": {
-            "fields": ["dependencies"],
+            "fields": ["declared_dependencies"],
             "icon_class": "fa-solid fa-layer-group",
             "template": "scanpipe/tabset/tab_dependencies.html",
         },
         "vulnerabilities": {
-            "fields": ["affected_by_vulnerabilities"],
+            "fields": [
+                {"field_name": "affected_by_vulnerabilities", "render_func": list},
+            ],
             "icon_class": "fa-solid fa-bug",
             "template": "scanpipe/tabset/tab_vulnerabilities.html",
         },
         "extra_data": {
-            "fields": [
-                {"field_name": "extra_data", "render_func": render_as_yaml},
-            ],
+            "fields": ["extra_data"],
             "verbose_name": "Extra",
+            "icon_class": "fa-solid fa-plus-square",
+        },
+        "purldb": {
+            "fields": ["uuid"],
+            "verbose_name": "PurlDB",
             "icon_class": "fa-solid fa-database",
+            "template": "scanpipe/tabset/tab_purldb_loader.html",
+            "display_condition": purldb_is_configured,
         },
     }
+
+
+class DiscoveredPackagePurlDBTabView(ConditionalLoginRequired, generic.DetailView):
+    model = DiscoveredPackage
+    slug_field = "uuid"
+    slug_url_kwarg = "uuid"
+    template_name = "scanpipe/tabset/tab_purldb_content.html"
+
+    @staticmethod
+    def get_fields_data(purldb_entry):
+        exclude = [
+            "uuid",
+            "purl",
+            "license_detections",
+            "resources",
+        ]
+
+        fields_data = {}
+        for field_name, value in purldb_entry.items():
+            if not value or field_name in exclude:
+                continue
+
+            label = capfirst(
+                field_name.replace("url", "URL")
+                .replace("_", " ")
+                .replace("sha", "SHA")
+                .replace("vcs", "VCS")
+            )
+            fields_data[field_name] = {"label": label, "value": value}
+
+        return fields_data
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        if not purldb.is_configured():
+            raise Http404("PurlDB access is not configured.")
+
+        if purldb_entry := purldb.get_package_by_purl(self.object.package_url):
+            fields = self.get_fields_data(purldb_entry)
+            context["tab_data"] = {"fields": fields}
+
+        return context
 
 
 class DiscoveredDependencyDetailsView(
@@ -1913,6 +2005,12 @@ class DiscoveredDependencyDetailsView(
             ),
         ),
         Prefetch(
+            "resolved_to_package",
+            queryset=DiscoveredPackage.objects.only(
+                "uuid", *PURL_FIELDS, "package_uid", "project_id"
+            ),
+        ),
+        Prefetch(
             "datafile_resource",
             queryset=CodebaseResource.objects.only("path", "name", "project_id"),
         ),
@@ -1923,7 +2021,11 @@ class DiscoveredDependencyDetailsView(
                 "package_url",
                 {
                     "field_name": "for_package",
-                    "template": "scanpipe/tabset/field_for_package.html",
+                    "template": "scanpipe/tabset/field_related_package.html",
+                },
+                {
+                    "field_name": "resolved_to_package",
+                    "template": "scanpipe/tabset/field_related_package.html",
                 },
                 {
                     "field_name": "datafile_resource",
@@ -1934,20 +2036,23 @@ class DiscoveredDependencyDetailsView(
                 "scope",
                 "datasource_id",
             ],
-            "icon_class": "fa-solid fa-info-circle",
+            "icon_class": "fa-solid fa-circle-check",
         },
         "others": {
             "fields": [
                 "dependency_uid",
                 "for_package_uid",
+                "resolved_to_package_uid",
                 "is_runtime",
                 "is_optional",
                 "is_resolved",
             ],
-            "icon_class": "fa-solid fa-plus-square",
+            "icon_class": "fa-solid fa-info-circle",
         },
         "vulnerabilities": {
-            "fields": ["affected_by_vulnerabilities"],
+            "fields": [
+                {"field_name": "affected_by_vulnerabilities", "render_func": list},
+            ],
             "icon_class": "fa-solid fa-bug",
             "template": "scanpipe/tabset/tab_vulnerabilities.html",
         },

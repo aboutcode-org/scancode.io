@@ -71,8 +71,9 @@
       "notice_text": "",
       "source_packages": [],
       "extra_data": {},
-      "package_uid": "",
-      "datasource_id": "",
+      "package_uid": "pkg:local-files/analysis-b74fe5df/b74fe5df-e965-415e-ba65-f38421a0695d?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datasource_ids": [],
+      "datafile_paths": [],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -387,17 +388,20 @@
               "matcher": "2-aho",
               "end_line": 17,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_2.RULE",
+              "from_file": null,
               "start_line": 2,
               "matched_text": " Licensed to the Apache Software Foundation (ASF) under one\n or more contributor license agreements.  See the NOTICE file\n distributed with this work for additional information\n regarding copyright ownership.  The ASF licenses this file\n to you under the Apache License, Version 2.0 (the\n \"License\"); you may not use this file except in compliance\n with the License.  You may obtain a copy of the License at\n\n  http://www.apache.org/licenses/LICENSE-2.0\n\n Unless required by applicable law or agreed to in writing,\n software distributed under the License is distributed on an\n \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n KIND, either express or implied.  See the License for the\n specific language governing permissions and limitations\n under the License.",
               "match_coverage": 100.0,
               "matched_length": 119,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
-          "license_expression": "apache-2.0"
+          "license_expression": "apache-2.0",
+          "license_expression_spdx": "Apache-2.0"
         }
       ],
       "license_clues": [],
@@ -407,7 +411,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -575,17 +579,20 @@
               "matcher": "2-aho",
               "end_line": 16,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_2.RULE",
+              "from_file": null,
               "start_line": 2,
               "matched_text": " * Licensed to the Apache Software Foundation (ASF) under one\n * or more contributor license agreements.  See the NOTICE file\n * distributed with this work for additional information\n * regarding copyright ownership.  The ASF licenses this file\n * to you under the Apache License, Version 2.0 (the\n * \"License\"); you may not use this file except in compliance\n * with the License.  You may obtain a copy of the License at\n *\n *     http://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.",
               "match_coverage": 100.0,
               "matched_length": 119,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
-          "license_expression": "apache-2.0"
+          "license_expression": "apache-2.0",
+          "license_expression_spdx": "Apache-2.0"
         }
       ],
       "license_clues": [],
@@ -595,7 +602,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -636,17 +643,20 @@
               "matcher": "2-aho",
               "end_line": 16,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_2.RULE",
+              "from_file": null,
               "start_line": 2,
               "matched_text": " * Licensed to the Apache Software Foundation (ASF) under one\n * or more contributor license agreements.  See the NOTICE file\n * distributed with this work for additional information\n * regarding copyright ownership.  The ASF licenses this file\n * to you under the Apache License, Version 2.0 (the\n * \"License\"); you may not use this file except in compliance\n * with the License.  You may obtain a copy of the License at\n *\n *     http://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.",
               "match_coverage": 100.0,
               "matched_length": 119,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
-          "license_expression": "apache-2.0"
+          "license_expression": "apache-2.0",
+          "license_expression_spdx": "Apache-2.0"
         }
       ],
       "license_clues": [],
@@ -656,7 +666,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -697,17 +707,20 @@
               "matcher": "2-aho",
               "end_line": 17,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_2.RULE",
+              "from_file": null,
               "start_line": 2,
               "matched_text": " * Licensed to the Apache Software Foundation (ASF) under one\n * or more contributor license agreements.  See the NOTICE file\n * distributed with this work for additional information\n * regarding copyright ownership.  The ASF licenses this file\n * to you under the Apache License, Version 2.0 (the\n * \"License\"); you may not use this file except in compliance\n * with the License.  You may obtain a copy of the License at\n *\n * http://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing,\n * software distributed under the License is distributed on an\n * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n * KIND, either express or implied.  See the License for the\n * specific language governing permissions and limitations\n * under the License.",
               "match_coverage": 100.0,
               "matched_length": 119,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
-          "license_expression": "apache-2.0"
+          "license_expression": "apache-2.0",
+          "license_expression_spdx": "Apache-2.0"
         }
       ],
       "license_clues": [],
@@ -717,7 +730,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -758,17 +771,20 @@
               "matcher": "2-aho",
               "end_line": 17,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_2.RULE",
+              "from_file": null,
               "start_line": 2,
               "matched_text": " * Licensed to the Apache Software Foundation (ASF) under one\n * or more contributor license agreements.  See the NOTICE file\n * distributed with this work for additional information\n * regarding copyright ownership.  The ASF licenses this file\n * to you under the Apache License, Version 2.0 (the\n * \"License\"); you may not use this file except in compliance\n * with the License.  You may obtain a copy of the License at\n *\n * http://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing,\n * software distributed under the License is distributed on an\n * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n * KIND, either express or implied.  See the License for the\n * specific language governing permissions and limitations\n * under the License.",
               "match_coverage": 100.0,
               "matched_length": 119,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
-          "license_expression": "apache-2.0"
+          "license_expression": "apache-2.0",
+          "license_expression_spdx": "Apache-2.0"
         }
       ],
       "license_clues": [],
@@ -778,7 +794,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -819,17 +835,20 @@
               "matcher": "2-aho",
               "end_line": 16,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_2.RULE",
+              "from_file": null,
               "start_line": 2,
               "matched_text": " * Licensed to the Apache Software Foundation (ASF) under one\n * or more contributor license agreements.  See the NOTICE file\n * distributed with this work for additional information\n * regarding copyright ownership.  The ASF licenses this file\n * to you under the Apache License, Version 2.0 (the\n * \"License\"); you may not use this file except in compliance\n * with the License.  You may obtain a copy of the License at\n *\n *     http://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.",
               "match_coverage": 100.0,
               "matched_length": 119,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
-          "license_expression": "apache-2.0"
+          "license_expression": "apache-2.0",
+          "license_expression_spdx": "Apache-2.0"
         }
       ],
       "license_clues": [],
@@ -839,7 +858,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -880,17 +899,20 @@
               "matcher": "2-aho",
               "end_line": 17,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_2.RULE",
+              "from_file": null,
               "start_line": 2,
               "matched_text": " * Licensed to the Apache Software Foundation (ASF) under one\n * or more contributor license agreements.  See the NOTICE file\n * distributed with this work for additional information\n * regarding copyright ownership.  The ASF licenses this file\n * to you under the Apache License, Version 2.0 (the\n * \"License\"); you may not use this file except in compliance\n * with the License.  You may obtain a copy of the License at\n *\n * http://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing,\n * software distributed under the License is distributed on an\n * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n * KIND, either express or implied.  See the License for the\n * specific language governing permissions and limitations\n * under the License.",
               "match_coverage": 100.0,
               "matched_length": 119,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
-          "license_expression": "apache-2.0"
+          "license_expression": "apache-2.0",
+          "license_expression_spdx": "Apache-2.0"
         }
       ],
       "license_clues": [],
@@ -900,7 +922,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -941,17 +963,20 @@
               "matcher": "2-aho",
               "end_line": 16,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_2.RULE",
+              "from_file": null,
               "start_line": 2,
               "matched_text": " * Licensed to the Apache Software Foundation (ASF) under one\n * or more contributor license agreements.  See the NOTICE file\n * distributed with this work for additional information\n * regarding copyright ownership.  The ASF licenses this file\n * to you under the Apache License, Version 2.0 (the\n * \"License\"); you may not use this file except in compliance\n * with the License.  You may obtain a copy of the License at\n *\n *     http://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.",
               "match_coverage": 100.0,
               "matched_length": 119,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
-          "license_expression": "apache-2.0"
+          "license_expression": "apache-2.0",
+          "license_expression_spdx": "Apache-2.0"
         }
       ],
       "license_clues": [],
@@ -961,7 +986,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -1002,17 +1027,20 @@
               "matcher": "2-aho",
               "end_line": 16,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_2.RULE",
+              "from_file": null,
               "start_line": 2,
               "matched_text": " * Licensed to the Apache Software Foundation (ASF) under one\n * or more contributor license agreements.  See the NOTICE file\n * distributed with this work for additional information\n * regarding copyright ownership.  The ASF licenses this file\n * to you under the Apache License, Version 2.0 (the\n * \"License\"); you may not use this file except in compliance\n * with the License.  You may obtain a copy of the License at\n *\n *     http://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.",
               "match_coverage": 100.0,
               "matched_length": 119,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
-          "license_expression": "apache-2.0"
+          "license_expression": "apache-2.0",
+          "license_expression_spdx": "Apache-2.0"
         }
       ],
       "license_clues": [],
@@ -1022,7 +1050,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -1063,17 +1091,20 @@
               "matcher": "2-aho",
               "end_line": 16,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_2.RULE",
+              "from_file": null,
               "start_line": 2,
               "matched_text": " * Licensed to the Apache Software Foundation (ASF) under one\n * or more contributor license agreements.  See the NOTICE file\n * distributed with this work for additional information\n * regarding copyright ownership.  The ASF licenses this file\n * to you under the Apache License, Version 2.0 (the\n * \"License\"); you may not use this file except in compliance\n * with the License.  You may obtain a copy of the License at\n *\n *     http://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.",
               "match_coverage": 100.0,
               "matched_length": 119,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
-          "license_expression": "apache-2.0"
+          "license_expression": "apache-2.0",
+          "license_expression_spdx": "Apache-2.0"
         }
       ],
       "license_clues": [],
@@ -1083,7 +1114,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -1124,17 +1155,20 @@
               "matcher": "2-aho",
               "end_line": 17,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_2.RULE",
+              "from_file": null,
               "start_line": 2,
               "matched_text": " * Licensed to the Apache Software Foundation (ASF) under one\n * or more contributor license agreements.  See the NOTICE file\n * distributed with this work for additional information\n * regarding copyright ownership.  The ASF licenses this file\n * to you under the Apache License, Version 2.0 (the\n * \"License\"); you may not use this file except in compliance\n * with the License.  You may obtain a copy of the License at\n *\n * http://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing,\n * software distributed under the License is distributed on an\n * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n * KIND, either express or implied.  See the License for the\n * specific language governing permissions and limitations\n * under the License.",
               "match_coverage": 100.0,
               "matched_length": 119,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
-          "license_expression": "apache-2.0"
+          "license_expression": "apache-2.0",
+          "license_expression_spdx": "Apache-2.0"
         }
       ],
       "license_clues": [],
@@ -1144,7 +1178,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -1185,17 +1219,20 @@
               "matcher": "2-aho",
               "end_line": 16,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_2.RULE",
+              "from_file": null,
               "start_line": 2,
               "matched_text": " * Licensed to the Apache Software Foundation (ASF) under one\n * or more contributor license agreements.  See the NOTICE file\n * distributed with this work for additional information\n * regarding copyright ownership.  The ASF licenses this file\n * to you under the Apache License, Version 2.0 (the\n * \"License\"); you may not use this file except in compliance\n * with the License.  You may obtain a copy of the License at\n *\n *     http://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.",
               "match_coverage": 100.0,
               "matched_length": 119,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
-          "license_expression": "apache-2.0"
+          "license_expression": "apache-2.0",
+          "license_expression_spdx": "Apache-2.0"
         }
       ],
       "license_clues": [],
@@ -1205,7 +1242,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758"
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
       ],
       "emails": [],
       "urls": [
@@ -1379,849 +1416,980 @@
               "matcher": "2-aho",
               "end_line": 11,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 11,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 13,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 13,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 99.0,
               "matcher": "2-aho",
               "end_line": 15,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/maven_pom_12.RULE",
+              "from_file": null,
               "start_line": 15,
               "matched_text": "License: BSD  (LICENSE.txt)",
               "match_coverage": 100.0,
               "matched_length": 4,
               "rule_relevance": 99,
               "rule_identifier": "maven_pom_12.RULE",
-              "license_expression": "bsd-new"
+              "license_expression": "bsd-new",
+              "spdx_license_expression": "BSD-3-Clause"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 17,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 17,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 19,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 19,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 21,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 21,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 21,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/epl-1.0_19.RULE",
+              "from_file": null,
               "start_line": 21,
               "matched_text": "License: Eclipse Public License, Version 1.0  (http://www.eclipse.org/legal/epl-v10.html)",
               "match_coverage": 100.0,
               "matched_length": 15,
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_19.RULE",
-              "license_expression": "epl-1.0"
+              "license_expression": "epl-1.0",
+              "spdx_license_expression": "EPL-1.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 21,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-2.1_40.RULE",
+              "from_file": null,
               "start_line": 21,
               "matched_text": "License: GNU LESSER GENERAL PUBLIC LICENSE, Version 2.1  (http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)",
               "match_coverage": 100.0,
               "matched_length": 20,
               "rule_relevance": 100,
               "rule_identifier": "lgpl-2.1_40.RULE",
-              "license_expression": "lgpl-2.1"
+              "license_expression": "lgpl-2.1",
+              "spdx_license_expression": "LGPL-2.1-only"
             },
             {
               "score": 99.0,
               "matcher": "2-aho",
               "end_line": 23,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_public_domain.RULE",
+              "from_file": null,
               "start_line": 23,
               "matched_text": "License: Public Domain",
               "match_coverage": 100.0,
               "matched_length": 3,
               "rule_relevance": 99,
               "rule_identifier": "pypi_public_domain.RULE",
-              "license_expression": "public-domain"
+              "license_expression": "public-domain",
+              "spdx_license_expression": "LicenseRef-scancode-public-domain"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 27,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_188.RULE",
+              "from_file": null,
               "start_line": 27,
               "matched_text": "License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)",
               "match_coverage": 100.0,
               "matched_length": 13,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_188.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 31,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/maven_pom_1.RULE",
+              "from_file": null,
               "start_line": 31,
               "matched_text": "License: Apache 2  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 12,
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_1.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 35,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 35,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 37,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 37,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 39,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 39,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 41,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 41,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 43,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 43,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 45,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 45,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 47,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 47,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 49,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 49,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 51,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 51,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 53,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 53,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 57,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 57,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 59,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 59,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 63,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/cddl-1.0_or_gpl-2.0_with_classpath-exception-2.0_1.RULE",
+              "from_file": null,
               "start_line": 63,
               "matched_text": "License: CDDL + GPLv2 with classpath exception  (https://glassfish.dev.java.net/nonav/public/CDDL+GPL.html)",
               "match_coverage": 100.0,
               "matched_length": 15,
               "rule_relevance": 100,
               "rule_identifier": "cddl-1.0_or_gpl-2.0_with_classpath-exception-2.0_1.RULE",
-              "license_expression": "cddl-1.0 OR gpl-2.0 WITH classpath-exception-2.0"
+              "license_expression": "cddl-1.0 OR gpl-2.0 WITH classpath-exception-2.0",
+              "spdx_license_expression": "CDDL-1.0 OR GPL-2.0-only WITH Classpath-exception-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 67,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/maven_pom_21.RULE",
+              "from_file": null,
               "start_line": 67,
               "matched_text": "License: New BSD license  (http://www.opensource.org/licenses/bsd-license.php)",
               "match_coverage": 100.0,
               "matched_length": 12,
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_21.RULE",
-              "license_expression": "bsd-new"
+              "license_expression": "bsd-new",
+              "spdx_license_expression": "BSD-3-Clause"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 71,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 71,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 75,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/maven_pom_1.RULE",
+              "from_file": null,
               "start_line": 75,
               "matched_text": "License: Apache 2  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 12,
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_1.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 79,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_203.RULE",
+              "from_file": null,
               "start_line": 79,
               "matched_text": "License: Apache Software License - Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0)",
               "match_coverage": 100.0,
               "matched_length": 15,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 79,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/epl-1.0_20.RULE",
+              "from_file": null,
               "start_line": 79,
               "matched_text": "License: Eclipse Public License - Version 1.0  (http://www.eclipse.org/org/documents/epl-v10.php)",
               "match_coverage": 100.0,
               "matched_length": 16,
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
-              "license_expression": "epl-1.0"
+              "license_expression": "epl-1.0",
+              "spdx_license_expression": "EPL-1.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 81,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_203.RULE",
+              "from_file": null,
               "start_line": 81,
               "matched_text": "License: Apache Software License - Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0)",
               "match_coverage": 100.0,
               "matched_length": 15,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 81,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/epl-1.0_20.RULE",
+              "from_file": null,
               "start_line": 81,
               "matched_text": "License: Eclipse Public License - Version 1.0  (http://www.eclipse.org/org/documents/epl-v10.php)",
               "match_coverage": 100.0,
               "matched_length": 16,
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
-              "license_expression": "epl-1.0"
+              "license_expression": "epl-1.0",
+              "spdx_license_expression": "EPL-1.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 85,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mit_51.RULE",
+              "from_file": null,
               "start_line": 85,
               "matched_text": "License: MIT License  (http://www.opensource.org/licenses/mit-license.php)",
               "match_coverage": 100.0,
               "matched_length": 11,
               "rule_relevance": 100,
               "rule_identifier": "mit_51.RULE",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "spdx_license_expression": "MIT"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 89,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 89,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 91,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 91,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 93,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/maven_pom_5.RULE",
+              "from_file": null,
               "start_line": 93,
               "matched_text": "License: Apache License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 15,
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_5.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 95,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 95,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 97,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 97,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 99,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 99,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 101,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 101,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 103,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 103,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 105,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 105,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 107,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 107,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 109,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 109,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 111,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_209.RULE",
+              "from_file": null,
               "start_line": 111,
               "matched_text": "License: The Apache Software License, Version 2.0  (file://${basedir}/LICENSE)",
               "match_coverage": 100.0,
               "matched_length": 11,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_209.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 113,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_209.RULE",
+              "from_file": null,
               "start_line": 113,
               "matched_text": "License: The Apache Software License, Version 2.0  (file://${basedir}/LICENSE)",
               "match_coverage": 100.0,
               "matched_length": 11,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_209.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 115,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_209.RULE",
+              "from_file": null,
               "start_line": 115,
               "matched_text": "License: The Apache Software License, Version 2.0  (file://${basedir}/LICENSE)",
               "match_coverage": 100.0,
               "matched_length": 11,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_209.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 117,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/maven_pom_5.RULE",
+              "from_file": null,
               "start_line": 117,
               "matched_text": "License: Apache License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 15,
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_5.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 119,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/maven_pom_5.RULE",
+              "from_file": null,
               "start_line": 119,
               "matched_text": "License: Apache License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 15,
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_5.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 121,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 121,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 125,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_143.RULE",
+              "from_file": null,
               "start_line": 125,
               "matched_text": "License: Apache License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0)",
               "match_coverage": 100.0,
               "matched_length": 14,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_143.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 129,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_203.RULE",
+              "from_file": null,
               "start_line": 129,
               "matched_text": "License: Apache Software License - Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0)",
               "match_coverage": 100.0,
               "matched_length": 15,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 129,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/epl-1.0_20.RULE",
+              "from_file": null,
               "start_line": 129,
               "matched_text": "License: Eclipse Public License - Version 1.0  (http://www.eclipse.org/org/documents/epl-v10.php)",
               "match_coverage": 100.0,
               "matched_length": 16,
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
-              "license_expression": "epl-1.0"
+              "license_expression": "epl-1.0",
+              "spdx_license_expression": "EPL-1.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 131,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_203.RULE",
+              "from_file": null,
               "start_line": 131,
               "matched_text": "License: Apache Software License - Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0)",
               "match_coverage": 100.0,
               "matched_length": 15,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 131,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/epl-1.0_20.RULE",
+              "from_file": null,
               "start_line": 131,
               "matched_text": "License: Eclipse Public License - Version 1.0  (http://www.eclipse.org/org/documents/epl-v10.php)",
               "match_coverage": 100.0,
               "matched_length": 16,
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
-              "license_expression": "epl-1.0"
+              "license_expression": "epl-1.0",
+              "spdx_license_expression": "EPL-1.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 133,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_203.RULE",
+              "from_file": null,
               "start_line": 133,
               "matched_text": "License: Apache Software License - Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0)",
               "match_coverage": 100.0,
               "matched_length": 15,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 133,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/epl-1.0_20.RULE",
+              "from_file": null,
               "start_line": 133,
               "matched_text": "License: Eclipse Public License - Version 1.0  (http://www.eclipse.org/org/documents/epl-v10.php)",
               "match_coverage": 100.0,
               "matched_length": 16,
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
-              "license_expression": "epl-1.0"
+              "license_expression": "epl-1.0",
+              "spdx_license_expression": "EPL-1.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 135,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_203.RULE",
+              "from_file": null,
               "start_line": 135,
               "matched_text": "License: Apache Software License - Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0)",
               "match_coverage": 100.0,
               "matched_length": 15,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 135,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/epl-1.0_20.RULE",
+              "from_file": null,
               "start_line": 135,
               "matched_text": "License: Eclipse Public License - Version 1.0  (http://www.eclipse.org/org/documents/epl-v10.php)",
               "match_coverage": 100.0,
               "matched_length": 16,
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
-              "license_expression": "epl-1.0"
+              "license_expression": "epl-1.0",
+              "spdx_license_expression": "EPL-1.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 137,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_203.RULE",
+              "from_file": null,
               "start_line": 137,
               "matched_text": "License: Apache Software License - Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0)",
               "match_coverage": 100.0,
               "matched_length": 15,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 137,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/epl-1.0_20.RULE",
+              "from_file": null,
               "start_line": 137,
               "matched_text": "License: Eclipse Public License - Version 1.0  (http://www.eclipse.org/org/documents/epl-v10.php)",
               "match_coverage": 100.0,
               "matched_length": 16,
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
-              "license_expression": "epl-1.0"
+              "license_expression": "epl-1.0",
+              "spdx_license_expression": "EPL-1.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 139,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_203.RULE",
+              "from_file": null,
               "start_line": 139,
               "matched_text": "License: Apache Software License - Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0)",
               "match_coverage": 100.0,
               "matched_length": 15,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 139,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/epl-1.0_20.RULE",
+              "from_file": null,
               "start_line": 139,
               "matched_text": "License: Eclipse Public License - Version 1.0  (http://www.eclipse.org/org/documents/epl-v10.php)",
               "match_coverage": 100.0,
               "matched_length": 16,
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
-              "license_expression": "epl-1.0"
+              "license_expression": "epl-1.0",
+              "spdx_license_expression": "EPL-1.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 141,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_203.RULE",
+              "from_file": null,
               "start_line": 141,
               "matched_text": "License: Apache Software License - Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0)",
               "match_coverage": 100.0,
               "matched_length": 15,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 141,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/epl-1.0_20.RULE",
+              "from_file": null,
               "start_line": 141,
               "matched_text": "License: Eclipse Public License - Version 1.0  (http://www.eclipse.org/org/documents/epl-v10.php)",
               "match_coverage": 100.0,
               "matched_length": 16,
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
-              "license_expression": "epl-1.0"
+              "license_expression": "epl-1.0",
+              "spdx_license_expression": "EPL-1.0"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 145,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_212.RULE",
+              "from_file": null,
               "start_line": 145,
               "matched_text": "License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)",
               "match_coverage": 100.0,
               "matched_length": 17,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0_and_bsd_new_and_epl_1_0_and_lgpl_2_1_and_public_domain_and__cddl_1_0_or_gpl_2_0_with_classpath_exception_2_0__and_mit-89f48bad-a653-527d-8324-71e8d9738745",
-          "license_expression": "apache-2.0 AND bsd-new AND epl-1.0 AND lgpl-2.1 AND public-domain AND (cddl-1.0 OR gpl-2.0 WITH classpath-exception-2.0) AND mit"
+          "license_expression": "apache-2.0 AND bsd-new AND epl-1.0 AND lgpl-2.1 AND public-domain AND (cddl-1.0 OR gpl-2.0 WITH classpath-exception-2.0) AND mit",
+          "license_expression_spdx": "Apache-2.0 AND BSD-3-Clause AND EPL-1.0 AND LGPL-2.1-only AND LicenseRef-scancode-public-domain AND (CDDL-1.0 OR GPL-2.0-only WITH Classpath-exception-2.0) AND MIT"
         }
       ],
       "license_clues": [],
@@ -2513,17 +2681,20 @@
               "matcher": "1-hash",
               "end_line": 202,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/apache-2.0.LICENSE",
+              "from_file": null,
               "start_line": 2,
               "matched_text": "                                 Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      copyright license to reproduce, prepare Derivative Works of,\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n\n   END OF TERMS AND CONDITIONS\n\n   APPENDIX: How to apply the Apache License to your work.\n\n      To apply the Apache License to your work, attach the following\n      boilerplate notice, with the fields enclosed by brackets \"[]\"\n      replaced with your own identifying information. (Don't include\n      the brackets!)  The text should be enclosed in the appropriate\n      comment syntax for the file format. We also recommend that a\n      file or class name and description of purpose be included on the\n      same \"printed page\" as the copyright notice for easier\n      identification within third-party archives.\n\n   Copyright [yyyy] [name of copyright owner]\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.",
               "match_coverage": 100.0,
               "matched_length": 1584,
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0.LICENSE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-ab23f79b-ec38-9a8a-9b23-85059407f34d",
-          "license_expression": "apache-2.0"
+          "license_expression": "apache-2.0",
+          "license_expression_spdx": "Apache-2.0"
         }
       ],
       "license_clues": [],
@@ -2612,17 +2783,20 @@
               "matcher": "2-aho",
               "end_line": 6,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_product_includes_2.RULE",
+              "from_file": null,
               "start_line": 5,
               "matched_text": "This product includes software developed at\nThe Apache Software Foundation (http://www.apache.org/).",
               "match_coverage": 100.0,
               "matched_length": 14,
               "rule_relevance": 95,
               "rule_identifier": "apache-2.0_product_includes_2.RULE",
-              "license_expression": "apache-2.0"
+              "license_expression": "apache-2.0",
+              "spdx_license_expression": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-482220ca-c07b-bf59-66ed-6e7eaf9f3b1e",
-          "license_expression": "apache-2.0"
+          "license_expression": "apache-2.0",
+          "license_expression_spdx": "Apache-2.0"
         }
       ],
       "license_clues": [],

@@ -36,7 +36,7 @@
         {% if input_source.is_file and input_source.size %}
           <span class="mr-1">{{ input_source.size|filesizeformat }}</span>
         {% endif %}
-        {% if input_source.exists and input_source.filename %}
+        {% if input_source.is_file and input_source.exists and input_source.filename %}
           <a class="is-grey-link is-clickable" href="{% url 'project_download_input' project.slug input_source.filename %}"><span class="icon width-1 height-1"><i class="fa-solid fa-download"></i></span></a>
         {% endif %}
         {% if project.can_change_inputs and input_source.uuid %}

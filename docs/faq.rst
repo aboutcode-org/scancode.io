@@ -9,10 +9,25 @@ our frequently asked questions.
 How can I run a scan?
 ---------------------
 
-You simply start by creating a :ref:`new project <user_interface_create_new_project>`
+Once you've completed the ScanCode.io app installation,
+you simply start by creating a :ref:`new project <user_interface_create_new_project>`
 and run the appropriate pipeline.
 
-ScanCode.io offers several :ref:`built_in_pipelines` depending on your input, see above.
+ScanCode.io offers several :ref:`built_in_pipelines` depending on your input, see
+the :ref:`faq_which_pipeline` bellow.
+
+As an alternative, I you simply which to run a pipeline without installing ScanCode.io
+you may use the Docker image to run pipelines as a single command:
+
+.. code-block:: bash
+
+  docker run --rm \
+    -v "$(pwd)":/codedrop \
+    ghcr.io/nexb/scancode.io:latest \
+    sh -c "run scan_codebase /codedrop" \
+    > results.json
+
+Refer to the :ref:`cli_run` section for more about this approach.
 
 .. _faq_which_pipeline:
 
@@ -70,10 +85,10 @@ existing data, allowing for more comprehensive analysis and insights.
   Before executing this pipeline, make sure to set up
   :ref:`PurlDB <scancodeio_settings_purldb>`.
 
-- To **match your project codebase resources to PurlDB for Package matches**,
-  utilize the :ref:`match_to_purldb <pipeline_match_to_purldb>` pipeline.
-  It's essential to set up :ref:`PurlDB <scancodeio_settings_purldb>` before executing
-  this pipeline.
+- To **match your project codebase resources to MatchCode.io for Package matches**,
+  utilize the :ref:`match_to_matchcode <pipeline_match_to_matchcode>` pipeline.
+  It's essential to set up :ref:`MatchCode.io <scancodeio_settings_matchcodeio>` before
+  executing this pipeline.
 
 What is the difference between scan_codebase and scan_single_package pipelines?
 -------------------------------------------------------------------------------
@@ -218,3 +233,19 @@ Example for GitHub private repository files::
 Example for Docker private repository::
 
     SCANCODEIO_SKOPEO_CREDENTIALS="registry.com=user:password"
+
+Can I use a git repository as project input?
+--------------------------------------------
+
+Yes, as an alternative to an uploaded file, or an download URL targeting an archive,
+you may directly provide the URL to a git repository.
+The repository will be cloned in the project inputs, fetching only the latest commit
+history, at the start of a pipeline execution.
+
+Note that only the HTTPS type of URL is supported::
+
+    https://<host>[:<port>]/<path-to-git-repo>.git`
+
+A GitHub repository URL example::
+
+    https://github.com/username/repository.git

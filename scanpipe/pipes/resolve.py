@@ -42,29 +42,45 @@ Resolve packages from manifest, lockfile, and SBOM.
 """
 
 
+def resolve_manifest_resources(resource, package_registry):
+    """Get package data from resource."""
+    packages = get_packages_from_manifest(resource.location, package_registry) or []
+
+    for package_data in packages:
+        package_data["codebase_resources"] = [resource]
+
+    return packages
+
+
 def get_packages(project, package_registry, manifest_resources, model=None):
     """
     Get package data from package manifests/lockfiles/SBOMs or
     get package data for resolved packages from package requirements.
     """
     resolved_packages = []
+    sboms_headers = {}
 
     if not manifest_resources.exists():
         project.add_warning(
-            description="No resources found with package data",
+            description="No resources containing package data found in codebase.",
             model=model,
         )
-        return
+        return []
 
     for resource in manifest_resources:
-        if packages := get_packages_from_manifest(resource.location, package_registry):
+        if packages := resolve_manifest_resources(resource, package_registry):
             resolved_packages.extend(packages)
+            if headers := get_manifest_headers(resource):
+                sboms_headers[resource.name] = headers
         else:
             project.add_error(
-                description="No packages could be resolved for",
+                description="No packages could be resolved",
                 model=model,
                 resource=resource,
             )
+
+    if sboms_headers:
+        project.update_extra_data({"sboms_headers": sboms_headers})
 
     return resolved_packages
 
@@ -80,7 +96,8 @@ def create_packages_and_dependencies(project, packages, resolved=False):
     for package_data in packages:
         package_data = set_license_expression(package_data)
         dependencies = package_data.pop("dependencies", [])
-        update_or_create_package(project, package_data)
+        codebase_resources = package_data.pop("codebase_resources", [])
+        update_or_create_package(project, package_data, codebase_resources)
 
         for dependency_data in dependencies:
             if resolved:
@@ -264,17 +281,17 @@ def get_default_package_type(input_location):
         if handler.is_datafile(input_location):
             return handler.default_package_type
 
-        if input_location.endswith((".spdx", ".spdx.json")):
-            return "spdx"
+    if input_location.endswith((".spdx", ".spdx.json")):
+        return "spdx"
 
-        if input_location.endswith((".bom.json", ".cdx.json")):
+    if input_location.endswith(("bom.json", ".cdx.json", "bom.xml", ".cdx.xml")):
+        return "cyclonedx"
+
+    if input_location.endswith((".json", ".xml")):
+        if cyclonedx.is_cyclonedx_bom(input_location):
             return "cyclonedx"
-
-        if input_location.endswith(".json"):
-            if cyclonedx.is_cyclonedx_bom(input_location):
-                return "cyclonedx"
-            if spdx.is_spdx_document(input_location):
-                return "spdx"
+        if spdx.is_spdx_document(input_location):
+            return "spdx"
 
 
 # Mapping between `default_package_type` its related resolver functions
@@ -309,3 +326,49 @@ def set_license_expression(package_data):
             package_data["declared_license_expression"] = license_expression
 
     return package_data
+
+
+def get_manifest_headers(resource):
+    """Extract headers from a manifest file based on its package type."""
+    input_location = resource.location
+    package_type = get_default_package_type(input_location)
+    extract_fields = []
+
+    if package_type == "cyclonedx":
+        extract_fields = [
+            "bomFormat",
+            "specVersion",
+            "serialNumber",
+            "version",
+            "metadata",
+        ]
+    elif package_type == "spdx":
+        extract_fields = [
+            "spdxVersion",
+            "dataLicense",
+            "SPDXID",
+            "name",
+            "documentNamespace",
+            "creationInfo",
+            "comment",
+        ]
+
+    if extract_fields:
+        return extract_headers(input_location, extract_fields)
+
+
+def extract_headers(input_location, extract_fields):
+    """Read a file from the given location and extracts specified fields."""
+    input_path = Path(input_location)
+    document_data = input_path.read_text()
+
+    if str(input_location).endswith(".json"):
+        cyclonedx_document = json.loads(document_data)
+        extracted_headers = {
+            field: value
+            for field, value in cyclonedx_document.items()
+            if field in extract_fields
+        }
+        return extracted_headers
+
+    return {}

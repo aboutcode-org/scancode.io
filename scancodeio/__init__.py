@@ -28,7 +28,7 @@ from pathlib import Path
 
 import git
 
-VERSION = "34.0.0"
+VERSION = "34.6.1"
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = PROJECT_DIR.parent
@@ -94,4 +94,28 @@ def command_line():
     from django.core.management import execute_from_command_line
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "scancodeio.settings")
+    execute_from_command_line(sys.argv)
+
+
+def combined_run():
+    """
+    Command line entry point for executing pipeline as a single command.
+
+    This function sets up a pre-configured settings context, requiring no additional
+    configuration.
+    It combines the creation, execution, and result retrieval of the project into a
+    single process.
+    """
+    from django.core.checks.security.base import SECRET_KEY_INSECURE_PREFIX
+    from django.core.management import execute_from_command_line
+    from django.core.management.utils import get_random_secret_key
+
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "scancodeio.settings")
+    secret_key = SECRET_KEY_INSECURE_PREFIX + get_random_secret_key()
+    os.environ.setdefault("SECRET_KEY", secret_key)
+    os.environ.setdefault("SCANCODEIO_DB_ENGINE", "django.db.backends.sqlite3")
+    os.environ.setdefault("SCANCODEIO_DB_NAME", "scancodeio.sqlite3")
+    os.environ.setdefault("SCANCODEIO_PROCESSES", "0")  # Disable multiprocessing
+
+    sys.argv.insert(1, "run")
     execute_from_command_line(sys.argv)

@@ -37,6 +37,14 @@ SCANCODEIO_DB_PASSWORD=scancodeio
 POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
 DATE=$(shell date +"%Y-%m-%d_%H%M")
 
+# Use sudo for postgres, only on Linux
+UNAME := $(shell uname)
+ifeq ($(UNAME), Linux)
+	SUDO_POSTGRES=sudo -u postgres
+else
+	SUDO_POSTGRES=
+endif
+
 virtualenv:
 	@echo "-> Bootstrap the virtualenv with PYTHON_EXE=${PYTHON_EXE}"
 	@${PYTHON_EXE} ${VIRTUALENV_PYZ} --never-download --no-periodic-update .
@@ -96,15 +104,20 @@ migrate:
 	@echo "-> Apply database migrations"
 	${MANAGE} migrate
 
+upgrade:
+	@echo "-> Upgrade local git checkout"
+	@git pull
+	@$(MAKE) migrate
+
 postgresdb:
 	@echo "-> Configure PostgreSQL database"
 	@echo "-> Create database user ${SCANCODEIO_DB_NAME}"
-	@createuser --no-createrole --no-superuser --login --inherit --createdb '${SCANCODEIO_DB_USER}' || true
-	@psql -c "alter user ${SCANCODEIO_DB_USER} with encrypted password '${SCANCODEIO_DB_PASSWORD}';" || true
+	@${SUDO_POSTGRES} createuser --no-createrole --no-superuser --login --inherit --createdb '${SCANCODEIO_DB_USER}' || true
+	@${SUDO_POSTGRES} psql -c "alter user ${SCANCODEIO_DB_USER} with encrypted password '${SCANCODEIO_DB_PASSWORD}';" || true
 	@echo "-> Drop ${SCANCODEIO_DB_NAME} database"
-	@dropdb ${SCANCODEIO_DB_NAME} || true
+	@${SUDO_POSTGRES} dropdb ${SCANCODEIO_DB_NAME} || true
 	@echo "-> Create ${SCANCODEIO_DB_NAME} database"
-	@createdb --owner=${SCANCODEIO_DB_USER} ${POSTGRES_INITDB_ARGS} ${SCANCODEIO_DB_NAME}
+	@${SUDO_POSTGRES} createdb --owner=${SCANCODEIO_DB_USER} ${POSTGRES_INITDB_ARGS} ${SCANCODEIO_DB_NAME}
 	@$(MAKE) migrate
 
 backupdb:
@@ -150,4 +163,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install check bandit valid isort check-deploy clean migrate postgresdb sqlitedb backupdb run test docs bump docker-images offline-package
+.PHONY: virtualenv conf dev envfile install check bandit valid isort check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run test docs bump docker-images offline-package

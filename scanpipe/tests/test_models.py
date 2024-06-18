@@ -49,7 +49,6 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from packagedcode.models import PackageData
-from packageurl import PackageURL
 from requests.exceptions import RequestException
 from rq.job import JobStatus
 
@@ -71,6 +70,8 @@ from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import dependency_data2
 from scanpipe.tests import license_policies_index
+from scanpipe.tests import make_dependency
+from scanpipe.tests import make_package
 from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
@@ -226,7 +227,7 @@ class ScanPipeModelsTest(TestCase):
         self.project1.add_input_source(
             filename="file2", download_url="https://download.url"
         )
-        self.project1.update(settings={"extract_recursively": True})
+        self.project1.update(settings={"product_name": "My Product"})
         new_file_path1 = self.project1.input_path / "file.zip"
         new_file_path1.touch()
         run1 = self.project1.add_pipeline("analyze_docker_image", selected_groups=["g"])
@@ -596,10 +597,43 @@ class ScanPipeModelsTest(TestCase):
 
     def test_scanpipe_project_get_input_config_file(self):
         self.assertIsNone(self.project1.get_input_config_file())
+
         config_file = self.project1.input_path / settings.SCANCODEIO_CONFIG_FILE
         config_file.touch()
         config_file_location = str(self.project1.get_input_config_file())
         self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
+
+        dir1_path = self.project1.codebase_path / "dir1"
+        dir1_path.mkdir(parents=True, exist_ok=True)
+        dir1_config_file = dir1_path / settings.SCANCODEIO_CONFIG_FILE
+        dir1_config_file.touch()
+        # If a config file exists directly in the input directory, return it.
+        config_file_location = str(self.project1.get_input_config_file())
+        self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
+
+        config_file.unlink()
+        config_file_location = str(self.project1.get_input_config_file())
+        self.assertTrue(
+            config_file_location.endswith("codebase/dir1/scancode-config.yml")
+        )
+
+        dir2_path = self.project1.codebase_path / "dir2"
+        dir2_path.mkdir(parents=True, exist_ok=True)
+        dir2_config_file = dir2_path / settings.SCANCODEIO_CONFIG_FILE
+        dir2_config_file.touch()
+        # If multiple config files are found, report an error.
+        self.assertIsNone(self.project1.get_input_config_file())
+        error = self.project1.projectmessages.get()
+        self.assertIn("More than one scancode-config.yml found", error.description)
+
+        dir1_config_file.unlink()
+        dir2_config_file.unlink()
+        sub_dir1_path = self.project1.codebase_path / "dir1" / "subdir1"
+        sub_dir1_path.mkdir(parents=True, exist_ok=True)
+        sub_dir1_config_file = sub_dir1_path / settings.SCANCODEIO_CONFIG_FILE
+        sub_dir1_config_file.touch()
+        # Search for config files *ONLY* in immediate codebase/ subdirectories.
+        self.assertIsNone(self.project1.get_input_config_file())
 
     def test_scanpipe_project_get_settings_as_yml(self):
         self.assertEqual("{}\n", self.project1.get_settings_as_yml())
@@ -636,18 +670,26 @@ class ScanPipeModelsTest(TestCase):
         copy_input(test_config_file, self.project1.input_path)
 
         expected = {
-            "ignored_patterns": ["*.img", "docs/*", "*/tests/*"],
-            "extract_recursively": False,
+            "product_name": "My Product Name",
+            "product_version": "1.0",
+            "ignored_patterns": ["*.tmp", "tests/*"],
+            "ignored_dependency_scopes": [
+                {"package_type": "npm", "scope": "devDependencies"},
+                {"package_type": "pypi", "scope": "tests"},
+            ],
         }
         self.assertEqual(expected, self.project1.get_env())
 
-        config = {"extract_recursively": True, "ignored_patterns": None}
+        config = {"ignored_patterns": None}
         self.project1.settings = config
         self.project1.save()
-        expected = {
-            "ignored_patterns": ["*.img", "docs/*", "*/tests/*"],
-            "extract_recursively": True,
-        }
+        self.assertEqual(expected, self.project1.get_env())
+
+        config = {"ignored_patterns": ["*.txt"], "product_name": "Product1"}
+        self.project1.settings = config
+        self.project1.save()
+        expected["product_name"] = "Product1"
+        expected["ignored_patterns"] = ["*.txt"]
         self.assertEqual(expected, self.project1.get_env())
 
     def test_scanpipe_project_get_env_invalid_yml_content(self):
@@ -657,6 +699,31 @@ class ScanPipeModelsTest(TestCase):
         config_file_location = str(self.project1.get_input_config_file())
         self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
         self.assertEqual({}, self.project1.get_env())
+
+        error = self.project1.projectmessages.get()
+        self.assertIn("Failed to load configuration from", error.description)
+        self.assertIn("The file format is invalid.", error.description)
+
+    def test_scanpipe_project_get_ignored_dependency_scopes_index(self):
+        self.project1.settings = {
+            "ignored_dependency_scopes": [{"package_type": "pypi", "scope": "tests"}]
+        }
+        expected = {"pypi": ["tests"]}
+        self.assertEqual(expected, self.project1.ignored_dependency_scopes_index)
+        self.assertEqual(expected, self.project1.get_ignored_dependency_scopes_index())
+
+        self.project1.settings = {
+            "ignored_dependency_scopes": [
+                {"package_type": "pypi", "scope": "tests"},
+                {"package_type": "pypi", "scope": "build"},
+                {"package_type": "npm", "scope": "devDependencies"},
+            ]
+        }
+        # Since this is a cache property, it still returns the previous value
+        self.assertEqual(expected, self.project1.ignored_dependency_scopes_index)
+        # The following function call always build and return the index
+        expected = {"npm": ["devDependencies"], "pypi": ["tests", "build"]}
+        self.assertEqual(expected, self.project1.get_ignored_dependency_scopes_index())
 
     def test_scanpipe_project_model_labels(self):
         self.project1.labels.add("label1", "label2")
@@ -1940,8 +2007,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(package_data1["version"], cyclonedx_component.version)
         bom_ref = package.package_uid
         self.assertEqual(bom_ref, str(cyclonedx_component.bom_ref))
-        package_url = PackageURL.from_string(package_data1["package_uid"])
-        self.assertEqual(package_url, cyclonedx_component.purl)
+        self.assertEqual(package.package_url, str(cyclonedx_component.purl))
         self.assertEqual(1, len(cyclonedx_component.licenses))
         self.assertEqual(
             package_data1["declared_license_expression_spdx"],
@@ -2048,6 +2114,32 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(["scope"], updated_fields)
         self.assertEqual(new_data["scope"], dependency.scope)
 
+    def test_scanpipe_discovered_dependency_model_many_to_many(self):
+        project = Project.objects.create(name="project")
+
+        a = make_package(project, "pkg:type/a")
+        b = make_package(project, "pkg:type/b")
+        c = make_package(project, "pkg:type/c")
+        # A -> B -> C
+        a_b = make_dependency(project, for_package=a, resolved_to_package=b)
+        b_c = make_dependency(project, for_package=b, resolved_to_package=c)
+
+        # *_packages fields return DiscoveredPackage QuerySet
+        self.assertEqual([b], list(a.children_packages.all()))
+        self.assertEqual([], list(a.parent_packages.all()))
+        self.assertEqual([c], list(b.children_packages.all()))
+        self.assertEqual([a], list(b.parent_packages.all()))
+        self.assertEqual([], list(c.children_packages.all()))
+        self.assertEqual([b], list(c.parent_packages.all()))
+
+        # *_dependencies fields return DiscoveredDependency QuerySet
+        self.assertEqual([a_b], list(a.declared_dependencies.all()))
+        self.assertEqual([], list(a.resolved_from_dependencies.all()))
+        self.assertEqual([b_c], list(b.declared_dependencies.all()))
+        self.assertEqual([a_b], list(b.resolved_from_dependencies.all()))
+        self.assertEqual([], list(c.declared_dependencies.all()))
+        self.assertEqual([b_c], list(c.resolved_from_dependencies.all()))
+
     def test_scanpipe_discovered_dependency_model_is_vulnerable_property(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
         self.assertFalse(package.is_vulnerable)
@@ -2065,18 +2157,30 @@ class ScanPipeModelsTest(TestCase):
             "modified_resources",
             "codebase_resources",
             "package_uid",
+            "datasource_ids",
+            "datafile_paths",
             "filename",
             "affected_by_vulnerabilities",
             "compliance_alert",
             "tag",
+            "declared_dependencies",
+            "resolved_from_dependencies",
+            "parent_packages",
+            "children_packages",
         ]
+
+        package_data_only_field = ["datasource_id", "dependencies"]
 
         discovered_package_fields = [
             field.name
             for field in DiscoveredPackage._meta.get_fields()
             if field.name not in scanpipe_only_fields
         ]
-        toolkit_package_fields = [field.name for field in PackageData.__attrs_attrs__]
+        toolkit_package_fields = [
+            field.name
+            for field in PackageData.__attrs_attrs__
+            if field.name not in package_data_only_field
+        ]
 
         for toolkit_field in toolkit_package_fields:
             self.assertIn(toolkit_field, discovered_package_fields)
@@ -2373,7 +2477,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
         error = project1.projectmessages.latest("created_date")
         self.assertEqual("DiscoveredPackage", error.model)
-        expected_message = "No values for the following required fields: name"
+        expected_message = 'No values provided for the required "name" field.'
         self.assertEqual(expected_message, error.description)
         self.assertEqual(package_data1["purl"], error.details["purl"])
         self.assertEqual("", error.details["name"])
@@ -2391,6 +2495,17 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
 
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
         self.assertEqual(project_message_count, ProjectMessage.objects.count())
+
+    def test_scanpipe_discovered_package_model_create_from_data_missing_type(self):
+        project1 = Project.objects.create(name="Analysis")
+
+        incomplete_data = dict(package_data1)
+        incomplete_data["type"] = ""
+
+        package = DiscoveredPackage.create_from_data(project1, incomplete_data)
+        self.assertEqual(project1, package.project)
+        self.assertEqual("pkg:unknown/debian/adduser@3.118?arch=all", str(package))
+        self.assertEqual("unknown", package.type)
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_discovered_dependency_model_create_from_data(self):
@@ -2454,9 +2569,11 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         package_data_no_uid = package_data1.copy()
         package_data_no_uid.pop("package_uid")
         package2 = DiscoveredPackage.create_from_data(project1, package_data_no_uid)
-        self.assertFalse(package2.package_uid)
+        self.assertTrue(package2.package_uid)
+        self.assertNotEqual(package.package_uid, package2.package_uid)
         package3 = DiscoveredPackage.create_from_data(project1, package_data_no_uid)
-        self.assertFalse(package3.package_uid)
+        self.assertTrue(package3.package_uid)
+        self.assertNotEqual(package.package_uid, package3.package_uid)
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_codebase_resource_create_and_add_package_warnings(self):

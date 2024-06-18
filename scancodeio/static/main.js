@@ -60,50 +60,61 @@ function setupCloseModalButtons() {
 
 // Tabs
 
-function setupTabs() {
-  const $tabLinks = getAll('.tabs a');
+function activateTab(tabLink) {
+  const tabsContainer = tabLink.closest('.tabs');
+  if (!tabsContainer) return; // Safety check
 
-  function activateTab($tabLink) {
-    const activeLink = document.querySelector('.tabs .is-active');
-    const activeTabContent = document.querySelector('.tab-content.is-active');
-    const targetId = $tabLink.dataset.target;
-    const targetTabContent = document.getElementById(targetId);
+  const tabs = tabsContainer.querySelectorAll('li');
+  const tabContents = tabsContainer.parentNode.querySelectorAll('.tab-content');
 
-    activeLink.classList.remove('is-active');
-    $tabLink.parentNode.classList.add('is-active');
-    if (activeTabContent) activeTabContent.classList.remove('is-active');
-    if (targetTabContent) targetTabContent.classList.add('is-active');
+  // Deactivate all tabs
+  tabs.forEach(item => item.classList.remove('is-active'));
+  // Deactivate all tab contents
+  tabContents.forEach(content => content.classList.remove('is-active'));
 
-    // Set the active tab in the URL hash. The "tab-" prefix is removed to avoid
-    // un-wanted scrolling to the related "id" element
+  tabLink.parentNode.classList.add('is-active');
+  const targetId = tabLink.getAttribute('data-target');
+  const targetContent = tabsContainer.parentNode.querySelector(`#${targetId}`);
+  if (targetContent) {
+    targetContent.classList.add('is-active');
+  }
+
+  // Conditionally update the URL hash
+  const storeInHash = !tabsContainer.classList.contains('disable-hash-storage');
+  if (storeInHash) {
     document.location.hash = targetId.replace('tab-', '');
   }
+}
 
-  // Activate the related tab using the current URL hash
-  function activateTabFromHash() {
-    let tabLink;
+function activateTabFromHash() {
+  const hashValue = document.location.hash.slice(1); // Remove the '#' from the hash
+  if (!hashValue) return;
 
-    if (document.location.hash !== "") {
-      let tabName = document.location.hash.slice(1);
-      tabLink = document.querySelector(`a[data-target="tab-${tabName}"]`);
-    }
-    else if ($tabLinks.length) {
-      tabLink = $tabLinks[0];
-    }
-    if (tabLink) activateTab(tabLink);
+  const tabLink = document.querySelector(`a[data-target="tab-${hashValue}"]`);
+  if (tabLink) {
+    activateTab(tabLink);
   }
+}
 
-  $tabLinks.forEach(function ($el) {
-    $el.addEventListener('click', function () {
-      activateTab($el)
+function setupTabs() {
+  const tabsContainers = document.querySelectorAll('.tabs');
+
+  tabsContainers.forEach(tabsContainer => {
+    const tabLinks = tabsContainer.querySelectorAll('a[data-target]');
+
+    tabLinks.forEach(tabLink => {
+      tabLink.addEventListener('click', (event) => {
+        event.preventDefault(); // Prevent the default behavior of the anchor tag
+        activateTab(tabLink);
+      });
     });
   });
 
   // Activate the related tab if hash is present in the URL on page loading
-  activateTabFromHash();
+   activateTabFromHash();
   // Enable tab history navigation (using previous/next browser button for example)
   // by detecting URL hash changes.
-  window.addEventListener("hashchange", () => {activateTabFromHash()});
+   window.addEventListener("hashchange", activateTabFromHash);
 }
 
 // Menu
@@ -147,12 +158,18 @@ function setupHighlightControls() {
   const $highlightShows = getAll(".is-more-show");
 
   $highlightShows.forEach(function ($el) {
-    $el.addEventListener("click", function () {
-      let text = $el.querySelector("strong").textContent;
-      let newText = text === "Show all" ? "Hide" : "Show all";
-      $el.querySelector("strong").textContent = newText;
-      $el.parentNode.classList.toggle("is-more-clipped");
-    });
+    const parentDiv = $el.parentNode;
+
+    if (parentDiv.scrollHeight <= 250) {
+      $el.style.display = "none";
+    } else {
+      $el.addEventListener("click", function () {
+        let text = $el.querySelector("strong").textContent;
+        let newText = text === "Show all" ? "Hide" : "Show all";
+        $el.querySelector("strong").textContent = newText;
+        $el.parentNode.classList.toggle("is-more-clipped");
+      });
+    }
   });
 }
 

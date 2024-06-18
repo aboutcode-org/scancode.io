@@ -540,6 +540,18 @@ class ScanPipeAPITest(TransactionTestCase):
         results = json.loads(response_value)
         self.assertIn("$schema", sorted(results.keys()))
 
+        data = {
+            "output_format": "cyclonedx",
+            "version": "1.5",
+        }
+        response = self.csrf_client.get(url, data=data)
+        response_value = response.getvalue()
+        results = json.loads(response_value)
+        self.assertEqual(
+            "http://cyclonedx.org/schema/bom-1.5.schema.json", results["$schema"]
+        )
+        self.assertEqual("1.5", results["specVersion"])
+
         data = {"output_format": "xlsx"}
         response = self.csrf_client.get(url, data=data)
         expected = [
@@ -985,8 +997,8 @@ class ScanPipeAPITest(TransactionTestCase):
             get_model_serializer(None)
 
     def test_scanpipe_api_serializer_get_serializer_fields(self):
-        self.assertEqual(45, len(get_serializer_fields(DiscoveredPackage)))
-        self.assertEqual(12, len(get_serializer_fields(DiscoveredDependency)))
+        self.assertEqual(46, len(get_serializer_fields(DiscoveredPackage)))
+        self.assertEqual(13, len(get_serializer_fields(DiscoveredDependency)))
         self.assertEqual(33, len(get_serializer_fields(CodebaseResource)))
         self.assertEqual(5, len(get_serializer_fields(CodebaseRelation)))
         self.assertEqual(7, len(get_serializer_fields(ProjectMessage)))

@@ -31,24 +31,26 @@
             "distro": {
               "os": "linux",
               "architecture": null,
-              "name": "Debian GNU/Linux",
-              "version": "9 (stretch)",
-              "identifier": "debian",
-              "id_like": null,
-              "version_codename": null,
-              "version_id": "9",
-              "pretty_name": "Debian GNU/Linux 9 (stretch)",
+              "name": "Ubuntu",
+              "version": "22.04.3 LTS (Jammy Jellyfish)",
+              "identifier": "ubuntu",
+              "id_like": "debian",
+              "version_codename": "jammy",
+              "version_id": "22.04",
+              "pretty_name": "Ubuntu 22.04.3 LTS",
               "cpe_name": null,
-              "home_url": "https://www.debian.org/",
+              "home_url": "https://www.ubuntu.com/",
               "documentation_url": null,
-              "support_url": "https://www.debian.org/support",
-              "bug_report_url": "https://bugs.debian.org/",
-              "privacy_policy_url": null,
+              "support_url": "https://help.ubuntu.com/",
+              "bug_report_url": "https://bugs.launchpad.net/ubuntu/",
+              "privacy_policy_url": "https://www.ubuntu.com/legal/terms-and-policies/privacy-policy",
               "build_id": null,
               "variant": null,
               "variant_id": null,
               "logo": null,
-              "extra_data": {}
+              "extra_data": {
+                "UBUNTU_CODENAME": "jammy"
+              }
             }
           }
         ]
@@ -57,12 +59,12 @@
   ],
   "packages": [
     {
-      "purl": "pkg:deb/libncurses5@6.1-1ubuntu1.18.04?architecture=amd64",
+      "purl": "pkg:deb/ubuntu/libncurses5@6.1-1ubuntu1.18.04?arch=amd64",
       "type": "deb",
-      "namespace": "",
+      "namespace": "ubuntu",
       "name": "libncurses5",
       "version": "6.1-1ubuntu1.18.04",
-      "qualifiers": "architecture=amd64",
+      "qualifiers": "arch=amd64",
       "subpath": "",
       "tag": "",
       "primary_language": "",
@@ -70,10 +72,10 @@
       "parties": [
         {
           "url": null,
-          "name": "Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>",
+          "name": "Ubuntu Developers",
           "role": "maintainer",
           "type": null,
-          "email": null
+          "email": "ubuntu-devel-discuss@lists.ubuntu.com"
         }
       ],
       "keywords": [
@@ -103,17 +105,20 @@
               "matcher": "2-aho",
               "end_line": 45,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/x11-fsf.LICENSE",
+              "from_file": "basic-rootfs.tar.gz-extract/usr/share/doc/libncurses5/copyright",
               "start_line": 23,
               "matched_text": "Permission is hereby granted, free of charge, to any person obtaining a\ncopy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, distribute with modifications, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included\nin all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS\nOR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE ABOVE COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,\nDAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR\nOTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR\nTHE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\nExcept as contained in this notice, the name(s) of the above copyright\nholders shall not be used in advertising or otherwise to promote the\nsale, use or other dealings in this Software without prior written\nauthorization.",
               "match_coverage": 100.0,
               "matched_length": 200,
               "rule_relevance": 100,
               "rule_identifier": "x11-fsf.LICENSE",
-              "license_expression": "x11-fsf"
+              "license_expression": "x11-fsf",
+              "spdx_license_expression": "X11-distribute-modifications-variant"
             }
           ],
           "identifier": "x11_fsf-5f3d72c2-fa6a-2f7b-b859-17e7567c1724",
-          "license_expression": "x11-fsf"
+          "license_expression": "x11-fsf",
+          "license_expression_spdx": "X11-distribute-modifications-variant"
         },
         {
           "matches": [
@@ -122,17 +127,20 @@
               "matcher": "2-aho",
               "end_line": 70,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/x11-xconsortium_2.RULE",
+              "from_file": "basic-rootfs.tar.gz-extract/usr/share/doc/libncurses5/copyright",
               "start_line": 50,
               "matched_text": "Permission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to\ndeal in the Software without restriction, including without limitation the\nrights to use, copy, modify, merge, publish, distribute, sublicense, and/or\nsell copies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE\nX CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN\nAN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNEC-\nTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\nExcept as contained in this notice, the name of the X Consortium shall not\nbe used in advertising or otherwise to promote the sale, use or other deal-\nings in this Software without prior written authorization from the X Consor-\ntium.",
               "match_coverage": 100.0,
               "matched_length": 201,
               "rule_relevance": 100,
               "rule_identifier": "x11-xconsortium_2.RULE",
-              "license_expression": "x11-xconsortium"
+              "license_expression": "x11-xconsortium",
+              "spdx_license_expression": "X11"
             }
           ],
           "identifier": "x11_xconsortium-8bc3e205-5f29-ecad-90bc-2f492c65be46",
-          "license_expression": "x11-xconsortium"
+          "license_expression": "x11-xconsortium",
+          "license_expression_spdx": "X11"
         },
         {
           "matches": [
@@ -141,17 +149,20 @@
               "matcher": "2-aho",
               "end_line": 98,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/bsd-new_19.RULE",
+              "from_file": "basic-rootfs.tar.gz-extract/usr/share/doc/libncurses5/copyright",
               "start_line": 76,
               "matched_text": "Redistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions\nare met:\n1. Redistributions of source code must retain the above copyright\n   notice, this list of conditions and the following disclaimer.\n2. Redistributions in binary form must reproduce the above copyright\n   notice, this list of conditions and the following disclaimer in the\n   documentation and/or other materials provided with the distribution.\n3. Neither the name of the University nor the names of its contributors\n   may be used to endorse or promote products derived from this software\n   without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE\nARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS\nOR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)\nHOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT\nLIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY\nOUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF\nSUCH DAMAGE.",
               "match_coverage": 100.0,
               "matched_length": 213,
               "rule_relevance": 100,
               "rule_identifier": "bsd-new_19.RULE",
-              "license_expression": "bsd-new"
+              "license_expression": "bsd-new",
+              "spdx_license_expression": "BSD-3-Clause"
             }
           ],
           "identifier": "bsd_new-ccc98c3a-92d4-e7a3-e0ba-798328cb6b98",
-          "license_expression": "bsd-new"
+          "license_expression": "bsd-new",
+          "license_expression_spdx": "BSD-3-Clause"
         },
         {
           "matches": [
@@ -160,17 +171,20 @@
               "matcher": "2-aho",
               "end_line": 127,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/x11-xconsortium_41.RULE",
+              "from_file": "basic-rootfs.tar.gz-extract/usr/share/doc/libncurses5/copyright",
               "start_line": 105,
               "matched_text": "Permission is hereby granted, free of charge, to any person obtaining a\ncopy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be included\nin all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS\nOR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE ABOVE LISTED COPYRIGHT HOLDER(S) BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\nExcept as contained in this notice, the name(s) of the above copyright\nholders shall not be used in advertising or otherwise to promote the\nsale, use or other dealings in this Software without prior written\nauthorization.",
               "match_coverage": 100.0,
               "matched_length": 199,
               "rule_relevance": 100,
               "rule_identifier": "x11-xconsortium_41.RULE",
-              "license_expression": "x11-xconsortium"
+              "license_expression": "x11-xconsortium",
+              "spdx_license_expression": "X11"
             }
           ],
           "identifier": "x11_xconsortium-4a366de0-e107-017e-0783-8145953fe45e",
-          "license_expression": "x11-xconsortium"
+          "license_expression": "x11-xconsortium",
+          "license_expression_spdx": "X11"
         }
       ],
       "other_license_expression": "",
@@ -179,25 +193,32 @@
       "extracted_license_statement": "",
       "notice_text": "",
       "source_packages": [
-        "pkg:deb/ncurses"
+        "pkg:deb/ubuntu/ncurses"
       ],
       "extra_data": {
         "multi_arch": "same"
       },
-      "package_uid": "pkg:deb/libncurses5@6.1-1ubuntu1.18.04?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "package_uid": "pkg:deb/ubuntu/libncurses5@6.1-1ubuntu1.18.04?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datasource_ids": [
+        "debian_installed_status_db",
+        "debian_copyright_in_package"
+      ],
+      "datafile_paths": [
+        "basic-rootfs.tar.gz-extract/var/lib/dpkg/status",
+        "basic-rootfs.tar.gz-extract/usr/share/doc/libncurses5/copyright"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
       "affected_by_vulnerabilities": []
     },
     {
-      "purl": "pkg:deb/libndp0@1.4-2ubuntu0.16.04.1?architecture=amd64",
+      "purl": "pkg:deb/ubuntu/libndp0@1.4-2ubuntu0.16.04.1?arch=amd64",
       "type": "deb",
-      "namespace": "",
+      "namespace": "ubuntu",
       "name": "libndp0",
       "version": "1.4-2ubuntu0.16.04.1",
-      "qualifiers": "architecture=amd64",
+      "qualifiers": "arch=amd64",
       "subpath": "",
       "tag": "",
       "primary_language": "",
@@ -205,10 +226,10 @@
       "parties": [
         {
           "url": null,
-          "name": "Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>",
+          "name": "Ubuntu Developers",
           "role": "maintainer",
           "type": null,
-          "email": null
+          "email": "ubuntu-devel-discuss@lists.ubuntu.com"
         }
       ],
       "keywords": [
@@ -241,55 +262,69 @@
               "matcher": "1-hash",
               "end_line": 13,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-2.1-plus_108.RULE",
+              "from_file": "basic-rootfs.tar.gz-extract/usr/share/doc/libndp0/copyright",
               "start_line": 13,
               "matched_text": "License: lgpl-2.1+",
               "match_coverage": 100.0,
               "matched_length": 4,
               "rule_relevance": 100,
               "rule_identifier": "lgpl-2.1-plus_108.RULE",
-              "license_expression": "lgpl-2.1-plus"
+              "license_expression": "lgpl-2.1-plus",
+              "spdx_license_expression": "LGPL-2.1-or-later"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 26,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-2.1-plus_93.RULE",
+              "from_file": "basic-rootfs.tar.gz-extract/usr/share/doc/libndp0/copyright",
               "start_line": 14,
               "matched_text": "This program is free software; you can redistribute it and/or modify it\nunder the terms of the GNU Lesser General Public License as published\nby the Free Software Foundation; either version 2.1 of the License, or\n(at your option) any later version.\n\nThis program is distributed in the hope that it will be useful,\nbut WITHOUT ANY WARRANTY; without even the implied warranty of\nMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser\nGeneral Public License for more details.\n\nYou should have received a copy of the GNU Lesser General Public License\nalong with this program; if not, write to the Free Software Foundation,\nInc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA",
               "match_coverage": 100.0,
               "matched_length": 117,
               "rule_relevance": 100,
               "rule_identifier": "lgpl-2.1-plus_93.RULE",
-              "license_expression": "lgpl-2.1-plus"
+              "license_expression": "lgpl-2.1-plus",
+              "spdx_license_expression": "LGPL-2.1-or-later"
             },
             {
               "score": 100.0,
               "matcher": "2-aho",
               "end_line": 30,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-2.1_314.RULE",
+              "from_file": "basic-rootfs.tar.gz-extract/usr/share/doc/libndp0/copyright",
               "start_line": 24,
               "matched_text": "You should have received a copy of the GNU Lesser General Public License\nalong with this program; if not, write to the Free Software Foundation,\nInc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA\n\nOn Debian systems, the full text of the GNU Lesser General Public\nLicense version 2.1 can be found in the file\n`/usr/share/common-licenses/LGPL-2.1'.",
               "match_coverage": 100.0,
               "matched_length": 64,
               "rule_relevance": 100,
               "rule_identifier": "lgpl-2.1_314.RULE",
-              "license_expression": "lgpl-2.1"
+              "license_expression": "lgpl-2.1",
+              "spdx_license_expression": "LGPL-2.1-only"
             }
           ],
           "identifier": "lgpl_2_1_plus_and_lgpl_2_1-1018860f-b475-01e3-bdd4-39bf3444650e",
-          "license_expression": "lgpl-2.1-plus AND lgpl-2.1"
+          "license_expression": "lgpl-2.1-plus AND lgpl-2.1",
+          "license_expression_spdx": "LGPL-2.1-or-later AND LGPL-2.1-only"
         }
       ],
       "extracted_license_statement": "- LGPL-2.1+\n- LGPL-2.1+\n- LGPL-2.1+\n",
       "notice_text": "",
       "source_packages": [
-        "pkg:deb/libndp"
+        "pkg:deb/ubuntu/libndp"
       ],
       "extra_data": {
         "multi_arch": "same"
       },
-      "package_uid": "pkg:deb/libndp0@1.4-2ubuntu0.16.04.1?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "package_uid": "pkg:deb/ubuntu/libndp0@1.4-2ubuntu0.16.04.1?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datasource_ids": [
+        "debian_installed_status_db",
+        "debian_copyright_in_package"
+      ],
+      "datafile_paths": [
+        "basic-rootfs.tar.gz-extract/var/lib/dpkg/status",
+        "basic-rootfs.tar.gz-extract/usr/share/doc/libndp0/copyright"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -336,9 +371,9 @@
       "status": "ignored-not-interesting",
       "tag": "",
       "extension": "",
-      "md5": "8589b473401e7ebcca5d97204405c887",
-      "sha1": "29420ee3cb176f64209d5beddc5713133fa7c2d4",
-      "sha256": "aa6ccd5b1ade06c11f679cc781bdd3158f1007266ea391ed98a1bbf365641fd4",
+      "md5": "fd30c92c61acbdebbd205e33534ac9bc",
+      "sha1": "46d2cadf740c18ed8a1b30dbd7f5eeee521e1e8f",
+      "sha256": "4bde2c39f541afb5ac413a03c8e5f57aa99b8fab304a62386dc0b16044cc0e2d",
       "sha512": "",
       "programming_language": "",
       "is_binary": false,
@@ -511,7 +546,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:deb/libncurses5@6.1-1ubuntu1.18.04?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758"
+        "pkg:deb/ubuntu/libncurses5@6.1-1ubuntu1.18.04?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
       "emails": [],
       "urls": [],
@@ -575,7 +610,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:deb/libndp0@1.4-2ubuntu0.16.04.1?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758"
+        "pkg:deb/ubuntu/libndp0@1.4-2ubuntu0.16.04.1?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
       "emails": [],
       "urls": [],
