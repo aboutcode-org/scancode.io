@@ -1543,10 +1543,6 @@ class DiscoveredDependencyListView(
             "field_name": "is_resolved",
             "filter_fieldname": "is_resolved",
         },
-        {
-            "field_name": "is_direct",
-            "filter_fieldname": "is_direct",
-        },
         "for_package",
         "resolved_to_package",
         "datafile_resource",

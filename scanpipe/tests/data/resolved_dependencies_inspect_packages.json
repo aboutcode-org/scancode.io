@@ -1110,13 +1110,13 @@
         }
       ],
       "for_packages": [
-        "pkg:npm/create-athena-partition@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:npm/bluebird@3.7.2?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:npm/csvtojson@2.0.10?uuid=fixed-uid-done-for-testing-5642512d1758",
         "pkg:npm/athena-express@6.0.4?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:npm/strip-bom@2.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:npm/bluebird@3.7.2?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:npm/create-athena-partition@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:npm/csvtojson@2.0.10?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:npm/is-utf8@0.2.1?uuid=fixed-uid-done-for-testing-5642512d1758",
         "pkg:npm/lodash@4.17.21?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:npm/is-utf8@0.2.1?uuid=fixed-uid-done-for-testing-5642512d1758"
+        "pkg:npm/strip-bom@2.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
       "emails": [],
       "urls": [],

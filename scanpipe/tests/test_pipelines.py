@@ -481,10 +481,12 @@ class PipelinesIntegrationTest(TestCase):
                 ):
                     value = purl_with_fake_uuid(value)
                 if key == "for_packages" and value:
-                    value = [
-                        self.purl_fields_with_fake_uuid(package_uid, key)
-                        for package_uid in value
-                    ]
+                    value = sorted(
+                        [
+                            self.purl_fields_with_fake_uuid(package_uid, key)
+                            for package_uid in value
+                        ]
+                    )
                 if is_local_files and key in ("name", "namespace", "purl") and value:
                     value = self.purl_fields_with_fake_uuid(value, key)
                 normalized_data[key] = value
