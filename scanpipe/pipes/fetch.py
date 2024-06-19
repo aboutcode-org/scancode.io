@@ -55,6 +55,9 @@ def run_command_safely(command_args):
     commands. It provides a safer and more straightforward API compared to older methods
     like subprocess.Popen.
 
+    WARNING: Please note that the `--option=value` syntax is required for args entries,
+    and not the `--option value` format.
+
     - This does not use the Shell (shell=False) to prevent injection vulnerabilities.
     - The command should be provided as a list of ``command_args`` arguments.
     - Only full paths to executable commands should be provided to avoid any ambiguity.
@@ -197,12 +200,12 @@ def get_docker_image_platform(docker_url):
     authentication_args = []
     authfile = settings.SCANCODEIO_SKOPEO_AUTHFILE_LOCATION
     if authfile:
-        authentication_args.append(f"--authfile {authfile}")
+        authentication_args.append(f"--authfile={authfile}")
 
     netloc = urlparse(docker_url).netloc
     if credential := settings.SCANCODEIO_SKOPEO_CREDENTIALS.get(netloc):
         # Username and password for accessing the registry.
-        authentication_args.append(f"--creds {credential}")
+        authentication_args.append(f"--creds={credential}")
     elif not authfile:
         # Access the registry anonymously.
         authentication_args.append("--no-creds")
@@ -287,12 +290,12 @@ def fetch_docker_image(docker_url, to=None):
 
     authentication_args = []
     if authfile := settings.SCANCODEIO_SKOPEO_AUTHFILE_LOCATION:
-        authentication_args.append(f"--authfile {authfile}")
+        authentication_args.append(f"--authfile={authfile}")
 
     netloc = urlparse(docker_url).netloc
     if credential := settings.SCANCODEIO_SKOPEO_CREDENTIALS.get(netloc):
         # Credentials for accessing the source registry.
-        authentication_args.append(f"--src-creds {credential}")
+        authentication_args.append(f"--src-creds={credential}")
 
     cmd_args = (
         str(skopeo_executable),

@@ -129,14 +129,14 @@ class ScanPipeFetchPipesTest(TestCase):
             with self.assertRaises(Exception):
                 fetch.fetch_docker_image(url)
             cmd_args = mock_run_command_safely.call_args[0][0]
-            self.assertIn("--authfile auth.json", cmd_args)
+            self.assertIn("--authfile=auth.json", cmd_args)
 
         credentials = {"registry.com": "user:password"}
         with override_settings(SCANCODEIO_SKOPEO_CREDENTIALS=credentials):
             with self.assertRaises(Exception):
                 fetch.fetch_docker_image(url)
             cmd_args = mock_run_command_safely.call_args[0][0]
-            self.assertIn("--src-creds user:password", cmd_args)
+            self.assertIn("--src-creds=user:password", cmd_args)
 
     @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")
     @mock.patch("scanpipe.pipes.fetch.run_command_safely")
@@ -165,14 +165,14 @@ class ScanPipeFetchPipesTest(TestCase):
         with override_settings(SCANCODEIO_SKOPEO_AUTHFILE_LOCATION="auth.json"):
             fetch.get_docker_image_platform(url)
             cmd_args = mock_run_command_safely.call_args[0][0]
-            self.assertIn("--authfile auth.json", cmd_args)
+            self.assertIn("--authfile=auth.json", cmd_args)
             self.assertNotIn("--no-creds", cmd_args)
 
         credentials = {"registry.com": "user:password"}
         with override_settings(SCANCODEIO_SKOPEO_CREDENTIALS=credentials):
             fetch.get_docker_image_platform(url)
             cmd_args = mock_run_command_safely.call_args[0][0]
-            self.assertIn("--creds user:password", cmd_args)
+            self.assertIn("--creds=user:password", cmd_args)
             self.assertNotIn("--no-creds", cmd_args)
 
     def test_scanpipe_pipes_fetch_docker_image_string_injection_protection(self):
