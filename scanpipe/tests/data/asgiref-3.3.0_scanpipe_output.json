@@ -2,18 +2,18 @@
   "headers": [
     {
       "tool_name": "scanpipe",
-      "tool_version": "v34.5.0-8-g21a9308",
+      "tool_version": "v34.6.2-9-g4aef6db",
       "other_tools": [
-        "pkg:pypi/scancode-toolkit@32.1.0"
+        "pkg:pypi/scancode-toolkit@32.2.0"
       ],
       "notice": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n",
-      "uuid": "83d59103-a103-4c9a-a433-618eff973b63",
-      "created_date": "2024-06-13T14:23:21.548Z",
+      "uuid": "0d37341f-f1fc-45c9-bc02-db1eabaccae7",
+      "created_date": "2024-06-20T14:35:43.180Z",
       "notes": "",
       "settings": {},
       "input_sources": [
         {
-          "uuid": "075464b8-34ad-44ef-b5d3-99a50d79c5d4",
+          "uuid": "1d424247-8840-43f1-bfe0-277d73c72106",
           "filename": "asgiref-3.3.0-py3-none-any.whl",
           "download_url": "",
           "is_uploaded": true,
@@ -28,15 +28,15 @@
           "pipeline_name": "scan_codebase",
           "status": "not_started",
           "description": "Scan a codebase for application packages, licenses, and copyrights.",
-          "uuid": "ceb011c2-6d52-4c3a-bbff-c53e45f0313e",
-          "created_date": "2024-06-13T14:23:21.551739Z",
+          "uuid": "c2be3b12-1cf4-4f1d-9802-411f73c17e58",
+          "created_date": "2024-06-20T14:35:43.184006Z",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
           "task_end_date": null,
           "task_exitcode": null,
           "task_output": "",
-          "log": "2024-06-13 14:23:21.55 Pipeline [scan_codebase] starting\n2024-06-13 14:23:21.55 Step [download_missing_inputs] starting\n2024-06-13 14:23:21.55 Step [download_missing_inputs] completed in 0 seconds\n2024-06-13 14:23:21.55 Step [copy_inputs_to_codebase_directory] starting\n2024-06-13 14:23:21.55 Step [copy_inputs_to_codebase_directory] completed in 0 seconds\n2024-06-13 14:23:21.55 Step [extract_archives] starting\n2024-06-13 14:23:21.60 Step [extract_archives] completed in 0 seconds\n2024-06-13 14:23:21.60 Step [collect_and_create_codebase_resources] starting\n2024-06-13 14:23:21.67 Step [collect_and_create_codebase_resources] completed in 0 seconds\n2024-06-13 14:23:21.67 Step [flag_empty_files] starting\n2024-06-13 14:23:21.67 Step [flag_empty_files] completed in 0 seconds\n2024-06-13 14:23:21.67 Step [flag_ignored_resources] starting\n2024-06-13 14:23:21.67 Step [flag_ignored_resources] completed in 0 seconds\n2024-06-13 14:23:21.68 Step [scan_for_application_packages] starting\n2024-06-13 14:23:21.69 Progress: 11% (2/18)\n2024-06-13 14:23:21.70 Progress: 22% (4/18)\n2024-06-13 14:23:21.71 Progress: 33% (6/18)\n2024-06-13 14:23:21.71 Progress: 44% (8/18)\n2024-06-13 14:23:21.71 Progress: 55% (10/18)\n2024-06-13 14:23:21.71 Progress: 66% (12/18)\n2024-06-13 14:23:21.71 Progress: 77% (14/18)\n2024-06-13 14:23:21.71 Progress: 88% (16/18)\n2024-06-13 14:23:24.08 Progress: 100% (18/18)\n2024-06-13 14:23:26.20 Step [scan_for_application_packages] completed in 5 seconds\n2024-06-13 14:23:26.20 Step [scan_for_files] starting\n2024-06-13 14:23:26.32 Progress: 12% (2/16) ETA: 1 seconds\n2024-06-13 14:23:26.33 Progress: 25% (4/16)\n2024-06-13 14:23:26.35 Progress: 37% (6/16)\n2024-06-13 14:23:26.56 Progress: 50% (8/16)\n2024-06-13 14:23:26.60 Progress: 62% (10/16)\n2024-06-13 14:23:26.63 Progress: 75% (12/16)\n2024-06-13 14:23:26.79 Progress: 87% (14/16)\n2024-06-13 14:23:26.88 Progress: 100% (16/16)\n2024-06-13 14:23:26.90 Step [scan_for_files] completed in 1 seconds\n2024-06-13 14:23:26.90 Pipeline completed in 5 seconds\n",
+          "log": "2024-06-20 14:35:43.18 Pipeline [scan_codebase] starting\n2024-06-20 14:35:43.18 Step [download_missing_inputs] starting\n2024-06-20 14:35:43.18 Step [download_missing_inputs] completed in 0 seconds\n2024-06-20 14:35:43.18 Step [copy_inputs_to_codebase_directory] starting\n2024-06-20 14:35:43.18 Step [copy_inputs_to_codebase_directory] completed in 0 seconds\n2024-06-20 14:35:43.18 Step [extract_archives] starting\n2024-06-20 14:35:43.24 Step [extract_archives] completed in 0 seconds\n2024-06-20 14:35:43.24 Step [collect_and_create_codebase_resources] starting\n2024-06-20 14:35:43.32 Step [collect_and_create_codebase_resources] completed in 0 seconds\n2024-06-20 14:35:43.32 Step [flag_empty_files] starting\n2024-06-20 14:35:43.32 Step [flag_empty_files] completed in 0 seconds\n2024-06-20 14:35:43.32 Step [flag_ignored_resources] starting\n2024-06-20 14:35:43.32 Step [flag_ignored_resources] completed in 0 seconds\n2024-06-20 14:35:43.32 Step [scan_for_application_packages] starting\n2024-06-20 14:35:43.35 Progress: 11% (2/18)\n2024-06-20 14:35:43.37 Progress: 22% (4/18)\n2024-06-20 14:35:43.37 Progress: 33% (6/18)\n2024-06-20 14:35:43.37 Progress: 44% (8/18)\n2024-06-20 14:35:43.37 Progress: 55% (10/18)\n2024-06-20 14:35:43.37 Progress: 66% (12/18)\n2024-06-20 14:35:43.37 Progress: 77% (14/18)\n2024-06-20 14:35:43.37 Progress: 88% (16/18)\n2024-06-20 14:35:46.48 Progress: 100% (18/18)\n2024-06-20 14:35:49.01 Step [scan_for_application_packages] completed in 6 seconds\n2024-06-20 14:35:49.01 Step [scan_for_files] starting\n2024-06-20 14:35:49.18 Progress: 12% (2/16) ETA: 1 seconds\n2024-06-20 14:35:49.19 Progress: 25% (4/16) ETA: 1 seconds\n2024-06-20 14:35:49.19 Progress: 37% (6/16)\n2024-06-20 14:35:49.49 Progress: 50% (8/16)\n2024-06-20 14:35:49.59 Progress: 62% (10/16)\n2024-06-20 14:35:49.64 Progress: 75% (12/16)\n2024-06-20 14:35:49.85 Progress: 87% (14/16)\n2024-06-20 14:35:50.04 Progress: 100% (16/16)\n2024-06-20 14:35:50.07 Step [scan_for_files] completed in 1 seconds\n2024-06-20 14:35:50.08 Pipeline completed in 7 seconds\n",
           "execution_time": null
         }
       ],
@@ -154,7 +154,7 @@
         "Documentation": "https://asgi.readthedocs.io/",
         "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
       },
-      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=eca680a3-115b-494b-8581-81c93384e22d",
+      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=4705892e-924f-483a-a951-05109c930b3d",
       "is_private": false,
       "is_virtual": false,
       "datasource_ids": [
@@ -278,7 +278,7 @@
         "Documentation": "https://asgi.readthedocs.io/",
         "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
       },
-      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976",
+      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37",
       "is_private": false,
       "is_virtual": false,
       "datasource_ids": [
@@ -302,8 +302,8 @@
       "is_optional": true,
       "is_resolved": false,
       "is_direct": true,
-      "dependency_uid": "pkg:pypi/pytest?uuid=9f487b4c-4d3e-4d13-9100-89ab897c90ee",
-      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=eca680a3-115b-494b-8581-81c93384e22d",
+      "dependency_uid": "pkg:pypi/pytest?uuid=52eb9840-989c-407d-8e4b-309535ef9df5",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=4705892e-924f-483a-a951-05109c930b3d",
       "resolved_to_package_uid": null,
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
@@ -318,8 +318,8 @@
       "is_optional": true,
       "is_resolved": false,
       "is_direct": true,
-      "dependency_uid": "pkg:pypi/pytest?uuid=909f72ab-1d6b-41f6-b41a-2b3be388870a",
-      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976",
+      "dependency_uid": "pkg:pypi/pytest?uuid=7b581a48-b4b1-40e6-a7e5-a14de28ca546",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37",
       "resolved_to_package_uid": null,
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
@@ -334,8 +334,8 @@
       "is_optional": true,
       "is_resolved": false,
       "is_direct": true,
-      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=7c26cfc3-080d-4d3c-bcfe-fd6a495c5d3a",
-      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=eca680a3-115b-494b-8581-81c93384e22d",
+      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=9e2bf13a-0bdf-4894-a0d3-e44c28893055",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=4705892e-924f-483a-a951-05109c930b3d",
       "resolved_to_package_uid": null,
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
@@ -350,8 +350,8 @@
       "is_optional": true,
       "is_resolved": false,
       "is_direct": true,
-      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=e474c205-ceef-444a-a0d7-aee32c8716df",
-      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976",
+      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=02fcb56f-f0d2-438c-989e-54cb8009ebe6",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37",
       "resolved_to_package_uid": null,
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
@@ -656,7 +656,7 @@
         }
       ],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=eca680a3-115b-494b-8581-81c93384e22d"
+        "pkg:pypi/asgiref@3.3.0?uuid=4705892e-924f-483a-a951-05109c930b3d"
       ],
       "emails": [],
       "urls": [],
@@ -833,7 +833,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976"
+        "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37"
       ],
       "emails": [],
       "urls": [],
@@ -1135,7 +1135,7 @@
         }
       ],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976"
+        "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37"
       ],
       "emails": [],
       "urls": [],
@@ -1172,7 +1172,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976"
+        "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37"
       ],
       "emails": [],
       "urls": [],
@@ -1209,7 +1209,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976"
+        "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37"
       ],
       "emails": [],
       "urls": [],
@@ -1246,7 +1246,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976"
+        "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37"
       ],
       "emails": [],
       "urls": [],
@@ -1283,7 +1283,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976"
+        "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37"
       ],
       "emails": [],
       "urls": [],
@@ -1320,7 +1320,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976"
+        "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37"
       ],
       "emails": [],
       "urls": [],
@@ -1357,7 +1357,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976"
+        "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37"
       ],
       "emails": [],
       "urls": [],
@@ -1394,7 +1394,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976"
+        "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37"
       ],
       "emails": [],
       "urls": [],
@@ -1431,7 +1431,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976"
+        "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37"
       ],
       "emails": [],
       "urls": [],
@@ -1468,7 +1468,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976"
+        "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37"
       ],
       "emails": [],
       "urls": [],
@@ -1505,7 +1505,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976"
+        "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37"
       ],
       "emails": [],
       "urls": [],
@@ -1565,7 +1565,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976"
+        "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37"
       ],
       "emails": [],
       "urls": [
@@ -1618,7 +1618,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=510ea8b0-d7a7-4531-96ea-f41cb4384976"
+        "pkg:pypi/asgiref@3.3.0?uuid=52c2a744-d7a9-4afc-b38a-5d86a19d9c37"
       ],
       "emails": [],
       "urls": [],

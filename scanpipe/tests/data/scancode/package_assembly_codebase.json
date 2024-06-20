@@ -2,16 +2,16 @@
   "headers": [
     {
       "tool_name": "scancode-toolkit",
-      "tool_version": "32.1.0",
+      "tool_version": "32.2.0",
       "options": {
         "--info": true,
         "--package": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "start_timestamp": "2024-06-13T142327.801919",
-      "end_timestamp": "2024-06-13T142327.894178",
-      "output_format_version": "3.1.0",
-      "duration": 0.09227418899536133,
+      "start_timestamp": "2024-06-20T143551.606618",
+      "end_timestamp": "2024-06-20T143551.806679",
+      "output_format_version": "3.2.0",
+      "duration": 0.2000892162322998,
       "message": null,
       "errors": [],
       "warnings": [],
@@ -23,7 +23,7 @@
           "platform_version": "#122-Ubuntu SMP Thu May 23 07:48:21 UTC 2024",
           "python_version": "3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0]"
         },
-        "spdx_license_list_version": "3.23",
+        "spdx_license_list_version": "3.24",
         "files_count": 3
       }
     }
@@ -91,7 +91,7 @@
       "repository_homepage_url": "https://www.npmjs.com/package/test",
       "repository_download_url": "https://registry.npmjs.org/test/-/test-0.1.0.tgz",
       "api_data_url": "https://registry.npmjs.org/test/0.1.0",
-      "package_uid": "pkg:npm/test@0.1.0?uuid=a5225ee0-cc90-49cf-80bc-370004b8ced5",
+      "package_uid": "pkg:npm/test@0.1.0?uuid=52a13e12-1ca3-4d62-8468-0ef2122c1fb8",
       "datafile_paths": [
         "package_assembly_codebase.tar.gz-extract/test/get_package_resources/package.json"
       ],
@@ -274,7 +274,7 @@
         }
       ],
       "for_packages": [
-        "pkg:npm/test@0.1.0?uuid=a5225ee0-cc90-49cf-80bc-370004b8ced5"
+        "pkg:npm/test@0.1.0?uuid=52a13e12-1ca3-4d62-8468-0ef2122c1fb8"
       ],
       "files_count": 0,
       "dirs_count": 0,
@@ -303,7 +303,7 @@
       "is_script": false,
       "package_data": [],
       "for_packages": [
-        "pkg:npm/test@0.1.0?uuid=a5225ee0-cc90-49cf-80bc-370004b8ced5"
+        "pkg:npm/test@0.1.0?uuid=52a13e12-1ca3-4d62-8468-0ef2122c1fb8"
       ],
       "files_count": 0,
       "dirs_count": 0,
