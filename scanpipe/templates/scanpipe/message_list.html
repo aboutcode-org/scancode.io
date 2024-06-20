@@ -30,7 +30,7 @@
             <td style="max-width: 250px;">
               <div style="max-height: 200px; overflow-y: scroll;">
                 {% if message.description|length < 100 %}
-                  <a href="?message={{ message.description }}" class="is-black-link">{{ message.description }}</a>
+                  <a href="?description={{ message.description }}" class="is-black-link">{{ message.description }}</a>
                 {% else %}
                   {{ message.description }}
                 {% endif %}
