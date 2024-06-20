@@ -30,6 +30,7 @@ from scanpipe.pipes import js
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.pipes.pathmap import build_index
+from scanpipe.tests import make_resource_file
 
 
 class ScanPipeJsTest(TestCase):
@@ -180,6 +181,12 @@ class ScanPipeJsTest(TestCase):
         result = js.get_minified_resource(map_file, minified_resources)
 
         self.assertEqual(expected, result)
+
+    def test_scanpipe_pipes_js_get_minified_resource_multiple_map_occurrences(self):
+        resource = make_resource_file(self.project1, "main.map.js.map")
+        self.assertIsNone(
+            js.get_minified_resource(resource, self.project1.codebaseresources.all())
+        )
 
     def test_scanpipe_pipes_js_get_matches_by_ratio(self):
         to_dir = (

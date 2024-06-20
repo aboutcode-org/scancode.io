@@ -120,7 +120,7 @@ class ScanSinglePackage(Pipeline):
             self.project.add_error(
                 description="\n".join(errors),
                 model=self.pipeline_name,
-                details={"path": resource_path},
+                details={"resource_path": resource_path.removeprefix("codebase/")},
             )
 
         if not scan_output_path.exists():
