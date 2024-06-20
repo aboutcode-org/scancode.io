@@ -125,7 +125,7 @@ def extract_archives(location, recurse=False):
 
     If `recurse` is True, extract nested archives-in-archives recursively.
 
-    Return a list of extraction errors.
+    Return a dict of extraction errors, keyed by the resource location.
 
     Wrapper of the `extractcode.api.extract_archives` function.
     """
@@ -135,10 +135,11 @@ def extract_archives(location, recurse=False):
         "all_formats": True,
     }
 
-    errors = []
+    errors = {}
     for event in extractcode_api.extract_archives(location, **options):
-        if event.done:
-            errors.extend(event.errors)
+        if event.done and event.errors:
+            resource_path = str(Path(event.source).relative_to(location))
+            errors[resource_path] = event.errors
 
     return errors
 

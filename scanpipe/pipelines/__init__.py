@@ -310,8 +310,12 @@ class Pipeline(BasePipeline):
             recurse=True,
         )
 
-        if extract_errors:
-            self.add_error("\n".join(extract_errors))
+        for resource_path, errors in extract_errors.items():
+            self.project.add_error(
+                description="\n".join(errors),
+                model="extract_archives",
+                details={"resource_path": resource_path},
+            )
 
         # Reload the project env post-extraction as the scancode-config.yml file
         # may be located in one of the extracted archives.

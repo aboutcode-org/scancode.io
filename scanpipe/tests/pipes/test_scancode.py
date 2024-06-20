@@ -78,7 +78,7 @@ class ScanPipeScancodePipesTest(TestCase):
         copy_input(input_location, tempdir)
 
         errors = scancode.extract_archives(tempdir)
-        self.assertEqual([], errors)
+        self.assertEqual({}, errors)
 
         results = [path.name for path in list(tempdir.glob("**/*"))]
         self.assertEqual(9, len(results))
