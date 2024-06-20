@@ -24,6 +24,8 @@ from pathlib import Path
 
 from django.test import TestCase
 
+import mock
+
 from scanpipe import pipes
 from scanpipe.models import Project
 from scanpipe.pipes import resolve
@@ -201,6 +203,20 @@ class ScanPipeResolvePipesTest(TestCase):
         resource1 = project1.codebaseresources.get(name="toml.spdx.json")
         self.assertEqual([resource1], package.get("codebase_resources"))
 
+        self.assertEqual(["sboms_headers"], list(project1.extra_data.keys()))
+        sboms_headers = project1.extra_data["sboms_headers"]
+        self.assertEqual(["toml.spdx.json"], list(sboms_headers.keys()))
+        expected = [
+            "spdxVersion",
+            "dataLicense",
+            "SPDXID",
+            "name",
+            "documentNamespace",
+            "creationInfo",
+            "comment",
+        ]
+        self.assertEqual(expected, list(sboms_headers["toml.spdx.json"].keys()))
+
     def test_scanpipe_resolve_create_packages_and_dependencies(self):
         project1 = Project.objects.create(name="Analysis")
         input_location = self.data_location / "manifests" / "toml.spdx.json"
@@ -221,3 +237,18 @@ class ScanPipeResolvePipesTest(TestCase):
         resource1 = project1.codebaseresources.get(name="toml.spdx.json")
         package = project1.discoveredpackages.get()
         self.assertEqual(resource1, package.codebase_resources.get())
+
+    def test_scanpipe_resolve_get_manifest_headers(self):
+        input_location = self.data_location / "manifests" / "toml.spdx.json"
+        resource = mock.Mock(location=input_location)
+        expected = [
+            "spdxVersion",
+            "dataLicense",
+            "SPDXID",
+            "name",
+            "documentNamespace",
+            "creationInfo",
+            "comment",
+        ]
+        headers = resolve.get_manifest_headers(resource)
+        self.assertEqual(expected, list(headers.keys()))

@@ -18,7 +18,7 @@ def update_package_datasource_ids(apps, schema_editor):
 
     object_count = queryset.count()
     if object_count:
-        logger.info(f"\nCompute datasource_ids for {object_count:,} packages.")
+        logger.info(f"Compute datasource_ids for {object_count:,} packages.")
 
     chunk_size = 2000
     iterator = queryset.iterator(chunk_size=chunk_size)

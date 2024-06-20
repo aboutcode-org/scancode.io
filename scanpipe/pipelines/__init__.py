@@ -40,8 +40,18 @@ from scanpipe import humanize_time
 logger = logging.getLogger(__name__)
 
 
-class InputFileError(Exception):
+class InputFilesError(Exception):
     """InputFile is missing or cannot be downloaded."""
+
+    def __init__(self, error_tracebacks):
+        self.error_tracebacks = error_tracebacks
+        super().__init__(self._generate_message())
+
+    def _generate_message(self):
+        message = "InputFilesError encountered with the following issues:\n"
+        for index, (error, tb) in enumerate(self.error_tracebacks, start=1):
+            message += f"\nError {index}: {str(error)}\n\n{tb}"
+        return message
 
 
 def group(*groups):
@@ -218,9 +228,9 @@ class BasePipeline:
     def download_missing_inputs(self):
         """
         Download any InputSource missing on disk.
-        Raise an error if any of the uploaded files is not available.
+        Raise an error if any of the uploaded files is not available or not reachable.
         """
-        errors = []
+        error_tracebacks = []
 
         for input_source in self.project.inputsources.all():
             if input_source.exists():
@@ -229,18 +239,20 @@ class BasePipeline:
             if input_source.is_uploaded:
                 msg = f"Uploaded file {input_source} not available."
                 self.log(msg)
-                errors.append(msg)
+                error_tracebacks.append((msg, "No traceback available."))
                 continue
 
             self.log(f"Fetching input from {input_source.download_url}")
             try:
                 input_source.fetch()
             except Exception as error:
+                traceback_str = traceback.format_exc()
+                logger.error(traceback_str)
                 self.log(f"{input_source.download_url} could not be fetched.")
-                errors.append(error)
+                error_tracebacks.append((str(error), traceback_str))
 
-        if errors:
-            raise InputFileError(errors)
+        if error_tracebacks:
+            raise InputFilesError(error_tracebacks)
 
     def add_error(self, exception, resource=None):
         """Create a ``ProjectMessage`` ERROR record on the current `project`."""

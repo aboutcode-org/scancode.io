@@ -39,7 +39,7 @@ from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.pipelines import InputFileError
+from scanpipe.pipelines import InputFilesError
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import root_filesystem
@@ -166,11 +166,17 @@ class ScanPipePipelinesTest(TestCase):
             filename=file_location.name, is_uploaded=True
         )
         self.assertFalse(input_source.exists())
-        with self.assertRaises(InputFileError) as error:
+        with self.assertRaises(InputFilesError) as error:
             pipeline.download_missing_inputs()
-        error_msg = "Uploaded file filename=notice.NOTICE [uploaded] not available."
-        self.assertEqual(f"['{error_msg}']", str(error.exception))
-        self.assertIn(error_msg, run.log)
+        error_msg = (
+            "InputFilesError encountered with the following issues:\n\n"
+            "Error 1: Uploaded file filename=notice.NOTICE [uploaded] not available."
+            "\n\nNo traceback available."
+        )
+        self.assertEqual(error_msg, str(error.exception))
+        self.assertIn(
+            "Uploaded file filename=notice.NOTICE [uploaded] not available.", run.log
+        )
 
         project1.copy_input_from(file_location)
         self.assertTrue(input_source.exists())
@@ -190,6 +196,53 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual("file.zip", input_source2.filename)
         self.assertTrue(input_source2.exists())
         mock_get.assert_called_once()
+
+    @mock.patch("scanpipe.models.InputSource.fetch")
+    def test_scanpipe_pipeline_class_download_fetch_exception(self, mock_fetch):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("do_nothing")
+        pipeline = run.make_pipeline_instance()
+
+        mock_fetch.side_effect = Exception("File not found")
+        download_url = "https://download.url/file.zip"
+        project1.add_input_source(download_url=download_url)
+
+        with self.assertRaises(InputFilesError) as error:
+            pipeline.download_missing_inputs()
+        self.assertIn(
+            "InputFilesError encountered with the following issues:",
+            str(error.exception),
+        )
+        self.assertIn("Error 1: File not found", str(error.exception))
+        self.assertIn("Traceback (most recent call last):", str(error.exception))
+        self.assertIn("Exception: File not found", str(error.exception))
+
+        self.assertIn("Fetching input from https://download.url/file.zip", run.log)
+        self.assertIn("https://download.url/file.zip could not be fetched.", run.log)
+
+    @mock.patch("git.repo.base.Repo.clone_from")
+    def test_scanpipe_pipeline_class_download_missing_inputs_git_repo(self, mock_clone):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("do_nothing")
+        pipeline = run.make_pipeline_instance()
+
+        download_url = "https://github.com/nexB/scancode.io.git"
+        input_source = project1.add_input_source(download_url=download_url)
+
+        def mock_make_to_path(**kwargs):
+            to_path = kwargs.get("to_path")
+            to_path.touch()
+
+        mock_clone.side_effect = mock_make_to_path
+        mock_clone.return_value = None
+
+        pipeline.download_missing_inputs()
+        self.assertIn(
+            "Fetching input from https://github.com/nexB/scancode.io.git", run.log
+        )
+        input_source.refresh_from_db()
+        self.assertEqual("scancode.io.git", input_source.filename)
+        self.assertTrue(input_source.exists())
 
     def test_scanpipe_pipeline_class_save_errors_context_manager(self):
         project1 = Project.objects.create(name="Analysis")

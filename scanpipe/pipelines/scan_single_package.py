@@ -70,7 +70,7 @@ class ScanSinglePackage(Pipeline):
     def get_package_input(self):
         """Locate the package input in the project's input/ directory."""
         input_files = self.project.input_files
-        inputs = list(self.project.inputs())
+        inputs = list(self.project.inputs("*"))
 
         if len(inputs) != 1 or len(input_files) != 1:
             raise Exception("Only 1 input file supported")
@@ -120,7 +120,7 @@ class ScanSinglePackage(Pipeline):
             self.project.add_error(
                 description="\n".join(errors),
                 model=self.pipeline_name,
-                details={"path": resource_path},
+                details={"resource_path": resource_path.removeprefix("codebase/")},
             )
 
         if not scan_output_path.exists():

@@ -1,6 +1,29 @@
 Changelog
 =========
 
+v34.6.3 (unreleased)
+--------------------
+
+- Use the ``--option=value`` syntax for args entries in place of ``--option value``
+  for fetching Docker images using skopeo through ``run_command_safely`` calls.
+  https://github.com/nexB/scancode.io/issues/1257
+
+- Fix an issue in the d2d JavaScript mapper.
+  https://github.com/nexB/scancode.io/pull/1274
+
+v34.6.2 (2024-06-18)
+--------------------
+
+- Store SBOMs headers in the `Project.extra_data` field during the load_sboms
+  pipeline.
+  https://github.com/nexB/scancode.io/issues/1253
+
+- Add support for fetching Git repository as Project input.
+  https://github.com/nexB/scancode.io/issues/921
+
+- Enhance the logging and reporting of input fetch exceptions.
+  https://github.com/nexB/scancode.io/issues/1257
+
 v34.6.1 (2024-06-07)
 --------------------
 

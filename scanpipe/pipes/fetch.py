@@ -34,6 +34,7 @@ from urllib.parse import urlparse
 
 from django.conf import settings
 
+import git
 import requests
 from commoncode import command
 from commoncode.hash import multi_checksums
@@ -54,6 +55,9 @@ def run_command_safely(command_args):
     commands. It provides a safer and more straightforward API compared to older methods
     like subprocess.Popen.
 
+    WARNING: Please note that the `--option=value` syntax is required for args entries,
+    and not the `--option value` format.
+
     - This does not use the Shell (shell=False) to prevent injection vulnerabilities.
     - The command should be provided as a list of ``command_args`` arguments.
     - Only full paths to executable commands should be provided to avoid any ambiguity.
@@ -62,15 +66,22 @@ def run_command_safely(command_args):
     sure to sanitize and validate the input to prevent any malicious commands from
     being executed.
 
-    As ``check`` is True, if the exit code is non-zero, it raises a CalledProcessError.
+    Raise a SubprocessError if the exit code was non-zero.
     """
-    result = subprocess.run(  # nosec
+    completed_process = subprocess.run(  # nosec
         command_args,
         capture_output=True,
         text=True,
-        check=True,
     )
-    return result.stdout
+
+    if completed_process.returncode:
+        error_msg = (
+            f'Error while executing cmd="{completed_process.args}": '
+            f'"{completed_process.stderr.strip()}"'
+        )
+        raise subprocess.SubprocessError(error_msg)
+
+    return completed_process.stdout
 
 
 def get_request_session(uri):
@@ -189,12 +200,12 @@ def get_docker_image_platform(docker_url):
     authentication_args = []
     authfile = settings.SCANCODEIO_SKOPEO_AUTHFILE_LOCATION
     if authfile:
-        authentication_args.append(f"--authfile {authfile}")
+        authentication_args.append(f"--authfile={authfile}")
 
     netloc = urlparse(docker_url).netloc
     if credential := settings.SCANCODEIO_SKOPEO_CREDENTIALS.get(netloc):
         # Username and password for accessing the registry.
-        authentication_args.append(f"--creds {credential}")
+        authentication_args.append(f"--creds={credential}")
     elif not authfile:
         # Access the registry anonymously.
         authentication_args.append("--no-creds")
@@ -279,12 +290,12 @@ def fetch_docker_image(docker_url, to=None):
 
     authentication_args = []
     if authfile := settings.SCANCODEIO_SKOPEO_AUTHFILE_LOCATION:
-        authentication_args.append(f"--authfile {authfile}")
+        authentication_args.append(f"--authfile={authfile}")
 
     netloc = urlparse(docker_url).netloc
     if credential := settings.SCANCODEIO_SKOPEO_CREDENTIALS.get(netloc):
         # Credentials for accessing the source registry.
-        authentication_args.append(f"--src-creds {credential}")
+        authentication_args.append(f"--src-creds={credential}")
 
     cmd_args = (
         str(skopeo_executable),
@@ -312,6 +323,28 @@ def fetch_docker_image(docker_url, to=None):
     )
 
 
+def fetch_git_repo(url, to=None):
+    """Fetch provided git ``url`` as a clone and return a ``Download`` object."""
+    download_directory = to or tempfile.mkdtemp()
+    url = url.rstrip("/")
+    filename = url.split("/")[-1]
+    to_path = Path(download_directory) / filename
+    # Disable any prompt, especially for credentials
+    git_env = {"GIT_TERMINAL_PROMPT": "0"}
+
+    git.Repo.clone_from(url=url, to_path=to_path, depth=1, env=git_env)
+
+    return Download(
+        uri=url,
+        directory=download_directory,
+        filename=filename,
+        path=to_path,
+        size="",
+        sha1="",
+        md5="",
+    )
+
+
 SCHEME_TO_FETCHER_MAPPING = {
     "http": fetch_http,
     "https": fetch_http,
@@ -321,6 +354,12 @@ SCHEME_TO_FETCHER_MAPPING = {
 
 def get_fetcher(url):
     """Return the fetcher function based on the provided `url` scheme."""
+    if url.startswith("git@"):
+        raise ValueError("SSH 'git@' URLs are not supported. Use https:// instead.")
+
+    if url.rstrip("/").endswith(".git"):
+        return fetch_git_repo
+
     # Not using `urlparse(url).scheme` for the scheme as it converts to lower case.
     scheme = url.split("://")[0]
 

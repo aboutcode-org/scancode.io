@@ -965,7 +965,7 @@ class AboutFileIndexes:
 
             if not mapped_resources:
                 error_message_details = {
-                    "path": about_path,
+                    "resource_path": about_path,
                     "package_data": package_data,
                 }
                 project.add_warning(

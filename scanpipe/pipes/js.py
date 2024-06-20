@@ -192,7 +192,7 @@ def get_minified_resource(map_resource, minified_resources):
     """
     path = Path(map_resource.path.lstrip("/"))
 
-    minified_file, _ = path.name.split(".map")
+    minified_file = path.name.removesuffix(".map")
     minified_file_path = path.parent / minified_file
     minified_resource = minified_resources.get_or_none(path=minified_file_path)
 

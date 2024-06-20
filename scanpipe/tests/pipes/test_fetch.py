@@ -38,6 +38,9 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual(fetch.fetch_http, fetch.get_fetcher("http://a.b/f.z"))
         self.assertEqual(fetch.fetch_http, fetch.get_fetcher("https://a.b/f.z"))
         self.assertEqual(fetch.fetch_docker_image, fetch.get_fetcher("docker://image"))
+        git_http_url = "https://github.com/nexB/scancode.io.git"
+        self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(git_http_url))
+        self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(git_http_url + "/"))
 
         with self.assertRaises(ValueError) as cm:
             fetch.get_fetcher("")
@@ -57,6 +60,11 @@ class ScanPipeFetchPipesTest(TestCase):
         with self.assertRaises(ValueError) as cm:
             fetch.get_fetcher("DOCKER://image")
         expected = "URL scheme 'DOCKER' is not supported. Did you mean: 'docker'?"
+        self.assertEqual(expected, str(cm.exception))
+
+        with self.assertRaises(ValueError) as cm:
+            fetch.get_fetcher("git@github.com:nexB/scancode.io.git")
+        expected = "SSH 'git@' URLs are not supported. Use https:// instead."
         self.assertEqual(expected, str(cm.exception))
 
     @mock.patch("requests.sessions.Session.get")
@@ -121,14 +129,14 @@ class ScanPipeFetchPipesTest(TestCase):
             with self.assertRaises(Exception):
                 fetch.fetch_docker_image(url)
             cmd_args = mock_run_command_safely.call_args[0][0]
-            self.assertIn("--authfile auth.json", cmd_args)
+            self.assertIn("--authfile=auth.json", cmd_args)
 
         credentials = {"registry.com": "user:password"}
         with override_settings(SCANCODEIO_SKOPEO_CREDENTIALS=credentials):
             with self.assertRaises(Exception):
                 fetch.fetch_docker_image(url)
             cmd_args = mock_run_command_safely.call_args[0][0]
-            self.assertIn("--src-creds user:password", cmd_args)
+            self.assertIn("--src-creds=user:password", cmd_args)
 
     @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")
     @mock.patch("scanpipe.pipes.fetch.run_command_safely")
@@ -157,14 +165,14 @@ class ScanPipeFetchPipesTest(TestCase):
         with override_settings(SCANCODEIO_SKOPEO_AUTHFILE_LOCATION="auth.json"):
             fetch.get_docker_image_platform(url)
             cmd_args = mock_run_command_safely.call_args[0][0]
-            self.assertIn("--authfile auth.json", cmd_args)
+            self.assertIn("--authfile=auth.json", cmd_args)
             self.assertNotIn("--no-creds", cmd_args)
 
         credentials = {"registry.com": "user:password"}
         with override_settings(SCANCODEIO_SKOPEO_CREDENTIALS=credentials):
             fetch.get_docker_image_platform(url)
             cmd_args = mock_run_command_safely.call_args[0][0]
-            self.assertIn("--creds user:password", cmd_args)
+            self.assertIn("--creds=user:password", cmd_args)
             self.assertNotIn("--no-creds", cmd_args)
 
     def test_scanpipe_pipes_fetch_docker_image_string_injection_protection(self):
@@ -217,3 +225,16 @@ class ScanPipeFetchPipesTest(TestCase):
         with override_settings(SCANCODEIO_FETCH_HEADERS=headers):
             session = fetch.get_request_session(url)
             self.assertEqual("token TOKEN", session.headers.get("Authorization"))
+
+    @mock.patch("git.repo.base.Repo.clone_from")
+    def test_scanpipe_pipes_fetch_git_repo(self, mock_clone_from):
+        mock_clone_from.return_value = None
+        url = "https://github.com/nexB/scancode.io.git"
+        download = fetch.fetch_git_repo(url)
+
+        self.assertEqual(url, download.uri)
+        self.assertEqual("scancode.io.git", download.filename)
+        self.assertTrue(str(download.path).endswith("scancode.io.git"))
+        self.assertEqual("", download.size)
+        self.assertEqual("", download.sha1)
+        self.assertEqual("", download.md5)
