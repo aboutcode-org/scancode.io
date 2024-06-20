@@ -301,6 +301,19 @@ class Pipeline(BasePipeline):
         if ignored_patterns := self.env.get("ignored_patterns"):
             flag.flag_ignored_patterns(self.project, patterns=ignored_patterns)
 
+    def extract_archive(self, location, target):
+        """Extract archive at `location` to `target`. Save errors as messages."""
+        from scanpipe.pipes import scancode
+
+        extract_errors = scancode.extract_archive(location, target)
+
+        for resource_path, errors in extract_errors.items():
+            self.project.add_error(
+                description="\n".join(errors),
+                model="extract_archive",
+                details={"resource_path": resource_path},
+            )
+
     def extract_archives(self):
         """Extract archives located in the codebase/ directory with extractcode."""
         from scanpipe.pipes import scancode

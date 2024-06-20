@@ -59,7 +59,7 @@ class ScanPipeScancodePipesTest(TestCase):
         input_location = str(self.data_location / "archive.zip")
 
         errors = scancode.extract_archive(input_location, target)
-        self.assertEqual([], errors)
+        self.assertEqual({}, errors)
 
         results = [path.name for path in list(Path(target).glob("**/*"))]
         expected = [

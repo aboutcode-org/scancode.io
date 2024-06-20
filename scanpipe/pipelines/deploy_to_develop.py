@@ -127,13 +127,9 @@ class DeployToDevelop(Pipeline):
             (self.to_files, self.project.codebase_path / d2d.TO),
         ]
 
-        errors = []
         for input_files, codebase_path in inputs_with_codebase_path_destination:
             for input_file_path in input_files:
-                errors += scancode.extract_archive(input_file_path, codebase_path)
-
-        if errors:
-            self.add_error("\n".join(errors))
+                self.extract_archive(input_file_path, codebase_path)
 
         # Reload the project env post-extraction as the scancode-config.yml file
         # may be located in one of the extracted archives.

@@ -406,11 +406,17 @@ class RootFSPipelineTest(TestCase):
         self.assertEqual(2, len(project1.input_files))
 
         with mock.patch("scanpipe.pipes.scancode.extract_archive") as extract_archive:
-            extract_archive.return_value = ["Error"]
+            extract_archive.return_value = {"path/to/resource": ["error1", "error2"]}
             pipeline_instance.extract_input_files_to_codebase_directory()
 
-        error = project1.projectmessages.get()
-        self.assertEqual("Error\nError", error.description)
+        projects_errors = project1.projectmessages.all()
+        self.assertEqual(2, len(projects_errors))
+        project_error = projects_errors[0]
+        self.assertEqual("error", project_error.severity)
+        self.assertEqual("error1\nerror2", project_error.description)
+        self.assertEqual("extract_archive", project_error.model)
+        self.assertEqual({"resource_path": "path/to/resource"}, project_error.details)
+        self.assertEqual("", project_error.traceback)
 
 
 def sort_for_os_compatibility(scan_data):

@@ -102,15 +102,16 @@ def extract_archive(location, target):
     Extract a single archive or compressed file at `location` to the `target`
     directory.
 
-    Return a list of extraction errors.
+    Return a dict of extraction errors, keyed by the resource location.
 
     Wrapper of the `extractcode.api.extract_archive` function.
     """
-    errors = []
+    errors = {}
 
     for event in extractcode_api.extract_archive(location, target):
-        if event.done:
-            errors.extend(event.errors)
+        if event.done and event.errors:
+            resource_path = str(Path(event.source).relative_to(location))
+            errors[resource_path] = event.errors
 
     return errors
 

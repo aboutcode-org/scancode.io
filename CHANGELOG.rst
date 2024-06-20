@@ -11,6 +11,10 @@ v34.6.3 (unreleased)
 - Fix an issue in the d2d JavaScript mapper.
   https://github.com/nexB/scancode.io/pull/1274
 
+- Refine the extraction errors reporting to include the resource path for rendering
+  link to the related resources in the UI.
+  https://github.com/nexB/scancode.io/issues/1273
+
 v34.6.2 (2024-06-18)
 --------------------
 
