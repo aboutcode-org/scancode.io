@@ -154,8 +154,6 @@ Provide one or more vulnerability id to be ignored, **one per line**.
 You can provide ``VCID`` from VulnerableCode or any aliases such as ``CVE`` or
 ``GHSA``.
 
-For example::
-
 .. code-block:: yaml
 
     ignored_vulnerabilities:
