@@ -1,8 +1,8 @@
 product_name: My Product Name
 product_version: '1.0'
 ignored_patterns:
-  - '*.tmp'
-  - 'tests/*'
+ - '*.tmp'
+ - 'tests/*'
 ignored_dependency_scopes:
  - package_type: npm
    scope: devDependencies

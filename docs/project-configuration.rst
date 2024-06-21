@@ -52,8 +52,8 @@ Content of a ``scancode-config.yml`` file:
     product_name: My Product Name
     product_version: '1.0'
     ignored_patterns:
-      - '*.tmp'
-      - 'tests/*'
+     - '*.tmp'
+     - 'tests/*'
     ignored_dependency_scopes:
      - package_type: npm
        scope: devDependencies
@@ -129,10 +129,10 @@ packages, define the following in your ``scancode-config.yml`` configuration fil
 .. code-block:: yaml
 
     ignored_dependency_scopes:
-      - package_type: npm
-        scope: devDependencies
-      - package_type: pypi
-        scope: tests
+     - package_type: npm
+       scope: devDependencies
+     - package_type: pypi
+       scope: tests
 
 If you prefer to use the :ref:`user_interface_project_settings` form, list each
 ignored scope using the `package_type:scope` syntax, **one per line**, such as:

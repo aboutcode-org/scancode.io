@@ -9,8 +9,8 @@
 # - Use ``*`` to match multiple characters.
 # - Use ``?`` to match a single character.
 #ignored_patterns:
-#  - '*.tmp'
-#  - 'tests/*'
+# - '*.tmp'
+# - 'tests/*'
 
 # Specify certain dependency scopes to be ignored for a given package type.
 #ignored_dependency_scopes:
