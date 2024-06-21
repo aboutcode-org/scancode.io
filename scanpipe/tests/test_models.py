@@ -677,6 +677,11 @@ class ScanPipeModelsTest(TestCase):
                 {"package_type": "npm", "scope": "devDependencies"},
                 {"package_type": "pypi", "scope": "tests"},
             ],
+            "ignored_vulnerabilities": [
+                "VCID-q4q6-yfng-aaag",
+                "CVE-2024-27351",
+                "GHSA-vm8q-m57g-pff3",
+            ],
         }
         self.assertEqual(expected, self.project1.get_env())
 
@@ -724,6 +729,18 @@ class ScanPipeModelsTest(TestCase):
         # The following function call always build and return the index
         expected = {"npm": ["devDependencies"], "pypi": ["tests", "build"]}
         self.assertEqual(expected, self.project1.get_ignored_dependency_scopes_index())
+
+    def test_scanpipe_project_get_ignored_vulnerabilities_set(self):
+        self.project1.settings = {
+            "ignored_vulnerabilities": [
+                "VCID-q4q6-yfng-aaag",
+                "CVE-2024-27351",
+                "GHSA-vm8q-m57g-pff3",
+            ],
+        }
+        expected = {"VCID-q4q6-yfng-aaag", "CVE-2024-27351", "GHSA-vm8q-m57g-pff3"}
+        self.assertEqual(expected, self.project1.ignored_vulnerabilities_set)
+        self.assertEqual(expected, self.project1.get_ignored_vulnerabilities_set())
 
     def test_scanpipe_project_model_labels(self):
         self.project1.labels.add("label1", "label2")

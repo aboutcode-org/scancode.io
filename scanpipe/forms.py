@@ -365,10 +365,16 @@ For example: `npm:devDependencies`
 """
 
 
+ignored_vulnerabilities_help = """
+Specify certain vulnerabilities to be ignored using VCID, CVE, or any aliases.
+"""
+
+
 class ProjectSettingsForm(forms.ModelForm):
     settings_fields = [
         "ignored_patterns",
         "ignored_dependency_scopes",
+        "ignored_vulnerabilities",
         "attribution_template",
         "product_name",
         "product_version",
@@ -398,6 +404,18 @@ class ProjectSettingsForm(forms.ModelForm):
         ),
         key_name="package_type",
         value_name="scope",
+    )
+    ignored_vulnerabilities = ListTextarea(
+        label="Ignored vulnerabilities",
+        required=False,
+        help_text=convert_markdown_to_html(ignored_vulnerabilities_help.strip()),
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea is-dynamic",
+                "rows": 2,
+                "placeholder": "VCID-q4q6-yfng-aaag\nCVE-2024-27351",
+            },
+        ),
     )
     attribution_template = forms.CharField(
         label="Attribution template",

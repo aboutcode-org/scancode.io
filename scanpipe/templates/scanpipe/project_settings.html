@@ -76,6 +76,18 @@
                     {{ form.ignored_dependency_scopes.help_text|safe|linebreaksbr }}
                   </div>
                 </div>
+
+                <div class="field">
+                  <label class="label" for="{{ form.ignored_vulnerabilities.id_for_label }}">
+                    {{ form.ignored_vulnerabilities.label }}
+                  </label>
+                  <div class="control">
+                    {{ form.ignored_vulnerabilities }}
+                  </div>
+                  <div class="help">
+                    {{ form.ignored_vulnerabilities.help_text|safe|linebreaksbr }}
+                  </div>
+                </div>
               </div>
             </div>
 

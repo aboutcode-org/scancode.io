@@ -1,0 +1,696 @@
+{
+    "url": "http://vulnerablecode/api/packages/807568",
+    "purl": "pkg:pypi/django@5.0",
+    "type": "pypi",
+    "namespace": "",
+    "name": "django",
+    "version": "5.0",
+    "qualifiers": {},
+    "subpath": "",
+    "next_non_vulnerable_version": "5.0.3",
+    "latest_non_vulnerable_version": "5.0.3",
+    "affected_by_vulnerabilities": [
+        {
+            "url": "http://vulnerablecode/api/vulnerabilities/516832",
+            "vulnerability_id": "VCID-3gge-bre2-aaac",
+            "summary": "",
+            "references": [
+                {
+                    "reference_url": "https://access.redhat.com/hydra/rest/securitydata/cve/CVE-2024-24680.json",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "7.5",
+                            "scoring_system": "cvssv3",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        }
+                    ],
+                    "url": "https://access.redhat.com/hydra/rest/securitydata/cve/CVE-2024-24680.json"
+                },
+                {
+                    "reference_url": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-24680",
+                    "reference_id": "",
+                    "scores": [],
+                    "url": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-24680"
+                },
+                {
+                    "reference_url": "https://docs.djangoproject.com/en/5.0/releases/security",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "LOW",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://docs.djangoproject.com/en/5.0/releases/security"
+                },
+                {
+                    "reference_url": "https://docs.djangoproject.com/en/5.0/releases/security/",
+                    "reference_id": "",
+                    "scores": [],
+                    "url": "https://docs.djangoproject.com/en/5.0/releases/security/"
+                },
+                {
+                    "reference_url": "https://ftp.suse.com/pub/projects/security/yaml/suse-cvss-scores.yaml",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "2.1",
+                            "scoring_system": "cvssv2",
+                            "scoring_elements": "AV:N/AC:H/Au:S/C:N/I:P/A:N"
+                        },
+                        {
+                            "value": "4.4",
+                            "scoring_system": "cvssv3",
+                            "scoring_elements": "CVSS:3.0/AV:L/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:L"
+                        },
+                        {
+                            "value": "4.7",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:H"
+                        }
+                    ],
+                    "url": "https://ftp.suse.com/pub/projects/security/yaml/suse-cvss-scores.yaml"
+                },
+                {
+                    "reference_url": "https://github.com/django/django",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "7.5",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "HIGH",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://github.com/django/django"
+                },
+                {
+                    "reference_url": "https://github.com/django/django/commit/16a8fe18a3b81250f4fa57e3f93f0599dc4895bc",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "MODERATE",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://github.com/django/django/commit/16a8fe18a3b81250f4fa57e3f93f0599dc4895bc"
+                },
+                {
+                    "reference_url": "https://github.com/django/django/commit/55519d6cf8998fe4c8f5c8abffc2b10a7c3d14e9",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "MODERATE",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://github.com/django/django/commit/55519d6cf8998fe4c8f5c8abffc2b10a7c3d14e9"
+                },
+                {
+                    "reference_url": "https://github.com/django/django/commit/572ea07e84b38ea8de0551f4b4eda685d91d09d2",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "MODERATE",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://github.com/django/django/commit/572ea07e84b38ea8de0551f4b4eda685d91d09d2"
+                },
+                {
+                    "reference_url": "https://github.com/django/django/commit/c1171ffbd570db90ca206c30f8e2b9f691243820",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "MODERATE",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://github.com/django/django/commit/c1171ffbd570db90ca206c30f8e2b9f691243820"
+                },
+                {
+                    "reference_url": "https://github.com/pypa/advisory-database/tree/main/vulns/django/PYSEC-2024-28.yaml",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "MODERATE",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://github.com/pypa/advisory-database/tree/main/vulns/django/PYSEC-2024-28.yaml"
+                },
+                {
+                    "reference_url": "https://groups.google.com/forum/#%21forum/django-announce",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "LOW",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://groups.google.com/forum/#%21forum/django-announce"
+                },
+                {
+                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/D2JIRXEDP4ZET5KFMAPPYSK663Q52NEX",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "LOW",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/D2JIRXEDP4ZET5KFMAPPYSK663Q52NEX"
+                },
+                {
+                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/D2JIRXEDP4ZET5KFMAPPYSK663Q52NEX/",
+                    "reference_id": "",
+                    "scores": [],
+                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/D2JIRXEDP4ZET5KFMAPPYSK663Q52NEX/"
+                },
+                {
+                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SN2PLJGYSAAG5KUVIUFJYKD3BLQ4OSN6",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "LOW",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SN2PLJGYSAAG5KUVIUFJYKD3BLQ4OSN6"
+                },
+                {
+                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SN2PLJGYSAAG5KUVIUFJYKD3BLQ4OSN6/",
+                    "reference_id": "",
+                    "scores": [],
+                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SN2PLJGYSAAG5KUVIUFJYKD3BLQ4OSN6/"
+                },
+                {
+                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZQJOMNRMVPCN5WMIZ7YSX5LQ7IR2NY4D",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "LOW",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZQJOMNRMVPCN5WMIZ7YSX5LQ7IR2NY4D"
+                },
+                {
+                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZQJOMNRMVPCN5WMIZ7YSX5LQ7IR2NY4D/",
+                    "reference_id": "",
+                    "scores": [],
+                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZQJOMNRMVPCN5WMIZ7YSX5LQ7IR2NY4D/"
+                },
+                {
+                    "reference_url": "https://www.djangoproject.com/weblog/2024/feb/06/security-releases",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "MODERATE",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://www.djangoproject.com/weblog/2024/feb/06/security-releases"
+                },
+                {
+                    "reference_url": "https://www.djangoproject.com/weblog/2024/feb/06/security-releases/",
+                    "reference_id": "",
+                    "scores": [],
+                    "url": "https://www.djangoproject.com/weblog/2024/feb/06/security-releases/"
+                },
+                {
+                    "reference_url": "https://bugzilla.redhat.com/show_bug.cgi?id=2261856",
+                    "reference_id": "2261856",
+                    "scores": [],
+                    "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2261856"
+                },
+                {
+                    "reference_url": "https://nvd.nist.gov/vuln/search/results?adv_search=true&isCpeNameSearch=true&query=cpe:2.3:a:djangoproject:django:*:*:*:*:*:*:*:*",
+                    "reference_id": "cpe:2.3:a:djangoproject:django:*:*:*:*:*:*:*:*",
+                    "scores": [],
+                    "url": "https://nvd.nist.gov/vuln/search/results?adv_search=true&isCpeNameSearch=true&query=cpe:2.3:a:djangoproject:django:*:*:*:*:*:*:*:*"
+                },
+                {
+                    "reference_url": "https://nvd.nist.gov/vuln/detail/CVE-2024-24680",
+                    "reference_id": "CVE-2024-24680",
+                    "scores": [
+                        {
+                            "value": "7.5",
+                            "scoring_system": "cvssv3",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        }
+                    ],
+                    "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-24680"
+                },
+                {
+                    "reference_url": "https://github.com/advisories/GHSA-xxj9-f6rv-m3x4",
+                    "reference_id": "GHSA-xxj9-f6rv-m3x4",
+                    "scores": [
+                        {
+                            "value": "MODERATE",
+                            "scoring_system": "cvssv3.1_qr",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://github.com/advisories/GHSA-xxj9-f6rv-m3x4"
+                },
+                {
+                    "reference_url": "https://access.redhat.com/errata/RHSA-2024:1057",
+                    "reference_id": "RHSA-2024:1057",
+                    "scores": [],
+                    "url": "https://access.redhat.com/errata/RHSA-2024:1057"
+                },
+                {
+                    "reference_url": "https://access.redhat.com/errata/RHSA-2024:1878",
+                    "reference_id": "RHSA-2024:1878",
+                    "scores": [],
+                    "url": "https://access.redhat.com/errata/RHSA-2024:1878"
+                },
+                {
+                    "reference_url": "https://access.redhat.com/errata/RHSA-2024:2731",
+                    "reference_id": "RHSA-2024:2731",
+                    "scores": [],
+                    "url": "https://access.redhat.com/errata/RHSA-2024:2731"
+                },
+                {
+                    "reference_url": "https://usn.ubuntu.com/6623-1/",
+                    "reference_id": "USN-6623-1",
+                    "scores": [],
+                    "url": "https://usn.ubuntu.com/6623-1/"
+                }
+            ],
+            "fixed_packages": [
+                {
+                    "url": "http://vulnerablecode/api/packages/807572",
+                    "purl": "pkg:pypi/django@5.0.2",
+                    "is_vulnerable": true,
+                    "affected_by_vulnerabilities": [
+                        {
+                            "vulnerability": "VCID-q4q6-yfng-aaag"
+                        }
+                    ],
+                    "resource_url": "http://vulnerablecode/packages/pkg:pypi/django@5.0.2"
+                }
+            ],
+            "aliases": [
+                "BIT-django-2024-24680",
+                "CVE-2024-24680",
+                "GHSA-xxj9-f6rv-m3x4",
+                "PYSEC-2024-28"
+            ],
+            "resource_url": "http://vulnerablecode/vulnerabilities/VCID-3gge-bre2-aaac"
+        },
+        {
+            "url": "http://vulnerablecode/api/vulnerabilities/522941",
+            "vulnerability_id": "VCID-q4q6-yfng-aaag",
+            "summary": "In Django 3.2 before 3.2.25, 4.2 before 4.2.11, and 5.0 before 5.0.3, the django.utils.text.Truncator.words() method (with html=True) and the truncatewords_html template filter are subject to a potential regular expression denial-of-service attack via a crafted string. NOTE: this issue exists because of an incomplete fix for CVE-2019-14232 and CVE-2023-43665.",
+            "references": [
+                {
+                    "reference_url": "https://access.redhat.com/hydra/rest/securitydata/cve/CVE-2024-27351.json",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "7.5",
+                            "scoring_system": "cvssv3",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        }
+                    ],
+                    "url": "https://access.redhat.com/hydra/rest/securitydata/cve/CVE-2024-27351.json"
+                },
+                {
+                    "reference_url": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-27351",
+                    "reference_id": "",
+                    "scores": [],
+                    "url": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-27351"
+                },
+                {
+                    "reference_url": "https://docs.djangoproject.com/en/5.0/releases/security",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "LOW",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://docs.djangoproject.com/en/5.0/releases/security"
+                },
+                {
+                    "reference_url": "https://docs.djangoproject.com/en/5.0/releases/security/",
+                    "reference_id": "",
+                    "scores": [],
+                    "url": "https://docs.djangoproject.com/en/5.0/releases/security/"
+                },
+                {
+                    "reference_url": "https://ftp.suse.com/pub/projects/security/yaml/suse-cvss-scores.yaml",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "2.1",
+                            "scoring_system": "cvssv2",
+                            "scoring_elements": "AV:N/AC:H/Au:S/C:N/I:P/A:N"
+                        },
+                        {
+                            "value": "4.4",
+                            "scoring_system": "cvssv3",
+                            "scoring_elements": "CVSS:3.0/AV:L/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:L"
+                        },
+                        {
+                            "value": "4.7",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:H"
+                        }
+                    ],
+                    "url": "https://ftp.suse.com/pub/projects/security/yaml/suse-cvss-scores.yaml"
+                },
+                {
+                    "reference_url": "https://github.com/django/django",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "7.5",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "HIGH",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://github.com/django/django"
+                },
+                {
+                    "reference_url": "https://github.com/django/django/commit/072963e4c4d0b3a7a8c5412bc0c7d27d1a9c3521",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "LOW",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://github.com/django/django/commit/072963e4c4d0b3a7a8c5412bc0c7d27d1a9c3521"
+                },
+                {
+                    "reference_url": "https://github.com/django/django/commit/3394fc6132436eca89e997083bae9985fb7e761e",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "LOW",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://github.com/django/django/commit/3394fc6132436eca89e997083bae9985fb7e761e"
+                },
+                {
+                    "reference_url": "https://github.com/django/django/commit/3c9a2771cc80821e041b16eb36c1c37af5349d4a",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "LOW",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://github.com/django/django/commit/3c9a2771cc80821e041b16eb36c1c37af5349d4a"
+                },
+                {
+                    "reference_url": "https://github.com/pypa/advisory-database/tree/main/vulns/django/PYSEC-2024-47.yaml",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "LOW",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://github.com/pypa/advisory-database/tree/main/vulns/django/PYSEC-2024-47.yaml"
+                },
+                {
+                    "reference_url": "https://groups.google.com/forum/#%21forum/django-announce",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "LOW",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://groups.google.com/forum/#%21forum/django-announce"
+                },
+                {
+                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/D2JIRXEDP4ZET5KFMAPPYSK663Q52NEX",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "LOW",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/D2JIRXEDP4ZET5KFMAPPYSK663Q52NEX"
+                },
+                {
+                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/D2JIRXEDP4ZET5KFMAPPYSK663Q52NEX/",
+                    "reference_id": "",
+                    "scores": [],
+                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/D2JIRXEDP4ZET5KFMAPPYSK663Q52NEX/"
+                },
+                {
+                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SN2PLJGYSAAG5KUVIUFJYKD3BLQ4OSN6",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "LOW",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SN2PLJGYSAAG5KUVIUFJYKD3BLQ4OSN6"
+                },
+                {
+                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SN2PLJGYSAAG5KUVIUFJYKD3BLQ4OSN6/",
+                    "reference_id": "",
+                    "scores": [],
+                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SN2PLJGYSAAG5KUVIUFJYKD3BLQ4OSN6/"
+                },
+                {
+                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZQJOMNRMVPCN5WMIZ7YSX5LQ7IR2NY4D",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "LOW",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZQJOMNRMVPCN5WMIZ7YSX5LQ7IR2NY4D"
+                },
+                {
+                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZQJOMNRMVPCN5WMIZ7YSX5LQ7IR2NY4D/",
+                    "reference_id": "",
+                    "scores": [],
+                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZQJOMNRMVPCN5WMIZ7YSX5LQ7IR2NY4D/"
+                },
+                {
+                    "reference_url": "https://www.djangoproject.com/weblog/2024/mar/04/security-releases",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "LOW",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://www.djangoproject.com/weblog/2024/mar/04/security-releases"
+                },
+                {
+                    "reference_url": "https://www.djangoproject.com/weblog/2024/mar/04/security-releases/",
+                    "reference_id": "",
+                    "scores": [],
+                    "url": "https://www.djangoproject.com/weblog/2024/mar/04/security-releases/"
+                },
+                {
+                    "reference_url": "http://www.openwall.com/lists/oss-security/2024/03/04/1",
+                    "reference_id": "",
+                    "scores": [
+                        {
+                            "value": "5.9",
+                            "scoring_system": "cvssv3.1",
+                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                        },
+                        {
+                            "value": "LOW",
+                            "scoring_system": "generic_textual",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "http://www.openwall.com/lists/oss-security/2024/03/04/1"
+                },
+                {
+                    "reference_url": "https://bugzilla.redhat.com/show_bug.cgi?id=2266045",
+                    "reference_id": "2266045",
+                    "scores": [],
+                    "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2266045"
+                },
+                {
+                    "reference_url": "https://nvd.nist.gov/vuln/detail/CVE-2024-27351",
+                    "reference_id": "CVE-2024-27351",
+                    "scores": [],
+                    "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-27351"
+                },
+                {
+                    "reference_url": "https://github.com/advisories/GHSA-vm8q-m57g-pff3",
+                    "reference_id": "GHSA-vm8q-m57g-pff3",
+                    "scores": [
+                        {
+                            "value": "LOW",
+                            "scoring_system": "cvssv3.1_qr",
+                            "scoring_elements": ""
+                        }
+                    ],
+                    "url": "https://github.com/advisories/GHSA-vm8q-m57g-pff3"
+                },
+                {
+                    "reference_url": "https://access.redhat.com/errata/RHSA-2024:1878",
+                    "reference_id": "RHSA-2024:1878",
+                    "scores": [],
+                    "url": "https://access.redhat.com/errata/RHSA-2024:1878"
+                },
+                {
+                    "reference_url": "https://access.redhat.com/errata/RHSA-2024:3781",
+                    "reference_id": "RHSA-2024:3781",
+                    "scores": [],
+                    "url": "https://access.redhat.com/errata/RHSA-2024:3781"
+                },
+                {
+                    "reference_url": "https://usn.ubuntu.com/6674-1/",
+                    "reference_id": "USN-6674-1",
+                    "scores": [],
+                    "url": "https://usn.ubuntu.com/6674-1/"
+                },
+                {
+                    "reference_url": "https://usn.ubuntu.com/6674-2/",
+                    "reference_id": "USN-6674-2",
+                    "scores": [],
+                    "url": "https://usn.ubuntu.com/6674-2/"
+                }
+            ],
+            "fixed_packages": [
+                {
+                    "url": "http://vulnerablecode/api/packages/810988",
+                    "purl": "pkg:pypi/django@5.0.3",
+                    "is_vulnerable": false,
+                    "affected_by_vulnerabilities": [],
+                    "resource_url": "http://vulnerablecode/packages/pkg:pypi/django@5.0.3"
+                }
+            ],
+            "aliases": [
+                "CVE-2024-27351",
+                "GHSA-vm8q-m57g-pff3",
+                "PYSEC-2024-47"
+            ],
+            "resource_url": "http://vulnerablecode/vulnerabilities/VCID-q4q6-yfng-aaag"
+        }
+    ],
+    "fixing_vulnerabilities": [],
+    "resource_url": "http://vulnerablecode/packages/pkg:pypi/django@5.0"
+}
