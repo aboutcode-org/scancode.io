@@ -11,6 +11,9 @@ v34.6.3 (unreleased)
 - Fix an issue in the d2d JavaScript mapper.
   https://github.com/nexB/scancode.io/pull/1274
 
+- Add support for a ``ignored_vulnerabilities`` field on the Project configuration.
+  https://github.com/nexB/scancode.io/issues/1271
+
 v34.6.2 (2024-06-18)
 --------------------
 

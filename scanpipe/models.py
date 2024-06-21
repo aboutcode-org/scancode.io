@@ -863,6 +863,25 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         return self.get_ignored_dependency_scopes_index()
 
+    def get_ignored_vulnerabilities_set(self):
+        """
+        Return a set of ``ignored_vulnerabilities`` setting values defined in this
+        Project env.
+        """
+        ignored_vulnerabilities = self.get_env(field_name="ignored_vulnerabilities")
+        if ignored_vulnerabilities:
+            return set(entry for entry in ignored_vulnerabilities)
+
+        return []
+
+    @cached_property
+    def ignored_vulnerabilities_set(self):
+        """
+        Return the computed value of get_ignored_vulnerabilities_set.
+        The value is only generated once and cached for further calls.
+        """
+        return self.get_ignored_vulnerabilities_set()
+
     def clear_tmp_directory(self):
         """
         Delete the whole content of the tmp/ directory.

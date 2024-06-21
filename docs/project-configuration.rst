@@ -59,9 +59,13 @@ Content of a ``scancode-config.yml`` file:
        scope: devDependencies
      - package_type: pypi
        scope: tests
+    ignored_vulnerabilities:
+     - VCID-q4q6-yfng-aaag
+     - CVE-2024-27351
+     - GHSA-vm8q-m57g-pff3
 
-See the :ref:`project_configuration_settings` section for the details about each
-setting.
+See the following :ref:`project_configuration_settings` section for the details about
+each setting.
 
 .. tip::
     You can generate the project configuration file from the
@@ -141,3 +145,23 @@ ignored scope using the `package_type:scope` syntax, **one per line**, such as:
 .. warning::
     Be precise when listing scope names to avoid unintended exclusions.
     Ensure the scope names are correct and reflect your project requirements.
+
+ignored_vulnerabilities
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Provide one or more vulnerability id to be ignored, **one per line**.
+
+You can provide ``VCID`` from VulnerableCode or any aliases such as ``CVE`` or
+``GHSA``.
+
+For example::
+
+.. code-block:: yaml
+
+    ignored_vulnerabilities:
+     - VCID-q4q6-yfng-aaag
+     - CVE-2024-27351
+     - GHSA-vm8q-m57g-pff3
+     - OSV-2020-871
+     - BIT-django-2024-24680
+     - PYSEC-2024-28

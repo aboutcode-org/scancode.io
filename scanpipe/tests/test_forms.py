@@ -133,6 +133,7 @@ class ScanPipeFormsTest(TestCase):
 
         expected = {
             "ignored_patterns": ["*.ext", "dir/*"],
+            "ignored_vulnerabilities": None,
             "ignored_dependency_scopes": None,
             "product_name": "",
             "product_version": "",
@@ -181,6 +182,7 @@ class ScanPipeFormsTest(TestCase):
         project = form.save()
         expected = {
             "ignored_patterns": None,
+            "ignored_vulnerabilities": None,
             "ignored_dependency_scopes": [
                 {"package_type": "npm", "scope": "devDependencies"},
                 {"package_type": "pypi", "scope": "tests"},
