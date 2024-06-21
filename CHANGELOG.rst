@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.6.3 (unreleased)
+v34.6.3 (2024-06-21)
 --------------------
 
 - Use the ``--option=value`` syntax for args entries in place of ``--option value``
