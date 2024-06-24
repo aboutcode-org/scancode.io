@@ -242,13 +242,13 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertJSONEqual(results_as_json, expected_location.read_text())
 
     def test_scanpipe_pipes_outputs_to_cyclonedx(self, regen=FIXTURES_REGEN):
-        self.maxDiff = None
         fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
         project = Project.objects.get(name="asgiref")
-        resource = project.codebaseresources.get(name="asgiref-3.3.0-py3-none-any.whl")
-        package = resource.discovered_packages.get()
+        package = project.discoveredpackages.get(
+            uuid="8fc54317-6054-4eb7-b189-f1b2822d3fa6"
+        )
 
         package.other_license_expression_spdx = "Apache-2.0 AND LicenseRef-test"
         data_location = self.data_path / "cyclonedx/django-4.0.10-vulnerability.json"
