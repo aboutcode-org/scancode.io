@@ -118,16 +118,17 @@ class ScanPipeScancodePipesTest(TestCase):
             self.assertEqual(sorted(expected), sorted(results))
 
         else:
-            print(errors)
-            error = list(errors.values())[0]
-            self.assertTrue(
-                any(
-                    [
-                        "Unable to read kernel" in error,
-                        "VM Image extraction only supported on Linux." in error,
-                    ]
-                )
-            )
+            expected = {
+                ".": [
+                    "Unable to read kernel at: /boot/vmlinuz-6.5.0-1022-azure.\n"
+                    "libguestfs requires the kernel executable to be readable.\n"
+                    "This is the case by default on most Linux distributions except on "
+                    "Ubuntu.\nPlease follow the ExtractCode installation instructions "
+                    "in the README.rst at:\n"
+                    "https://github.com/nexB/extractcode/blob/main/README.rst '\n"
+                ]
+            }
+            self.assertEqual(expected, errors)
 
     def test_scanpipe_pipes_scancode_get_resource_info(self):
         input_location = str(self.data_location / "notice.NOTICE")
