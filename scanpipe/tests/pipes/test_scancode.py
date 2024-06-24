@@ -72,6 +72,18 @@ class ScanPipeScancodePipesTest(TestCase):
         for path in expected:
             self.assertIn(path, results)
 
+    def test_scanpipe_pipes_scancode_extract_archive_errors(self):
+        target = tempfile.mkdtemp()
+        input_location = str(self.data_location / "scancode" / "corrupted.tar.gz")
+        errors = scancode.extract_archive(input_location, target)
+        expected = {
+            input_location: [
+                "gzip decompression failed (zlib returned error -3, msg invalid code "
+                "lengths set)"
+            ]
+        }
+        self.assertEqual(expected, errors)
+
     def test_scanpipe_pipes_scancode_extract_archives(self):
         tempdir = Path(tempfile.mkdtemp())
         input_location = str(self.data_location / "archive.zip")
@@ -92,6 +104,20 @@ class ScanPipeScancodePipesTest(TestCase):
         ]
         for path in expected:
             self.assertIn(path, results)
+
+    def test_scanpipe_pipes_scancode_extract_archives_errors(self):
+        tempdir = Path(tempfile.mkdtemp())
+        input_location = str(self.data_location / "scancode" / "corrupted.tar.gz")
+        target = copy_input(input_location, tempdir)
+
+        errors = scancode.extract_archives(tempdir)
+        expected = {
+            str(target): [
+                "gzip decompression failed (zlib returned error -3, msg invalid code "
+                "lengths set)"
+            ]
+        }
+        self.assertEqual(expected, errors)
 
     @skipIf(sys.platform != "linux", "QCOW2 extraction is not available on macOS.")
     def test_scanpipe_pipes_scancode_extract_archive_vmimage_qcow2(self):
@@ -119,7 +145,7 @@ class ScanPipeScancodePipesTest(TestCase):
 
         else:
             expected = {
-                ".": [
+                str(input_location): [
                     "Unable to read kernel at: /boot/vmlinuz-6.5.0-1022-azure.\n"
                     "libguestfs requires the kernel executable to be readable.\n"
                     "This is the case by default on most Linux distributions except on "

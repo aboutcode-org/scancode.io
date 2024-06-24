@@ -41,8 +41,10 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipelines import InputFilesError
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipelines import deploy_to_develop
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import root_filesystem
+from scanpipe.pipelines import scan_single_package
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
@@ -415,7 +417,7 @@ class RootFSPipelineTest(TestCase):
         self.assertEqual("error", project_error.severity)
         self.assertEqual("error1\nerror2", project_error.description)
         self.assertEqual("extract_archive", project_error.model)
-        self.assertEqual({"resource_path": "path/to/resource"}, project_error.details)
+        self.assertEqual({"filename": "resource"}, project_error.details)
         self.assertEqual("", project_error.traceback)
 
 
@@ -628,6 +630,32 @@ class PipelinesIntegrationTest(TestCase):
             self.data_location / "multiple-is-npm-1.0.0_scan_package_summary.json"
         )
         self.assertPipelineResultEqual(expected_file, summary_file)
+
+    @mock.patch("scanpipe.pipelines.scan_single_package.is_archive")
+    def test_scanpipe_scan_package_single_extract_input_to_codebase_directory(
+        self, mock_is_archive
+    ):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("scan_single_package")
+        pipeline_instance = scan_single_package.ScanSinglePackage(run)
+
+        project1.move_input_from(tempfile.mkstemp(suffix=".zip")[1])
+        self.assertEqual(1, len(project1.input_files))
+
+        mock_is_archive.return_value = True
+        pipeline_instance.get_package_input()
+        with mock.patch("scanpipe.pipes.scancode.extract_archive") as extract_archive:
+            extract_archive.return_value = {"path/to/resource": ["error1", "error2"]}
+            pipeline_instance.extract_input_to_codebase_directory()
+
+        projects_errors = project1.projectmessages.all()
+        self.assertEqual(1, len(projects_errors))
+        project_error = projects_errors[0]
+        self.assertEqual("error", project_error.severity)
+        self.assertEqual("error1\nerror2", project_error.description)
+        self.assertEqual("extract_archive", project_error.model)
+        self.assertEqual({"filename": "resource"}, project_error.details)
+        self.assertEqual("", project_error.traceback)
 
     def test_scanpipe_scan_package_single_file(self):
         pipeline_name = "scan_single_package"
@@ -1194,6 +1222,30 @@ class PipelinesIntegrationTest(TestCase):
         result_file = output.to_json(project1)
         expected_file = self.data_location / "flume-ng-node-d2d.json"
         self.assertPipelineResultEqual(expected_file, result_file)
+
+    def test_scanpipe_deploy_to_develop_pipeline_extract_input_files_errors(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("map_deploy_to_develop")
+        pipeline_instance = deploy_to_develop.DeployToDevelop(run)
+
+        # Create 2 files in the input/ directory to generate error twice
+        project1.move_input_from(tempfile.mkstemp(prefix="from-")[1])
+        project1.move_input_from(tempfile.mkstemp(prefix="to-")[1])
+        self.assertEqual(2, len(project1.input_files))
+
+        pipeline_instance.get_inputs()
+        with mock.patch("scanpipe.pipes.scancode.extract_archive") as extract_archive:
+            extract_archive.return_value = {"path/to/resource": ["error1", "error2"]}
+            pipeline_instance.extract_inputs_to_codebase_directory()
+
+        projects_errors = project1.projectmessages.all()
+        self.assertEqual(2, len(projects_errors))
+        project_error = projects_errors[0]
+        self.assertEqual("error", project_error.severity)
+        self.assertEqual("error1\nerror2", project_error.description)
+        self.assertEqual("extract_archive", project_error.model)
+        self.assertEqual({"filename": "resource"}, project_error.details)
+        self.assertEqual("", project_error.traceback)
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("uuid.uuid4")

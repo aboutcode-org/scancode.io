@@ -25,6 +25,7 @@ import logging
 import traceback
 from contextlib import contextmanager
 from functools import wraps
+from pathlib import Path
 from pydoc import getdoc
 from pydoc import splitdoc
 from timeit import default_timer as timer
@@ -307,11 +308,22 @@ class Pipeline(BasePipeline):
 
         extract_errors = scancode.extract_archive(location, target)
 
-        for resource_path, errors in extract_errors.items():
+        for resource_location, errors in extract_errors.items():
+            resource_path = Path(resource_location)
+
+            if resource_path.is_relative_to(self.project.codebase_path):
+                resource_path = resource_path.relative_to(self.project.codebase_path)
+                details = {"resource_path": str(resource_path)}
+            elif resource_path.is_relative_to(self.project.input_path):
+                resource_path = resource_path.relative_to(self.project.input_path)
+                details = {"path": f"input/{str(resource_path)}"}
+            else:
+                details = {"filename": str(resource_path.name)}
+
             self.project.add_error(
                 description="\n".join(errors),
                 model="extract_archive",
-                details={"resource_path": resource_path},
+                details=details,
             )
 
     def extract_archives(self):
