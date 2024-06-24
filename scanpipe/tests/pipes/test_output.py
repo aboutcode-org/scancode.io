@@ -242,6 +242,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertJSONEqual(results_as_json, expected_location.read_text())
 
     def test_scanpipe_pipes_outputs_to_cyclonedx(self, regen=FIXTURES_REGEN):
+        self.maxDiff = None
         fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
