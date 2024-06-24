@@ -118,7 +118,8 @@ class ScanPipeScancodePipesTest(TestCase):
             self.assertEqual(sorted(expected), sorted(results))
 
         else:
-            error = errors.values()[0]
+            print(errors)
+            error = list(errors.values())[0]
             self.assertTrue(
                 any(
                     [
