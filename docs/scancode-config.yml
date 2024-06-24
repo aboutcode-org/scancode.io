@@ -9,8 +9,8 @@
 # - Use ``*`` to match multiple characters.
 # - Use ``?`` to match a single character.
 #ignored_patterns:
-#  - '*.tmp'
-#  - 'tests/*'
+# - '*.tmp'
+# - 'tests/*'
 
 # Specify certain dependency scopes to be ignored for a given package type.
 #ignored_dependency_scopes:
@@ -18,3 +18,9 @@
 #   scope: devDependencies
 # - package_type: pypi
 #   scope: tests
+
+# Specify certain vulnerabilities to be ignored using VCID, CVE, or any aliases.
+#ignored_vulnerabilities:
+# - VCID-q4q6-yfng-aaag
+# - CVE-2024-27351
+# - GHSA-vm8q-m57g-pff3

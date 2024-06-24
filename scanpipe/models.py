@@ -863,6 +863,25 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         return self.get_ignored_dependency_scopes_index()
 
+    def get_ignored_vulnerabilities_set(self):
+        """
+        Return a set of ``ignored_vulnerabilities`` setting values defined in this
+        Project env.
+        """
+        ignored_vulnerabilities = self.get_env(field_name="ignored_vulnerabilities")
+        if ignored_vulnerabilities:
+            return set(entry for entry in ignored_vulnerabilities)
+
+        return []
+
+    @cached_property
+    def ignored_vulnerabilities_set(self):
+        """
+        Return the computed value of get_ignored_vulnerabilities_set.
+        The value is only generated once and cached for further calls.
+        """
+        return self.get_ignored_vulnerabilities_set()
+
     def clear_tmp_directory(self):
         """
         Delete the whole content of the tmp/ directory.
@@ -2324,9 +2343,53 @@ class ComplianceAlertMixin(models.Model):
         return self.Compliance.OK
 
 
+class FileClassifierFieldsModelMixin(models.Model):
+    """
+    Fields returned by the ScanCode-toolkit ``--classify`` plugin.
+    See ``summarycode.classify_plugin.FileClassifier``.
+    """
+
+    is_legal = models.BooleanField(
+        default=False,
+        help_text=_(
+            "True if this file is likely a legal, license-related file such as a "
+            "COPYING or LICENSE file."
+        ),
+    )
+    is_manifest = models.BooleanField(
+        default=False,
+        help_text=_(
+            "True if this file is likely a package manifest file such as a Maven "
+            "pom.xml or an npm package.json"
+        ),
+    )
+    is_readme = models.BooleanField(
+        default=False,
+        help_text=_("True if this file is likely a README file."),
+    )
+    is_top_level = models.BooleanField(
+        default=False,
+        help_text=_(
+            "True if this file is top-level file located either at the root of a "
+            "package or in a well-known common location."
+        ),
+    )
+    is_key_file = models.BooleanField(
+        default=False,
+        help_text=_(
+            "True if this file is top-level file and either a legal, readme or "
+            "manifest file."
+        ),
+    )
+
+    class Meta:
+        abstract = True
+
+
 class CodebaseResource(
     ProjectRelatedModel,
     ScanFieldsModelMixin,
+    FileClassifierFieldsModelMixin,
     ExtraDataFieldMixin,
     SaveProjectMessageMixin,
     UpdateFromDataMixin,
@@ -2421,7 +2484,6 @@ class CodebaseResource(
     is_binary = models.BooleanField(default=False)
     is_text = models.BooleanField(default=False)
     is_archive = models.BooleanField(default=False)
-    is_key_file = models.BooleanField(default=False)
     is_media = models.BooleanField(default=False)
     package_data = models.JSONField(
         default=list,
