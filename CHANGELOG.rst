@@ -1,6 +1,12 @@
 Changelog
 =========
 
+v34.6.4 (unreleased)
+--------------------
+
+- Add all "classify" plugin fields from scancode-toolkit on the CodebaseResource model.
+  https://github.com/nexB/scancode.io/issues/1275
+
 v34.6.3 (2024-06-21)
 --------------------
 

@@ -12,11 +12,25 @@
       {% if object.is_archive %}
         {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Archive</span>' content="Archive or compressed file. Not scanned directly." only %}
       {% endif %}
-      {% if object.is_key_file %}
-        {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Key file</span>' content="Top-level file with key content and metadata and either a legal, readme or package manifest." only %}
-      {% endif %}
       {% if object.is_media %}
         {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Media</span>' content="Image, sound, video or similar media file." only %}
+      {% endif %}
+      {% if object.is_legal %}
+        {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Legal</span>' content="Legal, license-related file such as a COPYING or LICENSE file." only %}
+      {% endif %}
+
+      {% if object.is_manifest %}
+        {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Manifest</span>' content="Package manifest file such as a Maven pom.xml or a npm package.json" only %}
+      {% endif %}
+      {% if object.is_readme %}
+        {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Readme</span>' content="README file" only %}
+      {% endif %}
+      {% if object.is_top_level %}
+        {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Top level</span>' content="Top-level file located either at the root of a package or in a well-known common location." only %}
+      {% endif %}
+
+      {% if object.is_key_file %}
+        {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Key file</span>' content="Top-level file with key content and metadata and either a legal, readme or package manifest." only %}
       {% endif %}
     </div>
     <div class="nav-button">

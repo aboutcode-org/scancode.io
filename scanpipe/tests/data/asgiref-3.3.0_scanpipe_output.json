@@ -2,18 +2,18 @@
   "headers": [
     {
       "tool_name": "scanpipe",
-      "tool_version": "v33.1.0-14-gd4b299c",
+      "tool_version": "34.6.3",
       "other_tools": [
-        "pkg:pypi/scancode-toolkit@32.0.8"
+        "pkg:pypi/scancode-toolkit@32.1.0"
       ],
       "notice": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n",
-      "uuid": "8d3058f3-ec1f-487d-8c5f-b2d3b26cda3e",
-      "created_date": "2024-03-01T11:33:36.591Z",
+      "uuid": "809b2669-0871-40e6-b932-50598310caac",
+      "created_date": "2024-06-24T06:58:40.386Z",
       "notes": "",
       "settings": {},
       "input_sources": [
         {
-          "uuid": "df2fef03-0f8c-41b6-a645-e8a4de4e0f65",
+          "uuid": "146197f3-217a-4a6d-b287-7661929e5f0a",
           "filename": "asgiref-3.3.0-py3-none-any.whl",
           "download_url": "",
           "is_uploaded": true,
@@ -28,15 +28,15 @@
           "pipeline_name": "scan_codebase",
           "status": "not_started",
           "description": "Scan a codebase for application packages, licenses, and copyrights.",
-          "uuid": "dfe51f4c-9867-462b-977c-1897531bb35f",
-          "created_date": "2024-03-01T11:33:36.594169Z",
+          "uuid": "4d888ac2-92f8-4841-8b4e-11996fcd0fd6",
+          "created_date": "2024-06-24T08:58:40.390918+02:00",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
           "task_end_date": null,
           "task_exitcode": null,
           "task_output": "",
-          "log": "2024-03-01 11:33:36.59 Pipeline [scan_codebase] starting\n2024-03-01 11:33:36.59 Step [download_missing_inputs] starting\n2024-03-01 11:33:36.59 Step [download_missing_inputs] completed in 0 seconds\n2024-03-01 11:33:36.59 Step [copy_inputs_to_codebase_directory] starting\n2024-03-01 11:33:36.59 Step [copy_inputs_to_codebase_directory] completed in 0 seconds\n2024-03-01 11:33:36.59 Step [extract_archives] starting\n2024-03-01 11:33:36.66 Step [extract_archives] completed in 0 seconds\n2024-03-01 11:33:36.66 Step [collect_and_create_codebase_resources] starting\n2024-03-01 11:33:36.85 Step [collect_and_create_codebase_resources] completed in 0 seconds\n2024-03-01 11:33:36.85 Step [flag_empty_files] starting\n2024-03-01 11:33:36.85 Step [flag_empty_files] completed in 0 seconds\n2024-03-01 11:33:36.85 Step [flag_ignored_resources] starting\n2024-03-01 11:33:36.85 Step [flag_ignored_resources] completed in 0 seconds\n2024-03-01 11:33:36.85 Step [scan_for_application_packages] starting\n2024-03-01 11:33:36.89 Progress: 11% (2/18)\n2024-03-01 11:33:36.92 Progress: 22% (4/18)\n2024-03-01 11:33:36.93 Progress: 33% (6/18)\n2024-03-01 11:33:36.93 Progress: 44% (8/18)\n2024-03-01 11:33:36.93 Progress: 55% (10/18)\n2024-03-01 11:33:36.93 Progress: 66% (12/18)\n2024-03-01 11:33:36.93 Progress: 77% (14/18)\n2024-03-01 11:33:36.93 Progress: 88% (16/18)\n2024-03-01 11:33:39.89 Progress: 100% (18/18)\n2024-03-01 11:33:40.08 Step [scan_for_application_packages] completed in 3 seconds\n2024-03-01 11:33:40.08 Step [scan_for_files] starting\n2024-03-01 11:33:50.84 Progress: 12% (2/16) ETA: 79 seconds (1.3 minutes)\n2024-03-01 11:33:51.20 Progress: 25% (4/16) ETA: 33 seconds\n2024-03-01 11:33:51.91 Progress: 37% (6/16) ETA: 20 seconds\n2024-03-01 11:33:52.72 Progress: 50% (8/16) ETA: 13 seconds\n2024-03-01 11:33:52.97 Progress: 62% (10/16) ETA: 8 seconds\n2024-03-01 11:33:53.15 Progress: 75% (12/16) ETA: 4 seconds\n2024-03-01 11:33:53.16 Progress: 87% (14/16) ETA: 2 seconds\n2024-03-01 11:33:53.56 Progress: 100% (16/16)\n2024-03-01 11:33:53.85 Step [scan_for_files] completed in 14 seconds\n2024-03-01 11:33:53.85 Pipeline completed in 17 seconds\n",
+          "log": "2024-06-24 08:58:40.39 Pipeline [scan_codebase] starting\n2024-06-24 08:58:40.39 Step [download_missing_inputs] starting\n2024-06-24 08:58:40.39 Step [download_missing_inputs] completed in 0 seconds\n2024-06-24 08:58:40.39 Step [copy_inputs_to_codebase_directory] starting\n2024-06-24 08:58:40.39 Step [copy_inputs_to_codebase_directory] completed in 0 seconds\n2024-06-24 08:58:40.39 Step [extract_archives] starting\n2024-06-24 08:58:40.46 Step [extract_archives] completed in 0 seconds\n2024-06-24 08:58:40.46 Step [collect_and_create_codebase_resources] starting\n2024-06-24 08:58:40.55 Step [collect_and_create_codebase_resources] completed in 0 seconds\n2024-06-24 08:58:40.55 Step [flag_empty_files] starting\n2024-06-24 08:58:40.56 Step [flag_empty_files] completed in 0 seconds\n2024-06-24 08:58:40.56 Step [flag_ignored_resources] starting\n2024-06-24 08:58:40.56 Step [flag_ignored_resources] completed in 0 seconds\n2024-06-24 08:58:40.56 Step [scan_for_application_packages] starting\n2024-06-24 08:58:40.58 Progress: 11% (2/18)\n2024-06-24 08:58:40.59 Progress: 22% (4/18)\n2024-06-24 08:58:40.59 Progress: 33% (6/18)\n2024-06-24 08:58:40.59 Progress: 44% (8/18)\n2024-06-24 08:58:40.60 Progress: 55% (10/18)\n2024-06-24 08:58:40.60 Progress: 66% (12/18)\n2024-06-24 08:58:40.60 Progress: 77% (14/18)\n2024-06-24 08:58:40.60 Progress: 88% (16/18)\n2024-06-24 08:58:42.99 Progress: 100% (18/18)\n2024-06-24 08:58:43.10 Step [scan_for_application_packages] completed in 3 seconds\n2024-06-24 08:58:43.10 Step [scan_for_files] starting\n2024-06-24 08:58:45.36 Progress: 12% (2/16) ETA: 17 seconds\n2024-06-24 08:58:45.36 Progress: 25% (4/16) ETA: 7 seconds\n2024-06-24 08:58:45.50 Progress: 37% (6/16) ETA: 4 seconds\n2024-06-24 08:58:45.56 Progress: 50% (8/16) ETA: 2 seconds\n2024-06-24 08:58:45.71 Progress: 62% (10/16) ETA: 2 seconds\n2024-06-24 08:58:45.91 Progress: 75% (12/16) ETA: 1 seconds\n2024-06-24 08:58:46.22 Progress: 87% (14/16)\n2024-06-24 08:58:46.30 Progress: 100% (16/16)\n2024-06-24 08:58:46.33 Step [scan_for_files] completed in 3 seconds\n2024-06-24 08:58:46.33 Pipeline completed in 6 seconds\n",
           "execution_time": null
         }
       ],
@@ -154,8 +154,13 @@
         "Documentation": "https://asgi.readthedocs.io/",
         "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
       },
-      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=90cd6d93-1c46-477a-bd4a-47aa6b3ce773",
-      "datasource_id": "",
+      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fd86b29f-e974-4880-9cc5-c8191a8241da",
+      "datasource_ids": [
+        "pypi_wheel"
+      ],
+      "datafile_paths": [
+        "asgiref-3.3.0-py3-none-any.whl"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -271,8 +276,13 @@
         "Documentation": "https://asgi.readthedocs.io/",
         "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
       },
-      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c",
-      "datasource_id": "",
+      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e",
+      "datasource_ids": [
+        "pypi_wheel_metadata"
+      ],
+      "datafile_paths": [
+        "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -287,8 +297,9 @@
       "is_runtime": true,
       "is_optional": true,
       "is_resolved": false,
-      "dependency_uid": "pkg:pypi/pytest?uuid=33c92b36-8293-4fe5-8094-0eb645833284",
-      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=90cd6d93-1c46-477a-bd4a-47aa6b3ce773",
+      "dependency_uid": "pkg:pypi/pytest?uuid=5143b8e1-badc-4937-90da-d3d124ecdfd4",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fd86b29f-e974-4880-9cc5-c8191a8241da",
+      "resolved_to_package_uid": null,
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
       "package_type": "pypi",
@@ -301,8 +312,9 @@
       "is_runtime": true,
       "is_optional": true,
       "is_resolved": false,
-      "dependency_uid": "pkg:pypi/pytest?uuid=21776640-36c9-4111-a6c4-ea5a550c85e0",
-      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c",
+      "dependency_uid": "pkg:pypi/pytest?uuid=f0c50c37-e20a-416d-9395-9238c1c133c9",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e",
+      "resolved_to_package_uid": null,
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
       "package_type": "pypi",
@@ -315,8 +327,9 @@
       "is_runtime": true,
       "is_optional": true,
       "is_resolved": false,
-      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=bf9520e1-0b6a-4c00-90c4-b5e7afb6de3e",
-      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=90cd6d93-1c46-477a-bd4a-47aa6b3ce773",
+      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=ba2634df-8cb1-48cc-875a-bc511888f27a",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fd86b29f-e974-4880-9cc5-c8191a8241da",
+      "resolved_to_package_uid": null,
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
       "package_type": "pypi",
@@ -329,8 +342,9 @@
       "is_runtime": true,
       "is_optional": true,
       "is_resolved": false,
-      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=1963fa7d-3e64-4975-b4e7-80492466fefb",
-      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c",
+      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=baae1579-e28e-40d7-9900-29af699fe7a7",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e",
+      "resolved_to_package_uid": null,
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
       "package_type": "pypi",
@@ -357,6 +371,10 @@
       "is_text": false,
       "is_archive": true,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
@@ -630,7 +648,7 @@
         }
       ],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=90cd6d93-1c46-477a-bd4a-47aa6b3ce773"
+        "pkg:pypi/asgiref@3.3.0?uuid=fd86b29f-e974-4880-9cc5-c8191a8241da"
       ],
       "emails": [],
       "urls": [],
@@ -655,6 +673,10 @@
       "is_text": false,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
@@ -690,6 +712,10 @@
       "is_text": false,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
@@ -725,6 +751,10 @@
       "is_text": false,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
@@ -760,6 +790,10 @@
       "is_text": true,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "bsd-new",
       "detected_license_expression_spdx": "BSD-3-Clause",
@@ -807,7 +841,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c"
+        "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e"
       ],
       "emails": [],
       "urls": [],
@@ -832,6 +866,10 @@
       "is_text": true,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
@@ -1105,7 +1143,7 @@
         }
       ],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c"
+        "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e"
       ],
       "emails": [],
       "urls": [],
@@ -1130,6 +1168,10 @@
       "is_text": true,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
@@ -1142,7 +1184,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c"
+        "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e"
       ],
       "emails": [],
       "urls": [],
@@ -1167,6 +1209,10 @@
       "is_text": true,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
@@ -1179,7 +1225,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c"
+        "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e"
       ],
       "emails": [],
       "urls": [],
@@ -1204,6 +1250,10 @@
       "is_text": true,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
@@ -1216,7 +1266,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c"
+        "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e"
       ],
       "emails": [],
       "urls": [],
@@ -1241,6 +1291,10 @@
       "is_text": true,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
@@ -1253,7 +1307,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c"
+        "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e"
       ],
       "emails": [],
       "urls": [],
@@ -1278,6 +1332,10 @@
       "is_text": true,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
@@ -1290,7 +1348,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c"
+        "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e"
       ],
       "emails": [],
       "urls": [],
@@ -1315,6 +1373,10 @@
       "is_text": true,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
@@ -1327,7 +1389,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c"
+        "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e"
       ],
       "emails": [],
       "urls": [],
@@ -1352,6 +1414,10 @@
       "is_text": true,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
@@ -1364,7 +1430,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c"
+        "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e"
       ],
       "emails": [],
       "urls": [],
@@ -1389,6 +1455,10 @@
       "is_text": true,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
@@ -1401,7 +1471,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c"
+        "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e"
       ],
       "emails": [],
       "urls": [],
@@ -1426,6 +1496,10 @@
       "is_text": true,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
@@ -1438,7 +1512,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c"
+        "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e"
       ],
       "emails": [],
       "urls": [],
@@ -1463,6 +1537,10 @@
       "is_text": true,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
@@ -1475,7 +1553,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c"
+        "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e"
       ],
       "emails": [],
       "urls": [],
@@ -1500,6 +1578,10 @@
       "is_text": true,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "apache-2.0",
       "detected_license_expression_spdx": "Apache-2.0",
@@ -1535,7 +1617,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c"
+        "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e"
       ],
       "emails": [],
       "urls": [
@@ -1576,6 +1658,10 @@
       "is_text": true,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
       "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
@@ -1588,7 +1674,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fb05a7ee-1078-4d60-bf71-2ba031414f1c"
+        "pkg:pypi/asgiref@3.3.0?uuid=abf2b1fe-4a9d-46fa-bfd9-550fd278dc5e"
       ],
       "emails": [],
       "urls": [],
