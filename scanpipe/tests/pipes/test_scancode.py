@@ -104,7 +104,7 @@ class ScanPipeScancodePipesTest(TestCase):
 
         # The VM image extraction features are available in the Docker image context.
         if from_docker_image:
-            self.assertEqual([], errors)
+            self.assertEqual({}, errors)
             results = [path.name for path in list(Path(target).glob("**/*"))]
             expected = [
                 "bin",
@@ -118,7 +118,7 @@ class ScanPipeScancodePipesTest(TestCase):
             self.assertEqual(sorted(expected), sorted(results))
 
         else:
-            error = errors[0]
+            error = errors.values()[0]
             self.assertTrue(
                 any(
                     [
