@@ -611,6 +611,28 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(1, len(Project.get_root_content(project.input_path)))
         self.assertEqual(0, len(Project.get_root_content(project.codebase_path)))
 
+    def test_scanpipe_management_command_flush_projects(self):
+        project1 = Project.objects.create(name="project1")
+        project2 = Project.objects.create(name="project2")
+        ten_days_ago = timezone.now() - datetime.timedelta(days=10)
+        project2.update(created_date=ten_days_ago)
+
+        out = StringIO()
+        options = ["--retain-days", 7, "--no-color", "--no-input"]
+        call_command("flush-projects", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        expected = "1 project and its related data have been removed."
+        self.assertEqual(expected, out_value)
+        self.assertEqual(project1, Project.objects.get())
+
+        Project.objects.create(name="project2")
+        out = StringIO()
+        options = ["--no-color", "--no-input"]
+        call_command("flush-projects", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        expected = "2 projects and their related data have been removed."
+        self.assertEqual(expected, out_value)
+
     def test_scanpipe_management_command_create_user(self):
         out = StringIO()
 

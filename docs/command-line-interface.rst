@@ -298,6 +298,25 @@ Optional arguments:
 - ``--no-input`` Does not prompt the user for input of any kind.
 
 
+`$ scanpipe flush-projects`
+---------------------------
+
+Delete all project data and their related work directories created more than a
+specified number of days ago.
+
+Optional arguments:
+
+- ``---retain-days RETAIN_DAYS`` Specify the number of days to retain data.
+  All data older than this number of days will be deleted.
+  **Defaults to 0 (delete all data)**.
+
+  For example, to delete all projects created more than one week ago::
+
+    scanpipe flush-projects --retain-days 7
+
+- ``--no-input`` Does not prompt the user for input of any kind.
+
+
 .. _cli_create_user:
 
 `$ scanpipe create-user <username>`
