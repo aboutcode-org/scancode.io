@@ -249,3 +249,15 @@ Note that only the HTTPS type of URL is supported::
 A GitHub repository URL example::
 
     https://github.com/username/repository.git
+
+
+What is the fast way to cleanup my ScanCode.io installation, removing all projects and all inputs?
+----------------------------------------------------------------------------------------------------
+
+1. Stop ScanCode.io.
+2. In a ./manage shell, run this to delete all the project's data::
+
+    Project.objects.all().delete()
+
+3. In a shell, cd to your workspace directory and remove all files there.
+
