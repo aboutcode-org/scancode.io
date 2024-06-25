@@ -30,6 +30,7 @@ import requests
 from packageurl import PackageURL
 from univers.version_range import RANGE_CLASS_BY_SCHEMES
 from univers.version_range import InvalidVersionRange
+from univers.versions import InvalidVersion
 
 from scanpipe.pipes import LoopProgress
 from scanpipe.pipes import poll_until_success
@@ -277,7 +278,7 @@ def get_unique_unresolved_purls(project):
         if range_class := RANGE_CLASS_BY_SCHEMES.get(pkg_type):
             try:
                 vers = range_class.from_native(extracted_requirement)
-            except InvalidVersionRange:
+            except (InvalidVersionRange, InvalidVersion):
                 continue
 
             if not vers.constraints:
