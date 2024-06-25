@@ -298,6 +298,8 @@ Optional arguments:
 - ``--no-input`` Does not prompt the user for input of any kind.
 
 
+.. _cli_flush_projects:
+
 `$ scanpipe flush-projects`
 ---------------------------
 
