@@ -611,7 +611,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_name = "scan_single_package"
         project1 = Project.objects.create(name="Analysis")
 
-        input_location = self.data / "is-npm-1.0.0.tgz"
+        input_location = self.data / "scancode" / "is-npm-1.0.0.tgz"
         project1.copy_input_from(input_location)
 
         run = project1.add_pipeline(pipeline_name)
@@ -625,11 +625,13 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(1, project1.discovereddependencies.count())
 
         scancode_file = project1.get_latest_output(filename="scancode")
-        expected_file = self.data / "is-npm-1.0.0_scan_package.json"
+        expected_file = self.data / "scancode" / "is-npm-1.0.0_scan_package.json"
         self.assertPipelineResultEqual(expected_file, scancode_file)
 
         summary_file = project1.get_latest_output(filename="summary")
-        expected_file = self.data / "is-npm-1.0.0_scan_package_summary.json"
+        expected_file = (
+            self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
+        )
         self.assertPipelineResultEqual(expected_file, summary_file)
 
         # Ensure that we only have one instance of is-npm in `key_files_packages`
@@ -725,7 +727,7 @@ class PipelinesIntegrationTest(TestCase):
         project1 = Project.objects.create(name="Analysis")
 
         filename = "is-npm-1.0.0.tgz"
-        input_location = self.data / filename
+        input_location = self.data / "scancode" / filename
         project1.copy_input_from(input_location)
         project1.add_input_source("https://download.url", filename)
 
@@ -740,7 +742,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(1, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
-        expected_file = self.data / "is-npm-1.0.0_scan_codebase.json"
+        expected_file = self.data / "scancode" / "is-npm-1.0.0_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_inspect_packages_creates_packages_npm(self):
@@ -748,7 +750,7 @@ class PipelinesIntegrationTest(TestCase):
         project1 = Project.objects.create(name="Analysis")
 
         filename = "is-npm-1.0.0.tgz"
-        input_location = self.data / filename
+        input_location = self.data / "scancode" / filename
         project1.copy_input_from(input_location)
 
         run = project1.add_pipeline(pipeline_name)
@@ -792,7 +794,7 @@ class PipelinesIntegrationTest(TestCase):
         project1 = Project.objects.create(name="Analysis")
 
         filename = "daglib-0.6.0-py3-none-any.whl"
-        input_location = self.data / filename
+        input_location = self.data / "scancode" / filename
         project1.copy_input_from(input_location)
         project1.add_input_source("https://download.url", filename)
 
@@ -807,7 +809,9 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(8, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
-        expected_file = self.data / "daglib-0.6.0-py3-none-any.whl_scan_codebase.json"
+        expected_file = (
+            self.data / "scancode" / "daglib-0.6.0-py3-none-any.whl_scan_codebase.json"
+        )
         self.assertPipelineResultEqual(expected_file, result_file)
 
     @skipIf(sys.platform != "linux", "Expected results are inconsistent across OS")
@@ -956,7 +960,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_name = "load_inventory"
         project1 = Project.objects.create(name="Tool: scancode-toolkit")
 
-        input_location = self.data / "asgiref-3.3.0_toolkit_scan.json"
+        input_location = self.data / "asgiref" / "asgiref-3.3.0_toolkit_scan.json"
         project1.copy_input_from(input_location)
 
         run = project1.add_pipeline(pipeline_name)
@@ -970,13 +974,15 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(4, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
-        expected_file = self.data / "asgiref-3.3.0_load_inventory_expected.json"
+        expected_file = (
+            self.data / "asgiref" / "asgiref-3.3.0_load_inventory_expected.json"
+        )
         self.assertPipelineResultEqual(expected_file, result_file)
 
         # Using the ScanCode.io JSON output as the input
         project2 = Project.objects.create(name="Tool: scanpipe")
 
-        input_location = self.data / "asgiref-3.3.0_scanpipe_output.json"
+        input_location = self.data / "asgiref" / "asgiref-3.3.0_scanpipe_output.json"
         project2.copy_input_from(input_location)
 
         run = project2.add_pipeline(pipeline_name)
@@ -1324,7 +1330,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_name2 = "populate_purldb"
         project1 = Project.objects.create(name="Utility: PurlDB")
 
-        input_location = self.data / "asgiref-3.3.0_toolkit_scan.json"
+        input_location = self.data / "asgiref" / "asgiref-3.3.0_toolkit_scan.json"
         project1.copy_input_from(input_location)
 
         run = project1.add_pipeline(pipeline_name1)

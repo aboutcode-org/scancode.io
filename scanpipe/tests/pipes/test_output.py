@@ -153,7 +153,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_outputs_to_csv(self):
-        fixtures = self.data / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
@@ -172,7 +172,7 @@ class ScanPipeOutputPipesTest(TestCase):
             self.assertIn(csv_file, [f.name for f in output_files])
 
     def test_scanpipe_pipes_outputs_to_json(self):
-        fixtures = self.data / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
@@ -203,7 +203,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertIn(output_file.name, project.output_root)
 
     def test_scanpipe_pipes_outputs_to_xlsx(self):
-        fixtures = self.data / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
         project = Project.objects.get(name="asgiref")
@@ -242,7 +242,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertJSONEqual(results_as_json, expected_location.read_text())
 
     def test_scanpipe_pipes_outputs_to_cyclonedx(self, regen=FIXTURES_REGEN):
-        fixtures = self.data / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
         project = Project.objects.get(name="asgiref")
@@ -270,7 +270,7 @@ class ScanPipeOutputPipesTest(TestCase):
         results_json["vulnerabilities"][0]["bom-ref"] = "BomRef"
         results = json.dumps(results_json, indent=2)
 
-        expected_location = self.data / "cyclonedx/asgiref-3.3.0.cdx.json"
+        expected_location = self.data / "cyclonedx" / "asgiref-3.3.0.cdx.json"
         if regen:
             expected_location.write_text(results)
 
@@ -310,7 +310,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual(expected, results_json["dependencies"])
 
     def test_scanpipe_pipes_outputs_to_spdx(self):
-        fixtures = self.data / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
@@ -326,7 +326,7 @@ class ScanPipeOutputPipesTest(TestCase):
         results_json["files"] = []
         results = json.dumps(results_json, indent=2)
 
-        expected_file = self.data / "asgiref-3.3.0.spdx.json"
+        expected_file = self.data / "asgiref" / "asgiref-3.3.0.spdx.json"
         self.assertResultsEqual(expected_file, results)
 
         # Make sure the output can be generated even if the work_directory was wiped

@@ -85,7 +85,7 @@ User = get_user_model()
 
 class ScanPipeModelsTest(TestCase):
     data = Path(__file__).parent / "data"
-    fixtures = [data / "asgiref-3.3.0_fixtures.json"]
+    fixtures = [data / "asgiref" / "asgiref-3.3.0_fixtures.json"]
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
@@ -1337,7 +1337,7 @@ class ScanPipeModelsTest(TestCase):
             f.write("content")
         self.assertEqual("content\n", resource.file_content)
 
-        file_with_long_lines = self.data / "decompose_l_u_8hpp_source.html"
+        file_with_long_lines = self.data / "misc" / "decompose_l_u_8hpp_source.html"
         copy_input(file_with_long_lines, self.project1.codebase_path)
 
         resource.update(path="decompose_l_u_8hpp_source.html")
@@ -1791,7 +1791,7 @@ class ScanPipeModelsTest(TestCase):
 
     @skipIf(sys.platform != "linux", "Ordering differs on macOS.")
     def test_scanpipe_codebase_resource_model_walk_method(self):
-        fixtures = self.data / "asgiref-3.3.0_walk_test_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_walk_test_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         asgiref_root = self.project_asgiref.codebaseresources.get(
             path="asgiref-3.3.0.whl-extract"

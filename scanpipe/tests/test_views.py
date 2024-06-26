@@ -446,7 +446,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertNotContains(response, expected1)
         self.assertNotContains(response, expected2)
 
-        scan_summary = self.data / "is-npm-1.0.0_scan_package_summary.json"
+        scan_summary = self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
         with summary_file.open("w") as opened_file:
             opened_file.write(scan_summary.read_text())
 
@@ -457,7 +457,7 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_details_get_license_clarity_data(self):
         get_license_clarity_data = ProjectDetailView.get_license_clarity_data
 
-        scan_summary = self.data / "is-npm-1.0.0_scan_package_summary.json"
+        scan_summary = self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
         scan_summary_json = json.loads(scan_summary.read_text())
         license_clarity_data = get_license_clarity_data(scan_summary_json)
 
@@ -473,7 +473,7 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_details_get_scan_summary_data(self):
         get_scan_summary_data = ProjectDetailView.get_scan_summary_data
 
-        scan_summary = self.data / "is-npm-1.0.0_scan_package_summary.json"
+        scan_summary = self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
         scan_summary_json = json.loads(scan_summary.read_text())
         scan_summary_data = get_scan_summary_data(scan_summary_json)
 

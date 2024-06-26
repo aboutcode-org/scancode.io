@@ -43,13 +43,13 @@ class ScanPipeInputPipesTest(TestCase):
         tool_name = input.get_tool_name_from_scan_headers(scan_data={"headers": []})
         self.assertIsNone(tool_name)
 
-        input_location = self.data / "asgiref-3.3.0_scanpipe_output.json"
+        input_location = self.data / "asgiref" / "asgiref-3.3.0_scanpipe_output.json"
         tool_name = input.get_tool_name_from_scan_headers(
             scan_data=json.loads(input_location.read_text())
         )
         self.assertEqual("scanpipe", tool_name)
 
-        input_location = self.data / "asgiref-3.3.0_toolkit_scan.json"
+        input_location = self.data / "asgiref" / "asgiref-3.3.0_toolkit_scan.json"
         tool_name = input.get_tool_name_from_scan_headers(
             scan_data=json.loads(input_location.read_text())
         )
@@ -64,7 +64,7 @@ class ScanPipeInputPipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_load_inventory_from_toolkit_scan(self):
         project = Project.objects.create(name="Analysis")
-        input_location = self.data / "asgiref-3.3.0_toolkit_scan.json"
+        input_location = self.data / "asgiref" / "asgiref-3.3.0_toolkit_scan.json"
         input.load_inventory_from_toolkit_scan(project, input_location)
         self.assertEqual(18, project.codebaseresources.count())
         self.assertEqual(2, project.discoveredpackages.count())
@@ -72,7 +72,7 @@ class ScanPipeInputPipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_load_inventory_from_scanpipe(self):
         project = Project.objects.create(name="1")
-        input_location = self.data / "asgiref-3.3.0_scanpipe_output.json"
+        input_location = self.data / "asgiref" / "asgiref-3.3.0_scanpipe_output.json"
         scan_data = json.loads(input_location.read_text())
         input.load_inventory_from_scanpipe(project, scan_data)
         self.assertEqual(18, project.codebaseresources.count())
@@ -119,7 +119,7 @@ class ScanPipeInputPipesTest(TestCase):
         self.assertEqual(0, project1.codebaserelations.count())
 
     def test_scanpipe_pipes_input_load_inventory_from_project_xlsx_output(self):
-        fixtures = self.data / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project1 = Project.objects.get(name="asgiref")
         xlsx_output = output.to_xlsx(project1)

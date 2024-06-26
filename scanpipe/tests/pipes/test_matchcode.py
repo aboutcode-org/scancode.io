@@ -43,7 +43,7 @@ class MatchCodePipesTest(TestCase):
         self.project1 = Project.objects.create(name="Analysis")
 
     def test_scanpipe_pipes_matchcode_fingerprint_codebase_directories(self):
-        fixtures = self.data / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
@@ -323,7 +323,9 @@ class MatchCodePipesTest(TestCase):
         )
 
         # This resource should not have a fingerprint
-        copy_input(self.data / "is-npm-1.0.0.tgz", self.project1.codebase_path)
+        copy_input(
+            self.data / "scancode" / "is-npm-1.0.0.tgz", self.project1.codebase_path
+        )
         codebase_resource2 = CodebaseResource.objects.create(
             project=self.project1, path="is-npm-1.0.0.tgz"
         )

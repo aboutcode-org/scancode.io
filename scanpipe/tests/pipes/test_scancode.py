@@ -380,7 +380,7 @@ class ScanPipeScancodePipesTest(TestCase):
     @expectedFailure
     def test_scanpipe_pipes_scancode_virtual_codebase(self):
         project = Project.objects.create(name="asgiref")
-        input_location = self.data / "asgiref-3.3.0_scanpipe_output.json"
+        input_location = self.data / "asgiref" / "asgiref-3.3.0_scanpipe_output.json"
         virtual_codebase = scancode.get_virtual_codebase(project, input_location)
         self.assertEqual(19, len(virtual_codebase.resources.keys()))
 
@@ -461,7 +461,7 @@ class ScanPipeScancodePipesTest(TestCase):
         pipeline_name = "scan_single_package"
         project1 = Project.objects.create(name="Analysis")
 
-        input_location = self.data / "is-npm-1.0.0.tgz"
+        input_location = self.data / "scancode" / "is-npm-1.0.0.tgz"
         project1.copy_input_from(input_location)
 
         run = project1.add_pipeline(pipeline_name)
@@ -479,9 +479,9 @@ class ScanPipeScancodePipesTest(TestCase):
         # uses a subprocess call to run the ``scancode`` command.
         project1.codebaseresources.all().update(file_type="", mime_type="text/plain")
 
-        scan_output_location = self.data / "is-npm-1.0.0_scan_package.json"
+        scan_output_location = self.data / "scancode" / "is-npm-1.0.0_scan_package.json"
         summary = scancode.make_results_summary(project1, scan_output_location)
-        expected_location = self.data / "scancode/is-npm-1.0.0_summary.json"
+        expected_location = self.data / "scancode" / "is-npm-1.0.0_summary.json"
         if regen:
             expected_location.write_text(json.dumps(summary, indent=2))
 

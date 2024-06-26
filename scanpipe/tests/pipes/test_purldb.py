@@ -40,7 +40,7 @@ from scanpipe.tests import package_data1
 
 class ScanPipePurlDBTest(TestCase):
     data = Path(__file__).parent.parent / "data"
-    fixtures = [data / "asgiref-3.3.0_fixtures.json"]
+    fixtures = [data / "asgiref" / "asgiref-3.3.0_fixtures.json"]
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
