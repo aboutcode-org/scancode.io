@@ -326,14 +326,14 @@ class Pipeline(BasePipeline):
                 details=details,
             )
 
-    def extract_archives(self):
+    def extract_archives(self, location=None):
         """Extract archives located in the codebase/ directory with extractcode."""
         from scanpipe.pipes import scancode
 
-        extract_errors = scancode.extract_archives(
-            location=self.project.codebase_path,
-            recurse=True,
-        )
+        if not location:
+            location = self.project.codebase_path
+
+        extract_errors = scancode.extract_archives(location=location, recurse=True)
 
         for resource_path, errors in extract_errors.items():
             self.project.add_error(
