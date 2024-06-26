@@ -110,7 +110,7 @@ def extract_archive(location, target):
 
     for event in extractcode_api.extract_archive(location, target):
         if event.done and event.errors:
-            errors[event.source] = event.errors
+            errors[str(event.source)] = event.errors
 
     return errors
 
@@ -138,7 +138,7 @@ def extract_archives(location, recurse=False):
     errors = {}
     for event in extractcode_api.extract_archives(location, **options):
         if event.done and event.errors:
-            errors[event.source] = event.errors
+            errors[str(event.source)] = event.errors
 
     return errors
 
