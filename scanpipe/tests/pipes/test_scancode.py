@@ -59,7 +59,7 @@ class ScanPipeScancodePipesTest(TestCase):
         input_location = str(self.data_location / "archive.zip")
 
         errors = scancode.extract_archive(input_location, target)
-        self.assertEqual([], errors)
+        self.assertEqual({}, errors)
 
         results = [path.name for path in list(Path(target).glob("**/*"))]
         expected = [
@@ -72,13 +72,25 @@ class ScanPipeScancodePipesTest(TestCase):
         for path in expected:
             self.assertIn(path, results)
 
+    def test_scanpipe_pipes_scancode_extract_archive_errors(self):
+        target = tempfile.mkdtemp()
+        input_location = str(self.data_location / "scancode" / "corrupted.tar.gz")
+        errors = scancode.extract_archive(input_location, target)
+
+        error_message = "gzip decompression failed"
+        if sys.platform == "darwin":
+            error_message += " (zlib returned error -3, msg invalid code lengths set)"
+
+        expected = {input_location: [error_message]}
+        self.assertEqual(expected, errors)
+
     def test_scanpipe_pipes_scancode_extract_archives(self):
         tempdir = Path(tempfile.mkdtemp())
         input_location = str(self.data_location / "archive.zip")
         copy_input(input_location, tempdir)
 
         errors = scancode.extract_archives(tempdir)
-        self.assertEqual([], errors)
+        self.assertEqual({}, errors)
 
         results = [path.name for path in list(tempdir.glob("**/*"))]
         self.assertEqual(9, len(results))
@@ -93,6 +105,19 @@ class ScanPipeScancodePipesTest(TestCase):
         for path in expected:
             self.assertIn(path, results)
 
+    def test_scanpipe_pipes_scancode_extract_archives_errors(self):
+        tempdir = Path(tempfile.mkdtemp())
+        input_location = str(self.data_location / "scancode" / "corrupted.tar.gz")
+        target = copy_input(input_location, tempdir)
+        errors = scancode.extract_archives(tempdir)
+
+        error_message = "gzip decompression failed"
+        if sys.platform == "darwin":
+            error_message += " (zlib returned error -3, msg invalid code lengths set)"
+
+        expected = {str(target): [error_message]}
+        self.assertEqual(expected, errors)
+
     @skipIf(sys.platform != "linux", "QCOW2 extraction is not available on macOS.")
     def test_scanpipe_pipes_scancode_extract_archive_vmimage_qcow2(self):
         target = tempfile.mkdtemp()
@@ -104,7 +129,7 @@ class ScanPipeScancodePipesTest(TestCase):
 
         # The VM image extraction features are available in the Docker image context.
         if from_docker_image:
-            self.assertEqual([], errors)
+            self.assertEqual({}, errors)
             results = [path.name for path in list(Path(target).glob("**/*"))]
             expected = [
                 "bin",
@@ -118,15 +143,17 @@ class ScanPipeScancodePipesTest(TestCase):
             self.assertEqual(sorted(expected), sorted(results))
 
         else:
-            error = errors[0]
-            self.assertTrue(
-                any(
-                    [
-                        "Unable to read kernel" in error,
-                        "VM Image extraction only supported on Linux." in error,
-                    ]
-                )
-            )
+            expected = {
+                str(input_location): [
+                    "Unable to read kernel at: /boot/vmlinuz-6.5.0-1022-azure.\n"
+                    "libguestfs requires the kernel executable to be readable.\n"
+                    "This is the case by default on most Linux distributions except on "
+                    "Ubuntu.\nPlease follow the ExtractCode installation instructions "
+                    "in the README.rst at:\n"
+                    "https://github.com/nexB/extractcode/blob/main/README.rst '\n"
+                ]
+            }
+            self.assertEqual(expected, errors)
 
     def test_scanpipe_pipes_scancode_get_resource_info(self):
         input_location = str(self.data_location / "notice.NOTICE")

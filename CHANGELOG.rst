@@ -7,6 +7,10 @@ v34.6.4 (unreleased)
 - Add all "classify" plugin fields from scancode-toolkit on the CodebaseResource model.
   https://github.com/nexB/scancode.io/issues/1275
 
+- Refine the extraction errors reporting to include the resource path for rendering
+  link to the related resources in the UI.
+  https://github.com/nexB/scancode.io/issues/1273
+
 - Add a ``flush-projects`` management command, to Delete all project data and their
   related work directories created more than a specified number of days ago.
   https://github.com/nexB/scancode.io/issues/1289
