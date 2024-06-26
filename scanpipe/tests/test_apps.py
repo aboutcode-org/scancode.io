@@ -41,7 +41,7 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class ScanPipeAppsTest(TestCase):
-    data_location = Path(__file__).parent / "data"
+    data = Path(__file__).parent / "data"
     pipelines_location = Path(__file__).parent / "pipelines"
 
     def test_scanpipe_apps_get_policies_index(self):
@@ -66,7 +66,7 @@ class ScanPipeAppsTest(TestCase):
             self.assertEqual({}, scanpipe_app.license_policies_index)
 
         scanpipe_app.license_policies_index = {}
-        policies_files = self.data_location / "policies.yml"
+        policies_files = self.data / "policies" / "policies.yml"
         with override_settings(SCANCODEIO_POLICIES_FILE=policies_files):
             scanpipe_app.set_policies()
             self.assertEqual(

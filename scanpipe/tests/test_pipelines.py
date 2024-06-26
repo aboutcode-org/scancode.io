@@ -163,7 +163,7 @@ class ScanPipePipelinesTest(TestCase):
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
 
-        file_location = self.data / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         input_source = project1.add_input_source(
             filename=file_location.name, is_uploaded=True
         )
@@ -645,7 +645,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_name = "scan_single_package"
         project1 = Project.objects.create(name="Analysis")
 
-        input_location = self.data / "multiple-is-npm-1.0.0.tar.gz"
+        input_location = self.data / "scancode" / "multiple-is-npm-1.0.0.tar.gz"
         project1.copy_input_from(input_location)
 
         run = project1.add_pipeline(pipeline_name)
@@ -659,12 +659,16 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(2, project1.discovereddependencies.count())
 
         scancode_file = project1.get_latest_output(filename="scancode")
-        expected_file = self.data / "multiple-is-npm-1.0.0_scan_package.json"
+        expected_file = (
+            self.data / "scancode" / "multiple-is-npm-1.0.0_scan_package.json"
+        )
         # Do not override the regen as this file is generated in regen_test_data
         self.assertPipelineResultEqual(expected_file, scancode_file)
 
         summary_file = project1.get_latest_output(filename="summary")
-        expected_file = self.data / "multiple-is-npm-1.0.0_scan_package_summary.json"
+        expected_file = (
+            self.data / "scancode" / "multiple-is-npm-1.0.0_scan_package_summary.json"
+        )
         self.assertPipelineResultEqual(expected_file, summary_file)
 
     @mock.patch("scanpipe.pipelines.scan_single_package.is_archive")
@@ -812,7 +816,7 @@ class PipelinesIntegrationTest(TestCase):
         project1 = Project.objects.create(name="Analysis")
 
         filename = "alpine_3_15_4.tar.gz"
-        input_location = self.data / filename
+        input_location = self.data / "docker" / filename
         project1.copy_input_from(input_location)
         project1.add_input_source("https://download.url", filename)
 
@@ -827,7 +831,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
-        expected_file = self.data / "alpine_3_15_4_scan_codebase.json"
+        expected_file = self.data / "docker" / "alpine_3_15_4_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_docker_pipeline_does_not_report_errors_for_broken_symlinks(self):
@@ -861,7 +865,7 @@ class PipelinesIntegrationTest(TestCase):
         project1 = Project.objects.create(name="Analysis")
 
         filename = "centos.tar.gz"
-        input_location = self.data / filename
+        input_location = self.data / "docker" / filename
         project1.copy_input_from(input_location)
         project1.add_input_source("https://download.url", filename)
 
@@ -876,7 +880,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
-        expected_file = self.data / "centos_scan_codebase.json"
+        expected_file = self.data / "docker" / "centos_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_docker_pipeline_debian_integration(self):
@@ -884,7 +888,7 @@ class PipelinesIntegrationTest(TestCase):
         project1 = Project.objects.create(name="Analysis")
 
         filename = "debian.tar.gz"
-        input_location = self.data / filename
+        input_location = self.data / "docker" / filename
         project1.copy_input_from(input_location)
         project1.add_input_source("https://download.url", filename)
 
@@ -899,7 +903,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
-        expected_file = self.data / "debian_scan_codebase.json"
+        expected_file = self.data / "docker" / "debian_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_docker_pipeline_distroless_debian_integration(self):
@@ -907,7 +911,7 @@ class PipelinesIntegrationTest(TestCase):
         project1 = Project.objects.create(name="Analysis")
 
         filename = "gcr_io_distroless_base.tar.gz"
-        input_location = self.data / filename
+        input_location = self.data / "docker" / filename
         project1.copy_input_from(input_location)
         project1.add_input_source("https://download.url", filename)
 
@@ -922,14 +926,16 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
-        expected_file = self.data / "gcr_io_distroless_base_scan_codebase.json"
+        expected_file = (
+            self.data / "docker" / "gcr_io_distroless_base_scan_codebase.json"
+        )
         self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_rootfs_pipeline_integration(self):
         pipeline_name = "analyze_root_filesystem_or_vm_image"
         project1 = Project.objects.create(name="Analysis")
 
-        input_location = self.data / "basic-rootfs.tar.gz"
+        input_location = self.data / "rootfs" / "basic-rootfs.tar.gz"
         project1.copy_input_from(input_location)
 
         run = project1.add_pipeline(pipeline_name)
@@ -943,7 +949,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
-        expected_file = self.data / "basic-rootfs_root_filesystems.json"
+        expected_file = self.data / "rootfs" / "basic-rootfs_root_filesystems.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_load_inventory_pipeline_integration(self):
@@ -1244,7 +1250,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
-        expected_file = self.data / "flume-ng-node-d2d.json"
+        expected_file = self.data / "d2d" / "flume-ng-node-d2d.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_deploy_to_develop_pipeline_extract_input_files_errors(self):

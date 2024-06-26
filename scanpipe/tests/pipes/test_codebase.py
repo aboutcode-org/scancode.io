@@ -34,7 +34,7 @@ from scanpipe.pipes import scancode
 
 
 class ScanPipeCodebasePipesTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def test_scanpipe_pipes_codebase_get_codebase_tree(self):
         def _replace_path(virtual_tree_children):
@@ -49,11 +49,11 @@ class ScanPipeCodebasePipesTest(TestCase):
                 res["path"] = path
                 _replace_path(res.get("children", []))
 
-        fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
-        scan_results = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
+        scan_results = self.data / "asgiref-3.3.0_scanpipe_output.json"
         virtual_codebase = scancode.get_virtual_codebase(project, scan_results)
         project_codebase = codebase.ProjectCodebase(project)
 
@@ -62,7 +62,7 @@ class ScanPipeCodebasePipesTest(TestCase):
         virtual_tree = codebase.get_codebase_tree(virtual_codebase, fields)
         project_tree = codebase.get_codebase_tree(project_codebase, fields)
 
-        with open(self.data_location / "asgiref-3.3.0_tree.json") as f:
+        with open(self.data / "asgiref-3.3.0_tree.json") as f:
             expected = json.loads(f.read())
 
         self.assertEqual(expected, project_tree)
@@ -82,7 +82,7 @@ class ScanPipeCodebasePipesTest(TestCase):
         self.assertEqual(dict(children=[]), project_codebase.get_tree())
 
     def test_scanpipe_pipes_codebase_project_codebase_class_with_resources(self):
-        fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
         project = Project.objects.get(name="asgiref")
@@ -100,14 +100,14 @@ class ScanPipeCodebasePipesTest(TestCase):
         self.assertEqual(expected, next(walk_gen).path)
 
         tree = project_codebase.get_tree()
-        with open(self.data_location / "asgiref-3.3.0_tree.json") as f:
+        with open(self.data / "asgiref-3.3.0_tree.json") as f:
             expected = json.loads(f.read())
 
         self.assertEqual(expected, tree)
 
     @skipIf(sys.platform != "linux", "Ordering differs on macOS.")
     def test_scanpipe_pipes_codebase_project_codebase_class_walk(self):
-        fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
         project = Project.objects.get(name="asgiref")
@@ -162,7 +162,7 @@ class ScanPipeCodebasePipesTest(TestCase):
         self.assertEqual(expected_bottom_up_paths, bottom_up_paths)
 
     def test_scanpipe_pipes_codebase_get_basic_virtual_codebase(self):
-        fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
         resources = project.codebaseresources.all()

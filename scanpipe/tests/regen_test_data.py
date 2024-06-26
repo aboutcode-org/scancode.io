@@ -59,14 +59,14 @@ class RegenTestData(TestCase):
         -e SCANCODEIO_TEST_FIXTURES_REGEN=True web ./manage.py test
     """
 
-    data_location = Path(__file__).parent / "data"
+    data = Path(__file__).parent / "data"
 
     def test_regen_asgiref_test_files(self):
         pipeline_name = "scan_codebase"
         project1 = Project.objects.create(name="asgiref")
 
         filename = "asgiref-3.3.0-py3-none-any.whl"
-        input_location = self.data_location / filename
+        input_location = self.data / filename
         project1.copy_input_from(input_location)
         project1.add_input_source(filename=filename, is_uploaded=True)
         run = project1.add_pipeline(pipeline_name)
@@ -78,7 +78,7 @@ class RegenTestData(TestCase):
         # ScanCode-toolkit scan result
         scancode.run_scan(
             location=str(project1.codebase_path),
-            output_file=str(self.data_location / "asgiref-3.3.0_toolkit_scan.json"),
+            output_file=str(self.data / "asgiref-3.3.0_toolkit_scan.json"),
             run_scan_args={
                 "copyright": True,
                 "info": True,
@@ -88,13 +88,13 @@ class RegenTestData(TestCase):
         )
 
         # ScanCode.io results
-        test_file_location = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
+        test_file_location = self.data / "asgiref-3.3.0_scanpipe_output.json"
         result_file = output.to_json(project1)
         result_json = json.loads(Path(result_file).read_text())
         test_file_location.write_text(json.dumps(result_json, indent=2))
 
         # Model fixtures
-        fixtures_test_file_location = self.data_location / "asgiref-3.3.0_fixtures.json"
+        fixtures_test_file_location = self.data / "asgiref-3.3.0_fixtures.json"
         models = [
             "scanpipe.project",
             "scanpipe.run",
@@ -106,7 +106,7 @@ class RegenTestData(TestCase):
 
         # Walk test fixtures
         test_file_location = (
-            self.data_location / "asgiref-3.3.0_walk_test_fixtures.json"
+            self.data / "asgiref-3.3.0_walk_test_fixtures.json"
         )
         with open(fixtures_test_file_location) as f:
             fixtures = json.load(f)
@@ -121,7 +121,7 @@ class RegenTestData(TestCase):
         test_file_location.write_text(json.dumps(fixtures, indent=2))
 
         # Codebase tree
-        test_file_location = self.data_location / "asgiref-3.3.0_tree.json"
+        test_file_location = self.data / "asgiref-3.3.0_tree.json"
         pc = codebase.ProjectCodebase(project1)
         project_tree = codebase.get_codebase_tree(codebase=pc, fields=["name", "path"])
         test_file_location.write_text(json.dumps(project_tree, indent=2))
@@ -129,7 +129,7 @@ class RegenTestData(TestCase):
         # Load inventory expected file
         project2 = Project.objects.create(name="package_assembly")
         filename = "package_assembly_codebase.tar.gz"
-        input_file = self.data_location / "scancode" / filename
+        input_file = self.data / "scancode" / filename
         project2.copy_input_from(input_location)
         input.copy_input(input_file, project2.codebase_path)
         scancode.extract_archives(location=project2.codebase_path)
@@ -139,7 +139,7 @@ class RegenTestData(TestCase):
         json_filename = "package_assembly_codebase.json"
         scancode.run_scan(
             location=scan_location,
-            output_file=str(self.data_location / "scancode" / json_filename),
+            output_file=str(self.data / "scancode" / json_filename),
             run_scan_args={
                 "info": True,
                 "package": True,
