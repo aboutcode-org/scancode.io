@@ -249,3 +249,32 @@ Note that only the HTTPS type of URL is supported::
 A GitHub repository URL example::
 
     https://github.com/username/repository.git
+
+How can I cleanup my ScanCode.io installation, removing all projects and related data?
+--------------------------------------------------------------------------------------
+
+You can use the :ref:`cli_flush_projects` command to perform bulk deletion of projects
+and their associated data stored on disk::
+
+    $ scanpipe flush-projects
+
+**Confirmation will be required before deletion.**
+
+To automate this process, such as running it from a cron job, you can use the
+``--no-input`` option to skip confirmation prompts.
+
+Additionally, you can retain specific projects and their data based on their
+creation date using the ``--retain-days`` option.
+
+Here's an example of a crontab entry that runs daily and flushes all projects and
+data older than 7 days::
+
+    @daily scanpipe flush-projects --retain-days 7 --no-input
+
+.. note:: If you are use Docker for running ScanCode.io, you can run the scanpipe
+  ``flush-projects`` command using::
+
+    docker compose run --rm web scanpipe flush-projects
+
+  See :ref:`command_line_interface` chapter for more information about the scanpipe
+  command.

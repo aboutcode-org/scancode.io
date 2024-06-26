@@ -11,6 +11,10 @@ v34.6.4 (unreleased)
   link to the related resources in the UI.
   https://github.com/nexB/scancode.io/issues/1273
 
+- Add a ``flush-projects`` management command, to Delete all project data and their
+  related work directories created more than a specified number of days ago.
+  https://github.com/nexB/scancode.io/issues/1289
+
 v34.6.3 (2024-06-21)
 --------------------
 
