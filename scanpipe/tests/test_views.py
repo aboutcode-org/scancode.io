@@ -57,7 +57,7 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 @override_settings(SCANCODEIO_REQUIRE_AUTHENTICATION=False)
 class ScanPipeViewsTest(TestCase):
-    data_location = Path(__file__).parent / "data"
+    data = Path(__file__).parent / "data"
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
@@ -239,7 +239,7 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
 
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         copy_input(file_location, self.project1.input_path)
         filename = file_location.name
         url = reverse("project_download_input", args=[self.project1.slug, filename])
@@ -256,7 +256,7 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
 
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         copy_input(file_location, self.project1.output_path)
         filename = file_location.name
         url = reverse("project_download_output", args=[self.project1.slug, filename])
@@ -276,7 +276,7 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.post(url, follow=True)
         self.assertEqual(404, response.status_code)
 
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         copy_input(file_location, self.project1.input_path)
         filename = file_location.name
         input1 = self.project1.add_input_source(filename=filename, is_uploaded=True)
@@ -446,7 +446,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertNotContains(response, expected1)
         self.assertNotContains(response, expected2)
 
-        scan_summary = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
+        scan_summary = self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
         with summary_file.open("w") as opened_file:
             opened_file.write(scan_summary.read_text())
 
@@ -457,7 +457,7 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_details_get_license_clarity_data(self):
         get_license_clarity_data = ProjectDetailView.get_license_clarity_data
 
-        scan_summary = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
+        scan_summary = self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
         scan_summary_json = json.loads(scan_summary.read_text())
         license_clarity_data = get_license_clarity_data(scan_summary_json)
 
@@ -473,7 +473,7 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_details_get_scan_summary_data(self):
         get_scan_summary_data = ProjectDetailView.get_scan_summary_data
 
-        scan_summary = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
+        scan_summary = self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
         scan_summary_json = json.loads(scan_summary.read_text())
         scan_summary_data = get_scan_summary_data(scan_summary_json)
 
@@ -888,8 +888,8 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, expected, status_code=404)
 
         resource_files = [
-            self.data_location / "codebase" / "a.txt",
-            self.data_location / "codebase" / "b.txt",
+            self.data / "codebase" / "a.txt",
+            self.data / "codebase" / "b.txt",
         ]
         copy_inputs(resource_files, self.project1.codebase_path)
         resource1 = CodebaseResource.objects.create(

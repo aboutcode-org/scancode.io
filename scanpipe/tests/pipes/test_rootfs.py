@@ -33,14 +33,14 @@ from scanpipe.pipes import rootfs
 
 
 class ScanPipeRootfsPipesTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def test_scanpipe_pipes_rootfs_from_project_codebase_class_method(self):
         p1 = Project.objects.create(name="Analysis")
         root_filesystems = list(rootfs.RootFs.from_project_codebase(p1))
         self.assertEqual([], root_filesystems)
 
-        input_location = str(self.data_location / "windows-container-rootfs.tar")
+        input_location = str(self.data / "rootfs" / "windows-container-rootfs.tar")
         extract_tar(input_location, target_dir=p1.codebase_path)
         root_filesystems = list(rootfs.RootFs.from_project_codebase(p1))
         self.assertEqual(1, len(root_filesystems))

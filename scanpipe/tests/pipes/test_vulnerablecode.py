@@ -44,8 +44,8 @@ class ScanPipeVulnerableCodeTest(TestCase):
         self, mock_search_by_purl
     ):
         django_5_0 = make_package(self.project1, "pkg:pypi/django@5.0")
-        data_location = self.data / "vulnerablecode/django-5.0_package_data.json"
-        package_data = json.loads(data_location.read_text())
+        data = self.data / "vulnerablecode/django-5.0_package_data.json"
+        package_data = json.loads(data.read_text())
         mock_search_by_purl.return_value = [package_data]
         buffer = io.StringIO()
 
@@ -65,8 +65,8 @@ class ScanPipeVulnerableCodeTest(TestCase):
         self.assertEqual(1, len(django_5_0.affected_by_vulnerabilities))
 
     def test_scanpipe_pipes_vulnerablecode_filter_vulnerabilities(self):
-        data_location = self.data / "vulnerablecode/django-5.0_package_data.json"
-        package_data = json.loads(data_location.read_text())
+        data = self.data / "vulnerablecode/django-5.0_package_data.json"
+        package_data = json.loads(data.read_text())
         vulnerability_data = package_data["affected_by_vulnerabilities"]
         self.assertEqual(2, len(vulnerability_data))
 

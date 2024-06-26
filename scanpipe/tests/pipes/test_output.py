@@ -60,7 +60,7 @@ def make_config_directory(project):
 
 
 class ScanPipeOutputPipesTest(TestCase):
-    data_path = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def assertResultsEqual(self, expected_file, results, regen=FIXTURES_REGEN):
         """
@@ -153,7 +153,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_outputs_to_csv(self):
-        fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
@@ -172,7 +172,7 @@ class ScanPipeOutputPipesTest(TestCase):
             self.assertIn(csv_file, [f.name for f in output_files])
 
     def test_scanpipe_pipes_outputs_to_json(self):
-        fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
@@ -203,7 +203,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertIn(output_file.name, project.output_root)
 
     def test_scanpipe_pipes_outputs_to_xlsx(self):
-        fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
         project = Project.objects.get(name="asgiref")
@@ -226,14 +226,14 @@ class ScanPipeOutputPipesTest(TestCase):
 
     def test_scanpipe_pipes_outputs_vulnerability_as_cyclonedx(self):
         component_bom_ref = "pkg:pypi/django@4.0.10"
-        data_location = self.data_path / "cyclonedx/django-4.0.10-vulnerability.json"
+        data = self.data / "cyclonedx/django-4.0.10-vulnerability.json"
 
-        vulnerability_data = json.loads(data_location.read_text())
+        vulnerability_data = json.loads(data.read_text())
         results = output.vulnerability_as_cyclonedx(
             vulnerability_data, component_bom_ref
         )
 
-        expected_location = self.data_path / "cyclonedx/django-4.0.10_as_cdx.json"
+        expected_location = self.data / "cyclonedx/django-4.0.10_as_cdx.json"
         results_as_json = results.as_json()
 
         # if True:
@@ -242,7 +242,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertJSONEqual(results_as_json, expected_location.read_text())
 
     def test_scanpipe_pipes_outputs_to_cyclonedx(self, regen=FIXTURES_REGEN):
-        fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
         project = Project.objects.get(name="asgiref")
@@ -251,8 +251,8 @@ class ScanPipeOutputPipesTest(TestCase):
         )
 
         package.other_license_expression_spdx = "Apache-2.0 AND LicenseRef-test"
-        data_location = self.data_path / "cyclonedx/django-4.0.10-vulnerability.json"
-        vulnerability_data = json.loads(data_location.read_text())
+        data = self.data / "cyclonedx/django-4.0.10-vulnerability.json"
+        vulnerability_data = json.loads(data.read_text())
         package.affected_by_vulnerabilities = [vulnerability_data]
         package.save()
 
@@ -270,7 +270,7 @@ class ScanPipeOutputPipesTest(TestCase):
         results_json["vulnerabilities"][0]["bom-ref"] = "BomRef"
         results = json.dumps(results_json, indent=2)
 
-        expected_location = self.data_path / "cyclonedx/asgiref-3.3.0.cdx.json"
+        expected_location = self.data / "cyclonedx" / "asgiref-3.3.0.cdx.json"
         if regen:
             expected_location.write_text(results)
 
@@ -310,7 +310,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual(expected, results_json["dependencies"])
 
     def test_scanpipe_pipes_outputs_to_spdx(self):
-        fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
@@ -326,7 +326,7 @@ class ScanPipeOutputPipesTest(TestCase):
         results_json["files"] = []
         results = json.dumps(results_json, indent=2)
 
-        expected_file = self.data_path / "asgiref-3.3.0.spdx.json"
+        expected_file = self.data / "asgiref" / "asgiref-3.3.0.spdx.json"
         self.assertResultsEqual(expected_file, results)
 
         # Make sure the output can be generated even if the work_directory was wiped
@@ -402,14 +402,14 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual(expected, rendered)
 
     def test_scanpipe_pipes_outputs_render_template(self):
-        template_location = str(self.data_path / "outputs" / "render_me.html")
+        template_location = str(self.data / "outputs" / "render_me.html")
         template_string = Path(template_location).read_text()
         context = {"var": "value"}
         rendered = output.render_template(template_string, context)
         self.assertEqual("value", rendered)
 
     def test_scanpipe_pipes_outputs_render_template_file(self):
-        template_location = str(self.data_path / "outputs" / "render_me.html")
+        template_location = str(self.data / "outputs" / "render_me.html")
         context = {"var": "value"}
         rendered = output.render_template_file(template_location, context)
         self.assertEqual("value", rendered)
@@ -459,7 +459,7 @@ class ScanPipeOutputPipesTest(TestCase):
         with self.assertNumQueries(2):
             output_file = output.to_attribution(project=project)
 
-        expected_file = self.data_path / "outputs" / "expected_attribution.html"
+        expected_file = self.data / "outputs" / "expected_attribution.html"
         self.assertResultsEqual(expected_file, output_file.read_text())
 
         config_directory = make_config_directory(project)
