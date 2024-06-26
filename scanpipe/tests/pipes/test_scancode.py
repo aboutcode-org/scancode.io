@@ -76,12 +76,12 @@ class ScanPipeScancodePipesTest(TestCase):
         target = tempfile.mkdtemp()
         input_location = str(self.data_location / "scancode" / "corrupted.tar.gz")
         errors = scancode.extract_archive(input_location, target)
-        expected = {
-            input_location: [
-                "gzip decompression failed (zlib returned error -3, msg invalid code "
-                "lengths set)"
-            ]
-        }
+
+        error_message = "gzip decompression failed"
+        if sys.platform == "darwin":
+            error_message += " (zlib returned error -3, msg invalid code lengths set)"
+
+        expected = {input_location: [error_message]}
         self.assertEqual(expected, errors)
 
     def test_scanpipe_pipes_scancode_extract_archives(self):
@@ -109,14 +109,13 @@ class ScanPipeScancodePipesTest(TestCase):
         tempdir = Path(tempfile.mkdtemp())
         input_location = str(self.data_location / "scancode" / "corrupted.tar.gz")
         target = copy_input(input_location, tempdir)
-
         errors = scancode.extract_archives(tempdir)
-        expected = {
-            str(target): [
-                "gzip decompression failed (zlib returned error -3, msg invalid code "
-                "lengths set)"
-            ]
-        }
+
+        error_message = "gzip decompression failed"
+        if sys.platform == "darwin":
+            error_message += " (zlib returned error -3, msg invalid code lengths set)"
+
+        expected = {str(target): [error_message]}
         self.assertEqual(expected, errors)
 
     @skipIf(sys.platform != "linux", "QCOW2 extraction is not available on macOS.")
