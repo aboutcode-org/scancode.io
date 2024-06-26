@@ -37,6 +37,7 @@ SCORECARD_URL = settings.SCORECARD_URL
 if SCORECARD_URL:
     SCORECARD_API_URL = f'{SCORECARD_URL.rstrip("/")}/projects/'
 
+
 def is_configured():
     """Return True if the required Scorecard settings have been set."""
     if SCORECARD_API_URL:
