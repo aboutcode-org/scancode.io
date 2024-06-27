@@ -63,7 +63,7 @@ PURLDB_API_KEY = settings.PURLDB_API_KEY
 if PURLDB_API_KEY:
     session.headers.update({"Authorization": f"Token {PURLDB_API_KEY}"})
 
-DEFAULT_TIMEOUT = 60
+DEFAULT_TIMEOUT = 600
 
 
 def is_configured():
@@ -275,9 +275,16 @@ def get_unique_unresolved_purls(project):
     packages = set()
     for item in distinct_unresolved:
         pkg_type, namespace, name, extracted_requirement = item
+        print(
+            'pkg_type: ', pkg_type,
+            'namespace: ', namespace,
+            'name: ', name,
+            'extracted_requirement: ', extracted_requirement
+        )
         if range_class := RANGE_CLASS_BY_SCHEMES.get(pkg_type):
             try:
                 vers = range_class.from_native(extracted_requirement)
+                print('vers: ', vers)
             except (InvalidVersionRange, InvalidVersion):
                 continue
 
