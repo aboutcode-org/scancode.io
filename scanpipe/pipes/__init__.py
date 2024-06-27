@@ -512,7 +512,11 @@ class ElapsedTimeProgress:
     @property
     def eta(self):
         run_time = timer() - self.start_time
-        return round(run_time / self.current_progress * (100 - self.current_progress))
+        if self.current_progress:
+            return round(run_time / self.current_progress * (100 - self.current_progress))
+        else:
+            return 0
+            
 
     def log_progress(self):
         elapsed_time = timer() - self.last_logged_time
