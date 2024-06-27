@@ -78,6 +78,7 @@ from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLMixin
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
+from ossf_scorecard.contrib.models import Package_score_Mixin
 from rest_framework.authtoken.models import Token
 from rq.command import send_stop_job_command
 from rq.exceptions import NoSuchJobError
@@ -3692,6 +3693,21 @@ class DiscoveredDependency(
             version=self.version,
             external_refs=external_refs,
         )
+
+class PackageScore(UUIDPKModel, Package_score_Mixin):
+
+    def __str__(self):
+        return self.score or str(self.uuid)
+
+    discovered_package = models.ForeignKey(
+        DiscoveredPackage,
+        related_name="declared_dependencies",
+        help_text=_("The package that declares this dependency."),
+        on_delete=models.CASCADE,
+        editable=False,
+        blank=True,
+        null=True,
+    )
 
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
