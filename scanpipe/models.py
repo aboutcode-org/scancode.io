@@ -3709,6 +3709,45 @@ class PackageScore(UUIDPKModel, Package_score_Mixin):
         null=True,
     )
 
+    @classmethod
+    def create_from_data(
+            cls,
+            DiscoveredPackage,
+            scorecard_data,
+            scoring_tool=None
+    ):
+        """
+        Create and returns a DiscoveredDependency for a `project` from the
+        `dependency_data`.
+
+        If `strip_datafile_path_root` is True, then `create_from_data()` will
+        strip the root path segment from the `datafile_path` of
+        `dependency_data` before looking up the corresponding CodebaseResource
+        for `datafile_path`. This is used in the case where Dependency data is
+        imported from a scancode-toolkit scan, where the root path segments are
+        not stripped for `datafile_path`.
+        """
+        scorecard_data = scorecard_data.copy()
+        required_fields = ["purl", "dependency_uid"]
+        missing_values = [
+            field_name
+            for field_name in required_fields
+            if not dependency_data.get(field_name)
+        ]
+
+
+
+        cleaned_data = {
+            field_name: value
+            for field_name, value in dependency_data.items()
+            if field_name in cls.model_fields() and value not in EMPTY_VALUES
+        }
+
+        return cls.objects.create(
+            discovered_package=DiscoveredPackage,
+            scoring_tool=scoring_tool,
+        )
+
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
     target_url = models.URLField(_("Target URL"), max_length=1024)
