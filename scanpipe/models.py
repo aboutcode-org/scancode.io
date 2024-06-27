@@ -3477,10 +3477,28 @@ class DiscoveredDependency(
             "The identifier for the datafile handler used to obtain this dependency."
         ),
     )
-    is_runtime = models.BooleanField(default=False)
-    is_optional = models.BooleanField(default=False)
-    is_resolved = models.BooleanField(default=False)
-    is_direct = models.BooleanField(default=False)
+    is_runtime = models.BooleanField(
+        default=False,
+        help_text=_("True if this dependency is a runtime dependency."),
+    )
+    is_optional = models.BooleanField(
+        default=False,
+        help_text=_("True if this dependency is an optional dependency"),
+    )
+    is_resolved = models.BooleanField(
+        default=False,
+        help_text=_(
+            "True if this dependency version requirement has been pinned "
+            "and this dependency points to an exact version."
+        ),
+    )
+    is_direct = models.BooleanField(
+        default=False,
+        help_text=_(
+            "True if this is a direct, first-level dependency relationship "
+            "for a package."
+        ),
+    )
 
     objects = DiscoveredDependencyQuerySet.as_manager()
 

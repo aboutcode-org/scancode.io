@@ -528,10 +528,14 @@ def resolve_dependencies(project):
             package = None
             if pd.purl:
                 purl_data = DiscoveredPackage.extract_purl_data(package_mapping)
-                package = DiscoveredPackage.objects.get_or_none(
+                packages = DiscoveredPackage.objects.filter(
                     project=project,
                     **purl_data,
                 )
+
+                for package in packages:
+                    if resource.location in package.datafile_paths:
+                        break
 
             dependencies = package_mapping.get("dependencies") or []
             update_packages_and_dependencies(
@@ -583,6 +587,8 @@ def update_packages_and_dependencies(
             dependency_data=dep,
             for_package=package,
             resolved_to_package=resolved_to_package,
+            datafile_resource=resource,
+            datasource_id=datasource_id,
         )
 
 
@@ -627,6 +633,15 @@ def match_and_resolve_dependencies(project):
                     and dependency.extracted_requirement in dep.extracted_requirement
                 )
             ]
+
+            # This should be done only in the case of lockfiles where only one version
+            # of a package is present for an environment
+            if not other_dependencies:
+                other_dependencies = [
+                    dep
+                    for dep in matched_dependencies
+                    if (dep.purl == dependency.purl and dep.resolved_to_package)
+                ]
 
         if other_dependencies:
             resolved_dependency = other_dependencies.pop()

@@ -270,9 +270,10 @@ def update_or_create_dependency(
     if ignore_dependency_scope(project, dependency_data):
         return  # Do not create the DiscoveredDependency record.
 
+    dependencies = []
     if not dependency_uid:
         purl_data = DiscoveredDependency.extract_purl_data(dependency_data)
-        dependency = DiscoveredDependency.objects.get_or_none(
+        dependencies = DiscoveredDependency.objects.filter(
             project=project,
             extracted_requirement=extracted_requirement,
             **purl_data,
@@ -282,12 +283,36 @@ def update_or_create_dependency(
             project=project,
             dependency_uid=dependency_uid,
         )
+        if dependency:
+            dependencies.append(dependency)
 
-    if dependency:
-        dependency.update_from_data(dependency_data)
-        if resolved_to_package and not dependency.resolved_to_package:
-            dependency.update(resolved_to_package=resolved_to_package)
-    else:
+    for dependency in dependencies:
+        # This dependency relationship is for a new package
+        if (
+            for_package
+            and dependency.for_package
+            and dependency.for_package != for_package
+        ):
+            DiscoveredDependency.populate_dependency_uuid(dependency_data)
+            dependency = DiscoveredDependency.create_from_data(
+                project,
+                dependency_data,
+                for_package=for_package,
+                resolved_to_package=resolved_to_package,
+                datafile_resource=datafile_resource,
+                datasource_id=datasource_id,
+                strip_datafile_path_root=strip_datafile_path_root,
+            )
+            break
+
+        elif dependency:
+            dependency.update_from_data(dependency_data)
+            if resolved_to_package and not dependency.resolved_to_package:
+                dependency.update(resolved_to_package=resolved_to_package)
+            if for_package and not dependency.for_package:
+                dependency.update(for_package=for_package)
+
+    if not dependencies:
         DiscoveredDependency.populate_dependency_uuid(dependency_data)
         dependency = DiscoveredDependency.create_from_data(
             project,
