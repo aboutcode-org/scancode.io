@@ -202,7 +202,19 @@ def bulk_search_by_cpes(
     return request_post(url, data, timeout)
 
 
-def fetch_vulnerabilities(packages, chunk_size=1000, logger=logger.info):
+def filter_vulnerabilities(vulnerabilities, ignore_set):
+    """Filter out vulnerabilities based on a list of ignored IDs and aliases."""
+    return [
+        vulnerability
+        for vulnerability in vulnerabilities
+        if vulnerability.get("vulnerability_id") not in ignore_set
+        and not any(alias in ignore_set for alias in vulnerability.get("aliases", []))
+    ]
+
+
+def fetch_vulnerabilities(
+    packages, chunk_size=1000, logger=logger.info, ignore_set=None
+):
     """
     Fetch and store vulnerabilities for each provided ``packages``.
     The PURLs are used for the lookups in batch of ``chunk_size`` per request.
@@ -217,7 +229,12 @@ def fetch_vulnerabilities(packages, chunk_size=1000, logger=logger.info):
     unsaved_objects = []
     for package in packages:
         if package_data := vulnerabilities_by_purl.get(package.package_url):
-            if affected_by := package_data.get("affected_by_vulnerabilities", []):
+            affected_by = package_data.get("affected_by_vulnerabilities", [])
+
+            if ignore_set and affected_by:
+                affected_by = filter_vulnerabilities(affected_by, ignore_set)
+
+            if affected_by:
                 package.affected_by_vulnerabilities = affected_by
                 unsaved_objects.append(package)
 

@@ -35,7 +35,7 @@ from scanpipe.pipes.input import copy_input
 
 @skipIf(sys.platform == "darwin", "Not supported on macOS")
 class ScanPipeSymbolsPipesTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
@@ -44,7 +44,7 @@ class ScanPipeSymbolsPipesTest(TestCase):
         dir = self.project1.codebase_path / "codefile"
         dir.mkdir(parents=True)
 
-        file_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        file_location = self.data / "d2d-javascript" / "from" / "main.js"
         copy_input(file_location, dir)
 
         pipes.collect_and_create_codebase_resources(self.project1)
@@ -60,7 +60,7 @@ class ScanPipeSymbolsPipesTest(TestCase):
         dir = self.project1.codebase_path / "codefile"
         dir.mkdir(parents=True)
 
-        file_location = self.data_location / "source-inspector" / "test3.cpp"
+        file_location = self.data / "source-inspector" / "test3.cpp"
         copy_input(file_location, dir)
 
         pipes.collect_and_create_codebase_resources(self.project1)
@@ -72,7 +72,7 @@ class ScanPipeSymbolsPipesTest(TestCase):
         result_extra_data = main_file.extra_data
 
         expected_extra_data = (
-            self.data_location / "source-inspector" / "test3.cpp-pygments-expected.json"
+            self.data / "source-inspector" / "test3.cpp-pygments-expected.json"
         )
 
         with open(expected_extra_data) as f:
@@ -84,7 +84,7 @@ class ScanPipeSymbolsPipesTest(TestCase):
         dir = self.project1.codebase_path / "codefile"
         dir.mkdir(parents=True)
 
-        file_location = self.data_location / "source-inspector" / "test3.cpp"
+        file_location = self.data / "source-inspector" / "test3.cpp"
         copy_input(file_location, dir)
 
         pipes.collect_and_create_codebase_resources(self.project1)
@@ -96,9 +96,7 @@ class ScanPipeSymbolsPipesTest(TestCase):
         result_extra_data = main_file.extra_data
 
         expected_extra_data = (
-            self.data_location
-            / "source-inspector"
-            / "test3.cpp-tree-sitter-expected.json"
+            self.data / "source-inspector" / "test3.cpp-tree-sitter-expected.json"
         )
 
         with open(expected_extra_data) as f:

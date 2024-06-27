@@ -25,6 +25,7 @@ import logging
 import traceback
 from contextlib import contextmanager
 from functools import wraps
+from pathlib import Path
 from pydoc import getdoc
 from pydoc import splitdoc
 from timeit import default_timer as timer
@@ -301,17 +302,45 @@ class Pipeline(BasePipeline):
         if ignored_patterns := self.env.get("ignored_patterns"):
             flag.flag_ignored_patterns(self.project, patterns=ignored_patterns)
 
-    def extract_archives(self):
+    def extract_archive(self, location, target):
+        """Extract archive at `location` to `target`. Save errors as messages."""
+        from scanpipe.pipes import scancode
+
+        extract_errors = scancode.extract_archive(location, target)
+
+        for resource_location, errors in extract_errors.items():
+            resource_path = Path(resource_location)
+
+            if resource_path.is_relative_to(self.project.codebase_path):
+                resource_path = resource_path.relative_to(self.project.codebase_path)
+                details = {"resource_path": str(resource_path)}
+            elif resource_path.is_relative_to(self.project.input_path):
+                resource_path = resource_path.relative_to(self.project.input_path)
+                details = {"path": f"input/{str(resource_path)}"}
+            else:
+                details = {"filename": str(resource_path.name)}
+
+            self.project.add_error(
+                description="\n".join(errors),
+                model="extract_archive",
+                details=details,
+            )
+
+    def extract_archives(self, location=None):
         """Extract archives located in the codebase/ directory with extractcode."""
         from scanpipe.pipes import scancode
 
-        extract_errors = scancode.extract_archives(
-            location=self.project.codebase_path,
-            recurse=True,
-        )
+        if not location:
+            location = self.project.codebase_path
 
-        if extract_errors:
-            self.add_error("\n".join(extract_errors))
+        extract_errors = scancode.extract_archives(location=location, recurse=True)
+
+        for resource_path, errors in extract_errors.items():
+            self.project.add_error(
+                description="\n".join(errors),
+                model="extract_archives",
+                details={"resource_path": resource_path},
+            )
 
         # Reload the project env post-extraction as the scancode-config.yml file
         # may be located in one of the extracted archives.

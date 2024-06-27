@@ -60,7 +60,7 @@ from scanpipe.tests import package_data1
 # TransactionTestCase is required for the Run related actions that use
 # the transaction.on_commit() signal
 class ScanPipeAPITest(TransactionTestCase):
-    data_location = Path(__file__).parent / "data"
+    data = Path(__file__).parent / "data"
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
@@ -684,7 +684,7 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"error": "Summary file not available"}
         self.assertEqual(expected, response.data)
 
-        summary_file = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
+        summary_file = self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
         copy_input(summary_file, self.project1.output_path)
 
         response = self.csrf_client.get(url)
@@ -999,7 +999,7 @@ class ScanPipeAPITest(TransactionTestCase):
     def test_scanpipe_api_serializer_get_serializer_fields(self):
         self.assertEqual(48, len(get_serializer_fields(DiscoveredPackage)))
         self.assertEqual(14, len(get_serializer_fields(DiscoveredDependency)))
-        self.assertEqual(33, len(get_serializer_fields(CodebaseResource)))
+        self.assertEqual(37, len(get_serializer_fields(CodebaseResource)))
         self.assertEqual(5, len(get_serializer_fields(CodebaseRelation)))
         self.assertEqual(7, len(get_serializer_fields(ProjectMessage)))
 

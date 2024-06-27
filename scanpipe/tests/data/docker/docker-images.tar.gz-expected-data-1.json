@@ -1,0 +1,394 @@
+[
+  {
+    "sha256": null,
+    "docker_version": "1.12.6",
+    "os": "linux",
+    "os_version": null,
+    "architecture": "amd64",
+    "variant": null,
+    "created": "2017-01-18T09:49:05.022760406Z",
+    "author": null,
+    "comment": null,
+    "labels": {
+      "com.microscaling.docker.dockerfile": "/Dockerfile",
+      "com.microscaling.license": "Apache-2.0",
+      "org.label-schema.build-date": "2017-01-18T09:49:02Z",
+      "org.label-schema.description": "Our Microscaling Engine provides automation, resilience and efficiency for microservice architectures. Experiment with microscaling at app.microscaling.com.",
+      "org.label-schema.name": "Microscaling Engine",
+      "org.label-schema.schema-version": "1.0",
+      "org.label-schema.url": "https://microscaling.com",
+      "org.label-schema.vcs-ref": "45b22cb",
+      "org.label-schema.vcs-url": "https://github.com/microscaling/microscaling.git",
+      "org.label-schema.vendor": "Microscaling Systems",
+      "org.label-schema.version": "0.9.1"
+    },
+    "image_format": "docker",
+    "image_id": "4ac5c955a6dc9dc709fa2ce8dd21c45292afd9e4af38dcd1fb239ed546d19233",
+    "config_digest": "sha256:4ac5c955a6dc9dc709fa2ce8dd21c45292afd9e4af38dcd1fb239ed546d19233",
+    "tags": [
+      "microscaling/microscaling:latest"
+    ],
+    "distro": null,
+    "layers": [
+      {
+        "extracted_location": null,
+        "archive_location": "d388bee71bbf28f77042d89b353bacd14506227a39b6b1098afe457f0a0b608e/layer.tar",
+        "sha256": "7cbcbac42c44c6c38559e5df3a494f44987333c8023a40fec48df2fce1fc146b",
+        "docker_version": null,
+        "os": null,
+        "os_version": null,
+        "architecture": null,
+        "variant": null,
+        "labels": [],
+        "layer_id": "7cbcbac42c44c6c38559e5df3a494f44987333c8023a40fec48df2fce1fc146b",
+        "size": 10240,
+        "is_empty_layer": false,
+        "author": null,
+        "created": "2016-12-27T18:17:13.762716133Z",
+        "created_by": "/bin/sh -c #(nop) ADD file:eeed5f514a35d18fcd9cbfe6c40c582211020bffdd53e4799018d33826fe5067 in / ",
+        "comment": null
+      },
+      {
+        "extracted_location": null,
+        "archive_location": "e439273044a3b34ba206c3598cd007dbba34db5af98d40718d585869af68602e/layer.tar",
+        "sha256": "d242f1731c55e0f057e183146de867e820dd2ef575125ec36b008340a3acc65e",
+        "docker_version": null,
+        "os": null,
+        "os_version": null,
+        "architecture": null,
+        "variant": null,
+        "labels": [],
+        "layer_id": "d242f1731c55e0f057e183146de867e820dd2ef575125ec36b008340a3acc65e",
+        "size": 10240,
+        "is_empty_layer": false,
+        "author": "Ross Fairbanks \"ross@microscaling.com\"",
+        "created": "2017-01-03T13:15:58.410035553Z",
+        "created_by": "/bin/sh -c apk update &&     apk upgrade &&     apk add $BUILD_PACKAGES &&     rm -rf /var/cache/apk/*",
+        "comment": null
+      },
+      {
+        "extracted_location": null,
+        "archive_location": "ca473f7411dd74e2d4781fc552d75d3b63c830ff66a253eec6bf5a6261c031b2/layer.tar",
+        "sha256": "d43ffef6b2712ef8ecdd86866e543b21ef8843742bf7c73a308a973534fa6c3f",
+        "docker_version": null,
+        "os": null,
+        "os_version": null,
+        "architecture": null,
+        "variant": null,
+        "labels": [],
+        "layer_id": "d43ffef6b2712ef8ecdd86866e543b21ef8843742bf7c73a308a973534fa6c3f",
+        "size": 10240,
+        "is_empty_layer": false,
+        "author": "Ross Fairbanks \"ross@microscaling.com\"",
+        "created": "2017-01-17T11:17:46.675078318Z",
+        "created_by": "/bin/sh -c #(nop) COPY multi:0847be51b158e2902e11d406f498a1d8d58ede5fbab01297b446d84b42667433 in / ",
+        "comment": null
+      },
+      {
+        "extracted_location": null,
+        "archive_location": "325919382e7b94a21ef80452c2fb599f5a03364e8559da0eca1359ad6ac394a0/layer.tar",
+        "sha256": "76ad2c2330f19d6f16fdf86e7b10cc2c1a8160746ffa1c4e3e46c75661f4bdcd",
+        "docker_version": null,
+        "os": null,
+        "os_version": null,
+        "architecture": null,
+        "variant": null,
+        "labels": [],
+        "layer_id": "76ad2c2330f19d6f16fdf86e7b10cc2c1a8160746ffa1c4e3e46c75661f4bdcd",
+        "size": 10240,
+        "is_empty_layer": false,
+        "author": "Ross Fairbanks \"ross@microscaling.com\"",
+        "created": "2017-01-17T11:17:48.829523581Z",
+        "created_by": "/bin/sh -c chmod +x /microscaling",
+        "comment": null
+      }
+    ],
+    "history": [
+      {
+        "created": "2016-12-27T18:17:13.762716133Z",
+        "created_by": "/bin/sh -c #(nop) ADD file:eeed5f514a35d18fcd9cbfe6c40c582211020bffdd53e4799018d33826fe5067 in / "
+      },
+      {
+        "created": "2017-01-03T13:15:49.512603795Z",
+        "author": "Ross Fairbanks \"ross@microscaling.com\"",
+        "created_by": "/bin/sh -c #(nop)  MAINTAINER Ross Fairbanks \"ross@microscaling.com\"",
+        "empty_layer": true
+      },
+      {
+        "created": "2017-01-03T13:15:49.913789767Z",
+        "author": "Ross Fairbanks \"ross@microscaling.com\"",
+        "created_by": "/bin/sh -c #(nop)  ENV BUILD_PACKAGES=ca-certificates",
+        "empty_layer": true
+      },
+      {
+        "created": "2017-01-03T13:15:58.410035553Z",
+        "author": "Ross Fairbanks \"ross@microscaling.com\"",
+        "created_by": "/bin/sh -c apk update &&     apk upgrade &&     apk add $BUILD_PACKAGES &&     rm -rf /var/cache/apk/*"
+      },
+      {
+        "created": "2017-01-17T11:17:46.675078318Z",
+        "author": "Ross Fairbanks \"ross@microscaling.com\"",
+        "created_by": "/bin/sh -c #(nop) COPY multi:0847be51b158e2902e11d406f498a1d8d58ede5fbab01297b446d84b42667433 in / "
+      },
+      {
+        "created": "2017-01-17T11:17:48.829523581Z",
+        "author": "Ross Fairbanks \"ross@microscaling.com\"",
+        "created_by": "/bin/sh -c chmod +x /microscaling"
+      },
+      {
+        "created": "2017-01-17T11:17:49.322379301Z",
+        "author": "Ross Fairbanks \"ross@microscaling.com\"",
+        "created_by": "/bin/sh -c #(nop)  ARG BUILD_DATE",
+        "empty_layer": true
+      },
+      {
+        "created": "2017-01-17T11:17:49.639696203Z",
+        "author": "Ross Fairbanks \"ross@microscaling.com\"",
+        "created_by": "/bin/sh -c #(nop)  ARG VERSION",
+        "empty_layer": true
+      },
+      {
+        "created": "2017-01-17T11:17:49.991577291Z",
+        "author": "Ross Fairbanks \"ross@microscaling.com\"",
+        "created_by": "/bin/sh -c #(nop)  ARG VCS_URL",
+        "empty_layer": true
+      },
+      {
+        "created": "2017-01-17T11:17:50.34992704Z",
+        "author": "Ross Fairbanks \"ross@microscaling.com\"",
+        "created_by": "/bin/sh -c #(nop)  ARG VCS_REF",
+        "empty_layer": true
+      },
+      {
+        "created": "2017-01-18T09:49:04.672769694Z",
+        "author": "Ross Fairbanks \"ross@microscaling.com\"",
+        "created_by": "/bin/sh -c #(nop)  LABEL org.label-schema.build-date=2017-01-18T09:49:02Z org.label-schema.name=Microscaling Engine org.label-schema.description=Our Microscaling Engine provides automation, resilience and efficiency for microservice architectures. Experiment with microscaling at app.microscaling.com. org.label-schema.url=https://microscaling.com org.label-schema.vcs-url=https://github.com/microscaling/microscaling.git org.label-schema.vcs-ref=45b22cb org.label-schema.vendor=Microscaling Systems org.label-schema.version=0.9.1 org.label-schema.schema-version=1.0 com.microscaling.docker.dockerfile=/Dockerfile com.microscaling.license=Apache-2.0",
+        "empty_layer": true
+      },
+      {
+        "created": "2017-01-18T09:49:05.022760406Z",
+        "author": "Ross Fairbanks \"ross@microscaling.com\"",
+        "created_by": "/bin/sh -c #(nop)  CMD [\"/microscaling\"]",
+        "empty_layer": true
+      }
+    ]
+  },
+  {
+    "sha256": null,
+    "docker_version": "19.03.8",
+    "os": "linux",
+    "os_version": null,
+    "architecture": "amd64",
+    "variant": null,
+    "created": "2020-10-11T21:21:00.914818853Z",
+    "author": null,
+    "comment": null,
+    "labels": {
+      "maintainer": "Bjoern Kimminich <bjoern.kimminich@owasp.org>",
+      "org.opencontainers.image.authors": "Bjoern Kimminich <bjoern.kimminich@owasp.org>",
+      "org.opencontainers.image.created": "\u201d2020-10-11T21:19:43Z\u201d",
+      "org.opencontainers.image.description": "Capture-the-Flag (CTF) environment setup tools for OWASP Juice Shop",
+      "org.opencontainers.image.documentation": "https://help.owasp-juice.shop/part1/ctf.html",
+      "org.opencontainers.image.licenses": "MIT",
+      "org.opencontainers.image.revision": "55df34d",
+      "org.opencontainers.image.source": "https://github.com/bkimminich/juice-shop-ctf.git",
+      "org.opencontainers.image.title": "OWASP Juice Shop CTF-Extension",
+      "org.opencontainers.image.url": "https://owasp-juice.shop",
+      "org.opencontainers.image.vendor": "Open Web Application Security Project",
+      "org.opencontainers.image.version": "8.1.2"
+    },
+    "image_format": "docker",
+    "image_id": "2e92ac90bc1e459ee9d2d72a8bcd3787895d3d7d2d75391e620cea6f20b61315",
+    "config_digest": "sha256:2e92ac90bc1e459ee9d2d72a8bcd3787895d3d7d2d75391e620cea6f20b61315",
+    "tags": [
+      "bkimminich/juice-shop-ctf:latest"
+    ],
+    "distro": null,
+    "layers": [
+      {
+        "extracted_location": null,
+        "archive_location": "2ba5d0825bcb0d843f975f7ba52db62531dbc73df083fae3d355c1a22d4a4bdc/layer.tar",
+        "sha256": "3e207b409db364b595ba862cdc12be96dcdad8e36c59a03b7b3b61c946a5741a",
+        "docker_version": null,
+        "os": null,
+        "os_version": null,
+        "architecture": null,
+        "variant": null,
+        "labels": [],
+        "layer_id": "3e207b409db364b595ba862cdc12be96dcdad8e36c59a03b7b3b61c946a5741a",
+        "size": 10240,
+        "is_empty_layer": false,
+        "author": null,
+        "created": "2020-04-24T01:05:03.608058404Z",
+        "created_by": "/bin/sh -c #(nop) ADD file:b91adb67b670d3a6ff9463e48b7def903ed516be66fc4282d22c53e41512be49 in / ",
+        "comment": null
+      },
+      {
+        "extracted_location": null,
+        "archive_location": "c9d345514b7a7f4e4d14748c6a7a6cb408f117fccce87ef80bf72429b5360c44/layer.tar",
+        "sha256": "09c52b6fbc483eb8e2d244a916da54fb3990cdaa575cab35edfbb27e132929cb",
+        "docker_version": null,
+        "os": null,
+        "os_version": null,
+        "architecture": null,
+        "variant": null,
+        "labels": [],
+        "layer_id": "09c52b6fbc483eb8e2d244a916da54fb3990cdaa575cab35edfbb27e132929cb",
+        "size": 10240,
+        "is_empty_layer": false,
+        "author": null,
+        "created": "2020-10-08T16:23:14.227103847Z",
+        "created_by": "/bin/sh -c addgroup -g 1000 node     && adduser -u 1000 -G node -s /bin/sh -D node     && apk add --no-cache         libstdc++     && apk add --no-cache --virtual .build-deps         curl     && ARCH= && alpineArch=\"$(apk --print-arch)\"       && case \"${alpineArch##*-}\" in         x86_64)           ARCH='x64'           CHECKSUM=\"b8b33ec1d2f6463ded7c02bf29ef4141ff4aabb2c0e0ba14cf16ac7c0a6a31a5\"           ;;         *) ;;       esac   && if [ -n \"${CHECKSUM}\" ]; then     set -eu;     curl -fsSLO --compressed \"https://unofficial-builds.nodejs.org/download/release/v$NODE_VERSION/node-v$NODE_VERSION-linux-$ARCH-musl.tar.xz\";     echo \"$CHECKSUM  node-v$NODE_VERSION-linux-$ARCH-musl.tar.xz\" | sha256sum -c -       && tar -xJf \"node-v$NODE_VERSION-linux-$ARCH-musl.tar.xz\" -C /usr/local --strip-components=1 --no-same-owner       && ln -s /usr/local/bin/node /usr/local/bin/nodejs;   else     echo \"Building from source\"     && apk add --no-cache --virtual .build-deps-full         binutils-gold         g++         gcc         gnupg         libgcc         linux-headers         make         python3     && for key in       4ED778F539E3634C779C87C6D7062848A1AB005C       94AE36675C464D64BAFA68DD7434390BDBE9B9C5       1C050899334244A8AF75E53792EF661D867B9DFA       71DCFD284A79C3B38668286BC97EC7A07EDE3FC1       8FCCA13FEF1D0C2E91008E09770F7A9A5AE15600       C4F0DFFF4E8C1A8236409D08E73BC641CC11F4C8       C82FA3AE1CBEDC6BE46B9360C43CEC45C17AB93C       DD8F2338BAE7501E3DD5AC78C273792F7D83545D       A48C2BEE680E841632CD4E44F07496B3EB3C1762       108F52B48DB57BB0CC439B2997B01419BD92F80A       B9E2F5981AA6E0CD28160D9FF13993A75599653C     ; do       gpg --batch --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys \"$key\" ||       gpg --batch --keyserver hkp://ipv4.pool.sks-keyservers.net --recv-keys \"$key\" ||       gpg --batch --keyserver hkp://pgp.mit.edu:80 --recv-keys \"$key\" ;     done     && curl -fsSLO --compressed \"https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION.tar.xz\"     && curl -fsSLO --compressed \"https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc\"     && gpg --batch --decrypt --output SHASUMS256.txt SHASUMS256.txt.asc     && grep \" node-v$NODE_VERSION.tar.xz\\$\" SHASUMS256.txt | sha256sum -c -     && tar -xf \"node-v$NODE_VERSION.tar.xz\"     && cd \"node-v$NODE_VERSION\"     && ./configure     && make -j$(getconf _NPROCESSORS_ONLN) V=     && make install     && apk del .build-deps-full     && cd ..     && rm -Rf \"node-v$NODE_VERSION\"     && rm \"node-v$NODE_VERSION.tar.xz\" SHASUMS256.txt.asc SHASUMS256.txt;   fi   && rm -f \"node-v$NODE_VERSION-linux-$ARCH-musl.tar.xz\"   && apk del .build-deps   && node --version   && npm --version",
+        "comment": null
+      },
+      {
+        "extracted_location": null,
+        "archive_location": "cbfc5b91e94f389bd405928c3be3367feea459d5917bde9d8b2792b96ae789ef/layer.tar",
+        "sha256": "55141db9edb2a13ee593cff8c80e883e672e388c8686fd94a4f2518f21de1d32",
+        "docker_version": null,
+        "os": null,
+        "os_version": null,
+        "architecture": null,
+        "variant": null,
+        "labels": [],
+        "layer_id": "55141db9edb2a13ee593cff8c80e883e672e388c8686fd94a4f2518f21de1d32",
+        "size": 10240,
+        "is_empty_layer": false,
+        "author": null,
+        "created": "2020-10-08T16:23:16.985023204Z",
+        "created_by": "/bin/sh -c apk add --no-cache --virtual .build-deps-yarn curl gnupg tar   && for key in     6A010C5166006599AA17F08146C2130DFD2497F5   ; do     gpg --batch --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys \"$key\" ||     gpg --batch --keyserver hkp://ipv4.pool.sks-keyservers.net --recv-keys \"$key\" ||     gpg --batch --keyserver hkp://pgp.mit.edu:80 --recv-keys \"$key\" ;   done   && curl -fsSLO --compressed \"https://yarnpkg.com/downloads/$YARN_VERSION/yarn-v$YARN_VERSION.tar.gz\"   && curl -fsSLO --compressed \"https://yarnpkg.com/downloads/$YARN_VERSION/yarn-v$YARN_VERSION.tar.gz.asc\"   && gpg --batch --verify yarn-v$YARN_VERSION.tar.gz.asc yarn-v$YARN_VERSION.tar.gz   && mkdir -p /opt   && tar -xzf yarn-v$YARN_VERSION.tar.gz -C /opt/   && ln -s /opt/yarn-v$YARN_VERSION/bin/yarn /usr/local/bin/yarn   && ln -s /opt/yarn-v$YARN_VERSION/bin/yarnpkg /usr/local/bin/yarnpkg   && rm yarn-v$YARN_VERSION.tar.gz.asc yarn-v$YARN_VERSION.tar.gz   && apk del .build-deps-yarn   && yarn --version",
+        "comment": null
+      },
+      {
+        "extracted_location": null,
+        "archive_location": "bf1ad815335aca28dc1b64e4a9cad7f0bd9f7e9ee8162dce166150b4f1169b0e/layer.tar",
+        "sha256": "01f37c950ed43fd0ecc47d0a72949201594f650bd63861cc6e6ac8097ca600bf",
+        "docker_version": null,
+        "os": null,
+        "os_version": null,
+        "architecture": null,
+        "variant": null,
+        "labels": [],
+        "layer_id": "01f37c950ed43fd0ecc47d0a72949201594f650bd63861cc6e6ac8097ca600bf",
+        "size": 10240,
+        "is_empty_layer": false,
+        "author": null,
+        "created": "2020-10-08T16:23:17.192305843Z",
+        "created_by": "/bin/sh -c #(nop) COPY file:238737301d47304174e4d24f4def935b29b3069c03c72ae8de97d94624382fce in /usr/local/bin/ ",
+        "comment": null
+      },
+      {
+        "extracted_location": null,
+        "archive_location": "5b2fc24305d353053e3a6aa7a613e75240e34cfede725f4bd4c466468cd3c48c/layer.tar",
+        "sha256": "08dc907515cbda226cd872c2c79d087eb226fd27182b6b1315306aade51f963d",
+        "docker_version": null,
+        "os": null,
+        "os_version": null,
+        "architecture": null,
+        "variant": null,
+        "labels": [],
+        "layer_id": "08dc907515cbda226cd872c2c79d087eb226fd27182b6b1315306aade51f963d",
+        "size": 10240,
+        "is_empty_layer": false,
+        "author": null,
+        "created": "2020-10-11T21:20:59.851868447Z",
+        "created_by": "/bin/sh -c #(nop) COPY dir:5bd634490f1e144602e7b39a1ebcb69af1748a34673299424a7fe6f10334bfa1 in /juice-shop-ctf ",
+        "comment": null
+      },
+      {
+        "extracted_location": null,
+        "archive_location": "ee512e2eb28e302e80a1e0bfad85ee3b18adc84a80e88ceac4325c13e3e083ec/layer.tar",
+        "sha256": "5b4096031e4780d4c3010335ede79886786ec89d22c2bd85642a30beac682ec9",
+        "docker_version": null,
+        "os": null,
+        "os_version": null,
+        "architecture": null,
+        "variant": null,
+        "labels": [],
+        "layer_id": "5b4096031e4780d4c3010335ede79886786ec89d22c2bd85642a30beac682ec9",
+        "size": 10240,
+        "is_empty_layer": false,
+        "author": null,
+        "created": "2020-10-11T21:21:00.668316194Z",
+        "created_by": "/bin/sh -c #(nop) WORKDIR /data",
+        "comment": null
+      }
+    ],
+    "history": [
+      {
+        "created": "2020-04-24T01:05:03.608058404Z",
+        "created_by": "/bin/sh -c #(nop) ADD file:b91adb67b670d3a6ff9463e48b7def903ed516be66fc4282d22c53e41512be49 in / "
+      },
+      {
+        "created": "2020-04-24T01:05:03.92860976Z",
+        "created_by": "/bin/sh -c #(nop)  CMD [\"/bin/sh\"]",
+        "empty_layer": true
+      },
+      {
+        "created": "2020-10-08T16:23:07.591276187Z",
+        "created_by": "/bin/sh -c #(nop)  ENV NODE_VERSION=14.13.1",
+        "empty_layer": true
+      },
+      {
+        "created": "2020-10-08T16:23:14.227103847Z",
+        "created_by": "/bin/sh -c addgroup -g 1000 node     && adduser -u 1000 -G node -s /bin/sh -D node     && apk add --no-cache         libstdc++     && apk add --no-cache --virtual .build-deps         curl     && ARCH= && alpineArch=\"$(apk --print-arch)\"       && case \"${alpineArch##*-}\" in         x86_64)           ARCH='x64'           CHECKSUM=\"b8b33ec1d2f6463ded7c02bf29ef4141ff4aabb2c0e0ba14cf16ac7c0a6a31a5\"           ;;         *) ;;       esac   && if [ -n \"${CHECKSUM}\" ]; then     set -eu;     curl -fsSLO --compressed \"https://unofficial-builds.nodejs.org/download/release/v$NODE_VERSION/node-v$NODE_VERSION-linux-$ARCH-musl.tar.xz\";     echo \"$CHECKSUM  node-v$NODE_VERSION-linux-$ARCH-musl.tar.xz\" | sha256sum -c -       && tar -xJf \"node-v$NODE_VERSION-linux-$ARCH-musl.tar.xz\" -C /usr/local --strip-components=1 --no-same-owner       && ln -s /usr/local/bin/node /usr/local/bin/nodejs;   else     echo \"Building from source\"     && apk add --no-cache --virtual .build-deps-full         binutils-gold         g++         gcc         gnupg         libgcc         linux-headers         make         python3     && for key in       4ED778F539E3634C779C87C6D7062848A1AB005C       94AE36675C464D64BAFA68DD7434390BDBE9B9C5       1C050899334244A8AF75E53792EF661D867B9DFA       71DCFD284A79C3B38668286BC97EC7A07EDE3FC1       8FCCA13FEF1D0C2E91008E09770F7A9A5AE15600       C4F0DFFF4E8C1A8236409D08E73BC641CC11F4C8       C82FA3AE1CBEDC6BE46B9360C43CEC45C17AB93C       DD8F2338BAE7501E3DD5AC78C273792F7D83545D       A48C2BEE680E841632CD4E44F07496B3EB3C1762       108F52B48DB57BB0CC439B2997B01419BD92F80A       B9E2F5981AA6E0CD28160D9FF13993A75599653C     ; do       gpg --batch --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys \"$key\" ||       gpg --batch --keyserver hkp://ipv4.pool.sks-keyservers.net --recv-keys \"$key\" ||       gpg --batch --keyserver hkp://pgp.mit.edu:80 --recv-keys \"$key\" ;     done     && curl -fsSLO --compressed \"https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION.tar.xz\"     && curl -fsSLO --compressed \"https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc\"     && gpg --batch --decrypt --output SHASUMS256.txt SHASUMS256.txt.asc     && grep \" node-v$NODE_VERSION.tar.xz\\$\" SHASUMS256.txt | sha256sum -c -     && tar -xf \"node-v$NODE_VERSION.tar.xz\"     && cd \"node-v$NODE_VERSION\"     && ./configure     && make -j$(getconf _NPROCESSORS_ONLN) V=     && make install     && apk del .build-deps-full     && cd ..     && rm -Rf \"node-v$NODE_VERSION\"     && rm \"node-v$NODE_VERSION.tar.xz\" SHASUMS256.txt.asc SHASUMS256.txt;   fi   && rm -f \"node-v$NODE_VERSION-linux-$ARCH-musl.tar.xz\"   && apk del .build-deps   && node --version   && npm --version"
+      },
+      {
+        "created": "2020-10-08T16:23:14.624783745Z",
+        "created_by": "/bin/sh -c #(nop)  ENV YARN_VERSION=1.22.5",
+        "empty_layer": true
+      },
+      {
+        "created": "2020-10-08T16:23:16.985023204Z",
+        "created_by": "/bin/sh -c apk add --no-cache --virtual .build-deps-yarn curl gnupg tar   && for key in     6A010C5166006599AA17F08146C2130DFD2497F5   ; do     gpg --batch --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys \"$key\" ||     gpg --batch --keyserver hkp://ipv4.pool.sks-keyservers.net --recv-keys \"$key\" ||     gpg --batch --keyserver hkp://pgp.mit.edu:80 --recv-keys \"$key\" ;   done   && curl -fsSLO --compressed \"https://yarnpkg.com/downloads/$YARN_VERSION/yarn-v$YARN_VERSION.tar.gz\"   && curl -fsSLO --compressed \"https://yarnpkg.com/downloads/$YARN_VERSION/yarn-v$YARN_VERSION.tar.gz.asc\"   && gpg --batch --verify yarn-v$YARN_VERSION.tar.gz.asc yarn-v$YARN_VERSION.tar.gz   && mkdir -p /opt   && tar -xzf yarn-v$YARN_VERSION.tar.gz -C /opt/   && ln -s /opt/yarn-v$YARN_VERSION/bin/yarn /usr/local/bin/yarn   && ln -s /opt/yarn-v$YARN_VERSION/bin/yarnpkg /usr/local/bin/yarnpkg   && rm yarn-v$YARN_VERSION.tar.gz.asc yarn-v$YARN_VERSION.tar.gz   && apk del .build-deps-yarn   && yarn --version"
+      },
+      {
+        "created": "2020-10-08T16:23:17.192305843Z",
+        "created_by": "/bin/sh -c #(nop) COPY file:238737301d47304174e4d24f4def935b29b3069c03c72ae8de97d94624382fce in /usr/local/bin/ "
+      },
+      {
+        "created": "2020-10-08T16:23:17.37961953Z",
+        "created_by": "/bin/sh -c #(nop)  ENTRYPOINT [\"docker-entrypoint.sh\"]",
+        "empty_layer": true
+      },
+      {
+        "created": "2020-10-08T16:23:17.549978283Z",
+        "created_by": "/bin/sh -c #(nop)  CMD [\"node\"]",
+        "empty_layer": true
+      },
+      {
+        "created": "2020-10-11T21:20:52.959207202Z",
+        "created_by": "/bin/sh -c #(nop)  ARG BUILD_DATE",
+        "empty_layer": true
+      },
+      {
+        "created": "2020-10-11T21:20:53.20642118Z",
+        "created_by": "/bin/sh -c #(nop)  ARG VCS_REF",
+        "empty_layer": true
+      },
+      {
+        "created": "2020-10-11T21:20:53.439387368Z",
+        "created_by": "/bin/sh -c #(nop)  LABEL maintainer=Bjoern Kimminich <bjoern.kimminich@owasp.org> org.opencontainers.image.title=OWASP Juice Shop CTF-Extension org.opencontainers.image.description=Capture-the-Flag (CTF) environment setup tools for OWASP Juice Shop org.opencontainers.image.authors=Bjoern Kimminich <bjoern.kimminich@owasp.org> org.opencontainers.image.vendor=Open Web Application Security Project org.opencontainers.image.documentation=https://help.owasp-juice.shop/part1/ctf.html org.opencontainers.image.licenses=MIT org.opencontainers.image.version=8.1.2 org.opencontainers.image.url=https://owasp-juice.shop org.opencontainers.image.source=https://github.com/bkimminich/juice-shop-ctf.git org.opencontainers.image.revision=55df34d org.opencontainers.image.created=\u201d2020-10-11T21:19:43Z\u201d",
+        "empty_layer": true
+      },
+      {
+        "created": "2020-10-11T21:20:59.851868447Z",
+        "created_by": "/bin/sh -c #(nop) COPY dir:5bd634490f1e144602e7b39a1ebcb69af1748a34673299424a7fe6f10334bfa1 in /juice-shop-ctf "
+      },
+      {
+        "created": "2020-10-11T21:21:00.397239764Z",
+        "created_by": "/bin/sh -c #(nop)  VOLUME [/data]",
+        "empty_layer": true
+      },
+      {
+        "created": "2020-10-11T21:21:00.668316194Z",
+        "created_by": "/bin/sh -c #(nop) WORKDIR /data"
+      },
+      {
+        "created": "2020-10-11T21:21:00.914818853Z",
+        "created_by": "/bin/sh -c #(nop)  ENTRYPOINT [\"npx\" \"/juice-shop-ctf/bin/juice-shop-ctf.js\"]",
+        "empty_layer": true
+      }
+    ]
+  }
+]

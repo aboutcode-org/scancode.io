@@ -566,8 +566,12 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_binary",
             "is_text",
             "is_archive",
-            "is_key_file",
             "is_media",
+            "is_legal",
+            "is_manifest",
+            "is_readme",
+            "is_top_level",
+            "is_key_file",
         ]
 
     def __init__(self, *args, **kwargs):

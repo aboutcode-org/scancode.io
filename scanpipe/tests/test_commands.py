@@ -65,7 +65,7 @@ def raise_interrupt(run_pk):
 
 
 class ScanPipeManagementCommandTest(TestCase):
-    data_location = Path(__file__).parent / "data"
+    data = Path(__file__).parent / "data"
     pipeline_name = "analyze_docker_image"
     pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
     purldb_update_status_url = f"{purldb.PURLDB_API_URL}scan_queue/update_status/"
@@ -611,6 +611,28 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(1, len(Project.get_root_content(project.input_path)))
         self.assertEqual(0, len(Project.get_root_content(project.codebase_path)))
 
+    def test_scanpipe_management_command_flush_projects(self):
+        project1 = Project.objects.create(name="project1")
+        project2 = Project.objects.create(name="project2")
+        ten_days_ago = timezone.now() - datetime.timedelta(days=10)
+        project2.update(created_date=ten_days_ago)
+
+        out = StringIO()
+        options = ["--retain-days", 7, "--no-color", "--no-input"]
+        call_command("flush-projects", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        expected = "1 project and its related data have been removed."
+        self.assertEqual(expected, out_value)
+        self.assertEqual(project1, Project.objects.get())
+
+        Project.objects.create(name="project2")
+        out = StringIO()
+        options = ["--no-color", "--no-input"]
+        call_command("flush-projects", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        expected = "2 projects and their related data have been removed."
+        self.assertEqual(expected, out_value)
+
     def test_scanpipe_management_command_create_user(self):
         out = StringIO()
 
@@ -645,14 +667,14 @@ class ScanPipeManagementCommandTest(TestCase):
 
         expected = "wrong_pipeline is not a valid pipeline."
         with self.assertRaisesMessage(CommandError, expected):
-            call_command("run", "wrong_pipeline", str(self.data_location))
+            call_command("run", "wrong_pipeline", str(self.data))
 
         expected = "bad_location not found."
         with self.assertRaisesMessage(CommandError, expected):
             call_command("run", "scan_single_package", "bad_location")
 
         out = StringIO()
-        input_location = self.data_location / "codebase"
+        input_location = self.data / "codebase"
         with redirect_stdout(out):
             call_command("run", "inspect_packages", input_location)
 
@@ -681,7 +703,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "status": f"scan indexed for scannable uri {scannable_uri_uuid}"
         }
         mock_get_latest_output.return_value = (
-            self.data_location / "scancode" / "is-npm-1.0.0_summary.json"
+            self.data / "scancode" / "is-npm-1.0.0_summary.json"
         )
         mock_download_get.return_value = mock.Mock(
             content=b"\x00",

@@ -1,7 +1,21 @@
 Changelog
 =========
 
-v34.6.3 (unreleased)
+v34.6.4 (unreleased)
+--------------------
+
+- Add all "classify" plugin fields from scancode-toolkit on the CodebaseResource model.
+  https://github.com/nexB/scancode.io/issues/1275
+
+- Refine the extraction errors reporting to include the resource path for rendering
+  link to the related resources in the UI.
+  https://github.com/nexB/scancode.io/issues/1273
+
+- Add a ``flush-projects`` management command, to Delete all project data and their
+  related work directories created more than a specified number of days ago.
+  https://github.com/nexB/scancode.io/issues/1289
+
+v34.6.3 (2024-06-21)
 --------------------
 
 - Use the ``--option=value`` syntax for args entries in place of ``--option value``
@@ -10,6 +24,9 @@ v34.6.3 (unreleased)
 
 - Fix an issue in the d2d JavaScript mapper.
   https://github.com/nexB/scancode.io/pull/1274
+
+- Add support for a ``ignored_vulnerabilities`` field on the Project configuration.
+  https://github.com/nexB/scancode.io/issues/1271
 
 v34.6.2 (2024-06-18)
 --------------------
