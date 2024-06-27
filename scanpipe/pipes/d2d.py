@@ -48,6 +48,7 @@ from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import convert_glob_to_django_regex
+from scanpipe.pipes import ElapsedTimeProgress
 from scanpipe.pipes import LoopProgress
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
@@ -57,6 +58,7 @@ from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
 from scanpipe.pipes import resolve
 from scanpipe.pipes import scancode
+import time
 
 FROM = "from/"
 TO = "to/"
@@ -643,11 +645,12 @@ def match_purldb_resources(
 
 
 def _match_purldb_resources(
-    project, to_resources, matcher_func, chunk_size=1000, logger=None
+    project, to_resources, matcher_func, chunk_size=100, logger=None
 ):
     resource_count = to_resources.count()
+    
     resource_iterator = to_resources.iterator(chunk_size=chunk_size)
-    progress = LoopProgress(resource_count, logger)
+    progress = ElapsedTimeProgress(total_iterations=resource_count, logger=logger, progress_period=60)
     total_matched_count = 0
     total_sha1_count = 0
     processed_resources_count = 0
