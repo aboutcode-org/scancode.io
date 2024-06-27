@@ -604,7 +604,7 @@ def match_sha1s_to_purldb(
 
 
 def match_purldb_resources(
-    project, extensions, matcher_func, chunk_size=1000, logger=None
+    project, extensions, matcher_func, chunk_size=100, logger=None
 ):
     """
     Match against PurlDB selecting codebase resources using provided
@@ -648,7 +648,7 @@ def _match_purldb_resources(
     project, to_resources, matcher_func, chunk_size=100, logger=None
 ):
     resource_count = to_resources.count()
-    
+
     resource_iterator = to_resources.iterator(chunk_size=chunk_size)
     progress = ElapsedTimeProgress(total_iterations=resource_count, logger=logger, progress_period=60)
     total_matched_count = 0
