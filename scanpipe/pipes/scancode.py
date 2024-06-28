@@ -494,6 +494,7 @@ def process_package_data(project, static_resolve=False):
                 resource=resource,
                 package_mapping=package_mapping,
                 find_package=False,
+                process_resolved=False,
             )
 
     if static_resolve:
@@ -505,6 +506,7 @@ def create_packages_and_dependencies_from_mapping(
     resource,
     package_mapping,
     find_package=False,
+    process_resolved=False,
 ):
     """
     Create or update packages and dependencies from a `package_mapping`,
@@ -512,6 +514,8 @@ def create_packages_and_dependencies_from_mapping(
 
     If `find_package` is True, find the package with the respective purl data,
     instead of trying to create it.
+    If `process_resolved` is True, also create packages and dependency relations
+    from the resolved packages of dependencies of this `package_mapping`.
     """
     pd = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
     if not pd.can_assemble:
@@ -547,7 +551,7 @@ def create_packages_and_dependencies_from_mapping(
         package=package,
         resource=resource,
         datasource_id=pd.datasource_id,
-        process_resolved=False,
+        process_resolved=process_resolved,
     )
 
 
@@ -559,26 +563,12 @@ def resolve_dependencies(project):
     logger.info(f"Project {project} resolve_dependencies:")
     for resource in project.codebaseresources.has_package_data():
         for package_mapping in resource.package_data:
-            pd = packagedcode_models.PackageData.from_dict(package_mapping)
-            package = None
-            if pd.purl:
-                purl_data = DiscoveredPackage.extract_purl_data(package_mapping)
-                packages = DiscoveredPackage.objects.filter(
-                    project=project,
-                    **purl_data,
-                )
-
-                for package in packages:
-                    if resource.location in package.datafile_paths:
-                        break
-
-            dependencies = package_mapping.get("dependencies") or []
-            update_packages_and_dependencies(
+            create_packages_and_dependencies_from_mapping(
                 project=project,
-                dependencies=dependencies,
-                package=package,
                 resource=resource,
-                datasource_id=pd.datasource_id,
+                package_mapping=package_mapping,
+                find_package=True,
+                process_resolved=True,
             )
 
     match_and_resolve_dependencies(project)
@@ -596,6 +586,9 @@ def update_packages_and_dependencies(
     Create DiscoveredPackage and DiscoveredDependency objects from
     a package_data dependencies, and also from nested resolved packages
     and dependencies if present.
+
+    If `process_resolved` is True, also create packages and dependency relations
+    from the resolved packages of `dependencies`.
     """
     for dep in dependencies:
         resolved_package = dep.get("resolved_package") or {}
