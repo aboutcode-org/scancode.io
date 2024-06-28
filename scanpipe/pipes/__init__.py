@@ -263,28 +263,10 @@ def update_or_create_dependency(
     If the dependency is resolved and a resolved package is created, we have the
     corresponsing package_uid at `resolved_to`.
     """
-    dependency = None
-    dependency_uid = dependency_data.get("dependency_uid")
-    extracted_requirement = dependency_data.get("extracted_requirement")
-
     if ignore_dependency_scope(project, dependency_data):
         return  # Do not create the DiscoveredDependency record.
 
-    dependencies = []
-    if not dependency_uid:
-        purl_data = DiscoveredDependency.extract_purl_data(dependency_data)
-        dependencies = DiscoveredDependency.objects.filter(
-            project=project,
-            extracted_requirement=extracted_requirement,
-            **purl_data,
-        )
-    else:
-        dependency = DiscoveredDependency.objects.get_or_none(
-            project=project,
-            dependency_uid=dependency_uid,
-        )
-        if dependency:
-            dependencies.append(dependency)
+    dependencies = get_dependencies(project, dependency_data)
 
     for dependency in dependencies:
         is_for_new_package = (
@@ -325,6 +307,35 @@ def update_or_create_dependency(
         )
 
     return dependency
+
+
+def get_dependencies(project, dependency_data):
+    """
+    Given a `dependency_data` mapping, get a list of DiscoveredDependency objects
+    for that `project` with similar dependency data.
+    """
+    dependency = None
+    dependency_uid = dependency_data.get("dependency_uid")
+    extracted_requirement = dependency_data.get("extracted_requirement")
+    if not extracted_requirement:
+        extracted_requirement = ""
+    dependencies = []
+    if not dependency_uid:
+        purl_data = DiscoveredDependency.extract_purl_data(dependency_data)
+        dependencies = DiscoveredDependency.objects.filter(
+            project=project,
+            extracted_requirement=extracted_requirement,
+            **purl_data,
+        )
+    else:
+        dependency = DiscoveredDependency.objects.get_or_none(
+            project=project,
+            dependency_uid=dependency_uid,
+        )
+        if dependency:
+            dependencies.append(dependency)
+
+    return dependencies
 
 
 def get_or_create_relation(project, relation_data):

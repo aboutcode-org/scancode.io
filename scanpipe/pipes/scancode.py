@@ -644,6 +644,9 @@ def match_and_resolve_dependencies(project):
             dependency_data={"purl": dependency.purl},
             ignore_nulls=True,
         )
+        extracted_requirement = dependency.extracted_requirement
+        if not extracted_requirement:
+            extracted_requirement = ""
 
         matched_dependencies = DiscoveredDependency.objects.filter(
             project=project,
@@ -676,7 +679,10 @@ def match_and_resolve_dependencies(project):
                 other_dependencies = [
                     dep
                     for dep in matched_dependencies
-                    if (dep.purl == dependency.purl and dep.resolved_to_package)
+                    if (
+                        dep.base_purl == dependency.base_purl
+                        and dep.resolved_to_package
+                    )
                 ]
 
         if other_dependencies:

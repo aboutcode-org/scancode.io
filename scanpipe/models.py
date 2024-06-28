@@ -74,6 +74,7 @@ from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licensing
 from matchcode_toolkit.fingerprinting import IGNORED_DIRECTORY_FINGERPRINTS
 from packagedcode.models import build_package_uid
+from packagedcode.utils import get_base_purl
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLMixin
@@ -3617,6 +3618,10 @@ class DiscoveredDependency(
     @property
     def purl(self):
         return self.package_url
+
+    @property
+    def base_purl(self):
+        return get_base_purl(self.package_url)
 
     @property
     def package_type(self):
