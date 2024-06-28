@@ -58,7 +58,7 @@ Fetch codebase to scan
 
 **Local Project Codebase**: Ensure you have a local checkout of your project's codebase.
 
-We are using this repo for out tutorial: https://github.com/nexB/scancode-workbench
+We are using this repo for our tutorial: https://github.com/nexB/scancode-workbench
 
 We download the following: https://github.com/nexB/scancode-workbench/archive/refs/tags/v4.0.2.tar.gz
 
