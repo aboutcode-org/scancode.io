@@ -34,7 +34,7 @@ from univers.version_range import InvalidVersionRange
 
 from scanpipe.pipes import LoopProgress
 from scanpipe.pipes import _clean_package_data
-from scanpipe.pipes import poll_until_success
+from scanpipe.pipes import output
 
 
 class PurlDBException(Exception):
@@ -486,18 +486,32 @@ def create_project_name(download_url, scannable_uri_uuid):
     return f"{slugify(download_url)}-{scannable_uri_uuid[0:8]}"
 
 
-def poll_run_status(project, sleep=10):
+def check_project_run_statuses(project, logger=None):
     """
-    Poll the status of all runs of `project`. Raise a PurlDBException with a
-    message containing the log of the run if the run has stopped, failed, or
-    gone stale, otherwise return None.
+    If any of the runs of this Project has failed, update the status of the
+    Scannable URI associated with this Project to `failed` and send back a
+    log of the failed runs.
     """
-    runs = project.runs.all()
-    for run in runs:
-        if not poll_until_success(check=get_run_status, sleep=sleep, run=run):
-            status = get_run_status(run)
-            msg = f"Run ended with status {status}:\n\n{run.log}"
-            raise PurlDBException(msg)
+    from scanpipe.models import AbstractTaskFieldsModel
+
+    run_status = AbstractTaskFieldsModel.Status
+    failed_runs = project.runs.filter(status=run_status.FAILURE)
+    if failed_runs:
+        failure_msgs = []
+        for failed_run in failed_runs:
+            msg = f"{failed_run.pipeline_name} failed:\n\n{failed_run.log}\n"
+            failure_msgs.append(msg)
+        failure_msg = "\n".join(failure_msgs)
+
+        if logger:
+            logger(failure_msg)
+
+        scannable_uri_uuid = project.extra_data.get("scannable_uri_uuid")
+        update_status(
+            scannable_uri_uuid=scannable_uri_uuid,
+            status="failed",
+            scan_log=failure_msg,
+        )
 
 
 def get_run_status(run, **kwargs):
@@ -562,3 +576,29 @@ def enrich_discovered_packages(project, logger=logger.info):
         f"enriched with the PurlDB."
     )
     return updated_package_count
+
+
+def send_project_results(project, logger=None):
+    """
+    Send the JSON summary and results of `project` to PurlDB for the scan
+    request `scannable_uri_uuid`.
+
+    Raise a PurlDBException if there is an issue sending results to PurlDB.
+    """
+    scan_results_location = output.to_json(project)
+    scan_summary_location = project.get_latest_output(filename="summary")
+    scannable_uri_uuid = project.extra_data.get("scannable_uri_uuid")
+    response = send_results_to_purldb(
+        scannable_uri_uuid,
+        scan_results_location,
+        scan_summary_location,
+        project.extra_data,
+    )
+
+    if not response:
+        raise PurlDBException(
+            "Bad response returned when sending results to PurlDB"
+        )
+
+    if logger:
+        logger("Scan results and other data have been sent to PurlDB")
