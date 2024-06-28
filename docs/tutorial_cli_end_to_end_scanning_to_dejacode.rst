@@ -60,7 +60,7 @@ Fetch codebase to scan
 
 We are using this repo for out tutorial: https://github.com/nexB/scancode-workbench
 
-We download the following: https://github.com/nexB/scancode-workbench/archive/refs/tags/v4.0.2.zip
+We download the following: https://github.com/nexB/scancode-workbench/archive/refs/tags/v4.0.2.tar.gz
 
 Extract the checkout and delete the archive:
 
