@@ -287,12 +287,12 @@ def update_or_create_dependency(
             dependencies.append(dependency)
 
     for dependency in dependencies:
-        # This dependency relationship is for a new package
-        if (
+        is_for_new_package = (
             for_package
             and dependency.for_package
             and dependency.for_package != for_package
-        ):
+        )
+        if is_for_new_package:
             DiscoveredDependency.populate_dependency_uuid(dependency_data)
             dependency = DiscoveredDependency.create_from_data(
                 project,

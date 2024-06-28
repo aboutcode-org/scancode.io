@@ -489,38 +489,73 @@ def process_package_data(project, static_resolve=False):
     for resource in project.codebaseresources.has_package_data():
         logger.info(f"  Processing: {resource.path}")
         for package_mapping in resource.package_data:
-            pd = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
-            if not pd.can_assemble:
-                continue
-
-            logger.info(f"  Package data: {pd.purl}")
-
-            package_data = pd.to_dict()
-            dependencies = package_data.pop("dependencies")
-
-            package = None
-            if pd.purl:
-                package = pipes.update_or_create_package(
-                    project=project,
-                    package_data=package_data,
-                    codebase_resources=[resource],
-                )
-
-            for dep in dependencies:
-                pipes.update_or_create_dependency(
-                    project=project,
-                    dependency_data=dep,
-                    for_package=package,
-                    datafile_resource=resource,
-                    datasource_id=pd.datasource_id,
-                )
+            create_packages_and_dependencies_from_mapping(
+                project=project,
+                resource=resource,
+                package_mapping=package_mapping,
+                find_package=False,
+            )
 
     if static_resolve:
         resolve_dependencies(project)
 
 
-def resolve_dependencies(project):
+def create_packages_and_dependencies_from_mapping(
+    project,
+    resource,
+    package_mapping,
+    find_package=False,
+):
+    """
+    Create or update packages and dependencies from a `package_mapping`,
+    for a respective `resource` and `project`.
 
+    If `find_package` is True, find the package with the respective purl data,
+    instead of trying to create it.
+    """
+    pd = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
+    if not pd.can_assemble:
+        return
+
+    logger.info(f"  Package data: {pd.purl}")
+
+    package_data = pd.to_dict()
+    dependencies = package_data.pop("dependencies")
+
+    package = None
+    if pd.purl:
+        if find_package:
+            purl_data = DiscoveredPackage.extract_purl_data(package_mapping)
+            packages = DiscoveredPackage.objects.filter(
+                project=project,
+                **purl_data,
+            )
+
+            for package in packages:
+                if resource.location in package.datafile_paths:
+                    break
+        else:
+            package = pipes.update_or_create_package(
+                project=project,
+                package_data=package_data,
+                codebase_resources=[resource],
+            )
+
+    update_packages_and_dependencies(
+        project=project,
+        dependencies=dependencies,
+        package=package,
+        resource=resource,
+        datasource_id=pd.datasource_id,
+        process_resolved=False,
+    )
+
+
+def resolve_dependencies(project):
+    """
+    Match and merge resolved dependencies to create a dependency graph of
+    direct dependency relations between resolved packages.
+    """
     logger.info(f"Project {project} resolve_dependencies:")
     for resource in project.codebaseresources.has_package_data():
         for package_mapping in resource.package_data:
@@ -555,6 +590,7 @@ def update_packages_and_dependencies(
     package,
     resource,
     datasource_id,
+    process_resolved=True,
 ):
     """
     Create DiscoveredPackage and DiscoveredDependency objects from
@@ -564,7 +600,7 @@ def update_packages_and_dependencies(
     for dep in dependencies:
         resolved_package = dep.get("resolved_package") or {}
         resolved_to_package = None
-        if resolved_package:
+        if process_resolved and resolved_package:
             resolved_to_package = pipes.update_or_create_package(
                 project=project,
                 package_data=resolved_package,

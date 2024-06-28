@@ -49,6 +49,7 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from packagedcode.models import PackageData
+from packageurl import PackageURL
 from requests.exceptions import RequestException
 from rq.job import JobStatus
 
@@ -65,6 +66,7 @@ from scanpipe.models import RunNotAllowedToStart
 from scanpipe.models import UUIDTaggedItem
 from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.models import get_project_work_directory
+from scanpipe.models import normalize_package_url_data
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
@@ -729,6 +731,17 @@ class ScanPipeModelsTest(TestCase):
         # The following function call always build and return the index
         expected = {"npm": ["devDependencies"], "pypi": ["tests", "build"]}
         self.assertEqual(expected, self.project1.get_ignored_dependency_scopes_index())
+
+    def test_scanpipe_normalize_package_url_data(self):
+        purl = PackageURL.from_string("pkg:npm/athena-express@6.0.4")
+        purl_data = normalize_package_url_data(purl_mapping=purl.to_dict())
+        self.assertEqual(purl_data.get("namespace"), "")
+
+        purl_data = normalize_package_url_data(
+            purl_mapping=purl.to_dict(),
+            ignore_nulls=True,
+        )
+        self.assertEqual(purl_data.get("namespace"), None)
 
     def test_scanpipe_project_get_ignored_vulnerabilities_set(self):
         self.project1.settings = {

@@ -13,17 +13,50 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="discovereddependency",
             name="is_direct",
-            field=models.BooleanField(default=False),
+            field=models.BooleanField(
+                default=False,
+                help_text="True if this is a direct, first-level dependency relationship for a package.",
+            ),
         ),
         migrations.AddField(
             model_name="discoveredpackage",
             name="is_private",
-            field=models.BooleanField(default=False),
+            field=models.BooleanField(
+                default=False,
+                help_text="True if this is a private package, either not meant to be published on a repository, and/or a local package without a name and version used primarily to track dependencies and other information.",
+            ),
         ),
         migrations.AddField(
             model_name="discoveredpackage",
             name="is_virtual",
-            field=models.BooleanField(default=False),
+            field=models.BooleanField(
+                default=False,
+                help_text="True if this package is created only from a manifest or lockfile, and not from its actual packaged code. The files of this package are not present in the codebase.",
+            ),
+        ),
+        migrations.AlterField(
+            model_name="discovereddependency",
+            name="is_optional",
+            field=models.BooleanField(
+                default=False,
+                help_text="True if this dependency is an optional dependency",
+            ),
+        ),
+        migrations.AlterField(
+            model_name="discovereddependency",
+            name="is_resolved",
+            field=models.BooleanField(
+                default=False,
+                help_text="True if this dependency version requirement has been pinned and this dependency points to an exact version.",
+            ),
+        ),
+        migrations.AlterField(
+            model_name="discovereddependency",
+            name="is_runtime",
+            field=models.BooleanField(
+                default=False,
+                help_text="True if this dependency is a runtime dependency.",
+            ),
         ),
         migrations.AddIndex(
             model_name="discovereddependency",

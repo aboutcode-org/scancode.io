@@ -557,6 +557,12 @@ class PipelinesIntegrationTest(TestCase):
         Return the `data`, where any `package_uid` value has been normalized
         with `purl_with_fake_uuid()`
         """
+        fields_with_package_uids = [
+            "package_uid",
+            "dependency_uid",
+            "for_package_uid",
+            "resolved_to_package_uid",
+        ]
         if isinstance(data, list):
             return [self._normalize_package_uids(entry) for entry in data]
 
@@ -568,16 +574,7 @@ class PipelinesIntegrationTest(TestCase):
             for key, value in data.items():
                 if isinstance(value, (list, dict)):
                     value = self._normalize_package_uids(value)
-                if (
-                    key
-                    in (
-                        "package_uid",
-                        "dependency_uid",
-                        "for_package_uid",
-                        "resolved_to_package_uid",
-                    )
-                    and value
-                ):
+                if key in fields_with_package_uids and value:
                     value = purl_with_fake_uuid(value)
                 if key == "for_packages" and value:
                     value = sorted(

@@ -3074,8 +3074,23 @@ class AbstractPackage(models.Model):
         blank=True,
         help_text=_("A notice text for this package."),
     )
-    is_private = models.BooleanField(default=False)
-    is_virtual = models.BooleanField(default=False)
+    is_private = models.BooleanField(
+        default=False,
+        help_text=_(
+            "True if this is a private package, either not meant to be "
+            "published on a repository, and/or a local package without a "
+            "name and version used primarily to track dependencies and "
+            "other information."
+        ),
+    )
+    is_virtual = models.BooleanField(
+        default=False,
+        help_text=_(
+            "True if this package is created only from a manifest or lockfile, "
+            "and not from its actual packaged code. The files of this package "
+            "are not present in the codebase."
+        ),
+    )
     datasource_ids = models.JSONField(
         default=list,
         blank=True,
