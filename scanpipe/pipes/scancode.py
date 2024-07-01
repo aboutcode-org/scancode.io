@@ -648,7 +648,9 @@ def match_and_resolve_dependencies(project):
         )
 
         other_dependencies = [
-            dep for dep in matched_dependencies if dep.purl != dependency.purl
+            matched_dependency
+            for matched_dependency in matched_dependencies
+            if matched_dependency.purl != dependency.purl
         ]
         if not other_dependencies:
             # We also have cases where multiple dependency requirements have one
@@ -658,11 +660,12 @@ def match_and_resolve_dependencies(project):
                 **purl_data,
             )
             other_dependencies = [
-                dep
-                for dep in matched_dependencies
+                matched_dependency
+                for matched_dependency in matched_dependencies
                 if (
-                    dep.purl != dependency.purl
-                    and dependency.extracted_requirement in dep.extracted_requirement
+                    matched_dependency.purl != dependency.purl
+                    and dependency.extracted_requirement
+                    in matched_dependency.extracted_requirement
                 )
             ]
 
@@ -670,11 +673,11 @@ def match_and_resolve_dependencies(project):
             # of a package is present for an environment
             if not other_dependencies:
                 other_dependencies = [
-                    dep
-                    for dep in matched_dependencies
+                    matched_dependency
+                    for matched_dependency in matched_dependencies
                     if (
-                        dep.base_purl == dependency.base_purl
-                        and dep.resolved_to_package
+                        matched_dependency.base_purl == dependency.base_purl
+                        and matched_dependency.resolved_to_package
                     )
                 ]
 

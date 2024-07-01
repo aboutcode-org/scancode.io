@@ -316,9 +316,8 @@ def get_dependencies(project, dependency_data):
     """
     dependency = None
     dependency_uid = dependency_data.get("dependency_uid")
-    extracted_requirement = dependency_data.get("extracted_requirement")
-    if not extracted_requirement:
-        extracted_requirement = ""
+    extracted_requirement = dependency_data.get("extracted_requirement") or ""
+
     dependencies = []
     if not dependency_uid:
         purl_data = DiscoveredDependency.extract_purl_data(dependency_data)

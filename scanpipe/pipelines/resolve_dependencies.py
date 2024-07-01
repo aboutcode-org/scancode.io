@@ -59,15 +59,23 @@ class ResolveDependencies(ScanCodebase):
 
     @group("Static Resolver")
     def scan_for_application_packages(self):
+        """
+        Scan and assemble application packages from package manifests
+        and lockfiles.
+        """
         scancode.scan_for_application_packages(
             self.project,
-            assemble=False,
+            assemble=True,
             resource_qs=self.manifest_resources,
             progress_logger=self.log,
         )
 
     @group("Static Resolver")
     def create_packages_and_dependencies(self):
+        """
+        Create the statically resolved packages and their dependencies
+        in the database.
+        """
         scancode.process_package_data(self.project, static_resolve=True)
 
     @group("Dynamic Resolver")
@@ -85,7 +93,10 @@ class ResolveDependencies(ScanCodebase):
 
     @group("Dynamic Resolver")
     def create_resolved_packages(self):
-        """Create the resolved packages and their dependencies in the database."""
+        """
+        Create the dynamically resolved packages and their dependencies
+        in the database.
+        """
         resolve.create_packages_and_dependencies(
             project=self.project,
             packages=self.resolved_packages,
