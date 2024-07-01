@@ -109,13 +109,17 @@ def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
 
 
 def request_post(url, data=None, headers=None, files=None, timeout=DEFAULT_TIMEOUT):
+    print("asdf123")
     try:
         response = session.post(
             url, data=data, timeout=timeout, headers=headers, files=files
         )
         response.raise_for_status()
-        return response.json()
+        r = response.json()
+        print(r)
+        return r
     except (requests.RequestException, ValueError, TypeError) as exception:
+        print(exception)
         logger.debug(f"{label} [Exception] {exception}")
 
 
@@ -225,7 +229,8 @@ def feed_purldb(packages, chunk_size, logger=logger.info):
     progress = LoopProgress(batches_count, logger)
 
     for batch in progress.iter(package_batches):
-        if response := submit_purls(packages=batch):
+        response = submit_purls(packages=batch)
+        if response:
             queued_packages_count += response.get("queued_packages_count", 0)
             unqueued_packages_count += response.get("unqueued_packages_count", 0)
             unsupported_packages_count += response.get("unsupported_packages_count", 0)
@@ -303,13 +308,13 @@ def populate_purldb_with_discovered_packages(project, logger=logger.info):
     packages_to_populate = []
     for pkg in discoveredpackages:
         purl = pkg.purl
-        source_purl = pkg.source_packages
-        if not purl:
-            continue
+        source_packages = pkg.source_packages
         package = {"purl": purl}
-        if source_purl:
-            package["source_purl"] = source_purl
+        if source_packages:
+            package["source_purl"] = source_packages[0]
         packages_to_populate.append(package)
+
+    print(packages_to_populate)
 
     logger(
         f"Populating PurlDB with {len(packages_to_populate):,d}"
@@ -317,7 +322,7 @@ def populate_purldb_with_discovered_packages(project, logger=logger.info):
     )
     feed_purldb(
         packages=packages_to_populate,
-        chunk_size=100,
+        chunk_size=50,
         logger=logger,
     )
 
