@@ -71,6 +71,8 @@
       "notice_text": "",
       "source_packages": [],
       "extra_data": {},
+      "is_private": false,
+      "is_virtual": false,
       "package_uid": "pkg:local-files/analysis-90cb6382/90cb6382-431c-4187-be76-d4f1a2199a2f?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datasource_ids": [],
       "datafile_paths": [],
@@ -122,6 +124,8 @@
           "*flume-ng-node-*.jar-extract/org/apache/flume/node/ConfigurationProvider.class"
         ]
       },
+      "is_private": false,
+      "is_virtual": false,
       "package_uid": "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datasource_ids": [],
       "datafile_paths": [],

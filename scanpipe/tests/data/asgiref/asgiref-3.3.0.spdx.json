@@ -3,7 +3,7 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "scancodeio_asgiref",
-  "documentNamespace": "https://scancode.io/spdxdocs/809b2669-0871-40e6-b932-50598310caac",
+  "documentNamespace": "https://scancode.io/spdxdocs/2f5f5927-2cad-4ecb-9043-fda5337bd501",
   "creationInfo": {
     "created": "2000-01-01T01:02:03Z",
     "creators": [
@@ -14,7 +14,7 @@
   "packages": [
     {
       "name": "asgiref",
-      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-7549ef42-cbba-4fd9-a528-9055fcb66b8a",
+      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-75b6bb66-de86-4a35-a780-bc1f635f11f4",
       "downloadLocation": "NOASSERTION",
       "licenseConcluded": "BSD-3-Clause",
       "copyrightText": "NOASSERTION",
@@ -33,7 +33,7 @@
     },
     {
       "name": "asgiref",
-      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-8fc54317-6054-4eb7-b189-f1b2822d3fa6",
+      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-d10827fc-bcd1-4c10-ad6c-972dd4defa9c",
       "downloadLocation": "NOASSERTION",
       "licenseConcluded": "BSD-3-Clause",
       "copyrightText": "NOASSERTION",
@@ -52,7 +52,7 @@
     },
     {
       "name": "pytest",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest?uuid=5143b8e1-badc-4937-90da-d3d124ecdfd4",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest?uuid=0928ca6e-d50e-439a-847d-ecb1366a8f2a",
       "downloadLocation": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
       "copyrightText": "NOASSERTION",
@@ -68,7 +68,7 @@
     },
     {
       "name": "pytest",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest?uuid=f0c50c37-e20a-416d-9395-9238c1c133c9",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest?uuid=94372d19-8ab8-4b16-b6a7-72478e0b4cc4",
       "downloadLocation": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
       "copyrightText": "NOASSERTION",
@@ -84,7 +84,7 @@
     },
     {
       "name": "pytest-asyncio",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest-asyncio?uuid=ba2634df-8cb1-48cc-875a-bc511888f27a",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest-asyncio?uuid=ccd9eb22-778d-4bd4-af59-8b63e4163b22",
       "downloadLocation": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
       "copyrightText": "NOASSERTION",
@@ -100,7 +100,7 @@
     },
     {
       "name": "pytest-asyncio",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest-asyncio?uuid=baae1579-e28e-40d7-9900-29af699fe7a7",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest-asyncio?uuid=e751ec65-9351-4949-ae8f-5bc1a9efa336",
       "downloadLocation": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
       "copyrightText": "NOASSERTION",
@@ -116,33 +116,33 @@
     }
   ],
   "documentDescribes": [
-    "SPDXRef-scancodeio-discoveredpackage-7549ef42-cbba-4fd9-a528-9055fcb66b8a",
-    "SPDXRef-scancodeio-discoveredpackage-8fc54317-6054-4eb7-b189-f1b2822d3fa6",
-    "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest?uuid=5143b8e1-badc-4937-90da-d3d124ecdfd4",
-    "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest?uuid=f0c50c37-e20a-416d-9395-9238c1c133c9",
-    "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest-asyncio?uuid=ba2634df-8cb1-48cc-875a-bc511888f27a",
-    "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest-asyncio?uuid=baae1579-e28e-40d7-9900-29af699fe7a7"
+    "SPDXRef-scancodeio-discoveredpackage-75b6bb66-de86-4a35-a780-bc1f635f11f4",
+    "SPDXRef-scancodeio-discoveredpackage-d10827fc-bcd1-4c10-ad6c-972dd4defa9c",
+    "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest?uuid=0928ca6e-d50e-439a-847d-ecb1366a8f2a",
+    "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest?uuid=94372d19-8ab8-4b16-b6a7-72478e0b4cc4",
+    "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest-asyncio?uuid=ccd9eb22-778d-4bd4-af59-8b63e4163b22",
+    "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest-asyncio?uuid=e751ec65-9351-4949-ae8f-5bc1a9efa336"
   ],
   "files": [],
   "relationships": [
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest?uuid=5143b8e1-badc-4937-90da-d3d124ecdfd4",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-7549ef42-cbba-4fd9-a528-9055fcb66b8a",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest?uuid=0928ca6e-d50e-439a-847d-ecb1366a8f2a",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-75b6bb66-de86-4a35-a780-bc1f635f11f4",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest?uuid=f0c50c37-e20a-416d-9395-9238c1c133c9",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-8fc54317-6054-4eb7-b189-f1b2822d3fa6",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest?uuid=94372d19-8ab8-4b16-b6a7-72478e0b4cc4",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-d10827fc-bcd1-4c10-ad6c-972dd4defa9c",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest-asyncio?uuid=ba2634df-8cb1-48cc-875a-bc511888f27a",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-7549ef42-cbba-4fd9-a528-9055fcb66b8a",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest-asyncio?uuid=ccd9eb22-778d-4bd4-af59-8b63e4163b22",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-75b6bb66-de86-4a35-a780-bc1f635f11f4",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest-asyncio?uuid=baae1579-e28e-40d7-9900-29af699fe7a7",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-8fc54317-6054-4eb7-b189-f1b2822d3fa6",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest-asyncio?uuid=e751ec65-9351-4949-ae8f-5bc1a9efa336",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-d10827fc-bcd1-4c10-ad6c-972dd4defa9c",
       "relationshipType": "DEPENDENCY_OF"
     }
   ],
