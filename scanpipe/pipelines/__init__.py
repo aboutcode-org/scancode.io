@@ -197,6 +197,7 @@ class BasePipeline:
         self.log(f"Pipeline [{self.pipeline_name}] starting")
 
         steps = self.get_steps(groups=self.run.selected_groups)
+        selected_steps = self.run.selected_steps
 
         if self.download_inputs:
             steps = (self.__class__.download_missing_inputs,) + steps
@@ -206,6 +207,10 @@ class BasePipeline:
 
         for current_index, step in enumerate(steps, start=1):
             step_name = step.__name__
+
+            if selected_steps and step_name not in selected_steps:
+                self.log(f"Step [{step_name}] skipped")
+                continue
 
             self.run.set_current_step(f"{current_index}/{steps_count} {step_name}")
             self.log(f"Step [{step_name}] starting")
