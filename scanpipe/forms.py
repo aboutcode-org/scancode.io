@@ -549,7 +549,12 @@ class PipelineRunStepSelectionForm(forms.ModelForm):
 
         super().__init__(*args, **kwargs)
         pipeline_class = self.instance.pipeline_class
-        self.fields["selected_steps"].choices = self.get_step_choices(pipeline_class)
+        choices = self.get_step_choices(pipeline_class)
+        self.fields["selected_steps"].choices = choices
+
+        # All step checkboxes are selected by default unless already defined on the run
+        if not self.instance.selected_steps:
+            self.initial["selected_steps"] = [choice[0] for choice in choices]
 
     @staticmethod
     def get_step_choices(pipeline_class):

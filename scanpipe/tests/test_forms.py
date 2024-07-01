@@ -244,3 +244,4 @@ class ScanPipeFormsTest(TestCase):
         self.assertEqual(expected, choices)
         choices = PipelineRunStepSelectionForm.get_step_choices(DoNothing)
         self.assertEqual(expected, choices)
+        self.assertEqual({"selected_steps": ["step1", "step2"]}, form.initial)

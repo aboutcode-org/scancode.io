@@ -1,0 +1,15 @@
+<div id="run-step-selection-box" class="box has-background-warning-light">
+  <div class="has-text-weight-semibold mb-3">
+    Warning: Step Selection is an advanced feature.<br>
+    Removing steps may compromise data integrity. Use with caution.
+  </div>
+  <form hx-post="{% url 'project_run_step_selection' run.uuid %}" hx-target="">{% csrf_token %}
+    <div class="field">
+      <label class="label">Select steps:</label>
+      <div class="control">
+        {{ form.selected_steps }}
+      </div>
+    </div>
+    <button class="button is-smaller is-link">Update steps</button>
+  </form>
+</div>

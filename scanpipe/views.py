@@ -75,6 +75,7 @@ from scanpipe.forms import AddLabelsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import ArchiveProjectForm
 from scanpipe.forms import EditInputSourceTagForm
+from scanpipe.forms import PipelineRunStepSelectionForm
 from scanpipe.forms import ProjectCloneForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectSettingsForm
@@ -1180,7 +1181,7 @@ class HTTPResponseHXRedirect(HttpResponseRedirect):
         self["HX-Redirect"] = self["Location"]
 
 
-class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, generic.UpdateView):
+class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, UpdateView):
     model = Project
     form_class = ProjectCloneForm
     template_name = "scanpipe/includes/project_clone_form.html"
@@ -2081,6 +2082,7 @@ def run_detail_view(request, uuid):
         "run": run,
         "project": project,
         "webhook_subscriptions": project.webhooksubscriptions.all(),
+        "step_selection_form": PipelineRunStepSelectionForm(instance=run),
     }
 
     return render(request, template, context)
@@ -2117,11 +2119,22 @@ def pipeline_help_view(request, pipeline_name):
     return render(request, template, context)
 
 
+class RunStepSelectionFormView(ConditionalLoginRequired, FormAjaxMixin, UpdateView):
+    model = Run
+    slug_field = "uuid"
+    slug_url_kwarg = "uuid"
+    form_class = PipelineRunStepSelectionForm
+    template_name = "scanpipe/includes/run_step_selection_form.html"
+
+    def form_valid(self, form):
+        return HttpResponse("Submitted!")
+
+
 class CodebaseResourceRawView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
-    generic.detail.SingleObjectMixin,
-    generic.base.View,
+    SingleObjectMixin,
+    generic.View,
 ):
     model = CodebaseResource
     slug_field = "path"
