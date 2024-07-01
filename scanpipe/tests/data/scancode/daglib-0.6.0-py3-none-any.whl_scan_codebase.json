@@ -254,7 +254,7 @@
   "dependencies": [
     {
       "purl": "pkg:pypi/dask",
-      "extracted_requirement": "dask[delayed]<2023.0.0,>=2022.7.1",
+      "extracted_requirement": "<2023.0.0,>=2022.7.1",
       "scope": "install",
       "is_runtime": true,
       "is_optional": false,
@@ -270,7 +270,7 @@
     },
     {
       "purl": "pkg:pypi/dask",
-      "extracted_requirement": "dask[delayed]<2023.0.0,>=2022.7.1",
+      "extracted_requirement": "<2023.0.0,>=2022.7.1",
       "scope": "install",
       "is_runtime": true,
       "is_optional": false,
@@ -286,7 +286,7 @@
     },
     {
       "purl": "pkg:pypi/graphviz",
-      "extracted_requirement": "graphviz<0.21,>=0.20; extra == \"graphviz\"",
+      "extracted_requirement": "<0.21,>=0.20",
       "scope": "graphviz",
       "is_runtime": true,
       "is_optional": true,
@@ -302,7 +302,7 @@
     },
     {
       "purl": "pkg:pypi/graphviz",
-      "extracted_requirement": "graphviz<0.21,>=0.20; extra == \"graphviz\"",
+      "extracted_requirement": "<0.21,>=0.20",
       "scope": "graphviz",
       "is_runtime": true,
       "is_optional": true,
@@ -318,7 +318,7 @@
     },
     {
       "purl": "pkg:pypi/ipycytoscape",
-      "extracted_requirement": "ipycytoscape<2.0.0,>=1.3.3; extra == \"ipycytoscape\"",
+      "extracted_requirement": "<2.0.0,>=1.3.3",
       "scope": "ipycytoscape",
       "is_runtime": true,
       "is_optional": true,
@@ -334,7 +334,7 @@
     },
     {
       "purl": "pkg:pypi/ipycytoscape",
-      "extracted_requirement": "ipycytoscape<2.0.0,>=1.3.3; extra == \"ipycytoscape\"",
+      "extracted_requirement": "<2.0.0,>=1.3.3",
       "scope": "ipycytoscape",
       "is_runtime": true,
       "is_optional": true,
@@ -350,10 +350,10 @@
     },
     {
       "purl": "pkg:pypi/networkx",
-      "extracted_requirement": "networkx<3.0.0,>=2.8.5",
+      "extracted_requirement": "<3.0.0,>=2.8.5",
       "scope": "install",
       "is_runtime": true,
-      "is_optional": false,
+      "is_optional": true,
       "is_resolved": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/networkx?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -366,10 +366,10 @@
     },
     {
       "purl": "pkg:pypi/networkx",
-      "extracted_requirement": "networkx<3.0.0,>=2.8.5",
+      "extracted_requirement": "<3.0.0,>=2.8.5",
       "scope": "install",
       "is_runtime": true,
-      "is_optional": false,
+      "is_optional": true,
       "is_resolved": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/networkx?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -458,7 +458,7 @@
               "is_optional": false,
               "is_resolved": false,
               "resolved_package": {},
-              "extracted_requirement": "dask[delayed]<2023.0.0,>=2022.7.1"
+              "extracted_requirement": "<2023.0.0,>=2022.7.1"
             },
             {
               "purl": "pkg:pypi/graphviz",
@@ -469,7 +469,7 @@
               "is_optional": true,
               "is_resolved": false,
               "resolved_package": {},
-              "extracted_requirement": "graphviz<0.21,>=0.20; extra == \"graphviz\""
+              "extracted_requirement": "<0.21,>=0.20"
             },
             {
               "purl": "pkg:pypi/ipycytoscape",
@@ -480,7 +480,7 @@
               "is_optional": true,
               "is_resolved": false,
               "resolved_package": {},
-              "extracted_requirement": "ipycytoscape<2.0.0,>=1.3.3; extra == \"ipycytoscape\""
+              "extracted_requirement": "<2.0.0,>=1.3.3"
             },
             {
               "purl": "pkg:pypi/networkx",
@@ -488,10 +488,10 @@
               "is_direct": true,
               "extra_data": {},
               "is_runtime": true,
-              "is_optional": false,
+              "is_optional": true,
               "is_resolved": false,
               "resolved_package": {},
-              "extracted_requirement": "networkx<3.0.0,>=2.8.5"
+              "extracted_requirement": "<3.0.0,>=2.8.5"
             }
           ],
           "download_url": null,
@@ -876,7 +876,7 @@
               "is_optional": false,
               "is_resolved": false,
               "resolved_package": {},
-              "extracted_requirement": "dask[delayed]<2023.0.0,>=2022.7.1"
+              "extracted_requirement": "<2023.0.0,>=2022.7.1"
             },
             {
               "purl": "pkg:pypi/graphviz",
@@ -887,7 +887,7 @@
               "is_optional": true,
               "is_resolved": false,
               "resolved_package": {},
-              "extracted_requirement": "graphviz<0.21,>=0.20; extra == \"graphviz\""
+              "extracted_requirement": "<0.21,>=0.20"
             },
             {
               "purl": "pkg:pypi/ipycytoscape",
@@ -898,7 +898,7 @@
               "is_optional": true,
               "is_resolved": false,
               "resolved_package": {},
-              "extracted_requirement": "ipycytoscape<2.0.0,>=1.3.3; extra == \"ipycytoscape\""
+              "extracted_requirement": "<2.0.0,>=1.3.3"
             },
             {
               "purl": "pkg:pypi/networkx",
@@ -906,10 +906,10 @@
               "is_direct": true,
               "extra_data": {},
               "is_runtime": true,
-              "is_optional": false,
+              "is_optional": true,
               "is_resolved": false,
               "resolved_package": {},
-              "extracted_requirement": "networkx<3.0.0,>=2.8.5"
+              "extracted_requirement": "<3.0.0,>=2.8.5"
             }
           ],
           "download_url": null,
