@@ -20,8 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from scanpipe.pipelines import group
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import resolve
+from scanpipe.pipes import scancode
 
 
 class ResolveDependencies(ScanCodebase):
@@ -45,6 +47,8 @@ class ResolveDependencies(ScanCodebase):
             cls.collect_and_create_codebase_resources,
             cls.flag_ignored_resources,
             cls.get_manifest_inputs,
+            cls.scan_for_application_packages,
+            cls.create_packages_and_dependencies,
             cls.get_packages_from_manifest,
             cls.create_resolved_packages,
         )
@@ -53,6 +57,28 @@ class ResolveDependencies(ScanCodebase):
         """Locate package manifest files with a supported package resolver."""
         self.manifest_resources = resolve.get_manifest_resources(self.project)
 
+    @group("Static Resolver")
+    def scan_for_application_packages(self):
+        """
+        Scan and assemble application packages from package manifests
+        and lockfiles.
+        """
+        scancode.scan_for_application_packages(
+            self.project,
+            assemble=True,
+            resource_qs=self.manifest_resources,
+            progress_logger=self.log,
+        )
+
+    @group("Static Resolver")
+    def create_packages_and_dependencies(self):
+        """
+        Create the statically resolved packages and their dependencies
+        in the database.
+        """
+        scancode.process_package_data(self.project, static_resolve=True)
+
+    @group("Dynamic Resolver")
     def get_packages_from_manifest(self):
         """
         Resolve package data from lockfiles/requirement files with package
@@ -65,8 +91,12 @@ class ResolveDependencies(ScanCodebase):
             model="get_packages_from_manifest",
         )
 
+    @group("Dynamic Resolver")
     def create_resolved_packages(self):
-        """Create the resolved packages and their dependencies in the database."""
+        """
+        Create the dynamically resolved packages and their dependencies
+        in the database.
+        """
         resolve.create_packages_and_dependencies(
             project=self.project,
             packages=self.resolved_packages,

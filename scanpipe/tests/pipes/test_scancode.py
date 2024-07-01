@@ -569,3 +569,129 @@ class ScanPipeScancodePipesTest(TestCase):
 
         self.assertEqual(1, project1.discoveredpackages.count())
         self.assertEqual(6, project1.discovereddependencies.count())
+
+    def test_scanpipe_scancode_create_packages_and_dependencies_from_mapping(self):
+        pipeline_name = "inspect_packages"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data / "dependencies" / "resolved_dependencies.zip"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(
+            pipeline_name=pipeline_name,
+            selected_groups=[],
+        )
+        pipeline = run.make_pipeline_instance()
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(7, project1.discovereddependencies.count())
+
+        yarn_resource = project1.codebaseresources.get(
+            path="resolved_dependencies.zip-extract/yarn.lock"
+        )
+        lockfile_package_data = yarn_resource.package_data[0]
+        scancode.create_packages_and_dependencies_from_mapping(
+            project=project1,
+            resource=yarn_resource,
+            package_mapping=lockfile_package_data,
+            find_package=False,
+            process_resolved=True,
+        )
+
+        self.assertEqual(7, project1.discoveredpackages.count())
+        self.assertEqual(12, project1.discovereddependencies.count())
+
+    def test_scanpipe_scancode_resolve_dependencies(self):
+        project1 = Project.objects.create(name="Analysis")
+        pkg_1 = DiscoveredPackage.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            version="3.7.2",
+        )
+        DiscoveredDependency.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            extracted_requirement="^3.5.1",
+            is_direct=False,
+            resolved_to_package=pkg_1,
+        )
+        dep_2 = DiscoveredDependency.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            extracted_requirement="^3.5.1",
+            is_direct=True,
+        )
+        scancode.match_and_resolve_dependencies(project1)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(1, project1.discovereddependencies.count())
+        resolved_dep = project1.discovereddependencies.get(name="bluebird")
+        self.assertEqual(resolved_dep, dep_2)
+        self.assertEqual(resolved_dep.resolved_to_package, pkg_1)
+
+    def test_scanpipe_scancode_resolve_dependencies_complex_requirements(self):
+        project1 = Project.objects.create(name="Analysis")
+        pkg_1 = DiscoveredPackage.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            version="3.7.2",
+        )
+        DiscoveredDependency.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            extracted_requirement="^3.5.1",
+            is_direct=False,
+            resolved_to_package=pkg_1,
+        )
+        dep_2 = DiscoveredDependency.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            extracted_requirement="^3.5.1 || ^3.5.0",
+            is_direct=True,
+        )
+        scancode.match_and_resolve_dependencies(project1)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(1, project1.discovereddependencies.count())
+        resolved_dep = project1.discovereddependencies.get(name="bluebird")
+        self.assertEqual(resolved_dep, dep_2)
+        self.assertEqual(resolved_dep.resolved_to_package, pkg_1)
+
+    def test_scanpipe_scancode_resolve_dependencies_no_requirements(self):
+        project1 = Project.objects.create(name="Analysis")
+        pkg_1 = DiscoveredPackage.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            version="3.7.2",
+        )
+        DiscoveredDependency.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            extracted_requirement="^3.5.1",
+            is_direct=False,
+            resolved_to_package=pkg_1,
+        )
+        dep_2 = DiscoveredDependency.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            extracted_requirement="",
+            is_direct=True,
+        )
+        scancode.match_and_resolve_dependencies(project1)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(1, project1.discovereddependencies.count())
+        resolved_dep = project1.discovereddependencies.get(name="bluebird")
+        self.assertEqual(resolved_dep, dep_2)
+        self.assertEqual(resolved_dep.resolved_to_package, pkg_1)

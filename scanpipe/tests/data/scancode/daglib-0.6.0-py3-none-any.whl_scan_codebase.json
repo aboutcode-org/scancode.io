@@ -127,6 +127,8 @@
         "Documentation": "https://mharrisb1.github.io/daglib/"
       },
       "package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [
         "pypi_wheel"
       ],
@@ -235,6 +237,8 @@
         "Documentation": "https://mharrisb1.github.io/daglib/"
       },
       "package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [
         "pypi_wheel_metadata"
       ],
@@ -255,6 +259,7 @@
       "is_runtime": true,
       "is_optional": false,
       "is_resolved": false,
+      "is_direct": true,
       "dependency_uid": "pkg:pypi/dask?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "resolved_to_package_uid": null,
@@ -270,6 +275,7 @@
       "is_runtime": true,
       "is_optional": false,
       "is_resolved": false,
+      "is_direct": true,
       "dependency_uid": "pkg:pypi/dask?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "resolved_to_package_uid": null,
@@ -285,6 +291,7 @@
       "is_runtime": true,
       "is_optional": true,
       "is_resolved": false,
+      "is_direct": true,
       "dependency_uid": "pkg:pypi/graphviz?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "resolved_to_package_uid": null,
@@ -300,6 +307,7 @@
       "is_runtime": true,
       "is_optional": true,
       "is_resolved": false,
+      "is_direct": true,
       "dependency_uid": "pkg:pypi/graphviz?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "resolved_to_package_uid": null,
@@ -315,6 +323,7 @@
       "is_runtime": true,
       "is_optional": true,
       "is_resolved": false,
+      "is_direct": true,
       "dependency_uid": "pkg:pypi/ipycytoscape?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "resolved_to_package_uid": null,
@@ -330,6 +339,7 @@
       "is_runtime": true,
       "is_optional": true,
       "is_resolved": false,
+      "is_direct": true,
       "dependency_uid": "pkg:pypi/ipycytoscape?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "resolved_to_package_uid": null,
@@ -345,6 +355,7 @@
       "is_runtime": true,
       "is_optional": false,
       "is_resolved": false,
+      "is_direct": true,
       "dependency_uid": "pkg:pypi/networkx?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "resolved_to_package_uid": null,
@@ -360,6 +371,7 @@
       "is_runtime": true,
       "is_optional": false,
       "is_resolved": false,
+      "is_direct": true,
       "dependency_uid": "pkg:pypi/networkx?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "resolved_to_package_uid": null,
@@ -431,6 +443,8 @@
           "extra_data": {
             "Documentation": "https://mharrisb1.github.io/daglib/"
           },
+          "is_private": false,
+          "is_virtual": false,
           "qualifiers": {},
           "notice_text": null,
           "api_data_url": "https://pypi.org/pypi/daglib/0.6.0/json",
@@ -438,6 +452,7 @@
             {
               "purl": "pkg:pypi/dask",
               "scope": "install",
+              "is_direct": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,
@@ -448,6 +463,7 @@
             {
               "purl": "pkg:pypi/graphviz",
               "scope": "graphviz",
+              "is_direct": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
@@ -458,6 +474,7 @@
             {
               "purl": "pkg:pypi/ipycytoscape",
               "scope": "ipycytoscape",
+              "is_direct": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
@@ -468,6 +485,7 @@
             {
               "purl": "pkg:pypi/networkx",
               "scope": "install",
+              "is_direct": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,
@@ -843,6 +861,8 @@
           "extra_data": {
             "Documentation": "https://mharrisb1.github.io/daglib/"
           },
+          "is_private": false,
+          "is_virtual": false,
           "qualifiers": {},
           "notice_text": null,
           "api_data_url": "https://pypi.org/pypi/daglib/0.6.0/json",
@@ -850,6 +870,7 @@
             {
               "purl": "pkg:pypi/dask",
               "scope": "install",
+              "is_direct": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,
@@ -860,6 +881,7 @@
             {
               "purl": "pkg:pypi/graphviz",
               "scope": "graphviz",
+              "is_direct": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
@@ -870,6 +892,7 @@
             {
               "purl": "pkg:pypi/ipycytoscape",
               "scope": "ipycytoscape",
+              "is_direct": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
@@ -880,6 +903,7 @@
             {
               "purl": "pkg:pypi/networkx",
               "scope": "install",
+              "is_direct": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,

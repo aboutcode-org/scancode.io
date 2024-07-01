@@ -14,12 +14,12 @@
         "--summary": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "output_format_version": "3.1.0",
+      "output_format_version": "3.2.0",
       "message": null,
       "errors": [],
       "warnings": [],
       "extra_data": {
-        "spdx_license_list_version": "3.23",
+        "spdx_license_list_version": "3.24",
         "files_count": 6
       }
     }
@@ -121,7 +121,13 @@
       "extracted_license_statement": "- MIT\n",
       "notice_text": null,
       "source_packages": [],
-      "extra_data": {},
+      "is_private": false,
+      "is_virtual": false,
+      "extra_data": {
+        "engines": {
+          "node": ">=0.10.0"
+        }
+      },
       "repository_homepage_url": "https://www.npmjs.com/package/is-npm",
       "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
       "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
@@ -203,7 +209,13 @@
       "extracted_license_statement": "- MIT\n",
       "notice_text": null,
       "source_packages": [],
-      "extra_data": {},
+      "is_private": false,
+      "is_virtual": false,
+      "extra_data": {
+        "engines": {
+          "node": ">=0.10.0"
+        }
+      },
       "repository_homepage_url": "https://www.npmjs.com/package/is-npm",
       "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
       "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
@@ -225,6 +237,7 @@
       "is_runtime": false,
       "is_optional": true,
       "is_resolved": false,
+      "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
       "dependency_uid": "pkg:npm/ava?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -239,6 +252,7 @@
       "is_runtime": false,
       "is_optional": true,
       "is_resolved": false,
+      "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
       "dependency_uid": "pkg:npm/ava?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -602,7 +616,13 @@
           "notice_text": null,
           "source_packages": [],
           "file_references": [],
-          "extra_data": {},
+          "is_private": false,
+          "is_virtual": false,
+          "extra_data": {
+            "engines": {
+              "node": ">=0.10.0"
+            }
+          },
           "dependencies": [
             {
               "purl": "pkg:npm/ava",
@@ -611,6 +631,7 @@
               "is_runtime": false,
               "is_optional": true,
               "is_resolved": false,
+              "is_direct": true,
               "resolved_package": {},
               "extra_data": {}
             }
@@ -865,7 +886,13 @@
           "notice_text": null,
           "source_packages": [],
           "file_references": [],
-          "extra_data": {},
+          "is_private": false,
+          "is_virtual": false,
+          "extra_data": {
+            "engines": {
+              "node": ">=0.10.0"
+            }
+          },
           "dependencies": [
             {
               "purl": "pkg:npm/ava",
@@ -874,6 +901,7 @@
               "is_runtime": false,
               "is_optional": true,
               "is_resolved": false,
+              "is_direct": true,
               "resolved_package": {},
               "extra_data": {}
             }
