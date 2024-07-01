@@ -2302,6 +2302,12 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(package_score.scoring_tool, "OSSF")
         self.assertEqual(package_score.score, "6.7")
 
+        checks = package_score.discovered_packages_score_checks.all()
+        self.assertEqual(checks.count(), 14)
+        self.assertEqual(checks[0].check_name, 'Code-Review')
+        self.assertEqual(checks[0].check_score, '1')
+
+
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
     """

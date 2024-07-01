@@ -80,6 +80,7 @@ from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLMixin
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
+from ossf_scorecard.contrib.django.models import scorecard_checks_Mixin
 from ossf_scorecard.contrib.django.models import Package_score_Mixin
 from ossf_scorecard.contrib.django.utils import fetch_documentation_url
 from rest_framework.authtoken.models import Token
@@ -3786,6 +3787,7 @@ class PackageScore(UUIDPKModel, Package_score_Mixin):
     )
 
     @classmethod
+    @transaction.atomic()
     def create_from_data(
             cls,
             DiscoveredPackage,
@@ -3820,8 +3822,50 @@ class PackageScore(UUIDPKModel, Package_score_Mixin):
             scoring_tool=scoring_tool,
         )
 
-        scorecard_object.save()
+        # Create associated scorecard_checks
+        checks_data = scorecard_data.get('checks', [])
+
+        ScorecardCheck.objects.bulk_create([
+            ScorecardCheck(
+                check_name=check_data.get('name'),
+                check_score=check_data.get('score'),
+                reason=check_data.get('reason'),
+                details=check_data.get('details', []),
+                for_package_score=scorecard_object
+            ) for check_data in checks_data
+        ])
+
         return scorecard_object
+
+
+class ScorecardCheck(UUIDPKModel, scorecard_checks_Mixin):
+
+    def __str__(self):
+        return self.check_score or str(self.uuid)
+
+    for_package_score = models.ForeignKey(
+        PackageScore,
+        related_name="discovered_packages_score_checks",
+        help_text=_("The checks for which the score is given"),
+        on_delete=models.CASCADE,
+        editable=False,
+        blank=True,
+        null=True,
+    )
+
+    @classmethod
+    def create_from_data(cls, package_score, check_data):
+        """
+        Create a ScorecardCheck instance from provided data.
+        """
+        final_data = {
+            'check_name': check_data.get('name'),
+            'check_score': check_data.get('score'),
+            'reason': check_data.get('reason'),
+            'details': check_data.get('details', []),
+            'for_package_score': package_score,
+        }
+        return cls.objects.create(**final_data)
       
 def normalize_package_url_data(purl_mapping, ignore_nulls=False):
     """
@@ -3840,7 +3884,6 @@ def normalize_package_url_data(purl_mapping, ignore_nulls=False):
                 normalized_purl_mapping[field_name] = value or ""
 
     return normalized_purl_mapping
-
 
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
