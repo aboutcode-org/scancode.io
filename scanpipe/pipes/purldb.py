@@ -302,9 +302,13 @@ def populate_purldb_with_discovered_packages(project, logger=logger.info):
     discoveredpackages = project.discoveredpackages.all()
     packages_to_populate = []
     for pkg in discoveredpackages:
-        package = {"purl": pkg.purl}
-        if pkg.source_packages:
-            package["source_purl"] = pkg.source_packages
+        purl = pkg.purl
+        source_purl = pkg.source_packages
+        if not purl:
+            continue
+        package = {"purl": purl}
+        if source_purl:
+            package["source_purl"] = source_purl
         packages_to_populate.append(package)
 
     logger(
