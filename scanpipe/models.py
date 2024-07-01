@@ -29,6 +29,7 @@ import uuid
 from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
+from datetime import datetime
 from itertools import groupby
 from operator import itemgetter
 from pathlib import Path
@@ -78,7 +79,8 @@ from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLMixin
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
-from ossf_scorecard.contrib.models import Package_score_Mixin
+from ossf_scorecard.contrib.django.models import Package_score_Mixin
+from ossf_scorecard.contrib.django.utils import fetch_documentation_url
 from rest_framework.authtoken.models import Token
 from rq.command import send_stop_job_command
 from rq.exceptions import NoSuchJobError
@@ -3694,6 +3696,7 @@ class DiscoveredDependency(
             external_refs=external_refs,
         )
 
+
 class PackageScore(UUIDPKModel, Package_score_Mixin):
 
     def __str__(self):
@@ -3701,8 +3704,8 @@ class PackageScore(UUIDPKModel, Package_score_Mixin):
 
     discovered_package = models.ForeignKey(
         DiscoveredPackage,
-        related_name="declared_dependencies",
-        help_text=_("The package that declares this dependency."),
+        related_name="discovered_packages_score",
+        help_text=_("The package for which the score is given"),
         on_delete=models.CASCADE,
         editable=False,
         blank=True,
@@ -3717,36 +3720,35 @@ class PackageScore(UUIDPKModel, Package_score_Mixin):
             scoring_tool=None
     ):
         """
-        Create and returns a DiscoveredDependency for a `project` from the
-        `dependency_data`.
-
-        If `strip_datafile_path_root` is True, then `create_from_data()` will
-        strip the root path segment from the `datafile_path` of
-        `dependency_data` before looking up the corresponding CodebaseResource
-        for `datafile_path`. This is used in the case where Dependency data is
-        imported from a scancode-toolkit scan, where the root path segments are
-        not stripped for `datafile_path`.
+        Create ScoreCard Object from ScoreCard Json
         """
         scorecard_data = scorecard_data.copy()
-        required_fields = ["purl", "dependency_uid"]
-        missing_values = [
-            field_name
-            for field_name in required_fields
-            if not dependency_data.get(field_name)
-        ]
 
+        final_data = {'score': str(scorecard_data.get('score')),
+                      'scoring_tool_version': scorecard_data.get('scorecard').get('version'),
+                      'scoring_tool_documentation_url': fetch_documentation_url(
+                          scorecard_data.get('checks')[0].get('documentation').get('url')
+                      )}
 
+        date_str = scorecard_data.get('date', None)
+        if date_str:
 
-        cleaned_data = {
-            field_name: value
-            for field_name, value in dependency_data.items()
-            if field_name in cls.model_fields() and value not in EMPTY_VALUES
-        }
+            naive_datetime = datetime.strptime(date_str, '%Y-%m-%d')
 
-        return cls.objects.create(
+            score_date = timezone.make_aware(naive_datetime, timezone.get_current_timezone())
+        else:
+            score_date = timezone.now()
+
+        final_data['score_date'] = score_date
+
+        scorecard_object = cls.objects.create(
+            **final_data,
             discovered_package=DiscoveredPackage,
             scoring_tool=scoring_tool,
         )
+
+        scorecard_object.save()
+        return scorecard_object
 
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
