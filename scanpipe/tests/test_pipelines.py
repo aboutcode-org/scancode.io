@@ -827,7 +827,7 @@ class PipelinesIntegrationTest(TestCase):
 
         run = project1.add_pipeline(
             pipeline_name=pipeline_name,
-            selected_groups=["Static Resolver"],
+            selected_groups=["StaticResolver"],
         )
         pipeline = run.make_pipeline_instance()
 
@@ -854,7 +854,7 @@ class PipelinesIntegrationTest(TestCase):
 
         run = project1.add_pipeline(
             pipeline_name=pipeline_name,
-            selected_groups=["Static Resolver"],
+            selected_groups=["StaticResolver"],
         )
         pipeline = run.make_pipeline_instance()
 
@@ -883,7 +883,7 @@ class PipelinesIntegrationTest(TestCase):
 
         run = project1.add_pipeline(
             pipeline_name=pipeline_name,
-            selected_groups=["Static Resolver"],
+            selected_groups=["StaticResolver"],
         )
         pipeline = run.make_pipeline_instance()
 
@@ -910,7 +910,7 @@ class PipelinesIntegrationTest(TestCase):
 
         run = project1.add_pipeline(
             pipeline_name=pipeline_name,
-            selected_groups=["Static Resolver"],
+            selected_groups=["StaticResolver"],
         )
         pipeline = run.make_pipeline_instance()
 
@@ -936,7 +936,7 @@ class PipelinesIntegrationTest(TestCase):
 
         run = project1.add_pipeline(
             pipeline_name=pipeline_name,
-            selected_groups=["Static Resolver"],
+            selected_groups=["StaticResolver"],
         )
         pipeline = run.make_pipeline_instance()
 
