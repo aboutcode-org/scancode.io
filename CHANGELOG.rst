@@ -15,13 +15,13 @@ v34.6.4 (unreleased)
   related work directories created more than a specified number of days ago.
   https://github.com/nexB/scancode.io/issues/1289
 
-- Update the ``inspect_packages`` pipeline to have an optional ``Static Resolver``
+- Update the ``inspect_packages`` pipeline to have an optional ``StaticResolver``
   group to create resolved packages and dependency relationships from lockfiles
   and manifests having pre-resolved dependencies. Also update this pipeline to
   perform package assembly from multiple manifests and files to create
   discovered packages. Also update the ``resolve_dependencies`` pipeline to have
-  the same ``Static Resolver`` group and mode the dynamic resolution part to a new
-  optional ``Dynamic Resolver`` group.
+  the same ``StaticResolver`` group and mode the dynamic resolution part to a new
+  optional ``DynamicResolver`` group.
   See https://github.com/nexB/scancode.io/pull/1244
 
 - Add a new attribute ``is_direct`` to the DiscoveredDependency model and two new

@@ -685,7 +685,7 @@ class ScanPipeManagementCommandTest(TestCase):
         out = StringIO()
         with redirect_stdout(out):
             options = [
-                "inspect_packages:Static Resolver",
+                "inspect_packages:StaticResolver",
                 "do_nothing:Group1,Group2",
                 input_location,
             ]
@@ -694,7 +694,7 @@ class ScanPipeManagementCommandTest(TestCase):
         json_data = json.loads(out.getvalue())
         runs = json_data["headers"][0]["runs"]
         self.assertEqual("inspect_packages", runs[0]["pipeline_name"])
-        self.assertEqual(["Static Resolver"], runs[0]["selected_groups"])
+        self.assertEqual(["StaticResolver"], runs[0]["selected_groups"])
 
         self.assertEqual("do_nothing", runs[1]["pipeline_name"])
         self.assertEqual(["Group1", "Group2"], runs[1]["selected_groups"])

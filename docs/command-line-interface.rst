@@ -380,7 +380,7 @@ For example, running the ``inspect_packages`` pipeline on a manifest file:
 
 .. tip:: Use the "pipeline_name:group1,group2" syntax to select steps groups::
 
-    $ run inspect_packages:"Static Resolver" package.json > results.json
+    $ run inspect_packages:StaticResolver package.json > results.json
 
 In the following example, running the ``scan_codebase`` followed by the
 ``find_vulnerabilities`` pipelines on a codebase directory:

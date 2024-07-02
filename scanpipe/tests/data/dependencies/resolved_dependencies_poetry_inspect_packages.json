@@ -16,7 +16,7 @@
           "pipeline_name": "inspect_packages",
           "status": "not_started",
           "selected_groups": [
-            "Static Resolver"
+            "StaticResolver"
           ],
           "scancodeio_version": "",
           "task_id": null,
