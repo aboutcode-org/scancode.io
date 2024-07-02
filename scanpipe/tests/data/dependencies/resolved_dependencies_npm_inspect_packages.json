@@ -15,6 +15,9 @@
         {
           "pipeline_name": "inspect_packages",
           "status": "not_started",
+          "selected_groups": [
+            "Static Resolver"
+          ],
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
@@ -163,7 +166,7 @@
               "matcher": "5-undetected",
               "end_line": 1,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/package-manifest-unknown-cb9ea49fe36cb2e1ba6d87c68e1195a492f762cf",
-              "from_file": "resolved_dependencies_npm.zip-extract/package.json",
+              "from_file": null,
               "start_line": 1,
               "matched_text": "license - UNLICENSED",
               "match_coverage": 100.0,
@@ -640,38 +643,17 @@
           "source_packages": [],
           "bug_tracking_url": null,
           "primary_language": "JavaScript",
-          "license_detections": [
-            {
-              "matches": [
-                {
-                  "score": 100.0,
-                  "matcher": "5-undetected",
-                  "end_line": 1,
-                  "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/package-manifest-unknown-cb9ea49fe36cb2e1ba6d87c68e1195a492f762cf",
-                  "from_file": null,
-                  "start_line": 1,
-                  "matched_text": "license - UNLICENSED",
-                  "match_coverage": 100.0,
-                  "matched_length": 2,
-                  "rule_relevance": 100,
-                  "rule_identifier": "package-manifest-unknown-cb9ea49fe36cb2e1ba6d87c68e1195a492f762cf",
-                  "license_expression": "unknown",
-                  "spdx_license_expression": "LicenseRef-scancode-unknown"
-                }
-              ],
-              "identifier": "unknown-0669ac45-20f6-defd-ec9f-2b6aafc9f944",
-              "license_expression": "unknown",
-              "license_expression_spdx": "LicenseRef-scancode-unknown"
-            }
-          ],
+          "license_detections": [],
           "repository_download_url": null,
           "repository_homepage_url": null,
           "other_license_detections": [],
           "other_license_expression": null,
-          "declared_license_expression": "unknown",
-          "extracted_license_statement": "- UNLICENSED\n",
+          "declared_license_expression": null,
+          "extracted_license_statement": [
+            "UNLICENSED"
+          ],
           "other_license_expression_spdx": null,
-          "declared_license_expression_spdx": "LicenseRef-scancode-unknown"
+          "declared_license_expression_spdx": null
         }
       ],
       "for_packages": [
