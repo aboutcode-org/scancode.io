@@ -30,8 +30,9 @@ v34.6.4 (unreleased)
   contents for CodebaseResources in the ``extra_data`` tab.
   See https://github.com/nexB/scancode.io/pull/1244
 
-- Update scancode-toolkit to version ``32.2.0``. For the complete list of updates
+- Update scancode-toolkit to version ``32.2.1``. For the complete list of updates
   and improvements see https://github.com/nexB/scancode-toolkit/releases/tag/v32.2.0
+  and https://github.com/nexB/scancode-toolkit/releases/tag/v32.2.1
 
 v34.6.3 (2024-06-21)
 --------------------
