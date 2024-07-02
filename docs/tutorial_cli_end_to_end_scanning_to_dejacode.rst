@@ -3,9 +3,9 @@
 Analyze Codebase End to End with DepLock and DejaCode (Command Line)
 =====================================================================
 
-The focus of this tutorial is to guide you through scanning a codebase end to end, starting with the
-dependency resolution, through the scanning proper, and finally the upload of the scan in DejaCode,
-using DepLock and ScanCode.io.
+The focus of this tutorial is to guide you through scanning a codebase end to end,
+starting with the dependency resolution, through the scanning proper, and finally
+the upload of the scan in DejaCode, using DepLock and ScanCode.io.
 
 This is designed to run a faster, simple **inspect_packages** ScanCode.io pipeline.
 
@@ -50,7 +50,7 @@ The process for this tutorial is to:
 
 
 .. note::
-    Below instructions have been tested on Linux for now.
+    Below instructions have been tested only on Linux for now.
 
 
 Fetch codebase to scan
@@ -146,14 +146,15 @@ Run ScanCode Package Detection
 -------------------------------
 
 Execute the following command to run the ScanCode scanner
-with **inspect_packages** pipeline on codebase in our current directory.
+with **inspect_packages** pipeline with static resolution
+on the codebase in our current directory.
 
 .. code-block:: shell
 
     docker run --rm \
       -v "$(pwd)":/code \
       ghcr.io/nexb/scancode.io:latest \
-      sh -c "run inspect_packages /code" \
+      sh -c "run inspect_packages:StaticResolver /code" \
       > results.json
 
 

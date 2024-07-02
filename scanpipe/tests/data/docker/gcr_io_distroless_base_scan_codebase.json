@@ -17,6 +17,7 @@
         {
           "pipeline_name": "analyze_docker_image",
           "status": "not_started",
+          "selected_groups": null,
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
@@ -169,6 +170,8 @@
         "multi_arch": "foreign"
       },
       "package_uid": "pkg:deb/debian/base-files@11.1%2Bdeb11u3?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [
         "debian_distroless_installed_db"
       ],
@@ -232,6 +235,8 @@
         "multi_arch": "same"
       },
       "package_uid": "pkg:deb/debian/libc6@2.31-13%2Bdeb11u3?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [
         "debian_distroless_installed_db"
       ],
@@ -295,6 +300,8 @@
         "multi_arch": "same"
       },
       "package_uid": "pkg:deb/debian/libssl1.1@1.1.1n-0%2Bdeb11u2?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [
         "debian_distroless_installed_db"
       ],
@@ -356,6 +363,8 @@
         "multi_arch": "foreign"
       },
       "package_uid": "pkg:deb/debian/netbase@6.3?arch=all&uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [
         "debian_distroless_installed_db"
       ],
@@ -417,6 +426,8 @@
         "multi_arch": "foreign"
       },
       "package_uid": "pkg:deb/debian/openssl@1.1.1n-0%2Bdeb11u2?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [
         "debian_distroless_installed_db"
       ],
@@ -478,6 +489,8 @@
         "multi_arch": "foreign"
       },
       "package_uid": "pkg:deb/debian/tzdata@2021a-1%2Bdeb11u4?arch=all&uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [
         "debian_distroless_installed_db"
       ],
@@ -16611,6 +16624,8 @@
           "copyright": null,
           "namespace": "debian",
           "extra_data": {},
+          "is_private": false,
+          "is_virtual": false,
           "qualifiers": {},
           "notice_text": null,
           "api_data_url": null,
@@ -17914,6 +17929,8 @@
           "copyright": "2003 Fumitoshi UKAI <ukai@debian.or.jp>\n2009 Philipp Kern <pkern@debian.org>\n2011 Michael Shuler <michael@pbandjelly.org>\nVarious Debian Contributors\nMozilla Contributors",
           "namespace": null,
           "extra_data": {},
+          "is_private": false,
+          "is_virtual": false,
           "qualifiers": {},
           "notice_text": null,
           "api_data_url": null,

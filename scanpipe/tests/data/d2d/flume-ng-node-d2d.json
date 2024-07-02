@@ -21,6 +21,7 @@
         {
           "pipeline_name": "map_deploy_to_develop",
           "status": "not_started",
+          "selected_groups": null,
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
@@ -72,6 +73,8 @@
       "source_packages": [],
       "extra_data": {},
       "package_uid": "pkg:local-files/analysis-b74fe5df/b74fe5df-e965-415e-ba65-f38421a0695d?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [],
       "datafile_paths": [],
       "file_references": [],

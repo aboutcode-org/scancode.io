@@ -584,6 +584,12 @@ class PipelinesIntegrationTest(TestCase):
         Return the `data`, where any `package_uid` value has been normalized
         with `purl_with_fake_uuid()`
         """
+        fields_with_package_uids = [
+            "package_uid",
+            "dependency_uid",
+            "for_package_uid",
+            "resolved_to_package_uid",
+        ]
         if isinstance(data, list):
             return [self._normalize_package_uids(entry) for entry in data]
 
@@ -595,16 +601,15 @@ class PipelinesIntegrationTest(TestCase):
             for key, value in data.items():
                 if isinstance(value, (list, dict)):
                     value = self._normalize_package_uids(value)
-                if (
-                    key in ("package_uid", "dependency_uid", "for_package_uid")
-                    and value
-                ):
+                if key in fields_with_package_uids and value:
                     value = purl_with_fake_uuid(value)
                 if key == "for_packages" and value:
-                    value = [
-                        self.purl_fields_with_fake_uuid(package_uid, key)
-                        for package_uid in value
-                    ]
+                    value = sorted(
+                        [
+                            self.purl_fields_with_fake_uuid(package_uid, key)
+                            for package_uid in value
+                        ]
+                    )
                 if is_local_files and key in ("name", "namespace", "purl") and value:
                     value = self.purl_fields_with_fake_uuid(value, key)
                 normalized_data[key] = value
@@ -612,8 +617,25 @@ class PipelinesIntegrationTest(TestCase):
 
         return data
 
+    def _sort_dependencies(self, data):
+        """
+        Sort dependencies by their "for_package_uid".
+
+        After dependency resolution in some cases we have multiple
+        dependency requirements resolved to a same package, and they
+        are not sorted the same way every time.
+        """
+        mappings = data.get("dependencies")
+        if mappings:
+            mappings_by_uid = {}
+            for mapping in mappings:
+                uid = mapping.get("for_package_uid") or ""
+                mappings_by_uid[uid] = mapping
+            data["dependencies"] = list(dict(sorted(mappings_by_uid.items())).values())
+        return data
+
     def assertPipelineResultEqual(
-        self, expected_file, result_file, regen=FIXTURES_REGEN
+        self, expected_file, result_file, sort_dependencies=False, regen=FIXTURES_REGEN
     ):
         """
         Set `regen` to True to regenerate the expected results.
@@ -621,6 +643,8 @@ class PipelinesIntegrationTest(TestCase):
         result_json = json.loads(Path(result_file).read_text())
         result_json = self._normalize_package_uids(result_json)
         result_data = self._without_keys(result_json, self.exclude_from_diff)
+        if sort_dependencies:
+            result_data = self._sort_dependencies(result_data)
         result_data = sort_for_os_compatibility(result_data)
 
         if regen:
@@ -629,6 +653,8 @@ class PipelinesIntegrationTest(TestCase):
         expected_json = json.loads(expected_file.read_text())
         expected_json = self._normalize_package_uids(expected_json)
         expected_data = self._without_keys(expected_json, self.exclude_from_diff)
+        if sort_dependencies:
+            result_data = self._sort_dependencies(result_data)
         expected_data = sort_for_os_compatibility(expected_data)
 
         self.assertEqual(expected_data, result_data)
@@ -793,11 +819,14 @@ class PipelinesIntegrationTest(TestCase):
         package = project1.discoveredpackages.get()
         dependency = project1.discovereddependencies.get()
 
-        self.assertEqual(1, package.codebase_resources.count())
+        self.assertEqual(3, package.codebase_resources.count())
         self.assertEqual("pkg:npm/is-npm@1.0.0", dependency.for_package.purl)
         self.assertEqual(package.datasource_ids, [dependency.datasource_id])
         self.assertEqual(
-            package.codebase_resources.get().path, dependency.datafile_resource.path
+            package.codebase_resources.get(
+                path="is-npm-1.0.0.tgz-extract/package/package.json"
+            ).path,
+            dependency.datafile_resource.path,
         )
 
     def test_scanpipe_inspect_packages_creates_packages_pypi(self):
@@ -815,6 +844,142 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(6, project1.codebaseresources.count())
         self.assertEqual(0, project1.discoveredpackages.count())
         self.assertEqual(26, project1.discovereddependencies.count())
+
+    def test_scanpipe_inspect_packages_with_resolved_dependencies_npm(self):
+        pipeline_name = "inspect_packages"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data / "dependencies" / "resolved_dependencies_npm.zip"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(
+            pipeline_name=pipeline_name,
+            selected_groups=["StaticResolver"],
+        )
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+        self.assertEqual(4, project1.codebaseresources.count())
+        self.assertEqual(7, project1.discoveredpackages.count())
+        self.assertEqual(6, project1.discovereddependencies.count())
+
+        result_file = output.to_json(project1)
+        expected_file = (
+            self.data
+            / "dependencies"
+            / "resolved_dependencies_npm_inspect_packages.json"
+        )
+        self.assertPipelineResultEqual(expected_file, result_file)
+
+    def test_scanpipe_inspect_packages_with_resolved_dependencies_poetry(self):
+        pipeline_name = "inspect_packages"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data / "dependencies" / "resolved_dependencies_poetry.zip"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(
+            pipeline_name=pipeline_name,
+            selected_groups=["StaticResolver"],
+        )
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+        self.assertEqual(5, project1.codebaseresources.count())
+        self.assertEqual(6, project1.discoveredpackages.count())
+        self.assertEqual(10, project1.discovereddependencies.count())
+
+        result_file = output.to_json(project1)
+        expected_file = (
+            self.data
+            / "dependencies"
+            / "resolved_dependencies_poetry_inspect_packages.json"
+        )
+        self.assertPipelineResultEqual(expected_file, result_file)
+
+    def test_scanpipe_resolved_dependencies_cocoapods(self):
+        pipeline_name = "resolve_dependencies"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = (
+            self.data / "dependencies" / "resolved_dependencies_cocoapods.zip"
+        )
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(
+            pipeline_name=pipeline_name,
+            selected_groups=["StaticResolver"],
+        )
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+        self.assertEqual(3, project1.codebaseresources.count())
+        self.assertEqual(25, project1.discoveredpackages.count())
+        self.assertEqual(30, project1.discovereddependencies.count())
+
+        result_file = output.to_json(project1)
+        expected_file = (
+            self.data / "dependencies" / "resolved_dependencies_cocoapods.json"
+        )
+        self.assertPipelineResultEqual(
+            expected_file, result_file, sort_dependencies=True
+        )
+
+    def test_scanpipe_resolved_dependencies_pip_inspect(self):
+        pipeline_name = "resolve_dependencies"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data / "dependencies" / "resolved_dependencies_pip.zip"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(
+            pipeline_name=pipeline_name,
+            selected_groups=["StaticResolver"],
+        )
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+        self.assertEqual(3, project1.codebaseresources.count())
+        self.assertEqual(4, project1.discoveredpackages.count())
+        self.assertEqual(17, project1.discovereddependencies.count())
+
+        result_file = output.to_json(project1)
+        expected_file = self.data / "dependencies" / "resolved_dependencies_pip.json"
+        self.assertPipelineResultEqual(
+            expected_file,
+            result_file,
+        )
+
+    def test_scanpipe_resolved_dependencies_nuget(self):
+        pipeline_name = "resolve_dependencies"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data / "dependencies" / "resolved_dependencies_nuget.zip"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(
+            pipeline_name=pipeline_name,
+            selected_groups=["StaticResolver"],
+        )
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+        self.assertEqual(3, project1.codebaseresources.count())
+        self.assertEqual(34, project1.discoveredpackages.count())
+        self.assertEqual(108, project1.discovereddependencies.count())
+
+        result_file = output.to_json(project1)
+        expected_file = self.data / "dependencies" / "resolved_dependencies_nuget.json"
+        self.assertPipelineResultEqual(
+            expected_file,
+            result_file,
+            sort_dependencies=True,
+        )
 
     def test_scanpipe_scan_codebase_can_process_wheel(self):
         pipeline_name = "scan_codebase"

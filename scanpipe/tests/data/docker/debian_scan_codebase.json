@@ -17,6 +17,7 @@
         {
           "pipeline_name": "analyze_docker_image",
           "status": "not_started",
+          "selected_groups": null,
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
@@ -276,6 +277,8 @@
         ]
       },
       "package_uid": "pkg:deb/ubuntu/libncurses5@6.1-1ubuntu1.18.04?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [
         "debian_installed_status_db",
         "debian_copyright_in_package",
@@ -414,6 +417,8 @@
         ]
       },
       "package_uid": "pkg:deb/ubuntu/libndp0@1.4-2ubuntu0.16.04.1?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [
         "debian_installed_status_db",
         "debian_copyright_in_package",
