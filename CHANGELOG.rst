@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.6.4 (unreleased)
+v34.7.0 (2024-07-02)
 --------------------
 
 - Add all "classify" plugin fields from scancode-toolkit on the CodebaseResource model.
