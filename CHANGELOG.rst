@@ -34,6 +34,9 @@ v34.6.4 (unreleased)
   and improvements see https://github.com/nexB/scancode-toolkit/releases/tag/v32.2.0
   and https://github.com/nexB/scancode-toolkit/releases/tag/v32.2.1
 
+- Add support for providing pipeline "selected_groups" in the ``run`` entry point.
+  https://github.com/nexB/scancode.io/issues/1306
+
 v34.6.3 (2024-06-21)
 --------------------
 

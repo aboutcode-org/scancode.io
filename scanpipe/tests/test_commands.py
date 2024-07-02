@@ -660,7 +660,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
     def test_scanpipe_management_command_run(self):
         expected = (
-            "Error: the following arguments are required: pipelines, input_location"
+            "Error: the following arguments are required: PIPELINE_NAME, input_location"
         )
         with self.assertRaisesMessage(CommandError, expected):
             call_command("run")
@@ -680,6 +680,24 @@ class ScanPipeManagementCommandTest(TestCase):
 
         json_data = json.loads(out.getvalue())
         self.assertEqual(3, len(json_data["files"]))
+
+        # Multiple pipeline and selected_groups are supported
+        out = StringIO()
+        with redirect_stdout(out):
+            options = [
+                "inspect_packages:Static Resolver",
+                "do_nothing:Group1,Group2",
+                input_location,
+            ]
+            call_command("run", *options)
+
+        json_data = json.loads(out.getvalue())
+        runs = json_data["headers"][0]["runs"]
+        self.assertEqual("inspect_packages", runs[0]["pipeline_name"])
+        self.assertEqual(["Static Resolver"], runs[0]["selected_groups"])
+
+        self.assertEqual("do_nothing", runs[1]["pipeline_name"])
+        self.assertEqual(["Group1", "Group2"], runs[1]["selected_groups"])
 
     @mock.patch("scanpipe.models.Project.get_latest_output")
     @mock.patch("scanpipe.pipes.purldb.request_post")
