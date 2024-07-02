@@ -39,7 +39,7 @@ scanpipe_app.register_pipeline("do_nothing", DoNothing)
 scanpipe_app.register_pipeline("profile_step", ProfileStep)
 scanpipe_app.register_pipeline("raise_exception", RaiseException)
 
-FIXTURES_REGEN = os.environ.get("SCANCODEIO_TEST_FIXTURES_REGEN", 1)
+FIXTURES_REGEN = os.environ.get("SCANCODEIO_TEST_FIXTURES_REGEN", False)
 mocked_now = mock.Mock(now=lambda: datetime(2010, 10, 10, 10, 10, 10))
 
 
