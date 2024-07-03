@@ -168,7 +168,12 @@ def _clean_package_data(package_data):
     return package_data
 
 
-def update_or_create_package(project, package_data, codebase_resources=None):
+def update_or_create_package(
+    project,
+    package_data,
+    codebase_resources=None,
+    is_virtual=False,
+):
     """
     Get, update or create a DiscoveredPackage then return it.
     Use the `project` and `package_data` mapping to lookup and creates the
@@ -239,6 +244,7 @@ def update_or_create_dependency(
     project,
     dependency_data,
     for_package=None,
+    resolved_to_package=None,
     datafile_resource=None,
     datasource_id=None,
     strip_datafile_path_root=False,
@@ -254,33 +260,81 @@ def update_or_create_dependency(
     corresponding CodebaseResource for `datafile_path`. This is used in the case
     where Dependency data is imported from a scancode-toolkit scan, where the
     root path segments are not stripped for `datafile_path`.
+    If the dependency is resolved and a resolved package is created, we have the
+    corresponsing package_uid at `resolved_to`.
     """
-    dependency = None
-    dependency_uid = dependency_data.get("dependency_uid")
-
     if ignore_dependency_scope(project, dependency_data):
         return  # Do not create the DiscoveredDependency record.
 
-    if not dependency_uid:
-        dependency_data["dependency_uid"] = uuid.uuid4()
-    else:
-        dependency = project.discovereddependencies.get_or_none(
-            dependency_uid=dependency_uid,
-        )
+    dependencies = get_dependencies(project, dependency_data)
 
-    if dependency:
-        dependency.update_from_data(dependency_data)
-    else:
+    for dependency in dependencies:
+        is_for_new_package = (
+            for_package
+            and dependency.for_package
+            and dependency.for_package != for_package
+        )
+        if is_for_new_package:
+            DiscoveredDependency.populate_dependency_uuid(dependency_data)
+            dependency = DiscoveredDependency.create_from_data(
+                project,
+                dependency_data,
+                for_package=for_package,
+                resolved_to_package=resolved_to_package,
+                datafile_resource=datafile_resource,
+                datasource_id=datasource_id,
+                strip_datafile_path_root=strip_datafile_path_root,
+            )
+            break
+
+        elif dependency:
+            dependency.update_from_data(dependency_data)
+            if resolved_to_package and not dependency.resolved_to_package:
+                dependency.update(resolved_to_package=resolved_to_package)
+            if for_package and not dependency.for_package:
+                dependency.update(for_package=for_package)
+
+    if not dependencies:
+        DiscoveredDependency.populate_dependency_uuid(dependency_data)
         dependency = DiscoveredDependency.create_from_data(
             project,
             dependency_data,
             for_package=for_package,
+            resolved_to_package=resolved_to_package,
             datafile_resource=datafile_resource,
             datasource_id=datasource_id,
             strip_datafile_path_root=strip_datafile_path_root,
         )
 
     return dependency
+
+
+def get_dependencies(project, dependency_data):
+    """
+    Given a `dependency_data` mapping, get a list of DiscoveredDependency objects
+    for that `project` with similar dependency data.
+    """
+    dependency = None
+    dependency_uid = dependency_data.get("dependency_uid")
+    extracted_requirement = dependency_data.get("extracted_requirement") or ""
+
+    dependencies = []
+    if not dependency_uid:
+        purl_data = DiscoveredDependency.extract_purl_data(dependency_data)
+        dependencies = DiscoveredDependency.objects.filter(
+            project=project,
+            extracted_requirement=extracted_requirement,
+            **purl_data,
+        )
+    else:
+        dependency = DiscoveredDependency.objects.get_or_none(
+            project=project,
+            dependency_uid=dependency_uid,
+        )
+        if dependency:
+            dependencies.append(dependency)
+
+    return dependencies
 
 
 def get_or_create_relation(project, relation_data):
@@ -420,10 +474,10 @@ class LoopProgress:
             yield item
 
 
+
 class ElapsedTimeProgress:
     """
-    A context manager for logging progress in loops based on a fixed elapsed time
-    period in seconds
+    A context manager for logging progress in loops based on a fixed elapsed time period in seconds
 
     Usage::
 
@@ -459,11 +513,10 @@ class ElapsedTimeProgress:
     def eta(self):
         run_time = timer() - self.start_time
         if self.current_progress:
-            return round(
-                run_time / self.current_progress * (100 - self.current_progress)
-            )
+            return round(run_time / self.current_progress * (100 - self.current_progress))
         else:
             return 0
+            
 
     def log_progress(self):
         elapsed_time = timer() - self.last_logged_time

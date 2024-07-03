@@ -37,7 +37,7 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class ScanPipeDockerPipesTest(TestCase):
-    data_path = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
     maxDiff = None
 
     def assertResultsEqual(self, expected_file, results, regen=FIXTURES_REGEN):
@@ -52,7 +52,7 @@ class ScanPipeDockerPipesTest(TestCase):
 
     def test_pipes_docker_get_image_data_contains_layers_with_relative_paths(self):
         extract_target = str(Path(tempfile.mkdtemp()) / "tempdir")
-        input_tarball = str(self.data_path / "docker-images.tar.gz")
+        input_tarball = str(self.data / "docker" / "docker-images.tar.gz")
 
         # Extract the image first
         images, errors = docker.extract_image_from_tarball(
@@ -64,7 +64,9 @@ class ScanPipeDockerPipesTest(TestCase):
 
         images_data = [docker.get_image_data(i) for i in images]
         results = json.dumps(images_data, indent=2)
-        expected_location = self.data_path / "docker-images.tar.gz-expected-data-1.json"
+        expected_location = (
+            self.data / "docker" / "docker-images.tar.gz-expected-data-1.json"
+        )
         self.assertResultsEqual(expected_location, results)
 
         # Extract the layers second
@@ -76,7 +78,9 @@ class ScanPipeDockerPipesTest(TestCase):
 
         images_data = [docker.get_image_data(i) for i in images]
         results = json.dumps(images_data, indent=2)
-        expected_location = self.data_path / "docker-images.tar.gz-expected-data-2.json"
+        expected_location = (
+            self.data / "docker" / "docker-images.tar.gz-expected-data-2.json"
+        )
         self.assertResultsEqual(expected_location, results)
 
     def test_pipes_docker_flag_whiteout_codebase_resources(self):
@@ -94,7 +98,7 @@ class ScanPipeDockerPipesTest(TestCase):
         self,
     ):
         extract_target = str(Path(tempfile.mkdtemp()) / "tempdir")
-        input_tarball = str(self.data_path / "image-with-symlinks/minitag.tar")
+        input_tarball = str(self.data / "image-with-symlinks" / "minitag.tar")
 
         # Extract the image first
         images, errors = docker.extract_image_from_tarball(
@@ -107,7 +111,7 @@ class ScanPipeDockerPipesTest(TestCase):
         images_data = [docker.get_image_data(i) for i in images]
         results = json.dumps(images_data, indent=2)
         expected_location = (
-            self.data_path / "image-with-symlinks/minitag.tar-expected-data-1.json"
+            self.data / "image-with-symlinks" / "minitag.tar-expected-data-1.json"
         )
         self.assertResultsEqual(expected_location, results)
 
@@ -121,7 +125,7 @@ class ScanPipeDockerPipesTest(TestCase):
         images_data = [docker.get_image_data(i) for i in images]
         results = json.dumps(images_data, indent=2)
         expected_location = (
-            self.data_path / "image-with-symlinks/minitag.tar-expected-data-2.json"
+            self.data / "image-with-symlinks" / "minitag.tar-expected-data-2.json"
         )
         self.assertResultsEqual(expected_location, results)
 

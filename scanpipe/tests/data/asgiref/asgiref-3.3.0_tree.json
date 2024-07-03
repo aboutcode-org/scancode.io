@@ -1,0 +1,82 @@
+{
+  "children": [
+    {
+      "name": "asgiref-3.3.0-py3-none-any.whl",
+      "path": "asgiref-3.3.0-py3-none-any.whl"
+    },
+    {
+      "name": "asgiref-3.3.0-py3-none-any.whl-extract",
+      "path": "asgiref-3.3.0-py3-none-any.whl-extract",
+      "children": [
+        {
+          "name": "asgiref",
+          "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
+          "children": [
+            {
+              "name": "__init__.py",
+              "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py"
+            },
+            {
+              "name": "compatibility.py",
+              "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py"
+            },
+            {
+              "name": "current_thread_executor.py",
+              "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py"
+            },
+            {
+              "name": "local.py",
+              "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py"
+            },
+            {
+              "name": "server.py",
+              "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py"
+            },
+            {
+              "name": "sync.py",
+              "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py"
+            },
+            {
+              "name": "testing.py",
+              "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py"
+            },
+            {
+              "name": "timeout.py",
+              "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py"
+            },
+            {
+              "name": "wsgi.py",
+              "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py"
+            }
+          ]
+        },
+        {
+          "name": "asgiref-3.3.0.dist-info",
+          "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info",
+          "children": [
+            {
+              "name": "LICENSE",
+              "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/LICENSE"
+            },
+            {
+              "name": "METADATA",
+              "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA"
+            },
+            {
+              "name": "RECORD",
+              "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/RECORD"
+            },
+            {
+              "name": "top_level.txt",
+              "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/top_level.txt"
+            },
+            {
+              "name": "WHEEL",
+              "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

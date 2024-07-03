@@ -34,20 +34,20 @@ from scanpipe.tests import make_resource_file
 
 
 class ScanPipeJsTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
 
     def test_scanpipe_pipes_js_sha1(self):
-        source_file = self.data_location / "d2d-javascript/from/main.js"
+        source_file = self.data / "d2d-javascript/from/main.js"
         with open(source_file) as f:
             source_text = f.read()
         result = js.sha1(source_text)
         self.assertEqual("d6bfcf7d1f8a00cc639b3a186a52453d37c52f61", result)
 
     def test_scanpipe_pipes_js_is_source_mapping_in_minified(self):
-        to_input_location = self.data_location / "d2d-javascript" / "to" / "main.js"
+        to_input_location = self.data / "d2d-javascript" / "to" / "main.js"
         to_dir = (
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
             "intelligent robotics platform.lpkg-extract/"
@@ -69,7 +69,7 @@ class ScanPipeJsTest(TestCase):
         self.assertEqual(True, result)
 
     def test_scanpipe_pipes_js_source_content_sha1_list(self):
-        to_input_location = self.data_location / "d2d-javascript" / "to" / "main.js.map"
+        to_input_location = self.data / "d2d-javascript" / "to" / "main.js.map"
         to_dir = (
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
             "intelligent robotics platform.lpkg-extract/"
@@ -91,7 +91,7 @@ class ScanPipeJsTest(TestCase):
         self.assertEqual(["d6bfcf7d1f8a00cc639b3a186a52453d37c52f61"], result)
 
     def test_scanpipe_pipes_js_get_map_sources(self):
-        to_input_location = self.data_location / "d2d-javascript" / "to" / "main.js.map"
+        to_input_location = self.data / "d2d-javascript" / "to" / "main.js.map"
         to_dir = (
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
             "intelligent robotics platform.lpkg-extract/"
@@ -115,8 +115,8 @@ class ScanPipeJsTest(TestCase):
         )
 
     def test_scanpipe_pipes_js_get_map_sources_content(self):
-        to_input_location = self.data_location / "d2d-javascript" / "to" / "main.js.map"
-        expected_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        to_input_location = self.data / "d2d-javascript" / "to" / "main.js.map"
+        expected_location = self.data / "d2d-javascript" / "from" / "main.js"
         to_dir = (
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
             "intelligent robotics platform.lpkg-extract/"
@@ -150,8 +150,8 @@ class ScanPipeJsTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         resource_files = [
-            self.data_location / "d2d-javascript" / "to" / "main.js.map",
-            self.data_location / "d2d-javascript" / "to" / "main.js",
+            self.data / "d2d-javascript" / "to" / "main.js.map",
+            self.data / "d2d-javascript" / "to" / "main.js",
         ]
         copy_inputs(resource_files, to_dir)
 
@@ -197,14 +197,12 @@ class ScanPipeJsTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         resource_files = [
-            self.data_location / "d2d-javascript" / "to" / "unmain.js.map",
-            self.data_location / "d2d-javascript" / "to" / "no_path_unmain.js.map",
+            self.data / "d2d-javascript" / "to" / "unmain.js.map",
+            self.data / "d2d-javascript" / "to" / "no_path_unmain.js.map",
         ]
         copy_inputs(resource_files, to_dir)
 
-        from_input_location = (
-            self.data_location / "d2d-javascript" / "from" / "unmain.js"
-        )
+        from_input_location = self.data / "d2d-javascript" / "from" / "unmain.js"
         from_dir = (
             self.project1.codebase_path
             / "from/project.tar.zst/modules/apps/adaptive-media/"
@@ -264,12 +262,10 @@ class ScanPipeJsTest(TestCase):
             "resources/adaptive_media/js"
         )
         to_dir.mkdir(parents=True)
-        to_map_input_location = (
-            self.data_location / "d2d-javascript" / "to" / "main.js.map"
-        )
+        to_map_input_location = self.data / "d2d-javascript" / "to" / "main.js.map"
         copy_input(to_map_input_location, to_dir)
 
-        from_input_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        from_input_location = self.data / "d2d-javascript" / "from" / "main.js"
         from_dir = (
             self.project1.codebase_path
             / "from/project.tar.zst/modules/apps/adaptive-media/"

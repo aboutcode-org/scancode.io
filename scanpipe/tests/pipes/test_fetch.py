@@ -32,7 +32,7 @@ from scanpipe.pipes import fetch
 
 
 class ScanPipeFetchPipesTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def test_scanpipe_pipes_fetch_get_fetcher(self):
         self.assertEqual(fetch.fetch_http, fetch.get_fetcher("http://a.b/f.z"))
