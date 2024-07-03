@@ -47,9 +47,11 @@ from summarycode.classify import LEGAL_STARTS_ENDS
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredPackage
 from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.pipes import ElapsedTimeProgress
 from scanpipe.pipes import LoopProgress
+from scanpipe.pipes import _clean_package_data
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
 from scanpipe.pipes import js
@@ -973,17 +975,20 @@ class AboutFileMapper:
                 continue
 
             # Create the Package using .ABOUT data and assign related codebase_resources
-            about_package = pipes.update_or_create_package(
+            about_package = update_or_create_package(
                 project=project,
                 package_data=package_data,
+                about_file=about_file,
                 codebase_resources=mapped_resources,
             )
             about_purls.add(about_package.purl)
             mapped_about_resources.append(about_file_resource)
 
             # Map the .ABOUT file resource to all related resources in the ``to/`` side.
+            # do not if they exists
             for mapped_resource in mapped_resources:
-                pipes.make_relation(
+                CodebaseRelation.objects.get_or_create(
+                    project=project,
                     from_resource=about_file_resource,
                     to_resource=mapped_resource,
                     map_type="about_file",
@@ -997,6 +1002,57 @@ class AboutFileMapper:
             about_file_companions.update(status=flag.ABOUT_MAPPED)
 
         return about_purls, mapped_about_resources
+
+
+def update_or_create_package(
+    project,
+    package_data,
+    about_file,
+    codebase_resources=None,
+    is_virtual=False,
+):
+    """
+    Get, update or create a DiscoveredPackage then return it.
+    Use the `project` and `package_data` mapping to lookup and creates the
+    DiscoveredPackage using its Package URL and package_uid as a unique key.
+    The package can be associated to `codebase_resources` providing a list or queryset
+    of resources.
+    """
+    purl_data = DiscoveredPackage.extract_purl_data(package_data)
+    package_data = _clean_package_data(package_data)
+
+    new_mapped_paths = sorted(ab.path for ab in about_file.mapped_resources)
+
+    packages = DiscoveredPackage.objects.filter(
+        project=project,
+        **purl_data,
+    )
+
+    already_mapped_about = False
+    for package in packages:
+        # check if this was already ABOUT mapped with this ABOUT file
+        existing_mapped_paths = sorted(
+            cbr.path for cbr in package.codebase_resources.all()
+        )
+        if new_mapped_paths == existing_mapped_paths:
+            already_mapped_about = True
+            break
+
+    # if mapped, create nothing
+    if not already_mapped_about:
+        package = DiscoveredPackage.create_from_data(project, package_data)
+
+    if package:
+        datasource_id = package_data.get("datasource_id") or ""
+        if datasource_id and datasource_id not in package.datasource_ids:
+            datasource_ids = package.datasource_ids.copy()
+            datasource_ids.append(datasource_id)
+            package.update(datasource_ids=datasource_ids)
+
+        if codebase_resources:
+            package.add_resources(codebase_resources)
+
+    return package
 
 
 def _get_matched_about_file(to_resource, about_files, logger=None):
