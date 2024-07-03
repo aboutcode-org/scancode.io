@@ -2296,14 +2296,14 @@ class ScanPipeModelsTest(TestCase):
 
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
 
-        package_score = PackageScore.create_from_data(package, scorecard_data, scoring_tool="OSSF")
+        package_score = PackageScore.create_from_data(package, scorecard_data, PackageScore.ScoringTool.OSSF)
 
         self.assertIsNotNone(package_score)
-        self.assertEqual(package_score.scoring_tool, "OSSF")
+        self.assertEqual(package_score.scoring_tool, PackageScore.ScoringTool.OSSF)
         self.assertEqual(package_score.score, "6.7")
 
         checks = package_score.discovered_packages_score_checks.all()
-        self.assertEqual(checks.count(), 14)
+        self.assertEqual(checks.count(), 15)
         self.assertEqual(checks[0].check_name, 'Code-Review')
         self.assertEqual(checks[0].check_score, '1')
 

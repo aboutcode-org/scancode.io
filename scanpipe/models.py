@@ -80,9 +80,9 @@ from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLMixin
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
-from ossf_scorecard.contrib.django.models import scorecard_checks_Mixin
-from ossf_scorecard.contrib.django.models import Package_score_Mixin
-from ossf_scorecard.contrib.django.utils import fetch_documentation_url
+from ossf_scorecard.contrib.django.models import ScorecardChecksMixin
+from ossf_scorecard.contrib.django.models import PackageScoreMixin
+from ossf_scorecard.contrib.django.utils import FetchDocumentationUrl
 from rest_framework.authtoken.models import Token
 from rq.command import send_stop_job_command
 from rq.exceptions import NoSuchJobError
@@ -3771,7 +3771,7 @@ class DiscoveredDependency(
 
 
 
-class PackageScore(UUIDPKModel, Package_score_Mixin):
+class PackageScore(UUIDPKModel, PackageScoreMixin):
 
     def __str__(self):
         return self.score or str(self.uuid)
@@ -3801,7 +3801,7 @@ class PackageScore(UUIDPKModel, Package_score_Mixin):
 
         final_data = {'score': str(scorecard_data.get('score')),
                       'scoring_tool_version': scorecard_data.get('scorecard').get('version'),
-                      'scoring_tool_documentation_url': fetch_documentation_url(
+                      'scoring_tool_documentation_url': FetchDocumentationUrl(
                           scorecard_data.get('checks')[0].get('documentation').get('url')
                       )}
 
@@ -3839,7 +3839,7 @@ class PackageScore(UUIDPKModel, Package_score_Mixin):
         return scorecard_object
 
 
-class ScorecardCheck(UUIDPKModel, scorecard_checks_Mixin):
+class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
 
     def __str__(self):
         return self.check_score or str(self.uuid)
