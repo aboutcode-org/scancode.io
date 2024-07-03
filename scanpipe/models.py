@@ -3770,7 +3770,6 @@ class DiscoveredDependency(
         )
 
 
-
 class PackageScore(UUIDPKModel, PackageScoreMixin):
 
     def __str__(self):
@@ -3788,33 +3787,32 @@ class PackageScore(UUIDPKModel, PackageScoreMixin):
 
     @classmethod
     @transaction.atomic()
-    def create_from_data(
-            cls,
-            DiscoveredPackage,
-            scorecard_data,
-            scoring_tool=None
-    ):
+    def create_from_data(cls, DiscoveredPackage, scorecard_data, scoring_tool=None):
         """
         Create ScoreCard Object from ScoreCard Json
         """
         scorecard_data = scorecard_data.copy()
 
-        final_data = {'score': str(scorecard_data.get('score')),
-                      'scoring_tool_version': scorecard_data.get('scorecard').get('version'),
-                      'scoring_tool_documentation_url': FetchDocumentationUrl(
-                          scorecard_data.get('checks')[0].get('documentation').get('url')
-                      )}
+        final_data = {
+            "score": str(scorecard_data.get("score")),
+            "scoring_tool_version": scorecard_data.get("scorecard").get("version"),
+            "scoring_tool_documentation_url": FetchDocumentationUrl(
+                scorecard_data.get("checks")[0].get("documentation").get("url")
+            ),
+        }
 
-        date_str = scorecard_data.get('date', None)
+        date_str = scorecard_data.get("date", None)
         if date_str:
 
-            naive_datetime = datetime.strptime(date_str, '%Y-%m-%d')
+            naive_datetime = datetime.strptime(date_str, "%Y-%m-%d")
 
-            score_date = timezone.make_aware(naive_datetime, timezone.get_current_timezone())
+            score_date = timezone.make_aware(
+                naive_datetime, timezone.get_current_timezone()
+            )
         else:
             score_date = timezone.now()
 
-        final_data['score_date'] = score_date
+        final_data["score_date"] = score_date
 
         scorecard_object = cls.objects.create(
             **final_data,
@@ -3823,18 +3821,20 @@ class PackageScore(UUIDPKModel, PackageScoreMixin):
         )
 
         # Create associated scorecard_checks
-        checks_data = scorecard_data.get('checks', [])
+        checks_data = scorecard_data.get("checks", [])
 
-
-        ScorecardCheck.objects.bulk_create([
-            ScorecardCheck(
-                check_name=check_data.get('name'),
-                check_score=check_data.get('score'),
-                reason=check_data.get('reason'),
-                details=check_data.get('details') or [],
-                for_package_score=scorecard_object
-            ) for check_data in checks_data
-        ])
+        ScorecardCheck.objects.bulk_create(
+            [
+                ScorecardCheck(
+                    check_name=check_data.get("name"),
+                    check_score=check_data.get("score"),
+                    reason=check_data.get("reason"),
+                    details=check_data.get("details") or [],
+                    for_package_score=scorecard_object,
+                )
+                for check_data in checks_data
+            ]
+        )
 
         return scorecard_object
 
@@ -3860,14 +3860,15 @@ class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
         Create a ScorecardCheck instance from provided data.
         """
         final_data = {
-            'check_name': check_data.get('name'),
-            'check_score': check_data.get('score'),
-            'reason': check_data.get('reason'),
-            'details': check_data.get('details', []),
-            'for_package_score': package_score,
+            "check_name": check_data.get("name"),
+            "check_score": check_data.get("score"),
+            "reason": check_data.get("reason"),
+            "details": check_data.get("details", []),
+            "for_package_score": package_score,
         }
         return cls.objects.create(**final_data)
-      
+
+
 def normalize_package_url_data(purl_mapping, ignore_nulls=False):
     """
     Normalize a mapping of purl data so database queries with

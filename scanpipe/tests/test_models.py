@@ -2293,10 +2293,10 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue("a" in paths)
 
     def test_scorecard_models(self):
-
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
-
-        package_score = PackageScore.create_from_data(package, scorecard_data, PackageScore.ScoringTool.OSSF)
+        package_score = PackageScore.create_from_data(
+            package, scorecard_data, PackageScore.ScoringTool.OSSF
+        )
 
         self.assertIsNotNone(package_score)
         self.assertEqual(package_score.scoring_tool, PackageScore.ScoringTool.OSSF)
@@ -2304,9 +2304,8 @@ class ScanPipeModelsTest(TestCase):
 
         checks = package_score.discovered_packages_score_checks.all()
         self.assertEqual(checks.count(), 15)
-        self.assertEqual(checks[0].check_name, 'Code-Review')
-        self.assertEqual(checks[0].check_score, '1')
-
+        self.assertEqual(checks[0].check_name, "Code-Review")
+        self.assertEqual(checks[0].check_score, "1")
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
