@@ -420,10 +420,10 @@ class LoopProgress:
             yield item
 
 
-
 class ElapsedTimeProgress:
     """
-    A context manager for logging progress in loops based on a fixed elapsed time period in seconds
+    A context manager for logging progress in loops based on a fixed elapsed time
+    period in seconds
 
     Usage::
 
@@ -459,10 +459,11 @@ class ElapsedTimeProgress:
     def eta(self):
         run_time = timer() - self.start_time
         if self.current_progress:
-            return round(run_time / self.current_progress * (100 - self.current_progress))
+            return round(
+                run_time / self.current_progress * (100 - self.current_progress)
+            )
         else:
             return 0
-            
 
     def log_progress(self):
         elapsed_time = timer() - self.last_logged_time

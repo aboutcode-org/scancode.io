@@ -276,15 +276,19 @@ def get_unique_unresolved_purls(project):
     for item in distinct_unresolved:
         pkg_type, namespace, name, extracted_requirement = item
         print(
-            'pkg_type: ', pkg_type,
-            'namespace: ', namespace,
-            'name: ', name,
-            'extracted_requirement: ', extracted_requirement
+            "pkg_type: ",
+            pkg_type,
+            "namespace: ",
+            namespace,
+            "name: ",
+            name,
+            "extracted_requirement: ",
+            extracted_requirement,
         )
         if range_class := RANGE_CLASS_BY_SCHEMES.get(pkg_type):
             try:
                 vers = range_class.from_native(extracted_requirement)
-                print('vers: ', vers)
+                print("vers: ", vers)
             except (InvalidVersionRange, InvalidVersion):
                 continue
 
