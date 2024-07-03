@@ -1364,9 +1364,10 @@ class ScanPipeD2DPipesTest(TestCase):
                 "flume/node/AbstractZooKeeperConfigurationProvider.class"
             )
         )
-        self.assertEqual(
-            about_file_mapper.get_matched_about_file(to_resource), about_path
-        )
+        path = about_file_mapper.get_matched_about_file(
+            to_resource
+        ).about_file_resource.path
+        self.assertEqual(path, about_path)
 
     def test_scanpipe_pipes_map_d2d_using_about(self):
         input_dir = self.project1.input_path
