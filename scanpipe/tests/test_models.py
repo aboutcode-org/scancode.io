@@ -58,9 +58,9 @@ from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import PackageScore
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
-from scanpipe.models import PackageScore
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.models import RunNotAllowedToStart
@@ -79,8 +79,8 @@ from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
-from scanpipe.tests import scorecard_data
 from scanpipe.tests import package_data2
+from scanpipe.tests import scorecard_data
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 
 scanpipe_app = apps.get_app_config("scanpipe")
