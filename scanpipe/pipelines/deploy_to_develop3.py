@@ -24,9 +24,7 @@ from scanpipe.pipelines.deploy_to_develop import DeployToDevelop
 
 
 class DeployToDevelop3(DeployToDevelop):
-    """
-    Temp pipeline to debug d2d.
-    """
+    """Temp pipeline to debug d2d."""
 
     download_inputs = False
     is_addon = True
@@ -41,4 +39,3 @@ class DeployToDevelop3(DeployToDevelop):
             cls.flag_deployed_from_resources_with_missing_license,
             cls.create_local_files_packages,
         )
-

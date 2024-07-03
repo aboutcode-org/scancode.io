@@ -471,7 +471,7 @@ class ScanPipeD2DPipesTest(TestCase):
 
         self.assertEqual(expected, results)
 
-    def test_scanpipe_pipes_d2d_get_indexable_qualified_java_paths_from_values_yields_correct_paths(# NOQA: E501
+    def test_scanpipe_pipes_d2d_get_indexable_qualified_java_paths_from_values_yields_correct_paths(  # NOQA: E501
         self,
     ):
         resource_values = [
@@ -1318,28 +1318,45 @@ class ScanPipeD2DPipesTest(TestCase):
         about_path = "from/flume-ng-node-1.9.0-sources.ABOUT"
 
         self.assertIn(
-            about_path, [ab.about_file_resource.path for ab in about_file_mapper.about_files]
+            about_path,
+            [ab.about_file_resource.path for ab in about_file_mapper.about_files],
         )
-        regexes = sorted(ab.about_resource_regex for ab in about_file_mapper.about_files)
-        expected = ['^.*flume\\-ng\\-node\\-.*\\.jar.*$', '^flume\\-ng\\-node\\-1\\.8\\.0\\.jar$']
-        self.assertEqual(
-            regexes, expected
+        regexes = sorted(
+            ab.about_resource_regex for ab in about_file_mapper.about_files
         )
-        names = sorted(ab.package_data.get("name") for ab in about_file_mapper.about_files)
+        expected = [
+            "^.*flume\\-ng\\-node\\-.*\\.jar.*$",
+            "^flume\\-ng\\-node\\-1\\.8\\.0\\.jar$",
+        ]
+        self.assertEqual(regexes, expected)
+        names = sorted(
+            ab.package_data.get("name") for ab in about_file_mapper.about_files
+        )
         self.assertEqual(
             names,
-            ['log4j', 'log4j'],
+            ["log4j", "log4j"],
         )
         about_notice_path = "from/flume-ng-node-1.9.0-sources.NOTICE"
         about_notice_file = self.project1.codebaseresources.get(path=about_notice_path)
         abf = sorted(
-            ab for ab in about_file_mapper.about_files
+            ab
+            for ab in about_file_mapper.about_files
             if ab.about_file_resource.path == about_path
         )
+        about_file_companions_by_about_files = {}
+        for about_file in abf:
+            about_file_path = about_file.about_file_resource.path
+            about_file_companions_by_about_files[about_file_path] = (
+                about_file_mapper.get_about_file_companions(about_file)
+            )
 
-        self.assertIn(
-            about_notice_file, about_file_mapper.get_about_file_companions(abf)
-        )
+        self.assertEqual(1, len(about_file_companions_by_about_files))
+        for (
+            about_file,
+            about_file_companions,
+        ) in about_file_companions_by_about_files.items():
+            self.assertTrue(about_file_companions.exists())
+            self.assertIn(about_notice_file, about_file_companions)
 
         to_resource = self.project1.codebaseresources.get(
             path=(
@@ -1399,8 +1416,9 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
         abf = [
-            ab for ab in about_file_mapper.about_files
-            if ab.about_file_resource.path==about_path
+            ab
+            for ab in about_file_mapper.about_files
+            if ab.about_file_resource.path == about_path
         ][0]
 
         self.assertIn(
@@ -1541,13 +1559,13 @@ class ScanPipeD2DPipesTest(TestCase):
             ).count(),
         )
 
-    def test_scanpipe_pipes_map_about_files_using_about_with_overlapping_about_resource_path_patterns(# NOQA
+    def test_scanpipe_pipes_map_about_files_using_about_with_overlapping_about_resource_path_patterns(  # NOQA
         self,
     ):
         input_dir = self.project1.input_path
         input_resources = [
-            self.data_location / "d2d/overlapping-about-patterns/to-codebase.zip",
-            self.data_location / "d2d/overlapping-about-patterns/from-abouts.zip",
+            self.data / "d2d/overlapping-about-patterns/to-codebase.zip",
+            self.data / "d2d/overlapping-about-patterns/from-abouts.zip",
         ]
         copy_inputs(input_resources, input_dir)
         self.from_files, self.to_files = d2d.get_inputs(self.project1)

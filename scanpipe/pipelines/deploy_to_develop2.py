@@ -20,17 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from scanpipe import pipes
-from scanpipe.pipelines import Pipeline
-from scanpipe.pipelines import group
+
+from scanpipe.pipelines.deploy_to_develop import DeployToDevelop
 from scanpipe.pipes import d2d
-from scanpipe.pipes import flag
-from scanpipe.pipes import matchcode
-from scanpipe.pipes import purldb
-from scanpipe.pipes import scancode
 
 
-class DeployToDevelop2(Pipeline):
+class DeployToDevelop2(DeployToDevelop):
     """
     Establish relationships between two code trees: deployment and development.
 
@@ -91,7 +86,6 @@ class DeployToDevelop2(Pipeline):
         map_about_files2(project=self.project, logger=self.log)
 
 
-
 def map_about_files2(project, logger=None):
     """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
     project_resources = project.codebaseresources
@@ -134,4 +128,3 @@ def map_about_files2(project, logger=None):
             f"{len(mapped_about_resources):,d} About files which "
             f"were mapped to resources in the to/ side."
         )
-
