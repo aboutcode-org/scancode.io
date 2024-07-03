@@ -150,17 +150,6 @@ class ScanPipePurlDBTest(TestCase):
         results = purldb.get_next_download_url()
         self.assertFalse(results)
 
-    def test_scanpipe_pipes_purldb_get_run_status(self):
-        now = timezone.now()
-        run = self.create_run(
-            pipeline="succeed",
-            task_start_date=now,
-            task_end_date=now,
-            task_exitcode=0,
-        )
-        status = purldb.get_run_status(run=run)
-        self.assertEqual("success", status)
-
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.is_available")
     def test_scanpipe_pipes_purldb_check_project_run_statuses(
