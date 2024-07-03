@@ -574,7 +574,7 @@ class ScanPipeScancodePipesTest(TestCase):
         pipeline_name = "inspect_packages"
         project1 = Project.objects.create(name="Analysis")
 
-        input_location = self.data / "dependencies" / "resolved_dependencies.zip"
+        input_location = self.data / "dependencies" / "resolved_dependencies_npm.zip"
         project1.copy_input_from(input_location)
 
         run = project1.add_pipeline(
@@ -589,7 +589,7 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual(7, project1.discovereddependencies.count())
 
         yarn_resource = project1.codebaseresources.get(
-            path="resolved_dependencies.zip-extract/yarn.lock"
+            path="resolved_dependencies_npm.zip-extract/yarn.lock"
         )
         lockfile_package_data = yarn_resource.package_data[0]
         scancode.create_packages_and_dependencies_from_mapping(

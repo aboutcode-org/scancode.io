@@ -15,6 +15,7 @@
         {
           "pipeline_name": "analyze_root_filesystem_or_vm_image",
           "status": "not_started",
+          "selected_groups": null,
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,

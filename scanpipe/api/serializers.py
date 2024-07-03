@@ -113,6 +113,7 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
             "pipeline_name",
             "status",
             "description",
+            "selected_groups",
             "project",
             "uuid",
             "created_date",

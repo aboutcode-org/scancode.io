@@ -35,7 +35,16 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
-        parser.add_argument("pipelines", help="Pipelines to run, comma-separated.")
+        parser.add_argument(
+            "pipelines",
+            metavar="PIPELINE_NAME",
+            nargs="+",
+            help=(
+                "One or more pipeline to run. "
+                "The pipelines executed based on their given order. "
+                'Groups can be provided using the "pipeline_name:group1,group2" syntax.'
+            ),
+        )
         parser.add_argument(
             "input_location", help="Input location: file, directory, and URL supported."
         )
@@ -49,7 +58,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         pipelines = options["pipelines"]
-        pipelines = [pipeline_name.strip() for pipeline_name in pipelines.split(",")]
         input_location = options["input_location"]
         output_format = options["format"]
         # Generate a random name for the project if not provided

@@ -354,16 +354,16 @@ Optional arguments:
 
 .. _cli_run:
 
-`$ run PIPELINE_NAME INPUT_LOCATION`
-------------------------------------
+`$ run PIPELINE_NAME [PIPELINE_NAME ...] input_location`
+--------------------------------------------------------
 
 A ``run`` command is available for executing pipelines and printing the results
 without providing any configuration. This can be useful for running a pipeline to get
 the results without the need to persist the data in the database or access the UI to
 review the results.
 
-.. tip:: You can run multiple pipelines by providing their names, comma-separated,
-  such as `pipeline1,pipeline2`.
+.. tip:: You can run multiple pipelines by providing their names, space-separated,
+  such as `pipeline1 pipeline2`.
 
 Optional arguments:
 
@@ -378,12 +378,16 @@ For example, running the ``inspect_packages`` pipeline on a manifest file:
 
     $ run inspect_packages path/to/package.json > results.json
 
+.. tip:: Use the "pipeline_name:group1,group2" syntax to select steps groups::
+
+    $ run inspect_packages:StaticResolver package.json > results.json
+
 In the following example, running the ``scan_codebase`` followed by the
 ``find_vulnerabilities`` pipelines on a codebase directory:
 
 .. code-block:: bash
 
-    $ run scan_codebase,find_vulnerabilities path/to/codebase/ > results.json
+    $ run scan_codebase find_vulnerabilities path/to/codebase/ > results.json
 
 Using a URL as input is also supported:
 
