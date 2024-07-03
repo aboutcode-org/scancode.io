@@ -3788,9 +3788,7 @@ class PackageScore(UUIDPKModel, PackageScoreMixin):
     @classmethod
     @transaction.atomic()
     def create_from_data(cls, DiscoveredPackage, scorecard_data, scoring_tool=None):
-        """
-        Create ScoreCard Object from ScoreCard Json
-        """
+        """Create ScoreCard Object from ScoreCard Json"""
         scorecard_data = scorecard_data.copy()
 
         final_data = {
@@ -3856,9 +3854,7 @@ class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
 
     @classmethod
     def create_from_data(cls, package_score, check_data):
-        """
-        Create a ScorecardCheck instance from provided data.
-        """
+        """Create a ScorecardCheck instance from provided data."""
         final_data = {
             "check_name": check_data.get("name"),
             "check_score": check_data.get("score"),
