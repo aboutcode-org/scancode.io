@@ -3825,12 +3825,13 @@ class PackageScore(UUIDPKModel, Package_score_Mixin):
         # Create associated scorecard_checks
         checks_data = scorecard_data.get('checks', [])
 
+
         ScorecardCheck.objects.bulk_create([
             ScorecardCheck(
                 check_name=check_data.get('name'),
                 check_score=check_data.get('score'),
                 reason=check_data.get('reason'),
-                details=check_data.get('details', []),
+                details=check_data.get('details') or [],
                 for_package_score=scorecard_object
             ) for check_data in checks_data
         ])
