@@ -282,21 +282,21 @@ scorecard_data = {
             "details": None,
             "documentation": {
                 "short": "Determines if the project requires human code review before "
-                         "pull requests (aka merge requests) are merged.",
+                "pull requests (aka merge requests) are merged.",
                 "url": "https://github.com/ossf/scorecard/blob/5d08c1cc11c1e45c2ab2a"
-                       "88adac0a18464f0216b/docs/checks.md#code-review",
+                "88adac0a18464f0216b/docs/checks.md#code-review",
             },
         },
         {
             "name": "Maintained",
             "score": 10,
             "reason": "30 commit(s) and 17 issue activity found in the last 90 days "
-                      "-- score normalized to 10",
+            "-- score normalized to 10",
             "details": None,
             "documentation": {
                 "short": 'Determines if the project is "actively maintained".',
                 "url": "https://github.com/ossf/scorecard/blob/5d08c1cc11c1e45c2ab2a88"
-                       "adac0a18464f0216b/docs/checks.md#maintained",
+                "adac0a18464f0216b/docs/checks.md#maintained",
             },
         },
         {
@@ -306,9 +306,9 @@ scorecard_data = {
             "details": None,
             "documentation": {
                 "short": "Determines if the project has an OpenSSF (formerly CII) Best "
-                         "Practices Badge.",
+                "Practices Badge.",
                 "url": "https://github.com/ossf/scorecard/blob/5d08c1cc11c1e45c2ab2a88"
-                       "adac0a18464f0216b/docs/checks.md#cii-best-practices",
+                "adac0a18464f0216b/docs/checks.md#cii-best-practices",
             },
         },
         {
@@ -318,12 +318,12 @@ scorecard_data = {
             "details": [
                 "Info: project has a license file: LICENSE.txt:0",
                 'Info: FSF or OSI recognized license: BSD 3-Clause "New" or "Revised"'
-                ' License: LICENSE.txt:0',
+                " License: LICENSE.txt:0",
             ],
             "documentation": {
                 "short": "Determines if the project has defined a license.",
                 "url": "https://github.com/ossf/scorecard/blob/5d08c1cc11c"
-                       "1e45c2ab2a88adac0a18464f0216b/docs/checks.md#license",
+                "1e45c2ab2a88adac0a18464f0216b/docs/checks.md#license",
             },
         },
         {
@@ -333,16 +333,16 @@ scorecard_data = {
             "details": None,
             "documentation": {
                 "short": "Determines if the project's GitHub Action workflows avoid "
-                         "dangerous patterns.",
+                "dangerous patterns.",
                 "url": "https://github.com/ossf/scorecard/blob/5d08c1cc11c1e45c2ab2a88a"
-                       "dac0a18464f0216b/docs/checks.md#dangerous-workflow",
+                "dac0a18464f0216b/docs/checks.md#dangerous-workflow",
             },
         },
         {
             "name": "Signed-Releases",
             "score": 10,
             "reason": "5 out of the last 5 releases have a total of 5 signed "
-                      "artifacts.",
+            "artifacts.",
             "details": [
                 "Info: provenance for release artifact: multiple.intoto.jsonl:"
                 " https://api.github.com/repos/pallets/flask/releases/assets/160813583",
@@ -357,9 +357,9 @@ scorecard_data = {
             ],
             "documentation": {
                 "short": "Determines if the project cryptographically signs release art"
-                         "ifacts.",
+                "ifacts.",
                 "url": "https://github.com/ossf/scorecard/blob/5d08c1cc11c1e45c2ab2a88"
-                       "adac0a18464f0216b/docs/checks.md#signed-releases",
+                "adac0a18464f0216b/docs/checks.md#signed-releases",
             },
         },
         {
@@ -376,9 +376,9 @@ scorecard_data = {
             ],
             "documentation": {
                 "short": "Determines if the project's workflows follow the princip"
-                         "le of least privilege.",
+                "le of least privilege.",
                 "url": "https://github.com/ossf/scorecard/blob/5d08c1cc11c1e45c2ab2a8"
-                       "8adac0a18464f0216b/docs/checks.md#token-permissions",
+                "8adac0a18464f0216b/docs/checks.md#token-permissions",
             },
         },
         {
@@ -388,23 +388,23 @@ scorecard_data = {
             "details": None,
             "documentation": {
                 "short": "Determines if the project has generated executable (bin"
-                         "ary) artifacts in the source repository.",
+                "ary) artifacts in the source repository.",
                 "url": "https://github.com/ossf/scorecard/blob/5d08c1cc11c1e45c2ab"
-                       "2a88adac0a18464f0216b/docs/checks.md#binary-artifacts",
+                "2a88adac0a18464f0216b/docs/checks.md#binary-artifacts",
             },
         },
         {
             "name": "Branch-Protection",
             "score": -1,
             "reason": "internal error: error during branchesHandler.setup: intern"
-                      "al error: githubv4.Query: "
-                      "Resource not accessible by integration",
+            "al error: githubv4.Query: "
+            "Resource not accessible by integration",
             "details": None,
             "documentation": {
                 "short": "Determines if the default and release branches are prote"
-                         "cted with GitHub's branch protection settings.",
+                "cted with GitHub's branch protection settings.",
                 "url": "https://github.com/ossf/scorecard/blob/5d08c1cc11c1e45c2ab"
-                       "2a88adac0a18464f0216b/docs/checks.md#branch-protection",
+                "2a88adac0a18464f0216b/docs/checks.md#branch-protection",
             },
         },
         {
@@ -428,9 +428,9 @@ scorecard_data = {
             ],
             "documentation": {
                 "short": "Determines if the project has declared and pinned the depen"
-                         "dencies of its build process.",
+                "dencies of its build process.",
                 "url": "https://github.com/ossf/scorecard/blob/5d08c1cc11c1e45c2ab"
-                       "2a88adac0a18464f0216b/docs/checks.md#pinned-dependencies",
+                "2a88adac0a18464f0216b/docs/checks.md#pinned-dependencies",
             },
         },
         {
@@ -441,7 +441,7 @@ scorecard_data = {
             "documentation": {
                 "short": "Determines if the project uses fuzzing.",
                 "url": "https://github.com/ossf/scorecard/blob/5d08c1cc11c1e45c2ab2a"
-                       "88adac0a18464f0216b/docs/checks.md#fuzzing",
+                "88adac0a18464f0216b/docs/checks.md#fuzzing",
             },
         },
         {
@@ -454,10 +454,10 @@ scorecard_data = {
             ],
             "documentation": {
                 "short": "Determines if the project is published as a package that othe"
-                         "rs can easily download, install, "
-                         "easily update, and uninstall.",
+                "rs can easily download, install, "
+                "easily update, and uninstall.",
                 "url": "https://github.com/ossf/scorecard/blob/5d08c1cc11c1e"
-                       "45c2ab2a88adac0a18464f0216b/docs/checks.md#packaging",
+                "45c2ab2a88adac0a18464f0216b/docs/checks.md#packaging",
             },
         },
         {
@@ -476,7 +476,7 @@ scorecard_data = {
             "documentation": {
                 "short": "Determines if the project has published a security policy.",
                 "url": "https://github.com/ossf/scorecard/blob/5d08c1cc11c1e45c2"
-                       "ab2a88adac0a18464f0216b/docs/checks.md#security-policy",
+                "ab2a88adac0a18464f0216b/docs/checks.md#security-policy",
             },
         },
         {
@@ -491,9 +491,9 @@ scorecard_data = {
             ],
             "documentation": {
                 "short": "Determines if the project has open, known unfixed vulnera"
-                         "bilities.",
+                "bilities.",
                 "url": "https://github.com/ossf/scorecard/blob/5d08c1cc11c1e45c2ab2"
-                       "a88adac0a18464f0216b/docs/checks.md#vulnerabilities",
+                "a88adac0a18464f0216b/docs/checks.md#vulnerabilities",
             },
         },
         {
@@ -504,7 +504,7 @@ scorecard_data = {
             "documentation": {
                 "short": "Determines if the project uses static code analysis.",
                 "url": "https://github.com/ossf/scorecard/blob/5d08c1cc11c1e45c2a"
-                       "b2a88adac0a18464f0216b/docs/checks.md#sast",
+                "b2a88adac0a18464f0216b/docs/checks.md#sast",
             },
         },
     ],
