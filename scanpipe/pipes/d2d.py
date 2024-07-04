@@ -171,7 +171,7 @@ def _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
         # compute the root of the packages on the source side
         from_source_root_parts = from_resource.path.strip("/").split("/")
         from_source_root = "/".join(
-            from_source_root_parts[: -match.matched_path_length]
+            from_source_root_parts[:-match.matched_path_length]
         )
         pipes.make_relation(
             from_resource=from_resource,
@@ -913,7 +913,14 @@ class AboutFileMapper:
         """
         mapped_to_resources = []
 
-        for to_resource in to_resources:
+        resources_count = to_resources.count()
+        steps = int(resources_count/1000) or 5
+        progress = LoopProgress(
+            total_iterations=resources_count,
+            logger=logger,
+            progress_step=steps,
+        )
+        for to_resource in progress.iter(to_resources):
             about_file = self.get_matched_about_file(
                 to_resource=to_resource, logger=logger
             )
@@ -945,7 +952,7 @@ class AboutFileMapper:
             name__in=companion_names
         )
 
-    def create_about_packages_relations(self, project):
+    def create_about_packages_relations(self, project, logger=None):
         """
         Create packages using About file package data, if the About file
         has mapped resources on the to/ codebase and creates the mappings
@@ -953,8 +960,14 @@ class AboutFileMapper:
         """
         about_purls = set()
         mapped_about_resources = []
+        len_abouts = len(self.about_files)
+        progress = LoopProgress(
+            total_iterations=len_abouts,
+            logger=logger,
+            progress_step=int(len_abouts/10) or 10,
+        )
 
-        for about_file in self.about_files:
+        for about_file in progress.iter(self.about_files):
             about_file_resource = about_file.about_file_resource
             package_data = about_file.package_data
 
@@ -1121,6 +1134,7 @@ def map_about_files(project, logger=None):
 
     about_purls, mapped_about_resources = about_mapper.create_about_packages_relations(
         project=project,
+        logger=logger,
     )
     if logger:
         logger(
