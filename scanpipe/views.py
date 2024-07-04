@@ -2089,7 +2089,6 @@ def run_detail_view(request, uuid):
         "run": run,
         "project": project,
         "webhook_subscriptions": project.webhooksubscriptions.all(),
-        "step_selection_form": PipelineRunStepSelectionForm(instance=run),
     }
 
     return render(request, template, context)
@@ -2126,7 +2125,7 @@ def pipeline_help_view(request, pipeline_name):
     return render(request, template, context)
 
 
-class RunStepSelectionFormView(ConditionalLoginRequired, FormAjaxMixin, UpdateView):
+class RunStepSelectionFormView(ConditionalLoginRequired, UpdateView):
     model = Run
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
@@ -2134,7 +2133,13 @@ class RunStepSelectionFormView(ConditionalLoginRequired, FormAjaxMixin, UpdateVi
     template_name = "scanpipe/includes/run_step_selection_form.html"
 
     def form_valid(self, form):
-        return HttpResponse("Submitted!")
+        form.save()
+        success_html_content = """
+        <div id="run-step-selection-box" class="box has-background-success-light">
+          Steps updated successfully.
+        </div>
+        """
+        return HttpResponse(success_html_content)
 
 
 class CodebaseResourceRawView(
