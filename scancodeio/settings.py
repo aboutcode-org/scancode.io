@@ -417,4 +417,4 @@ MATCHCODEIO_API_KEY = env.str("MATCHCODEIO_API_KEY", default="")
 
 # OpenSSF ScoreCard Integration
 
-SCORECARD_URL = env.str('SCORECARD_URL', default="")
+SCORECARD_URL = env.str("SCORECARD_URL", default="")
