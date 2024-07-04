@@ -245,3 +245,16 @@ class ScanPipeFormsTest(TestCase):
         choices = PipelineRunStepSelectionForm.get_step_choices(DoNothing)
         self.assertEqual(expected, choices)
         self.assertEqual({"selected_steps": ["step1", "step2"]}, form.initial)
+
+    def test_scanpipe_forms_pipeline_run_step_selection_form_save(self):
+        run = Run.objects.create(project=self.project1, pipeline_name="do_nothing")
+        data = {"selected_steps": "invalid"}
+        form = PipelineRunStepSelectionForm(data=data, instance=run)
+        self.assertFalse(form.is_valid())
+
+        data = {"selected_steps": ["step1"]}
+        form = PipelineRunStepSelectionForm(data=data, instance=run)
+        self.assertTrue(form.is_valid())
+        form.save()
+        run.refresh_from_db()
+        self.assertEqual(["step1"], run.selected_steps)
