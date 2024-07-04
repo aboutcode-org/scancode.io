@@ -1068,23 +1068,11 @@ def _get_matched_about_file(to_resource, about_files, logger=None):
         ):
             continue
 
-        if logger:
-            logger(
-                f"ABOUT file {about_file.about_file_resource.path} matched path of to/ "
-                f"{to_resource} using pattern {about_file.about_resource_regex}"
-            )
-
         # check if ignored
         is_ignored_resource = False
         for ignore_regex_pattern in about_file.ignored_resource_regexes:
             if regex_match(pattern=ignore_regex_pattern, string=to_resource_path):
                 is_ignored_resource = True
-                if logger:
-                    logger(
-                        f"ABOUT file {about_file.about_file_resource.path} matched "
-                        f"path of to/ {to_resource} IGNORED using pattern "
-                        f"{ignore_regex_pattern}"
-                    )
                 break
 
         if is_ignored_resource:
