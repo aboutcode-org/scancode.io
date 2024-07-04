@@ -1,6 +1,16 @@
 Changelog
 =========
 
+v34.7.1 (unreleased)
+--------------------
+
+- Add pipeline step selection for a run execution.
+  This allows to run a pipeline in an advanced mode allowing to skip some steps,
+  or restart from a step, like the last failed step.
+  The steps can be edited from the Run "status" modal using the "Select steps" button.
+  This is an advanced feature and should we used with caution.
+  https://github.com/nexB/scancode.io/issues/1303
+
 v34.7.0 (2024-07-02)
 --------------------
 

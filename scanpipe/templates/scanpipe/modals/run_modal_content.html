@@ -29,9 +29,17 @@
         </div>
       {% endif %}
       {% if run.status == run.Status.NOT_STARTED or run.status == run.Status.QUEUED %}
-        <a href="{% url 'project_delete_pipeline' project.slug run.uuid %}" class="execute-pipeline-link has-text-danger ml-3">
+        <a href="{% url 'project_delete_pipeline' project.slug run.uuid %}" class="execute-pipeline-link has-text-danger ml-2">
           <i class="fa-solid fa-trash-alt"></i>
           Delete pipeline
+        </a>
+        <a href="#" class="ml-4"
+           hx-get="{% url 'project_run_step_selection' run.uuid %}"
+           hx-target="#run-step-selection-box"
+           hx-swap="outerHTML"
+        >
+          <i class="fa-regular fa-square-check"></i>
+          Select steps
         </a>
       {% endif %}
       {% if run.task_exitcode %}
@@ -59,6 +67,7 @@
         </a>
       {% endif %}
     </div>
+    <div id="run-step-selection-box"></div>
     <div class="field is-grouped is-grouped-multiline">
       {% if run.execution_time %}
         <div class="control">

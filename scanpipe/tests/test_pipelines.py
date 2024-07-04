@@ -143,6 +143,33 @@ class ScanPipePipelinesTest(TestCase):
         self.assertIn("Step [raise_exception_step] starting", run.log)
         self.assertIn("Pipeline failed", run.log)
 
+    @mock.patch("scanpipe.tests.pipelines.do_nothing.DoNothing.step1")
+    @mock.patch("scanpipe.tests.pipelines.do_nothing.DoNothing.step2")
+    def test_scanpipe_pipeline_class_execute_with_selected_steps(self, step2, step1):
+        step1.__name__ = "step1"
+        step2.__name__ = "step2"
+
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("do_nothing")
+        pipeline = run.make_pipeline_instance()
+
+        run.selected_steps = ["step2", "not_existing_step"]
+        run.save()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode)
+        self.assertEqual("", out)
+
+        step1.assert_not_called()
+        step2.assert_called()
+
+        run.refresh_from_db()
+        self.assertIn("Pipeline [do_nothing] starting", run.log)
+        self.assertIn("Step [step1] skipped", run.log)
+        self.assertIn("Step [step2] starting", run.log)
+        self.assertIn("Step [step2] completed", run.log)
+        self.assertIn("Pipeline completed", run.log)
+
     def test_scanpipe_pipeline_class_download_inputs_attribute(self):
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("do_nothing")

@@ -1775,6 +1775,9 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     selected_groups = models.JSONField(
         null=True, blank=True, validators=[validate_none_or_list]
     )
+    selected_steps = models.JSONField(
+        null=True, blank=True, validators=[validate_none_or_list]
+    )
 
     objects = RunQuerySet.as_manager()
 

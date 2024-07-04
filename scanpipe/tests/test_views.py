@@ -790,6 +790,44 @@ class ScanPipeViewsTest(TestCase):
         expected = '<span class="tag is-danger">Stopped</span>'
         self.assertContains(response, expected)
 
+    def test_scanpipe_views_project_run_step_selection_view(self):
+        run = self.project1.add_pipeline("do_nothing")
+        url = reverse("project_run_step_selection", args=[run.uuid])
+
+        response = self.client.get(url)
+        expected_input1 = (
+            '<input type="checkbox" name="selected_steps" value="step1" '
+            'id="id_selected_steps_0" checked>'
+        )
+        self.assertContains(response, expected_input1)
+        expected_input2 = (
+            '<input type="checkbox" name="selected_steps" value="step2" '
+            'id="id_selected_steps_1" checked>'
+        )
+        self.assertContains(response, expected_input2)
+
+        response = self.client.post(url, data={"selected_steps": ["invalid"]})
+        expected = "Select a valid choice. invalid is not one of the available choices."
+        self.assertContains(response, expected, html=True)
+
+        response = self.client.post(url, data={"selected_steps": ["step1"]})
+        expected = (
+            '<div id="run-step-selection-box" class="box has-background-success-light">'
+            "Steps updated successfully."
+            "</div>"
+        )
+        self.assertContains(response, expected, html=True)
+        run.refresh_from_db()
+        self.assertEqual(["step1"], run.selected_steps)
+        response = self.client.get(url)
+        self.assertContains(response, expected_input1)
+        # Not checked anymore in the initial data
+        expected_input2 = (
+            '<input type="checkbox" name="selected_steps" value="step2" '
+            'id="id_selected_steps_1">'
+        )
+        self.assertContains(response, expected_input2)
+
     def test_scanpipe_views_pipeline_help_view(self):
         url = reverse("pipeline_help", args=["not_existing_pipeline"])
         response = self.client.get(url)
