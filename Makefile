@@ -36,6 +36,7 @@ SCANCODEIO_DB_USER=scancodeio
 SCANCODEIO_DB_PASSWORD=scancodeio
 POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
 DATE=$(shell date +"%Y-%m-%d_%H%M")
+SCANCODEIO_PORT=8001
 
 # Use sudo for postgres, only on Linux
 UNAME := $(shell uname)
@@ -130,7 +131,7 @@ sqlitedb:
 	@$(MAKE) migrate
 
 run:
-	${MANAGE} runserver 8001 --insecure
+	${MANAGE} runserver ${SCANCODEIO_PORT} --insecure
 
 test:
 	@echo "-> Run the test suite"
