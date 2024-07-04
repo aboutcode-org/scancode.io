@@ -114,6 +114,7 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
             "status",
             "description",
             "selected_groups",
+            "selected_steps",
             "project",
             "uuid",
             "created_date",
