@@ -24,6 +24,8 @@ import json
 import sys
 from pathlib import Path
 
+import saneyaml
+
 from attributecode.model import About
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
@@ -152,8 +154,16 @@ def resolve_pypi_packages(input_location):
 
 
 def resolve_about_package(input_location):
-    """Resolve the package from the ``input_location`` .ABOUT file."""
+    """
+    Return a mapping of DiscoveredPackage fields from the ``input_location`` .ABOUT file.
+    """
+    try:
+        saneyaml.load(open(input_location))
+    except Exception as e:
+        raise Exception(f"Failed to load ABOUT file: {input_location}") from e
+
     about = About(location=input_location)
+
     about_data = about.as_dict()
     package_data = about_data.copy()
 
@@ -162,23 +172,25 @@ def resolve_about_package(input_location):
         for field_name, value in package_url_data.items():
             if value:
                 package_data[field_name] = value
+            else:
+                # clean from redundant discrete fields
+                package_data.pop(field_name, None)
 
-    package_data["extra_data"] = {}
+    extra_data = package_data["extra_data"] = {}
 
     if about_resource := about_data.get("about_resource"):
-        package_data["filename"] = list(about_resource.keys())[0]
+        extra_data["about_resource"] = list(about_resource.keys())[0]
 
     if ignored_resources := about_data.get("ignored_resources"):
-        package_data["extra_data"]["ignored_resources"] = list(ignored_resources.keys())
+        extra_data["ignored_resources"] = list(ignored_resources.keys())
 
-    populate_license_notice_fields_about(package_data, about_data)
+    populate_license_notice_fields_about(package_data=package_data, about_data=about_data)
 
     for field_name, value in about_data.items():
         if field_name.startswith("checksum_"):
             package_data[field_name.replace("checksum_", "")] = value
 
-    package_data = DiscoveredPackage.clean_data(package_data)
-    return package_data
+    return DiscoveredPackage.clean_data(package_data)
 
 
 def populate_license_notice_fields_about(package_data, about_data):

@@ -830,8 +830,9 @@ class AboutFile:
             )
             return
 
-        files_pattern = package_data.get("filename")
-        if not files_pattern:
+        extra_data = package_data.get("extra_data") or {}
+        about_resource = extra_data.get("about_resource")
+        if not about_resource:
             # Cannot map anything without the "about_resource" path pattern.
             project.add_error(
                 description="ABOUT file does not have about_resource",
@@ -841,18 +842,16 @@ class AboutFile:
             )
             return
 
-        about_resource_regex = convert_glob_to_django_regex(files_pattern)
+        about_resource_regex = convert_glob_to_django_regex(about_resource)
 
-        ignored_resources = []
         ignored_resource_regexes = []
-        if extra_data := package_data.get("extra_data"):
-            ignored_resources = extra_data.get("ignored_resources", [])
-            for pattern in ignored_resources:
-                ignored_resource_regexes.append(convert_glob_to_django_regex(pattern))
+        ignored_resources = extra_data.get("ignored_resources") or []
+        for pattern in ignored_resources:
+            ignored_resource_regexes.append(convert_glob_to_django_regex(pattern))
 
         return cls(
             about_file_resource=about_file_resource,
-            about_resource=files_pattern,
+            about_resource=about_resource,
             about_resource_regex=about_resource_regex,
             ignored_resources=ignored_resources,
             ignored_resource_regexes=ignored_resource_regexes,
@@ -1068,7 +1067,7 @@ def update_or_create_package(
     return package
 
 
-def _get_matched_about_file(to_resource, about_files, logger=None):
+def _get_matched_about_file(to_resource, about_files, logger=None, _debug=False):
     """
     Return the first AboutFile from the list of ``about_files`` that matches the
     ``to_resource`` Path. If not matched or ignored, return None.
@@ -1081,11 +1080,23 @@ def _get_matched_about_file(to_resource, about_files, logger=None):
         ):
             continue
 
+        if _debug and logger:
+            logger(
+                f"ABOUT file {about_file.about_file_resource.path} matched path of to/ "
+                f"{to_resource} using pattern {about_file.about_resource_regex}"
+            )
+
         # check if ignored
         is_ignored_resource = False
         for ignore_regex_pattern in about_file.ignored_resource_regexes:
             if regex_match(pattern=ignore_regex_pattern, string=to_resource_path):
                 is_ignored_resource = True
+                if _debug and logger:
+                    logger(
+                        f"ABOUT file {about_file.about_file_resource.path} matched "
+                        f"path of to/ {to_resource} IGNORED using pattern "
+                        f"{ignore_regex_pattern}"
+                    )
                 break
 
         if is_ignored_resource:

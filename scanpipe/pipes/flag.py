@@ -78,7 +78,7 @@ def flag_ignored_directories(project):
     return qs.update(status=IGNORED_DIRECTORY)
 
 
-def flag_ignored_patterns(project, patterns):
+def flag_ignored_patterns(project, patterns, logger=None, _debug=False):
     """Flag codebase resource as ``ignored`` status from list of ``patterns``."""
     if isinstance(patterns, str):
         patterns = patterns.splitlines()
@@ -86,6 +86,8 @@ def flag_ignored_patterns(project, patterns):
     update_count = 0
     for pattern in patterns:
         qs = project.codebaseresources.no_status().path_pattern(pattern)
+        if _debug and logger and qs.exists():
+            logger(f"flag_ignored_patterns: using {pattern} ignored paths:{[r.path for r in qs]}")
         update_count += qs.update(status=IGNORED_PATTERN)
 
     return update_count
