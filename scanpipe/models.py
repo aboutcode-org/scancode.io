@@ -2908,6 +2908,13 @@ class DiscoveredPackageQuerySet(
         )
         return self.annotate(resources_count=count_subquery)
 
+    def only_purl_fields(self):
+        """
+        Only select and return the UUID and PURL fields.
+        Minimum requirements to render a Package link in the UI.
+        """
+        return self.only("uuid", *PURL_FIELDS)
+
 
 class AbstractPackage(models.Model):
     """These fields should be kept in line with `packagedcode.models.PackageData`."""
