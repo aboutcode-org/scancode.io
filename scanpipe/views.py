@@ -1370,7 +1370,7 @@ class CodebaseResourceListView(
     prefetch_related = [
         Prefetch(
             "discovered_packages",
-            queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS),
+            queryset=DiscoveredPackage.objects.only_purl_fields(),
         )
     ]
     table_columns = [
@@ -1509,12 +1509,10 @@ class DiscoveredDependencyListView(
     template_name = "scanpipe/dependency_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("dependency", 100)
     prefetch_related = [
-        Prefetch(
-            "for_package", queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS)
-        ),
+        Prefetch("for_package", queryset=DiscoveredPackage.objects.only_purl_fields()),
         Prefetch(
             "resolved_to_package",
-            queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS),
+            queryset=DiscoveredPackage.objects.only_purl_fields(),
         ),
         Prefetch(
             "datafile_resource", queryset=CodebaseResource.objects.only("path", "name")
@@ -1853,7 +1851,10 @@ class DiscoveredPackageDetailsView(
                 "project_id",
             ),
         ),
-        "declared_dependencies__project",
+        Prefetch(
+            "declared_dependencies__resolved_to_package",
+            queryset=DiscoveredPackage.objects.only_purl_fields(),
+        ),
     ]
     tabset = {
         "essentials": {
