@@ -3,6 +3,7 @@
     <thead>
       <tr>
         <th>Package URL</th>
+        <th>Resolved to package</th>
         <th>Type</th>
         <th>Scope</th>
         <th>Datasource ID</th>
@@ -12,7 +13,14 @@
       {% for dependency in tab_data.fields.declared_dependencies.value %}
         <tr>
           <td title="{{ dependency.dependency_uid }}">
-            <a href="{{ dependency.get_absolute_url }}">{{ dependency.purl }}</a>
+            {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+            <a href="{% url 'dependency_detail' project.slug dependency.dependency_uid %}">{{ dependency.purl }}</a>
+          </td>
+          <td>
+            {% if dependency.resolved_to_package %}
+               {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+                <a href="{% url 'package_detail' project.slug dependency.resolved_to_package.uuid %}">{{ dependency.resolved_to_package.purl }}</a>
+            {% endif %}
           </td>
           <td>{{ dependency.type }}</td>
           <td class="break-normal">{{ dependency.scope }}</td>

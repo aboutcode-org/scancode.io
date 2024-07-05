@@ -75,6 +75,7 @@ from scanpipe.forms import AddLabelsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import ArchiveProjectForm
 from scanpipe.forms import EditInputSourceTagForm
+from scanpipe.forms import PipelineRunStepSelectionForm
 from scanpipe.forms import ProjectCloneForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectSettingsForm
@@ -1180,7 +1181,7 @@ class HTTPResponseHXRedirect(HttpResponseRedirect):
         self["HX-Redirect"] = self["Location"]
 
 
-class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, generic.UpdateView):
+class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, UpdateView):
     model = Project
     form_class = ProjectCloneForm
     template_name = "scanpipe/includes/project_clone_form.html"
@@ -1369,7 +1370,7 @@ class CodebaseResourceListView(
     prefetch_related = [
         Prefetch(
             "discovered_packages",
-            queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS),
+            queryset=DiscoveredPackage.objects.only_purl_fields(),
         )
     ]
     table_columns = [
@@ -1508,12 +1509,10 @@ class DiscoveredDependencyListView(
     template_name = "scanpipe/dependency_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("dependency", 100)
     prefetch_related = [
-        Prefetch(
-            "for_package", queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS)
-        ),
+        Prefetch("for_package", queryset=DiscoveredPackage.objects.only_purl_fields()),
         Prefetch(
             "resolved_to_package",
-            queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS),
+            queryset=DiscoveredPackage.objects.only_purl_fields(),
         ),
         Prefetch(
             "datafile_resource", queryset=CodebaseResource.objects.only("path", "name")
@@ -1852,7 +1851,10 @@ class DiscoveredPackageDetailsView(
                 "project_id",
             ),
         ),
-        "declared_dependencies__project",
+        Prefetch(
+            "declared_dependencies__resolved_to_package",
+            queryset=DiscoveredPackage.objects.only_purl_fields(),
+        ),
     ]
     tabset = {
         "essentials": {
@@ -2124,11 +2126,28 @@ def pipeline_help_view(request, pipeline_name):
     return render(request, template, context)
 
 
+class RunStepSelectionFormView(ConditionalLoginRequired, UpdateView):
+    model = Run
+    slug_field = "uuid"
+    slug_url_kwarg = "uuid"
+    form_class = PipelineRunStepSelectionForm
+    template_name = "scanpipe/includes/run_step_selection_form.html"
+
+    def form_valid(self, form):
+        form.save()
+        success_html_content = """
+        <div id="run-step-selection-box" class="box has-background-success-light">
+          Steps updated successfully.
+        </div>
+        """
+        return HttpResponse(success_html_content)
+
+
 class CodebaseResourceRawView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
-    generic.detail.SingleObjectMixin,
-    generic.base.View,
+    SingleObjectMixin,
+    generic.View,
 ):
     model = CodebaseResource
     slug_field = "path"

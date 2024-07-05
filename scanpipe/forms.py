@@ -29,6 +29,7 @@ from taggit.forms import TagField
 from taggit.forms import TagWidget
 
 from scanpipe.models import Project
+from scanpipe.models import Run
 from scanpipe.pipelines import convert_markdown_to_html
 from scanpipe.pipes import fetch
 
@@ -119,9 +120,11 @@ class InputsBaseForm(forms.Form):
             project.add_input_source(download_url=url)
 
 
-class GroupChoiceField(forms.MultipleChoiceField):
+class CheckboxChoiceField(forms.MultipleChoiceField):
     widget = forms.CheckboxSelectMultiple
 
+
+class SelectedGroupsCheckboxChoiceField(CheckboxChoiceField):
     def valid_value(self, value):
         """Accept all values."""
         return True
@@ -137,7 +140,7 @@ class PipelineBaseForm(forms.Form):
         initial=True,
         required=False,
     )
-    selected_groups = GroupChoiceField(required=False)
+    selected_groups = SelectedGroupsCheckboxChoiceField(required=False)
 
     def handle_pipeline(self, project):
         pipeline = self.cleaned_data["pipeline"]
@@ -531,3 +534,31 @@ class ProjectCloneForm(forms.Form):
 
     def save(self, *args, **kwargs):
         return self.project.clone(**self.cleaned_data)
+
+
+class PipelineRunStepSelectionForm(forms.ModelForm):
+    selected_steps = CheckboxChoiceField(required=False)
+
+    class Meta:
+        model = Run
+        fields = [
+            "selected_steps",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        if not kwargs.get("instance"):
+            raise ValueError("An Run object is required to instantiate this form.")
+
+        super().__init__(*args, **kwargs)
+        pipeline_class = self.instance.pipeline_class
+        choices = self.get_step_choices(pipeline_class)
+        self.fields["selected_steps"].choices = choices
+
+        # All step checkboxes are selected by default unless already defined on the run
+        if not self.instance.selected_steps:
+            self.initial["selected_steps"] = [choice[0] for choice in choices]
+
+    @staticmethod
+    def get_step_choices(pipeline_class):
+        """Return a `choices` list of tuple suitable for a Django ChoiceField."""
+        return [(step.__name__, step.__name__) for step in pipeline_class.get_steps()]

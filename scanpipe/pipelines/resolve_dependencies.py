@@ -57,7 +57,7 @@ class ResolveDependencies(ScanCodebase):
         """Locate package manifest files with a supported package resolver."""
         self.manifest_resources = resolve.get_manifest_resources(self.project)
 
-    @group("Static Resolver")
+    @group("StaticResolver")
     def scan_for_application_packages(self):
         """
         Scan and assemble application packages from package manifests
@@ -70,7 +70,7 @@ class ResolveDependencies(ScanCodebase):
             progress_logger=self.log,
         )
 
-    @group("Static Resolver")
+    @group("StaticResolver")
     def create_packages_and_dependencies(self):
         """
         Create the statically resolved packages and their dependencies
@@ -78,7 +78,7 @@ class ResolveDependencies(ScanCodebase):
         """
         scancode.process_package_data(self.project, static_resolve=True)
 
-    @group("Dynamic Resolver")
+    @group("DynamicResolver")
     def get_packages_from_manifest(self):
         """
         Resolve package data from lockfiles/requirement files with package
@@ -91,7 +91,7 @@ class ResolveDependencies(ScanCodebase):
             model="get_packages_from_manifest",
         )
 
-    @group("Dynamic Resolver")
+    @group("DynamicResolver")
     def create_resolved_packages(self):
         """
         Create the dynamically resolved packages and their dependencies

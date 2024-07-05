@@ -65,7 +65,7 @@ class InspectPackages(ScanCodebase):
             progress_logger=self.log,
         )
 
-    @group("Static Resolver")
+    @group("StaticResolver")
     def resolve_dependencies(self):
         """
         Create packages and dependency relationships from

@@ -1775,6 +1775,9 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     selected_groups = models.JSONField(
         null=True, blank=True, validators=[validate_none_or_list]
     )
+    selected_steps = models.JSONField(
+        null=True, blank=True, validators=[validate_none_or_list]
+    )
 
     objects = RunQuerySet.as_manager()
 
@@ -2904,6 +2907,13 @@ class DiscoveredPackageQuerySet(
             output_field=IntegerField(),
         )
         return self.annotate(resources_count=count_subquery)
+
+    def only_purl_fields(self):
+        """
+        Only select and return the UUID and PURL fields.
+        Minimum requirements to render a Package link in the UI.
+        """
+        return self.only("uuid", *PURL_FIELDS)
 
 
 class AbstractPackage(models.Model):

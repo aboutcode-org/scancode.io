@@ -122,6 +122,11 @@ urlpatterns = [
         name="run_status",
     ),
     path(
+        "run/<uuid:uuid>/step_selection/",
+        views.RunStepSelectionFormView.as_view(),
+        name="project_run_step_selection",
+    ),
+    path(
         "pipeline/<str:pipeline_name>/help/",
         views.pipeline_help_view,
         name="pipeline_help",
