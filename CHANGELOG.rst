@@ -11,6 +11,9 @@ v34.7.1 (unreleased)
   This is an advanced feature and should we used with caution.
   https://github.com/nexB/scancode.io/issues/1303
 
+- Display the resolved_to_package as link in the dependencies tab.
+  https://github.com/nexB/scancode.io/pull/1314
+
 v34.7.0 (2024-07-02)
 --------------------
 
