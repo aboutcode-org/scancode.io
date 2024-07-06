@@ -23,6 +23,7 @@
 import csv
 import decimal
 import json
+import math
 import re
 from operator import attrgetter
 from pathlib import Path
@@ -56,6 +57,9 @@ from scanpipe.pipes import docker
 from scanpipe.pipes import spdx
 
 scanpipe_app = apps.get_app_config("scanpipe")
+
+# max number of rows when creating an XLSX worksheet (excluding one hear row)
+MAX_ROWS_PER_SHEET = 1048576 - 1
 
 
 def safe_filename(filename):
@@ -294,7 +298,12 @@ model_name_to_worksheet_name = {
 }
 
 
-def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
+def queryset_to_xlsx_worksheet(
+    queryset,
+    workbook,
+    exclude_fields=(),
+    max_rows_per_sheet=MAX_ROWS_PER_SHEET,
+):
     """
     Add a new worksheet to the ``workbook`` ``xlsxwriter.Workbook`` using the
     ``queryset``. The ``queryset`` "model_name" is used as a name for the
@@ -303,23 +312,46 @@ def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
 
     Add an extra trailing "xlsx_errors" column with conversion error messages if
     any. Return a number of conversion errors.
+
+    If a worksheet contains more than 1,048,576 -1 ``max_rows_per_sheet`` rows,
+    then create multiple worksheets to stay below the maximum number of rows
+    limit per worksheet of spreadsheet tools like LibreOffice.
     """
     from scanpipe.api.serializers import get_serializer_fields
 
     model_class = queryset.model
     model_name = model_class._meta.model_name
-    worksheet_name = model_name_to_worksheet_name.get(model_name)
+    worksheet_base_name = model_name_to_worksheet_name.get(model_name)
 
     fields = get_serializer_fields(model_class)
     exclude_fields = exclude_fields or []
     fields = [field for field in fields if field not in exclude_fields]
 
-    return _add_xlsx_worksheet(
-        workbook=workbook,
-        worksheet_name=worksheet_name,
-        rows=queryset,
-        fields=fields,
-    )
+    worksheets = []
+    number_of_worksheets = math.ceil(queryset.count() / max_rows_per_sheet)
+
+    # split worksheet if QS contains more than MAX_ROWS rows
+    qs_start = 0
+    for i in range(1, number_of_worksheets + 1):
+        qs_stop = max_rows_per_sheet * i
+        sub_qs = queryset[qs_start:qs_stop]
+        qs_start = qs_stop
+
+        if i == 1:
+            worksheet_name = worksheet_base_name
+        else:
+            # only append number suffix if we have more than one worksheet
+            worksheet_name = f"{worksheet_base_name}{i}"
+
+        wrksh = _add_xlsx_worksheet(
+            workbook=workbook,
+            worksheet_name=worksheet_name,
+            rows=sub_qs,
+            fields=fields,
+        )
+        worksheets.append(wrksh)
+
+    return worksheets
 
 
 def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
@@ -438,7 +470,7 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
     return value, error
 
 
-def to_xlsx(project):
+def to_xlsx(project, max_rows_per_sheet=MAX_ROWS_PER_SHEET):
     """
     Generate output for the provided ``project`` in XLSX format.
     The output file is created in the ``project`` "output/" directory.
@@ -447,6 +479,10 @@ def to_xlsx(project):
     Note that the XLSX worksheets contain each an extra "xlsx_errors" column
     with possible error messages for a row when converting the data to XLSX
     exceed the limits of what can be stored in a cell.
+
+    If a worksheet contains more than ``max_rows_per_sheet`` rows, create
+    multiple worksheets to stay below the maximum number of rows limit per
+    worksheet of spreadsheet tools like LibreOffice.
     """
     output_file = project.get_output_file_path("results", "xlsx")
     exclude_fields = [
@@ -471,10 +507,17 @@ def to_xlsx(project):
     with xlsxwriter.Workbook(output_file) as workbook:
         for model_name in model_names:
             queryset = get_queryset(project, model_name)
-            queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields)
+            queryset_to_xlsx_worksheet(
+                queryset, workbook, exclude_fields, max_rows_per_sheet
+            )
 
         if layers_data := docker.get_layers_data(project):
-            _add_xlsx_worksheet(workbook, "LAYERS", layers_data, docker.layer_fields)
+            _add_xlsx_worksheet(
+                workbook=workbook,
+                worksheet_name="LAYERS",
+                rows=layers_data,
+                fields=docker.layer_fields,
+            )
 
     return output_file
 
