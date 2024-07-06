@@ -33,6 +33,7 @@ from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase
 
+import openpyxl
 import xlsxwriter
 from licensedcode.cache import get_licensing
 from lxml import etree  # nosec
@@ -220,9 +221,66 @@ class ScanPipeOutputPipesTest(TestCase):
 
         # Make sure the output can be generated even if the work_directory was wiped
         shutil.rmtree(project.work_directory)
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(12):
             output_file = output.to_xlsx(project=project)
         self.assertIn(output_file.name, project.output_root)
+
+    def test_scanpipe_pipes_outputs_to_xlsx_with_split_tabs(self):
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+
+        project = Project.objects.get(name="asgiref")
+        output_file = output.to_xlsx(project, max_rows_per_sheet=7)
+
+        workbook = openpyxl.load_workbook(
+            filename=output_file, read_only=True, data_only=True
+        )
+
+        expected_tab_names = [
+            "DEPENDENCIES",
+            "PACKAGES",
+            "RESOURCES",
+            "RESOURCES2",
+            "RESOURCES3",
+        ]
+        tab_names = sorted(wrksh.title for wrksh in workbook)
+        self.assertEqual(tab_names, expected_tab_names)
+
+        expected_paths = set(  # NOQA
+            [
+                "path",
+                "asgiref-3.3.0-py3-none-any.whl",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract/asgiref",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/LICENSE",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/RECORD",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",  # NOQA
+                "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",  # NOQA
+            ]
+        )
+
+        paths = []
+        # and insert each row as a new object
+        for worksheet in workbook:
+            if not worksheet.title.startswith("RESOURCE"):
+                continue
+            for row in worksheet.iter_rows(max_col=1, values_only=True):
+                paths.extend(row)
+
+        self.assertEqual(set(paths), expected_paths)
+
+        shutil.rmtree(project.work_directory)
 
     def test_scanpipe_pipes_outputs_vulnerability_as_cyclonedx(self):
         component_bom_ref = "pkg:pypi/django@4.0.10"

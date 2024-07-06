@@ -135,6 +135,26 @@ class ScanPipeInputPipesTest(TestCase):
         self.assertEqual(4, project2.discovereddependencies.count())
         self.assertEqual(0, project2.codebaserelations.count())
 
+    def test_scanpipe_pipes_input_load_inventory_from_project_xlsx_output_with_split_tabs(  # NOQA
+        self,
+    ):
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+
+        project1 = Project.objects.get(name="asgiref")
+        self.assertEqual(18, project1.codebaseresources.count())
+        self.assertEqual(2, project1.discoveredpackages.count())
+        self.assertEqual(4, project1.discovereddependencies.count())
+        self.assertEqual(0, project1.codebaserelations.count())
+        xlsx_output = output.to_xlsx(project1, max_rows_per_sheet=7)
+
+        project2 = Project.objects.create(name="project2")
+        input.load_inventory_from_xlsx(project2, xlsx_output)
+        self.assertEqual(18, project2.codebaseresources.count())
+        self.assertEqual(2, project2.discoveredpackages.count())
+        self.assertEqual(4, project2.discovereddependencies.count())
+        self.assertEqual(0, project2.codebaserelations.count())
+
     def test_scanpipe_pipes_input_clean_xlsx_data_to_model_data_resource(self):
         xlsx_data = {"field_does_not_exist": "value", "path": None}
         results = input.clean_xlsx_data_to_model_data(CodebaseResource, xlsx_data)

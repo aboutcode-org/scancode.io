@@ -20,7 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import re
 import shutil
+from collections import defaultdict
 from pathlib import Path
 
 from django.core.exceptions import FieldDoesNotExist
@@ -182,6 +184,15 @@ def clean_xlsx_data_to_model_data(model_class, xlsx_data):
     return cleaned_data
 
 
+# use well defined order to ensure objects are created in the correct order
+worksheet_loadind_order = {
+    "RESOURCES": 1,
+    "RELATIONS": 2,
+    "PACKAGES": 3,
+    "DEPENDENCIES": 4,
+}
+
+
 def load_inventory_from_xlsx(project, input_location):
     """
     Create packages, dependencies, resources, and relations loaded from XLSX file
@@ -189,13 +200,35 @@ def load_inventory_from_xlsx(project, input_location):
     """
     workbook = openpyxl.load_workbook(input_location, read_only=True, data_only=True)
 
-    for worksheet_name, model_class in worksheet_name_to_model.items():
-        if worksheet_name not in workbook:
-            continue
+    ends_with_digits = lambda s: s.endswith(tuple("0123456789"))  # NOQA
 
-        worksheet_data = get_worksheet_data(worksheet=workbook[worksheet_name])
-        for row_data in worksheet_data:
-            object_maker_func = model_to_object_maker_func.get(model_class)
-            cleaned_data = clean_xlsx_data_to_model_data(model_class, row_data)
-            if cleaned_data:
-                object_maker_func(project, cleaned_data)
+    # group worksheets by their tab base name, accounting for splits using
+    # suffixed tab names as in PACKAGES2 for worksheet with many rows
+    worksheets_by_base_name = defaultdict(list)
+    for wrksh in workbook:
+        tab_name = wrksh.title
+        if ends_with_digits(tab_name):
+            tab_name, _ = re.split(r"\d+", tab_name)
+        if tab_name not in worksheet_name_to_model:
+            continue
+        worksheets_by_base_name[tab_name].append(wrksh)
+
+    # then iterate of the worksheets grouped by tab name /model name
+    # and insert each row as a new object
+    worksheets_by_base_name = dict(
+        sorted(
+            worksheets_by_base_name.items(),
+            key=lambda kv: worksheet_loadind_order[kv[0]],
+        )
+    )
+
+    for worksheet_name, worksheets in worksheets_by_base_name.items():
+        model_class = worksheet_name_to_model[worksheet_name]
+
+        for worksheet in sorted(worksheets, key=lambda w: w.title):
+            worksheet_data = get_worksheet_data(worksheet=worksheet)
+            for row_data in worksheet_data:
+                cleaned_data = clean_xlsx_data_to_model_data(model_class, row_data)
+                if cleaned_data:
+                    object_maker_func = model_to_object_maker_func.get(model_class)
+                    object_maker_func(project, cleaned_data)
