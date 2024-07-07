@@ -65,13 +65,18 @@ def is_available():
 
 def fetch_scorecard_info(packages, logger):
     """
-    Fetch scorecard information for the given packages.
+    Extract platform, org, and repo from a given GitHub or GitLab URL.
 
-    Args:
-        packages (QuerySet): A queryset of package instances.
-        logger (Logger): A logger instance to log messages.
+    Args
+    ----
+        url (str): The URL to parse.
+
+    Returns
+    -------
+        RepoData: Named tuple containing 'platform', 'org', and 'repo' if the URL is
+        valid, else None.
+
     """
-
     for package in packages:
         url = package.vcs_url
         repo_data = extract_repo_info(url)
@@ -92,9 +97,11 @@ def extract_repo_info(url):
     Args:
         url (str): The URL to parse.
 
-    Returns:
+    Returns
+    -------
         RepoData: Named tuple containing 'platform', 'org', and 'repo' if the URL is
         valid, else None.
+
     """
     RepoData = namedtuple("RepoData", ["platform", "org", "repo"])
 
