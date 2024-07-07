@@ -688,6 +688,8 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     declared_license_expression = django_filters.filters.CharFilter(
         widget=HasValueDropdownWidget
     )
+    is_private = StrictBooleanFilter()
+    is_virtual = StrictBooleanFilter()
 
     class Meta:
         model = DiscoveredPackage
@@ -721,6 +723,8 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_vulnerable",
             "compliance_alert",
             "tag",
+            "is_private",
+            "is_virtual",
         ]
 
 
@@ -731,6 +735,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "is_runtime",
         "is_optional",
         "is_resolved",
+        "is_direct",
         "datasource_id",
         "is_vulnerable",
     ]
@@ -751,6 +756,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_runtime",
             "is_optional",
             "is_resolved",
+            "is_direct",
             "for_package",
             "resolved_to_package",
             "datafile_resource",
@@ -765,6 +771,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     is_runtime = StrictBooleanFilter()
     is_optional = StrictBooleanFilter()
     is_resolved = StrictBooleanFilter()
+    is_direct = StrictBooleanFilter()
     is_vulnerable = IsVulnerable(field_name="affected_by_vulnerabilities")
 
     class Meta:
@@ -783,6 +790,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_runtime",
             "is_optional",
             "is_resolved",
+            "is_direct",
             "datasource_id",
             "is_vulnerable",
         ]

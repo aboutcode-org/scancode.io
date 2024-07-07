@@ -46,7 +46,7 @@ from scanpipe.tests import resource_data1
 
 
 class ScanPipePipesTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def test_scanpipe_pipes_strip_root(self):
         input_paths = [
@@ -273,11 +273,11 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
     the tests.
     """
 
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def test_scanpipe_pipes_make_codebase_resource(self):
         p1 = Project.objects.create(name="Analysis")
-        resource_location = str(self.data_location / "notice.NOTICE")
+        resource_location = str(self.data / "aboutcode" / "notice.NOTICE")
 
         with self.assertRaises(ValueError) as cm:
             pipes.make_codebase_resource(p1, resource_location)
@@ -364,9 +364,9 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         project1 = Project.objects.create(name="Analysis")
 
         resource_files = [
-            self.data_location / "codebase" / "a.txt",
-            self.data_location / "codebase" / "b.txt",
-            self.data_location / "codebase" / "c.txt",
+            self.data / "codebase" / "a.txt",
+            self.data / "codebase" / "b.txt",
+            self.data / "codebase" / "c.txt",
         ]
         copy_inputs(resource_files, project1.codebase_path)
 
@@ -394,7 +394,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
 
     def test_scanpipe_pipes_get_resource_codebase_root(self):
         p1 = Project.objects.create(name="Analysis")
-        input_location = self.data_location / "codebase" / "a.txt"
+        input_location = self.data / "codebase" / "a.txt"
         file_location = copy_input(input_location, p1.codebase_path)
         codebase_root = pipes.get_resource_codebase_root(p1, file_location)
         self.assertEqual("", codebase_root)
@@ -413,7 +413,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
 
     def test_scanpipe_pipes_collect_and_create_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")
-        input_location = self.data_location / "codebase" / "a.txt"
+        input_location = self.data / "codebase" / "a.txt"
         to_dir = p1.codebase_path / "to"
         to_dir.mkdir()
         from_dir = p1.codebase_path / "from"

@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from scanpipe.pipelines import group
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import scancode
 
@@ -49,7 +50,7 @@ class InspectPackages(ScanCodebase):
             cls.flag_empty_files,
             cls.flag_ignored_resources,
             cls.scan_for_application_packages,
-            cls.create_packages_and_dependencies,
+            cls.resolve_dependencies,
         )
 
     def scan_for_application_packages(self):
@@ -57,15 +58,18 @@ class InspectPackages(ScanCodebase):
         Scan resources for package information to add DiscoveredPackage
         and DiscoveredDependency objects from detected package data.
         """
-        # `assemble` is set to False because here in this pipeline we
-        # only detect package_data in resources and create
-        # Package/Dependency instances directly instead of assembling
-        # the packages and assigning files to them
         scancode.scan_for_application_packages(
             project=self.project,
-            assemble=False,
+            assemble=True,
             package_only=True,
+            progress_logger=self.log,
         )
 
-    def create_packages_and_dependencies(self):
-        scancode.process_package_data(self.project)
+    @group("StaticResolver")
+    def resolve_dependencies(self):
+        """
+        Create packages and dependency relationships from
+        lockfiles or manifests containing pre-resolved
+        dependencies.
+        """
+        scancode.resolve_dependencies(project=self.project)

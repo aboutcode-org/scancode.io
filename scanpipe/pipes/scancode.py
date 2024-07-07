@@ -47,6 +47,8 @@ from scancode.cli import run_scan as scancode_run_scan
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
+from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import flag
 
 logger = logging.getLogger("scanpipe.pipes")
@@ -102,15 +104,15 @@ def extract_archive(location, target):
     Extract a single archive or compressed file at `location` to the `target`
     directory.
 
-    Return a list of extraction errors.
+    Return a dict of extraction errors, keyed by the resource location.
 
     Wrapper of the `extractcode.api.extract_archive` function.
     """
-    errors = []
+    errors = {}
 
     for event in extractcode_api.extract_archive(location, target):
-        if event.done:
-            errors.extend(event.errors)
+        if event.done and event.errors:
+            errors[str(event.source)] = event.errors
 
     return errors
 
@@ -125,7 +127,7 @@ def extract_archives(location, recurse=False):
 
     If `recurse` is True, extract nested archives-in-archives recursively.
 
-    Return a list of extraction errors.
+    Return a dict of extraction errors, keyed by the resource location.
 
     Wrapper of the `extractcode.api.extract_archives` function.
     """
@@ -135,10 +137,10 @@ def extract_archives(location, recurse=False):
         "all_formats": True,
     }
 
-    errors = []
+    errors = {}
     for event in extractcode_api.extract_archives(location, **options):
-        if event.done:
-            errors.extend(event.errors)
+        if event.done and event.errors:
+            errors[str(event.source)] = event.errors
 
     return errors
 
@@ -368,7 +370,7 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
 
 
 def scan_for_application_packages(
-    project, assemble=True, package_only=False, progress_logger=None
+    project, assemble=True, package_only=False, resource_qs=None, progress_logger=None
 ):
     """
     Run a package scan on resources without a status for a `project`,
@@ -383,7 +385,8 @@ def scan_for_application_packages(
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
     """
-    resource_qs = project.codebaseresources.no_status()
+    if not resource_qs:
+        resource_qs = project.codebaseresources.no_status()
 
     scan_func_kwargs = {
         "package_only": package_only,
@@ -473,7 +476,7 @@ def assemble_packages(project):
                     logger.info(f"Unknown Package assembly item type: {item!r}")
 
 
-def process_package_data(project):
+def process_package_data(project, static_resolve=False):
     """
     Create instances of DiscoveredPackage and DiscoveredDependency for `project`
     from the parsed package data present in the CodebaseResources of `project`.
@@ -482,39 +485,212 @@ def process_package_data(project):
     package/dependency objects are created directly from package data.
     """
     logger.info(f"Project {project} process_package_data:")
-    seen_resource_paths = set()
 
     for resource in project.codebaseresources.has_package_data():
-        if resource.path in seen_resource_paths:
-            continue
-
         logger.info(f"  Processing: {resource.path}")
         for package_mapping in resource.package_data:
-            pd = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
-            if not pd.can_assemble:
-                continue
+            create_packages_and_dependencies_from_mapping(
+                project=project,
+                resource=resource,
+                package_mapping=package_mapping,
+                find_package=False,
+                process_resolved=False,
+            )
 
-            logger.info(f"  Package data: {pd.purl}")
+    if static_resolve:
+        resolve_dependencies(project)
 
-            package_data = pd.to_dict()
-            dependencies = package_data.pop("dependencies")
 
-            package = None
-            if pd.purl:
-                package = pipes.update_or_create_package(
-                    project=project,
-                    package_data=package_data,
-                    codebase_resources=[resource],
-                )
+def create_packages_and_dependencies_from_mapping(
+    project,
+    resource,
+    package_mapping,
+    find_package=False,
+    process_resolved=False,
+):
+    """
+    Create or update packages and dependencies from a `package_mapping`,
+    for a respective `resource` and `project`.
 
-            for dep in dependencies:
+    If `find_package` is True, find the package with the respective purl data,
+    instead of trying to create it.
+    If `process_resolved` is True, also create packages and dependency relations
+    from the resolved packages of dependencies of this `package_mapping`.
+    """
+    pd = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
+    if not pd.can_assemble:
+        return
+
+    logger.info(f"  Package data: {pd.purl}")
+
+    package_data = pd.to_dict()
+    dependencies = package_data.pop("dependencies")
+
+    package = None
+    if pd.purl:
+        if find_package:
+            purl_data = DiscoveredPackage.extract_purl_data(package_mapping)
+            packages = DiscoveredPackage.objects.filter(
+                project=project,
+                **purl_data,
+            )
+
+            for package in packages:
+                if resource.location in package.datafile_paths:
+                    break
+        else:
+            package = pipes.update_or_create_package(
+                project=project,
+                package_data=package_data,
+                codebase_resources=[resource],
+            )
+
+    update_packages_and_dependencies(
+        project=project,
+        dependencies=dependencies,
+        package=package,
+        resource=resource,
+        datasource_id=pd.datasource_id,
+        process_resolved=process_resolved,
+    )
+
+
+def resolve_dependencies(project):
+    """
+    Match and merge resolved dependencies to create a dependency graph of
+    direct dependency relations between resolved packages.
+    """
+    logger.info(f"Project {project} resolve_dependencies:")
+    for resource in project.codebaseresources.has_package_data():
+        for package_mapping in resource.package_data:
+            create_packages_and_dependencies_from_mapping(
+                project=project,
+                resource=resource,
+                package_mapping=package_mapping,
+                find_package=True,
+                process_resolved=True,
+            )
+
+    match_and_resolve_dependencies(project)
+
+
+def update_packages_and_dependencies(
+    project,
+    dependencies,
+    package,
+    resource,
+    datasource_id,
+    process_resolved=True,
+):
+    """
+    Create DiscoveredPackage and DiscoveredDependency objects from
+    a package_data dependencies, and also from nested resolved packages
+    and dependencies if present.
+
+    If `process_resolved` is True, also create packages and dependency relations
+    from the resolved packages of `dependencies`.
+    """
+    for dep in dependencies:
+        resolved_package = dep.get("resolved_package") or {}
+        resolved_to_package = None
+        if process_resolved and resolved_package:
+            resolved_to_package = pipes.update_or_create_package(
+                project=project,
+                package_data=resolved_package,
+                codebase_resources=[resource],
+                is_virtual=True,
+            )
+
+            deps_from_resolved = resolved_package.get("dependencies") or []
+            for dep_from_resolved in deps_from_resolved:
                 pipes.update_or_create_dependency(
                     project=project,
-                    dependency_data=dep,
-                    for_package=package,
+                    dependency_data=dep_from_resolved,
+                    for_package=resolved_to_package,
                     datafile_resource=resource,
-                    datasource_id=pd.datasource_id,
+                    datasource_id=datasource_id,
                 )
+
+        pipes.update_or_create_dependency(
+            project=project,
+            dependency_data=dep,
+            for_package=package,
+            resolved_to_package=resolved_to_package,
+            datafile_resource=resource,
+            datasource_id=datasource_id,
+        )
+
+
+def match_and_resolve_dependencies(project):
+    """
+    From a project with both direct dependency relationships (contains
+    only the parent package and the requirement) and indirect dependency
+    relationships like in lockfiles (this contains the resolved package
+    and the requirement), match and update dependencies to contain the
+    full dependency graph.
+    """
+    for dependency in project.discovereddependencies.all():
+        if dependency.resolved_to_package:
+            continue
+
+        purl_data = DiscoveredDependency.extract_purl_data(
+            dependency_data={"purl": dependency.purl},
+            ignore_nulls=True,
+        )
+        extracted_requirement = dependency.extracted_requirement
+        if not extracted_requirement:
+            extracted_requirement = ""
+
+        matched_dependencies = DiscoveredDependency.objects.filter(
+            project=project,
+            extracted_requirement=dependency.extracted_requirement,
+            **purl_data,
+        )
+
+        other_dependencies = [
+            matched_dependency
+            for matched_dependency in matched_dependencies
+            if matched_dependency.purl != dependency.purl
+        ]
+        if not other_dependencies:
+            # We also have cases where multiple dependency requirements have one
+            # resolved package and the extracted requirements field is combined
+            matched_dependencies = DiscoveredDependency.objects.filter(
+                project=project,
+                **purl_data,
+            )
+            other_dependencies = [
+                matched_dependency
+                for matched_dependency in matched_dependencies
+                if (
+                    matched_dependency.purl != dependency.purl
+                    and dependency.extracted_requirement
+                    in matched_dependency.extracted_requirement
+                )
+            ]
+
+            # This should be done only in the case of lockfiles where only one version
+            # of a package is present for an environment
+            if not other_dependencies:
+                other_dependencies = [
+                    matched_dependency
+                    for matched_dependency in matched_dependencies
+                    if (
+                        matched_dependency.base_purl == dependency.base_purl
+                        and matched_dependency.resolved_to_package
+                    )
+                ]
+
+        if other_dependencies:
+            resolved_dependency = other_dependencies.pop()
+            dependency.update(
+                resolved_to_package=resolved_dependency.resolved_to_package,
+            )
+
+    # We need only the direct dependency relationships but not the from indirect
+    # dependency realtionships which are between the main package to resolved packages
+    indirect_dependencies = project.discovereddependencies.filter(is_direct=False)
+    indirect_dependencies.delete()
 
 
 def get_packages_with_purl_from_resources(project):

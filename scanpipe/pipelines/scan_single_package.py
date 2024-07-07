@@ -93,13 +93,7 @@ class ScanSinglePackage(Pipeline):
             copy_input(self.input_path, self.project.codebase_path)
             return
 
-        extract_errors = scancode.extract_archive(
-            location=self.input_path,
-            target=self.project.codebase_path,
-        )
-
-        if extract_errors:
-            self.add_error("\n".join(extract_errors))
+        self.extract_archive(self.input_path, self.project.codebase_path)
 
         # Reload the project env post-extraction as the scancode-config.yml file
         # may be located in one of the extracted archives.
