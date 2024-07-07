@@ -47,7 +47,7 @@ from scanpipe.tests import resource_data1
 
 
 class ScanPipeD2DPipesTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
@@ -534,9 +534,9 @@ class ScanPipeD2DPipesTest(TestCase):
 
     def test_scanpipe_pipes_d2d_find_java_packages(self):
         input_locations = [
-            self.data_location / "d2d" / "find_java_packages" / "Foo.java",
-            self.data_location / "d2d" / "find_java_packages" / "Baz.java",
-            self.data_location / "d2d" / "find_java_packages" / "Baz.class",
+            self.data / "d2d" / "find_java_packages" / "Foo.java",
+            self.data / "d2d" / "find_java_packages" / "Baz.java",
+            self.data / "d2d" / "find_java_packages" / "Baz.class",
         ]
 
         from_dir = self.project1.codebase_path / "from"
@@ -580,12 +580,12 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         resource_files = [
-            self.data_location / "d2d-javascript" / "to" / "main.js.map",
-            self.data_location / "d2d-javascript" / "to" / "main.js",
+            self.data / "d2d-javascript" / "to" / "main.js.map",
+            self.data / "d2d-javascript" / "to" / "main.js",
         ]
         copy_inputs(resource_files, to_dir)
 
-        from_input_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        from_input_location = self.data / "d2d-javascript" / "from" / "main.js"
         from_dir = (
             self.project1.codebase_path
             / "from/project.tar.zst/modules/apps/adaptive-media/"
@@ -626,14 +626,12 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         resource_files = [
-            self.data_location / "d2d-javascript" / "to" / "unmain.js.map",
-            self.data_location / "d2d-javascript" / "to" / "unmain.js",
+            self.data / "d2d-javascript" / "to" / "unmain.js.map",
+            self.data / "d2d-javascript" / "to" / "unmain.js",
         ]
         copy_inputs(resource_files, to_dir)
 
-        from_input_location = (
-            self.data_location / "d2d-javascript" / "from" / "unmain.js"
-        )
+        from_input_location = self.data / "d2d-javascript" / "from" / "unmain.js"
         from_dir = (
             self.project1.codebase_path
             / "from/project.tar.zst/modules/apps/adaptive-media/"
@@ -668,7 +666,7 @@ class ScanPipeD2DPipesTest(TestCase):
     @mock.patch("scanpipe.pipes.purldb.match_resources")
     @mock.patch("scanpipe.pipes.purldb.request_get")
     def test_scanpipe_pipes_d2d_match_js_purldb(self, mock_match_resource, mock_get):
-        to_location = self.data_location / "d2d-javascript" / "to" / "unmain.js.map"
+        to_location = self.data / "d2d-javascript" / "to" / "unmain.js.map"
         to_dir = (
             self.project1.codebase_path
             / "to/project.tar.zst/modules/apps/adaptive-media/"
@@ -719,8 +717,8 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertNotEqual(package_data["uuid"], package.uuid)
 
     def test_scanpipe_pipes_d2d_map_javascript_post_purldb_match(self):
-        to_map = self.data_location / "d2d-javascript" / "to" / "main.js.map"
-        to_mini = self.data_location / "d2d-javascript" / "to" / "main.js"
+        to_map = self.data / "d2d-javascript" / "to" / "main.js.map"
+        to_mini = self.data / "d2d-javascript" / "to" / "main.js"
         to_dir = (
             self.project1.codebase_path
             / "to/project.tar.zst/modules/apps/adaptive-media/"
@@ -773,12 +771,12 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         resource_files = [
-            self.data_location / "d2d-javascript" / "to" / "main.js.map",
-            self.data_location / "d2d-javascript" / "to" / "main.js",
+            self.data / "d2d-javascript" / "to" / "main.js.map",
+            self.data / "d2d-javascript" / "to" / "main.js",
         ]
         copy_inputs(resource_files, to_dir)
 
-        from_input_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        from_input_location = self.data / "d2d-javascript" / "from" / "main.js"
         from_dir = (
             self.project1.codebase_path
             / "from/project.tar.zst/modules/apps/adaptive-media/"
@@ -817,12 +815,12 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir1.mkdir(parents=True)
         to_resource_files1 = [
-            self.data_location / "d2d-javascript" / "to" / "main.js.map",
-            self.data_location / "d2d-javascript" / "to" / "main.js",
+            self.data / "d2d-javascript" / "to" / "main.js.map",
+            self.data / "d2d-javascript" / "to" / "main.js",
         ]
         copy_inputs(to_resource_files1, to_dir1)
 
-        to_resource_file3 = self.data_location / "d2d-javascript" / "to" / "unmain.js"
+        to_resource_file3 = self.data / "d2d-javascript" / "to" / "unmain.js"
         to_dir3 = (
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
             "intelligent robotics platform.lpkg-extract/"
@@ -832,7 +830,7 @@ class ScanPipeD2DPipesTest(TestCase):
         to_dir3.mkdir(parents=True)
         copy_input(to_resource_file3, to_dir3)
 
-        from_input_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        from_input_location = self.data / "d2d-javascript" / "from" / "main.js"
         from_dir1 = (
             self.project1.codebase_path
             / "from/project.tar.zst/modules/apps/adaptive-media/"
@@ -937,7 +935,7 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
             "resources/node_modules/foo-bar"
         )
-        to_input_location = self.data_location / "d2d-javascript/to/package.json"
+        to_input_location = self.data / "d2d-javascript/to/package.json"
         to_dir.mkdir(parents=True)
         copy_input(to_input_location, to_dir)
 
@@ -1038,7 +1036,7 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
             "resources/node_modules/foo-bar"
         )
-        to_input_location = self.data_location / "d2d/find_java_packages/Foo.java"
+        to_input_location = self.data / "d2d/find_java_packages/Foo.java"
         to_dir.mkdir(parents=True)
         copy_input(to_input_location, to_dir)
 
@@ -1073,8 +1071,8 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         to_resource_files = [
-            self.data_location / "d2d/find_java_packages/Baz.java",
-            self.data_location / "d2d/about_files/expected.json",
+            self.data / "d2d/find_java_packages/Baz.java",
+            self.data / "d2d/about_files/expected.json",
         ]
         copy_inputs(to_resource_files, to_dir)
 
@@ -1112,7 +1110,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(flag.IGNORED_MEDIA_FILE, media_file.status)
 
     def test_flag_undeployed_resources(self):
-        from_input_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        from_input_location = self.data / "d2d-javascript" / "from" / "main.js"
         from_dir = (
             self.project1.codebase_path
             / "from/project.tar.zst/modules/apps/adaptive-media/"
@@ -1136,7 +1134,7 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
             "resources/node_modules/foo-bar"
         )
-        to_input_location = self.data_location / "d2d/find_java_packages/Foo.java"
+        to_input_location = self.data / "d2d/find_java_packages/Foo.java"
         to_dir.mkdir(parents=True)
         copy_input(to_input_location, to_dir)
 
@@ -1167,10 +1165,10 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         from_dir.mkdir(parents=True)
         from_resource_files = [
-            self.data_location / "d2d/find_java_packages/Foo.java",
-            self.data_location / "d2d/find_java_packages/Baz.java",
-            self.data_location / "d2d/about_files/expected.json",
-            self.data_location / "codebase/a.txt",
+            self.data / "d2d/find_java_packages/Foo.java",
+            self.data / "d2d/find_java_packages/Baz.java",
+            self.data / "d2d/about_files/expected.json",
+            self.data / "codebase/a.txt",
         ]
         copy_inputs(from_resource_files, from_dir)
         pipes.collect_and_create_codebase_resources(self.project1)
@@ -1230,10 +1228,10 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         to_resource_files = [
-            self.data_location / "d2d/legal/project.LICENSE",
-            self.data_location / "d2d/legal/license_mit.md",
-            self.data_location / "d2d/legal/project_notice.txt",
-            self.data_location / "codebase/a.txt",
+            self.data / "d2d/legal/project.LICENSE",
+            self.data / "d2d/legal/license_mit.md",
+            self.data / "d2d/legal/project_notice.txt",
+            self.data / "codebase/a.txt",
         ]
         copy_inputs(to_resource_files, to_dir)
         pipes.collect_and_create_codebase_resources(self.project1)
@@ -1253,8 +1251,8 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         to_resource_files = [
-            self.data_location / "d2d/non_whitespace_file.txt",
-            self.data_location / "d2d/whitespace_file.txt",
+            self.data / "d2d/non_whitespace_file.txt",
+            self.data / "d2d/whitespace_file.txt",
         ]
         copy_inputs(to_resource_files, to_dir)
         pipes.collect_and_create_codebase_resources(self.project1)
@@ -1284,8 +1282,8 @@ class ScanPipeD2DPipesTest(TestCase):
     def test_scanpipe_pipes_create_about_file_indexes(self):
         input_dir = self.project1.input_path
         input_resources = [
-            self.data_location / "d2d/about_files/to-with-jar.zip",
-            self.data_location / "d2d/about_files/from-with-about-file.zip",
+            self.data / "d2d/about_files/to-with-jar.zip",
+            self.data / "d2d/about_files/from-with-about-file.zip",
         ]
         copy_inputs(input_resources, input_dir)
         self.from_files, self.to_files = d2d.get_inputs(self.project1)
@@ -1350,8 +1348,8 @@ class ScanPipeD2DPipesTest(TestCase):
     def test_scanpipe_pipes_map_d2d_using_about(self):
         input_dir = self.project1.input_path
         input_resources = [
-            self.data_location / "d2d/about_files/to-with-jar.zip",
-            self.data_location / "d2d/about_files/from-with-about-file.zip",
+            self.data / "d2d/about_files/to-with-jar.zip",
+            self.data / "d2d/about_files/from-with-about-file.zip",
         ]
         copy_inputs(input_resources, input_dir)
         self.from_files, self.to_files = d2d.get_inputs(self.project1)
@@ -1402,8 +1400,8 @@ class ScanPipeD2DPipesTest(TestCase):
         about_file_indexes.create_about_packages_relations(self.project1)
 
     def test_scanpipe_pipes_d2d_match_purldb_resources_post_process(self):
-        to_map = self.data_location / "d2d-javascript" / "to" / "main.js.map"
-        to_mini = self.data_location / "d2d-javascript" / "to" / "main.js"
+        to_map = self.data / "d2d-javascript" / "to" / "main.js.map"
+        to_mini = self.data / "d2d-javascript" / "to" / "main.js"
         to_dir = (
             self.project1.codebase_path
             / "to/project.tar.zst/modules/apps/adaptive-media/"
@@ -1468,8 +1466,8 @@ class ScanPipeD2DPipesTest(TestCase):
     def test_scanpipe_pipes_d2d_map_elfs(self):
         input_dir = self.project1.input_path
         input_resources = [
-            self.data_location / "d2d-elfs/to-data.zip",
-            self.data_location / "d2d-elfs/from-data.zip",
+            self.data / "d2d-elfs/to-data.zip",
+            self.data / "d2d-elfs/from-data.zip",
         ]
         copy_inputs(input_resources, input_dir)
         self.from_files, self.to_files = d2d.get_inputs(self.project1)
@@ -1499,8 +1497,8 @@ class ScanPipeD2DPipesTest(TestCase):
     def test_scanpipe_pipes_d2d_map_go_paths(self):
         input_dir = self.project1.input_path
         input_resources = [
-            self.data_location / "d2d-go/to-data.zip",
-            self.data_location / "d2d-go/from-data.zip",
+            self.data / "d2d-go/to-data.zip",
+            self.data / "d2d-go/from-data.zip",
         ]
         copy_inputs(input_resources, input_dir)
         self.from_files, self.to_files = d2d.get_inputs(self.project1)

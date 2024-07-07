@@ -1,15 +1,54 @@
 Changelog
 =========
 
-v34.6.4 (unreleased)
+v34.7.1 (unreleased)
+--------------------
+
+- Add pipeline step selection for a run execution.
+  This allows to run a pipeline in an advanced mode allowing to skip some steps,
+  or restart from a step, like the last failed step.
+  The steps can be edited from the Run "status" modal using the "Select steps" button.
+  This is an advanced feature and should we used with caution.
+  https://github.com/nexB/scancode.io/issues/1303
+
+- Display the resolved_to_package as link in the dependencies tab.
+  https://github.com/nexB/scancode.io/pull/1314
+
+v34.7.0 (2024-07-02)
 --------------------
 
 - Add all "classify" plugin fields from scancode-toolkit on the CodebaseResource model.
   https://github.com/nexB/scancode.io/issues/1275
 
+- Refine the extraction errors reporting to include the resource path for rendering
+  link to the related resources in the UI.
+  https://github.com/nexB/scancode.io/issues/1273
+
 - Add a ``flush-projects`` management command, to Delete all project data and their
   related work directories created more than a specified number of days ago.
   https://github.com/nexB/scancode.io/issues/1289
+
+- Update the ``inspect_packages`` pipeline to have an optional ``StaticResolver``
+  group to create resolved packages and dependency relationships from lockfiles
+  and manifests having pre-resolved dependencies. Also update this pipeline to
+  perform package assembly from multiple manifests and files to create
+  discovered packages. Also update the ``resolve_dependencies`` pipeline to have
+  the same ``StaticResolver`` group and mode the dynamic resolution part to a new
+  optional ``DynamicResolver`` group.
+  See https://github.com/nexB/scancode.io/pull/1244
+
+- Add a new attribute ``is_direct`` to the DiscoveredDependency model and two new
+  attributes ``is_private`` and ``is_virtual`` to the DiscoveredPackage model.
+  Also update the UIs to show these attributes and show the ``package_data`` field
+  contents for CodebaseResources in the ``extra_data`` tab.
+  See https://github.com/nexB/scancode.io/pull/1244
+
+- Update scancode-toolkit to version ``32.2.1``. For the complete list of updates
+  and improvements see https://github.com/nexB/scancode-toolkit/releases/tag/v32.2.0
+  and https://github.com/nexB/scancode-toolkit/releases/tag/v32.2.1
+
+- Add support for providing pipeline "selected_groups" in the ``run`` entry point.
+  https://github.com/nexB/scancode.io/issues/1306
 
 v34.6.3 (2024-06-21)
 --------------------

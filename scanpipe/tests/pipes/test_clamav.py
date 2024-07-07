@@ -31,7 +31,7 @@ from scanpipe.tests import make_resource_file
 
 
 class ScanPipeClamAVPipesTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     @mock.patch("clamd.ClamdNetworkSocket.multiscan")
     def test_scanpipe_pipes_clamav_scan_for_virus(self, mock_multiscan):

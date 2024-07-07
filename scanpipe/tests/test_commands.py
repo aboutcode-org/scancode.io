@@ -65,7 +65,7 @@ def raise_interrupt(run_pk):
 
 
 class ScanPipeManagementCommandTest(TestCase):
-    data_location = Path(__file__).parent / "data"
+    data = Path(__file__).parent / "data"
     pipeline_name = "analyze_docker_image"
     pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
     purldb_update_status_url = f"{purldb.PURLDB_API_URL}scan_queue/update_status/"
@@ -660,26 +660,44 @@ class ScanPipeManagementCommandTest(TestCase):
 
     def test_scanpipe_management_command_run(self):
         expected = (
-            "Error: the following arguments are required: pipelines, input_location"
+            "Error: the following arguments are required: PIPELINE_NAME, input_location"
         )
         with self.assertRaisesMessage(CommandError, expected):
             call_command("run")
 
         expected = "wrong_pipeline is not a valid pipeline."
         with self.assertRaisesMessage(CommandError, expected):
-            call_command("run", "wrong_pipeline", str(self.data_location))
+            call_command("run", "wrong_pipeline", str(self.data))
 
         expected = "bad_location not found."
         with self.assertRaisesMessage(CommandError, expected):
             call_command("run", "scan_single_package", "bad_location")
 
         out = StringIO()
-        input_location = self.data_location / "codebase"
+        input_location = self.data / "codebase"
         with redirect_stdout(out):
             call_command("run", "inspect_packages", input_location)
 
         json_data = json.loads(out.getvalue())
         self.assertEqual(3, len(json_data["files"]))
+
+        # Multiple pipeline and selected_groups are supported
+        out = StringIO()
+        with redirect_stdout(out):
+            options = [
+                "inspect_packages:StaticResolver",
+                "do_nothing:Group1,Group2",
+                input_location,
+            ]
+            call_command("run", *options)
+
+        json_data = json.loads(out.getvalue())
+        runs = json_data["headers"][0]["runs"]
+        self.assertEqual("inspect_packages", runs[0]["pipeline_name"])
+        self.assertEqual(["StaticResolver"], runs[0]["selected_groups"])
+
+        self.assertEqual("do_nothing", runs[1]["pipeline_name"])
+        self.assertEqual(["Group1", "Group2"], runs[1]["selected_groups"])
 
     @mock.patch("scanpipe.models.Project.get_latest_output")
     @mock.patch("scanpipe.pipes.purldb.request_post")
@@ -703,7 +721,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "status": f"scan indexed for scannable uri {scannable_uri_uuid}"
         }
         mock_get_latest_output.return_value = (
-            self.data_location / "scancode" / "is-npm-1.0.0_summary.json"
+            self.data / "scancode" / "is-npm-1.0.0_summary.json"
         )
         mock_download_get.return_value = mock.Mock(
             content=b"\x00",

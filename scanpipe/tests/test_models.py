@@ -49,6 +49,7 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from packagedcode.models import PackageData
+from packageurl import PackageURL
 from requests.exceptions import RequestException
 from rq.job import JobStatus
 
@@ -65,6 +66,7 @@ from scanpipe.models import RunNotAllowedToStart
 from scanpipe.models import UUIDTaggedItem
 from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.models import get_project_work_directory
+from scanpipe.models import normalize_package_url_data
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
@@ -84,8 +86,8 @@ User = get_user_model()
 
 
 class ScanPipeModelsTest(TestCase):
-    data_location = Path(__file__).parent / "data"
-    fixtures = [data_location / "asgiref-3.3.0_fixtures.json"]
+    data = Path(__file__).parent / "data"
+    fixtures = [data / "asgiref" / "asgiref-3.3.0_fixtures.json"]
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
@@ -375,7 +377,7 @@ class ScanPipeModelsTest(TestCase):
 
         uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
         self.project1.add_upload(uploaded_file)
-        self.project1.copy_input_from(self.data_location / "notice.NOTICE")
+        self.project1.copy_input_from(self.data / "aboutcode" / "notice.NOTICE")
         self.project1.add_input_source(filename="missing.zip", is_uploaded=True)
 
         uuid1, uuid2 = [
@@ -481,7 +483,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual("tag_value", input_source.tag)
 
     def test_scanpipe_project_model_add_downloads(self):
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         copy_input(file_location, self.project1.tmp_path)
 
         download = Download(
@@ -638,7 +640,7 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_project_get_settings_as_yml(self):
         self.assertEqual("{}\n", self.project1.get_settings_as_yml())
 
-        test_config_file = self.data_location / "settings" / "scancode-config.yml"
+        test_config_file = self.data / "settings" / "scancode-config.yml"
         config_file = copy_input(test_config_file, self.project1.input_path)
         env_from_test_config = self.project1.get_env().copy()
         self.project1.settings = env_from_test_config
@@ -666,7 +668,7 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_project_get_env(self):
         self.assertEqual({}, self.project1.get_env())
 
-        test_config_file = self.data_location / "settings" / "scancode-config.yml"
+        test_config_file = self.data / "settings" / "scancode-config.yml"
         copy_input(test_config_file, self.project1.input_path)
 
         expected = {
@@ -729,6 +731,17 @@ class ScanPipeModelsTest(TestCase):
         # The following function call always build and return the index
         expected = {"npm": ["devDependencies"], "pypi": ["tests", "build"]}
         self.assertEqual(expected, self.project1.get_ignored_dependency_scopes_index())
+
+    def test_scanpipe_normalize_package_url_data(self):
+        purl = PackageURL.from_string("pkg:npm/athena-express@6.0.4")
+        purl_data = normalize_package_url_data(purl_mapping=purl.to_dict())
+        self.assertEqual(purl_data.get("namespace"), "")
+
+        purl_data = normalize_package_url_data(
+            purl_mapping=purl.to_dict(),
+            ignore_nulls=True,
+        )
+        self.assertEqual(purl_data.get("namespace"), None)
 
     def test_scanpipe_project_get_ignored_vulnerabilities_set(self):
         self.project1.settings = {
@@ -1239,21 +1252,21 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected, output.getvalue())
 
     def test_scanpipe_input_source_model_str(self):
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         input_source = self.project1.add_input_source(
             filename=file_location.name, is_uploaded=True
         )
         self.assertEqual("filename=notice.NOTICE [uploaded]", str(input_source))
 
     def test_scanpipe_input_source_model_path(self):
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         input_source = self.project1.add_input_source(
             filename=file_location.name, is_uploaded=True
         )
         self.assertTrue(str(input_source.path).endswith("input/notice.NOTICE"))
 
     def test_scanpipe_input_source_model_exists(self):
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         input_source = self.project1.add_input_source(
             filename=file_location.name, is_uploaded=True
         )
@@ -1266,7 +1279,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual([], self.project1.input_sources)
         self.assertEqual([], list(self.project1.inputs()))
 
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         copy_input(file_location, self.project1.input_path)
         input_source = self.project1.add_input_source(
             filename=file_location.name, is_uploaded=True
@@ -1282,7 +1295,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual([], list(self.project1.inputs()))
 
     def test_scanpipe_input_source_model_delete_file(self):
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         input_source = self.project1.add_input_source(
             filename=file_location.name, is_uploaded=True
         )
@@ -1337,7 +1350,7 @@ class ScanPipeModelsTest(TestCase):
             f.write("content")
         self.assertEqual("content\n", resource.file_content)
 
-        file_with_long_lines = self.data_location / "decompose_l_u_8hpp_source.html"
+        file_with_long_lines = self.data / "misc" / "decompose_l_u_8hpp_source.html"
         copy_input(file_with_long_lines, self.project1.codebase_path)
 
         resource.update(path="decompose_l_u_8hpp_source.html")
@@ -1345,7 +1358,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(101, line_count)
 
     def test_scanpipe_codebase_resource_model_file_content_for_map(self):
-        map_file_path = self.data_location / "d2d-javascript/to/main.js.map"
+        map_file_path = self.data / "d2d-javascript/to/main.js.map"
         copy_input(map_file_path, self.project1.codebase_path)
         resource = self.project1.codebaseresources.create(path="main.js.map")
 
@@ -1791,7 +1804,7 @@ class ScanPipeModelsTest(TestCase):
 
     @skipIf(sys.platform != "linux", "Ordering differs on macOS.")
     def test_scanpipe_codebase_resource_model_walk_method(self):
-        fixtures = self.data_location / "asgiref-3.3.0_walk_test_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_walk_test_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         asgiref_root = self.project_asgiref.codebaseresources.get(
             path="asgiref-3.3.0.whl-extract"

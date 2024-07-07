@@ -49,6 +49,9 @@
               <a href="?is_resolved={{ dependency.is_resolved }}" class="is-black-link">{{ dependency.is_resolved }}</a>
             </td>
             <td>
+              <a href="?is_resolved={{ dependency.is_direct }}" class="is-black-link">{{ dependency.is_direct }}</a>
+            </td>
+            <td>
               {% if dependency.for_package %}
                 {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
                 <a href="{% url 'package_detail' project.slug dependency.for_package.uuid %}" title="{{ dependency.for_package.purl }}">{{ dependency.for_package.purl }}</a>

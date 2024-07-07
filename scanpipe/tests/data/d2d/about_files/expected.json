@@ -21,6 +21,8 @@
         {
           "pipeline_name": "map_deploy_to_develop",
           "status": "not_started",
+          "selected_groups": null,
+          "selected_steps": null,
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
@@ -72,6 +74,8 @@
       "source_packages": [],
       "extra_data": {},
       "package_uid": "pkg:local-files/analysis-90cb6382/90cb6382-431c-4187-be76-d4f1a2199a2f?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [],
       "datafile_paths": [],
       "file_references": [],
@@ -123,6 +127,8 @@
         ]
       },
       "package_uid": "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
       "datasource_ids": [],
       "datafile_paths": [],
       "file_references": [],
