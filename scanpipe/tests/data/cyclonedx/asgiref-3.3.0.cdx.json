@@ -55,6 +55,10 @@
           "value": "https://github.com/django/asgiref/"
         },
         {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:pypi/asgiref@3.3.0?uuid=8203628e-74ff-42c0-b96d-cdd2c56a0f01"
+        },
+        {
           "name": "aboutcode:primary_language",
           "value": "Python"
         }
@@ -98,6 +102,10 @@
         {
           "name": "aboutcode:homepage_url",
           "value": "https://github.com/django/asgiref/"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:pypi/asgiref@3.3.0?uuid=6dc8a3e1-c9d2-41a0-aa6c-99999115001a"
         },
         {
           "name": "aboutcode:primary_language",
