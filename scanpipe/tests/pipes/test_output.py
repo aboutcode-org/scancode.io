@@ -367,6 +367,15 @@ class ScanPipeOutputPipesTest(TestCase):
         ]
         self.assertEqual(expected, results_json["dependencies"])
 
+    def test_scanpipe_pipes_outputs_get_cyclonedx_bom_package_uid_instances(self):
+        project = Project.objects.create(name="project")
+        make_package(project, "pkg:type/a", package_uid="pkg:type/a?uuid=1")
+        make_package(project, "pkg:type/a", package_uid="pkg:type/a?uuid=2")
+
+        output_file = output.to_cyclonedx(project=project)
+        results_json = json.loads(output_file.read_text())
+        self.assertEqual(2, len(results_json["components"]))
+
     def test_scanpipe_pipes_outputs_to_spdx(self):
         fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
