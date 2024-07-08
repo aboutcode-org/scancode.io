@@ -14,6 +14,10 @@ v34.7.1 (unreleased)
 - Display the resolved_to_package as link in the dependencies tab.
   https://github.com/nexB/scancode.io/pull/1314
 
+- Add support for multiple instances of a PackageURL in the CycloneDX outputs.
+  The `package_uid` is now included in each BOM Component as a property.
+  https://github.com/nexB/scancode.io/issues/1316
+
 v34.7.0 (2024-07-02)
 --------------------
 

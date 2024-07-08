@@ -2062,6 +2062,7 @@ class ScanPipeModelsTest(TestCase):
             "aboutcode:homepage_url": "https://packages.debian.org",
             "aboutcode:primary_language": "bash",
             "aboutcode:notice_text": "Notice\nText",
+            "aboutcode:package_uid": package_data1["package_uid"],
         }
         self.assertEqual(expected_properties, properties)
 
