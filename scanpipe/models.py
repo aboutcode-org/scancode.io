@@ -3414,6 +3414,7 @@ class DiscoveredPackage(
             "download_url",
             "homepage_url",
             "notice_text",
+            "package_uid",
         ]
         properties = [
             cyclonedx_model.Property(
