@@ -706,6 +706,7 @@ def match_purldb_directories(project, logger=None):
         .to_codebase()
         .no_status(status=flag.ABOUT_MAPPED)
         .no_status(status=flag.MATCHED_TO_PURLDB_PACKAGE)
+        .no_status(status=flag.IGNORED_PATTERN)
         .order_by("path")
     )
     directory_count = to_directories.count()
