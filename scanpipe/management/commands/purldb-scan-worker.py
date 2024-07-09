@@ -82,7 +82,15 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
             loop_count += 1
 
             # Usually, a worker can only run one Run at a time
-            if Run.objects.queued_or_running().count() >= max_concurrent_projects:
+            queued_or_running = Run.objects.queued_or_running()
+            queued_or_running_count = queued_or_running.count()
+            if queued_or_running_count >= max_concurrent_projects:
+                self.stdout.write(
+                    "Continuing: number of queued or running Runs"
+                    f"({queued_or_running_count}) is greater "
+                    "than the number of max concurrent projects "
+                    f"({max_concurrent_projects})"
+                )
                 continue
 
             # 1. Get download url from purldb
