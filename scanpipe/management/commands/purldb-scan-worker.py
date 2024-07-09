@@ -28,6 +28,7 @@ from django.db.models import Q
 
 from scanpipe.management.commands import AddInputCommandMixin
 from scanpipe.management.commands import CreateProjectCommandMixin
+from scanpipe.management.commands import execute_project
 from scanpipe.models import Run
 from scanpipe.pipes import output
 from scanpipe.pipes import purldb
@@ -92,6 +93,21 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
                 scannable_uri_uuid = response["scannable_uri_uuid"]
                 download_url = response["download_url"]
                 pipelines = response["pipelines"]
+
+                formatted_pipeline_names = [
+                    f'\t\t{pipeline}' for pipeline in pipelines
+                ]
+                formatted_pipeline_names = '\n'.join(formatted_pipeline_names)
+                msg = (
+                    "New job from PurlDB:\n"
+                    "\tscannable_uri_uuid:\n"
+                    f"\t\t{scannable_uri_uuid}\n"
+                    "\tdownload_url:\n"
+                    f"\t\t{download_url}\n"
+                    "\tpipelines:\n"
+                ) + formatted_pipeline_names
+
+                self.stdout.write(msg)
             else:
                 self.stderr.write("Bad response from PurlDB: unable to get next job.")
                 continue
@@ -148,10 +164,9 @@ def create_scan_project(
         name=name,
         pipelines=pipelines,
         input_urls=input_urls,
-        execute=True,
-        run_async=run_async,
     )
     project.update_extra_data({"scannable_uri_uuid": scannable_uri_uuid})
+    execute_project(project=project, run_async=run_async, command=command)
     return project
 
 
