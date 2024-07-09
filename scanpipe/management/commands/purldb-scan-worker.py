@@ -49,6 +49,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
         parser.add_argument(
             "--max-loops",
             dest="max_loops",
+            type=int,
             default=0,
             action="store",
             help="Limit the number of loops to a maximum number. "
@@ -58,6 +59,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
         parser.add_argument(
             "--max-concurrent-projects",
             dest="max_concurrent_projects",
+            type=int,
             default=1,
             action="store",
             help="Limit the number of Projects that can be run at once.",
@@ -67,8 +69,8 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
         self.verbosity = options["verbosity"]
         sleep = options["sleep"]
         run_async = options["async"]
-        max_loops = int(options["max_loops"])
-        max_concurrent_projects = int(options["max_concurrent_projects"])
+        max_loops = options["max_loops"]
+        max_concurrent_projects = options["max_concurrent_projects"]
 
         loop_count = 0
         while True:
@@ -80,7 +82,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
             loop_count += 1
 
             # Usually, a worker can only run one Run at a time
-            if Run.objects.queued_and_running().count() > max_concurrent_projects:
+            if Run.objects.queued_or_running().count() >= max_concurrent_projects:
                 continue
 
             # 1. Get download url from purldb
