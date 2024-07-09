@@ -24,7 +24,6 @@ import time
 import traceback
 
 from django.core.management.base import BaseCommand
-from django.db.models import Q
 
 from scanpipe.management.commands import AddInputCommandMixin
 from scanpipe.management.commands import CreateProjectCommandMixin
@@ -81,10 +80,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
             loop_count += 1
 
             # Usually, a worker can only run one Run at a time
-            queued_and_running = Run.objects.filter(
-                Q(task_id__isnull=False) | Q(task_start_date__isnull=False)
-            )
-            if queued_and_running.count() > max_concurrent_projects:
+            if Run.objects.queued_and_running().count() > max_concurrent_projects:
                 continue
 
             # 1. Get download url from purldb
@@ -94,10 +90,8 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
                 download_url = response["download_url"]
                 pipelines = response["pipelines"]
 
-                formatted_pipeline_names = [
-                    f'\t\t{pipeline}' for pipeline in pipelines
-                ]
-                formatted_pipeline_names = '\n'.join(formatted_pipeline_names)
+                formatted_pipeline_names = [f"\t\t{pipeline}" for pipeline in pipelines]
+                formatted_pipeline_names = "\n".join(formatted_pipeline_names)
                 msg = (
                     "New job from PurlDB:\n"
                     "\tscannable_uri_uuid:\n"

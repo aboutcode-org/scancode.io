@@ -24,7 +24,6 @@ import json
 import logging
 
 from django.conf import settings
-from django.db.models import Q
 from django.template.defaultfilters import pluralize
 from django.utils.text import slugify
 
@@ -493,12 +492,8 @@ def check_project_run_statuses(project, logger=None):
     update the status of the Scannable URI associated with this Project to
     `failed` and send back a log of the failed runs.
     """
-    failed_runs = project.runs.filter(
-        Q(task_exitcode__isnull=False, task_exitcode__gt=0)
-        | Q(task_exitcode=99)
-        | Q(task_exitcode=88)
-    )
-    if failed_runs:
+    failed_runs = project.runs.failed()
+    if failed_runs.exists():
         failure_msgs = []
         for failed_run in failed_runs:
             msg = f"{failed_run.pipeline_name} failed:\n\n{failed_run.log}\n"
