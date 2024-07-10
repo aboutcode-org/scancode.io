@@ -50,9 +50,21 @@ class Command(BaseCommand):
             dest="interactive",
             help="Do not prompt the user for input of any kind.",
         )
+        parser.add_argument(
+            "--admin",
+            action="store_true",
+            help="Specifies that the user should be created as an admin user.",
+        )
+        parser.add_argument(
+            "--super",
+            action="store_true",
+            help="Specifies that the user should be created as a superuser.",
+        )
 
     def handle(self, *args, **options):
         username = options["username"]
+        is_admin = options["admin"]
+        is_superuser = options["super"]
 
         error_msg = self._validate_username(username)
         if error_msg:
@@ -62,7 +74,14 @@ class Command(BaseCommand):
         if options["interactive"]:
             password = self.get_password_from_stdin(username)
 
-        user = self.UserModel._default_manager.create_user(username, password=password)
+        user_kwargs = {
+            "username": username,
+            "password": password,
+            "is_staff": is_admin or is_superuser,
+            "is_superuser": is_superuser,
+        }
+
+        user = self.UserModel._default_manager.create_user(**user_kwargs)
         token, _ = Token._default_manager.get_or_create(user=user)
 
         if options["verbosity"] > 0:
