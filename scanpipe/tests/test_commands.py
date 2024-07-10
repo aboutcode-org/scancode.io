@@ -645,6 +645,8 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn(f"User {username} created with API key:", out.getvalue())
         user = get_user_model().objects.get(username=username)
         self.assertTrue(user.auth_token)
+        self.assertFalse(user.is_staff)
+        self.assertFalse(user.is_superuser)
 
         expected = "Error: That username is already taken."
         with self.assertRaisesMessage(CommandError, expected):
@@ -657,6 +659,21 @@ class ScanPipeManagementCommandTest(TestCase):
         )
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-user", "--no-input", username)
+
+    def test_scanpipe_management_command_create_user_admin_superuser(self):
+        out = StringIO()
+        username = "my_username"
+        call_command("create-user", "--no-input", "--admin", username, stdout=out)
+        user = get_user_model().objects.get(username=username)
+        self.assertTrue(user.is_staff)
+        self.assertFalse(user.is_superuser)
+
+        out = StringIO()
+        username = "user2"
+        call_command("create-user", "--no-input", "--super", username, stdout=out)
+        user = get_user_model().objects.get(username=username)
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_superuser)
 
     def test_scanpipe_management_command_run(self):
         expected = (
