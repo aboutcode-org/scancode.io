@@ -21,6 +21,8 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django.contrib import admin
+from django.urls import reverse
+from django.utils.html import format_html
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -40,7 +42,14 @@ class ScanPipeBaseAdmin(admin.ModelAdmin):
 
 
 class ProjectAdmin(ScanPipeBaseAdmin):
-    list_display = ["name", "label_list", "is_archived"]
+    list_display = [
+        "name",
+        "label_list",
+        "packages_link",
+        "dependencies_link",
+        "resources_link",
+        "is_archived",
+    ]
     search_fields = ["uuid", "name"]
     list_filter = ["is_archived", "labels"]
     exclude = ["labels"]
@@ -52,6 +61,29 @@ class ProjectAdmin(ScanPipeBaseAdmin):
     @admin.display(description="Labels")
     def label_list(self, obj):
         return ", ".join(label.name for label in obj.labels.all())
+
+    @staticmethod
+    def make_filtered_link(obj, value, url_name):
+        """Return a link to the provided ``url_name`` filtered by this project."""
+        url = reverse(f"admin:scanpipe_{url_name}_changelist")
+        return format_html(
+            '<a href="{}?project__uuid__exact={}">{}</a>', url, obj.uuid, value
+        )
+
+    @admin.display(description="Packages")
+    def packages_link(self, obj):
+        count = obj.discoveredpackages.count()
+        return self.make_filtered_link(obj, count, "discoveredpackage")
+
+    @admin.display(description="Dependencies")
+    def dependencies_link(self, obj):
+        count = obj.discovereddependencies.count()
+        return self.make_filtered_link(obj, count, "discovereddependency")
+
+    @admin.display(description="Resources")
+    def resources_link(self, obj):
+        count = obj.codebaseresources.count()
+        return self.make_filtered_link(obj, count, "codebaseresource")
 
 
 class CodebaseResourceAdmin(ScanPipeBaseAdmin):
