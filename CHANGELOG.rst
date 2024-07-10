@@ -18,6 +18,9 @@ v34.7.1 (unreleased)
   The `package_uid` is now included in each BOM Component as a property.
   https://github.com/nexB/scancode.io/issues/1316
 
+- Add administration interface. Can be enabled with the SCANCODEIO_ENABLE_ADMIN_SITE
+  setting.
+
 v34.7.0 (2024-07-02)
 --------------------
 
