@@ -2918,6 +2918,7 @@ class DiscoveredPackageQuerySet(
         """
         return self.only("uuid", *PURL_FIELDS)
 
+
 class AbstractPackage(models.Model):
     """These fields should be kept in line with `packagedcode.models.PackageData`."""
 
