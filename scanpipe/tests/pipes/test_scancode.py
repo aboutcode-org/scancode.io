@@ -144,7 +144,7 @@ class ScanPipeScancodePipesTest(TestCase):
 
         else:
             expected = "libguestfs requires the kernel executable to be readable"
-            self.assertIn(expected, errors[str(input_location)])
+            self.assertIn(expected, errors[str(input_location)][0])
 
     def test_scanpipe_pipes_scancode_get_resource_info(self):
         input_location = str(self.data / "aboutcode" / "notice.NOTICE")
