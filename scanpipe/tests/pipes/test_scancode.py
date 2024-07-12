@@ -143,17 +143,8 @@ class ScanPipeScancodePipesTest(TestCase):
             self.assertEqual(sorted(expected), sorted(results))
 
         else:
-            expected = {
-                str(input_location): [
-                    "Unable to read kernel at: /boot/vmlinuz-6.5.0-1022-azure.\n"
-                    "libguestfs requires the kernel executable to be readable.\n"
-                    "This is the case by default on most Linux distributions except on "
-                    "Ubuntu.\nPlease follow the ExtractCode installation instructions "
-                    "in the README.rst at:\n"
-                    "https://github.com/nexB/extractcode/blob/main/README.rst '\n"
-                ]
-            }
-            self.assertEqual(expected, errors)
+            expected = "libguestfs requires the kernel executable to be readable"
+            self.assertContains(expected, errors[str(input_location)])
 
     def test_scanpipe_pipes_scancode_get_resource_info(self):
         input_location = str(self.data / "aboutcode" / "notice.NOTICE")

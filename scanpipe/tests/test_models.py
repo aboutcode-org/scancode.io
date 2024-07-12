@@ -1958,6 +1958,8 @@ class ScanPipeModelsTest(TestCase):
                     "is_resolved": 0,
                 },
                 "codebase_relations_summary": {},
+                "results_url": f"/api/projects/{self.project1.uuid}/results/",
+                "summary_url": f"/api/projects/{self.project1.uuid}/summary/",
             },
             "run": {
                 "pipeline_name": "pipeline",
