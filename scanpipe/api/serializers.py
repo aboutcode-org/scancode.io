@@ -144,6 +144,7 @@ class InputSourceSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(
     ExcludeFromListViewMixin,
+    SerializerExcludeFieldsMixin,
     PipelineChoicesMixin,
     TaggitSerializer,
     serializers.ModelSerializer,
