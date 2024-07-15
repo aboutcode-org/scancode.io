@@ -21,7 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipes import scorecode
+from ossf_scorecard import scorecard
 
 
 class FetchScoreCodeInfo(Pipeline):
@@ -39,21 +39,21 @@ class FetchScoreCodeInfo(Pipeline):
         return (
             cls.check_scorecode_service_availability,
             cls.lookup_packages_scorecode_info,
-            cls.lookup_dependencies_scorecode_info,
+            # cls.lookup_dependencies_scorecode_info,
         )
 
     def check_scorecode_service_availability(self):
         """Check if the scorecode service is configured and available."""
-        if not scorecode.is_configured():
+        if not scorecard.is_configured():
             raise Exception("scorecode service is not configured.")
 
-        if not scorecode.is_available():
+        if not scorecard.is_available():
             raise Exception("scorecode service is not available.")
 
     def lookup_packages_scorecode_info(self):
         """Fetch scorecode information for each of the project's discovered packages."""
         packages = self.project.discoveredpackages.all()
-        scorecode.fetch_scorecode_info(
+        scorecard.fetch_scorecard_info(
             packages=packages,
             logger=self.log,
         )
