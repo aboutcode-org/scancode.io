@@ -20,8 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from scanpipe.pipelines import Pipeline
 from ossf_scorecard import scorecard
+
+from scanpipe.pipelines import Pipeline
 
 
 class FetchScoreCodeInfo(Pipeline):
