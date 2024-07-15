@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.7.1 (unreleased)
+v34.7.1 (2024-07-15)
 --------------------
 
 - Add pipeline step selection for a run execution.
