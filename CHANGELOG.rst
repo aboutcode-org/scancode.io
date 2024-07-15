@@ -18,6 +18,9 @@ v34.7.1 (unreleased)
   The `package_uid` is now included in each BOM Component as a property.
   https://github.com/nexB/scancode.io/issues/1316
 
+- Add ``results_url`` and ``summary_url`` on the API ProjectSerializer.
+  https://github.com/nexB/scancode.io/issues/1325
+
 v34.7.0 (2024-07-02)
 --------------------
 
