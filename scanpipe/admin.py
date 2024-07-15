@@ -52,11 +52,24 @@ class ProjectAdmin(ScanPipeBaseAdmin):
     ]
     search_fields = ["uuid", "name"]
     list_filter = ["is_archived", "labels"]
-    exclude = ["labels"]
     ordering = ["-created_date"]
+    fieldsets = [
+        ("", {"fields": ("name", "slug", "notes", "extra_data", "settings", "uuid")}),
+        ("Links", {"fields": ("packages_link", "dependencies_link", "resources_link")}),
+    ]
+    readonly_fields = ["packages_link", "dependencies_link", "resources_link", "uuid"]
 
     def get_queryset(self, request):
-        return super().get_queryset(request).prefetch_related("labels")
+        return (
+            super()
+            .get_queryset(request)
+            .prefetch_related("labels")
+            .with_counts(
+                "codebaseresources",
+                "discoveredpackages",
+                "discovereddependencies",
+            )
+        )
 
     @admin.display(description="Labels")
     def label_list(self, obj):
@@ -70,19 +83,19 @@ class ProjectAdmin(ScanPipeBaseAdmin):
             '<a href="{}?project__uuid__exact={}">{}</a>', url, obj.uuid, value
         )
 
-    @admin.display(description="Packages")
+    @admin.display(description="Packages", ordering="discoveredpackages_count")
     def packages_link(self, obj):
-        count = obj.discoveredpackages.count()
+        count = obj.discoveredpackages_count
         return self.make_filtered_link(obj, count, "discoveredpackage")
 
-    @admin.display(description="Dependencies")
+    @admin.display(description="Dependencies", ordering="discovereddependencies_count")
     def dependencies_link(self, obj):
-        count = obj.discovereddependencies.count()
+        count = obj.discovereddependencies_count
         return self.make_filtered_link(obj, count, "discovereddependency")
 
-    @admin.display(description="Resources")
+    @admin.display(description="Resources", ordering="codebaseresources_count")
     def resources_link(self, obj):
-        count = obj.codebaseresources.count()
+        count = obj.codebaseresources_count
         return self.make_filtered_link(obj, count, "codebaseresource")
 
 
