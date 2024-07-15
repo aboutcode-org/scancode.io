@@ -55,6 +55,7 @@ from django.db.models.functions import Cast
 from django.db.models.functions import Lower
 from django.dispatch import receiver
 from django.forms import model_to_dict
+from django.urls import NoReverseMatch
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -446,6 +447,33 @@ class UpdateMixin:
             setattr(self, field_name, value)
 
         self.save(update_fields=list(kwargs.keys()))
+
+
+class AdminURLMixin:
+    """
+    A mixin to provide an admin URL for a model instance.
+
+    This mixin adds a method to generate the admin URL for a model instance,
+    which can be useful for linking to the admin interface directly from
+    the model instances.
+    """
+
+    def get_admin_url(self):
+        """
+        Return the URL for the admin change view of the instance.
+        The admin URL is only constructed and returned if the
+        SCANCODEIO_ENABLE_ADMIN_SITE setting is enabled.
+        """
+        if not settings.SCANCODEIO_ENABLE_ADMIN_SITE:
+            return
+
+        opts = self._meta
+        viewname = f"admin:{opts.app_label}_{opts.model_name}_change"
+        try:
+            url = reverse(viewname, args=[self.pk])
+        except NoReverseMatch:
+            return
+        return url
 
 
 def get_project_slug(project):
@@ -2412,6 +2440,7 @@ class CodebaseResource(
     UpdateFromDataMixin,
     HashFieldsMixin,
     ComplianceAlertMixin,
+    AdminURLMixin,
     models.Model,
 ):
     """
@@ -3146,6 +3175,7 @@ class DiscoveredPackage(
     PackageURLMixin,
     VulnerabilityMixin,
     ComplianceAlertMixin,
+    AdminURLMixin,
     AbstractPackage,
 ):
     """
@@ -3495,6 +3525,7 @@ class DiscoveredDependency(
     SaveProjectMessageMixin,
     UpdateFromDataMixin,
     VulnerabilityMixin,
+    AdminURLMixin,
     PackageURLMixin,
 ):
     """
