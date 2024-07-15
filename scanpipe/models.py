@@ -3838,19 +3838,24 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         return str(self.uuid)
 
     def get_payload(self, pipeline_run):
-        return {
-            "project": {
-                "uuid": self.project.uuid,
-                "name": self.project.name,
-                "input_sources": self.project.get_inputs_with_source(),
-            },
-            "run": {
-                "uuid": pipeline_run.uuid,
-                "pipeline_name": pipeline_run.pipeline_name,
-                "status": pipeline_run.status,
-                "scancodeio_version": pipeline_run.scancodeio_version,
-            },
+        """Return the Webhook payload generated from project and pipeline_run data."""
+        from scanpipe.api.serializers import ProjectSerializer
+        from scanpipe.api.serializers import RunSerializer
+
+        project_serializer = ProjectSerializer(
+            instance=self.project,
+            exclude_fields=("url", "runs"),
+        )
+        run_serializer = RunSerializer(
+            instance=pipeline_run,
+            exclude_fields=("url", "project"),
+        )
+        payload = {
+            "project": project_serializer.data,
+            "run": run_serializer.data,
         }
+
+        return payload
 
     def deliver(self, pipeline_run):
         """Deliver this Webhook by sending a POST request to the `target_url`."""

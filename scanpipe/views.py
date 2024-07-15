@@ -196,6 +196,11 @@ def render_as_yaml(value):
         return saneyaml.dump(value, indent=2)
 
 
+def render_size(size_in_bytes):
+    if size_in_bytes:
+        return f"{size_in_bytes} ({filesizeformat(size_in_bytes)})"
+
+
 def fields_have_no_values(fields_data):
     return not any([field_data.get("value") for field_data in fields_data.values()])
 
@@ -1681,7 +1686,7 @@ class CodebaseResourceDetailsView(
         },
         "others": {
             "fields": [
-                {"field_name": "size", "render_func": filesizeformat},
+                {"field_name": "size", "render_func": render_size},
                 {"field_name": "md5", "label": "MD5"},
                 {"field_name": "sha1", "label": "SHA1"},
                 {"field_name": "sha256", "label": "SHA256"},
@@ -1883,7 +1888,7 @@ class DiscoveredPackageDetailsView(
         },
         "others": {
             "fields": [
-                {"field_name": "size", "render_func": filesizeformat},
+                {"field_name": "size", "render_func": render_size},
                 "release_date",
                 {"field_name": "md5", "label": "MD5"},
                 {"field_name": "sha1", "label": "SHA1"},

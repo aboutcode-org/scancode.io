@@ -23,6 +23,9 @@ v34.7.1 (unreleased)
   Add ``--admin`` and ``--super`` options to the ``create-user`` management command.
   https://github.com/nexB/scancode.io/pull/1323
 
+- Add ``results_url`` and ``summary_url`` on the API ProjectSerializer.
+  https://github.com/nexB/scancode.io/issues/1325
+
 v34.7.0 (2024-07-02)
 --------------------
 
