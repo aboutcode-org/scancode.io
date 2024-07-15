@@ -78,6 +78,7 @@ from packagedcode.models import build_package_uid
 from packagedcode.utils import get_base_purl
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
+from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
 from packageurl.contrib.django.models import PackageURLMixin
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
 from rest_framework.authtoken.models import Token
@@ -103,10 +104,6 @@ class RunInProgressError(Exception):
 
 class RunNotAllowedToStart(Exception):
     """Previous Runs have not completed yet."""
-
-
-# PackageURL._fields
-PURL_FIELDS = ("type", "namespace", "name", "version", "qualifiers", "subpath")
 
 
 class UUIDPKModel(models.Model):
@@ -1616,7 +1613,7 @@ class UpdateFromDataMixin:
             skip_reasons = [
                 value in EMPTY_VALUES,
                 field_name not in model_fields,
-                field_name in PURL_FIELDS,
+                field_name in PACKAGE_URL_FIELDS,
             ]
             if any(skip_reasons):
                 continue
@@ -2040,7 +2037,7 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
             Prefetch(
                 "discovered_packages",
                 queryset=DiscoveredPackage.objects.only(
-                    "package_uid", "uuid", *PURL_FIELDS
+                    "package_uid", "uuid", *PACKAGE_URL_FIELDS
                 ),
             ),
         )
@@ -2924,10 +2921,6 @@ class VulnerabilityQuerySetMixin:
 class DiscoveredPackageQuerySet(
     VulnerabilityQuerySetMixin, PackageURLQuerySetMixin, ProjectRelatedQuerySet
 ):
-    def order_by_purl(self):
-        """Order by Package URL fields."""
-        return self.order_by("type", "namespace", "name", "version")
-
     def with_resources_count(self):
         count_subquery = Subquery(
             self.filter(pk=OuterRef("pk"))
@@ -2937,12 +2930,12 @@ class DiscoveredPackageQuerySet(
         )
         return self.annotate(resources_count=count_subquery)
 
-    def only_purl_fields(self):
+    def only_package_url_fields(self):
         """
         Only select and return the UUID and PURL fields.
         Minimum requirements to render a Package link in the UI.
         """
-        return self.only("uuid", *PURL_FIELDS)
+        return self.only("uuid", *PACKAGE_URL_FIELDS)
 
 
 class AbstractPackage(models.Model):
@@ -3814,7 +3807,7 @@ def normalize_package_url_data(purl_mapping, ignore_nulls=False):
     purl data can be executed.
     """
     normalized_purl_mapping = {}
-    for field_name in PURL_FIELDS:
+    for field_name in PACKAGE_URL_FIELDS:
         value = purl_mapping.get(field_name)
         if field_name == "qualifiers":
             value = normalize_qualifiers(value, encode=True)

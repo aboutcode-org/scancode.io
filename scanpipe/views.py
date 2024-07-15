@@ -59,6 +59,7 @@ from django.views.generic.edit import UpdateView
 import saneyaml
 import xlsxwriter
 from django_filters.views import FilterView
+from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
 
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
@@ -79,7 +80,6 @@ from scanpipe.forms import PipelineRunStepSelectionForm
 from scanpipe.forms import ProjectCloneForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectSettingsForm
-from scanpipe.models import PURL_FIELDS
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -1375,7 +1375,7 @@ class CodebaseResourceListView(
     prefetch_related = [
         Prefetch(
             "discovered_packages",
-            queryset=DiscoveredPackage.objects.only_purl_fields(),
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
         )
     ]
     table_columns = [
@@ -1483,7 +1483,7 @@ class DiscoveredPackageListView(
             .only(
                 "uuid",
                 "package_uid",
-                *PURL_FIELDS,
+                *PACKAGE_URL_FIELDS,
                 "project",
                 "primary_language",
                 "declared_license_expression",
@@ -1492,7 +1492,7 @@ class DiscoveredPackageListView(
                 "affected_by_vulnerabilities",
             )
             .with_resources_count()
-            .order_by_purl()
+            .order_by_package_url()
         )
 
     def get_context_data(self, **kwargs):
@@ -1514,10 +1514,13 @@ class DiscoveredDependencyListView(
     template_name = "scanpipe/dependency_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("dependency", 100)
     prefetch_related = [
-        Prefetch("for_package", queryset=DiscoveredPackage.objects.only_purl_fields()),
+        Prefetch(
+            "for_package",
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
+        ),
         Prefetch(
             "resolved_to_package",
-            queryset=DiscoveredPackage.objects.only_purl_fields(),
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
         ),
         Prefetch(
             "datafile_resource", queryset=CodebaseResource.objects.only("path", "name")
@@ -1658,7 +1661,7 @@ class CodebaseResourceDetailsView(
             "discovered_packages",
             queryset=DiscoveredPackage.objects.only(
                 "uuid",
-                *PURL_FIELDS,
+                *PACKAGE_URL_FIELDS,
                 "package_uid",
                 "affected_by_vulnerabilities",
                 "primary_language",
@@ -1858,7 +1861,7 @@ class DiscoveredPackageDetailsView(
         ),
         Prefetch(
             "declared_dependencies__resolved_to_package",
-            queryset=DiscoveredPackage.objects.only_purl_fields(),
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
         ),
     ]
     tabset = {
@@ -2018,13 +2021,13 @@ class DiscoveredDependencyDetailsView(
         Prefetch(
             "for_package",
             queryset=DiscoveredPackage.objects.only(
-                "uuid", *PURL_FIELDS, "package_uid", "project_id"
+                "uuid", *PACKAGE_URL_FIELDS, "package_uid", "project_id"
             ),
         ),
         Prefetch(
             "resolved_to_package",
             queryset=DiscoveredPackage.objects.only(
-                "uuid", *PURL_FIELDS, "package_uid", "project_id"
+                "uuid", *PACKAGE_URL_FIELDS, "package_uid", "project_id"
             ),
         ),
         Prefetch(
