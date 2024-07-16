@@ -25,6 +25,7 @@ import logging
 import traceback
 from contextlib import contextmanager
 from functools import wraps
+from pathlib import Path
 from pydoc import getdoc
 from pydoc import splitdoc
 from timeit import default_timer as timer
@@ -40,8 +41,18 @@ from scanpipe import humanize_time
 logger = logging.getLogger(__name__)
 
 
-class InputFileError(Exception):
+class InputFilesError(Exception):
     """InputFile is missing or cannot be downloaded."""
+
+    def __init__(self, error_tracebacks):
+        self.error_tracebacks = error_tracebacks
+        super().__init__(self._generate_message())
+
+    def _generate_message(self):
+        message = "InputFilesError encountered with the following issues:\n"
+        for index, (error, tb) in enumerate(self.error_tracebacks, start=1):
+            message += f"\nError {index}: {str(error)}\n\n{tb}"
+        return message
 
 
 def group(*groups):
@@ -168,11 +179,25 @@ class BasePipeline:
         logger.info(message)
         self.run.append_to_log(message)
 
+    @staticmethod
+    def output_from_exception(exception):
+        """Return a formatted error message including the traceback."""
+        output = f"{exception}\n\n"
+
+        if exception.__cause__ and str(exception.__cause__) != str(exception):
+            output += f"Cause: {exception.__cause__}\n\n"
+
+        traceback_formatted = "".join(traceback.format_tb(exception.__traceback__))
+        output += f"Traceback:\n{traceback_formatted}"
+
+        return output
+
     def execute(self):
         """Execute each steps in the order defined on this pipeline class."""
         self.log(f"Pipeline [{self.pipeline_name}] starting")
 
         steps = self.get_steps(groups=self.run.selected_groups)
+        selected_steps = self.run.selected_steps
 
         if self.download_inputs:
             steps = (self.__class__.download_missing_inputs,) + steps
@@ -183,16 +208,19 @@ class BasePipeline:
         for current_index, step in enumerate(steps, start=1):
             step_name = step.__name__
 
+            if selected_steps and step_name not in selected_steps:
+                self.log(f"Step [{step_name}] skipped")
+                continue
+
             self.run.set_current_step(f"{current_index}/{steps_count} {step_name}")
             self.log(f"Step [{step_name}] starting")
             step_start_time = timer()
 
             try:
                 step(self)
-            except Exception as e:
+            except Exception as exception:
                 self.log("Pipeline failed")
-                tb = "".join(traceback.format_tb(e.__traceback__))
-                return 1, f"{e}\n\nTraceback:\n{tb}"
+                return 1, self.output_from_exception(exception)
 
             step_run_time = timer() - step_start_time
             self.log(f"Step [{step_name}] completed in {humanize_time(step_run_time)}")
@@ -206,9 +234,9 @@ class BasePipeline:
     def download_missing_inputs(self):
         """
         Download any InputSource missing on disk.
-        Raise an error if any of the uploaded files is not available.
+        Raise an error if any of the uploaded files is not available or not reachable.
         """
-        errors = []
+        error_tracebacks = []
 
         for input_source in self.project.inputsources.all():
             if input_source.exists():
@@ -217,18 +245,20 @@ class BasePipeline:
             if input_source.is_uploaded:
                 msg = f"Uploaded file {input_source} not available."
                 self.log(msg)
-                errors.append(msg)
+                error_tracebacks.append((msg, "No traceback available."))
                 continue
 
             self.log(f"Fetching input from {input_source.download_url}")
             try:
                 input_source.fetch()
             except Exception as error:
+                traceback_str = traceback.format_exc()
+                logger.error(traceback_str)
                 self.log(f"{input_source.download_url} could not be fetched.")
-                errors.append(error)
+                error_tracebacks.append((str(error), traceback_str))
 
-        if errors:
-            raise InputFileError(errors)
+        if error_tracebacks:
+            raise InputFilesError(error_tracebacks)
 
     def add_error(self, exception, resource=None):
         """Create a ``ProjectMessage`` ERROR record on the current `project`."""
@@ -277,17 +307,49 @@ class Pipeline(BasePipeline):
         if ignored_patterns := self.env.get("ignored_patterns"):
             flag.flag_ignored_patterns(self.project, patterns=ignored_patterns)
 
-    def extract_archives(self):
+    def extract_archive(self, location, target):
+        """Extract archive at `location` to `target`. Save errors as messages."""
+        from scanpipe.pipes import scancode
+
+        extract_errors = scancode.extract_archive(location, target)
+
+        for resource_location, errors in extract_errors.items():
+            resource_path = Path(resource_location)
+
+            if resource_path.is_relative_to(self.project.codebase_path):
+                resource_path = resource_path.relative_to(self.project.codebase_path)
+                details = {"resource_path": str(resource_path)}
+            elif resource_path.is_relative_to(self.project.input_path):
+                resource_path = resource_path.relative_to(self.project.input_path)
+                details = {"path": f"input/{str(resource_path)}"}
+            else:
+                details = {"filename": str(resource_path.name)}
+
+            self.project.add_error(
+                description="\n".join(errors),
+                model="extract_archive",
+                details=details,
+            )
+
+    def extract_archives(self, location=None):
         """Extract archives located in the codebase/ directory with extractcode."""
         from scanpipe.pipes import scancode
 
-        extract_errors = scancode.extract_archives(
-            location=self.project.codebase_path,
-            recurse=self.env.get("extract_recursively", True),
-        )
+        if not location:
+            location = self.project.codebase_path
 
-        if extract_errors:
-            self.add_error("\n".join(extract_errors))
+        extract_errors = scancode.extract_archives(location=location, recurse=True)
+
+        for resource_path, errors in extract_errors.items():
+            self.project.add_error(
+                description="\n".join(errors),
+                model="extract_archives",
+                details={"resource_path": resource_path},
+            )
+
+        # Reload the project env post-extraction as the scancode-config.yml file
+        # may be located in one of the extracted archives.
+        self.env = self.project.get_env()
 
 
 def is_pipeline(obj):

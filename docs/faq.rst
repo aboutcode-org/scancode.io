@@ -9,10 +9,25 @@ our frequently asked questions.
 How can I run a scan?
 ---------------------
 
-You simply start by creating a :ref:`new project <user_interface_create_new_project>`
+Once you've completed the ScanCode.io app installation,
+you simply start by creating a :ref:`new project <user_interface_create_new_project>`
 and run the appropriate pipeline.
 
-ScanCode.io offers several :ref:`built_in_pipelines` depending on your input, see above.
+ScanCode.io offers several :ref:`built_in_pipelines` depending on your input, see
+the :ref:`faq_which_pipeline` bellow.
+
+As an alternative, I you simply which to run a pipeline without installing ScanCode.io
+you may use the Docker image to run pipelines as a single command:
+
+.. code-block:: bash
+
+  docker run --rm \
+    -v "$(pwd)":/codedrop \
+    ghcr.io/nexb/scancode.io:latest \
+    sh -c "run scan_codebase /codedrop" \
+    > results.json
+
+Refer to the :ref:`cli_run` section for more about this approach.
 
 .. _faq_which_pipeline:
 
@@ -218,3 +233,48 @@ Example for GitHub private repository files::
 Example for Docker private repository::
 
     SCANCODEIO_SKOPEO_CREDENTIALS="registry.com=user:password"
+
+Can I use a git repository as project input?
+--------------------------------------------
+
+Yes, as an alternative to an uploaded file, or an download URL targeting an archive,
+you may directly provide the URL to a git repository.
+The repository will be cloned in the project inputs, fetching only the latest commit
+history, at the start of a pipeline execution.
+
+Note that only the HTTPS type of URL is supported::
+
+    https://<host>[:<port>]/<path-to-git-repo>.git`
+
+A GitHub repository URL example::
+
+    https://github.com/username/repository.git
+
+How can I cleanup my ScanCode.io installation, removing all projects and related data?
+--------------------------------------------------------------------------------------
+
+You can use the :ref:`cli_flush_projects` command to perform bulk deletion of projects
+and their associated data stored on disk::
+
+    $ scanpipe flush-projects
+
+**Confirmation will be required before deletion.**
+
+To automate this process, such as running it from a cron job, you can use the
+``--no-input`` option to skip confirmation prompts.
+
+Additionally, you can retain specific projects and their data based on their
+creation date using the ``--retain-days`` option.
+
+Here's an example of a crontab entry that runs daily and flushes all projects and
+data older than 7 days::
+
+    @daily scanpipe flush-projects --retain-days 7 --no-input
+
+.. note:: If you are use Docker for running ScanCode.io, you can run the scanpipe
+  ``flush-projects`` command using::
+
+    docker compose run --rm web scanpipe flush-projects
+
+  See :ref:`command_line_interface` chapter for more information about the scanpipe
+  command.

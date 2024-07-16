@@ -21,18 +21,21 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import logging
-import time
 from collections import defaultdict
 
 from django.conf import settings
 
 import requests
 from matchcode_toolkit.fingerprinting import compute_codebase_directory_fingerprints
+from matchcode_toolkit.fingerprinting import get_file_fingerprint_hashes
+from scancode import Scanner
 
-from scanpipe.models import AbstractTaskFieldsModel
 from scanpipe.pipes import codebase
 from scanpipe.pipes import flag
+from scanpipe.pipes import poll_until_success
 from scanpipe.pipes.output import to_json
+from scanpipe.pipes.scancode import _scan_resource
+from scanpipe.pipes.scancode import scan_resources
 
 
 class MatchCodeIOException(Exception):
@@ -175,10 +178,12 @@ def save_directory_fingerprints(project, virtual_codebase, to_codebase_only=Fals
 
 def fingerprint_codebase_directories(project, to_codebase_only=False):
     """
-    Compute directory fingerprints for the directories of the to/ codebase from
-    `project`.
+    Compute directory fingerprints for the directories from `project`.
 
     These directory fingerprints are used for matching purposes on matchcode.
+
+    If `to_codebase_only` is True, the only directories from the `to/` codebase
+    are computed.
     """
     resources = project.codebaseresources.all()
     if to_codebase_only:
@@ -187,6 +192,61 @@ def fingerprint_codebase_directories(project, to_codebase_only=False):
     virtual_codebase = compute_codebase_directory_fingerprints(virtual_codebase)
     save_directory_fingerprints(
         project, virtual_codebase, to_codebase_only=to_codebase_only
+    )
+
+
+def fingerprint_codebase_resource(location, with_threading=True, **kwargs):
+    """
+    Compute fingerprints for the resource at `location` using the
+    scancode-toolkit direct API.
+
+    Return a dictionary of scan `results` and a list of `errors`.
+    """
+    scanners = [
+        Scanner("fingerprints", get_file_fingerprint_hashes),
+    ]
+    return _scan_resource(location, scanners, with_threading=with_threading)
+
+
+def save_resource_fingerprints(resource, scan_results, scan_errors=None):
+    """
+    Save computed fingerprints from `scan_results` to `resource.extra_data`.
+    Create project errors if any occurred during the scan.
+    """
+    resource.extra_data.update(scan_results)
+    resource.save()
+
+    if scan_errors:
+        resource.add_errors(scan_errors)
+        resource.update(status=flag.SCANNED_WITH_ERROR)
+
+
+def fingerprint_codebase_resources(
+    project, resource_qs=None, progress_logger=None, to_codebase_only=False
+):
+    """
+    Compute fingerprints for the resources from `project`.
+
+    These resource fingerprints are used for matching purposes on matchcode.
+
+    Multiprocessing is enabled by default on this pipe, the number of processes can be
+    controlled through the SCANCODEIO_PROCESSES setting.
+
+    If `to_codebase_only` is True, the only resources from the `to/` codebase
+    are computed.
+    """
+    # Checking for None to make the distinction with an empty resource_qs queryset
+    if resource_qs is None:
+        resource_qs = project.codebaseresources.filter(is_text=True)
+
+    if to_codebase_only:
+        resource_qs = resource_qs.to_codebase()
+
+    scan_resources(
+        resource_qs=resource_qs,
+        scan_func=fingerprint_codebase_resource,
+        save_func=save_resource_fingerprints,
+        progress_logger=progress_logger,
     )
 
 
@@ -210,7 +270,18 @@ def send_project_json_to_matchcode(
     return run_url
 
 
-def poll_until_success(run_url, sleep=10):
+def get_run_url_status(run_url, **kwargs):
+    """
+    Given a `run_url`, which is a URL to a ScanCode.io Project run, return its
+    status, otherwise return None.
+    """
+    response = request_get(run_url)
+    if response:
+        status = response["status"]
+        return status
+
+
+def poll_run_url_status(run_url, sleep=10):
     """
     Given a URL to a scancode.io run instance, `run_url`, return True when the
     run instance has completed successfully.
@@ -218,31 +289,14 @@ def poll_until_success(run_url, sleep=10):
     Raise a MatchCodeIOException when the run instance has failed, stopped, or gone
     stale.
     """
-    run_status = AbstractTaskFieldsModel.Status
-    while True:
-        response = request_get(run_url)
-        if response:
-            status = response["status"]
-            if status == run_status.SUCCESS:
-                return True
+    if poll_until_success(check=get_run_url_status, sleep=sleep, run_url=run_url):
+        return True
 
-            if status in [
-                run_status.NOT_STARTED,
-                run_status.QUEUED,
-                run_status.RUNNING,
-            ]:
-                continue
-
-            if status in [
-                run_status.FAILURE,
-                run_status.STOPPED,
-                run_status.STALE,
-            ]:
-                log = response["log"]
-                msg = f"Matching run has stopped:\n\n{log}"
-                raise MatchCodeIOException(msg)
-
-        time.sleep(sleep)
+    response = request_get(run_url)
+    if response:
+        log = response["log"]
+        msg = f"Matching run has stopped:\n\n{log}"
+        raise MatchCodeIOException(msg)
 
 
 def get_match_results(run_url):

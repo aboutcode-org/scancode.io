@@ -56,6 +56,8 @@ SCANCODEIO_REQUIRE_AUTHENTICATION = env.bool(
     "SCANCODEIO_REQUIRE_AUTHENTICATION", default=False
 )
 
+SCANCODEIO_ENABLE_ADMIN_SITE = env.bool("SCANCODEIO_ENABLE_ADMIN_SITE", default=False)
+
 SECURE_CONTENT_TYPE_NOSNIFF = env.bool("SECURE_CONTENT_TYPE_NOSNIFF", default=True)
 
 X_FRAME_OPTIONS = env.str("X_FRAME_OPTIONS", default="DENY")
@@ -364,6 +366,10 @@ SCANCODEIO_ASYNC = env.bool("SCANCODEIO_ASYNC", default=False)
 if not SCANCODEIO_ASYNC:
     for queue_config in RQ_QUEUES.values():
         queue_config["ASYNC"] = False
+
+# ClamAV virus scan
+CLAMD_USE_TCP = env.bool("CLAMD_USE_TCP", default=True)
+CLAMD_TCP_ADDR = env.str("CLAMD_TCP_ADDR", default="clamav")
 
 # Django restframework
 

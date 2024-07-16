@@ -25,41 +25,47 @@ from pathlib import Path
 
 from django.test import TestCase
 
+from cyclonedx.model import Property
 from cyclonedx.model import license as cdx_license_model
 from cyclonedx.model.bom import Bom
+from cyclonedx.model.component import Component
 from cyclonedx.validation import ValidationError
+from packageurl import PackageURL
 
 from scanpipe.pipes import cyclonedx
 
 
 class ScanPipeCycloneDXPipesTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
-    bom_file = data_location / "cyclonedx" / "nested.cdx.json"
+    data = Path(__file__).parent.parent / "data" / "cyclonedx"
+    bom_file = data / "nested.cdx.json"
 
     def setUp(self):
         self.bom_json = self.bom_file.read_text()
         self.bom_parsed = json.loads(self.bom_json)
-        self.bom = cyclonedx.get_bom(self.bom_parsed)
+        self.bom = Bom.from_json(data=self.bom_parsed)
         self.component1 = self.bom.components[0]
         self.component2 = self.component1.components[0]
         self.component3 = self.component2.components[0]
 
-    def test_scanpipe_cyclonedx_get_bom(self):
-        bom = cyclonedx.get_bom(self.bom_parsed)
-        self.assertIsInstance(bom, Bom)
-
     def test_scanpipe_cyclonedx_is_cyclonedx_bom(self):
+        # JSON
         self.assertTrue(cyclonedx.is_cyclonedx_bom(self.bom_file))
-        input_location = self.data_location / "cyclonedx" / "missing_schema.json"
+        input_location = self.data / "missing_schema.json"
         self.assertTrue(cyclonedx.is_cyclonedx_bom(input_location))
-        input_location = self.data_location / "cyclonedx" / "missing_bom_format.json"
+        input_location = self.data / "missing_bom_format.json"
+        self.assertFalse(cyclonedx.is_cyclonedx_bom(input_location))
+
+        # XML
+        input_location = self.data / "laravel-7.12.0" / "bom.1.4.xml"
+        self.assertTrue(cyclonedx.is_cyclonedx_bom(input_location))
+        input_location = self.data / "not_valid.xml"
         self.assertFalse(cyclonedx.is_cyclonedx_bom(input_location))
 
     def test_scanpipe_cyclonedx_get_components(self):
         empty_bom = Bom()
-        self.assertEqual([], cyclonedx.get_components(empty_bom))
+        self.assertEqual([], list(cyclonedx.get_components(empty_bom)))
 
-        components = cyclonedx.get_components(self.bom)
+        components = list(cyclonedx.get_components(self.bom))
         self.assertEqual(3, len(components))
 
         purls = [component.bom_ref.value for component in components]
@@ -128,6 +134,21 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         }
         self.assertEqual(expected, properties_data)
 
+        resolved_url_property = Property(
+            name="ResolvedUrl", value="https://download.url/resolved.tar.gz"
+        )
+        self.component3.properties.add(resolved_url_property)
+        properties_data = cyclonedx.get_properties_data(self.component3)
+        # Same result as the "aboutcode:download_url" takes precedence.
+        self.assertEqual(expected, properties_data)
+
+        self.component3.properties = {resolved_url_property}
+        properties_data = cyclonedx.get_properties_data(self.component3)
+        expected = {
+            "download_url": "https://download.url/resolved.tar.gz",
+        }
+        self.assertEqual(expected, properties_data)
+
     def test_scanpipe_cyclonedx_validate_document(self):
         error = cyclonedx.validate_document(document="{}")
         self.assertIsInstance(error, ValidationError)
@@ -169,8 +190,16 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         package_data = cyclonedx.cyclonedx_component_to_package_data(self.component1)
         self.assertEqual(expected, package_data)
 
+    def test_scanpipe_cyclonedx_component_to_package_data_encoded_purl_name(self):
+        # The purl contains encoded special chars
+        purl = PackageURL.from_string("pkg:type/a%3A%2Fb%3Aname@1.0")
+        component = Component(name="name", purl=purl)
+        package_data = cyclonedx.cyclonedx_component_to_package_data(component)
+        expected = {"name": "a:/b:name", "version": "1.0", "type": "type"}
+        self.assertEqual(expected, package_data)
+
     def test_scanpipe_cyclonedx_resolve_cyclonedx_packages(self):
-        input_location = self.data_location / "cyclonedx" / "missing_schema.json"
+        input_location = self.data / "missing_schema.json"
         with self.assertRaises(ValueError) as cm:
             cyclonedx.resolve_cyclonedx_packages(input_location)
         expected_error = (
@@ -182,22 +211,67 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         packages = cyclonedx.resolve_cyclonedx_packages(self.bom_file)
         self.assertEqual(3, len(packages))
 
-        # v1.2
-        input_location = self.data_location / "cyclonedx" / "laravel-7.12.0"
-        packages = cyclonedx.resolve_cyclonedx_packages(input_location / "bom.1.2.json")
-        self.assertEqual(63, len(packages))
-
-        # v1.3
-        input_location = self.data_location / "cyclonedx" / "laravel-7.12.0"
-        packages = cyclonedx.resolve_cyclonedx_packages(input_location / "bom.1.3.json")
-        self.assertEqual(63, len(packages))
-
-        # v1.4
-        input_location = self.data_location / "cyclonedx" / "laravel-7.12.0"
-        packages = cyclonedx.resolve_cyclonedx_packages(input_location / "bom.1.4.json")
-        self.assertEqual(63, len(packages))
-
-        # v1.5 (this file is generated by the to_cyclonedx)
-        input_location = self.data_location / "cyclonedx" / "asgiref-3.3.0.cdx.json"
+        # JSON v1.2
+        input_location = self.data / "laravel-7.12.0" / "bom.1.2.json"
         packages = cyclonedx.resolve_cyclonedx_packages(input_location)
-        self.assertEqual(3, len(packages))
+        self.assertEqual(62, len(packages))
+
+        # JSON v1.3
+        input_location = self.data / "laravel-7.12.0" / "bom.1.3.json"
+        packages = cyclonedx.resolve_cyclonedx_packages(input_location)
+        self.assertEqual(62, len(packages))
+
+        # JSON v1.4
+        input_location = self.data / "laravel-7.12.0" / "bom.1.4.json"
+        packages = cyclonedx.resolve_cyclonedx_packages(input_location)
+        self.assertEqual(62, len(packages))
+
+        # JSON v1.5 (this file is generated by the to_cyclonedx)
+        input_location = self.data / "asgiref-3.3.0.cdx.json"
+        packages = cyclonedx.resolve_cyclonedx_packages(input_location)
+        self.assertEqual(2, len(packages))
+
+        # XML v1.4
+        input_location = self.data / "laravel-7.12.0" / "bom.1.4.xml"
+        packages = cyclonedx.resolve_cyclonedx_packages(input_location)
+        self.assertEqual(62, len(packages))
+
+    def test_scanpipe_cyclonedx_resolve_cyclonedx_packages_pre_validation(self):
+        # This SBOM includes multiple deserialization issues that are "fixed"
+        # by the pre-validation cleanup.
+        input_location = self.data / "broken_sbom.json"
+        package_data = cyclonedx.resolve_cyclonedx_packages(input_location)
+        self.assertEqual([{"name": "asgiref"}], package_data)
+
+    def test_scanpipe_cyclonedx_cleanup_components_properties(self):
+        cyclonedx_document_json = {
+            "components": [
+                {
+                    "bom-ref": "pkg:type/name",
+                    # Problematic entries for validation
+                    "supplier": {"name": ""},
+                    "licenses": [{}],
+                }
+            ]
+        }
+        results = cyclonedx.cleanup_components_properties(cyclonedx_document_json)
+        expected = {"components": [{"bom-ref": "pkg:type/name"}]}
+        self.assertEqual(expected, results)
+
+    def test_scanpipe_cyclonedx_delete_ignored_root_properties(self):
+        cyclonedx_document_json = {
+            "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+            "bomFormat": "CycloneDX",
+            "specVersion": "1.6",
+            "serialNumber": "urn:uuid:b74fe5df-e965-415e-ba65-f38421a0695d",
+            "version": 1,
+            "metadata": {
+                "component": {
+                    "bom-ref": "8d3058f3-ec1f-487d-8c5f-b2d3b26cda3e",
+                },
+            },
+            "components": [{"bom-ref": "pkg:type/name"}],
+        }
+        results = cyclonedx.delete_ignored_root_properties(cyclonedx_document_json)
+        self.assertIn("components", results)
+        self.assertNotIn("metadata", results)

@@ -66,11 +66,14 @@ from scanpipe.models import RunNotAllowedToStart
 from scanpipe.models import UUIDTaggedItem
 from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.models import get_project_work_directory
+from scanpipe.models import normalize_package_url_data
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import dependency_data2
 from scanpipe.tests import license_policies_index
+from scanpipe.tests import make_dependency
+from scanpipe.tests import make_package
 from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
@@ -83,8 +86,8 @@ User = get_user_model()
 
 
 class ScanPipeModelsTest(TestCase):
-    data_location = Path(__file__).parent / "data"
-    fixtures = [data_location / "asgiref-3.3.0_fixtures.json"]
+    data = Path(__file__).parent / "data"
+    fixtures = [data / "asgiref" / "asgiref-3.3.0_fixtures.json"]
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
@@ -227,7 +230,7 @@ class ScanPipeModelsTest(TestCase):
         self.project1.add_input_source(
             filename="file2", download_url="https://download.url"
         )
-        self.project1.update(settings={"extract_recursively": True})
+        self.project1.update(settings={"product_name": "My Product"})
         new_file_path1 = self.project1.input_path / "file.zip"
         new_file_path1.touch()
         run1 = self.project1.add_pipeline("analyze_docker_image", selected_groups=["g"])
@@ -375,7 +378,7 @@ class ScanPipeModelsTest(TestCase):
 
         uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
         self.project1.add_upload(uploaded_file)
-        self.project1.copy_input_from(self.data_location / "notice.NOTICE")
+        self.project1.copy_input_from(self.data / "aboutcode" / "notice.NOTICE")
         self.project1.add_input_source(filename="missing.zip", is_uploaded=True)
 
         uuid1, uuid2 = [
@@ -481,7 +484,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual("tag_value", input_source.tag)
 
     def test_scanpipe_project_model_add_downloads(self):
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         copy_input(file_location, self.project1.tmp_path)
 
         download = Download(
@@ -597,15 +600,48 @@ class ScanPipeModelsTest(TestCase):
 
     def test_scanpipe_project_get_input_config_file(self):
         self.assertIsNone(self.project1.get_input_config_file())
+
         config_file = self.project1.input_path / settings.SCANCODEIO_CONFIG_FILE
         config_file.touch()
         config_file_location = str(self.project1.get_input_config_file())
         self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
 
+        dir1_path = self.project1.codebase_path / "dir1"
+        dir1_path.mkdir(parents=True, exist_ok=True)
+        dir1_config_file = dir1_path / settings.SCANCODEIO_CONFIG_FILE
+        dir1_config_file.touch()
+        # If a config file exists directly in the input directory, return it.
+        config_file_location = str(self.project1.get_input_config_file())
+        self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
+
+        config_file.unlink()
+        config_file_location = str(self.project1.get_input_config_file())
+        self.assertTrue(
+            config_file_location.endswith("codebase/dir1/scancode-config.yml")
+        )
+
+        dir2_path = self.project1.codebase_path / "dir2"
+        dir2_path.mkdir(parents=True, exist_ok=True)
+        dir2_config_file = dir2_path / settings.SCANCODEIO_CONFIG_FILE
+        dir2_config_file.touch()
+        # If multiple config files are found, report an error.
+        self.assertIsNone(self.project1.get_input_config_file())
+        error = self.project1.projectmessages.get()
+        self.assertIn("More than one scancode-config.yml found", error.description)
+
+        dir1_config_file.unlink()
+        dir2_config_file.unlink()
+        sub_dir1_path = self.project1.codebase_path / "dir1" / "subdir1"
+        sub_dir1_path.mkdir(parents=True, exist_ok=True)
+        sub_dir1_config_file = sub_dir1_path / settings.SCANCODEIO_CONFIG_FILE
+        sub_dir1_config_file.touch()
+        # Search for config files *ONLY* in immediate codebase/ subdirectories.
+        self.assertIsNone(self.project1.get_input_config_file())
+
     def test_scanpipe_project_get_settings_as_yml(self):
         self.assertEqual("{}\n", self.project1.get_settings_as_yml())
 
-        test_config_file = self.data_location / "settings" / "scancode-config.yml"
+        test_config_file = self.data / "settings" / "scancode-config.yml"
         config_file = copy_input(test_config_file, self.project1.input_path)
         env_from_test_config = self.project1.get_env().copy()
         self.project1.settings = env_from_test_config
@@ -633,22 +669,35 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_project_get_env(self):
         self.assertEqual({}, self.project1.get_env())
 
-        test_config_file = self.data_location / "settings" / "scancode-config.yml"
+        test_config_file = self.data / "settings" / "scancode-config.yml"
         copy_input(test_config_file, self.project1.input_path)
 
         expected = {
-            "ignored_patterns": ["*.img", "docs/*", "*/tests/*"],
-            "extract_recursively": False,
+            "product_name": "My Product Name",
+            "product_version": "1.0",
+            "ignored_patterns": ["*.tmp", "tests/*"],
+            "ignored_dependency_scopes": [
+                {"package_type": "npm", "scope": "devDependencies"},
+                {"package_type": "pypi", "scope": "tests"},
+            ],
+            "ignored_vulnerabilities": [
+                "VCID-q4q6-yfng-aaag",
+                "CVE-2024-27351",
+                "GHSA-vm8q-m57g-pff3",
+            ],
         }
         self.assertEqual(expected, self.project1.get_env())
 
-        config = {"extract_recursively": True, "ignored_patterns": None}
+        config = {"ignored_patterns": None}
         self.project1.settings = config
         self.project1.save()
-        expected = {
-            "ignored_patterns": ["*.img", "docs/*", "*/tests/*"],
-            "extract_recursively": True,
-        }
+        self.assertEqual(expected, self.project1.get_env())
+
+        config = {"ignored_patterns": ["*.txt"], "product_name": "Product1"}
+        self.project1.settings = config
+        self.project1.save()
+        expected["product_name"] = "Product1"
+        expected["ignored_patterns"] = ["*.txt"]
         self.assertEqual(expected, self.project1.get_env())
 
     def test_scanpipe_project_get_env_invalid_yml_content(self):
@@ -658,6 +707,54 @@ class ScanPipeModelsTest(TestCase):
         config_file_location = str(self.project1.get_input_config_file())
         self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
         self.assertEqual({}, self.project1.get_env())
+
+        error = self.project1.projectmessages.get()
+        self.assertIn("Failed to load configuration from", error.description)
+        self.assertIn("The file format is invalid.", error.description)
+
+    def test_scanpipe_project_get_ignored_dependency_scopes_index(self):
+        self.project1.settings = {
+            "ignored_dependency_scopes": [{"package_type": "pypi", "scope": "tests"}]
+        }
+        expected = {"pypi": ["tests"]}
+        self.assertEqual(expected, self.project1.ignored_dependency_scopes_index)
+        self.assertEqual(expected, self.project1.get_ignored_dependency_scopes_index())
+
+        self.project1.settings = {
+            "ignored_dependency_scopes": [
+                {"package_type": "pypi", "scope": "tests"},
+                {"package_type": "pypi", "scope": "build"},
+                {"package_type": "npm", "scope": "devDependencies"},
+            ]
+        }
+        # Since this is a cache property, it still returns the previous value
+        self.assertEqual(expected, self.project1.ignored_dependency_scopes_index)
+        # The following function call always build and return the index
+        expected = {"npm": ["devDependencies"], "pypi": ["tests", "build"]}
+        self.assertEqual(expected, self.project1.get_ignored_dependency_scopes_index())
+
+    def test_scanpipe_normalize_package_url_data(self):
+        purl = PackageURL.from_string("pkg:npm/athena-express@6.0.4")
+        purl_data = normalize_package_url_data(purl_mapping=purl.to_dict())
+        self.assertEqual(purl_data.get("namespace"), "")
+
+        purl_data = normalize_package_url_data(
+            purl_mapping=purl.to_dict(),
+            ignore_nulls=True,
+        )
+        self.assertEqual(purl_data.get("namespace"), None)
+
+    def test_scanpipe_project_get_ignored_vulnerabilities_set(self):
+        self.project1.settings = {
+            "ignored_vulnerabilities": [
+                "VCID-q4q6-yfng-aaag",
+                "CVE-2024-27351",
+                "GHSA-vm8q-m57g-pff3",
+            ],
+        }
+        expected = {"VCID-q4q6-yfng-aaag", "CVE-2024-27351", "GHSA-vm8q-m57g-pff3"}
+        self.assertEqual(expected, self.project1.ignored_vulnerabilities_set)
+        self.assertEqual(expected, self.project1.get_ignored_vulnerabilities_set())
 
     def test_scanpipe_project_model_labels(self):
         self.project1.labels.add("label1", "label2")
@@ -1156,21 +1253,21 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected, output.getvalue())
 
     def test_scanpipe_input_source_model_str(self):
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         input_source = self.project1.add_input_source(
             filename=file_location.name, is_uploaded=True
         )
         self.assertEqual("filename=notice.NOTICE [uploaded]", str(input_source))
 
     def test_scanpipe_input_source_model_path(self):
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         input_source = self.project1.add_input_source(
             filename=file_location.name, is_uploaded=True
         )
         self.assertTrue(str(input_source.path).endswith("input/notice.NOTICE"))
 
     def test_scanpipe_input_source_model_exists(self):
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         input_source = self.project1.add_input_source(
             filename=file_location.name, is_uploaded=True
         )
@@ -1183,7 +1280,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual([], self.project1.input_sources)
         self.assertEqual([], list(self.project1.inputs()))
 
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         copy_input(file_location, self.project1.input_path)
         input_source = self.project1.add_input_source(
             filename=file_location.name, is_uploaded=True
@@ -1199,7 +1296,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual([], list(self.project1.inputs()))
 
     def test_scanpipe_input_source_model_delete_file(self):
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         input_source = self.project1.add_input_source(
             filename=file_location.name, is_uploaded=True
         )
@@ -1254,7 +1351,7 @@ class ScanPipeModelsTest(TestCase):
             f.write("content")
         self.assertEqual("content\n", resource.file_content)
 
-        file_with_long_lines = self.data_location / "decompose_l_u_8hpp_source.html"
+        file_with_long_lines = self.data / "misc" / "decompose_l_u_8hpp_source.html"
         copy_input(file_with_long_lines, self.project1.codebase_path)
 
         resource.update(path="decompose_l_u_8hpp_source.html")
@@ -1262,7 +1359,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(101, line_count)
 
     def test_scanpipe_codebase_resource_model_file_content_for_map(self):
-        map_file_path = self.data_location / "d2d-javascript/to/main.js.map"
+        map_file_path = self.data / "d2d-javascript/to/main.js.map"
         copy_input(map_file_path, self.project1.codebase_path)
         resource = self.project1.codebaseresources.create(path="main.js.map")
 
@@ -1708,7 +1805,7 @@ class ScanPipeModelsTest(TestCase):
 
     @skipIf(sys.platform != "linux", "Ordering differs on macOS.")
     def test_scanpipe_codebase_resource_model_walk_method(self):
-        fixtures = self.data_location / "asgiref-3.3.0_walk_test_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_walk_test_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         asgiref_root = self.project_asgiref.codebaseresources.get(
             path="asgiref-3.3.0.whl-extract"
@@ -1799,7 +1896,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected_paths, result)
 
     @mock.patch("requests.post")
-    def test_scanpipe_webhook_subscription_deliver_method(self, mock_post):
+    def test_scanpipe_webhook_subscription_model_deliver_method(self, mock_post):
         webhook = self.project1.add_webhook_subscription("https://localhost")
         self.assertFalse(webhook.delivered)
         run1 = self.create_run()
@@ -1825,6 +1922,67 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(webhook.delivered)
         self.assertTrue(webhook.success)
         self.assertEqual("text", webhook.response_text)
+
+    def test_scanpipe_webhook_subscription_model_get_payload(self):
+        webhook = self.project1.add_webhook_subscription("https://localhost")
+        run1 = self.create_run()
+        payload = webhook.get_payload(run1)
+
+        expected = {
+            "project": {
+                "name": "Analysis",
+                "uuid": str(self.project1.uuid),
+                "is_archived": False,
+                "notes": "",
+                "labels": [],
+                "settings": {},
+                "input_sources": [],
+                "input_root": [],
+                "output_root": [],
+                "next_run": "pipeline",
+                "extra_data": {},
+                "message_count": 0,
+                "resource_count": 0,
+                "package_count": 0,
+                "dependency_count": 0,
+                "relation_count": 0,
+                "codebase_resources_summary": {},
+                "discovered_packages_summary": {
+                    "total": 0,
+                    "with_missing_resources": 0,
+                    "with_modified_resources": 0,
+                },
+                "discovered_dependencies_summary": {
+                    "total": 0,
+                    "is_runtime": 0,
+                    "is_optional": 0,
+                    "is_resolved": 0,
+                },
+                "codebase_relations_summary": {},
+                "results_url": f"/api/projects/{self.project1.uuid}/results/",
+                "summary_url": f"/api/projects/{self.project1.uuid}/summary/",
+            },
+            "run": {
+                "pipeline_name": "pipeline",
+                "status": run1.status,
+                "description": "",
+                "selected_groups": None,
+                "selected_steps": None,
+                "uuid": str(run1.uuid),
+                "scancodeio_version": "",
+                "task_id": None,
+                "task_start_date": None,
+                "task_end_date": None,
+                "task_exitcode": None,
+                "task_output": "",
+                "log": "",
+                "execution_time": None,
+            },
+        }
+
+        del payload["project"]["created_date"]
+        del payload["run"]["created_date"]
+        self.assertDictEqual(expected, payload)
 
     def test_scanpipe_discovered_package_model_extract_purl_data(self):
         package_data = {}
@@ -1941,8 +2099,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(package_data1["version"], cyclonedx_component.version)
         bom_ref = package.package_uid
         self.assertEqual(bom_ref, str(cyclonedx_component.bom_ref))
-        package_url = PackageURL.from_string(package_data1["package_uid"])
-        self.assertEqual(package_url, cyclonedx_component.purl)
+        self.assertEqual(package.package_url, str(cyclonedx_component.purl))
         self.assertEqual(1, len(cyclonedx_component.licenses))
         self.assertEqual(
             package_data1["declared_license_expression_spdx"],
@@ -1964,6 +2121,7 @@ class ScanPipeModelsTest(TestCase):
             "aboutcode:homepage_url": "https://packages.debian.org",
             "aboutcode:primary_language": "bash",
             "aboutcode:notice_text": "Notice\nText",
+            "aboutcode:package_uid": package_data1["package_uid"],
         }
         self.assertEqual(expected_properties, properties)
 
@@ -2049,6 +2207,32 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(["scope"], updated_fields)
         self.assertEqual(new_data["scope"], dependency.scope)
 
+    def test_scanpipe_discovered_dependency_model_many_to_many(self):
+        project = Project.objects.create(name="project")
+
+        a = make_package(project, "pkg:type/a")
+        b = make_package(project, "pkg:type/b")
+        c = make_package(project, "pkg:type/c")
+        # A -> B -> C
+        a_b = make_dependency(project, for_package=a, resolved_to_package=b)
+        b_c = make_dependency(project, for_package=b, resolved_to_package=c)
+
+        # *_packages fields return DiscoveredPackage QuerySet
+        self.assertEqual([b], list(a.children_packages.all()))
+        self.assertEqual([], list(a.parent_packages.all()))
+        self.assertEqual([c], list(b.children_packages.all()))
+        self.assertEqual([a], list(b.parent_packages.all()))
+        self.assertEqual([], list(c.children_packages.all()))
+        self.assertEqual([b], list(c.parent_packages.all()))
+
+        # *_dependencies fields return DiscoveredDependency QuerySet
+        self.assertEqual([a_b], list(a.declared_dependencies.all()))
+        self.assertEqual([], list(a.resolved_from_dependencies.all()))
+        self.assertEqual([b_c], list(b.declared_dependencies.all()))
+        self.assertEqual([a_b], list(b.resolved_from_dependencies.all()))
+        self.assertEqual([], list(c.declared_dependencies.all()))
+        self.assertEqual([b_c], list(c.resolved_from_dependencies.all()))
+
     def test_scanpipe_discovered_dependency_model_is_vulnerable_property(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
         self.assertFalse(package.is_vulnerable)
@@ -2072,9 +2256,13 @@ class ScanPipeModelsTest(TestCase):
             "affected_by_vulnerabilities",
             "compliance_alert",
             "tag",
+            "declared_dependencies",
+            "resolved_from_dependencies",
+            "parent_packages",
+            "children_packages",
         ]
 
-        package_data_only_field = ["datasource_id"]
+        package_data_only_field = ["datasource_id", "dependencies"]
 
         discovered_package_fields = [
             field.name
@@ -2382,7 +2570,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
         error = project1.projectmessages.latest("created_date")
         self.assertEqual("DiscoveredPackage", error.model)
-        expected_message = "No values for the following required fields: name"
+        expected_message = 'No values provided for the required "name" field.'
         self.assertEqual(expected_message, error.description)
         self.assertEqual(package_data1["purl"], error.details["purl"])
         self.assertEqual("", error.details["name"])
@@ -2400,6 +2588,17 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
 
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
         self.assertEqual(project_message_count, ProjectMessage.objects.count())
+
+    def test_scanpipe_discovered_package_model_create_from_data_missing_type(self):
+        project1 = Project.objects.create(name="Analysis")
+
+        incomplete_data = dict(package_data1)
+        incomplete_data["type"] = ""
+
+        package = DiscoveredPackage.create_from_data(project1, incomplete_data)
+        self.assertEqual(project1, package.project)
+        self.assertEqual("pkg:unknown/debian/adduser@3.118?arch=all", str(package))
+        self.assertEqual("unknown", package.type)
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_discovered_dependency_model_create_from_data(self):
@@ -2463,9 +2662,11 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         package_data_no_uid = package_data1.copy()
         package_data_no_uid.pop("package_uid")
         package2 = DiscoveredPackage.create_from_data(project1, package_data_no_uid)
-        self.assertFalse(package2.package_uid)
+        self.assertTrue(package2.package_uid)
+        self.assertNotEqual(package.package_uid, package2.package_uid)
         package3 = DiscoveredPackage.create_from_data(project1, package_data_no_uid)
-        self.assertFalse(package3.package_uid)
+        self.assertTrue(package3.package_uid)
+        self.assertNotEqual(package.package_uid, package3.package_uid)
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_codebase_resource_create_and_add_package_warnings(self):

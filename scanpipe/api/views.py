@@ -139,6 +139,8 @@ class ProjectViewSet(
         """Return the results in the provided `output_format` as an attachment."""
         project = self.get_object()
         format = request.query_params.get("output_format", "json")
+        version = request.query_params.get("version")
+        output_kwargs = {}
 
         if format == "json":
             return project_results_json_response(project, as_attachment=True)
@@ -147,7 +149,9 @@ class ProjectViewSet(
         elif format == "spdx":
             output_file = output.to_spdx(project)
         elif format == "cyclonedx":
-            output_file = output.to_cyclonedx(project)
+            if version:
+                output_kwargs["version"] = version
+            output_file = output.to_cyclonedx(project, **output_kwargs)
         elif format == "attribution":
             output_file = output.to_attribution(project)
         else:

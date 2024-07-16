@@ -1,5 +1,3 @@
-version: "3"
-
 # Mount the local scanpipe/ directory in the containers
 
 # This can be used to refresh fixtures from the docker container:

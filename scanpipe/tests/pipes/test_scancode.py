@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import json
+import multiprocessing
 import os
 import sys
 import tempfile
@@ -51,14 +52,14 @@ from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
 
 
 class ScanPipeScancodePipesTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def test_scanpipe_pipes_scancode_extract_archive(self):
         target = tempfile.mkdtemp()
-        input_location = str(self.data_location / "archive.zip")
+        input_location = str(self.data / "scancode" / "archive.zip")
 
         errors = scancode.extract_archive(input_location, target)
-        self.assertEqual([], errors)
+        self.assertEqual({}, errors)
 
         results = [path.name for path in list(Path(target).glob("**/*"))]
         expected = [
@@ -71,13 +72,25 @@ class ScanPipeScancodePipesTest(TestCase):
         for path in expected:
             self.assertIn(path, results)
 
+    def test_scanpipe_pipes_scancode_extract_archive_errors(self):
+        target = tempfile.mkdtemp()
+        input_location = str(self.data / "scancode" / "corrupted.tar.gz")
+        errors = scancode.extract_archive(input_location, target)
+
+        error_message = "gzip decompression failed"
+        if sys.platform == "darwin":
+            error_message += " (zlib returned error -3, msg invalid code lengths set)"
+
+        expected = {input_location: [error_message]}
+        self.assertEqual(expected, errors)
+
     def test_scanpipe_pipes_scancode_extract_archives(self):
         tempdir = Path(tempfile.mkdtemp())
-        input_location = str(self.data_location / "archive.zip")
+        input_location = str(self.data / "scancode" / "archive.zip")
         copy_input(input_location, tempdir)
 
         errors = scancode.extract_archives(tempdir)
-        self.assertEqual([], errors)
+        self.assertEqual({}, errors)
 
         results = [path.name for path in list(tempdir.glob("**/*"))]
         self.assertEqual(9, len(results))
@@ -92,10 +105,23 @@ class ScanPipeScancodePipesTest(TestCase):
         for path in expected:
             self.assertIn(path, results)
 
+    def test_scanpipe_pipes_scancode_extract_archives_errors(self):
+        tempdir = Path(tempfile.mkdtemp())
+        input_location = str(self.data / "scancode" / "corrupted.tar.gz")
+        target = copy_input(input_location, tempdir)
+        errors = scancode.extract_archives(tempdir)
+
+        error_message = "gzip decompression failed"
+        if sys.platform == "darwin":
+            error_message += " (zlib returned error -3, msg invalid code lengths set)"
+
+        expected = {str(target): [error_message]}
+        self.assertEqual(expected, errors)
+
     @skipIf(sys.platform != "linux", "QCOW2 extraction is not available on macOS.")
     def test_scanpipe_pipes_scancode_extract_archive_vmimage_qcow2(self):
         target = tempfile.mkdtemp()
-        compressed_input_location = str(self.data_location / "foobar.qcow2.tar.gz")
+        compressed_input_location = str(self.data / "scancode" / "foobar.qcow2.tar.gz")
         extract_tar(compressed_input_location, target_dir=target)
         input_location = Path(target) / "foobar.qcow2"
 
@@ -103,7 +129,7 @@ class ScanPipeScancodePipesTest(TestCase):
 
         # The VM image extraction features are available in the Docker image context.
         if from_docker_image:
-            self.assertEqual([], errors)
+            self.assertEqual({}, errors)
             results = [path.name for path in list(Path(target).glob("**/*"))]
             expected = [
                 "bin",
@@ -117,18 +143,11 @@ class ScanPipeScancodePipesTest(TestCase):
             self.assertEqual(sorted(expected), sorted(results))
 
         else:
-            error = errors[0]
-            self.assertTrue(
-                any(
-                    [
-                        "Unable to read kernel" in error,
-                        "VM Image extraction only supported on Linux." in error,
-                    ]
-                )
-            )
+            expected = "libguestfs requires the kernel executable to be readable"
+            self.assertIn(expected, errors[str(input_location)][0])
 
     def test_scanpipe_pipes_scancode_get_resource_info(self):
-        input_location = str(self.data_location / "notice.NOTICE")
+        input_location = str(self.data / "aboutcode" / "notice.NOTICE")
         sha256 = "b323607418a36b5bd700fcf52ae9ca49f82ec6359bc4b89b1b2d73cf75321757"
         expected = {
             "type": CodebaseResource.Type.FILE,
@@ -146,7 +165,7 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual(expected, resource_info)
 
     def test_scanpipe_pipes_scancode_scan_file(self):
-        input_location = str(self.data_location / "notice.NOTICE")
+        input_location = str(self.data / "aboutcode" / "notice.NOTICE")
         scan_results, scan_errors = scancode.scan_file(input_location)
         expected = [
             "authors",
@@ -164,7 +183,7 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual([], scan_errors)
 
     def test_scanpipe_pipes_scancode_scan_file_timeout(self):
-        input_location = str(self.data_location / "notice.NOTICE")
+        input_location = str(self.data / "aboutcode" / "notice.NOTICE")
 
         with mock.patch("scancode.api.get_copyrights") as get_copyrights:
             get_copyrights.side_effect = InterruptTimeoutError
@@ -188,7 +207,7 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual(sorted(expected), sorted(scan_results.keys()))
 
     def test_scanpipe_pipes_scancode_scan_file_min_license_score(self):
-        input_location = str(self.data_location / "notice.NOTICE")
+        input_location = str(self.data / "aboutcode" / "notice.NOTICE")
 
         scan_results, _ = scancode.scan_file(input_location)
         license_detections = scan_results.get("license_detections")
@@ -214,7 +233,7 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual("scanned-with-error", codebase_resource1.status)
         self.assertEqual(4, project1.projectmessages.count())
 
-        copy_input(self.data_location / "notice.NOTICE", project1.codebase_path)
+        copy_input(self.data / "aboutcode" / "notice.NOTICE", project1.codebase_path)
         codebase_resource2 = CodebaseResource.objects.create(
             project=project1, path="notice.NOTICE"
         )
@@ -227,7 +246,7 @@ class ScanPipeScancodePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_scan_file_and_save_results_timeout_error(self):
         project1 = Project.objects.create(name="Analysis")
-        copy_input(self.data_location / "notice.NOTICE", project1.codebase_path)
+        copy_input(self.data / "aboutcode" / "notice.NOTICE", project1.codebase_path)
         codebase_resource = CodebaseResource.objects.create(
             project=project1, path="notice.NOTICE"
         )
@@ -291,22 +310,8 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual("", resource3.detected_license_expression)
         self.assertEqual(["copy"], resource3.copyrights)
 
-    @mock.patch("scanpipe.pipes.scancode.scan_resources")
-    def test_scanpipe_pipes_scancode_scan_for_files_scancode_license_score(
-        self, mock_scan_resources
-    ):
-        project1 = Project.objects.create(
-            name="Analysis",
-            settings={"scancode_license_score": 99},
-        )
-
-        scancode.scan_for_files(project1)
-        expected = {"min_license_score": 99}
-        call = mock_scan_resources.call_args_list[-1]
-        self.assertEqual(expected, call.kwargs["scan_func_kwargs"])
-
     def test_scanpipe_pipes_scancode_scan_for_package_data_timeout(self):
-        input_location = str(self.data_location / "notice.NOTICE")
+        input_location = str(self.data / "aboutcode" / "notice.NOTICE")
 
         with mock.patch("scancode.api.get_package_data") as get_package_data:
             get_package_data.side_effect = InterruptTimeoutError
@@ -320,7 +325,7 @@ class ScanPipeScancodePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_scan_package_and_save_results_timeout_error(self):
         project1 = Project.objects.create(name="Analysis")
-        copy_input(self.data_location / "notice.NOTICE", project1.codebase_path)
+        copy_input(self.data / "aboutcode" / "notice.NOTICE", project1.codebase_path)
         codebase_resource = CodebaseResource.objects.create(
             project=project1, path="notice.NOTICE"
         )
@@ -366,7 +371,7 @@ class ScanPipeScancodePipesTest(TestCase):
     @expectedFailure
     def test_scanpipe_pipes_scancode_virtual_codebase(self):
         project = Project.objects.create(name="asgiref")
-        input_location = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
+        input_location = self.data / "asgiref" / "asgiref-3.3.0_scanpipe_output.json"
         virtual_codebase = scancode.get_virtual_codebase(project, input_location)
         self.assertEqual(19, len(virtual_codebase.resources.keys()))
 
@@ -401,7 +406,7 @@ class ScanPipeScancodePipesTest(TestCase):
     def test_scanpipe_pipes_scancode_get_packages_with_purl_from_resources(self):
         project = Project.objects.create(name="Analysis")
         filename = "package_assembly_codebase.json"
-        project_scan_location = self.data_location / "scancode" / filename
+        project_scan_location = self.data / "scancode" / filename
         input.load_inventory_from_toolkit_scan(project, project_scan_location)
 
         project.discoveredpackages.all().delete()
@@ -434,10 +439,11 @@ class ScanPipeScancodePipesTest(TestCase):
             run_scan_kwargs = mock_run_scan.call_args.kwargs
             self.assertEqual(10, run_scan_kwargs.get("timeout"))
 
-        with override_settings(SCANCODEIO_PROCESSES=10):
+        expected_processes = -1 if multiprocessing.get_start_method() != "fork" else 2
+        with override_settings(SCANCODEIO_PROCESSES=2):
             scancode.run_scan(location=None, output_file=output_file, run_scan_args={})
             run_scan_kwargs = mock_run_scan.call_args.kwargs
-            self.assertEqual(10, run_scan_kwargs.get("processes"))
+            self.assertEqual(expected_processes, run_scan_kwargs.get("processes"))
 
     def test_scanpipe_pipes_scancode_make_results_summary(self, regen=FIXTURES_REGEN):
         # Ensure the policies index is empty to avoid any side effect on results
@@ -446,7 +452,7 @@ class ScanPipeScancodePipesTest(TestCase):
         pipeline_name = "scan_single_package"
         project1 = Project.objects.create(name="Analysis")
 
-        input_location = self.data_location / "is-npm-1.0.0.tgz"
+        input_location = self.data / "scancode" / "is-npm-1.0.0.tgz"
         project1.copy_input_from(input_location)
 
         run = project1.add_pipeline(pipeline_name)
@@ -464,9 +470,9 @@ class ScanPipeScancodePipesTest(TestCase):
         # uses a subprocess call to run the ``scancode`` command.
         project1.codebaseresources.all().update(file_type="", mime_type="text/plain")
 
-        scan_output_location = self.data_location / "is-npm-1.0.0_scan_package.json"
+        scan_output_location = self.data / "scancode" / "is-npm-1.0.0_scan_package.json"
         summary = scancode.make_results_summary(project1, scan_output_location)
-        expected_location = self.data_location / "scancode/is-npm-1.0.0_summary.json"
+        expected_location = self.data / "scancode" / "is-npm-1.0.0_summary.json"
         if regen:
             expected_location.write_text(json.dumps(summary, indent=2))
 
@@ -475,7 +481,7 @@ class ScanPipeScancodePipesTest(TestCase):
     def test_scanpipe_pipes_scancode_assemble_packages(self):
         project = Project.objects.create(name="Analysis")
         filename = "package_assembly_codebase.json"
-        project_scan_location = self.data_location / "scancode" / filename
+        project_scan_location = self.data / "scancode" / filename
         input.load_inventory_from_toolkit_scan(project, project_scan_location)
 
         project.discoveredpackages.all().delete()
@@ -546,7 +552,7 @@ class ScanPipeScancodePipesTest(TestCase):
 
     def test_scanpipe_scancode_process_package_data(self):
         project1 = Project.objects.create(name="Utility: PurlDB")
-        package_json_location = self.data_location / "manifests" / "package.json"
+        package_json_location = self.data / "manifests" / "package.json"
         copy_input(package_json_location, project1.codebase_path)
         collect_and_create_codebase_resources(project1)
         scancode.scan_for_application_packages(project1, assemble=False)
@@ -554,3 +560,129 @@ class ScanPipeScancodePipesTest(TestCase):
 
         self.assertEqual(1, project1.discoveredpackages.count())
         self.assertEqual(6, project1.discovereddependencies.count())
+
+    def test_scanpipe_scancode_create_packages_and_dependencies_from_mapping(self):
+        pipeline_name = "inspect_packages"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data / "dependencies" / "resolved_dependencies_npm.zip"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(
+            pipeline_name=pipeline_name,
+            selected_groups=[],
+        )
+        pipeline = run.make_pipeline_instance()
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(7, project1.discovereddependencies.count())
+
+        yarn_resource = project1.codebaseresources.get(
+            path="resolved_dependencies_npm.zip-extract/yarn.lock"
+        )
+        lockfile_package_data = yarn_resource.package_data[0]
+        scancode.create_packages_and_dependencies_from_mapping(
+            project=project1,
+            resource=yarn_resource,
+            package_mapping=lockfile_package_data,
+            find_package=False,
+            process_resolved=True,
+        )
+
+        self.assertEqual(7, project1.discoveredpackages.count())
+        self.assertEqual(12, project1.discovereddependencies.count())
+
+    def test_scanpipe_scancode_resolve_dependencies(self):
+        project1 = Project.objects.create(name="Analysis")
+        pkg_1 = DiscoveredPackage.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            version="3.7.2",
+        )
+        DiscoveredDependency.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            extracted_requirement="^3.5.1",
+            is_direct=False,
+            resolved_to_package=pkg_1,
+        )
+        dep_2 = DiscoveredDependency.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            extracted_requirement="^3.5.1",
+            is_direct=True,
+        )
+        scancode.match_and_resolve_dependencies(project1)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(1, project1.discovereddependencies.count())
+        resolved_dep = project1.discovereddependencies.get(name="bluebird")
+        self.assertEqual(resolved_dep, dep_2)
+        self.assertEqual(resolved_dep.resolved_to_package, pkg_1)
+
+    def test_scanpipe_scancode_resolve_dependencies_complex_requirements(self):
+        project1 = Project.objects.create(name="Analysis")
+        pkg_1 = DiscoveredPackage.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            version="3.7.2",
+        )
+        DiscoveredDependency.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            extracted_requirement="^3.5.1",
+            is_direct=False,
+            resolved_to_package=pkg_1,
+        )
+        dep_2 = DiscoveredDependency.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            extracted_requirement="^3.5.1 || ^3.5.0",
+            is_direct=True,
+        )
+        scancode.match_and_resolve_dependencies(project1)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(1, project1.discovereddependencies.count())
+        resolved_dep = project1.discovereddependencies.get(name="bluebird")
+        self.assertEqual(resolved_dep, dep_2)
+        self.assertEqual(resolved_dep.resolved_to_package, pkg_1)
+
+    def test_scanpipe_scancode_resolve_dependencies_no_requirements(self):
+        project1 = Project.objects.create(name="Analysis")
+        pkg_1 = DiscoveredPackage.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            version="3.7.2",
+        )
+        DiscoveredDependency.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            extracted_requirement="^3.5.1",
+            is_direct=False,
+            resolved_to_package=pkg_1,
+        )
+        dep_2 = DiscoveredDependency.objects.create(
+            project=project1,
+            type="npm",
+            name="bluebird",
+            extracted_requirement="",
+            is_direct=True,
+        )
+        scancode.match_and_resolve_dependencies(project1)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(1, project1.discovereddependencies.count())
+        resolved_dep = project1.discovereddependencies.get(name="bluebird")
+        self.assertEqual(resolved_dep, dep_2)
+        self.assertEqual(resolved_dep.resolved_to_package, pkg_1)

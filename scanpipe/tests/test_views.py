@@ -57,7 +57,7 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 @override_settings(SCANCODEIO_REQUIRE_AUTHENTICATION=False)
 class ScanPipeViewsTest(TestCase):
-    data_location = Path(__file__).parent / "data"
+    data = Path(__file__).parent / "data"
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
@@ -239,7 +239,7 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
 
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         copy_input(file_location, self.project1.input_path)
         filename = file_location.name
         url = reverse("project_download_input", args=[self.project1.slug, filename])
@@ -256,7 +256,7 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
 
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         copy_input(file_location, self.project1.output_path)
         filename = file_location.name
         url = reverse("project_download_output", args=[self.project1.slug, filename])
@@ -276,7 +276,7 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.post(url, follow=True)
         self.assertEqual(404, response.status_code)
 
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         copy_input(file_location, self.project1.input_path)
         filename = file_location.name
         input1 = self.project1.add_input_source(filename=filename, is_uploaded=True)
@@ -446,7 +446,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertNotContains(response, expected1)
         self.assertNotContains(response, expected2)
 
-        scan_summary = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
+        scan_summary = self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
         with summary_file.open("w") as opened_file:
             opened_file.write(scan_summary.read_text())
 
@@ -457,7 +457,7 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_details_get_license_clarity_data(self):
         get_license_clarity_data = ProjectDetailView.get_license_clarity_data
 
-        scan_summary = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
+        scan_summary = self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
         scan_summary_json = json.loads(scan_summary.read_text())
         license_clarity_data = get_license_clarity_data(scan_summary_json)
 
@@ -473,7 +473,7 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_details_get_scan_summary_data(self):
         get_scan_summary_data = ProjectDetailView.get_scan_summary_data
 
-        scan_summary = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
+        scan_summary = self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
         scan_summary_json = json.loads(scan_summary.read_text())
         scan_summary_data = get_scan_summary_data(scan_summary_json)
 
@@ -648,7 +648,6 @@ class ScanPipeViewsTest(TestCase):
             "id_notes",
             "id_uuid",
             "id_work_directory",
-            "id_extract_recursively",
             "id_ignored_patterns",
             "id_attribution_template",
             'id="modal-archive"',
@@ -667,11 +666,11 @@ class ScanPipeViewsTest(TestCase):
 
     def test_scanpipe_views_project_settings_view_download_config_file(self):
         url = reverse("project_settings", args=[self.project1.slug])
-        self.project1.settings = {"extract_recursively": False}
+        self.project1.settings = {"product_name": "Product"}
         self.project1.save()
 
         response = self.client.get(url, data={"download": 1})
-        self.assertEqual(b"extract_recursively: no\n", response.getvalue())
+        self.assertEqual(b"product_name: Product\n", response.getvalue())
         self.assertEqual("application/x-yaml", response.headers["Content-Type"])
 
     def test_scanpipe_views_project_views(self):
@@ -791,6 +790,44 @@ class ScanPipeViewsTest(TestCase):
         expected = '<span class="tag is-danger">Stopped</span>'
         self.assertContains(response, expected)
 
+    def test_scanpipe_views_project_run_step_selection_view(self):
+        run = self.project1.add_pipeline("do_nothing")
+        url = reverse("project_run_step_selection", args=[run.uuid])
+
+        response = self.client.get(url)
+        expected_input1 = (
+            '<input type="checkbox" name="selected_steps" value="step1" '
+            'id="id_selected_steps_0" checked>'
+        )
+        self.assertContains(response, expected_input1)
+        expected_input2 = (
+            '<input type="checkbox" name="selected_steps" value="step2" '
+            'id="id_selected_steps_1" checked>'
+        )
+        self.assertContains(response, expected_input2)
+
+        response = self.client.post(url, data={"selected_steps": ["invalid"]})
+        expected = "Select a valid choice. invalid is not one of the available choices."
+        self.assertContains(response, expected, html=True)
+
+        response = self.client.post(url, data={"selected_steps": ["step1"]})
+        expected = (
+            '<div id="run-step-selection-box" class="box has-background-success-light">'
+            "Steps updated successfully."
+            "</div>"
+        )
+        self.assertContains(response, expected, html=True)
+        run.refresh_from_db()
+        self.assertEqual(["step1"], run.selected_steps)
+        response = self.client.get(url)
+        self.assertContains(response, expected_input1)
+        # Not checked anymore in the initial data
+        expected_input2 = (
+            '<input type="checkbox" name="selected_steps" value="step2" '
+            'id="id_selected_steps_1">'
+        )
+        self.assertContains(response, expected_input2)
+
     def test_scanpipe_views_pipeline_help_view(self):
         url = reverse("pipeline_help", args=["not_existing_pipeline"])
         response = self.client.get(url)
@@ -804,6 +841,13 @@ class ScanPipeViewsTest(TestCase):
             "<div>Locate the <code>from</code> and <code>to</code> input files.</div>"
         )
         self.assertContains(response, expected, html=True)
+
+    def test_scanpipe_views_codebase_resource_list_view_bad_search_query(self):
+        url = reverse("project_resources", args=[self.project1.slug])
+        data = {"search": "'"}  # No closing quotation
+        response = self.client.get(url, data=data)
+        expected_error = "The provided search value is invalid: No closing quotation"
+        self.assertContains(response, expected_error)
 
     def test_scanpipe_views_codebase_resource_details_view_tab_image(self):
         resource1 = make_resource_file(self.project1, "file1.ext")
@@ -882,8 +926,8 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, expected, status_code=404)
 
         resource_files = [
-            self.data_location / "codebase" / "a.txt",
-            self.data_location / "codebase" / "b.txt",
+            self.data / "codebase" / "a.txt",
+            self.data / "codebase" / "b.txt",
         ]
         copy_inputs(resource_files, self.project1.codebase_path)
         resource1 = CodebaseResource.objects.create(
@@ -912,7 +956,7 @@ class ScanPipeViewsTest(TestCase):
         package1.add_resources([resource1, resource2])
 
         url = reverse("project_resources", args=[self.project1.slug])
-        with self.assertNumQueries(7):
+        with self.assertNumQueries(8):
             self.client.get(url)
 
         with self.assertNumQueries(8):
@@ -979,6 +1023,41 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, '<section id="tab-vulnerabilities"')
         self.assertContains(response, "VCID-cah8-awtr-aaad")
 
+    @mock.patch("scanpipe.pipes.purldb.is_configured")
+    def test_scanpipe_views_discovered_package_purldb_tab_view(self, mock_configured):
+        package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        package_url = package1.get_absolute_url()
+
+        mock_configured.return_value = False
+        response = self.client.get(package_url)
+        self.assertNotContains(response, "tab-purldb")
+        self.assertNotContains(response, '<section id="tab-purldb"')
+
+        mock_configured.return_value = True
+        response = self.client.get(package_url)
+        self.assertContains(response, "tab-purldb")
+        self.assertContains(response, '<section id="tab-purldb"')
+
+        with mock.patch("scanpipe.pipes.purldb.get_package_by_purl") as get_package:
+            get_package.return_value = None
+            purldb_tab_url = f"{package_url}purldb_tab/"
+            response = self.client.get(purldb_tab_url)
+            msg = "No entries found in the PurlDB for this package"
+            self.assertContains(response, msg)
+
+            get_package.return_value = {
+                "uuid": "9261605f-e2fb-4db9-94ab-0d82d3273cdf",
+                "filename": "abab-2.0.3.tgz",
+                "type": "npm",
+                "name": "abab",
+                "version": "2.0.3",
+                "primary_language": "JavaScript",
+            }
+            response = self.client.get(purldb_tab_url)
+            self.assertContains(response, "abab-2.0.3.tgz")
+            self.assertContains(response, "2.0.3")
+            self.assertContains(response, "JavaScript")
+
     def test_scanpipe_views_discovered_dependency_views(self):
         DiscoveredPackage.create_from_data(self.project1, package_data1)
         make_resource_file(
@@ -988,12 +1067,13 @@ class ScanPipeViewsTest(TestCase):
         dep1 = DiscoveredDependency.create_from_data(self.project1, dependency_data1)
         DiscoveredDependency.create_from_data(self.project1, dependency_data2)
 
-        url = reverse("project_dependencies", args=[self.project1.slug])
+        list_view_url = reverse("project_dependencies", args=[self.project1.slug])
         with self.assertNumQueries(10):
-            self.client.get(url)
+            self.client.get(list_view_url)
 
+        details_url = dep1.get_absolute_url()
         with self.assertNumQueries(6):
-            self.client.get(dep1.get_absolute_url())
+            self.client.get(details_url)
 
     def test_scanpipe_views_codebase_relation_views(self):
         CodebaseRelation.objects.create(

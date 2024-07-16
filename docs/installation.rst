@@ -74,8 +74,8 @@ An overview of the web application usage is available at :ref:`user_interface`.
 
     **Make sure to allow enough memory to support each CPU processes**.
 
-    A good rule of thumb is to allow **1 GB of memory per CPU**.
-    For example, if Docker is configured for 8 CPUs, a minimum of 8 GB of memory is
+    A good rule of thumb is to allow **2 GB of memory per CPU**.
+    For example, if Docker is configured for 8 CPUs, a minimum of 16 GB of memory is
     required.
 
 .. tip::
@@ -236,7 +236,7 @@ Pre-installation Checklist
 
 Before you install ScanCode.io, make sure you have the following prerequisites:
 
- * **Python: versions 3.10 to 3.11** found at https://www.python.org/downloads/
+ * **Python: versions 3.10 to 3.12** found at https://www.python.org/downloads/
  * **Git**: most recent release available at https://git-scm.com/
  * **PostgreSQL**: release 11 or later found at https://www.postgresql.org/ or
    https://postgresapp.com/ on macOS
@@ -260,14 +260,25 @@ Make sure those are installed before attempting the ScanCode.io installation::
 See also `ScanCode-toolkit Prerequisites <https://scancode-toolkit.readthedocs.io/en/
 latest/getting-started/install.html#prerequisites>`_ for more details.
 
-For the :ref:`pipeline_collect_symbols` pipeline, `Universal Ctags <https://github.com/universal-ctags/ctags>`_ is needed.
-On **Linux** install it using::
+For the :ref:`pipeline_collect_symbols_ctags` pipeline, `Universal Ctags <https://github.com/universal-ctags/ctags>`_ is needed.
 
-    sudo apt-get install universal-ctags
+    * On **Linux** install it using::
 
-On **MacOS** install Universal Ctags using Homebrew::
+        sudo apt-get install universal-ctags
 
-    brew install universal-ctags
+    * On **MacOS** install Universal Ctags using Homebrew::
+
+        brew install universal-ctags
+
+For the :ref:`pipeline_collect_strings_gettext` pipeline, `gettext <https://www.gnu.org/software/gettext/>`_ is needed.
+
+    * On **Linux** install it using::
+
+        sudo apt-get install gettext
+
+    * On **MacOS** install gettext using Homebrew::
+
+        brew install gettext
 
 Clone and Configure
 ^^^^^^^^^^^^^^^^^^^
@@ -294,8 +305,8 @@ Clone and Configure
 
         softwareupdate --install-rosetta
         arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-        arch -x86_64 /usr/local/Homebrew/bin/brew install python@3.11
-        make dev PYTHON_EXE=/usr/local/bin/python3.11
+        arch -x86_64 /usr/local/Homebrew/bin/brew install python@3.12
+        make dev PYTHON_EXE=/usr/local/bin/python3.12
         (. bin/activate; pip install psycopg[binary])
 
  * Create an environment file::

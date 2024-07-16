@@ -25,11 +25,13 @@ from pathlib import Path
 from unittest import mock
 
 from django.test import TestCase
+from django.utils import timezone
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.models import Run
 from scanpipe.pipes import purldb
 from scanpipe.tests import dependency_data2
 from scanpipe.tests import dependency_data3
@@ -37,10 +39,19 @@ from scanpipe.tests import package_data1
 
 
 class ScanPipePurlDBTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
+    fixtures = [data / "asgiref" / "asgiref-3.3.0_fixtures.json"]
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
+        self.project_asgiref = Project.objects.get(name="asgiref")
+
+    def create_run(self, pipeline="pipeline", **kwargs):
+        return Run.objects.create(
+            project=self.project1,
+            pipeline_name=pipeline,
+            **kwargs,
+        )
 
     def test_scanpipe_pipes_purldb_get_unique_resolved_purls(self):
         DiscoveredPackage.create_from_data(self.project1, package_data1)
@@ -102,3 +113,124 @@ class ScanPipePurlDBTest(TestCase):
         self.assertIn(
             "1 PURLs were already present in PurlDB index queue", expected_log
         )
+
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    @mock.patch("scanpipe.pipes.purldb.is_available")
+    def test_scanpipe_pipes_purldb_get_next_download_url(
+        self, mock_is_available, mock_request_get
+    ):
+        mock_is_available.return_value = True
+        expected_download_url = "https://registry.npmjs.org/asdf/-/asdf-1.0.1.tgz"
+        expected_scannable_uri_uuid = "52b2930d-6e85-4b3e-ba3e-17dd9a618650"
+        expected_pipelines = ["scan_and_fingerprint_package"]
+        mock_request_get.side_effect = [
+            {
+                "download_url": expected_download_url,
+                "scannable_uri_uuid": expected_scannable_uri_uuid,
+                "pipelines": expected_pipelines,
+            },
+            {"download_url": "", "scannable_uri_uuid": "", "pipelines": []},
+            None,
+        ]
+
+        results = purldb.get_next_download_url()
+        self.assertTrue(results)
+        self.assertEqual(expected_scannable_uri_uuid, results["scannable_uri_uuid"])
+        self.assertEqual(expected_download_url, results["download_url"])
+        self.assertEqual(expected_pipelines, results["pipelines"])
+
+        results = purldb.get_next_download_url()
+        self.assertTrue(results)
+        self.assertFalse(results["scannable_uri_uuid"])
+        self.assertFalse(results["download_url"])
+        self.assertFalse(results["pipelines"])
+
+        results = purldb.get_next_download_url()
+        self.assertFalse(results)
+
+    def test_scanpipe_pipes_purldb_get_run_status(self):
+        now = timezone.now()
+        run = self.create_run(
+            pipeline="succeed",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=0,
+        )
+        status = purldb.get_run_status(run=run)
+        self.assertEqual("success", status)
+
+    def test_scanpipe_pipes_purldb_poll_run_status(self):
+        now = timezone.now()
+
+        # Test poll_run_status on individual pipelines
+        self.assertEqual(0, self.project1.runs.count())
+        self.create_run(
+            pipeline="succeed",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=0,
+        )
+        purldb.poll_run_status(project=self.project1)
+        self.project1.runs.all().delete()
+
+        self.create_run(
+            pipeline="failed",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=1,
+            log="failed",
+        )
+        with self.assertRaises(purldb.PurlDBException) as context:
+            purldb.poll_run_status(project=self.project1)
+            self.assertIn("failed", context.exception)
+        self.project1.runs.all().delete()
+
+        self.create_run(
+            pipeline="stopped",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=99,
+            log="stopped",
+        )
+        with self.assertRaises(purldb.PurlDBException) as context:
+            purldb.poll_run_status(project=self.project1)
+            self.assertIn("stopped", context.exception)
+        self.project1.runs.all().delete()
+
+        self.create_run(
+            pipeline="stale",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=88,
+            log="stale",
+        )
+        with self.assertRaises(purldb.PurlDBException) as context:
+            purldb.poll_run_status(project=self.project1)
+            self.assertIn("stale", context.exception)
+        self.project1.runs.all().delete()
+
+        # Test pipelines success, then failure
+        self.assertEqual(0, self.project1.runs.count())
+        self.create_run(
+            pipeline="succeed",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=0,
+        )
+        self.create_run(
+            pipeline="failed",
+            task_start_date=now,
+            task_end_date=now,
+            task_exitcode=1,
+            log="failed",
+        )
+        with self.assertRaises(purldb.PurlDBException) as context:
+            purldb.poll_run_status(project=self.project1)
+            self.assertIn("failed", context.exception)
+        self.project1.runs.all().delete()
+
+    def test_scanpipe_pipes_purldb_create_project_name(self):
+        download_url = "https://registry.npmjs.org/asdf/-/asdf-1.0.1.tgz"
+        scannable_uri_uuid = "52b2930d-6e85-4b3e-ba3e-17dd9a618650"
+        project_name = purldb.create_project_name(download_url, scannable_uri_uuid)
+        self.assertEqual("httpsregistrynpmjsorgasdf-asdf-101tgz-52b2930d", project_name)

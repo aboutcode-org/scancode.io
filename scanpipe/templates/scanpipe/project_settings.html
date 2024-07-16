@@ -51,19 +51,6 @@
             </div>
 
             <div class="panel">
-              <p id="extraction" class="panel-heading py-2 is-size-6">Extraction</p>
-              <div class="panel-block is-block px-4">
-                <div class="field">
-                  <label class="checkbox" for="{{ form.extract_recursively.id_for_label }}">
-                    {{ form.extract_recursively }}
-                    {{ form.extract_recursively.label }}
-                  </label>
-                  <p class="help">{{ form.extract_recursively.help_text }}</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel">
               <p id="ignored" class="panel-heading py-2 is-size-6">Ignored</p>
               <div class="panel-block is-block px-4">
                 <div class="field">
@@ -73,22 +60,57 @@
                   <div class="control">
                     {{ form.ignored_patterns }}
                   </div>
-                  <p class="help">{{ form.ignored_patterns.help_text }}</p>
+                  <div class="help">
+                    {{ form.ignored_patterns.help_text|safe|linebreaksbr }}
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="label" for="{{ form.ignored_dependency_scopes.id_for_label }}">
+                    {{ form.ignored_dependency_scopes.label }}
+                  </label>
+                  <div class="control">
+                    {{ form.ignored_dependency_scopes }}
+                  </div>
+                  <div class="help">
+                    {{ form.ignored_dependency_scopes.help_text|safe|linebreaksbr }}
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="label" for="{{ form.ignored_vulnerabilities.id_for_label }}">
+                    {{ form.ignored_vulnerabilities.label }}
+                  </label>
+                  <div class="control">
+                    {{ form.ignored_vulnerabilities }}
+                  </div>
+                  <div class="help">
+                    {{ form.ignored_vulnerabilities.help_text|safe|linebreaksbr }}
+                  </div>
                 </div>
               </div>
             </div>
 
             <div class="panel">
-              <p id="scancode" class="panel-heading py-2 is-size-6">ScanCode</p>
+              <p id="dejacode" class="panel-heading py-2 is-size-6">DejaCode</p>
               <div class="panel-block is-block px-4">
                 <div class="field">
-                  <label class="label" for="{{ form.scancode_license_score.id_for_label }}">
-                    {{ form.scancode_license_score.label }}
+                  <label class="label" for="{{ form.product_name.id_for_label }}">
+                    Product name
                   </label>
                   <div class="control">
-                    {{ form.scancode_license_score }}
+                    {{ form.product_name }}
                   </div>
-                  <p class="help">{{ form.scancode_license_score.help_text }}</p>
+                  <p class="help">{{ form.product_name.help_text }}</p>
+                </div>
+                <div class="field">
+                  <label class="label" for="{{ form.product_version.id_for_label }}">
+                    Product version
+                  </label>
+                  <div class="control">
+                    {{ form.product_version }}
+                  </div>
+                  <p class="help">{{ form.product_version.help_text }}</p>
                 </div>
               </div>
             </div>
@@ -103,7 +125,9 @@
                   <div class="control">
                     {{ form.attribution_template }}
                   </div>
-                  <p class="help">{{ form.attribution_template.help_text }}</p>
+                  <p class="help">
+                    {{ form.attribution_template.help_text|urlize|linebreaksbr }}
+                  </p>
                 </div>
               </div>
             </div>

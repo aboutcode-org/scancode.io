@@ -23,6 +23,7 @@
 from django.apps import apps
 
 from rest_framework import serializers
+from rest_framework.reverse import reverse
 from taggit.serializers import TaggitSerializer
 from taggit.serializers import TagListSerializerField
 
@@ -114,6 +115,8 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
             "pipeline_name",
             "status",
             "description",
+            "selected_groups",
+            "selected_steps",
             "project",
             "uuid",
             "created_date",
@@ -143,6 +146,7 @@ class InputSourceSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(
     ExcludeFromListViewMixin,
+    SerializerExcludeFieldsMixin,
     PipelineChoicesMixin,
     TaggitSerializer,
     serializers.ModelSerializer,
@@ -176,6 +180,8 @@ class ProjectSerializer(
     discovered_dependencies_summary = serializers.SerializerMethodField()
     codebase_relations_summary = serializers.SerializerMethodField()
     labels = TagListSerializerField(required=False)
+    results_url = serializers.SerializerMethodField()
+    summary_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -209,8 +215,9 @@ class ProjectSerializer(
             "discovered_packages_summary",
             "discovered_dependencies_summary",
             "codebase_relations_summary",
+            "results_url",
+            "summary_url",
         )
-
         exclude_from_list_view = [
             "settings",
             "input_root",
@@ -256,6 +263,16 @@ class ProjectSerializer(
     def validate_input_urls(self, value):
         """Add support for providing multiple URLs in a single string."""
         return [url for entry in value for url in entry.split()]
+
+    def get_action_url(self, obj, action_name):
+        request = self.context.get("request")
+        return reverse(f"project-{action_name}", kwargs={"pk": obj.pk}, request=request)
+
+    def get_results_url(self, obj):
+        return self.get_action_url(obj, "results")
+
+    def get_summary_url(self, obj):
+        return self.get_action_url(obj, "summary")
 
     def create(self, validated_data):
         """
@@ -316,6 +333,10 @@ class CodebaseResourceSerializer(serializers.ModelSerializer):
             "is_text",
             "is_archive",
             "is_media",
+            "is_legal",
+            "is_manifest",
+            "is_readme",
+            "is_top_level",
             "is_key_file",
             "detected_license_expression",
             "detected_license_expression_spdx",
@@ -381,6 +402,8 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
             "source_packages",
             "extra_data",
             "package_uid",
+            "is_private",
+            "is_virtual",
             "datasource_ids",
             "datafile_paths",
             "file_references",
@@ -393,6 +416,7 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
 class DiscoveredDependencySerializer(serializers.ModelSerializer):
     purl = serializers.ReadOnlyField()
     for_package_uid = serializers.ReadOnlyField()
+    resolved_to_package_uid = serializers.ReadOnlyField()
     datafile_path = serializers.ReadOnlyField()
     package_type = serializers.ReadOnlyField(source="type")
 
@@ -405,8 +429,10 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
             "is_runtime",
             "is_optional",
             "is_resolved",
+            "is_direct",
             "dependency_uid",
             "for_package_uid",
+            "resolved_to_package_uid",
             "datafile_path",
             "datasource_id",
             "package_type",

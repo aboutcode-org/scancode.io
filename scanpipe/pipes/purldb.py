@@ -24,6 +24,7 @@ import json
 import logging
 
 from django.conf import settings
+from django.utils.text import slugify
 
 import requests
 from packageurl import PackageURL
@@ -31,6 +32,12 @@ from univers.version_range import RANGE_CLASS_BY_SCHEMES
 from univers.version_range import InvalidVersionRange
 
 from scanpipe.pipes import LoopProgress
+from scanpipe.pipes import poll_until_success
+
+
+class PurlDBException(Exception):
+    pass
+
 
 label = "PurlDB"
 logger = logging.getLogger(__name__)
@@ -330,3 +337,112 @@ def populate_purldb_with_discovered_dependencies(project, logger=logger.info):
         chunk_size=10,
         logger=logger,
     )
+
+
+def get_package_by_purl(package_url):
+    """Get a Package details entry providing its `package_url`."""
+    if results := find_packages({"purl": str(package_url)}):
+        return results[0]
+
+
+def find_packages(payload):
+    """Get Packages using provided `payload` filters on the PurlDB package list."""
+    package_api_url = f"{PURLDB_API_URL}packages/"
+    response = request_get(package_api_url, payload=payload)
+    if response and response.get("count") > 0:
+        return response.get("results")
+
+
+def get_next_download_url(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
+    """
+    Return the ScannableURI UUID, download URL, and pipelines for the next
+    Package to be scanned from PurlDB
+
+    Return None if the request was not successful
+    """
+    response = request_get(
+        url=f"{api_url}scan_queue/get_next_download_url/",
+        timeout=timeout,
+    )
+    if response:
+        return response
+
+
+def send_results_to_purldb(
+    scannable_uri_uuid,
+    scan_results_location,
+    scan_summary_location,
+    project_extra_data,
+    timeout=DEFAULT_TIMEOUT,
+    api_url=PURLDB_API_URL,
+):
+    """
+    Send project results to purldb for the package handeled by the ScannableURI
+    with uuid of `scannable_uri_uuid`
+    """
+    with open(scan_results_location, "rb") as scan_results_file:
+        with open(scan_summary_location, "rb") as scan_summary_file:
+            data = {
+                "scannable_uri_uuid": scannable_uri_uuid,
+                "scan_status": "scanned",
+                "project_extra_data": json.dumps(project_extra_data),
+            }
+            files = {
+                "scan_results_file": scan_results_file,
+                "scan_summary_file": scan_summary_file,
+            }
+            response = request_post(
+                url=f"{api_url}scan_queue/update_status/",
+                timeout=timeout,
+                data=data,
+                files=files,
+            )
+    return response
+
+
+def update_status(
+    scannable_uri_uuid,
+    status,
+    scan_log="",
+    timeout=DEFAULT_TIMEOUT,
+    api_url=PURLDB_API_URL,
+):
+    """Update the status of a ScannableURI on a PurlDB scan queue"""
+    data = {
+        "scannable_uri_uuid": scannable_uri_uuid,
+        "scan_status": status,
+        "scan_log": scan_log,
+    }
+    response = request_post(
+        url=f"{api_url}scan_queue/update_status/",
+        timeout=timeout,
+        data=data,
+    )
+    return response
+
+
+def create_project_name(download_url, scannable_uri_uuid):
+    """Create a project name from `download_url` and `scannable_uri_uuid`"""
+    if len(download_url) > 50:
+        download_url = download_url[0:50]
+    return f"{slugify(download_url)}-{scannable_uri_uuid[0:8]}"
+
+
+def poll_run_status(project, sleep=10):
+    """
+    Poll the status of all runs of `project`. Raise a PurlDBException with a
+    message containing the log of the run if the run has stopped, failed, or
+    gone stale, otherwise return None.
+    """
+    runs = project.runs.all()
+    for run in runs:
+        if not poll_until_success(check=get_run_status, sleep=sleep, run=run):
+            status = get_run_status(run)
+            msg = f"Run ended with status {status}:\n\n{run.log}"
+            raise PurlDBException(msg)
+
+
+def get_run_status(run, **kwargs):
+    """Refresh the values of `run` and return its status"""
+    run.refresh_from_db()
+    return run.status

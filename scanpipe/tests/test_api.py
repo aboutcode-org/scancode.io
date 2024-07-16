@@ -60,7 +60,7 @@ from scanpipe.tests import package_data1
 # TransactionTestCase is required for the Run related actions that use
 # the transaction.on_commit() signal
 class ScanPipeAPITest(TransactionTestCase):
-    data_location = Path(__file__).parent / "data"
+    data = Path(__file__).parent / "data"
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
@@ -186,6 +186,14 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(1, response.data["package_count"])
         self.assertEqual(1, response.data["dependency_count"])
         self.assertEqual(1, response.data["relation_count"])
+        self.assertEqual(
+            f"http://testserver/api/projects/{self.project1.uuid}/results/",
+            response.data["results_url"],
+        )
+        self.assertEqual(
+            f"http://testserver/api/projects/{self.project1.uuid}/summary/",
+            response.data["summary_url"],
+        )
 
         expected = {"": 1}
         self.assertEqual(expected, response.data["codebase_resources_summary"])
@@ -540,6 +548,18 @@ class ScanPipeAPITest(TransactionTestCase):
         results = json.loads(response_value)
         self.assertIn("$schema", sorted(results.keys()))
 
+        data = {
+            "output_format": "cyclonedx",
+            "version": "1.5",
+        }
+        response = self.csrf_client.get(url, data=data)
+        response_value = response.getvalue()
+        results = json.loads(response_value)
+        self.assertEqual(
+            "http://cyclonedx.org/schema/bom-1.5.schema.json", results["$schema"]
+        )
+        self.assertEqual("1.5", results["specVersion"])
+
         data = {"output_format": "xlsx"}
         response = self.csrf_client.get(url, data=data)
         expected = [
@@ -672,7 +692,7 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"error": "Summary file not available"}
         self.assertEqual(expected, response.data)
 
-        summary_file = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
+        summary_file = self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
         copy_input(summary_file, self.project1.output_path)
 
         response = self.csrf_client.get(url)
@@ -985,9 +1005,9 @@ class ScanPipeAPITest(TransactionTestCase):
             get_model_serializer(None)
 
     def test_scanpipe_api_serializer_get_serializer_fields(self):
-        self.assertEqual(46, len(get_serializer_fields(DiscoveredPackage)))
-        self.assertEqual(12, len(get_serializer_fields(DiscoveredDependency)))
-        self.assertEqual(33, len(get_serializer_fields(CodebaseResource)))
+        self.assertEqual(48, len(get_serializer_fields(DiscoveredPackage)))
+        self.assertEqual(14, len(get_serializer_fields(DiscoveredDependency)))
+        self.assertEqual(37, len(get_serializer_fields(CodebaseResource)))
         self.assertEqual(5, len(get_serializer_fields(CodebaseRelation)))
         self.assertEqual(7, len(get_serializer_fields(ProjectMessage)))
 

@@ -28,6 +28,7 @@ from django.views.generic import RedirectView
 
 from rest_framework.routers import DefaultRouter
 
+from scanpipe.admin import admin_site
 from scanpipe.api.views import ProjectViewSet
 from scanpipe.api.views import RunViewSet
 from scanpipe.views import AccountProfileView
@@ -52,6 +53,11 @@ urlpatterns = auth_urlpatterns + [
     path("", include("scanpipe.urls")),
     path("", RedirectView.as_view(url="project/")),
 ]
+
+
+if settings.SCANCODEIO_ENABLE_ADMIN_SITE:
+    urlpatterns.append(path("admin/", admin_site.urls))
+
 
 if settings.DEBUG and settings.DEBUG_TOOLBAR:
     urlpatterns.append(path("__debug__/", include("debug_toolbar.urls")))

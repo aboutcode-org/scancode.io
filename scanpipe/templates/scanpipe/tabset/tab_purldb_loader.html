@@ -1,0 +1,5 @@
+<div hx-get="{% url 'package_purldb_tab' project.slug object.uuid %}" hx-trigger="load" hx-swap="outerHTML">
+  <div class="notification has-text-weight-semibold p-3">
+    <i class="fas fa-spinner fa-spin"></i> Fetching {{ object }} in {{ tab_data.verbose_name }} ...
+  </div>
+</div>

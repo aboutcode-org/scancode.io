@@ -23,6 +23,7 @@
 import difflib
 import logging
 import sys
+import time
 import uuid
 from contextlib import suppress
 from datetime import datetime
@@ -33,6 +34,7 @@ from timeit import default_timer as timer
 from django.db.models import Count
 
 from scanpipe import humanize_time
+from scanpipe.models import AbstractTaskFieldsModel
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -167,7 +169,12 @@ def _clean_package_data(package_data):
     return package_data
 
 
-def update_or_create_package(project, package_data, codebase_resources=None):
+def update_or_create_package(
+    project,
+    package_data,
+    codebase_resources=None,
+    is_virtual=False,
+):
     """
     Get, update or create a DiscoveredPackage then return it.
     Use the `project` and `package_data` mapping to lookup and creates the
@@ -179,6 +186,7 @@ def update_or_create_package(project, package_data, codebase_resources=None):
     package_data = _clean_package_data(package_data)
     # No values for package_uid requires to be empty string for proper queryset lookup
     package_uid = package_data.get("package_uid") or ""
+    datasource_id = package_data.get("datasource_id") or ""
 
     package = DiscoveredPackage.objects.get_or_none(
         project=project,
@@ -191,8 +199,14 @@ def update_or_create_package(project, package_data, codebase_resources=None):
     else:
         package = DiscoveredPackage.create_from_data(project, package_data)
 
-    if codebase_resources:
-        package.add_resources(codebase_resources)
+    if package:
+        if datasource_id and datasource_id not in package.datasource_ids:
+            datasource_ids = package.datasource_ids.copy()
+            datasource_ids.append(datasource_id)
+            package.update(datasource_ids=datasource_ids)
+
+        if codebase_resources:
+            package.add_resources(codebase_resources)
 
     return package
 
@@ -208,8 +222,33 @@ def create_local_files_package(project, defaults, codebase_resources=None):
     return update_or_create_package(project, package_data, codebase_resources)
 
 
+def ignore_dependency_scope(project, dependency_data):
+    """
+    Return True if the dependency should be ignored, i.e.: not created.
+    The ignored scopes are defined on the project ``ignored_dependency_scopes`` setting
+    field.
+    """
+    ignored_scope_index = project.ignored_dependency_scopes_index
+    if not ignored_scope_index:
+        return False
+
+    dependency_package_type = dependency_data.get("package_type")
+    dependency_scope = dependency_data.get("scope")
+    if dependency_package_type and dependency_scope:
+        if dependency_scope in ignored_scope_index.get(dependency_package_type, []):
+            return True  # Ignore this dependency entry.
+
+    return False
+
+
 def update_or_create_dependency(
-    project, dependency_data, for_package=None, strip_datafile_path_root=False
+    project,
+    dependency_data,
+    for_package=None,
+    resolved_to_package=None,
+    datafile_resource=None,
+    datasource_id=None,
+    strip_datafile_path_root=False,
 ):
     """
     Get, update or create a DiscoveredDependency then returns it.
@@ -222,24 +261,49 @@ def update_or_create_dependency(
     corresponding CodebaseResource for `datafile_path`. This is used in the case
     where Dependency data is imported from a scancode-toolkit scan, where the
     root path segments are not stripped for `datafile_path`.
+    If the dependency is resolved and a resolved package is created, we have the
+    corresponsing package_uid at `resolved_to`.
     """
-    dependency = None
-    dependency_uid = dependency_data.get("dependency_uid")
+    if ignore_dependency_scope(project, dependency_data):
+        return  # Do not create the DiscoveredDependency record.
 
-    if not dependency_uid:
-        dependency_data["dependency_uid"] = uuid.uuid4()
-    else:
-        dependency = project.discovereddependencies.get_or_none(
-            dependency_uid=dependency_uid,
+    dependencies = get_dependencies(project, dependency_data)
+
+    for dependency in dependencies:
+        is_for_new_package = (
+            for_package
+            and dependency.for_package
+            and dependency.for_package != for_package
         )
+        if is_for_new_package:
+            DiscoveredDependency.populate_dependency_uuid(dependency_data)
+            dependency = DiscoveredDependency.create_from_data(
+                project,
+                dependency_data,
+                for_package=for_package,
+                resolved_to_package=resolved_to_package,
+                datafile_resource=datafile_resource,
+                datasource_id=datasource_id,
+                strip_datafile_path_root=strip_datafile_path_root,
+            )
+            break
 
-    if dependency:
-        dependency.update_from_data(dependency_data)
-    else:
+        elif dependency:
+            dependency.update_from_data(dependency_data)
+            if resolved_to_package and not dependency.resolved_to_package:
+                dependency.update(resolved_to_package=resolved_to_package)
+            if for_package and not dependency.for_package:
+                dependency.update(for_package=for_package)
+
+    if not dependencies:
+        DiscoveredDependency.populate_dependency_uuid(dependency_data)
         dependency = DiscoveredDependency.create_from_data(
             project,
             dependency_data,
             for_package=for_package,
+            resolved_to_package=resolved_to_package,
+            datafile_resource=datafile_resource,
+            datasource_id=datasource_id,
             strip_datafile_path_root=strip_datafile_path_root,
         )
 
@@ -316,6 +380,34 @@ def _clean_license_detection_data(detection_data):
 
     detection_data["matches"] = updated_matches
     return detection_data
+
+
+def get_dependencies(project, dependency_data):
+    """
+    Given a `dependency_data` mapping, get a list of DiscoveredDependency objects
+    for that `project` with similar dependency data.
+    """
+    dependency = None
+    dependency_uid = dependency_data.get("dependency_uid")
+    extracted_requirement = dependency_data.get("extracted_requirement") or ""
+
+    dependencies = []
+    if not dependency_uid:
+        purl_data = DiscoveredDependency.extract_purl_data(dependency_data)
+        dependencies = DiscoveredDependency.objects.filter(
+            project=project,
+            extracted_requirement=extracted_requirement,
+            **purl_data,
+        )
+    else:
+        dependency = DiscoveredDependency.objects.get_or_none(
+            project=project,
+            dependency_uid=dependency_uid,
+        )
+        if dependency:
+            dependencies.append(dependency)
+
+    return dependencies
 
 
 def get_or_create_relation(project, relation_data):
@@ -484,3 +576,41 @@ def get_resource_diff_ratio(resource_a, resource_b):
             str_a=resource_a.file_content,
             str_b=resource_b.file_content,
         )
+
+
+def poll_until_success(check, sleep=10, **kwargs):
+    """
+    Given a function `check`, which returns the status of a run, return True
+    when the run instance has completed successfully.
+
+    Return False when the run instance has failed, stopped, or gone stale.
+
+    The arguments for `check` need to be provided as keyword argument into this
+    function.
+    """
+    run_status = AbstractTaskFieldsModel.Status
+    # Continue looping if the run instance has the following statuses
+    CONTINUE_STATUSES = [
+        run_status.NOT_STARTED,
+        run_status.QUEUED,
+        run_status.RUNNING,
+    ]
+    # Return False if the run instance has the following statuses
+    FAIL_STATUSES = [
+        run_status.FAILURE,
+        run_status.STOPPED,
+        run_status.STALE,
+    ]
+
+    while True:
+        status = check(**kwargs)
+        if status == run_status.SUCCESS:
+            return True
+
+        if status in CONTINUE_STATUSES:
+            continue
+
+        if status in FAIL_STATUSES:
+            return False
+
+        time.sleep(sleep)

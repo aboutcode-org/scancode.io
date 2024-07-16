@@ -27,6 +27,8 @@ from unittest import mock
 from django.apps import apps
 
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
+from scanpipe.models import DiscoveredPackage
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.profile_step import ProfileStep
 from scanpipe.tests.pipelines.raise_exception import RaiseException
@@ -65,6 +67,17 @@ def make_resource_directory(project, path, **extra):
     )
 
 
+def make_package(project, package_url, **extra):
+    package = DiscoveredPackage(project=project, **extra)
+    package.set_package_url(package_url)
+    package.save()
+    return package
+
+
+def make_dependency(project, **extra):
+    return DiscoveredDependency.objects.create(project=project, **extra)
+
+
 resource_data1 = {
     "path": "notice.NOTICE",
     "type": "file",
@@ -84,6 +97,10 @@ resource_data1 = {
     "is_text": True,
     "is_archive": False,
     "is_media": False,
+    "is_legal": False,
+    "is_manifest": False,
+    "is_readme": False,
+    "is_top_level": False,
     "is_key_file": False,
     "license_detections": [],
     "detected_license_expression": "",

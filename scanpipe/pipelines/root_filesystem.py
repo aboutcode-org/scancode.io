@@ -54,15 +54,14 @@ class RootFS(Pipeline):
         """Extract root filesystem input archives with extractcode."""
         input_files = self.project.inputs("*")
         target_path = self.project.codebase_path
-        errors = []
 
         for input_file in input_files:
             extract_target = target_path / f"{input_file.name}{EXTRACT_SUFFIX}"
-            extract_errors = scancode.extract_archive(input_file, extract_target)
-            errors.extend(extract_errors)
+            self.extract_archive(input_file, extract_target)
 
-        if errors:
-            self.add_error("\n".join(errors))
+        # Reload the project env post-extraction as the scancode-config.yml file
+        # may be located in one of the extracted archives.
+        self.env = self.project.get_env()
 
     def find_root_filesystems(self):
         """Find root filesystems in the project's codebase/."""

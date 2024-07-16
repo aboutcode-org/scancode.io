@@ -38,7 +38,9 @@ from django.db.models.functions import Concat
 from django.template.defaultfilters import pluralize
 
 from commoncode.paths import common_prefix
+from elf_inspector.dwarf import get_dwarf_paths
 from extractcode import EXTRACT_SUFFIX
+from go_inspector.plugin import collect_and_parse_symbols
 from packagedcode.npm import NpmPackageJsonHandler
 from summarycode.classify import LEGAL_STARTS_ENDS
 
@@ -963,7 +965,7 @@ class AboutFileIndexes:
 
             if not mapped_resources:
                 error_message_details = {
-                    "path": about_path,
+                    "resource_path": about_path,
                     "package_data": package_data,
                 }
                 project.add_warning(
@@ -1662,3 +1664,225 @@ def _match_purldb_resources_post_process(
             package.add_resources(unmapped_resources)
 
     return interesting_codebase_resources.count()
+
+
+def map_paths_resource(
+    to_resource, from_resources, from_resources_index, map_types, logger=None
+):
+    """
+    Map paths found in the ``to_resource`` extra_data to paths of the ``from_resources``
+    CodebaseResource queryset using the precomputed ``from_resources_index`` path index.
+    """
+    # Accumulate unique relation objects for bulk creation
+    relations_to_create = {}
+
+    for map_type in map_types:
+        # These are of type string
+        paths_in_binary = to_resource.extra_data.get(map_type, [])
+        paths_not_mapped = to_resource.extra_data[f"{map_type}_not_mapped"] = []
+        for item in process_paths_in_binary(
+            to_resource=to_resource,
+            from_resources=from_resources,
+            from_resources_index=from_resources_index,
+            map_type=map_type,
+            paths_in_binary=paths_in_binary,
+        ):
+            if isinstance(item, str):
+                paths_not_mapped.append(item)
+            else:
+                rel_key, relation = item
+                if rel_key not in relations_to_create:
+                    relations_to_create[rel_key] = relation
+        if paths_not_mapped:
+            to_resource.status = flag.REQUIRES_REVIEW
+            to_resource.save()
+            logger(
+                f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT mapped for: "
+                f"{to_resource.path!r}"
+            )
+
+    if relations_to_create:
+        rels = CodebaseRelation.objects.bulk_create(relations_to_create.values())
+        logger(
+            f"Created {len(rels)} mappings using "
+            f"{', '.join(map_types)} for: {to_resource.path!r}"
+        )
+    else:
+        logger(
+            f"No mappings using {', '.join(map_types)} for: " f"{to_resource.path!r}"
+        )
+
+
+def process_paths_in_binary(
+    to_resource,
+    from_resources,
+    from_resources_index,
+    map_type,
+    paths_in_binary,
+):
+    """
+    Process list of paths in binary and Yield either:
+    - a tuple of (unique key for a relationship, ``CodebaseRelation`` object)
+    - Or a path if it was not mapped
+    """
+    for path in paths_in_binary:
+        match = pathmap.find_paths(path, from_resources_index)
+        if not match:
+            yield path
+            continue
+
+        matched_path_length = match.matched_path_length
+        if is_invalid_match(match, matched_path_length):
+            yield path
+            continue
+
+        matched_from_resources = [
+            from_resources.get(id=rid) for rid in match.resource_ids
+        ]
+        matched_from_resources = sort_matched_from_resources(matched_from_resources)
+        winning_from_resource = matched_from_resources[0]
+
+        path_length = count_path_segments(path) - 1
+        extra_data = {
+            "path_score": f"{matched_path_length}/{path_length}",
+            map_type: path,
+        }
+
+        rel_key = (winning_from_resource.path, to_resource.path, map_type)
+        relation = CodebaseRelation(
+            project=winning_from_resource.project,
+            from_resource=winning_from_resource,
+            to_resource=to_resource,
+            map_type=map_type,
+            extra_data=extra_data,
+        )
+        yield rel_key, relation
+
+
+def count_path_segments(path):
+    """Return the number of path segments in POSIX ``path`` string"""
+    return len(path.strip("/").split("/"))
+
+
+def sort_matched_from_resources(matched_from_resources):
+    """
+    Return the sorted list of ``matched_from_resources``
+    based on path length and path.
+    """
+
+    def sorter(res):
+        return count_path_segments(res.path), res.path
+
+    return sorted(matched_from_resources, key=sorter)
+
+
+def is_invalid_match(match, matched_path_length):
+    """
+    Check if the match is invalid based on the ``matched_path_length`` and the number
+    of resource IDs.
+    """
+    return matched_path_length == 1 and len(match.resource_ids) != 1
+
+
+def map_elfs(project, logger=None):
+    """Map ELF binaries to their sources in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    to_resources = (
+        project.codebaseresources.files().to_codebase().has_no_relation().elfs()
+    )
+    for resource in to_resources:
+        try:
+            paths = get_elf_file_dwarf_paths(resource.location_path)
+            resource.update_extra_data(paths)
+        except Exception as e:
+            logger(f"Can not parse {resource.location_path!r} {e!r}")
+
+    if logger:
+        logger(
+            f"Mapping {to_resources.count():,d} to/ resources using paths "
+            f"with {from_resources.count():,d} from/ resources."
+        )
+
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
+    )
+
+    if logger:
+        logger("Done building from/ resources index.")
+
+    resource_iterator = to_resources.iterator(chunk_size=2000)
+    progress = LoopProgress(to_resources.count(), logger)
+    for to_resource in progress.iter(resource_iterator):
+        map_paths_resource(
+            to_resource,
+            from_resources,
+            from_resources_index,
+            map_types=["dwarf_compiled_paths", "dwarf_included_paths"],
+            logger=logger,
+        )
+
+
+def get_elf_file_dwarf_paths(location):
+    """Retrieve dwarf paths for ELF files."""
+    paths = get_dwarf_paths(location)
+    compiled_paths = paths.get("compiled_paths") or []
+    included_paths = paths.get("included_paths") or []
+    dwarf_paths = {}
+    if compiled_paths:
+        dwarf_paths["dwarf_compiled_paths"] = compiled_paths
+    if included_paths:
+        dwarf_paths["dwarf_included_paths"] = included_paths
+    return dwarf_paths
+
+
+def get_go_file_paths(location):
+    """Retrieve Go file paths."""
+    go_symbols = (
+        collect_and_parse_symbols(location, check_type=False).get("go_symbols") or {}
+    )
+    file_paths = {}
+    go_file_paths = go_symbols.get("file_paths") or []
+    if go_file_paths:
+        file_paths["go_file_paths"] = go_file_paths
+    return file_paths
+
+
+def map_go_paths(project, logger=None):
+    """Map Go binaries to their source in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    to_resources = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .has_no_relation()
+        .executable_binaries()
+    )
+    for resource in to_resources:
+        try:
+            paths = get_go_file_paths(resource.location_path)
+            resource.update_extra_data(paths)
+        except Exception as e:
+            logger(f"Can not parse {resource.location_path!r} {e!r}")
+
+    if logger:
+        logger(
+            f"Mapping {to_resources.count():,d} to/ resources using paths "
+            f"with {from_resources.count():,d} from/ resources."
+        )
+
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
+    )
+
+    if logger:
+        logger("Done building from/ resources index.")
+
+    resource_iterator = to_resources.iterator(chunk_size=2000)
+    progress = LoopProgress(to_resources.count(), logger)
+    for to_resource in progress.iter(resource_iterator):
+        map_paths_resource(
+            to_resource,
+            from_resources,
+            from_resources_index,
+            map_types=["go_file_paths"],
+            logger=logger,
+        )
