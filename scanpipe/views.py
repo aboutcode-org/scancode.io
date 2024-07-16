@@ -944,14 +944,14 @@ class ProjectResourceStatusSummaryView(ConditionalLoginRequired, generic.DetailV
         return context
 
 
-class ProjectResourceLicenseSummaryView(ConditionalLoginRequired, generic.DetailView):
+class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.DetailView):
     model = Project
-    template_name = "scanpipe/panels/resource_license_summary.html"
+    template_name = "scanpipe/panels/license_detections_summary.html"
 
     @staticmethod
-    def get_resource_license_summary(project, limit=10):
+    def get_license_detection_summary(project, limit=10):
         license_counter = count_group_by(
-            project.codebaseresources.files(), "detected_license_expression"
+            project.discoveredlicenses, "license_expression"
         )
 
         if list(license_counter.keys()) == [""]:
@@ -962,24 +962,29 @@ class ProjectResourceLicenseSummaryView(ConditionalLoginRequired, generic.Detail
             sorted(license_counter.items(), key=operator.itemgetter(1), reverse=True)
         )
 
-        # Remove the "no licenses" entry from the top list
-        no_licenses = sorted_by_count.pop("", None)
-
         # Keep the top entries
         top_licenses = dict(list(sorted_by_count.items())[:limit])
 
-        # Add the "no licenses" entry at the end
-        if no_licenses:
-            top_licenses[""] = no_licenses
+        # Also get count for detections with
+        expressions_with_compliance_alert = []
+        for license_expression in top_licenses.keys():
+            has_compliance_alert = (
+                project.discoveredlicenses.filter(license_expression=license_expression)
+                .has_compliance_alert()
+                .exists()
+            )
+            if has_compliance_alert:
+                expressions_with_compliance_alert.append(license_expression)
 
-        return top_licenses
+        return top_licenses, expressions_with_compliance_alert
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        summary = self.get_resource_license_summary(project=self.object)
-        context["resource_license_summary"] = summary
-        context["project_resources_url"] = reverse(
-            "project_resources", args=[self.object.slug]
+        summary, expressions = self.get_license_detection_summary(project=self.object)
+        context["license_detection_summary"] = summary
+        context["expressions_with_compliance_alert"] = expressions
+        context["project_licenses_url"] = reverse(
+            "project_licenses", args=[self.object.slug]
         )
         return context
 
@@ -1544,7 +1549,10 @@ class DiscoveredLicenseListView(
             "field_name": "license_expression",
             "filter_fieldname": "license_expression",
         },
-        "license_expression_spdx",
+        {
+            "field_name": "license_expression_spdx",
+            "filter_fieldname": "license_expression_spdx",
+        },
         "detection_count",
         {
             "field_name": "compliance_alert",
@@ -1565,6 +1573,11 @@ class DiscoveredLicenseListView(
             )
             .order_by_count_and_expression()
         )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["display_compliance_alert"] = scanpipe_app.policies_enabled
+        return context
 
 
 class ProjectMessageListView(

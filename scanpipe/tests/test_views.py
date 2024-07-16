@@ -683,7 +683,7 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(8):
             self.client.get(url)
 
-        with self.assertNumQueries(14):
+        with self.assertNumQueries(13):
             self.client.get(self.project1.get_absolute_url())
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
@@ -915,7 +915,7 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(7):
             self.client.get(url)
 
-        with self.assertNumQueries(7):
+        with self.assertNumQueries(8):
             self.client.get(resource1.get_absolute_url())
 
     def test_scanpipe_views_discovered_package_views(self):

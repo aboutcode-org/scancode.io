@@ -1235,6 +1235,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         return self.discoveredlicenses.count()
 
     @cached_property
+    def package_compliance_alert_count(self):
+        """Return the number of packages related to this project which have."""
+        return self.discoveredpackages.has_compliance_alert().count()
+
+    @cached_property
+    def license_compliance_alert_count(self):
+        """Return the number of packages related to this project which have."""
+        return self.discoveredlicenses.has_compliance_alert().count()
+
+    @cached_property
     def message_count(self):
         """Return the number of messages related to this project."""
         return self.projectmessages.count()
@@ -2156,6 +2166,17 @@ class ComplianceAlertMixin(models.Model):
     class Meta:
         abstract = True
 
+    @property
+    def has_compliance_alert(self):
+        """
+        Returns True if this instance has a compliance alert of `ERROR`
+        for it's respective license_expression fields.
+        """
+        if self.compliance_alert == self.Compliance.ERROR:
+            return True
+
+        return False
+
     @classmethod
     def from_db(cls, db, field_names, values):
         """
@@ -2710,8 +2731,16 @@ class VulnerabilityQuerySetMixin:
         return self.filter(~Q(affected_by_vulnerabilities__in=EMPTY_VALUES))
 
 
+class ComplianceAlertQuerySetMixin:
+    def has_compliance_alert(self):
+        return self.filter(Q(compliance_alert__exact=CodebaseResource.Compliance.ERROR))
+
+
 class DiscoveredPackageQuerySet(
-    VulnerabilityQuerySetMixin, PackageURLQuerySetMixin, ProjectRelatedQuerySet
+    VulnerabilityQuerySetMixin,
+    ComplianceAlertQuerySetMixin,
+    PackageURLQuerySetMixin,
+    ProjectRelatedQuerySet,
 ):
     def order_by_purl(self):
         """Order by Package URL fields."""
@@ -3485,7 +3514,10 @@ class DiscoveredDependency(
         )
 
 
-class DiscoveredLicenseQuerySet(ProjectRelatedQuerySet):
+class DiscoveredLicenseQuerySet(
+    ComplianceAlertQuerySetMixin,
+    ProjectRelatedQuerySet,
+):
     def order_by_count_and_expression(self):
         """Order by detection count and license expression (identifer) fields."""
         return self.order_by("-detection_count", "identifier")
@@ -3550,7 +3582,6 @@ class DiscoveredLicense(
     """
     A project's Discovered Licenses are the unique License Detection objects
     discovered in the code under analysis.
-
     """
 
     license_expression_field = "license_expression"

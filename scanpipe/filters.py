@@ -772,6 +772,8 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 class LicenseFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "compliance_alert",
+        "license_expression",
+        "license_expression_spdx",
     ]
 
     search = DiscoveredLicenseSearchFilter(
@@ -788,6 +790,7 @@ class LicenseFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         ],
     )
     license_expression = ParentAllValuesFilter()
+    license_expression_spdx = ParentAllValuesFilter()
     compliance_alert = django_filters.ChoiceFilter(
         choices=[(EMPTY_VAR, "None")] + CodebaseResource.Compliance.choices,
     )

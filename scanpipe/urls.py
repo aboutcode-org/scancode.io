@@ -192,9 +192,9 @@ urlpatterns = [
         name="project_resource_status_summary",
     ),
     path(
-        "project/<slug:slug>/resource_license_summary/",
-        views.ProjectResourceLicenseSummaryView.as_view(),
-        name="project_resource_license_summary",
+        "project/<slug:slug>/license_detection_summary/",
+        views.ProjectLicenseDetectionSummaryView.as_view(),
+        name="project_license_detection_summary",
     ),
     path(
         "project/<slug:slug>/",
