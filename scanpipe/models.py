@@ -1365,13 +1365,27 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
     @cached_property
     def package_compliance_alert_count(self):
-        """Return the number of packages related to this project which have."""
+        """
+        Return the number of packages related to this project which have
+        a license compliance error alert.
+        """
         return self.discoveredpackages.has_compliance_alert().count()
 
     @cached_property
     def license_compliance_alert_count(self):
-        """Return the number of packages related to this project which have."""
+        """
+        Return the number of license detections related to this project
+        which have a license compliance error alert.
+        """
         return self.discoveredlicenses.has_compliance_alert().count()
+
+    @cached_property
+    def resource_compliance_alert_count(self):
+        """
+        Return the number of codebase resources related to this project which have
+        a license compliance error alert.
+        """
+        return self.codebaseresources.has_compliance_alert().count()
 
     @cached_property
     def message_count(self):
@@ -2042,7 +2056,15 @@ def convert_glob_to_django_regex(glob_pattern):
     return escaped_pattern
 
 
-class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
+class ComplianceAlertQuerySetMixin:
+    def has_compliance_alert(self):
+        return self.filter(Q(compliance_alert__exact=CodebaseResource.Compliance.ERROR))
+
+
+class CodebaseResourceQuerySet(
+    ComplianceAlertQuerySetMixin,
+    ProjectRelatedQuerySet,
+):
     def prefetch_for_serializer(self):
         """
         Optimized prefetching for a QuerySet to be consumed by the
@@ -2943,11 +2965,6 @@ class VulnerabilityMixin(models.Model):
 class VulnerabilityQuerySetMixin:
     def vulnerable(self):
         return self.filter(~Q(affected_by_vulnerabilities__in=EMPTY_VALUES))
-
-
-class ComplianceAlertQuerySetMixin:
-    def has_compliance_alert(self):
-        return self.filter(Q(compliance_alert__exact=CodebaseResource.Compliance.ERROR))
 
 
 class DiscoveredPackageQuerySet(

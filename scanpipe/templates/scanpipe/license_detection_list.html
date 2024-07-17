@@ -26,7 +26,7 @@
               <a href="{% url 'license_detail' project.slug license_detection.identifier %}">{{ license_detection.identifier }}</a>
               {% if license_detection.has_compliance_alert %}
                 <a href="{% url 'license_detail' project.slug license_detection.identifier %}#detection">
-                  <i class="fa-solid fa-scale-balanced fa-sm has-text-danger" title="License Compliance Error"></i>
+                  <i class="fa-solid fa-scale-balanced fa-sm has-text-danger" title="License Compliance Alerts"></i>
                 </a>
               {% endif %}
             </td>

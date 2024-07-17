@@ -19,7 +19,7 @@
                 {{ match.license_expression }}
             </td>
             <td class="break-all">
-              {{ match.from_file }}
+                <a href="{% url 'resource_detail' project.slug match.from_file %}#detection">{{ match.from_file }}</a>
             </td>
             <td class="break-all">
                 {{ match.rule_url }}
@@ -73,7 +73,7 @@
           {% for file_region in tab_data.fields.file_regions.value %}
           <tr>
               <td class="break-all">
-                {{ file_region.path }}
+                <a href="{% url 'resource_detail' project.slug file_region.path %}#detection">{{ file_region.path }}</a>
               </td>
               <td class="break-all">
                   {{ file_region.start_line }}

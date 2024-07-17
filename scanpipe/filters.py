@@ -492,6 +492,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "status",
         "type",
+        "programming_language",
         "tag",
         "compliance_alert",
         "in_package",
@@ -521,6 +522,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "related_from__from_resource__path",
         ],
     )
+    programming_language = django_filters.AllValuesFilter()
     compliance_alert = django_filters.ChoiceFilter(
         choices=[(EMPTY_VAR, "None")] + CodebaseResource.Compliance.choices,
     )
@@ -577,8 +579,8 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        license_expression_filer = self.filters["detected_license_expression"]
-        license_expression_filer.extra["widget"] = HasValueDropdownWidget()
+        license_expression_filter = self.filters["detected_license_expression"]
+        license_expression_filter.extra["widget"] = HasValueDropdownWidget()
 
     @classmethod
     def filter_for_lookup(cls, field, lookup_type):
