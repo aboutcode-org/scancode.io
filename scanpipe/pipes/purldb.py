@@ -24,6 +24,7 @@ import json
 import logging
 
 from django.conf import settings
+from django.template.defaultfilters import pluralize
 from django.utils.text import slugify
 
 import requests
@@ -461,25 +462,28 @@ def get_run_status(run, **kwargs):
     return run.status
 
 
-def enrich_package_with_purldb_data(package):
+def enrich_package(package):
     """Enrich the provided ``package`` with the PurlDB data."""
     purldb_entry = get_package_by_purl(package.package_url)
     if purldb_entry:
         package_data = _clean_package_data(purldb_entry)
-        updated_fields = package.update_from_data(package_data)
-        return updated_fields
+        if updated_fields := package.update_from_data(package_data):
+            package.update_extra_data({ENRICH_EXTRA_DATA_KEY: updated_fields})
+            return updated_fields
 
 
-def enrich_discovered_packages_with_purldb(project, logger=logger.info):
+def enrich_discovered_packages(project, logger=logger.info):
     """Enrich all project discovered packages with the PurlDB data."""
     packages = project.discoveredpackages.all()
 
     updated_package_count = 0
     for package in packages:
-        updated_fields = enrich_package_with_purldb_data(package)
-        if updated_fields:
-            package.update_extra_data({ENRICH_EXTRA_DATA_KEY: updated_fields})
+        if updated_fields := enrich_package(package):
             logger(f"{package} {updated_fields}")
             updated_package_count += 1
 
-    logger(f"{updated_package_count} discovered packages enriched with the PurlDB.")
+    logger(
+        f"{updated_package_count} discovered package{pluralize(updated_package_count)} "
+        f"enriched with the PurlDB."
+    )
+    return updated_package_count
