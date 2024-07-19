@@ -29,6 +29,7 @@ class CollectStringsGettext(Pipeline):
 
     download_inputs = False
     is_addon = True
+    results_url = "/project/{slug}/resources/?extra_data=source_strings"
 
     @classmethod
     def steps(cls):

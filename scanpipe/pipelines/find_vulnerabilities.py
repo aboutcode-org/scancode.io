@@ -33,6 +33,7 @@ class FindVulnerabilities(Pipeline):
 
     download_inputs = False
     is_addon = True
+    results_url = "/project/{slug}/packages/?is_vulnerable=yes"
 
     @classmethod
     def steps(cls):

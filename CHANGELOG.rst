@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v34.7.2 (unreleased)
+--------------------
+
+- Add the ability to define a results_url on the Pipeline class.
+  When available, that link is displayed in the UI to easily reach the results view
+  related to the Pipeline run.
+
 v34.7.1 (2024-07-15)
 --------------------
 

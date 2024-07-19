@@ -29,6 +29,7 @@ class InspectELFBinaries(Pipeline):
 
     download_inputs = False
     is_addon = True
+    results_url = "/project/{slug}/resources/?extra_data=compiled_paths"
 
     @classmethod
     def steps(cls):
