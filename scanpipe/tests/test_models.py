@@ -1806,6 +1806,8 @@ class ScanPipeModelsTest(TestCase):
         for purl, expected_count in inputs:
             qs = DiscoveredPackage.objects.for_package_url(purl)
             self.assertEqual(expected_count, qs.count(), msg=purl)
+            qs2 = DiscoveredPackage.objects.filter(package_url=purl)
+            self.assertEqual(expected_count, qs2.count(), msg=purl)
 
     def test_scanpipe_discovered_package_queryset_vulnerable(self):
         p1 = DiscoveredPackage.create_from_data(self.project1, package_data1)

@@ -2943,6 +2943,13 @@ class DiscoveredPackageQuerySet(
         """
         return self.only("uuid", *PACKAGE_URL_FIELDS)
 
+    def filter(self, *args, **kwargs):
+        """Add support for using ``package_url`` as a field lookup."""
+        if purl_str := kwargs.pop("package_url", None):
+            return super().filter(*args, **kwargs).for_package_url(purl_str)
+
+        return super().filter(*args, **kwargs)
+
 
 class AbstractPackage(models.Model):
     """These fields should be kept in line with `packagedcode.models.PackageData`."""
