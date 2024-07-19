@@ -49,6 +49,7 @@ from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import FIXTURES_REGEN
+from scanpipe.tests import make_package
 from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.profile_step import ProfileStep
@@ -845,6 +846,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, project1.discoveredpackages.count())
         self.assertEqual(26, project1.discovereddependencies.count())
 
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_inspect_packages_with_resolved_dependencies_npm(self):
         pipeline_name = "inspect_packages"
         project1 = Project.objects.create(name="Analysis")
@@ -872,6 +874,7 @@ class PipelinesIntegrationTest(TestCase):
         )
         self.assertPipelineResultEqual(expected_file, result_file)
 
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_inspect_packages_with_resolved_dependencies_poetry(self):
         pipeline_name = "inspect_packages"
         project1 = Project.objects.create(name="Analysis")
@@ -1711,3 +1714,33 @@ class PipelinesIntegrationTest(TestCase):
             expected_extra_data = json.load(f)
 
         self.assertDictEqual(expected_extra_data, result_extra_data)
+
+    @mock.patch("scanpipe.pipes.purldb.is_available")
+    @mock.patch("scanpipe.pipes.purldb.is_configured")
+    @mock.patch("scanpipe.pipes.purldb.get_package_by_purl")
+    def test_scanpipe_enrich_with_purldb_pipeline_integration(
+        self, mock_get_package, mock_is_configured, mock_is_available
+    ):
+        pipeline_name = "enrich_with_purldb"
+        project1 = Project.objects.create(name="Analysis")
+        package1 = make_package(project1, package_url="pkg:npm/csvtojson@2.0.10")
+
+        mock_is_configured.return_value = True
+        mock_is_available.return_value = True
+
+        purldb_entry_file = self.data / "purldb" / "csvtojson-2.0.10.json"
+        purldb_entry = json.loads(purldb_entry_file.read_text())
+        mock_get_package.return_value = purldb_entry
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        package1.refresh_from_db()
+        self.assertTrue(package1.extra_data.get("enrich_with_purldb"))
+
+        run.refresh_from_db()
+        self.assertIn("pkg:npm/csvtojson@2.0.10 ['release_date'", run.log)
+        self.assertIn("1 discovered package enriched with the PurlDB.", run.log)

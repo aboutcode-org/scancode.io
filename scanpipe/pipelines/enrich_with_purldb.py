@@ -29,6 +29,7 @@ class EnrichWithPurlDB(Pipeline):
 
     download_inputs = False
     is_addon = True
+    results_url = "/project/{slug}/packages/?extra_data=" + purldb.ENRICH_EXTRA_DATA_KEY
 
     @classmethod
     def steps(cls):
@@ -39,4 +40,4 @@ class EnrichWithPurlDB(Pipeline):
 
     def enrich_discovered_packages_with_purldb(self):
         """Lookup discovered packages in PurlDB."""
-        purldb.enrich_discovered_packages_with_purldb(self.project, logger=self.log)
+        purldb.enrich_discovered_packages(self.project, logger=self.log)

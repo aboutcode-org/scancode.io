@@ -4,6 +4,10 @@ Changelog
 v34.7.2 (unreleased)
 --------------------
 
+- Add a new ``enrich_with_purldb`` add-on pipeline to enrich the discovered packages
+  with data available in the PurlDB.
+  https://github.com/nexB/scancode.io/issues/1182
+
 - Add the ability to define a results_url on the Pipeline class.
   When available, that link is displayed in the UI to easily reach the results view
   related to the Pipeline run.
