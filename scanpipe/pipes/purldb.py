@@ -32,6 +32,7 @@ from univers.version_range import RANGE_CLASS_BY_SCHEMES
 from univers.version_range import InvalidVersionRange
 
 from scanpipe.pipes import LoopProgress
+from scanpipe.pipes import _clean_package_data
 from scanpipe.pipes import poll_until_success
 
 
@@ -64,6 +65,9 @@ if PURLDB_API_KEY:
 
 DEFAULT_TIMEOUT = 60
 
+# This key can be used for filtering
+ENRICH_EXTRA_DATA_KEY = "enrich_with_purldb"
+
 
 def is_configured():
     """Return True if the required PurlDB settings have been set."""
@@ -85,6 +89,15 @@ def is_available():
         return False
 
     return response.status_code == requests.codes.ok
+
+
+def check_service_availability(*args):
+    """Check if the PurlDB service if configured and available."""
+    if not is_configured():
+        raise Exception(f"{label} is not configured.")
+
+    if not is_available():
+        raise Exception(f"{label} is not available.")
 
 
 def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
@@ -446,3 +459,27 @@ def get_run_status(run, **kwargs):
     """Refresh the values of `run` and return its status"""
     run.refresh_from_db()
     return run.status
+
+
+def enrich_package_with_purldb_data(package):
+    """Enrich the provided ``package`` with the PurlDB data."""
+    purldb_entry = get_package_by_purl(package.package_url)
+    if purldb_entry:
+        package_data = _clean_package_data(purldb_entry)
+        updated_fields = package.update_from_data(package_data)
+        return updated_fields
+
+
+def enrich_discovered_packages_with_purldb(project, logger=logger.info):
+    """Enrich all project discovered packages with the PurlDB data."""
+    packages = project.discoveredpackages.all()
+
+    updated_package_count = 0
+    for package in packages:
+        updated_fields = enrich_package_with_purldb_data(package)
+        if updated_fields:
+            package.update_extra_data({ENRICH_EXTRA_DATA_KEY: updated_fields})
+            logger(f"{package} {updated_fields}")
+            updated_package_count += 1
+
+    logger(f"{updated_package_count} discovered packages enriched with the PurlDB.")
