@@ -1982,6 +1982,12 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         for subscription in self.project.webhooksubscriptions.all():
             subscription.deliver(pipeline_run=self)
 
+    @property
+    def results_url(self):
+        """Return the rendered ``results_url`` if defined on the Pipeline class."""
+        if results_url := self.pipeline_class.results_url:
+            return results_url.format(**self.project.__dict__)
+
     def profile(self, print_results=False):
         """
         Return computed execution times for each step in the current Run.

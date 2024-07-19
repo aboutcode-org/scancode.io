@@ -46,6 +46,7 @@ from django.test import TestCase
 from django.test import TransactionTestCase
 from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
+from django.urls import reverse
 from django.utils import timezone
 
 from packagedcode.models import PackageData
@@ -1202,6 +1203,19 @@ class ScanPipeModelsTest(TestCase):
         run1 = self.create_run()
         run1.deliver_project_subscriptions()
         mock_deliver.assert_called_once_with(pipeline_run=run1)
+
+    def test_scanpipe_run_model_results_url(self):
+        run1 = self.create_run(pipeline="scan_codebase")
+        self.assertEqual("", run1.pipeline_class.results_url)
+        self.assertIsNone(run1.results_url)
+
+        run2 = self.create_run(pipeline="find_vulnerabilities")
+        self.assertEqual(
+            "/project/{slug}/packages/?is_vulnerable=yes",
+            run2.pipeline_class.results_url,
+        )
+        packages_url = reverse("project_packages", args=[self.project1.slug])
+        self.assertEqual(f"{packages_url}?is_vulnerable=yes", run2.results_url)
 
     def test_scanpipe_run_model_profile_method(self):
         run1 = self.create_run()

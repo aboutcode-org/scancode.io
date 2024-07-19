@@ -790,6 +790,16 @@ class ScanPipeViewsTest(TestCase):
         expected = '<span class="tag is-danger">Stopped</span>'
         self.assertContains(response, expected)
 
+    def test_scanpipe_views_run_detail_view_results_url(self):
+        run = self.project1.add_pipeline("find_vulnerabilities")
+        self.assertTrue(run.results_url)
+
+        url = reverse("run_detail", args=[run.uuid])
+        run.set_task_ended(exitcode=0)
+        response = self.client.get(url)
+        self.assertContains(response, "View pipeline results")
+        self.assertContains(response, run.results_url)
+
     def test_scanpipe_views_project_run_step_selection_view(self):
         run = self.project1.add_pipeline("do_nothing")
         url = reverse("project_run_step_selection", args=[run.uuid])

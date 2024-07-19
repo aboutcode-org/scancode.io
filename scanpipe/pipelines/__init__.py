@@ -84,6 +84,12 @@ class BasePipeline:
     download_inputs = True
     # Flag indicating if the Pipeline is an add-on, meaning it cannot be run first.
     is_addon = False
+    # Optional URL that targets a view of the results relative to this Pipeline.
+    # This URL may contain dictionary-style string formatting, which will be
+    # interpolated against the project's field attributes.
+    # For example, you could use results_url="/project/{slug}/packages/?filter=value"
+    # to target the Package list view with an active filtering.
+    results_url = ""
 
     def __init__(self, run):
         """Load the Run and Project instances."""
