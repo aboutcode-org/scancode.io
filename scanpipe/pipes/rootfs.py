@@ -47,6 +47,7 @@ SUPPORTED_DISTROS = [
     "fedora",
     "sles",
     "opensuse",
+    "mariner",
     "opensuse-tumbleweed",
     "photon",
     "windows",
