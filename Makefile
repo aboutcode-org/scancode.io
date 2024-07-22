@@ -25,7 +25,6 @@ PYTHON_EXE?=python3
 MANAGE=bin/python manage.py
 ACTIVATE?=. bin/activate;
 VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
-BLACK_ARGS=--exclude=".cache|migrations|data|lib|bin|var"
 # Do not depend on Python to generate the SECRET_KEY
 GET_SECRET_KEY=`head -c50 /dev/urandom | base64 | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
@@ -63,33 +62,22 @@ envfile:
 	@mkdir -p $(shell dirname ${ENV_FILE}) && touch ${ENV_FILE}
 	@echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
 
-isort:
-	@echo "-> Apply isort changes to ensure proper imports ordering"
-	@${ACTIVATE} isort --profile black .
-
-black:
-	@echo "-> Apply black code formatter"
-	@${ACTIVATE} black ${BLACK_ARGS} .
-
 doc8:
 	@echo "-> Run doc8 validation"
 	@${ACTIVATE} doc8 --max-line-length 100 --ignore-path docs/_build/ --quiet docs/
 
-valid: isort black doc8 check
+valid:
+	@echo "-> Run Ruff linter"
+	@${ACTIVATE} ruff check --fix
+	@echo "-> Run Ruff format"
+	@${ACTIVATE} ruff format
 
-bandit:
-	@echo "-> Run source code security analyzer"
-	@${ACTIVATE} bandit -r scanpipe scancodeio --quiet --exclude test_spdx.py
-
-check: doc8 bandit
-	@echo "-> Run flake8 (pycodestyle, pyflakes, mccabe) validation"
-	@${ACTIVATE} flake8 .
-	@echo "-> Run isort imports ordering validation"
-	@${ACTIVATE} isort --profile black --check-only .
-	@echo "-> Run black validation"
-	@${ACTIVATE} black --check ${BLACK_ARGS} .
-	@echo "-> Run docstring validation"
-	@${ACTIVATE} pydocstyle scanpipe scancodeio
+check:
+	@echo "-> Run Ruff linter validation (pycodestyle, bandit, isort, and more)"
+	@${ACTIVATE} ruff check
+	@echo "-> Run Ruff format validation"
+	@${ACTIVATE} ruff format --check
+	@$(MAKE) doc8
 
 check-deploy:
 	@echo "-> Check Django deployment settings"
@@ -163,4 +151,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install check bandit valid isort check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run test docs bump docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run test docs bump docker-images offline-package

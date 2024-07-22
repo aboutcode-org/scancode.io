@@ -71,7 +71,7 @@ class MatchCodePipesTest(TestCase):
                 / "match_to_matchcode"
                 / "request_post_response.json"
             )
-            with open(request_post_response_loc, "r") as f:
+            with open(request_post_response_loc) as f:
                 return json.load(f)
 
         mock_request_post.side_effect = mock_request_post_return
@@ -95,7 +95,7 @@ class MatchCodePipesTest(TestCase):
             / "match_to_matchcode"
             / "request_get_check_response.json"
         )
-        with open(request_get_check_response_loc, "r") as f:
+        with open(request_get_check_response_loc) as f:
             mock_request_get_check_return = json.load(f)
 
         mock_request_get.side_effect = [
@@ -233,7 +233,7 @@ class MatchCodePipesTest(TestCase):
             / "match_to_matchcode"
             / "request_get_results_response.json"
         )
-        with open(request_post_response_loc, "r") as f:
+        with open(request_post_response_loc) as f:
             match_results = json.load(f)
 
         resource_paths_by_package_uids = matchcode.map_match_results(match_results)
@@ -265,7 +265,7 @@ class MatchCodePipesTest(TestCase):
             / "match_to_matchcode"
             / "request_get_results_response.json"
         )
-        with open(request_get_results_response_loc, "r") as f:
+        with open(request_get_results_response_loc) as f:
             match_results = json.load(f)
 
         self.assertEqual(0, self.project1.discoveredpackages.all().count())
@@ -293,7 +293,7 @@ class MatchCodePipesTest(TestCase):
             / "match_to_matchcode"
             / "request_get_check_response.json"
         )
-        with open(request_get_check_response_loc, "r") as f:
+        with open(request_get_check_response_loc) as f:
             mock_request_get_check_return = json.load(f)
 
         request_get_results_response_loc = (
@@ -302,7 +302,7 @@ class MatchCodePipesTest(TestCase):
             / "match_to_matchcode"
             / "request_get_results_response.json"
         )
-        with open(request_get_results_response_loc, "r") as f:
+        with open(request_get_results_response_loc) as f:
             mock_request_get_results_return = json.load(f)
         mock_request_get.side_effect = [
             mock_request_get_check_return,

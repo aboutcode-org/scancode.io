@@ -135,7 +135,7 @@ class ScanPipeJsTest(TestCase):
             )
         )
 
-        with open(expected_location, "r") as f:
+        with open(expected_location) as f:
             expected = f.read()
 
         result = js.get_map_sources_content(to_resource)

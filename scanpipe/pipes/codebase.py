@@ -138,8 +138,7 @@ class ProjectCodebase:
         for root_resource in self.root_resources:
             if topdown:
                 yield root_resource
-            for resource in root_resource.walk(topdown=topdown):
-                yield resource
+            yield from root_resource.walk(topdown=topdown)
             if not topdown:
                 yield root_resource
 

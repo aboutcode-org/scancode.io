@@ -1,0 +1,45 @@
+[tool.ruff]
+line-length = 88
+exclude = [
+    "migrations",
+    "bin",
+    "Script",
+    "Lib",
+    "lib",
+    "lib64",
+    "local",
+    "var",
+]
+
+[tool.ruff.lint]
+# Rules: https://docs.astral.sh/ruff/rules/
+select = [
+    "E",  # pycodestyle
+    "W",  # pycodestyle warnings
+    "D",  # pydocstyle
+    "F",  # Pyflakes
+    "UP", # pyupgrade
+    "S",  # flake8-bandit
+    "I",  # isort
+    "C9", # McCabe complexity
+]
+ignore = ["D1", "D203", "D205", "D212", "D400", "D415"]
+
+[tool.ruff.lint.isort]
+force-single-line = true
+sections = { django = ["django"] }
+section-order = [
+    "future",
+    "standard-library",
+    "django",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.per-file-ignores]
+# All usage of assert on the SPDX test file.
+"**/test_spdx.py*" = ["S101"]

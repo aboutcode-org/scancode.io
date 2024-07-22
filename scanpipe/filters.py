@@ -260,7 +260,7 @@ class FilterSetUtilsMixin:
     @classmethod
     def filter_for_lookup(cls, field, lookup_type):
         """Add support for JSONField storing "list" using the JSONListFilter."""
-        if isinstance(field, models.JSONField) and field.default == list:
+        if isinstance(field, models.JSONField) and field.default is list:
             return JSONContainsFilter, {}
 
         return super().filter_for_lookup(field, lookup_type)
