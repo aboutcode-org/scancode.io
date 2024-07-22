@@ -22,8 +22,9 @@
 
 # Python version can be specified with `$ PYTHON_EXE=python3.x make conf`
 PYTHON_EXE?=python3
-MANAGE=bin/python manage.py
-ACTIVATE?=. bin/activate;
+VENV_LOCATION=.venv
+ACTIVATE?=. ${VENV_LOCATION}/bin/activate;
+MANAGE=${VENV_LOCATION}/bin/python manage.py
 VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
 # Do not depend on Python to generate the SECRET_KEY
 GET_SECRET_KEY=`head -c50 /dev/urandom | base64 | head -c50`
@@ -46,7 +47,7 @@ endif
 
 virtualenv:
 	@echo "-> Bootstrap the virtualenv with PYTHON_EXE=${PYTHON_EXE}"
-	@${PYTHON_EXE} ${VIRTUALENV_PYZ} --never-download --no-periodic-update .
+	@${PYTHON_EXE} ${VIRTUALENV_PYZ} --never-download --no-periodic-update ${VENV_LOCATION}
 
 conf: virtualenv
 	@echo "-> Install dependencies"
@@ -85,8 +86,8 @@ check-deploy:
 
 clean:
 	@echo "-> Clean the Python env"
-	rm -rf bin/ lib/ lib64/ include/ build/ dist/ docs/_build/ .cache/ pip-selfcheck.json pyvenv.cfg
-	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete -type d -name '*.egg-info' -delete
+	rm -rf .venv/ .*_cache/ *.egg-info/ build/ dist/
+	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
 
 migrate:
 	@echo "-> Apply database migrations"

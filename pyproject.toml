@@ -1,13 +1,8 @@
 [tool.ruff]
 line-length = 88
 exclude = [
+    ".venv",
     "migrations",
-    "bin",
-    "Script",
-    "Lib",
-    "lib",
-    "lib64",
-    "local",
     "var",
 ]
 
@@ -41,5 +36,5 @@ section-order = [
 max-complexity = 10
 
 [tool.ruff.lint.per-file-ignores]
-# All usage of assert on the SPDX test file.
+# Allow the usage of assert in the test_spdx file.
 "**/test_spdx.py*" = ["S101"]
