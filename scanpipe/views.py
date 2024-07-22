@@ -327,7 +327,7 @@ class TabSetMixin:
         if isinstance(field_value, Manager):
             return list(field_value.all())
 
-        if isinstance(field_value, (list, dict)):
+        if isinstance(field_value, list | dict):
             with suppress(Exception):
                 field_value = render_as_yaml(field_value)
 
