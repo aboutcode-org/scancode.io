@@ -2713,8 +2713,7 @@ class CodebaseResource(
         for child in self.children().iterator():
             if topdown:
                 yield child
-            for subchild in child.walk(topdown=topdown):
-                yield subchild
+            yield from child.walk(topdown=topdown)
             if not topdown:
                 yield child
 
@@ -2739,7 +2738,7 @@ class CodebaseResource(
         # This workaround ensures that the entire content of map files is displayed.
         file_type = get_type(self.location)
         if file_type.is_js_map:
-            with open(self.location, "r") as file:
+            with open(self.location) as file:
                 content = json.load(file)
 
             return json.dumps(content, indent=2)

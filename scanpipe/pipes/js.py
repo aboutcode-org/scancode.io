@@ -78,7 +78,7 @@ def sha1(content):
     # The following hash is not used in any security context. It is only used
     # to generate a value for matching purposes, collisions are acceptable and
     # "content" is not coming from user-generated input.
-    return hashlib.sha1(content.encode()).hexdigest()  # nosec
+    return hashlib.sha1(content.encode(), usedforsecurity=False).hexdigest()
 
 
 def source_content_sha1_list(map_file):
