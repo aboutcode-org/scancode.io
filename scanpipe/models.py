@@ -1975,7 +1975,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def make_pipeline_instance(self):
         """Return a pipelines instance using this Run pipeline_class."""
-        return self.pipeline_class(self)
+        return self.pipeline_class.make_run(run_instance=self)
 
     def deliver_project_subscriptions(self):
         """Triggers related project webhook subscriptions."""

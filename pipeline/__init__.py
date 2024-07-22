@@ -34,6 +34,30 @@ from markdown_it import MarkdownIt
 logger = logging.getLogger(__name__)
 
 
+"""
+Pipeline: steps definition, documentation
+Run: context (groups, steps), execution, logging, and results
+
+from pipeline import BasePipeline
+from pipeline import BasePipelineRun
+
+class DoSomething(BasePipeline):
+    @classmethod
+    def steps(cls):
+        return (cls.step1,)
+    def step1(self):
+        print("Message from step1")
+
+# 1. From the Pipeline class (preferred)
+run = DoSomething.make_run()
+run.execute()
+
+# 2. From the Run class
+run = BasePipelineRun(pipeline_class=DoSomething)
+run.execute()
+"""
+
+
 def group(*groups):
     """Mark a function as part of a particular group."""
 
@@ -70,16 +94,92 @@ def humanize_time(seconds):
     return message
 
 
+class BasePipelineRun:
+    """Base class for all pipeline run (execution)."""
+
+    def __init__(self, pipeline_class, selected_groups=None, selected_steps=None):
+        """Load the Pipeline class."""
+        self.pipeline_class = pipeline_class
+        self.pipeline_name = pipeline_class.__name__
+
+        self.selected_groups = selected_groups
+        self.selected_steps = selected_steps or []
+
+        self.execution_log = []
+        self.current_step = ""
+
+    def append_to_log(self, message):
+        self.execution_log.append(message)
+
+    def set_current_step(self, message):
+        self.current_step = message
+
+    def log(self, message):
+        """Log the given `message` to the current module logger and Run instance."""
+        now_as_localtime = timezone.localtime(timezone.now())
+        timestamp = now_as_localtime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-4]
+        message = f"{timestamp} {message}"
+        logger.info(message)
+        self.append_to_log(message)
+
+    @staticmethod
+    def output_from_exception(exception):
+        """Return a formatted error message including the traceback."""
+        output = f"{exception}\n\n"
+
+        if exception.__cause__ and str(exception.__cause__) != str(exception):
+            output += f"Cause: {exception.__cause__}\n\n"
+
+        traceback_formatted = "".join(traceback.format_tb(exception.__traceback__))
+        output += f"Traceback:\n{traceback_formatted}"
+
+        return output
+
+    def execute(self):
+        """Execute each steps in the order defined on this pipeline class."""
+        self.log(f"Pipeline [{self.pipeline_name}] starting")
+
+        steps = self.pipeline_class.get_steps(groups=self.selected_groups)
+        selected_steps = self.selected_steps
+
+        steps_count = len(steps)
+        pipeline_start_time = timer()
+
+        for current_index, step in enumerate(steps, start=1):
+            step_name = step.__name__
+
+            if selected_steps and step_name not in selected_steps:
+                self.log(f"Step [{step_name}] skipped")
+                continue
+
+            self.set_current_step(f"{current_index}/{steps_count} {step_name}")
+            self.log(f"Step [{step_name}] starting")
+            step_start_time = timer()
+
+            try:
+                step(self)  # WARNING: self is a Run instance, not a Pipeline instance
+            except Exception as exception:
+                self.log("Pipeline failed")
+                return 1, self.output_from_exception(exception)
+
+            step_run_time = timer() - step_start_time
+            self.log(f"Step [{step_name}] completed in {humanize_time(step_run_time)}")
+
+        self.set_current_step("")  # Reset the `current_step` field on completion
+        pipeline_run_time = timer() - pipeline_start_time
+        self.log(f"Pipeline completed in {humanize_time(pipeline_run_time)}")
+
+        return 0, ""
+
+
 class BasePipeline:
     """Base class for all pipeline implementations."""
 
+    # Default PipelineRun class for executing the Pipeline.
+    run_class = BasePipelineRun
+
     # Flag indicating if the Pipeline is an add-on, meaning it cannot be run first.
     is_addon = False
-
-    def __init__(self, run):
-        """Load the Run instance."""
-        self.run = run
-        self.pipeline_name = run.pipeline_name
 
     @classmethod
     def steps(cls):
@@ -160,67 +260,6 @@ class BasePipeline:
             )
         )
 
-    def log(self, message):
-        """Log the given `message` to the current module logger and Run instance."""
-        now_as_localtime = timezone.localtime(timezone.now())
-        timestamp = now_as_localtime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-4]
-        message = f"{timestamp} {message}"
-        logger.info(message)
-        self.run.append_to_log(message)
-
-    @staticmethod
-    def output_from_exception(exception):
-        """Return a formatted error message including the traceback."""
-        output = f"{exception}\n\n"
-
-        if exception.__cause__ and str(exception.__cause__) != str(exception):
-            output += f"Cause: {exception.__cause__}\n\n"
-
-        traceback_formatted = "".join(traceback.format_tb(exception.__traceback__))
-        output += f"Traceback:\n{traceback_formatted}"
-
-        return output
-
-    def execute(self):
-        """Execute each steps in the order defined on this pipeline class."""
-        self.log(f"Pipeline [{self.pipeline_name}] starting")
-
-        steps = self.get_steps(groups=self.run.selected_groups)
-        selected_steps = self.run.selected_steps
-
-        steps_count = len(steps)
-        pipeline_start_time = timer()
-
-        for current_index, step in enumerate(steps, start=1):
-            step_name = step.__name__
-
-            if selected_steps and step_name not in selected_steps:
-                self.log(f"Step [{step_name}] skipped")
-                continue
-
-            self.run.set_current_step(f"{current_index}/{steps_count} {step_name}")
-            self.log(f"Step [{step_name}] starting")
-            step_start_time = timer()
-
-            try:
-                step(self)
-            except Exception as exception:
-                self.log("Pipeline failed")
-                return 1, self.output_from_exception(exception)
-
-            step_run_time = timer() - step_start_time
-            self.log(f"Step [{step_name}] completed in {humanize_time(step_run_time)}")
-
-        self.run.set_current_step("")  # Reset the `current_step` field on completion
-        pipeline_run_time = timer() - pipeline_start_time
-        self.log(f"Pipeline completed in {humanize_time(pipeline_run_time)}")
-
-        return 0, ""
-
-
-# def is_pipeline(obj):
-#     """
-#     Return True if the `obj` is a subclass of `Pipeline` except for the
-#     `Pipeline` class itself.
-#     """
-#     return inspect.isclass(obj) and issubclass(obj, Pipeline) and obj is not Pipeline
+    @classmethod
+    def make_run(cls, *args, **kwargs):
+        return cls.run_class(cls, *args, **kwargs)

@@ -30,6 +30,7 @@ from pathlib import Path
 from pyinstrument import Profiler
 
 from pipeline import BasePipeline
+from pipeline import BasePipelineRun
 
 logger = logging.getLogger(__name__)
 
@@ -109,11 +110,35 @@ class CommonStepsMixin:
         self.env = self.project.get_env()
 
 
+class ProjectPipelineRun(BasePipelineRun):
+    def __init__(self, pipeline_class, run_instance):
+        """Load the Pipeline execution context from a Run database object."""
+        self.run = run_instance
+        self.project = run_instance.project
+        self.env = self.project.get_env()
+
+        self.pipeline_class = run_instance.pipeline_class
+        self.pipeline_name = run_instance.pipeline_name
+
+        self.selected_groups = run_instance.selected_groups
+        self.selected_steps = run_instance.selected_steps
+
+    def append_to_log(self, message):
+        self.run.append_to_log(message)
+
+    def set_current_step(self, message):
+        self.run.set_current_step(message)
+
+
 class Pipeline(CommonStepsMixin, BasePipeline):
     """Main class for all project related pipelines including common steps methods."""
 
+    # Project wrapper ProjectPipelineRun class
+    run_class = ProjectPipelineRun
+
     # Flag specifying whether to download missing inputs as an initial step.
     download_inputs = True
+
     # Optional URL that targets a view of the results relative to this Pipeline.
     # This URL may contain dictionary-style string formatting, which will be
     # interpolated against the project's field attributes.
@@ -121,12 +146,7 @@ class Pipeline(CommonStepsMixin, BasePipeline):
     # to target the Package list view with an active filtering.
     results_url = ""
 
-    def __init__(self, run):
-        """Load the Project instance."""
-        super().__init__(run)
-        self.project = self.run.project
-        self.env = self.project.get_env()
-
+    # TODO
     # @classmethod
     # def get_steps(cls, groups=None):
     #     """Inject the ``download_inputs`` step if enabled."""
