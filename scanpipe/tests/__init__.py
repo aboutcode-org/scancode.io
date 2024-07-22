@@ -52,7 +52,7 @@ def make_resource_file(project, path, **extra):
         type=CodebaseResource.Type.FILE,
         is_text=True,
         tag=path.split("/")[0],
-        **extra
+        **extra,
     )
 
 
@@ -63,7 +63,7 @@ def make_resource_directory(project, path, **extra):
         name=path.split("/")[-1],
         type=CodebaseResource.Type.DIRECTORY,
         tag=path.split("/")[0],
-        **extra
+        **extra,
     )
 
 

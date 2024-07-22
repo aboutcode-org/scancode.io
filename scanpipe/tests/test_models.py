@@ -381,9 +381,9 @@ class ScanPipeModelsTest(TestCase):
         self.project1.copy_input_from(self.data / "aboutcode" / "notice.NOTICE")
         self.project1.add_input_source(filename="missing.zip", is_uploaded=True)
 
-        uuid1, uuid2 = [
+        uuid1, uuid2 = (
             str(input_source.uuid) for input_source in self.project1.inputsources.all()
-        ]
+        )
 
         expected = [
             {
@@ -1376,7 +1376,7 @@ class ScanPipeModelsTest(TestCase):
         copy_input(map_file_path, self.project1.codebase_path)
         resource = self.project1.codebaseresources.create(path="main.js.map")
 
-        with open(map_file_path, "r") as file:
+        with open(map_file_path) as file:
             expected = json.load(file)
 
         result = json.loads(resource.file_content)

@@ -488,9 +488,7 @@ class RootFSPipelineTest(TestCase):
 
 
 def sort_for_os_compatibility(scan_data):
-    """
-    Sort the ``scan_data`` files and relations in place. Return ``scan_data``.
-    """
+    """Sort the ``scan_data`` files and relations in place. Return ``scan_data``."""
     if files := scan_data.get("files"):
         files.sort(key=lambda x: x["path"])
 
@@ -502,9 +500,7 @@ def sort_for_os_compatibility(scan_data):
 
 @tag("slow")
 class PipelinesIntegrationTest(TestCase):
-    """
-    Set of integration tests to ensure the proper output for each built-in Pipelines.
-    """
+    """Integration tests to ensure the proper output for each built-in Pipelines."""
 
     # Un-comment the following to display full diffs:
     # maxDiff = None
@@ -539,9 +535,7 @@ class PipelinesIntegrationTest(TestCase):
     ]
 
     def _without_keys(self, data, exclude_keys):
-        """
-        Return the `data` excluding the provided `exclude_keys`.
-        """
+        """Return the `data` excluding the provided `exclude_keys`."""
         if isinstance(data, list):
             return [self._without_keys(entry, exclude_keys) for entry in data]
 
@@ -638,9 +632,7 @@ class PipelinesIntegrationTest(TestCase):
     def assertPipelineResultEqual(
         self, expected_file, result_file, sort_dependencies=False, regen=FIXTURES_REGEN
     ):
-        """
-        Set `regen` to True to regenerate the expected results.
-        """
+        """Set `regen` to True to regenerate the expected results."""
         result_json = json.loads(Path(result_file).read_text())
         result_json = self._normalize_package_uids(result_json)
         result_data = self._without_keys(result_json, self.exclude_from_diff)

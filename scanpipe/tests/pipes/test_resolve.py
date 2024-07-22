@@ -21,10 +21,9 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from pathlib import Path
+from unittest import mock
 
 from django.test import TestCase
-
-import mock
 
 from scanpipe import pipes
 from scanpipe.models import Project

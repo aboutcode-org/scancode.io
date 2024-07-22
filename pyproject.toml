@@ -9,9 +9,6 @@ exclude = [
     "lib64",
     "local",
     "var",
-    "thirdparty",
-    "scanpipe/tests/",
-    "settings.py",
 ]
 
 [tool.ruff.lint]
@@ -26,7 +23,7 @@ select = [
     "I",  # isort
     "C9", # McCabe complexity
 ]
-ignore = ["UP032", "D1", "D203", "D205", "D212", "D400", "D415", "S308"]
+ignore = ["D1", "D203", "D205", "D212", "D400", "D415"]
 
 [tool.ruff.lint.isort]
 force-single-line = true
@@ -42,3 +39,7 @@ section-order = [
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
+
+[tool.ruff.lint.per-file-ignores]
+# All usage of assert on the SPDX test file.
+"**/test_spdx.py*" = ["S101"]
