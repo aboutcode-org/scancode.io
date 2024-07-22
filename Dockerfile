@@ -29,7 +29,7 @@ LABEL org.opencontainers.image.licenses="Apache-2.0"
 ENV APP_NAME scancodeio
 ENV APP_USER app
 ENV APP_DIR /opt/$APP_NAME
-ENV VIRTUAL_ENV /opt/$APP_NAME/venv
+ENV VENV_LOCATION /opt/$APP_NAME/.venv
 
 # Force Python unbuffered stdout and stderr (they are flushed to terminal immediately)
 ENV PYTHONUNBUFFERED 1
@@ -78,9 +78,9 @@ WORKDIR $APP_DIR
 USER $APP_USER
 
 # Create the virtualenv
-RUN python -m venv $VIRTUAL_ENV
+RUN python -m venv $VENV_LOCATION
 # Enable the virtualenv, similar effect as "source activate"
-ENV PATH $VIRTUAL_ENV/bin:$PATH
+ENV PATH $VENV_LOCATION/bin:$PATH
 
 # Create static/ and workspace/ directories
 RUN mkdir -p /var/$APP_NAME/static/ \

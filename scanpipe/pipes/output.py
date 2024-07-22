@@ -413,7 +413,7 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
         value = [mapping[mapping_key] for mapping in value]
 
     # convert these to text lines, remove duplicates
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, list | tuple):
         value = ordered_unique(str(v) for v in value if v)
         value = "\n".join(value)
 

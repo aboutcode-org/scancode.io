@@ -594,7 +594,7 @@ class PipelinesIntegrationTest(TestCase):
                 is_local_files = True
             normalized_data = {}
             for key, value in data.items():
-                if isinstance(value, (list, dict)):
+                if isinstance(value, list | dict):
                     value = self._normalize_package_uids(value)
                 if key in fields_with_package_uids and value:
                     value = purl_with_fake_uuid(value)

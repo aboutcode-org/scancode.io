@@ -1,15 +1,7 @@
 [tool.ruff]
 line-length = 88
-exclude = [
-    "migrations",
-    "bin",
-    "Script",
-    "Lib",
-    "lib",
-    "lib64",
-    "local",
-    "var",
-]
+extend-exclude = ["migrations", "var"]
+target-version = "py310"
 
 [tool.ruff.lint]
 # Rules: https://docs.astral.sh/ruff/rules/
@@ -41,5 +33,6 @@ section-order = [
 max-complexity = 10
 
 [tool.ruff.lint.per-file-ignores]
-# All usage of assert on the SPDX test file.
+# Allow the usage of assert in the test_spdx file.
 "**/test_spdx.py*" = ["S101"]
+"scanpipe/pipes/spdx.py" = ["UP006", "UP035"]

@@ -930,7 +930,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if not extensions:
             return self.input_path.glob(pattern)
 
-        if not isinstance(extensions, (list, tuple)):
+        if not isinstance(extensions, list | tuple):
             raise TypeError("extensions should be a list or tuple")
 
         return (
