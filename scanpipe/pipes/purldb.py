@@ -122,7 +122,7 @@ def check_service_availability(*args):
         raise Exception(f"{label} is not available.")
 
 
-def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
+def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT, raise_on_error=False):
     """Wrap the HTTP request calls on the API."""
     if not url:
         return
@@ -133,13 +133,15 @@ def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
     if payload:
         params.update(payload)
 
-    logger.debug(f"{label}: url={url} params={params}")
+    logger.debug(f"[{label}] Requesting URL: {url} with params: {params}")
     try:
         response = session.get(url, params=params, timeout=timeout)
         response.raise_for_status()
         return response.json()
     except (requests.RequestException, ValueError, TypeError) as exception:
-        logger.debug(f"{label} [Exception] {exception}")
+        logger.debug(f"[{label}] Request to {url} failed with exception: {exception}")
+        if raise_on_error:
+            raise PurlDBException(exception)
 
 
 def request_post(url, data=None, headers=None, files=None, timeout=DEFAULT_TIMEOUT):
@@ -391,13 +393,17 @@ def get_packages_for_purl(package_url):
     return find_packages(payload)
 
 
-def collect_data_for_purl(package_url):
+def collect_data_for_purl(package_url, raise_on_error=False):
     collect_api_url = f"{PURLDB_API_URL}collect/"
     payload = {
         "purl": str(package_url),
         "sort": "-version",
     }
-    purldb_entries = request_get(collect_api_url, payload=payload)
+    purldb_entries = request_get(
+        url=collect_api_url,
+        payload=payload,
+        raise_on_error=raise_on_error,
+    )
 
     if purldb_entries:
         return purldb_entries
@@ -503,7 +509,12 @@ def enrich_package(package):
     package_url = package.package_url
     project = package.project
 
-    purldb_entries = collect_data_for_purl(package_url)
+    try:
+        purldb_entries = collect_data_for_purl(package_url, raise_on_error=True)
+    except PurlDBException as exception:
+        project.add_error(model="PurlDB", exception=exception, package=package)
+        return
+
     if not purldb_entries:
         return
 
@@ -514,12 +525,12 @@ def enrich_package(package):
         project.add_warning(
             model="PurlDB",
             description=(
-                f"Multiple entries found in the PurlDB for {package_url}\n"
+                f'Multiple entries found in the PurlDB for "{package_url}". '
                 f"Using data from the most recent version."
             ),
-            details={"package_url": package_url, "uuid": package.uuid},
+            package=package,
         )
-        # Do not set fields specific to a given version.
+        # Do not set version-specific fields, such as the download_url.
         purldb_entry = {
             field: value
             for field, value in purldb_entries[0].items()
@@ -534,7 +545,7 @@ def enrich_package(package):
 
 def enrich_discovered_packages(project, logger=logger.info):
     """Enrich all project discovered packages with the PurlDB data."""
-    packages = project.discoveredpackages.all().select_related("project")
+    packages = project.discoveredpackages.all()
 
     updated_package_count = 0
     for package in packages:
