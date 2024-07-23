@@ -539,6 +539,8 @@ def enrich_package(package):
             if field in CROSS_VERSION_COMMON_FIELDS
         }
 
+    # Remove package_uid as it is not relevant to capture the value from PurlDB.
+    purldb_entry.pop("package_uid", None)
     package_data = _clean_package_data(purldb_entry)
     if updated_fields := package.update_from_data(package_data):
         package.update_extra_data({ENRICH_EXTRA_DATA_KEY: updated_fields})
