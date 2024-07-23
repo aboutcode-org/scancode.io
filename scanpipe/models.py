@@ -1259,11 +1259,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if resource:
             details["resource_path"] = resource.path
         if package:
-            # Do not change this field name as it has special behavior in templates.
-            details.update({
-                "package_url": package.package_url,
-                "package_uuid": package.uuid
-            })
+            details.update(
+                {"package_url": package.package_url, "package_uuid": package.uuid}
+            )
 
         return ProjectMessage.objects.create(
             project=self,

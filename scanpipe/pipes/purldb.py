@@ -138,7 +138,9 @@ def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT, raise_on_error=False
         response = session.get(url, params=params, timeout=timeout)
         response.raise_for_status()
         return response.json()
-    except (requests.RequestException, ValueError, TypeError) as exception:
+    except requests.RequestException:  # raise_for_status
+        return
+    except (ValueError, TypeError) as exception:
         logger.debug(f"[{label}] Request to {url} failed with exception: {exception}")
         if raise_on_error:
             raise PurlDBException(exception)
