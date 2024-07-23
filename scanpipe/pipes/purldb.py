@@ -69,6 +69,27 @@ DEFAULT_TIMEOUT = 60
 # This key can be used for filtering
 ENRICH_EXTRA_DATA_KEY = "enrich_with_purldb"
 
+# Subset of fields kept when multiple entries are found in the PurlDB.
+CROSS_VERSION_COMMON_FIELDS = [
+    "primary_language",
+    "description",
+    "parties",
+    "keywords",
+    "homepage_url",
+    "bug_tracking_url",
+    "code_view_url",
+    "vcs_url",
+    "repository_homepage_url",
+    "copyright",
+    "holder",
+    "declared_license_expression",
+    "declared_license_expression_spdx",
+    "other_license_expression",
+    "other_license_expression_spdx",
+    "extracted_license_statement",
+    "notice_text",
+]
+
 
 def is_configured():
     """Return True if the required PurlDB settings have been set."""
@@ -370,13 +391,16 @@ def get_packages_for_purl(package_url):
     return find_packages(payload)
 
 
-def get_package_by_purl(package_url):
-    """
-    Get a Package details entry providing its `package_url`.
-    If multiples entries are found in the PurlDB, the most recent version is returned.
-    """
-    if purldb_entries := get_packages_for_purl(package_url):
-        return purldb_entries[0]
+def collect_data_for_purl(package_url):
+    collect_api_url = f"{PURLDB_API_URL}collect/"
+    payload = {
+        "purl": str(package_url),
+        "sort": "-version",
+    }
+    purldb_entries = request_get(collect_api_url, payload=payload)
+
+    if purldb_entries:
+        return purldb_entries
 
 
 def get_next_download_url(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
@@ -476,17 +500,41 @@ def get_run_status(run, **kwargs):
 
 def enrich_package(package):
     """Enrich the provided ``package`` with the PurlDB data."""
-    purldb_entry = get_package_by_purl(package.package_url)
-    if purldb_entry:
-        package_data = _clean_package_data(purldb_entry)
-        if updated_fields := package.update_from_data(package_data):
-            package.update_extra_data({ENRICH_EXTRA_DATA_KEY: updated_fields})
-            return updated_fields
+    package_url = package.package_url
+    project = package.project
+
+    purldb_entries = collect_data_for_purl(package_url)
+    if not purldb_entries:
+        return
+
+    if len(purldb_entries) == 1:
+        # Single match, all the PurlDB data are used to enrich the package.
+        purldb_entry = purldb_entries[0]
+    else:
+        project.add_warning(
+            model="PurlDB",
+            description=(
+                f"Multiple entries found in the PurlDB for {package_url}\n"
+                f"Using data from the most recent version."
+            ),
+            details={"package_url": package_url, "uuid": package.uuid},
+        )
+        # Do not set fields specific to a given version.
+        purldb_entry = {
+            field: value
+            for field, value in purldb_entries[0].items()
+            if field in CROSS_VERSION_COMMON_FIELDS
+        }
+
+    package_data = _clean_package_data(purldb_entry)
+    if updated_fields := package.update_from_data(package_data):
+        package.update_extra_data({ENRICH_EXTRA_DATA_KEY: updated_fields})
+        return updated_fields
 
 
 def enrich_discovered_packages(project, logger=logger.info):
     """Enrich all project discovered packages with the PurlDB data."""
-    packages = project.discoveredpackages.all()
+    packages = project.discoveredpackages.all().select_related("project")
 
     updated_package_count = 0
     for package in packages:
