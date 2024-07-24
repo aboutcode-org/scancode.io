@@ -1999,9 +1999,13 @@ class DiscoveredPackagePurlDBTabView(ConditionalLoginRequired, generic.DetailVie
         if not purldb.is_configured():
             raise Http404("PurlDB access is not configured.")
 
-        if purldb_entry := purldb.get_package_by_purl(self.object.package_url):
-            fields = self.get_fields_data(purldb_entry)
+        if purldb_entries := purldb.get_packages_for_purl(self.object.package_url):
+            # Always display the most recent version entry.
+            fields = self.get_fields_data(purldb_entries[0])
             context["tab_data"] = {"fields": fields}
+            # Display a warning if multiple packages found in PurlDB for this purl.
+            if len(purldb_entries) > 1:
+                context["has_multiple_purldb_entries"] = True
 
         return context
 

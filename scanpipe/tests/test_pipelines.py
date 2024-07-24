@@ -1709,9 +1709,9 @@ class PipelinesIntegrationTest(TestCase):
 
     @mock.patch("scanpipe.pipes.purldb.is_available")
     @mock.patch("scanpipe.pipes.purldb.is_configured")
-    @mock.patch("scanpipe.pipes.purldb.get_package_by_purl")
+    @mock.patch("scanpipe.pipes.purldb.collect_data_for_purl")
     def test_scanpipe_enrich_with_purldb_pipeline_integration(
-        self, mock_get_package, mock_is_configured, mock_is_available
+        self, mock_collect_data, mock_is_configured, mock_is_available
     ):
         pipeline_name = "enrich_with_purldb"
         project1 = Project.objects.create(name="Analysis")
@@ -1722,7 +1722,7 @@ class PipelinesIntegrationTest(TestCase):
 
         purldb_entry_file = self.data / "purldb" / "csvtojson-2.0.10.json"
         purldb_entry = json.loads(purldb_entry_file.read_text())
-        mock_get_package.return_value = purldb_entry
+        mock_collect_data.return_value = [purldb_entry]
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()

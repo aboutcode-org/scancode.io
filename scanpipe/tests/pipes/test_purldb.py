@@ -237,17 +237,17 @@ class ScanPipePurlDBTest(TestCase):
         project_name = purldb.create_project_name(download_url, scannable_uri_uuid)
         self.assertEqual("httpsregistrynpmjsorgasdf-asdf-101tgz-52b2930d", project_name)
 
-    @mock.patch("scanpipe.pipes.purldb.get_package_by_purl")
-    def test_scanpipe_pipes_purldb_enrich_package(self, mock_get_package_by_purl):
+    @mock.patch("scanpipe.pipes.purldb.collect_data_for_purl")
+    def test_scanpipe_pipes_purldb_enrich_package(self, mock_collect_data):
         package1 = make_package(self.project1, package_url="pkg:npm/csvtojson@2.0.10")
 
-        mock_get_package_by_purl.return_value = {}
+        mock_collect_data.return_value = []
         updated_fields = purldb.enrich_package(package=package1)
         self.assertIsNone(updated_fields)
 
         purldb_entry_file = self.data / "purldb" / "csvtojson-2.0.10.json"
         purldb_entry = json.loads(purldb_entry_file.read_text())
-        mock_get_package_by_purl.return_value = purldb_entry
+        mock_collect_data.return_value = [purldb_entry]
         updated_fields = purldb.enrich_package(package=package1)
         self.assertTrue(updated_fields)
         self.assertIn("homepage_url", updated_fields)
@@ -258,13 +258,11 @@ class ScanPipePurlDBTest(TestCase):
         self.assertEqual(purldb_entry.get("sha256"), package1.sha256)
         self.assertEqual(purldb_entry.get("copyright"), package1.copyright)
 
-    @mock.patch("scanpipe.pipes.purldb.get_package_by_purl")
-    def test_scanpipe_pipes_purldb_enrich_discovered_packages(
-        self, mock_get_package_by_purl
-    ):
+    @mock.patch("scanpipe.pipes.purldb.collect_data_for_purl")
+    def test_scanpipe_pipes_purldb_enrich_discovered_packages(self, mock_collect_data):
         package1 = make_package(self.project1, package_url="pkg:npm/csvtojson@2.0.10")
 
-        mock_get_package_by_purl.return_value = {}
+        mock_collect_data.return_value = []
         buffer = io.StringIO()
         updated_package_count = purldb.enrich_discovered_packages(
             project=self.project1,
@@ -276,7 +274,7 @@ class ScanPipePurlDBTest(TestCase):
 
         purldb_entry_file = self.data / "purldb" / "csvtojson-2.0.10.json"
         purldb_entry = json.loads(purldb_entry_file.read_text())
-        mock_get_package_by_purl.return_value = purldb_entry
+        mock_collect_data.return_value = [purldb_entry]
         buffer = io.StringIO()
         updated_package_count = purldb.enrich_discovered_packages(
             project=self.project1,

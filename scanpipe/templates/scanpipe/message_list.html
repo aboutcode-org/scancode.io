@@ -46,6 +46,14 @@
                     </a>
                   </div>
                 {% endif %}
+                {% if message.details.package_uuid %}
+                  <div>
+                    <strong>Package</strong>:
+                    <a href="{% url 'package_detail' project.slug message.details.package_uuid %}" target="_blank">
+                      {{ message.details.package_url|default_if_none:message.details.package_uuid }}
+                    </a>
+                  </div>
+                {% endif %}
                 {% for key, value in message.details.items %}
                   <strong>{{ key }}</strong>: {{ value }}<br>
                 {% endfor %}
