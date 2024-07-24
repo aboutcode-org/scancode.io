@@ -171,6 +171,7 @@ class ProjectSerializer(
     execute_now = serializers.BooleanField(
         write_only=True,
         help_text="Execute pipeline now",
+        required=False,
     )
     upload_file = serializers.FileField(write_only=True, required=False)
     upload_file_tag = serializers.CharField(write_only=True, required=False)
