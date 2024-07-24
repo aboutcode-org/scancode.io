@@ -3992,6 +3992,8 @@ class WebhookDelivery(UUIDPKModel, ProjectRelatedModel):
         help_text=_("The date and time when the Webhook was sent."),
     )
     payload = models.JSONField(
+        blank=True,
+        default=dict,
         help_text=_("The JSON payload that was sent to the target URL."),
     )
     response_status_code = models.PositiveIntegerField(
