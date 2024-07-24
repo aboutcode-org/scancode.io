@@ -123,10 +123,6 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
             try:
                 # 2. Create and run project
 
-                # Run `send_project_results` to send results back to PurlDB
-                # after all the pipelines have been run.
-                pipelines.append("send_project_results")
-
                 project = create_scan_project(
                     command=self,
                     scannable_uri_uuid=scannable_uri_uuid,
@@ -183,25 +179,3 @@ def create_scan_project(
     )
     execute_project(project=project, run_async=run_async, command=command)
     return project
-
-
-def send_scan_project_results(project, scannable_uri_uuid):
-    """
-    Send the JSON summary and results of `project` to PurlDB for the scan
-    request `scannable_uri_uuid`.
-
-    Raise a PurlDBException if there is an issue sending results to PurlDB.
-    """
-    project.refresh_from_db()
-    scan_results_location = output.to_json(project)
-    scan_summary_location = project.get_latest_output(filename="summary")
-    response = purldb.send_results_to_purldb(
-        scannable_uri_uuid,
-        scan_results_location,
-        scan_summary_location,
-        project.extra_data,
-    )
-    if not response:
-        raise purldb.PurlDBException(
-            "Bad response returned when sending results to PurlDB"
-        )

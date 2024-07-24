@@ -426,38 +426,6 @@ def get_next_download_url(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
         return response
 
 
-def send_results_to_purldb(
-    scannable_uri_uuid,
-    scan_results_location,
-    scan_summary_location,
-    project_extra_data,
-    timeout=DEFAULT_TIMEOUT,
-    api_url=PURLDB_API_URL,
-):
-    """
-    Send project results to purldb for the package handeled by the ScannableURI
-    with uuid of `scannable_uri_uuid`
-    """
-    with open(scan_results_location, "rb") as scan_results_file:
-        with open(scan_summary_location, "rb") as scan_summary_file:
-            data = {
-                "scannable_uri_uuid": scannable_uri_uuid,
-                "scan_status": "scanned",
-                "project_extra_data": json.dumps(project_extra_data),
-            }
-            files = {
-                "scan_results_file": scan_results_file,
-                "scan_summary_file": scan_summary_file,
-            }
-            response = request_post(
-                url=f"{api_url}scan_queue/update_status/",
-                timeout=timeout,
-                data=data,
-                files=files,
-            )
-    return response
-
-
 def update_status(
     scannable_uri_uuid,
     status,
@@ -572,27 +540,3 @@ def enrich_discovered_packages(project, logger=logger.info):
         f"enriched with the PurlDB."
     )
     return updated_package_count
-
-
-def send_project_results(project, logger=None):
-    """
-    Send the JSON summary and results of `project` to PurlDB for the scan
-    request `scannable_uri_uuid`.
-
-    Raise a PurlDBException if there is an issue sending results to PurlDB.
-    """
-    scan_results_location = output.to_json(project)
-    scan_summary_location = project.get_latest_output(filename="summary")
-    scannable_uri_uuid = project.extra_data.get("scannable_uri_uuid")
-    response = send_results_to_purldb(
-        scannable_uri_uuid,
-        scan_results_location,
-        scan_summary_location,
-        project.extra_data,
-    )
-
-    if not response:
-        raise PurlDBException("Bad response returned when sending results to PurlDB")
-
-    if logger:
-        logger("Scan results and other data have been sent to PurlDB")
