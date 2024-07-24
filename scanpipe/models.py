@@ -1232,6 +1232,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         details=None,
         exception=None,
         resource=None,
+        package=None,
     ):
         """
         Create a ProjectMessage record for this Project.
@@ -1253,9 +1254,15 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             description = str(exception)
 
         details = details or {}
+
+        # Do not change the following field names as those have special behavior in
+        # templates.
         if resource:
-            # Do not change this field name as it has special behavior in templates.
             details["resource_path"] = resource.path
+        if package:
+            details.update(
+                {"package_url": package.package_url, "package_uuid": package.uuid}
+            )
 
         return ProjectMessage.objects.create(
             project=self,
@@ -1273,11 +1280,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         details=None,
         exception=None,
         resource=None,
+        package=None,
     ):
         """Create an INFO ProjectMessage record for this project."""
         severity = ProjectMessage.Severity.INFO
         return self.add_message(
-            severity, description, model, details, exception, resource
+            severity, description, model, details, exception, resource, package
         )
 
     def add_warning(
@@ -1287,11 +1295,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         details=None,
         exception=None,
         resource=None,
+        package=None,
     ):
         """Create a WARNING ProjectMessage record for this project."""
         severity = ProjectMessage.Severity.WARNING
         return self.add_message(
-            severity, description, model, details, exception, resource
+            severity, description, model, details, exception, resource, package
         )
 
     def add_error(
@@ -1301,11 +1310,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         details=None,
         exception=None,
         resource=None,
+        package=None,
     ):
         """Create an ERROR ProjectMessage record using for this project."""
         severity = ProjectMessage.Severity.ERROR
         return self.add_message(
-            severity, description, model, details, exception, resource
+            severity, description, model, details, exception, resource, package
         )
 
     def get_absolute_url(self):
