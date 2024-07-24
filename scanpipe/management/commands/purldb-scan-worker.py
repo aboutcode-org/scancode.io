@@ -174,7 +174,7 @@ def create_scan_project(
             "scannable_uri_uuid": scannable_uri_uuid,
         }
     )
-    url = f"{purldb.PURLDB_API_URL}scan_queue/{scannable_uri_uuid}/index_package_scan"
+    url = f"{purldb.PURLDB_API_URL}scan_queue/{scannable_uri_uuid}/index_package_scan/"
     project.add_webhook_subscription(
         target_url=url,
         trigger_on_each_run=False,

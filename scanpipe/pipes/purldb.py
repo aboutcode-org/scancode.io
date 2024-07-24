@@ -467,12 +467,11 @@ def update_status(
 ):
     """Update the status of a ScannableURI on a PurlDB scan queue"""
     data = {
-        "scannable_uri_uuid": scannable_uri_uuid,
         "scan_status": status,
         "scan_log": scan_log,
     }
     response = request_post(
-        url=f"{api_url}scan_queue/update_status/",
+        url=f"{api_url}scan_queue/{scannable_uri_uuid}/update_status/",
         timeout=timeout,
         data=data,
     )
