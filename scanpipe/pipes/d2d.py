@@ -834,7 +834,7 @@ class AboutFileIndexes:
                     description="Cannot create package from ABOUT file",
                     model="map_about_files",
                     details=error_message_details,
-                    resource=about_file_resource,
+                    object_instance=about_file_resource,
                 )
                 continue
 
@@ -846,7 +846,7 @@ class AboutFileIndexes:
                     description="ABOUT file does not have about_resource",
                     model="map_about_files",
                     details=error_message_details,
-                    resource=about_file_resource,
+                    object_instance=about_file_resource,
                 )
                 continue
             else:

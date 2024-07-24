@@ -76,7 +76,7 @@ def get_packages(project, package_registry, manifest_resources, model=None):
             project.add_error(
                 description="No packages could be resolved",
                 model=model,
-                resource=resource,
+                object_instance=resource,
             )
 
     if sboms_headers:

@@ -514,7 +514,7 @@ def enrich_package(package):
     try:
         purldb_entries = collect_data_for_purl(package_url, raise_on_error=True)
     except PurlDBException as exception:
-        project.add_error(model="PurlDB", exception=exception, package=package)
+        project.add_error(model="PurlDB", exception=exception, object_instance=package)
         return
 
     if not purldb_entries:
@@ -530,7 +530,7 @@ def enrich_package(package):
                 f'Multiple entries found in the PurlDB for "{package_url}". '
                 f"Using data from the most recent version."
             ),
-            package=package,
+            object_instance=package,
         )
         # Do not set version-specific fields, such as the download_url.
         purldb_entry = {
