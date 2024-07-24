@@ -87,7 +87,10 @@ def flag_ignored_patterns(project, patterns, logger=None, _debug=False):
     for pattern in patterns:
         qs = project.codebaseresources.no_status().path_pattern(pattern)
         if _debug and logger and qs.exists():
-            logger(f"flag_ignored_patterns: using {pattern} ignored paths:{[r.path for r in qs]}")
+            ignored_paths = [r.path for r in qs]
+            logger(
+                f"flag_ignored_patterns: using {pattern} ignored paths:{ignored_paths}"
+            )
         update_count += qs.update(status=IGNORED_PATTERN)
 
     return update_count

@@ -171,7 +171,7 @@ def _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
         # compute the root of the packages on the source side
         from_source_root_parts = from_resource.path.strip("/").split("/")
         from_source_root = "/".join(
-            from_source_root_parts[:-match.matched_path_length]
+            from_source_root_parts[: -match.matched_path_length]
         )
         pipes.make_relation(
             from_resource=from_resource,
@@ -914,7 +914,7 @@ class AboutFileMapper:
         mapped_to_resources = []
 
         resources_count = to_resources.count()
-        steps = int(resources_count/1000) or 5
+        steps = int(resources_count / 1000) or 5
         progress = LoopProgress(
             total_iterations=resources_count,
             logger=logger,
@@ -964,7 +964,7 @@ class AboutFileMapper:
         progress = LoopProgress(
             total_iterations=len_abouts,
             logger=logger,
-            progress_step=int(len_abouts/10) or 10,
+            progress_step=int(len_abouts / 10) or 10,
         )
 
         for about_file in progress.iter(self.about_files):

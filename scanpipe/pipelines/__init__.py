@@ -311,7 +311,9 @@ class Pipeline(BasePipeline):
         from scanpipe.pipes import flag
 
         if ignored_patterns := self.env.get("ignored_patterns"):
-            flag.flag_ignored_patterns(self.project, patterns=ignored_patterns, logger=self.log)
+            flag.flag_ignored_patterns(
+                self.project, patterns=ignored_patterns, logger=self.log
+            )
 
     def extract_archive(self, location, target):
         """Extract archive at `location` to `target`. Save errors as messages."""

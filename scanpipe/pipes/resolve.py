@@ -25,7 +25,6 @@ import sys
 from pathlib import Path
 
 import saneyaml
-
 from attributecode.model import About
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
@@ -155,7 +154,8 @@ def resolve_pypi_packages(input_location):
 
 def resolve_about_package(input_location):
     """
-    Return a mapping of DiscoveredPackage fields from the ``input_location`` .ABOUT file.
+    Return a mapping of DiscoveredPackage fields from the ``input_location``
+    .ABOUT file.
     """
     try:
         saneyaml.load(open(input_location))
@@ -184,7 +184,9 @@ def resolve_about_package(input_location):
     if ignored_resources := about_data.get("ignored_resources"):
         extra_data["ignored_resources"] = list(ignored_resources.keys())
 
-    populate_license_notice_fields_about(package_data=package_data, about_data=about_data)
+    populate_license_notice_fields_about(
+        package_data=package_data, about_data=about_data
+    )
 
     for field_name, value in about_data.items():
         if field_name.startswith("checksum_"):
