@@ -1979,7 +1979,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def deliver_project_subscriptions(self, has_next_run):
         """Triggers related project Webhook subscriptions."""
-        webhooks = self.project.webhooksubscriptions.filter(is_active=True)
+        webhooks = self.project.webhooksubscriptions.active()
 
         if has_next_run:
             webhooks = webhooks.filter(trigger_on_each_run=True)
@@ -3837,6 +3837,11 @@ def normalize_package_url_data(purl_mapping, ignore_nulls=False):
     return normalized_purl_mapping
 
 
+class WebhookSubscriptionQuerySet(ProjectRelatedQuerySet):
+    def active(self):
+        return self.filter(is_active=True)
+
+
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
     """
     A model to define Webhook subscriptions for Project pipeline execution events.
@@ -3882,6 +3887,8 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         editable=False,
         help_text=_("The date and time when the Webhook subscription was created."),
     )
+
+    objects = WebhookSubscriptionQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_date"]
@@ -4011,6 +4018,11 @@ class WebhookDelivery(UUIDPKModel, ProjectRelatedModel):
         blank=True,
         help_text=_("Any error messages encountered during the Webhook delivery."),
     )
+
+    class Meta:
+        verbose_name = _("webhook delivery")
+        verbose_name_plural = _("webhook deliveries")
+        ordering = ["-sent_date"]
 
     def __str__(self):
         return f"Webhook uuid={self.uuid} posted at {self.sent_date}"

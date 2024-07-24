@@ -27,7 +27,9 @@ class Migration(migrations.Migration):
                 ('webhook_subscription', models.ForeignKey(blank=True, editable=False, help_text='The Webhook subscription associated with this delivery.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='deliveries', to='scanpipe.webhooksubscription')),
             ],
             options={
-                'abstract': False,
+                'verbose_name': 'webhook delivery',
+                'verbose_name_plural': 'webhook deliveries',
+                'ordering': ['-sent_date'],
             },
             bases=(scanpipe.models.UpdateMixin, models.Model),
         ),
