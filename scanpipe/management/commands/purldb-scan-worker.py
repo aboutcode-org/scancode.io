@@ -169,7 +169,18 @@ def create_scan_project(
         pipelines=pipelines,
         input_urls=input_urls,
     )
-    project.update_extra_data({"scannable_uri_uuid": scannable_uri_uuid})
+    project.update_extra_data(
+        {
+            "scannable_uri_uuid": scannable_uri_uuid,
+        }
+    )
+    url = f"{purldb.PURLDB_API_URL}scan_queue/{scannable_uri_uuid}/index_package_scan"
+    project.add_webhook_subscription(
+        target_url=url,
+        trigger_on_each_run=False,
+        include_summary=True,
+        include_results=True,
+    )
     execute_project(project=project, run_async=run_async, command=command)
     return project
 
