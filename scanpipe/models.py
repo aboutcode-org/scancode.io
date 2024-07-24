@@ -637,11 +637,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         self.labels.clear()
 
         relationships = [
+            self.webhookdeliveries,
+            self.webhooksubscriptions,
             self.projectmessages,
             self.codebaserelations,
             self.discovereddependencies,
             self.codebaseresources,
             self.runs,
+            self.inputsources,
         ]
 
         for qs in relationships:
@@ -3552,8 +3555,7 @@ class DiscoveredDependency(
     manifest or lockfile.
     """
 
-    # Overrides the `project` field from `ProjectRelatedModel` to set the proper
-    # `related_name`.
+    # Overrides the `project` field to set the proper `related_name`.
     project = models.ForeignKey(
         Project,
         related_name="discovereddependencies",
@@ -3983,6 +3985,13 @@ class WebhookDelivery(UUIDPKModel, ProjectRelatedModel):
     during the delivery process.
     """
 
+    # Overrides the `project` field to set the proper `related_name`.
+    project = models.ForeignKey(
+        Project,
+        related_name="webhookdeliveries",
+        on_delete=models.CASCADE,
+        editable=False,
+    )
     webhook_subscription = models.ForeignKey(
         WebhookSubscription,
         related_name="deliveries",
