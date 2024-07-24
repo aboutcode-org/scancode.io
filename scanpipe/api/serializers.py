@@ -35,8 +35,8 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import InputSource
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
-from scanpipe.models import WebhookSubscription
 from scanpipe.models import Run
+from scanpipe.models import WebhookSubscription
 from scanpipe.pipes import count_group_by
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -180,7 +180,7 @@ class ProjectSerializer(
         style={"base_template": "textarea.html"},
     )
     webhook_url = serializers.CharField(write_only=True, required=False)
-    webhooks = WebhookSubscriptionSerializer(many=True, write_only=True)
+    webhooks = WebhookSubscriptionSerializer(many=True, write_only=True, required=False)
     next_run = serializers.CharField(source="get_next_run", read_only=True)
     runs = RunSerializer(many=True, read_only=True)
     input_sources = InputSourceSerializer(

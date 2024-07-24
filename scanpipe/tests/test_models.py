@@ -235,7 +235,9 @@ class ScanPipeModelsTest(TestCase):
         new_file_path1.touch()
         run1 = self.project1.add_pipeline("analyze_docker_image", selected_groups=["g"])
         run2 = self.project1.add_pipeline("find_vulnerabilities")
-        subscription1 = self.project1.add_webhook_subscription(target_url="http://domain.url")
+        subscription1 = self.project1.add_webhook_subscription(
+            target_url="http://domain.url"
+        )
 
         cloned_project = self.project1.clone("cloned project")
         self.assertIsInstance(cloned_project, Project)
@@ -1910,34 +1912,45 @@ class ScanPipeModelsTest(TestCase):
         result = [r.path for r in resource1.walk()]
         self.assertEqual(expected_paths, result)
 
+    def test_scanpipe_webhook_subscription_model_add_webhook_subscription(self):
+        webhook = self.project1.add_webhook_subscription(target_url="https://localhost")
+        self.assertEqual("https://localhost", webhook.target_url)
+        self.assertFalse(webhook.trigger_on_each_run)
+        self.assertFalse(webhook.include_summary)
+        self.assertFalse(webhook.include_results)
+        self.assertTrue(webhook.is_active)
+
     @mock.patch("requests.post")
     def test_scanpipe_webhook_subscription_model_deliver_method(self, mock_post):
         webhook = self.project1.add_webhook_subscription(target_url="https://localhost")
-
-        self.assertFalse(webhook.delivered)
         run1 = self.create_run()
 
         mock_post.side_effect = RequestException("Error from exception")
-        self.assertFalse(webhook.deliver(pipeline_run=run1))
-        webhook.refresh_from_db()
-        self.assertEqual("Error from exception", webhook.delivery_error)
-        self.assertFalse(webhook.delivered)
-        self.assertFalse(webhook.success)
+        webhook_delivery = webhook.deliver(pipeline_run=run1)
+        self.assertEqual("", webhook_delivery.response_text)
+        self.assertIsNone(webhook_delivery.response_status_code)
+        self.assertEqual("Error from exception", webhook_delivery.delivery_error)
+        self.assertFalse(webhook_delivery.delivered)
+        self.assertFalse(webhook_delivery.success)
 
         mock_post.side_effect = None
         mock_post.return_value = mock.Mock(status_code=404, text="text")
-        self.assertTrue(webhook.deliver(pipeline_run=run1))
-        webhook.refresh_from_db()
-        self.assertTrue(webhook.delivered)
-        self.assertFalse(webhook.success)
-        self.assertEqual("text", webhook.response_text)
+        webhook_delivery = webhook.deliver(pipeline_run=run1)
+        self.assertEqual("text", webhook_delivery.response_text)
+        self.assertEqual(404, webhook_delivery.response_status_code)
+        self.assertEqual("", webhook_delivery.delivery_error)
+        self.assertTrue(webhook_delivery.delivered)
+        self.assertFalse(webhook_delivery.success)
 
         mock_post.return_value = mock.Mock(status_code=200, text="text")
-        self.assertTrue(webhook.deliver(pipeline_run=run1))
-        webhook.refresh_from_db()
-        self.assertTrue(webhook.delivered)
-        self.assertTrue(webhook.success)
-        self.assertEqual("text", webhook.response_text)
+        webhook_delivery = webhook.deliver(pipeline_run=run1)
+        self.assertEqual("text", webhook_delivery.response_text)
+        self.assertEqual(200, webhook_delivery.response_status_code)
+        self.assertEqual("", webhook_delivery.delivery_error)
+        self.assertTrue(webhook_delivery.delivered)
+        self.assertTrue(webhook_delivery.success)
+
+        self.assertEqual(3, webhook.deliveries.count())
 
     def test_scanpipe_webhook_subscription_model_get_payload(self):
         webhook = self.project1.add_webhook_subscription(target_url="https://localhost")
@@ -1999,6 +2012,13 @@ class ScanPipeModelsTest(TestCase):
         del payload["project"]["created_date"]
         del payload["run"]["created_date"]
         self.assertDictEqual(expected, payload)
+
+        webhook.include_summary = True
+        webhook.include_results = True
+        webhook.save()
+        payload = webhook.get_payload(run1)
+        self.assertIn("summary", payload)
+        self.assertIn("results", payload)
 
     def test_scanpipe_discovered_package_model_extract_purl_data(self):
         package_data = {}

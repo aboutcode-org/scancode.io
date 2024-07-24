@@ -1984,7 +1984,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         """Return a pipelines instance using this Run pipeline_class."""
         return self.pipeline_class(self)
 
-    def deliver_project_subscriptions(self, has_next_run):
+    def deliver_project_subscriptions(self, has_next_run=False):
         """Triggers related project Webhook subscriptions."""
         webhooks = self.project.webhooksubscriptions.active()
 
@@ -3943,6 +3943,7 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
 
         payload = self.get_payload(pipeline_run)
         delivery = WebhookDelivery(
+            project=self.project,
             webhook_subscription=self,
             target_url=self.target_url,
             payload=payload,
@@ -3959,7 +3960,7 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             logger.error(exception)
             delivery.delivery_error = str(exception)
             delivery.save()
-            return False
+            return delivery
 
         delivery.response_status_code = response.status_code
         delivery.response_text = response.text
@@ -3970,7 +3971,7 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         else:
             logger.info(f"Webhook {self.uuid} returned a {response.status_code}.")
 
-        return True
+        return delivery
 
 
 class WebhookDelivery(UUIDPKModel, ProjectRelatedModel):
