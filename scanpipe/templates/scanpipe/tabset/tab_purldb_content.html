@@ -4,6 +4,13 @@
     You are looking at the details for this software package as defined
     in the PurlDB which was scanned automatically from a public source.
   </div>
+  {% if has_multiple_purldb_entries %}
+    <div class="notification is-warning is-light has-text-weight-semibold p-3 mb-4">
+      <i class="fa-solid fa-warning mr-1"></i>
+      Multiple packages were found in the PurlDB for "{{ object.package_url }}".
+      The data below corresponds to the most recent version of this package.
+    </div>
+  {% endif %}
   {% include 'scanpipe/tabset/tab_default.html' %}
 {% else %}
   <div class="notification is-warning is-light has-text-weight-semibold p-3 mb-4">

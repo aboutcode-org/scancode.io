@@ -1,0 +1,11 @@
+{% if user.is_superuser %}
+  {% with object.get_admin_url as admin_url %}
+    {% if admin_url %}
+      <span class="icon is-size-6">
+        <a href="{{ object.get_admin_url }}" target="_blank" title="Edit in Admin">
+          <i class="fa-regular fa-pen-to-square"></i>
+        </a>
+      </span>
+    {% endif %}
+  {% endwith %}
+{% endif %}

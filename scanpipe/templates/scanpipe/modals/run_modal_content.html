@@ -66,6 +66,11 @@
           Stop pipeline
         </a>
       {% endif %}
+      {% if run.status == run.Status.SUCCESS and run.results_url %}
+        <a href="{{ run.results_url }}" class="ml-1">
+          <i class="fa-regular fa-rectangle-list"></i> View pipeline results
+        </a>
+      {% endif %}
     </div>
     <div id="run-step-selection-box"></div>
     <div class="field is-grouped is-grouped-multiline">

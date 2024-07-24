@@ -59,6 +59,7 @@ from django.views.generic.edit import UpdateView
 import saneyaml
 import xlsxwriter
 from django_filters.views import FilterView
+from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
 
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
@@ -79,7 +80,6 @@ from scanpipe.forms import PipelineRunStepSelectionForm
 from scanpipe.forms import ProjectCloneForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectSettingsForm
-from scanpipe.models import PURL_FIELDS
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -194,6 +194,11 @@ class PrefetchRelatedViewMixin:
 def render_as_yaml(value):
     if value:
         return saneyaml.dump(value, indent=2)
+
+
+def render_size(size_in_bytes):
+    if size_in_bytes:
+        return f"{size_in_bytes} ({filesizeformat(size_in_bytes)})"
 
 
 def fields_have_no_values(fields_data):
@@ -322,7 +327,7 @@ class TabSetMixin:
         if isinstance(field_value, Manager):
             return list(field_value.all())
 
-        if isinstance(field_value, (list, dict)):
+        if isinstance(field_value, list | dict):
             with suppress(Exception):
                 field_value = render_as_yaml(field_value)
 
@@ -785,7 +790,8 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             # no pipelines are assigned to the project
             if (not pipeline_runs and not pipeline_class.is_addon)
             # at least one pipeline already exists on the project
-            or pipeline_runs and (name in project_run_names or pipeline_class.is_addon)
+            or pipeline_runs
+            and (name in project_run_names or pipeline_class.is_addon)
         ]
         return pipeline_choices
 
@@ -1370,7 +1376,7 @@ class CodebaseResourceListView(
     prefetch_related = [
         Prefetch(
             "discovered_packages",
-            queryset=DiscoveredPackage.objects.only_purl_fields(),
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
         )
     ]
     table_columns = [
@@ -1478,7 +1484,7 @@ class DiscoveredPackageListView(
             .only(
                 "uuid",
                 "package_uid",
-                *PURL_FIELDS,
+                *PACKAGE_URL_FIELDS,
                 "project",
                 "primary_language",
                 "declared_license_expression",
@@ -1487,7 +1493,7 @@ class DiscoveredPackageListView(
                 "affected_by_vulnerabilities",
             )
             .with_resources_count()
-            .order_by_purl()
+            .order_by_package_url()
         )
 
     def get_context_data(self, **kwargs):
@@ -1509,10 +1515,13 @@ class DiscoveredDependencyListView(
     template_name = "scanpipe/dependency_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("dependency", 100)
     prefetch_related = [
-        Prefetch("for_package", queryset=DiscoveredPackage.objects.only_purl_fields()),
+        Prefetch(
+            "for_package",
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
+        ),
         Prefetch(
             "resolved_to_package",
-            queryset=DiscoveredPackage.objects.only_purl_fields(),
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
         ),
         Prefetch(
             "datafile_resource", queryset=CodebaseResource.objects.only("path", "name")
@@ -1653,7 +1662,7 @@ class CodebaseResourceDetailsView(
             "discovered_packages",
             queryset=DiscoveredPackage.objects.only(
                 "uuid",
-                *PURL_FIELDS,
+                *PACKAGE_URL_FIELDS,
                 "package_uid",
                 "affected_by_vulnerabilities",
                 "primary_language",
@@ -1681,7 +1690,7 @@ class CodebaseResourceDetailsView(
         },
         "others": {
             "fields": [
-                {"field_name": "size", "render_func": filesizeformat},
+                {"field_name": "size", "render_func": render_size},
                 {"field_name": "md5", "label": "MD5"},
                 {"field_name": "sha1", "label": "SHA1"},
                 {"field_name": "sha256", "label": "SHA256"},
@@ -1853,7 +1862,7 @@ class DiscoveredPackageDetailsView(
         ),
         Prefetch(
             "declared_dependencies__resolved_to_package",
-            queryset=DiscoveredPackage.objects.only_purl_fields(),
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
         ),
     ]
     tabset = {
@@ -1883,7 +1892,7 @@ class DiscoveredPackageDetailsView(
         },
         "others": {
             "fields": [
-                {"field_name": "size", "render_func": filesizeformat},
+                {"field_name": "size", "render_func": render_size},
                 "release_date",
                 {"field_name": "md5", "label": "MD5"},
                 {"field_name": "sha1", "label": "SHA1"},
@@ -1990,9 +1999,13 @@ class DiscoveredPackagePurlDBTabView(ConditionalLoginRequired, generic.DetailVie
         if not purldb.is_configured():
             raise Http404("PurlDB access is not configured.")
 
-        if purldb_entry := purldb.get_package_by_purl(self.object.package_url):
-            fields = self.get_fields_data(purldb_entry)
+        if purldb_entries := purldb.get_packages_for_purl(self.object.package_url):
+            # Always display the most recent version entry.
+            fields = self.get_fields_data(purldb_entries[0])
             context["tab_data"] = {"fields": fields}
+            # Display a warning if multiple packages found in PurlDB for this purl.
+            if len(purldb_entries) > 1:
+                context["has_multiple_purldb_entries"] = True
 
         return context
 
@@ -2013,13 +2026,13 @@ class DiscoveredDependencyDetailsView(
         Prefetch(
             "for_package",
             queryset=DiscoveredPackage.objects.only(
-                "uuid", *PURL_FIELDS, "package_uid", "project_id"
+                "uuid", *PACKAGE_URL_FIELDS, "package_uid", "project_id"
             ),
         ),
         Prefetch(
             "resolved_to_package",
             queryset=DiscoveredPackage.objects.only(
-                "uuid", *PURL_FIELDS, "package_uid", "project_id"
+                "uuid", *PACKAGE_URL_FIELDS, "package_uid", "project_id"
             ),
         ),
         Prefetch(

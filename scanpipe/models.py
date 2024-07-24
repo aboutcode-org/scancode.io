@@ -55,6 +55,7 @@ from django.db.models.functions import Cast
 from django.db.models.functions import Lower
 from django.dispatch import receiver
 from django.forms import model_to_dict
+from django.urls import NoReverseMatch
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -77,6 +78,7 @@ from packagedcode.models import build_package_uid
 from packagedcode.utils import get_base_purl
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
+from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
 from packageurl.contrib.django.models import PackageURLMixin
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
 from rest_framework.authtoken.models import Token
@@ -102,10 +104,6 @@ class RunInProgressError(Exception):
 
 class RunNotAllowedToStart(Exception):
     """Previous Runs have not completed yet."""
-
-
-# PackageURL._fields
-PURL_FIELDS = ("type", "namespace", "name", "version", "qualifiers", "subpath")
 
 
 class UUIDPKModel(models.Model):
@@ -446,6 +444,33 @@ class UpdateMixin:
             setattr(self, field_name, value)
 
         self.save(update_fields=list(kwargs.keys()))
+
+
+class AdminURLMixin:
+    """
+    A mixin to provide an admin URL for a model instance.
+
+    This mixin adds a method to generate the admin URL for a model instance,
+    which can be useful for linking to the admin interface directly from
+    the model instances.
+    """
+
+    def get_admin_url(self):
+        """
+        Return the URL for the admin change view of the instance.
+        The admin URL is only constructed and returned if the
+        SCANCODEIO_ENABLE_ADMIN_SITE setting is enabled.
+        """
+        if not settings.SCANCODEIO_ENABLE_ADMIN_SITE:
+            return
+
+        opts = self._meta
+        viewname = f"admin:{opts.app_label}_{opts.model_name}_change"
+        try:
+            url = reverse(viewname, args=[self.pk])
+        except NoReverseMatch:
+            return
+        return url
 
 
 def get_project_slug(project):
@@ -905,7 +930,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if not extensions:
             return self.input_path.glob(pattern)
 
-        if not isinstance(extensions, (list, tuple)):
+        if not isinstance(extensions, list | tuple):
             raise TypeError("extensions should be a list or tuple")
 
         return (
@@ -1206,6 +1231,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         details=None,
         exception=None,
         resource=None,
+        package=None,
     ):
         """
         Create a ProjectMessage record for this Project.
@@ -1227,9 +1253,15 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             description = str(exception)
 
         details = details or {}
+
+        # Do not change the following field names as those have special behavior in
+        # templates.
         if resource:
-            # Do not change this field name as it has special behavior in templates.
             details["resource_path"] = resource.path
+        if package:
+            details.update(
+                {"package_url": package.package_url, "package_uuid": package.uuid}
+            )
 
         return ProjectMessage.objects.create(
             project=self,
@@ -1247,11 +1279,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         details=None,
         exception=None,
         resource=None,
+        package=None,
     ):
         """Create an INFO ProjectMessage record for this project."""
         severity = ProjectMessage.Severity.INFO
         return self.add_message(
-            severity, description, model, details, exception, resource
+            severity, description, model, details, exception, resource, package
         )
 
     def add_warning(
@@ -1261,11 +1294,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         details=None,
         exception=None,
         resource=None,
+        package=None,
     ):
         """Create a WARNING ProjectMessage record for this project."""
         severity = ProjectMessage.Severity.WARNING
         return self.add_message(
-            severity, description, model, details, exception, resource
+            severity, description, model, details, exception, resource, package
         )
 
     def add_error(
@@ -1275,11 +1309,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         details=None,
         exception=None,
         resource=None,
+        package=None,
     ):
         """Create an ERROR ProjectMessage record using for this project."""
         severity = ProjectMessage.Severity.ERROR
         return self.add_message(
-            severity, description, model, details, exception, resource
+            severity, description, model, details, exception, resource, package
         )
 
     def get_absolute_url(self):
@@ -1588,7 +1623,7 @@ class UpdateFromDataMixin:
             skip_reasons = [
                 value in EMPTY_VALUES,
                 field_name not in model_fields,
-                field_name in PURL_FIELDS,
+                field_name in PACKAGE_URL_FIELDS,
             ]
             if any(skip_reasons):
                 continue
@@ -1957,6 +1992,12 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         for subscription in self.project.webhooksubscriptions.all():
             subscription.deliver(pipeline_run=self)
 
+    @property
+    def results_url(self):
+        """Return the rendered ``results_url`` if defined on the Pipeline class."""
+        if results_url := self.pipeline_class.results_url:
+            return results_url.format(**self.project.__dict__)
+
     def profile(self, print_results=False):
         """
         Return computed execution times for each step in the current Run.
@@ -2012,7 +2053,7 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
             Prefetch(
                 "discovered_packages",
                 queryset=DiscoveredPackage.objects.only(
-                    "package_uid", "uuid", *PURL_FIELDS
+                    "package_uid", "uuid", *PACKAGE_URL_FIELDS
                 ),
             ),
         )
@@ -2412,6 +2453,7 @@ class CodebaseResource(
     UpdateFromDataMixin,
     HashFieldsMixin,
     ComplianceAlertMixin,
+    AdminURLMixin,
     models.Model,
 ):
     """
@@ -2681,8 +2723,7 @@ class CodebaseResource(
         for child in self.children().iterator():
             if topdown:
                 yield child
-            for subchild in child.walk(topdown=topdown):
-                yield subchild
+            yield from child.walk(topdown=topdown)
             if not topdown:
                 yield child
 
@@ -2707,7 +2748,7 @@ class CodebaseResource(
         # This workaround ensures that the entire content of map files is displayed.
         file_type = get_type(self.location)
         if file_type.is_js_map:
-            with open(self.location, "r") as file:
+            with open(self.location) as file:
                 content = json.load(file)
 
             return json.dumps(content, indent=2)
@@ -2895,10 +2936,6 @@ class VulnerabilityQuerySetMixin:
 class DiscoveredPackageQuerySet(
     VulnerabilityQuerySetMixin, PackageURLQuerySetMixin, ProjectRelatedQuerySet
 ):
-    def order_by_purl(self):
-        """Order by Package URL fields."""
-        return self.order_by("type", "namespace", "name", "version")
-
     def with_resources_count(self):
         count_subquery = Subquery(
             self.filter(pk=OuterRef("pk"))
@@ -2908,12 +2945,19 @@ class DiscoveredPackageQuerySet(
         )
         return self.annotate(resources_count=count_subquery)
 
-    def only_purl_fields(self):
+    def only_package_url_fields(self):
         """
         Only select and return the UUID and PURL fields.
         Minimum requirements to render a Package link in the UI.
         """
-        return self.only("uuid", *PURL_FIELDS)
+        return self.only("uuid", *PACKAGE_URL_FIELDS)
+
+    def filter(self, *args, **kwargs):
+        """Add support for using ``package_url`` as a field lookup."""
+        if purl_str := kwargs.pop("package_url", None):
+            return super().filter(*args, **kwargs).for_package_url(purl_str)
+
+        return super().filter(*args, **kwargs)
 
 
 class AbstractPackage(models.Model):
@@ -3146,6 +3190,7 @@ class DiscoveredPackage(
     PackageURLMixin,
     VulnerabilityMixin,
     ComplianceAlertMixin,
+    AdminURLMixin,
     AbstractPackage,
 ):
     """
@@ -3495,6 +3540,7 @@ class DiscoveredDependency(
     SaveProjectMessageMixin,
     UpdateFromDataMixin,
     VulnerabilityMixin,
+    AdminURLMixin,
     PackageURLMixin,
 ):
     """
@@ -3783,7 +3829,7 @@ def normalize_package_url_data(purl_mapping, ignore_nulls=False):
     purl data can be executed.
     """
     normalized_purl_mapping = {}
-    for field_name in PURL_FIELDS:
+    for field_name in PACKAGE_URL_FIELDS:
         value = purl_mapping.get(field_name)
         if field_name == "qualifiers":
             value = normalize_qualifiers(value, encode=True)
@@ -3807,19 +3853,24 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         return str(self.uuid)
 
     def get_payload(self, pipeline_run):
-        return {
-            "project": {
-                "uuid": self.project.uuid,
-                "name": self.project.name,
-                "input_sources": self.project.get_inputs_with_source(),
-            },
-            "run": {
-                "uuid": pipeline_run.uuid,
-                "pipeline_name": pipeline_run.pipeline_name,
-                "status": pipeline_run.status,
-                "scancodeio_version": pipeline_run.scancodeio_version,
-            },
+        """Return the Webhook payload generated from project and pipeline_run data."""
+        from scanpipe.api.serializers import ProjectSerializer
+        from scanpipe.api.serializers import RunSerializer
+
+        project_serializer = ProjectSerializer(
+            instance=self.project,
+            exclude_fields=("url", "runs"),
+        )
+        run_serializer = RunSerializer(
+            instance=pipeline_run,
+            exclude_fields=("url", "project"),
+        )
+        payload = {
+            "project": project_serializer.data,
+            "run": run_serializer.data,
         }
+
+        return payload
 
     def deliver(self, pipeline_run):
         """Deliver this Webhook by sending a POST request to the `target_url`."""

@@ -22,10 +22,10 @@
 
 # Python version can be specified with `$ PYTHON_EXE=python3.x make conf`
 PYTHON_EXE?=python3
-MANAGE=bin/python manage.py
-ACTIVATE?=. bin/activate;
+VENV_LOCATION=.venv
+ACTIVATE?=. ${VENV_LOCATION}/bin/activate;
+MANAGE=${VENV_LOCATION}/bin/python manage.py
 VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
-BLACK_ARGS=--exclude=".cache|migrations|data|lib|bin|var"
 # Do not depend on Python to generate the SECRET_KEY
 GET_SECRET_KEY=`head -c50 /dev/urandom | base64 | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
@@ -48,7 +48,7 @@ endif
 
 virtualenv:
 	@echo "-> Bootstrap the virtualenv with PYTHON_EXE=${PYTHON_EXE}"
-	@${PYTHON_EXE} ${VIRTUALENV_PYZ} --never-download --no-periodic-update .
+	@${PYTHON_EXE} ${VIRTUALENV_PYZ} --never-download --no-periodic-update ${VENV_LOCATION}
 
 conf: virtualenv
 	@echo "-> Install dependencies"
@@ -64,33 +64,22 @@ envfile:
 	@mkdir -p $(shell dirname ${ENV_FILE}) && touch ${ENV_FILE}
 	@echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
 
-isort:
-	@echo "-> Apply isort changes to ensure proper imports ordering"
-	@${ACTIVATE} isort --profile black .
-
-black:
-	@echo "-> Apply black code formatter"
-	@${ACTIVATE} black ${BLACK_ARGS} .
-
 doc8:
 	@echo "-> Run doc8 validation"
 	@${ACTIVATE} doc8 --max-line-length 100 --ignore-path docs/_build/ --quiet docs/
 
-valid: isort black doc8 check
+valid:
+	@echo "-> Run Ruff linter"
+	@${ACTIVATE} ruff check --fix
+	@echo "-> Run Ruff format"
+	@${ACTIVATE} ruff format
 
-bandit:
-	@echo "-> Run source code security analyzer"
-	@${ACTIVATE} bandit -r scanpipe scancodeio --quiet --exclude test_spdx.py
-
-check: doc8 bandit
-	@echo "-> Run flake8 (pycodestyle, pyflakes, mccabe) validation"
-	@${ACTIVATE} flake8 .
-	@echo "-> Run isort imports ordering validation"
-	@${ACTIVATE} isort --profile black --check-only .
-	@echo "-> Run black validation"
-	@${ACTIVATE} black --check ${BLACK_ARGS} .
-	@echo "-> Run docstring validation"
-	@${ACTIVATE} pydocstyle scanpipe scancodeio
+check:
+	@echo "-> Run Ruff linter validation (pycodestyle, bandit, isort, and more)"
+	@${ACTIVATE} ruff check
+	@echo "-> Run Ruff format validation"
+	@${ACTIVATE} ruff format --check
+	@$(MAKE) doc8
 
 check-deploy:
 	@echo "-> Check Django deployment settings"
@@ -98,8 +87,8 @@ check-deploy:
 
 clean:
 	@echo "-> Clean the Python env"
-	rm -rf bin/ lib/ lib64/ include/ build/ dist/ docs/_build/ .cache/ pip-selfcheck.json pyvenv.cfg
-	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete -type d -name '*.egg-info' -delete
+	rm -rf .venv/ .*_cache/ *.egg-info/ build/ dist/
+	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
 
 migrate:
 	@echo "-> Apply database migrations"
@@ -164,4 +153,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install check bandit valid isort check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run test docs bump docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run test docs bump docker-images offline-package

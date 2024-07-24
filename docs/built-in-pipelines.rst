@@ -74,6 +74,20 @@ Collect symbols and string with Tree-Sitter (addon)
     :members:
     :member-order: bysource
 
+.. _pipeline_enrich_with_purldb:
+
+Enrich With PurlDB (addon)
+--------------------------
+
+.. warning::
+    This pipeline requires access to a PurlDB service.
+    Refer to :ref:`scancodeio_settings_purldb` to configure access to PurlDB in your
+    ScanCode.io instance.
+
+.. autoclass:: scanpipe.pipelines.enrich_with_purldb.EnrichWithPurlDB()
+    :members:
+    :member-order: bysource
+
 .. _pipeline_find_vulnerabilities:
 
 Find Vulnerabilities (addon)

@@ -790,6 +790,16 @@ class ScanPipeViewsTest(TestCase):
         expected = '<span class="tag is-danger">Stopped</span>'
         self.assertContains(response, expected)
 
+    def test_scanpipe_views_run_detail_view_results_url(self):
+        run = self.project1.add_pipeline("find_vulnerabilities")
+        self.assertTrue(run.results_url)
+
+        url = reverse("run_detail", args=[run.uuid])
+        run.set_task_ended(exitcode=0)
+        response = self.client.get(url)
+        self.assertContains(response, "View pipeline results")
+        self.assertContains(response, run.results_url)
+
     def test_scanpipe_views_project_run_step_selection_view(self):
         run = self.project1.add_pipeline("do_nothing")
         url = reverse("project_run_step_selection", args=[run.uuid])
@@ -1038,21 +1048,23 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, "tab-purldb")
         self.assertContains(response, '<section id="tab-purldb"')
 
-        with mock.patch("scanpipe.pipes.purldb.get_package_by_purl") as get_package:
-            get_package.return_value = None
+        with mock.patch("scanpipe.pipes.purldb.get_packages_for_purl") as get_packages:
+            get_packages.return_value = None
             purldb_tab_url = f"{package_url}purldb_tab/"
             response = self.client.get(purldb_tab_url)
             msg = "No entries found in the PurlDB for this package"
             self.assertContains(response, msg)
 
-            get_package.return_value = {
-                "uuid": "9261605f-e2fb-4db9-94ab-0d82d3273cdf",
-                "filename": "abab-2.0.3.tgz",
-                "type": "npm",
-                "name": "abab",
-                "version": "2.0.3",
-                "primary_language": "JavaScript",
-            }
+            get_packages.return_value = [
+                {
+                    "uuid": "9261605f-e2fb-4db9-94ab-0d82d3273cdf",
+                    "filename": "abab-2.0.3.tgz",
+                    "type": "npm",
+                    "name": "abab",
+                    "version": "2.0.3",
+                    "primary_language": "JavaScript",
+                }
+            ]
             response = self.client.get(purldb_tab_url)
             self.assertContains(response, "abab-2.0.3.tgz")
             self.assertContains(response, "2.0.3")

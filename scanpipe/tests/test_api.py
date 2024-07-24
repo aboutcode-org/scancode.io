@@ -186,6 +186,14 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(1, response.data["package_count"])
         self.assertEqual(1, response.data["dependency_count"])
         self.assertEqual(1, response.data["relation_count"])
+        self.assertEqual(
+            f"http://testserver/api/projects/{self.project1.uuid}/results/",
+            response.data["results_url"],
+        )
+        self.assertEqual(
+            f"http://testserver/api/projects/{self.project1.uuid}/summary/",
+            response.data["summary_url"],
+        )
 
         expected = {"": 1}
         self.assertEqual(expected, response.data["codebase_resources_summary"])

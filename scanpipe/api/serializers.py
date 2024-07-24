@@ -23,6 +23,7 @@
 from django.apps import apps
 
 from rest_framework import serializers
+from rest_framework.reverse import reverse
 from taggit.serializers import TaggitSerializer
 from taggit.serializers import TagListSerializerField
 
@@ -144,6 +145,7 @@ class InputSourceSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(
     ExcludeFromListViewMixin,
+    SerializerExcludeFieldsMixin,
     PipelineChoicesMixin,
     TaggitSerializer,
     serializers.ModelSerializer,
@@ -177,6 +179,8 @@ class ProjectSerializer(
     discovered_dependencies_summary = serializers.SerializerMethodField()
     codebase_relations_summary = serializers.SerializerMethodField()
     labels = TagListSerializerField(required=False)
+    results_url = serializers.SerializerMethodField()
+    summary_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -210,8 +214,9 @@ class ProjectSerializer(
             "discovered_packages_summary",
             "discovered_dependencies_summary",
             "codebase_relations_summary",
+            "results_url",
+            "summary_url",
         )
-
         exclude_from_list_view = [
             "settings",
             "input_root",
@@ -257,6 +262,16 @@ class ProjectSerializer(
     def validate_input_urls(self, value):
         """Add support for providing multiple URLs in a single string."""
         return [url for entry in value for url in entry.split()]
+
+    def get_action_url(self, obj, action_name):
+        request = self.context.get("request")
+        return reverse(f"project-{action_name}", kwargs={"pk": obj.pk}, request=request)
+
+    def get_results_url(self, obj):
+        return self.get_action_url(obj, "results")
+
+    def get_summary_url(self, obj):
+        return self.get_action_url(obj, "summary")
 
     def create(self, validated_data):
         """

@@ -165,9 +165,9 @@ def clean_xlsx_field_value(model_class, field_name, value):
         return [{dict_key: entry} for entry in value.splitlines()]
 
     elif isinstance(field, models.JSONField):
-        if field.default == list:
+        if field.default is list:
             return value.splitlines()
-        elif field.default == dict:
+        elif field.default is dict:
             return  # dict stored as JSON are not supported
 
     return value

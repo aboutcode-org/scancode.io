@@ -46,6 +46,7 @@ from django.test import TestCase
 from django.test import TransactionTestCase
 from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
+from django.urls import reverse
 from django.utils import timezone
 
 from packagedcode.models import PackageData
@@ -380,9 +381,9 @@ class ScanPipeModelsTest(TestCase):
         self.project1.copy_input_from(self.data / "aboutcode" / "notice.NOTICE")
         self.project1.add_input_source(filename="missing.zip", is_uploaded=True)
 
-        uuid1, uuid2 = [
+        uuid1, uuid2 = (
             str(input_source.uuid) for input_source in self.project1.inputsources.all()
-        ]
+        )
 
         expected = [
             {
@@ -1203,6 +1204,19 @@ class ScanPipeModelsTest(TestCase):
         run1.deliver_project_subscriptions()
         mock_deliver.assert_called_once_with(pipeline_run=run1)
 
+    def test_scanpipe_run_model_results_url(self):
+        run1 = self.create_run(pipeline="scan_codebase")
+        self.assertEqual("", run1.pipeline_class.results_url)
+        self.assertIsNone(run1.results_url)
+
+        run2 = self.create_run(pipeline="find_vulnerabilities")
+        self.assertEqual(
+            "/project/{slug}/packages/?is_vulnerable=yes",
+            run2.pipeline_class.results_url,
+        )
+        packages_url = reverse("project_packages", args=[self.project1.slug])
+        self.assertEqual(f"{packages_url}?is_vulnerable=yes", run2.results_url)
+
     def test_scanpipe_run_model_profile_method(self):
         run1 = self.create_run()
         self.assertIsNone(run1.profile())
@@ -1362,7 +1376,7 @@ class ScanPipeModelsTest(TestCase):
         copy_input(map_file_path, self.project1.codebase_path)
         resource = self.project1.codebaseresources.create(path="main.js.map")
 
-        with open(map_file_path, "r") as file:
+        with open(map_file_path) as file:
             expected = json.load(file)
 
         result = json.loads(resource.file_content)
@@ -1792,6 +1806,8 @@ class ScanPipeModelsTest(TestCase):
         for purl, expected_count in inputs:
             qs = DiscoveredPackage.objects.for_package_url(purl)
             self.assertEqual(expected_count, qs.count(), msg=purl)
+            qs2 = DiscoveredPackage.objects.filter(package_url=purl)
+            self.assertEqual(expected_count, qs2.count(), msg=purl)
 
     def test_scanpipe_discovered_package_queryset_vulnerable(self):
         p1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
@@ -1895,7 +1911,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected_paths, result)
 
     @mock.patch("requests.post")
-    def test_scanpipe_webhook_subscription_deliver_method(self, mock_post):
+    def test_scanpipe_webhook_subscription_model_deliver_method(self, mock_post):
         webhook = self.project1.add_webhook_subscription("https://localhost")
         self.assertFalse(webhook.delivered)
         run1 = self.create_run()
@@ -1921,6 +1937,67 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(webhook.delivered)
         self.assertTrue(webhook.success)
         self.assertEqual("text", webhook.response_text)
+
+    def test_scanpipe_webhook_subscription_model_get_payload(self):
+        webhook = self.project1.add_webhook_subscription("https://localhost")
+        run1 = self.create_run()
+        payload = webhook.get_payload(run1)
+
+        expected = {
+            "project": {
+                "name": "Analysis",
+                "uuid": str(self.project1.uuid),
+                "is_archived": False,
+                "notes": "",
+                "labels": [],
+                "settings": {},
+                "input_sources": [],
+                "input_root": [],
+                "output_root": [],
+                "next_run": "pipeline",
+                "extra_data": {},
+                "message_count": 0,
+                "resource_count": 0,
+                "package_count": 0,
+                "dependency_count": 0,
+                "relation_count": 0,
+                "codebase_resources_summary": {},
+                "discovered_packages_summary": {
+                    "total": 0,
+                    "with_missing_resources": 0,
+                    "with_modified_resources": 0,
+                },
+                "discovered_dependencies_summary": {
+                    "total": 0,
+                    "is_runtime": 0,
+                    "is_optional": 0,
+                    "is_resolved": 0,
+                },
+                "codebase_relations_summary": {},
+                "results_url": f"/api/projects/{self.project1.uuid}/results/",
+                "summary_url": f"/api/projects/{self.project1.uuid}/summary/",
+            },
+            "run": {
+                "pipeline_name": "pipeline",
+                "status": run1.status,
+                "description": "",
+                "selected_groups": None,
+                "selected_steps": None,
+                "uuid": str(run1.uuid),
+                "scancodeio_version": "",
+                "task_id": None,
+                "task_start_date": None,
+                "task_end_date": None,
+                "task_exitcode": None,
+                "task_output": "",
+                "log": "",
+                "execution_time": None,
+            },
+        }
+
+        del payload["project"]["created_date"]
+        del payload["run"]["created_date"]
+        self.assertDictEqual(expected, payload)
 
     def test_scanpipe_discovered_package_model_extract_purl_data(self):
         package_data = {}

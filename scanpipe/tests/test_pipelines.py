@@ -49,6 +49,7 @@ from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import FIXTURES_REGEN
+from scanpipe.tests import make_package
 from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.profile_step import ProfileStep
@@ -487,9 +488,7 @@ class RootFSPipelineTest(TestCase):
 
 
 def sort_for_os_compatibility(scan_data):
-    """
-    Sort the ``scan_data`` files and relations in place. Return ``scan_data``.
-    """
+    """Sort the ``scan_data`` files and relations in place. Return ``scan_data``."""
     if files := scan_data.get("files"):
         files.sort(key=lambda x: x["path"])
 
@@ -501,9 +500,7 @@ def sort_for_os_compatibility(scan_data):
 
 @tag("slow")
 class PipelinesIntegrationTest(TestCase):
-    """
-    Set of integration tests to ensure the proper output for each built-in Pipelines.
-    """
+    """Integration tests to ensure the proper output for each built-in Pipelines."""
 
     # Un-comment the following to display full diffs:
     # maxDiff = None
@@ -538,9 +535,7 @@ class PipelinesIntegrationTest(TestCase):
     ]
 
     def _without_keys(self, data, exclude_keys):
-        """
-        Return the `data` excluding the provided `exclude_keys`.
-        """
+        """Return the `data` excluding the provided `exclude_keys`."""
         if isinstance(data, list):
             return [self._without_keys(entry, exclude_keys) for entry in data]
 
@@ -599,7 +594,7 @@ class PipelinesIntegrationTest(TestCase):
                 is_local_files = True
             normalized_data = {}
             for key, value in data.items():
-                if isinstance(value, (list, dict)):
+                if isinstance(value, list | dict):
                     value = self._normalize_package_uids(value)
                 if key in fields_with_package_uids and value:
                     value = purl_with_fake_uuid(value)
@@ -637,9 +632,7 @@ class PipelinesIntegrationTest(TestCase):
     def assertPipelineResultEqual(
         self, expected_file, result_file, sort_dependencies=False, regen=FIXTURES_REGEN
     ):
-        """
-        Set `regen` to True to regenerate the expected results.
-        """
+        """Set `regen` to True to regenerate the expected results."""
         result_json = json.loads(Path(result_file).read_text())
         result_json = self._normalize_package_uids(result_json)
         result_data = self._without_keys(result_json, self.exclude_from_diff)
@@ -845,6 +838,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, project1.discoveredpackages.count())
         self.assertEqual(26, project1.discovereddependencies.count())
 
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_inspect_packages_with_resolved_dependencies_npm(self):
         pipeline_name = "inspect_packages"
         project1 = Project.objects.create(name="Analysis")
@@ -872,6 +866,7 @@ class PipelinesIntegrationTest(TestCase):
         )
         self.assertPipelineResultEqual(expected_file, result_file)
 
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_inspect_packages_with_resolved_dependencies_poetry(self):
         pipeline_name = "inspect_packages"
         project1 = Project.objects.create(name="Analysis")
@@ -1711,3 +1706,33 @@ class PipelinesIntegrationTest(TestCase):
             expected_extra_data = json.load(f)
 
         self.assertDictEqual(expected_extra_data, result_extra_data)
+
+    @mock.patch("scanpipe.pipes.purldb.is_available")
+    @mock.patch("scanpipe.pipes.purldb.is_configured")
+    @mock.patch("scanpipe.pipes.purldb.collect_data_for_purl")
+    def test_scanpipe_enrich_with_purldb_pipeline_integration(
+        self, mock_collect_data, mock_is_configured, mock_is_available
+    ):
+        pipeline_name = "enrich_with_purldb"
+        project1 = Project.objects.create(name="Analysis")
+        package1 = make_package(project1, package_url="pkg:npm/csvtojson@2.0.10")
+
+        mock_is_configured.return_value = True
+        mock_is_available.return_value = True
+
+        purldb_entry_file = self.data / "purldb" / "csvtojson-2.0.10.json"
+        purldb_entry = json.loads(purldb_entry_file.read_text())
+        mock_collect_data.return_value = [purldb_entry]
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        package1.refresh_from_db()
+        self.assertTrue(package1.extra_data.get("enrich_with_purldb"))
+
+        run.refresh_from_db()
+        self.assertIn("pkg:npm/csvtojson@2.0.10 ['release_date'", run.log)
+        self.assertIn("1 discovered package enriched with the PurlDB.", run.log)

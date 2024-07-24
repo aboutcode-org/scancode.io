@@ -21,20 +21,23 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipes import clamav
+from scanpipe.pipes import purldb
 
 
-class ScanForVirus(Pipeline):
-    """Run a ClamAV scan on the codebase directory to detect virus infection."""
+class EnrichWithPurlDB(Pipeline):
+    """Enrich the discovered packages with data available in the PurlDB."""
 
     download_inputs = False
     is_addon = True
-    results_url = "/project/{slug}/resources/?extra_data=virus_report"
+    results_url = "/project/{slug}/packages/?extra_data=" + purldb.ENRICH_EXTRA_DATA_KEY
 
     @classmethod
     def steps(cls):
-        return (cls.scan_for_virus,)
+        return (
+            purldb.check_service_availability,
+            cls.enrich_discovered_packages_with_purldb,
+        )
 
-    def scan_for_virus(self):
-        """Run a ClamAV scan to detect virus infection."""
-        clamav.scan_for_virus(self.project)
+    def enrich_discovered_packages_with_purldb(self):
+        """Lookup discovered packages in PurlDB."""
+        purldb.enrich_discovered_packages(self.project, logger=self.log)
