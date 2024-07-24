@@ -699,35 +699,33 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         execute_now=False,
     ):
         """Clone this project using the provided ``clone_name`` as new project name."""
-        cloned_project = Project.objects.create(
+        new_project = Project.objects.create(
             name=clone_name,
             settings=self.settings if copy_settings else {},
         )
 
         if labels := self.labels.names():
-            cloned_project.labels.add(*labels)
+            new_project.labels.add(*labels)
 
         if copy_inputs:
             # Clone the InputSource instances
             for input_source in self.inputsources.all():
-                input_source.pk = None
-                input_source.project = cloned_project
-                input_source.save()
+                input_source.clone(to_project=new_project)
             # Copy the files from the input work directory
             for input_location in self.inputs():
-                cloned_project.copy_input_from(input_location)
+                new_project.copy_input_from(input_location)
 
         if copy_pipelines:
             for run in self.runs.all():
-                cloned_project.add_pipeline(
+                new_project.add_pipeline(
                     run.pipeline_name, execute_now, selected_groups=run.selected_groups
                 )
 
         if copy_subscriptions:
             for subscription in self.webhooksubscriptions.all():
-                cloned_project.add_webhook_subscription(subscription.target_url)
+                subscription.clone(to_project=new_project)
 
-        return cloned_project
+        return new_project
 
     def _raise_if_run_in_progress(self):
         """
@@ -1184,12 +1182,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         return run
 
-    def add_webhook_subscription(self, target_url):
+    def add_webhook_subscription(self, **kwargs):
         """
         Create a new WebhookSubscription instance with the provided `target_url` for
         the current project.
         """
-        return WebhookSubscription.objects.create(project=self, target_url=target_url)
+        return WebhookSubscription.objects.create(project=self, **kwargs)
 
     @cached_property
     def can_start_pipelines(self):
@@ -1496,6 +1494,15 @@ class ProjectRelatedModel(UpdateMixin, models.Model):
     @classmethod
     def model_fields(cls):
         return [field.name for field in cls._meta.get_fields()]
+
+    def clone(self, to_project):
+        """Clone this instance as a new instance of the provided ``to_project``."""
+        if to_project == self.project:
+            raise ValueError("Cannot clone instance into the same project.")
+
+        self.pk = None
+        self.project = to_project
+        self.save()
 
 
 class ProjectMessage(UUIDPKModel, ProjectRelatedModel):

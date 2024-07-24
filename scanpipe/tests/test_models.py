@@ -235,7 +235,7 @@ class ScanPipeModelsTest(TestCase):
         new_file_path1.touch()
         run1 = self.project1.add_pipeline("analyze_docker_image", selected_groups=["g"])
         run2 = self.project1.add_pipeline("find_vulnerabilities")
-        subscription1 = self.project1.add_webhook_subscription("http://domain.url")
+        subscription1 = self.project1.add_webhook_subscription(target_url="http://domain.url")
 
         cloned_project = self.project1.clone("cloned project")
         self.assertIsInstance(cloned_project, Project)
@@ -535,7 +535,7 @@ class ScanPipeModelsTest(TestCase):
 
     def test_scanpipe_project_model_add_webhook_subscription(self):
         self.assertEqual(0, self.project1.webhooksubscriptions.count())
-        self.project1.add_webhook_subscription("https://localhost")
+        self.project1.add_webhook_subscription(target_url="https://localhost")
         self.assertEqual(1, self.project1.webhooksubscriptions.count())
 
     def test_scanpipe_project_model_get_next_run(self):
@@ -1199,7 +1199,7 @@ class ScanPipeModelsTest(TestCase):
 
     @mock.patch("scanpipe.models.WebhookSubscription.deliver")
     def test_scanpipe_run_model_deliver_project_subscriptions(self, mock_deliver):
-        self.project1.add_webhook_subscription("https://localhost")
+        self.project1.add_webhook_subscription(target_url="https://localhost")
         run1 = self.create_run()
         run1.deliver_project_subscriptions()
         mock_deliver.assert_called_once_with(pipeline_run=run1)
@@ -1912,7 +1912,8 @@ class ScanPipeModelsTest(TestCase):
 
     @mock.patch("requests.post")
     def test_scanpipe_webhook_subscription_model_deliver_method(self, mock_post):
-        webhook = self.project1.add_webhook_subscription("https://localhost")
+        webhook = self.project1.add_webhook_subscription(target_url="https://localhost")
+
         self.assertFalse(webhook.delivered)
         run1 = self.create_run()
 
@@ -1939,7 +1940,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual("text", webhook.response_text)
 
     def test_scanpipe_webhook_subscription_model_get_payload(self):
-        webhook = self.project1.add_webhook_subscription("https://localhost")
+        webhook = self.project1.add_webhook_subscription(target_url="https://localhost")
         run1 = self.create_run()
         payload = webhook.get_payload(run1)
 

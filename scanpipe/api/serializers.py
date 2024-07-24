@@ -35,6 +35,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import InputSource
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
+from scanpipe.models import WebhookSubscription
 from scanpipe.models import Run
 from scanpipe.pipes import count_group_by
 
@@ -143,6 +144,18 @@ class InputSourceSerializer(serializers.ModelSerializer):
         ]
 
 
+class WebhookSubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WebhookSubscription
+        fields = [
+            "target_url",
+            "trigger_on_each_run",
+            "include_summary",
+            "include_results",
+            "is_active",
+        ]
+
+
 class ProjectSerializer(
     ExcludeFromListViewMixin,
     SerializerExcludeFieldsMixin,
@@ -167,6 +180,7 @@ class ProjectSerializer(
         style={"base_template": "textarea.html"},
     )
     webhook_url = serializers.CharField(write_only=True, required=False)
+    webhooks = WebhookSubscriptionSerializer(many=True, write_only=True)
     next_run = serializers.CharField(source="get_next_run", read_only=True)
     runs = RunSerializer(many=True, read_only=True)
     input_sources = InputSourceSerializer(
@@ -192,6 +206,7 @@ class ProjectSerializer(
             "upload_file_tag",
             "input_urls",
             "webhook_url",
+            "webhooks",
             "created_date",
             "is_archived",
             "notes",
@@ -289,6 +304,7 @@ class ProjectSerializer(
         pipeline = validated_data.pop("pipeline", [])
         execute_now = validated_data.pop("execute_now", False)
         webhook_url = validated_data.pop("webhook_url", None)
+        webhooks = validated_data.pop("webhooks", [])
 
         project = super().create(validated_data)
 
@@ -298,11 +314,14 @@ class ProjectSerializer(
         for url in input_urls:
             project.add_input_source(download_url=url)
 
-        if webhook_url:
-            project.add_webhook_subscription(webhook_url)
-
         for pipeline_name in pipeline:
             project.add_pipeline(pipeline_name, execute_now)
+
+        if webhook_url:
+            project.add_webhook_subscription(target_url=webhook_url)
+
+        for webhook_data in webhooks:
+            project.add_webhook_subscription(**webhook_data)
 
         return project
 
