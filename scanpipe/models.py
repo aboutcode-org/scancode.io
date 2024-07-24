@@ -1977,10 +1977,15 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         """Return a pipelines instance using this Run pipeline_class."""
         return self.pipeline_class(self)
 
-    def deliver_project_subscriptions(self):
-        """Triggers related project webhook subscriptions."""
-        for subscription in self.project.webhooksubscriptions.all():
-            subscription.deliver(pipeline_run=self)
+    def deliver_project_subscriptions(self, has_next_run):
+        """Triggers related project Webhook subscriptions."""
+        webhooks = self.project.webhooksubscriptions.filter(is_active=True)
+
+        if has_next_run:
+            webhooks = webhooks.filter(trigger_on_each_run=True)
+
+        for webhook in webhooks:
+            webhook.deliver(pipeline_run=self)
 
     @property
     def results_url(self):
@@ -3833,11 +3838,53 @@ def normalize_package_url_data(purl_mapping, ignore_nulls=False):
 
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
-    target_url = models.URLField(_("Target URL"), max_length=1024)
-    created_date = models.DateTimeField(auto_now_add=True, editable=False)
-    response_status_code = models.PositiveIntegerField(null=True, blank=True)
-    response_text = models.TextField(blank=True)
-    delivery_error = models.TextField(blank=True)
+    """
+    A model to define Webhook subscriptions for Project pipeline execution events.
+
+    This model captures the necessary details to configure a Webhook, including the
+    target URL and the specific events that trigger the Webhook.
+    It allows for customization on whether  the Webhook should be triggered on each
+    pipeline run and whether to include summary or result data in the payload.
+    """
+
+    target_url = models.URLField(
+        _("Target URL"),
+        max_length=1024,
+        blank=False,
+        help_text=_(
+            "The URL to which the POST request will be sent when the Webhook is "
+            "triggered."
+        ),
+    )
+    trigger_on_each_run = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Trigger the Webhook after each individual pipeline run instead of only "
+            "after all runs are completed."
+        ),
+    )
+    include_summary = models.BooleanField(
+        default=False,
+        help_text=_("Include the entire summary data in the payload."),
+    )
+    include_results = models.BooleanField(
+        default=False,
+        help_text=_("Include the entire results data in the payload."),
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text=_(
+            "Indicates whether the Webhook is currently active and should be triggered."
+        ),
+    )
+    created_date = models.DateTimeField(
+        auto_now_add=True,
+        editable=False,
+        help_text=_("The date and time when the Webhook subscription was created."),
+    )
+
+    class Meta:
+        ordering = ["-created_date"]
 
     def __str__(self):
         return str(self.uuid)
@@ -3846,6 +3893,7 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         """Return the Webhook payload generated from project and pipeline_run data."""
         from scanpipe.api.serializers import ProjectSerializer
         from scanpipe.api.serializers import RunSerializer
+        from scanpipe.pipes.output import to_json
 
         project_serializer = ProjectSerializer(
             instance=self.project,
@@ -3860,36 +3908,110 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             "run": run_serializer.data,
         }
 
+        if self.include_summary:
+            summary_file = self.project.get_latest_output(filename="summary")
+            summary = json.loads(summary_file.read_text()) if summary_file else {}
+            payload["summary"] = summary
+
+        if self.include_results:
+            results_file = to_json(self.project)
+            payload["results"] = json.loads(results_file.read_text())
+
         return payload
 
-    def deliver(self, pipeline_run):
+    def deliver(self, pipeline_run, timeout=10):
         """Deliver this Webhook by sending a POST request to the `target_url`."""
-        payload = self.get_payload(pipeline_run)
+        logger.info(f"Delivering Webhook {self.uuid}")
 
-        logger.info(f"Sending Webhook uuid={self.uuid}.")
+        if not self.is_active:
+            logger.info(f"Webhook {self.uuid} is not active.")
+            return False
+
+        payload = self.get_payload(pipeline_run)
+        delivery = WebhookDelivery(
+            webhook_subscription=self,
+            target_url=self.target_url,
+            payload=payload,
+        )
+
         try:
             response = requests.post(
                 url=self.target_url,
                 data=json.dumps(payload, cls=DjangoJSONEncoder),
                 headers={"Content-Type": "application/json"},
-                timeout=10,
+                timeout=timeout,
             )
         except requests.exceptions.RequestException as exception:
-            logger.info(exception)
-            self.update(delivery_error=str(exception))
+            logger.error(exception)
+            delivery.delivery_error = str(exception)
+            delivery.save()
             return False
 
-        self.update(
-            response_status_code=response.status_code,
-            response_text=response.text,
-        )
+        delivery.response_status_code = response.status_code
+        delivery.response_text = response.text
+        delivery.save()
 
-        if self.success:
-            logger.info(f"Webhook uuid={self.uuid} delivered and received.")
+        if delivery.success:
+            logger.info(f"Webhook {self.uuid} delivered successfully.")
         else:
-            logger.info(f"Webhook uuid={self.uuid} returned a {response.status_code}.")
+            logger.info(f"Webhook {self.uuid} returned a {response.status_code}.")
 
         return True
+
+
+class WebhookDelivery(UUIDPKModel, ProjectRelatedModel):
+    """
+    Stores historical data for Webhook deliveries.
+
+    This model keeps track of each delivery attempt made by a Webhook subscription,
+    including the payload sent, the response received, and any errors that occurred
+    during the delivery process.
+    """
+
+    webhook_subscription = models.ForeignKey(
+        WebhookSubscription,
+        related_name="deliveries",
+        editable=False,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        help_text=_("The Webhook subscription associated with this delivery."),
+    )
+    target_url = models.URLField(
+        _("Target URL"),
+        max_length=1024,
+        blank=False,
+        help_text=_(
+            "Stores a copy of the Webhook target URL in case the subscription object "
+            "is deleted."
+        ),
+    )
+    sent_date = models.DateTimeField(
+        auto_now_add=True,
+        editable=False,
+        help_text=_("The date and time when the Webhook was sent."),
+    )
+    payload = models.JSONField(
+        help_text=_("The JSON payload that was sent to the target URL."),
+    )
+    response_status_code = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=_(
+            "The HTTP status code received in response to the Webhook request."
+        ),
+    )
+    response_text = models.TextField(
+        blank=True,
+        help_text=_("The text response received from the target URL."),
+    )
+    delivery_error = models.TextField(
+        blank=True,
+        help_text=_("Any error messages encountered during the Webhook delivery."),
+    )
+
+    def __str__(self):
+        return f"Webhook uuid={self.uuid} posted at {self.sent_date}"
 
     @property
     def delivered(self):
