@@ -7,9 +7,18 @@ def migrate_webhook_delivery_data(apps, schema_editor):
     WebhookSubscription = apps.get_model("scanpipe", "WebhookSubscription")
     WebhookDelivery = apps.get_model("scanpipe", "WebhookDelivery")
 
-    for subscription in WebhookSubscription.objects.all():
+    subscription_qs = WebhookSubscription.objects.all().select_related("project")
+
+    for subscription in subscription_qs:
+        project = subscription.project
+
+        # Asserting the run FK in case this project has a single run
+        project_runs = project.runs.all()
+        run = project_runs[0] if len(project_runs) == 1 else None
+
         WebhookDelivery.objects.create(
-            project=subscription.project,
+            project=project,
+            run=run,
             webhook_subscription=subscription,
             target_url=subscription.target_url,
             sent_date=subscription.created_date,

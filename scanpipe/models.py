@@ -3947,6 +3947,7 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         delivery = WebhookDelivery(
             project=self.project,
             webhook_subscription=self,
+            run=pipeline_run,
             target_url=self.target_url,
             payload=payload,
         )
@@ -4000,6 +4001,15 @@ class WebhookDelivery(UUIDPKModel, ProjectRelatedModel):
         null=True,
         on_delete=models.SET_NULL,
         help_text=_("The Webhook subscription associated with this delivery."),
+    )
+    run = models.ForeignKey(
+        Run,
+        related_name="webhook_deliveries",
+        editable=False,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        help_text=_("The Pipeline Run associated with this delivery."),
     )
     target_url = models.URLField(
         _("Target URL"),

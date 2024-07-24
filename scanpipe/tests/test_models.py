@@ -65,6 +65,7 @@ from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.models import RunNotAllowedToStart
 from scanpipe.models import UUIDTaggedItem
+from scanpipe.models import WebhookSubscription
 from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.models import get_project_work_directory
 from scanpipe.models import normalize_package_url_data
@@ -174,8 +175,11 @@ class ScanPipeModelsTest(TestCase):
             "scanpipe.DiscoveredDependency": 0,
             "scanpipe.DiscoveredPackage": 1,
             "scanpipe.DiscoveredPackage_codebase_resources": 1,
+            "scanpipe.InputSource": 0,
             "scanpipe.ProjectMessage": 0,
             "scanpipe.Run": 1,
+            "scanpipe.WebhookDelivery": 0,
+            "scanpipe.WebhookSubscription": 0,
         }
         self.assertEqual(expected, delete_log)
         # Make sure the labels were deleted too.
@@ -1912,9 +1916,12 @@ class ScanPipeModelsTest(TestCase):
         result = [r.path for r in resource1.walk()]
         self.assertEqual(expected_paths, result)
 
-    def test_scanpipe_webhook_subscription_model_add_webhook_subscription(self):
-        webhook = self.project1.add_webhook_subscription(target_url="https://localhost")
-        self.assertEqual("https://localhost", webhook.target_url)
+    def test_scanpipe_webhook_subscription_model_create(self):
+        webhook = WebhookSubscription.objects.create(
+            project=self.project1,
+            target_url="https://url",
+        )
+        self.assertEqual("https://url", webhook.target_url)
         self.assertFalse(webhook.trigger_on_each_run)
         self.assertFalse(webhook.include_summary)
         self.assertFalse(webhook.include_results)
@@ -1922,11 +1929,12 @@ class ScanPipeModelsTest(TestCase):
 
     @mock.patch("requests.post")
     def test_scanpipe_webhook_subscription_model_deliver_method(self, mock_post):
-        webhook = self.project1.add_webhook_subscription(target_url="https://localhost")
+        webhook = self.project1.add_webhook_subscription(target_url="https://url")
         run1 = self.create_run()
 
         mock_post.side_effect = RequestException("Error from exception")
         webhook_delivery = webhook.deliver(pipeline_run=run1)
+        self.assertEqual(run1, webhook_delivery.run)
         self.assertEqual("", webhook_delivery.response_text)
         self.assertIsNone(webhook_delivery.response_status_code)
         self.assertEqual("Error from exception", webhook_delivery.delivery_error)
@@ -1936,6 +1944,7 @@ class ScanPipeModelsTest(TestCase):
         mock_post.side_effect = None
         mock_post.return_value = mock.Mock(status_code=404, text="text")
         webhook_delivery = webhook.deliver(pipeline_run=run1)
+        self.assertEqual(run1, webhook_delivery.run)
         self.assertEqual("text", webhook_delivery.response_text)
         self.assertEqual(404, webhook_delivery.response_status_code)
         self.assertEqual("", webhook_delivery.delivery_error)
@@ -1944,6 +1953,7 @@ class ScanPipeModelsTest(TestCase):
 
         mock_post.return_value = mock.Mock(status_code=200, text="text")
         webhook_delivery = webhook.deliver(pipeline_run=run1)
+        self.assertEqual(run1, webhook_delivery.run)
         self.assertEqual("text", webhook_delivery.response_text)
         self.assertEqual(200, webhook_delivery.response_status_code)
         self.assertEqual("", webhook_delivery.delivery_error)

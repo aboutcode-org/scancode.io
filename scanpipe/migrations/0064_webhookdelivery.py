@@ -24,6 +24,7 @@ class Migration(migrations.Migration):
                 ('response_text', models.TextField(blank=True, help_text='The text response received from the target URL.')),
                 ('delivery_error', models.TextField(blank=True, help_text='Any error messages encountered during the Webhook delivery.')),
                 ('project', models.ForeignKey(editable=False, on_delete=django.db.models.deletion.CASCADE, related_name='webhookdeliveries', to='scanpipe.project')),
+                ('run', models.ForeignKey(blank=True, editable=False, help_text='The Pipeline Run associated with this delivery.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='webhook_deliveries', to='scanpipe.run')),
                 ('webhook_subscription', models.ForeignKey(blank=True, editable=False, help_text='The Webhook subscription associated with this delivery.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='deliveries', to='scanpipe.webhooksubscription')),
             ],
             options={

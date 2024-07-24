@@ -2090,15 +2090,14 @@ class DiscoveredDependencyDetailsView(
 def run_detail_view(request, uuid):
     template = "scanpipe/modals/run_modal_content.html"
     run_qs = Run.objects.select_related("project").prefetch_related(
-        "project__webhookdeliveries",
+        "webhook_deliveries"
     )
     run = get_object_or_404(run_qs, uuid=uuid)
-    project = run.project
 
     context = {
         "run": run,
-        "project": project,
-        "webhook_deliveries": project.webhookdeliveries.all(),
+        "project": run.project,
+        "webhook_deliveries": run.webhook_deliveries.all(),
     }
 
     return render(request, template, context)
