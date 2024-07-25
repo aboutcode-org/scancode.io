@@ -56,6 +56,7 @@ from django.db.models.functions import Cast
 from django.db.models.functions import Lower
 from django.dispatch import receiver
 from django.forms import model_to_dict
+from django.urls import NoReverseMatch
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -80,6 +81,7 @@ from packagedcode.models import build_package_uid
 from packagedcode.utils import get_base_purl
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
+from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
 from packageurl.contrib.django.models import PackageURLMixin
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
 from rest_framework.authtoken.models import Token
@@ -105,10 +107,6 @@ class RunInProgressError(Exception):
 
 class RunNotAllowedToStart(Exception):
     """Previous Runs have not completed yet."""
-
-
-# PackageURL._fields
-PURL_FIELDS = ("type", "namespace", "name", "version", "qualifiers", "subpath")
 
 
 class UUIDPKModel(models.Model):
@@ -451,6 +449,33 @@ class UpdateMixin:
         self.save(update_fields=list(kwargs.keys()))
 
 
+class AdminURLMixin:
+    """
+    A mixin to provide an admin URL for a model instance.
+
+    This mixin adds a method to generate the admin URL for a model instance,
+    which can be useful for linking to the admin interface directly from
+    the model instances.
+    """
+
+    def get_admin_url(self):
+        """
+        Return the URL for the admin change view of the instance.
+        The admin URL is only constructed and returned if the
+        SCANCODEIO_ENABLE_ADMIN_SITE setting is enabled.
+        """
+        if not settings.SCANCODEIO_ENABLE_ADMIN_SITE:
+            return
+
+        opts = self._meta
+        viewname = f"admin:{opts.app_label}_{opts.model_name}_change"
+        try:
+            url = reverse(viewname, args=[self.pk])
+        except NoReverseMatch:
+            return
+        return url
+
+
 def get_project_slug(project):
     """
     Return a "slug" value for the provided ``project`` based on the slugify name
@@ -615,11 +640,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         self.labels.clear()
 
         relationships = [
+            self.webhookdeliveries,
+            self.webhooksubscriptions,
             self.projectmessages,
             self.codebaserelations,
             self.discovereddependencies,
             self.codebaseresources,
             self.runs,
+            self.inputsources,
         ]
 
         for qs in relationships:
@@ -677,35 +705,33 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         execute_now=False,
     ):
         """Clone this project using the provided ``clone_name`` as new project name."""
-        cloned_project = Project.objects.create(
+        new_project = Project.objects.create(
             name=clone_name,
             settings=self.settings if copy_settings else {},
         )
 
         if labels := self.labels.names():
-            cloned_project.labels.add(*labels)
+            new_project.labels.add(*labels)
 
         if copy_inputs:
             # Clone the InputSource instances
             for input_source in self.inputsources.all():
-                input_source.pk = None
-                input_source.project = cloned_project
-                input_source.save()
+                input_source.clone(to_project=new_project)
             # Copy the files from the input work directory
             for input_location in self.inputs():
-                cloned_project.copy_input_from(input_location)
+                new_project.copy_input_from(input_location)
 
         if copy_pipelines:
             for run in self.runs.all():
-                cloned_project.add_pipeline(
+                new_project.add_pipeline(
                     run.pipeline_name, execute_now, selected_groups=run.selected_groups
                 )
 
         if copy_subscriptions:
             for subscription in self.webhooksubscriptions.all():
-                cloned_project.add_webhook_subscription(subscription.target_url)
+                subscription.clone(to_project=new_project)
 
-        return cloned_project
+        return new_project
 
     def _raise_if_run_in_progress(self):
         """
@@ -908,7 +934,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if not extensions:
             return self.input_path.glob(pattern)
 
-        if not isinstance(extensions, (list, tuple)):
+        if not isinstance(extensions, list | tuple):
             raise TypeError("extensions should be a list or tuple")
 
         return (
@@ -1162,12 +1188,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         return run
 
-    def add_webhook_subscription(self, target_url):
+    def add_webhook_subscription(self, **kwargs):
         """
         Create a new WebhookSubscription instance with the provided `target_url` for
         the current project.
         """
-        return WebhookSubscription.objects.create(project=self, target_url=target_url)
+        return WebhookSubscription.objects.create(project=self, **kwargs)
 
     @cached_property
     def can_start_pipelines(self):
@@ -1209,6 +1235,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         details=None,
         exception=None,
         resource=None,
+        package=None,
     ):
         """
         Create a ProjectMessage record for this Project.
@@ -1230,9 +1257,15 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             description = str(exception)
 
         details = details or {}
+
+        # Do not change the following field names as those have special behavior in
+        # templates.
         if resource:
-            # Do not change this field name as it has special behavior in templates.
             details["resource_path"] = resource.path
+        if package:
+            details.update(
+                {"package_url": package.package_url, "package_uuid": package.uuid}
+            )
 
         return ProjectMessage.objects.create(
             project=self,
@@ -1250,11 +1283,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         details=None,
         exception=None,
         resource=None,
+        package=None,
     ):
         """Create an INFO ProjectMessage record for this project."""
         severity = ProjectMessage.Severity.INFO
         return self.add_message(
-            severity, description, model, details, exception, resource
+            severity, description, model, details, exception, resource, package
         )
 
     def add_warning(
@@ -1264,11 +1298,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         details=None,
         exception=None,
         resource=None,
+        package=None,
     ):
         """Create a WARNING ProjectMessage record for this project."""
         severity = ProjectMessage.Severity.WARNING
         return self.add_message(
-            severity, description, model, details, exception, resource
+            severity, description, model, details, exception, resource, package
         )
 
     def add_error(
@@ -1278,11 +1313,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         details=None,
         exception=None,
         resource=None,
+        package=None,
     ):
         """Create an ERROR ProjectMessage record using for this project."""
         severity = ProjectMessage.Severity.ERROR
         return self.add_message(
-            severity, description, model, details, exception, resource
+            severity, description, model, details, exception, resource, package
         )
 
     def get_absolute_url(self):
@@ -1475,6 +1511,17 @@ class ProjectRelatedModel(UpdateMixin, models.Model):
     def model_fields(cls):
         return [field.name for field in cls._meta.get_fields()]
 
+    def clone(self, to_project):
+        """Clone this instance as a new instance of the provided ``to_project``."""
+        if to_project == self.project:
+            raise ValueError("Cannot clone instance into the same project.")
+
+        self.pk = None
+        self.project = to_project
+        self.save()
+
+        return self
+
 
 class ProjectMessage(UUIDPKModel, ProjectRelatedModel):
     """Stores messages such as errors and exceptions raised during a pipeline run."""
@@ -1591,7 +1638,7 @@ class UpdateFromDataMixin:
             skip_reasons = [
                 value in EMPTY_VALUES,
                 field_name not in model_fields,
-                field_name in PURL_FIELDS,
+                field_name in PACKAGE_URL_FIELDS,
             ]
             if any(skip_reasons):
                 continue
@@ -1955,10 +2002,21 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         """Return a pipelines instance using this Run pipeline_class."""
         return self.pipeline_class(self)
 
-    def deliver_project_subscriptions(self):
-        """Triggers related project webhook subscriptions."""
-        for subscription in self.project.webhooksubscriptions.all():
-            subscription.deliver(pipeline_run=self)
+    def deliver_project_subscriptions(self, has_next_run=False):
+        """Triggers related project Webhook subscriptions."""
+        webhooks = self.project.webhooksubscriptions.active()
+
+        if has_next_run:
+            webhooks = webhooks.filter(trigger_on_each_run=True)
+
+        for webhook in webhooks:
+            webhook.deliver(pipeline_run=self)
+
+    @property
+    def results_url(self):
+        """Return the rendered ``results_url`` if defined on the Pipeline class."""
+        if results_url := self.pipeline_class.results_url:
+            return results_url.format(**self.project.__dict__)
 
     def profile(self, print_results=False):
         """
@@ -2015,7 +2073,7 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
             Prefetch(
                 "discovered_packages",
                 queryset=DiscoveredPackage.objects.only(
-                    "package_uid", "uuid", *PURL_FIELDS
+                    "package_uid", "uuid", *PACKAGE_URL_FIELDS
                 ),
             ),
         )
@@ -2415,6 +2473,7 @@ class CodebaseResource(
     UpdateFromDataMixin,
     HashFieldsMixin,
     ComplianceAlertMixin,
+    AdminURLMixin,
     models.Model,
 ):
     """
@@ -2684,8 +2743,7 @@ class CodebaseResource(
         for child in self.children().iterator():
             if topdown:
                 yield child
-            for subchild in child.walk(topdown=topdown):
-                yield subchild
+            yield from child.walk(topdown=topdown)
             if not topdown:
                 yield child
 
@@ -2710,7 +2768,7 @@ class CodebaseResource(
         # This workaround ensures that the entire content of map files is displayed.
         file_type = get_type(self.location)
         if file_type.is_js_map:
-            with open(self.location, "r") as file:
+            with open(self.location) as file:
                 content = json.load(file)
 
             return json.dumps(content, indent=2)
@@ -2898,10 +2956,6 @@ class VulnerabilityQuerySetMixin:
 class DiscoveredPackageQuerySet(
     VulnerabilityQuerySetMixin, PackageURLQuerySetMixin, ProjectRelatedQuerySet
 ):
-    def order_by_purl(self):
-        """Order by Package URL fields."""
-        return self.order_by("type", "namespace", "name", "version")
-
     def with_resources_count(self):
         count_subquery = Subquery(
             self.filter(pk=OuterRef("pk"))
@@ -2911,12 +2965,19 @@ class DiscoveredPackageQuerySet(
         )
         return self.annotate(resources_count=count_subquery)
 
-    def only_purl_fields(self):
+    def only_package_url_fields(self):
         """
         Only select and return the UUID and PURL fields.
         Minimum requirements to render a Package link in the UI.
         """
-        return self.only("uuid", *PURL_FIELDS)
+        return self.only("uuid", *PACKAGE_URL_FIELDS)
+
+    def filter(self, *args, **kwargs):
+        """Add support for using ``package_url`` as a field lookup."""
+        if purl_str := kwargs.pop("package_url", None):
+            return super().filter(*args, **kwargs).for_package_url(purl_str)
+
+        return super().filter(*args, **kwargs)
 
 
 class AbstractPackage(models.Model):
@@ -3149,6 +3210,7 @@ class DiscoveredPackage(
     PackageURLMixin,
     VulnerabilityMixin,
     ComplianceAlertMixin,
+    AdminURLMixin,
     AbstractPackage,
 ):
     """
@@ -3498,6 +3560,7 @@ class DiscoveredDependency(
     SaveProjectMessageMixin,
     UpdateFromDataMixin,
     VulnerabilityMixin,
+    AdminURLMixin,
     PackageURLMixin,
 ):
     """
@@ -3507,8 +3570,7 @@ class DiscoveredDependency(
     manifest or lockfile.
     """
 
-    # Overrides the `project` field from `ProjectRelatedModel` to set the proper
-    # `related_name`.
+    # Overrides the `project` field to set the proper `related_name`.
     project = models.ForeignKey(
         Project,
         related_name="discovereddependencies",
@@ -3879,7 +3941,7 @@ def normalize_package_url_data(purl_mapping, ignore_nulls=False):
     purl data can be executed.
     """
     normalized_purl_mapping = {}
-    for field_name in PURL_FIELDS:
+    for field_name in PACKAGE_URL_FIELDS:
         value = purl_mapping.get(field_name)
         if field_name == "qualifiers":
             value = normalize_qualifiers(value, encode=True)
@@ -3892,12 +3954,61 @@ def normalize_package_url_data(purl_mapping, ignore_nulls=False):
     return normalized_purl_mapping
 
 
+class WebhookSubscriptionQuerySet(ProjectRelatedQuerySet):
+    def active(self):
+        return self.filter(is_active=True)
+
+
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
-    target_url = models.URLField(_("Target URL"), max_length=1024)
-    created_date = models.DateTimeField(auto_now_add=True, editable=False)
-    response_status_code = models.PositiveIntegerField(null=True, blank=True)
-    response_text = models.TextField(blank=True)
-    delivery_error = models.TextField(blank=True)
+    """
+    A model to define Webhook subscriptions for Project pipeline execution events.
+
+    This model captures the necessary details to configure a Webhook, including the
+    target URL and the specific events that trigger the Webhook.
+    It allows for customization on whether  the Webhook should be triggered on each
+    pipeline run and whether to include summary or result data in the payload.
+    """
+
+    target_url = models.URLField(
+        _("Target URL"),
+        max_length=1024,
+        blank=False,
+        help_text=_(
+            "The URL to which the POST request will be sent when the Webhook is "
+            "triggered."
+        ),
+    )
+    trigger_on_each_run = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Trigger the Webhook after each individual pipeline run instead of only "
+            "after all runs are completed."
+        ),
+    )
+    include_summary = models.BooleanField(
+        default=False,
+        help_text=_("Include the entire summary data in the payload."),
+    )
+    include_results = models.BooleanField(
+        default=False,
+        help_text=_("Include the entire results data in the payload."),
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text=_(
+            "Indicates whether the Webhook is currently active and should be triggered."
+        ),
+    )
+    created_date = models.DateTimeField(
+        auto_now_add=True,
+        editable=False,
+        help_text=_("The date and time when the Webhook subscription was created."),
+    )
+
+    objects = WebhookSubscriptionQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["-created_date"]
 
     def __str__(self):
         return str(self.uuid)
@@ -3906,6 +4017,7 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         """Return the Webhook payload generated from project and pipeline_run data."""
         from scanpipe.api.serializers import ProjectSerializer
         from scanpipe.api.serializers import RunSerializer
+        from scanpipe.pipes.output import to_json
 
         project_serializer = ProjectSerializer(
             instance=self.project,
@@ -3920,36 +4032,135 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             "run": run_serializer.data,
         }
 
+        if self.include_summary:
+            summary_file = self.project.get_latest_output(filename="summary")
+            summary = json.loads(summary_file.read_text()) if summary_file else {}
+            payload["summary"] = summary
+
+        if self.include_results:
+            results_file = to_json(self.project)
+            payload["results"] = json.loads(results_file.read_text())
+
         return payload
 
-    def deliver(self, pipeline_run):
+    def deliver(self, pipeline_run, timeout=10):
         """Deliver this Webhook by sending a POST request to the `target_url`."""
-        payload = self.get_payload(pipeline_run)
+        logger.info(f"Delivering Webhook {self.uuid}")
 
-        logger.info(f"Sending Webhook uuid={self.uuid}.")
+        if not self.is_active:
+            logger.info(f"Webhook {self.uuid} is not active.")
+            return False
+
+        payload = self.get_payload(pipeline_run)
+        delivery = WebhookDelivery(
+            project=self.project,
+            webhook_subscription=self,
+            run=pipeline_run,
+            target_url=self.target_url,
+            payload=payload,
+        )
+
         try:
             response = requests.post(
                 url=self.target_url,
                 data=json.dumps(payload, cls=DjangoJSONEncoder),
                 headers={"Content-Type": "application/json"},
-                timeout=10,
+                timeout=timeout,
             )
         except requests.exceptions.RequestException as exception:
-            logger.info(exception)
-            self.update(delivery_error=str(exception))
-            return False
+            logger.error(exception)
+            delivery.delivery_error = str(exception)
+            delivery.save()
+            return delivery
 
-        self.update(
-            response_status_code=response.status_code,
-            response_text=response.text,
-        )
+        delivery.response_status_code = response.status_code
+        delivery.response_text = response.text
+        delivery.save()
 
-        if self.success:
-            logger.info(f"Webhook uuid={self.uuid} delivered and received.")
+        if delivery.success:
+            logger.info(f"Webhook {self.uuid} delivered successfully.")
         else:
-            logger.info(f"Webhook uuid={self.uuid} returned a {response.status_code}.")
+            logger.info(f"Webhook {self.uuid} returned a {response.status_code}.")
 
-        return True
+        return delivery
+
+
+class WebhookDelivery(UUIDPKModel, ProjectRelatedModel):
+    """
+    Stores historical data for Webhook deliveries.
+
+    This model keeps track of each delivery attempt made by a Webhook subscription,
+    including the payload sent, the response received, and any errors that occurred
+    during the delivery process.
+    """
+
+    # Overrides the `project` field to set the proper `related_name`.
+    project = models.ForeignKey(
+        Project,
+        related_name="webhookdeliveries",
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+    webhook_subscription = models.ForeignKey(
+        WebhookSubscription,
+        related_name="deliveries",
+        editable=False,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        help_text=_("The Webhook subscription associated with this delivery."),
+    )
+    run = models.ForeignKey(
+        Run,
+        related_name="webhook_deliveries",
+        editable=False,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        help_text=_("The Pipeline Run associated with this delivery."),
+    )
+    target_url = models.URLField(
+        _("Target URL"),
+        max_length=1024,
+        blank=False,
+        help_text=_(
+            "Stores a copy of the Webhook target URL in case the subscription object "
+            "is deleted."
+        ),
+    )
+    sent_date = models.DateTimeField(
+        auto_now_add=True,
+        editable=False,
+        help_text=_("The date and time when the Webhook was sent."),
+    )
+    payload = models.JSONField(
+        blank=True,
+        default=dict,
+        help_text=_("The JSON payload that was sent to the target URL."),
+    )
+    response_status_code = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=_(
+            "The HTTP status code received in response to the Webhook request."
+        ),
+    )
+    response_text = models.TextField(
+        blank=True,
+        help_text=_("The text response received from the target URL."),
+    )
+    delivery_error = models.TextField(
+        blank=True,
+        help_text=_("Any error messages encountered during the Webhook delivery."),
+    )
+
+    class Meta:
+        verbose_name = _("webhook delivery")
+        verbose_name_plural = _("webhook deliveries")
+        ordering = ["-sent_date"]
+
+    def __str__(self):
+        return f"Webhook uuid={self.uuid} posted at {self.sent_date}"
 
     @property
     def delivered(self):

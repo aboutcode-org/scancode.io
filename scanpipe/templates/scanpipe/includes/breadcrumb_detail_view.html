@@ -11,6 +11,7 @@
   {% if object_title %}
     <h1 class="is-size-5 break-all has-text-weight-semibold has-text-grey-darker">
       {{ object_title }}
+      {% include 'scanpipe/includes/admin_edit_link.html' %}
     </h1>
   {% elif template_title %}
     {% include template_title %}

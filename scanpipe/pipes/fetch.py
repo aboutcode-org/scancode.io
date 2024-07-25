@@ -25,7 +25,7 @@ import json
 import logging
 import os
 import re
-import subprocess  # nosec
+import subprocess
 import tempfile
 from collections import namedtuple
 from pathlib import Path
@@ -68,7 +68,7 @@ def run_command_safely(command_args):
 
     Raise a SubprocessError if the exit code was non-zero.
     """
-    completed_process = subprocess.run(  # nosec
+    completed_process = subprocess.run(  # noqa: S603
         command_args,
         capture_output=True,
         text=True,

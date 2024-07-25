@@ -69,10 +69,12 @@ def execute_pipeline_task(run_pk):
 
     info("Update Run instance with exitcode, output, and end_date", run_pk)
     run.set_task_ended(exitcode, output)
-    run.deliver_project_subscriptions()
+
+    next_run = project.get_next_run()
+    run.deliver_project_subscriptions(has_next_run=bool(next_run))
 
     if run.task_succeeded:
         # We keep the temporary files available for debugging in case of error
         project.clear_tmp_directory()
-        if next_run := project.get_next_run():
+        if next_run:
             next_run.start()

@@ -47,7 +47,7 @@ class MultipleFileField(forms.FileField):
 
     def clean(self, data, initial=None):
         single_file_clean = super().clean
-        if isinstance(data, (list, tuple)):
+        if isinstance(data, list | tuple):
             result = [single_file_clean(entry, initial) for entry in data]
         else:
             result = single_file_clean(data, initial)

@@ -13,5 +13,6 @@
       <span class="has-text-weight-semibold">{{ segment }}{% if is_extract %}-extract{% endif %}</span>
     {% endif %}
   {% endfor %}
+  {% include 'scanpipe/includes/admin_edit_link.html' %}
 </h1>
 {% endspaceless %}

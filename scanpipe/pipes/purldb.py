@@ -24,6 +24,7 @@ import json
 import logging
 
 from django.conf import settings
+from django.template.defaultfilters import pluralize
 from django.utils.text import slugify
 
 import requests
@@ -32,6 +33,7 @@ from univers.version_range import RANGE_CLASS_BY_SCHEMES
 from univers.version_range import InvalidVersionRange
 
 from scanpipe.pipes import LoopProgress
+from scanpipe.pipes import _clean_package_data
 from scanpipe.pipes import poll_until_success
 
 
@@ -64,6 +66,30 @@ if PURLDB_API_KEY:
 
 DEFAULT_TIMEOUT = 60
 
+# This key can be used for filtering
+ENRICH_EXTRA_DATA_KEY = "enrich_with_purldb"
+
+# Subset of fields kept when multiple entries are found in the PurlDB.
+CROSS_VERSION_COMMON_FIELDS = [
+    "primary_language",
+    "description",
+    "parties",
+    "keywords",
+    "homepage_url",
+    "bug_tracking_url",
+    "code_view_url",
+    "vcs_url",
+    "repository_homepage_url",
+    "copyright",
+    "holder",
+    "declared_license_expression",
+    "declared_license_expression_spdx",
+    "other_license_expression",
+    "other_license_expression_spdx",
+    "extracted_license_statement",
+    "notice_text",
+]
+
 
 def is_configured():
     """Return True if the required PurlDB settings have been set."""
@@ -87,7 +113,16 @@ def is_available():
     return response.status_code == requests.codes.ok
 
 
-def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
+def check_service_availability(*args):
+    """Check if the PurlDB service if configured and available."""
+    if not is_configured():
+        raise Exception(f"{label} is not configured.")
+
+    if not is_available():
+        raise Exception(f"{label} is not available.")
+
+
+def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT, raise_on_error=False):
     """Wrap the HTTP request calls on the API."""
     if not url:
         return
@@ -98,13 +133,17 @@ def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
     if payload:
         params.update(payload)
 
-    logger.debug(f"{label}: url={url} params={params}")
+    logger.debug(f"[{label}] Requesting URL: {url} with params: {params}")
     try:
         response = session.get(url, params=params, timeout=timeout)
         response.raise_for_status()
         return response.json()
-    except (requests.RequestException, ValueError, TypeError) as exception:
-        logger.debug(f"{label} [Exception] {exception}")
+    except requests.RequestException:  # raise_for_status
+        return
+    except (ValueError, TypeError) as exception:
+        logger.debug(f"[{label}] Request to {url} failed with exception: {exception}")
+        if raise_on_error:
+            raise PurlDBException(exception)
 
 
 def request_post(url, data=None, headers=None, files=None, timeout=DEFAULT_TIMEOUT):
@@ -339,18 +378,37 @@ def populate_purldb_with_discovered_dependencies(project, logger=logger.info):
     )
 
 
-def get_package_by_purl(package_url):
-    """Get a Package details entry providing its `package_url`."""
-    if results := find_packages({"purl": str(package_url)}):
-        return results[0]
-
-
 def find_packages(payload):
     """Get Packages using provided `payload` filters on the PurlDB package list."""
     package_api_url = f"{PURLDB_API_URL}packages/"
     response = request_get(package_api_url, payload=payload)
     if response and response.get("count") > 0:
         return response.get("results")
+
+
+def get_packages_for_purl(package_url):
+    """Get Package details entries providing a `package_url`."""
+    payload = {
+        "purl": str(package_url),
+        "sort": "-version",
+    }
+    return find_packages(payload)
+
+
+def collect_data_for_purl(package_url, raise_on_error=False):
+    collect_api_url = f"{PURLDB_API_URL}collect/"
+    payload = {
+        "purl": str(package_url),
+        "sort": "-version",
+    }
+    purldb_entries = request_get(
+        url=collect_api_url,
+        payload=payload,
+        raise_on_error=raise_on_error,
+    )
+
+    if purldb_entries:
+        return purldb_entries
 
 
 def get_next_download_url(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
@@ -446,3 +504,61 @@ def get_run_status(run, **kwargs):
     """Refresh the values of `run` and return its status"""
     run.refresh_from_db()
     return run.status
+
+
+def enrich_package(package):
+    """Enrich the provided ``package`` with the PurlDB data."""
+    package_url = package.package_url
+    project = package.project
+
+    try:
+        purldb_entries = collect_data_for_purl(package_url, raise_on_error=True)
+    except PurlDBException as exception:
+        project.add_error(model="PurlDB", exception=exception, package=package)
+        return
+
+    if not purldb_entries:
+        return
+
+    if len(purldb_entries) == 1:
+        # Single match, all the PurlDB data are used to enrich the package.
+        purldb_entry = purldb_entries[0]
+    else:
+        project.add_warning(
+            model="PurlDB",
+            description=(
+                f'Multiple entries found in the PurlDB for "{package_url}". '
+                f"Using data from the most recent version."
+            ),
+            package=package,
+        )
+        # Do not set version-specific fields, such as the download_url.
+        purldb_entry = {
+            field: value
+            for field, value in purldb_entries[0].items()
+            if field in CROSS_VERSION_COMMON_FIELDS
+        }
+
+    # Remove package_uid as it is not relevant to capture the value from PurlDB.
+    purldb_entry.pop("package_uid", None)
+    package_data = _clean_package_data(purldb_entry)
+    if updated_fields := package.update_from_data(package_data):
+        package.update_extra_data({ENRICH_EXTRA_DATA_KEY: updated_fields})
+        return updated_fields
+
+
+def enrich_discovered_packages(project, logger=logger.info):
+    """Enrich all project discovered packages with the PurlDB data."""
+    packages = project.discoveredpackages.all()
+
+    updated_package_count = 0
+    for package in packages:
+        if updated_fields := enrich_package(package):
+            logger(f"{package} {updated_fields}")
+            updated_package_count += 1
+
+    logger(
+        f"{updated_package_count} discovered package{pluralize(updated_package_count)} "
+        f"enriched with the PurlDB."
+    )
+    return updated_package_count

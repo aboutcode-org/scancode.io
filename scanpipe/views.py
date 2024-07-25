@@ -59,6 +59,7 @@ from django.views.generic.edit import UpdateView
 import saneyaml
 import xlsxwriter
 from django_filters.views import FilterView
+from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
 
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
@@ -79,7 +80,6 @@ from scanpipe.forms import PipelineRunStepSelectionForm
 from scanpipe.forms import ProjectCloneForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectSettingsForm
-from scanpipe.models import PURL_FIELDS
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -327,7 +327,7 @@ class TabSetMixin:
         if isinstance(field_value, Manager):
             return list(field_value.all())
 
-        if isinstance(field_value, (list, dict)):
+        if isinstance(field_value, list | dict):
             with suppress(Exception):
                 field_value = render_as_yaml(field_value)
 
@@ -790,7 +790,8 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             # no pipelines are assigned to the project
             if (not pipeline_runs and not pipeline_class.is_addon)
             # at least one pipeline already exists on the project
-            or pipeline_runs and (name in project_run_names or pipeline_class.is_addon)
+            or pipeline_runs
+            and (name in project_run_names or pipeline_class.is_addon)
         ]
         return pipeline_choices
 
@@ -801,6 +802,9 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
 
     form_class = ProjectSettingsForm
     success_message = 'The project "{}" settings have been updated.'
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related("webhooksubscriptions")
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -815,7 +819,9 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        project = self.get_object()
         context["archive_form"] = ArchiveProjectForm()
+        context["webhook_subscriptions"] = project.webhooksubscriptions.all()
         return context
 
     @staticmethod
@@ -1375,7 +1381,7 @@ class CodebaseResourceListView(
     prefetch_related = [
         Prefetch(
             "discovered_packages",
-            queryset=DiscoveredPackage.objects.only_purl_fields(),
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
         )
     ]
     table_columns = [
@@ -1483,7 +1489,7 @@ class DiscoveredPackageListView(
             .only(
                 "uuid",
                 "package_uid",
-                *PURL_FIELDS,
+                *PACKAGE_URL_FIELDS,
                 "project",
                 "primary_language",
                 "declared_license_expression",
@@ -1492,7 +1498,7 @@ class DiscoveredPackageListView(
                 "affected_by_vulnerabilities",
             )
             .with_resources_count()
-            .order_by_purl()
+            .order_by_package_url()
         )
 
     def get_context_data(self, **kwargs):
@@ -1514,10 +1520,13 @@ class DiscoveredDependencyListView(
     template_name = "scanpipe/dependency_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("dependency", 100)
     prefetch_related = [
-        Prefetch("for_package", queryset=DiscoveredPackage.objects.only_purl_fields()),
+        Prefetch(
+            "for_package",
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
+        ),
         Prefetch(
             "resolved_to_package",
-            queryset=DiscoveredPackage.objects.only_purl_fields(),
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
         ),
         Prefetch(
             "datafile_resource", queryset=CodebaseResource.objects.only("path", "name")
@@ -1658,7 +1667,7 @@ class CodebaseResourceDetailsView(
             "discovered_packages",
             queryset=DiscoveredPackage.objects.only(
                 "uuid",
-                *PURL_FIELDS,
+                *PACKAGE_URL_FIELDS,
                 "package_uid",
                 "affected_by_vulnerabilities",
                 "primary_language",
@@ -1858,7 +1867,7 @@ class DiscoveredPackageDetailsView(
         ),
         Prefetch(
             "declared_dependencies__resolved_to_package",
-            queryset=DiscoveredPackage.objects.only_purl_fields(),
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
         ),
     ]
     tabset = {
@@ -1995,9 +2004,13 @@ class DiscoveredPackagePurlDBTabView(ConditionalLoginRequired, generic.DetailVie
         if not purldb.is_configured():
             raise Http404("PurlDB access is not configured.")
 
-        if purldb_entry := purldb.get_package_by_purl(self.object.package_url):
-            fields = self.get_fields_data(purldb_entry)
+        if purldb_entries := purldb.get_packages_for_purl(self.object.package_url):
+            # Always display the most recent version entry.
+            fields = self.get_fields_data(purldb_entries[0])
             context["tab_data"] = {"fields": fields}
+            # Display a warning if multiple packages found in PurlDB for this purl.
+            if len(purldb_entries) > 1:
+                context["has_multiple_purldb_entries"] = True
 
         return context
 
@@ -2018,13 +2031,13 @@ class DiscoveredDependencyDetailsView(
         Prefetch(
             "for_package",
             queryset=DiscoveredPackage.objects.only(
-                "uuid", *PURL_FIELDS, "package_uid", "project_id"
+                "uuid", *PACKAGE_URL_FIELDS, "package_uid", "project_id"
             ),
         ),
         Prefetch(
             "resolved_to_package",
             queryset=DiscoveredPackage.objects.only(
-                "uuid", *PURL_FIELDS, "package_uid", "project_id"
+                "uuid", *PACKAGE_URL_FIELDS, "package_uid", "project_id"
             ),
         ),
         Prefetch(
@@ -2086,15 +2099,14 @@ class DiscoveredDependencyDetailsView(
 def run_detail_view(request, uuid):
     template = "scanpipe/modals/run_modal_content.html"
     run_qs = Run.objects.select_related("project").prefetch_related(
-        "project__webhooksubscriptions",
+        "webhook_deliveries"
     )
     run = get_object_or_404(run_qs, uuid=uuid)
-    project = run.project
 
     context = {
         "run": run,
-        "project": project,
-        "webhook_subscriptions": project.webhooksubscriptions.all(),
+        "project": run.project,
+        "webhook_deliveries": run.webhook_deliveries.all(),
     }
 
     return render(request, template, context)

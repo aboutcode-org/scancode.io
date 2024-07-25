@@ -1,7 +1,25 @@
 Changelog
 =========
 
-v34.7.1 (unreleased)
+v34.7.2 (unreleased)
+--------------------
+
+- Add a new ``enrich_with_purldb`` add-on pipeline to enrich the discovered packages
+  with data available in the PurlDB.
+  https://github.com/nexB/scancode.io/issues/1182
+
+- Add the ability to define a results_url on the Pipeline class.
+  When available, that link is displayed in the UI to easily reach the results view
+  related to the Pipeline run.
+  https://github.com/nexB/scancode.io/pull/1330
+
+- Expands on the existing WebhookSubscription model by adding a few fields to
+  configure the behavior of the Webhooks, and moves some of the fields to a new
+  WebhookDelivery model, which captures the results of a WebhookSubscription
+  "delivery".
+  https://github.com/nexB/scancode.io/issues/1325
+
+v34.7.1 (2024-07-15)
 --------------------
 
 - Add pipeline step selection for a run execution.
@@ -17,6 +35,11 @@ v34.7.1 (unreleased)
 - Add support for multiple instances of a PackageURL in the CycloneDX outputs.
   The `package_uid` is now included in each BOM Component as a property.
   https://github.com/nexB/scancode.io/issues/1316
+
+- Add administration interface. Can be enabled with the SCANCODEIO_ENABLE_ADMIN_SITE
+  setting.
+  Add ``--admin`` and ``--super`` options to the ``create-user`` management command.
+  https://github.com/nexB/scancode.io/pull/1323
 
 - Add ``results_url`` and ``summary_url`` on the API ProjectSerializer.
   https://github.com/nexB/scancode.io/issues/1325

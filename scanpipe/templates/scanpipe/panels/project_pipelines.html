@@ -4,10 +4,28 @@
   </p>
   {% for run in pipeline_runs %}
     <div class="panel-block is-justify-content-space-between">
-      <a class="modal-button is-black-link" data-target="pipeline-help-modal" data-pipeline-name="{{ run.pipeline_name }}" aria-haspopup="true">
-        {{ run.pipeline_name }}
-        <i class="fa-regular fa-circle-question"></i>
-      </a>
+      <div>
+        <a class="modal-button is-black-link" data-target="pipeline-help-modal" data-pipeline-name="{{ run.pipeline_name }}" aria-haspopup="true">
+          {{ run.pipeline_name }}
+          <i class="fa-regular fa-circle-question"></i>
+        </a>
+        {% if run.status == run.Status.SUCCESS and run.results_url %}
+          <div class="dropdown is-hoverable">
+            <div class="dropdown-trigger">
+              <a href="{{ run.results_url }}" class="ml-1">
+                <i class="fa-regular fa-rectangle-list"></i>
+              </a>
+            </div>
+            <div class="dropdown-menu">
+              <div class="dropdown-content">
+                <div class="dropdown-item">
+                  View pipeline results
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
       <a class="modal-button" data-target="run-detail-modal" data-uuid="{{ run.uuid }}" aria-haspopup="true">
         {% include "scanpipe/includes/run_status_tag.html" with run=run display_current_step=True only %}
       </a>

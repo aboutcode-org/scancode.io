@@ -56,6 +56,8 @@ SCANCODEIO_REQUIRE_AUTHENTICATION = env.bool(
     "SCANCODEIO_REQUIRE_AUTHENTICATION", default=False
 )
 
+SCANCODEIO_ENABLE_ADMIN_SITE = env.bool("SCANCODEIO_ENABLE_ADMIN_SITE", default=False)
+
 SECURE_CONTENT_TYPE_NOSNIFF = env.bool("SECURE_CONTENT_TYPE_NOSNIFF", default=True)
 
 X_FRAME_OPTIONS = env.str("X_FRAME_OPTIONS", default="DENY")
@@ -243,7 +245,9 @@ LOGIN_REDIRECT_URL = "project_list"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+        ),
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",

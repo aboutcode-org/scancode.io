@@ -351,6 +351,8 @@ API key.
 Optional arguments:
 
 - ``--no-input`` Does not prompt the user for input of any kind.
+- ``--admin`` Specifies that the user should be created as an admin user.
+- ``--super`` Specifies that the user should be created as a superuser.
 
 .. _cli_run:
 
