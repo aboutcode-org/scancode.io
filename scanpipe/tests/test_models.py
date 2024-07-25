@@ -1207,6 +1207,10 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_run_model_deliver_project_subscriptions(self, mock_deliver):
         self.project1.add_webhook_subscription(target_url="https://localhost")
         run1 = self.create_run()
+
+        run1.deliver_project_subscriptions(has_next_run=True)
+        mock_deliver.assert_not_called()
+
         run1.deliver_project_subscriptions()
         mock_deliver.assert_called_once_with(pipeline_run=run1)
 

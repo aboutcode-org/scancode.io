@@ -86,3 +86,38 @@ class ScanPipeTasksTest(TestCase):
         self.assertEqual("", run2.task_output)
         self.assertIsNone(run2.task_start_date)
         self.assertIsNone(run2.task_end_date)
+
+    @mock.patch("requests.post")
+    @mock.patch("scanpipe.pipelines.Pipeline.execute")
+    def test_scanpipe_tasks_execute_pipeline_task_subscriptions(
+        self, mock_execute, mock_post
+    ):
+        project = Project.objects.create(name="my_project")
+        project.add_webhook_subscription(target_url="https://localhost")
+        run_p1 = project.add_pipeline("do_nothing")
+        project.add_pipeline("do_nothing")
+
+        mock_post.return_value = mock.Mock(status_code=200, text="Ok")
+
+        mock_execute.return_value = 0, ""
+        tasks.execute_pipeline_task(run_p1.pk)
+        self.assertEqual(2, mock_execute.call_count)
+        # By default, trigger_on_each_run is False
+        self.assertEqual(1, mock_post.call_count)
+        self.assertEqual(1, project.webhookdeliveries.count())
+
+        project2 = Project.objects.create(name="my_project2")
+        project2.add_webhook_subscription(
+            target_url="https://localhost",
+            trigger_on_each_run=True,
+        )
+        run_p2 = project2.add_pipeline("do_nothing")
+        project2.add_pipeline("do_nothing")
+
+        mock_post.reset_mock()
+        mock_execute.reset_mock()
+        tasks.execute_pipeline_task(run_p2.pk)
+        self.assertEqual(2, mock_execute.call_count)
+        # This time trigger_on_each_run is True
+        self.assertEqual(2, mock_post.call_count)
+        self.assertEqual(2, project2.webhookdeliveries.count())
