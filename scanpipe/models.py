@@ -3843,7 +3843,6 @@ class DiscoveredDependency(
 
 
 class PackageScore(UUIDPKModel, PackageScoreMixin):
-
     def __str__(self):
         return self.score or str(self.uuid)
 
@@ -3871,7 +3870,6 @@ class PackageScore(UUIDPKModel, PackageScoreMixin):
 
         date_str = scorecard_data.score_date
         if date_str:
-
             naive_datetime = datetime.strptime(date_str, "%Y-%m-%d")
 
             score_date = timezone.make_aware(
@@ -3908,7 +3906,6 @@ class PackageScore(UUIDPKModel, PackageScoreMixin):
 
 
 class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
-
     def __str__(self):
         return self.check_score or str(self.uuid)
 
