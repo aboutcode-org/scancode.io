@@ -1517,6 +1517,8 @@ class ProjectRelatedModel(UpdateMixin, models.Model):
         self.project = to_project
         self.save()
 
+        return self
+
 
 class ProjectMessage(UUIDPKModel, ProjectRelatedModel):
     """Stores messages such as errors and exceptions raised during a pipeline run."""

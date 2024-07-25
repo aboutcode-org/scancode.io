@@ -598,6 +598,19 @@ class ScanPipeModelsTest(TestCase):
         self.assertIsNone(CodebaseResource.objects.get_or_none(path="path/"))
         self.assertIsNone(DiscoveredPackage.objects.get_or_none(name="name"))
 
+    def test_scanpipe_project_related_model_clone(self):
+        subscription1 = self.project1.add_webhook_subscription(
+            target_url="http://domain.url"
+        )
+
+        new_project = Project.objects.create(name="New Project")
+        subscription1.clone(to_project=new_project)
+
+        cloned_subscription = new_project.webhooksubscriptions.get()
+        subscription1 = self.project1.webhooksubscriptions.get()
+        self.assertEqual(new_project, cloned_subscription.project)
+        self.assertNotEqual(cloned_subscription.pk, subscription1.pk)
+
     def test_scanpipe_project_get_codebase_config_directory(self):
         self.assertIsNone(self.project1.get_codebase_config_directory())
         (self.project1.codebase_path / settings.SCANCODEIO_CONFIG_DIR).mkdir()

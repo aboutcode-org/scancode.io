@@ -13,6 +13,12 @@ v34.7.2 (unreleased)
   related to the Pipeline run.
   https://github.com/nexB/scancode.io/pull/1330
 
+- Expands on the existing WebhookSubscription model by adding a few fields to
+  configure the behavior of the Webhooks, and moves some of the fields to a new
+  WebhookDelivery model, which captures the results of a WebhookSubscription
+  "delivery".
+  https://github.com/nexB/scancode.io/issues/1325
+
 v34.7.1 (2024-07-15)
 --------------------
 
