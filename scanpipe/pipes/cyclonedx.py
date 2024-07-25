@@ -150,9 +150,15 @@ def is_cyclonedx_bom(input_location):
     return False
 
 
-def cyclonedx_component_to_package_data(cdx_component):
+def cyclonedx_component_to_package_data(cdx_component, dependencies=None):
     """Return package_data from CycloneDX component."""
-    extra_data = {}
+    dependencies = dependencies or {}
+
+    # Store the original bom_ref and dependencies for future processing.
+    bom_ref = str(cdx_component.bom_ref)
+    extra_data = {"bom_ref": bom_ref}
+    if depends_on := dependencies.get(bom_ref):
+        extra_data["depends_on"] = depends_on
 
     package_url_dict = {}
     if cdx_component.purl:
@@ -271,14 +277,15 @@ def cleanup_components_properties(cyclonedx_document_json):
     return cyclonedx_document_json
 
 
-def resolve_cyclonedx_packages(input_location):
-    """Resolve the packages from the `input_location` CycloneDX document file."""
+def get_bom_instance_from_file(input_location):
+    """Return a Bom instance from the `input_location` CycloneDX document file."""
     input_path = Path(input_location)
     document_data = input_path.read_text()
 
     if str(input_location).endswith(".xml"):
         cyclonedx_document = SafeElementTree.fromstring(document_data)
         cyclonedx_bom = Bom.from_xml(cyclonedx_document)
+        return cyclonedx_bom
 
     elif str(input_location).endswith(".json"):
         cyclonedx_document = json.loads(document_data)
@@ -294,9 +301,23 @@ def resolve_cyclonedx_packages(input_location):
             raise ValueError(error_msg)
 
         cyclonedx_bom = Bom.from_json(data=cyclonedx_document)
+        return cyclonedx_bom
 
-    else:
+
+def resolve_cyclonedx_packages(input_location):
+    """Resolve the packages from the `input_location` CycloneDX document file."""
+    cyclonedx_bom = get_bom_instance_from_file(input_location)
+    if not cyclonedx_bom:
         return []
 
     components = get_components(cyclonedx_bom)
-    return [cyclonedx_component_to_package_data(component) for component in components]
+
+    dependencies = defaultdict(list)
+    for entry in cyclonedx_bom.dependencies:
+        if depends_on := [str(dep.ref) for dep in entry.dependencies]:
+            dependencies[str(entry.ref)].extend(depends_on)
+
+    return [
+        cyclonedx_component_to_package_data(component, dependencies)
+        for component in components
+    ]
