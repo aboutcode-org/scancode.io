@@ -99,7 +99,14 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
                 scannable_uri_uuid = response["scannable_uri_uuid"]
                 download_url = response["download_url"]
                 pipelines = response["pipelines"]
+            else:
+                self.stderr.write("Bad response from PurlDB: unable to get next job.")
+                continue
 
+            if not (download_url and scannable_uri_uuid):
+                self.stdout.write("No new job from PurlDB.")
+                continue
+            else:
                 formatted_pipeline_names = [f"\t\t{pipeline}" for pipeline in pipelines]
                 formatted_pipeline_names = "\n".join(formatted_pipeline_names)
                 msg = (
@@ -110,19 +117,10 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
                     f"\t\t{download_url}\n"
                     "\tpipelines:\n"
                 ) + formatted_pipeline_names
-
                 self.stdout.write(msg)
-            else:
-                self.stderr.write("Bad response from PurlDB: unable to get next job.")
-                continue
-
-            if not (download_url and scannable_uri_uuid):
-                self.stdout.write("No new job from PurlDB.")
-                continue
 
             try:
                 # 2. Create and run project
-
                 project = create_scan_project(
                     command=self,
                     scannable_uri_uuid=scannable_uri_uuid,
