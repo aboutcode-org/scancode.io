@@ -803,6 +803,9 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
     form_class = ProjectSettingsForm
     success_message = 'The project "{}" settings have been updated.'
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related("webhooksubscriptions")
+
     def form_valid(self, form):
         response = super().form_valid(form)
         project = self.get_object()
@@ -816,7 +819,9 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        project = self.get_object()
         context["archive_form"] = ArchiveProjectForm()
+        context["webhook_subscriptions"] = project.webhooksubscriptions.all()
         return context
 
     @staticmethod
@@ -2094,15 +2099,14 @@ class DiscoveredDependencyDetailsView(
 def run_detail_view(request, uuid):
     template = "scanpipe/modals/run_modal_content.html"
     run_qs = Run.objects.select_related("project").prefetch_related(
-        "project__webhooksubscriptions",
+        "webhook_deliveries"
     )
     run = get_object_or_404(run_qs, uuid=uuid)
-    project = run.project
 
     context = {
         "run": run,
-        "project": project,
-        "webhook_subscriptions": project.webhooksubscriptions.all(),
+        "project": run.project,
+        "webhook_deliveries": run.webhook_deliveries.all(),
     }
 
     return render(request, template, context)
