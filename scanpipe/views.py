@@ -803,6 +803,9 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
     form_class = ProjectSettingsForm
     success_message = 'The project "{}" settings have been updated.'
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related("webhooksubscriptions")
+
     def form_valid(self, form):
         response = super().form_valid(form)
         project = self.get_object()
@@ -816,7 +819,9 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        project = self.get_object()
         context["archive_form"] = ArchiveProjectForm()
+        context["webhook_subscriptions"] = project.webhooksubscriptions.all()
         return context
 
     @staticmethod
