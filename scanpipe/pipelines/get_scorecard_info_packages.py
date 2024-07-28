@@ -28,21 +28,28 @@ from scanpipe.pipelines import Pipeline
 
 class FetchScoreCodeInfo(Pipeline):
     """
-        Pipeline to fetch ScoreCode information for packages and dependencies.
+    Pipeline to fetch ScoreCode information for packages and dependencies.
 
-        This pipeline retrieves ScoreCode data for each package and dependency
-        in the project and stores it in the corresponding package and dependency
-        instances.
+    This pipeline retrieves ScoreCode data for each package in the project and
+    stores it in the corresponding package instances
 
-        Attributes:
-            download_inputs (bool): Indicates whether inputs should be downloaded.
-            is_addon (bool): Indicates whether this pipeline is an add-on.
+    Attributes
+    ----------
+        download_inputs (bool): Indicates whether inputs should be downloaded.
+        is_addon (bool): Indicates whether this pipeline is an add-on.
 
-        Methods:
-            steps(cls):
-                Defines the steps for the pipeline.
+    Methods
+    -------
+        steps(cls):
+            Defines the steps for the pipeline.
 
-    scorecode data is stored on each package and dependency instance.
+        check_scorecode_service_availability(self):
+            Checks if the ScoreCode service is configured and available.
+
+        lookup_save_packages_scorecode_info(self):
+            Fetches ScoreCode information for each discovered package in the project
+            and saves the information to the respective package instances.
+
     """
 
     download_inputs = False
