@@ -2296,7 +2296,7 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
         return context
 
     def get_dependency_tree(self, project):
-        root_packages = project.discoveredpackages.root_packages()
+        root_packages = project.discoveredpackages.root_packages().order_by("name")
         project_children = [self.get_node(package) for package in root_packages]
 
         project_tree = {
@@ -2318,9 +2318,9 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
 
     def max_depth(self, node):
         """Recursively finds the maximum depth of the given tree."""
-        if not node or "children" not in node:
-            return 1
-        return 1 + max(self.max_depth(child) for child in node["children"])
+        if children := node.get("children", []):
+            return 1 + max(self.max_depth(child) for child in children)
+        return 1
 
     def count_rows(self, node):
         count = 1 if "name" in node else 0

@@ -46,6 +46,8 @@ from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import dependency_data2
+from scanpipe.tests import make_dependency
+from scanpipe.tests import make_package
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 from scanpipe.tests import package_data2
@@ -1130,3 +1132,45 @@ class ScanPipeViewsTest(TestCase):
         xss_url = reverse("license_detail", args=[xss])
         response = self.client.get(xss_url)
         self.assertEqual(response.status_code, 404)
+
+    def test_scanpipe_views_project_dependency_tree(self):
+        url = reverse("project_dependency_tree", args=[self.project1.slug])
+        response = self.client.get(url)
+        expected_tree = {"name": "Analysis", "children": []}
+        self.assertEqual(expected_tree, response.context["dependency_tree"])
+        self.assertEqual(1, response.context["max_depth"])
+        self.assertEqual(1, response.context["row_count"])
+
+        project = Project.objects.create(name="project")
+        a = make_package(project, "pkg:type/a")
+        b = make_package(project, "pkg:type/b")
+        c = make_package(project, "pkg:type/c")
+        make_package(project, "pkg:type/z")
+        # Project -> A -> B -> C
+        # Project -> Z
+        make_dependency(project, for_package=a, resolved_to_package=b)
+        make_dependency(project, for_package=b, resolved_to_package=c)
+        url = reverse("project_dependency_tree", args=[project.slug])
+        response = self.client.get(url)
+        expected_tree = {
+            "name": "project",
+            "children": [
+                {
+                    "name": "pkg:type/a",
+                    "children": [
+                        {"name": "pkg:type/b", "children": [{"name": "pkg:type/c"}]}
+                    ],
+                },
+                {"name": "pkg:type/z"},
+            ],
+        }
+        self.assertEqual(expected_tree, response.context["dependency_tree"])
+        self.assertEqual(4, response.context["max_depth"])
+        self.assertEqual(5, response.context["row_count"])
+        self.assertContains(response, '<script id="dependency_tree"')
+        self.assertContains(
+            response, '<script id="max_depth" type="application/json">4</script>'
+        )
+        self.assertContains(
+            response, '<script id="row_count" type="application/json">5</script>'
+        )
