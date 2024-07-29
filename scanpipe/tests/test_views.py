@@ -1138,8 +1138,6 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         expected_tree = {"name": "Analysis", "children": []}
         self.assertEqual(expected_tree, response.context["dependency_tree"])
-        self.assertEqual(1, response.context["max_depth"])
-        self.assertEqual(1, response.context["row_count"])
 
         project = Project.objects.create(name="project")
         a = make_package(project, "pkg:type/a")
@@ -1165,8 +1163,6 @@ class ScanPipeViewsTest(TestCase):
             ],
         }
         self.assertEqual(expected_tree, response.context["dependency_tree"])
-        self.assertEqual(4, response.context["max_depth"])
-        self.assertEqual(5, response.context["row_count"])
         self.assertContains(response, '<script id="dependency_tree"')
         self.assertContains(
             response, '<script id="max_depth" type="application/json">4</script>'
