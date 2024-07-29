@@ -12,7 +12,7 @@
     </section>
   </div>
 
-  <div class="container is-fluid mb-3">
+  <div class="container is-max-widescreen mb-3">
     <div id="tree"></div>
   </div>
 {% endblock %}
@@ -21,20 +21,41 @@
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6"></script>
   {{ dependency_tree|json_script:"dependency_tree" }}
+  {{ row_count|json_script:"row_count" }}
+  {{ max_depth|json_script:"max_depth" }}
   <script>
     const data = JSON.parse(document.getElementById("dependency_tree").textContent);
+    const row_count = JSON.parse(document.getElementById("row_count").textContent);
+    const max_depth = JSON.parse(document.getElementById("max_depth").textContent);
+    width = 110 * max_depth;
+    height = 25 * row_count;
 
+    function indent() {
+      return (root) => {
+        root.eachBefore((node, i) => {
+          node.y = node.depth;
+          node.x = i;
+        });
+      };
+    }
+
+    // https://observablehq.com/plot/marks/tree
     const plot = Plot.plot({
       axis: null,
       margin: 10,
       marginLeft: 40,
       marginRight: 160,
-      width: 928 * 2,
-      height: 1800 * 2,
+      width: width,
+      height: height,
       marks: [
         Plot.tree(d3.hierarchy(data).leaves(), {
           path: (node) => node.ancestors().reverse().map(({ data: { name } }) => name).join("|"),
-          delimiter: "|"
+          delimiter: "|",
+          treeLayout: indent,
+          strokeWidth: 1,
+          curve: "step-before",
+          fontSize: 14,
+          textStroke: "none"
         })
       ]
     });
