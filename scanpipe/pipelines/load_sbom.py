@@ -89,6 +89,8 @@ class LoadSBOM(ScanCodebase):
                     dependency_uid=str(uuid.uuid4()),
                     for_package=package,
                     resolved_to_package=resolved_to_package,
+                    is_runtime=True,
+                    is_resolved=True,
                 )
                 # dependency_data = {
                 #     "for_package": package,
