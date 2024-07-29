@@ -2297,8 +2297,6 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
             return context
 
         context["dependency_tree"] = dependency_tree
-        context["max_depth"] = self.max_depth(dependency_tree)
-        context["row_count"] = self.count_rows(dependency_tree)
         return context
 
     def get_dependency_tree(self, project):
@@ -2321,15 +2319,3 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
         if children:
             node["children"] = children
         return node
-
-    def max_depth(self, node):
-        """Recursively finds the maximum depth of the given tree."""
-        if children := node.get("children", []):
-            return 1 + max(self.max_depth(child) for child in children)
-        return 1
-
-    def count_rows(self, node):
-        count = 1 if "name" in node else 0
-        for child in node.get("children", []):
-            count += self.count_rows(child)
-        return count

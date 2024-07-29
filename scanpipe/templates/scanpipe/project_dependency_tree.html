@@ -33,10 +33,13 @@
   {{ max_depth|json_script:"max_depth" }}
   <script>
     const data = JSON.parse(document.getElementById("dependency_tree").textContent);
-    const row_count = JSON.parse(document.getElementById("row_count").textContent);
-    const max_depth = JSON.parse(document.getElementById("max_depth").textContent);
-    width = 110 * max_depth;
-    height = 25 * row_count;
+    const hierarchyData = d3.hierarchy(data);
+    const columnWidth = 110;
+    const rowWidth = 25;
+    const columnCount = hierarchyData.height;
+    const rowCount = hierarchyData.links().length;
+    const width = columnWidth * (columnCount + 1);
+    const height = rowWidth * (rowCount + 1);
 
     function indent() {
       return (root) => {
@@ -56,7 +59,7 @@
       width: width,
       height: height,
       marks: [
-        Plot.tree(d3.hierarchy(data).leaves(), {
+        Plot.tree(hierarchyData.leaves(), {
           path: (node) => node.ancestors().reverse().map(({ data: { name } }) => name).join("|"),
           delimiter: "|",
           treeLayout: indent,
