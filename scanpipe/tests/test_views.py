@@ -1174,3 +1174,9 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(
             response, '<script id="row_count" type="application/json">5</script>'
         )
+
+        # Adding a circular reference such as: Project -> A -> B -> C -> B -> C -> ...
+        make_dependency(project, for_package=c, resolved_to_package=b)
+        response = self.client.get(url)
+        self.assertTrue(response.context["recursion_error"])
+        self.assertContains(response, "The dependency tree cannot be rendered")

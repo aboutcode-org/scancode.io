@@ -13,6 +13,14 @@
   </div>
 
   <div class="container is-max-widescreen mb-3">
+    {% if recursion_error %}
+      <article class="message is-danger">
+        <div class="message-body">
+          The dependency tree cannot be rendered as it contains circular references.
+          {{ message|linebreaksbr }}
+        </div>
+      </article>
+    {% endif %}
     <div id="tree"></div>
   </div>
 {% endblock %}

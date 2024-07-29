@@ -2289,7 +2289,13 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        dependency_tree = self.get_dependency_tree(project=self.object)
+
+        try:
+            dependency_tree = self.get_dependency_tree(project=self.object)
+        except RecursionError:
+            context["recursion_error"] = True
+            return context
+
         context["dependency_tree"] = dependency_tree
         context["max_depth"] = self.max_depth(dependency_tree)
         context["row_count"] = self.count_rows(dependency_tree)
