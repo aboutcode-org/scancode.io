@@ -199,6 +199,22 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         expected = {"name": "a:/b:name", "version": "1.0", "type": "type"}
         self.assertEqual(expected, package_data)
 
+    def test_scanpipe_cyclonedx_get_bom_instance_from_file(self):
+        input_location = self.data / "missing_schema.json"
+        with self.assertRaises(ValueError) as cm:
+            cyclonedx.get_bom_instance_from_file(input_location)
+        expected_error = (
+            'CycloneDX document "missing_schema.json" is not valid:\n'
+            "Additional properties are not allowed ('invalid_entry' was unexpected)"
+        )
+        self.assertIn(expected_error, str(cm.exception))
+
+        input_location = self.data / "laravel-7.12.0" / "bom.1.4.json"
+        bom = cyclonedx.get_bom_instance_from_file(input_location)
+        self.assertIsInstance(bom, Bom)
+        self.assertEqual(62, len(bom.components))
+        self.assertEqual(63, len(bom.dependencies))
+
     def test_scanpipe_cyclonedx_resolve_cyclonedx_packages(self):
         input_location = self.data / "missing_schema.json"
         with self.assertRaises(ValueError) as cm:
@@ -236,6 +252,19 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         input_location = self.data / "laravel-7.12.0" / "bom.1.4.xml"
         packages = cyclonedx.resolve_cyclonedx_packages(input_location)
         self.assertEqual(62, len(packages))
+
+    def test_scanpipe_cyclonedx_resolve_cyclonedx_packages_dependencies(self):
+        input_location = self.data / "laravel-7.12.0" / "bom.1.4.json"
+        packages = cyclonedx.resolve_cyclonedx_packages(input_location)
+        self.assertEqual(62, len(packages))
+
+        extra_data = packages[0]["extra_data"]
+        self.assertEqual("asm89/stack-cors-1.3.0.0", extra_data["bom_ref"])
+        expected_depends_on = [
+            "symfony/http-foundation-5.4.16.0",
+            "symfony/http-kernel-5.4.16.0",
+        ]
+        self.assertEqual(expected_depends_on, extra_data["depends_on"])
 
     def test_scanpipe_cyclonedx_resolve_cyclonedx_packages_pre_validation(self):
         # This SBOM includes multiple deserialization issues that are "fixed"

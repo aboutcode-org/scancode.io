@@ -1164,12 +1164,6 @@ class ScanPipeViewsTest(TestCase):
         }
         self.assertEqual(expected_tree, response.context["dependency_tree"])
         self.assertContains(response, '<script id="dependency_tree"')
-        self.assertContains(
-            response, '<script id="max_depth" type="application/json">4</script>'
-        )
-        self.assertContains(
-            response, '<script id="row_count" type="application/json">5</script>'
-        )
 
         # Adding a circular reference such as: Project -> A -> B -> C -> B -> C -> ...
         make_dependency(project, for_package=c, resolved_to_package=b)

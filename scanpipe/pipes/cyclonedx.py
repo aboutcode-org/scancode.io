@@ -314,6 +314,8 @@ def resolve_cyclonedx_packages(input_location):
 
     components = get_components(cyclonedx_bom)
 
+    # Store the ``bom_ref`` and the ``depends_on`` values on the extra_data field for
+    # the dependency resolution that take place after the package creation.
     dependencies = defaultdict(list)
     for entry in cyclonedx_bom.dependencies:
         if depends_on := [str(dep.ref) for dep in entry.dependencies]:
