@@ -1841,6 +1841,23 @@ class ScanPipeModelsTest(TestCase):
         self.assertNotIn(p1, DiscoveredPackage.objects.vulnerable())
         self.assertIn(p2, DiscoveredPackage.objects.vulnerable())
 
+    def test_scanpipe_discovered_package_queryset_dependency_methods(self):
+        project = Project.objects.create(name="project")
+        a = make_package(project, "pkg:type/a")
+        b = make_package(project, "pkg:type/b")
+        c = make_package(project, "pkg:type/c")
+        z = make_package(project, "pkg:type/z")
+        # Project -> A -> B -> C
+        # Project -> Z
+        make_dependency(project, for_package=a, resolved_to_package=b)
+        make_dependency(project, for_package=b, resolved_to_package=c)
+
+        project_packages_qs = project.discoveredpackages.order_by("name")
+        root_packages = project_packages_qs.root_packages()
+        self.assertEqual([a, z], list(root_packages))
+        non_root_packages = project_packages_qs.non_root_packages()
+        self.assertEqual([b, c], list(non_root_packages))
+
     @skipIf(sys.platform != "linux", "Ordering differs on macOS.")
     def test_scanpipe_codebase_resource_model_walk_method(self):
         fixtures = self.data / "asgiref" / "asgiref-3.3.0_walk_test_fixtures.json"

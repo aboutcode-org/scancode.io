@@ -68,10 +68,10 @@ doc8:
 	@${ACTIVATE} doc8 --max-line-length 100 --ignore-path docs/_build/ --quiet docs/
 
 valid:
-	@echo "-> Run Ruff linter"
-	@${ACTIVATE} ruff check --fix
 	@echo "-> Run Ruff format"
 	@${ACTIVATE} ruff format
+	@echo "-> Run Ruff linter"
+	@${ACTIVATE} ruff check --fix
 
 check:
 	@echo "-> Run Ruff linter validation (pycodestyle, bandit, isort, and more)"

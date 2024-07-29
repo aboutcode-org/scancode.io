@@ -2976,6 +2976,20 @@ class DiscoveredPackageQuerySet(
 
         return super().filter(*args, **kwargs)
 
+    def non_root_packages(self):
+        """
+        Return packages that have at least one package parent.
+        Those are used as part of a ``Dependency.resolved_to`` FK.
+        """
+        return self.filter(resolved_from_dependencies__isnull=False)
+
+    def root_packages(self):
+        """
+        Return packages that are directly related to the Project.
+        Those packages are not used as part of a ``Dependency.resolved_to`` FK.
+        """
+        return self.filter(resolved_from_dependencies__isnull=True)
+
 
 class AbstractPackage(models.Model):
     """These fields should be kept in line with `packagedcode.models.PackageData`."""
