@@ -167,6 +167,7 @@ class ScanPipeCycloneDXPipesTest(TestCase):
             "extracted_license_statement": "OFL-1.1\nApache-2.0",
             "version": "0.10.2",
             "extra_data": {
+                "bom_ref": "pkg:pypi/toml@0.10.2?extension=tar.gz",
                 "externalReferences": {
                     "advisories": ["https://cyclonedx.org/advisories"],
                     "bom": ["https://cyclonedx.org/bom"],
@@ -241,7 +242,10 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         # by the pre-validation cleanup.
         input_location = self.data / "broken_sbom.json"
         package_data = cyclonedx.resolve_cyclonedx_packages(input_location)
-        self.assertEqual([{"name": "asgiref"}], package_data)
+        self.assertEqual(
+            [{"extra_data": {"bom_ref": "pkg:pypi/asgiref@3.3.0"}, "name": "asgiref"}],
+            package_data,
+        )
 
     def test_scanpipe_cyclonedx_cleanup_components_properties(self):
         cyclonedx_document_json = {

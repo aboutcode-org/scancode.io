@@ -153,12 +153,14 @@ def is_cyclonedx_bom(input_location):
 def cyclonedx_component_to_package_data(cdx_component, dependencies=None):
     """Return package_data from CycloneDX component."""
     dependencies = dependencies or {}
+    extra_data = {}
 
     # Store the original bom_ref and dependencies for future processing.
     bom_ref = str(cdx_component.bom_ref)
-    extra_data = {"bom_ref": bom_ref}
-    if depends_on := dependencies.get(bom_ref):
-        extra_data["depends_on"] = depends_on
+    if bom_ref:
+        extra_data["bom_ref"] = bom_ref
+        if depends_on := dependencies.get(bom_ref):
+            extra_data["depends_on"] = depends_on
 
     package_url_dict = {}
     if cdx_component.purl:
