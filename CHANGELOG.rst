@@ -19,6 +19,13 @@ v34.7.2 (unreleased)
   "delivery".
   https://github.com/nexB/scancode.io/issues/1325
 
+- Add support for creating dependencies using the ``load_sboms`` pipeline on CycloneDX
+  SBOM inputs.
+  https://github.com/nexB/scancode.io/issues/1145
+
+- Add a new Dependency view that renders the project dependencies as a tree.
+  https://github.com/nexB/scancode.io/issues/1145
+
 v34.7.1 (2024-07-15)
 --------------------
 
