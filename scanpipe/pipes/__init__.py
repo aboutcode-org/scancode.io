@@ -261,7 +261,7 @@ def update_or_create_dependency(
     where Dependency data is imported from a scancode-toolkit scan, where the
     root path segments are not stripped for `datafile_path`.
     If the dependency is resolved and a resolved package is created, we have the
-    corresponsing package_uid at `resolved_to`.
+    corresponding package_uid at `resolved_to`.
     """
     if ignore_dependency_scope(project, dependency_data):
         return  # Do not create the DiscoveredDependency record.
