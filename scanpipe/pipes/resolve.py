@@ -265,8 +265,12 @@ def convert_spdx_expression(license_expression_spdx):
     return get_license_detections_and_expression(license_expression_spdx)[1]
 
 
-def spdx_package_to_discovered_package_data(spdx_package):
+def spdx_package_to_package_data(spdx_package):
+    """Convert the provided spdx_package into package_data."""
     package_url_dict = {}
+    # Store the original "SPDXID" as package_uid for dependencies resolution.
+    package_uid = spdx_package.spdx_id
+
     for ref in spdx_package.external_refs:
         if ref.type == "purl":
             purl = ref.locator
@@ -283,6 +287,7 @@ def spdx_package_to_discovered_package_data(spdx_package):
         declared_expression = convert_spdx_expression(declared_license_expression_spdx)
 
     package_data = {
+        "package_uid": package_uid,
         "name": spdx_package.name,
         "download_url": spdx_package.download_location,
         "declared_license_expression": declared_expression,
@@ -305,8 +310,28 @@ def spdx_package_to_discovered_package_data(spdx_package):
     }
 
 
-def resolve_spdx_packages(input_location):
-    """Resolve the packages from the `input_location` SPDX document file."""
+def spdx_relationship_to_dependency_data(spdx_relationship):
+    """Convert the provided spdx_relationship into dependency_data."""
+    # spdx_id is a dependency of related_spdx_id
+    if spdx_relationship.is_dependency_relationship:
+        for_package_uid = spdx_relationship.related_spdx_id
+        resolve_to_package_uid = spdx_relationship.spdx_id
+    else:  # spdx_id depends on related_spdx_id
+        for_package_uid = spdx_relationship.spdx_id
+        resolve_to_package_uid = spdx_relationship.related_spdx_id
+
+    dependency_data = {
+        "for_package_uid": for_package_uid,
+        "resolve_to_package_uid": resolve_to_package_uid,
+        "is_runtime": True,
+        "is_resolved": True,
+        "is_direct": True,
+    }
+    return dependency_data
+
+
+def get_spdx_document_from_file(input_location):
+    """Return the loaded SPDX document from the `input_location` file."""
     input_path = Path(input_location)
     spdx_document = json.loads(input_path.read_text())
 
@@ -315,9 +340,29 @@ def resolve_spdx_packages(input_location):
     except Exception as e:
         raise Exception(f'SPDX document "{input_path.name}" is not valid: {e}')
 
+    return spdx_document
+
+
+def resolve_spdx_packages(input_location):
+    """Resolve the packages from the `input_location` SPDX document file."""
+    spdx_document = get_spdx_document_from_file(input_location)
     return [
-        spdx_package_to_discovered_package_data(spdx.Package.from_data(spdx_package))
+        spdx_package_to_package_data(spdx.Package.from_data(spdx_package))
         for spdx_package in spdx_document.get("packages", [])
+    ]
+
+
+def resolve_spdx_dependencies(input_location):
+    """Resolve the dependencies from the `input_location` SPDX document file."""
+    spdx_document = get_spdx_document_from_file(input_location)
+    spdx_relationships = [
+        spdx.Relationship.from_data(spdx_relationship)
+        for spdx_relationship in spdx_document.get("relationships", [])
+    ]
+
+    return [
+        spdx_relationship_to_dependency_data(spdx_relationship)
+        for spdx_relationship in spdx_relationships
     ]
 
 

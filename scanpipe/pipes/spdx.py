@@ -522,6 +522,18 @@ class Relationship:
             comment=data.get("comment"),
         )
 
+    @property
+    def is_dependency_relationship(self):
+        """
+        Return True if this relationship type implies that the spdx_id element
+        is a dependency of related_spdx_id.
+        """
+        reverse_dependency_types = ["ANCESTOR_OF", "CONTAINS", "DEPENDS_ON"]
+        # Every others types implies that the spdx_id element is a dependency of
+        # related_spdx_id. Such as:
+        # "DEPENDENCY_OF", "DESCENDANT_OF", "PACKAGE_OF", "CONTAINED_BY", ...
+        return self.relationship.upper() not in reverse_dependency_types
+
 
 @dataclass
 class Document:
