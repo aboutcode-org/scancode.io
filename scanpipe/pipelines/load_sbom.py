@@ -46,6 +46,7 @@ class LoadSBOM(ScanCodebase):
             cls.get_sbom_inputs,
             cls.get_packages_from_sboms,
             cls.create_packages_from_sboms,
+            cls.create_dependencies_from_sboms,
         )
 
     def get_sbom_inputs(self):
@@ -62,8 +63,12 @@ class LoadSBOM(ScanCodebase):
         )
 
     def create_packages_from_sboms(self):
-        """Create the packages and dependencies from the SBOM, in the database."""
+        """Create the packages declared in the SBOMs."""
         resolve.create_packages_and_dependencies(
             project=self.project,
             packages=self.packages,
         )
+
+    def create_dependencies_from_sboms(self):
+        """Create the dependency relationship declared in the SBOMs."""
+        resolve.create_dependencies_from_packages_extra_data(project=self.project)

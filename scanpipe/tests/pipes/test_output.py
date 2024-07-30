@@ -285,8 +285,10 @@ class ScanPipeOutputPipesTest(TestCase):
         a = make_package(project, "pkg:type/a")
         b = make_package(project, "pkg:type/b")
         c = make_package(project, "pkg:type/c")
+        make_package(project, "pkg:type/z")
 
-        # A -> B -> C
+        # Project -> A -> B -> C
+        # Project -> Z
         make_dependency(project, for_package=a, resolved_to_package=b)
         make_dependency(project, for_package=b, resolved_to_package=c)
 
@@ -296,12 +298,13 @@ class ScanPipeOutputPipesTest(TestCase):
 
         expected = [
             {
-                "dependsOn": ["pkg:type/a", "pkg:type/b", "pkg:type/c"],
+                "dependsOn": ["pkg:type/a", "pkg:type/b", "pkg:type/c", "pkg:type/z"],
                 "ref": str(project.uuid),
             },
             {"dependsOn": ["pkg:type/b"], "ref": "pkg:type/a"},
             {"dependsOn": ["pkg:type/c"], "ref": "pkg:type/b"},
             {"ref": "pkg:type/c"},
+            {"ref": "pkg:type/z"},
         ]
         self.assertEqual(expected, results_json["dependencies"])
 
