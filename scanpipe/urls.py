@@ -72,6 +72,11 @@ urlpatterns = [
         name="project_dependencies",
     ),
     path(
+        "project/<slug:slug>/dependency_tree/",
+        views.ProjectDependencyTreeView.as_view(),
+        name="project_dependency_tree",
+    ),
+    path(
         "project/<slug:slug>/relations/",
         views.CodebaseRelationListView.as_view(),
         name="project_relations",

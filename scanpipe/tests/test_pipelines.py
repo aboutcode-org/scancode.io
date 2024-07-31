@@ -1416,6 +1416,24 @@ class PipelinesIntegrationTest(TestCase):
             )
             self.assertEqual(expected["filename"], package.filename)
 
+    def test_scanpipe_load_sbom_pipeline_cyclonedx_with_dependencies_integration(self):
+        pipeline_name = "load_sbom"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data / "cyclonedx" / "laravel-7.12.0" / "bom.1.4.json"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(62, project1.discoveredpackages.count())
+        self.assertEqual(112, project1.discovereddependencies.count())
+        dependency = project1.discovereddependencies.all()[0]
+        self.assertEqual("bom.1.4.json", str(dependency.datafile_resource))
+
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("uuid.uuid4")
     def test_scanpipe_deploy_to_develop_pipeline_integration(

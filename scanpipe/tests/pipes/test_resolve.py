@@ -30,6 +30,7 @@ from scanpipe.models import Project
 from scanpipe.pipes import resolve
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.pipes.scancode import extract_archives
+from scanpipe.tests import make_package
 from scanpipe.tests import package_data1
 
 
@@ -234,6 +235,32 @@ class ScanPipeResolvePipesTest(TestCase):
         resource1 = project1.codebaseresources.get(name="toml.spdx.json")
         package = project1.discoveredpackages.get()
         self.assertEqual(resource1, package.codebase_resources.get())
+
+    def test_scanpipe_resolve_create_dependencies_from_packages_extra_data(self):
+        p1 = Project.objects.create(name="Analysis")
+        parent_extra_data = {"depends_on": ["child"]}
+        parent = make_package(p1, "pkg:type/parent", extra_data=parent_extra_data)
+        child = make_package(p1, "pkg:type/child", extra_data={"bom_ref": "child"})
+
+        created_count = resolve.create_dependencies_from_packages_extra_data(p1)
+        self.assertEqual(1, created_count)
+        dependency = p1.discovereddependencies.get()
+        self.assertEqual(parent, dependency.for_package)
+        self.assertEqual(child, dependency.resolved_to_package)
+        self.assertTrue(dependency.is_runtime)
+        self.assertTrue(dependency.is_resolved)
+        self.assertTrue(dependency.is_direct)
+        self.assertFalse(dependency.is_optional)
+
+        parent.update_extra_data({"depends_on": ["unknown"]})
+        created_count = resolve.create_dependencies_from_packages_extra_data(p1)
+        self.assertEqual(0, created_count)
+        message = p1.projectmessages.get()
+        self.assertEqual("error", message.severity)
+        self.assertEqual(
+            "Could not find resolved_to package entry: unknown.", message.description
+        )
+        self.assertEqual("create_dependencies", message.model)
 
     def test_scanpipe_resolve_get_manifest_headers(self):
         input_location = self.data / "manifests" / "toml.spdx.json"

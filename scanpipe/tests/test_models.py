@@ -598,6 +598,19 @@ class ScanPipeModelsTest(TestCase):
         self.assertIsNone(CodebaseResource.objects.get_or_none(path="path/"))
         self.assertIsNone(DiscoveredPackage.objects.get_or_none(name="name"))
 
+    def test_scanpipe_project_related_model_clone(self):
+        subscription1 = self.project1.add_webhook_subscription(
+            target_url="http://domain.url"
+        )
+
+        new_project = Project.objects.create(name="New Project")
+        subscription1.clone(to_project=new_project)
+
+        cloned_subscription = new_project.webhooksubscriptions.get()
+        subscription1 = self.project1.webhooksubscriptions.get()
+        self.assertEqual(new_project, cloned_subscription.project)
+        self.assertNotEqual(cloned_subscription.pk, subscription1.pk)
+
     def test_scanpipe_project_get_codebase_config_directory(self):
         self.assertIsNone(self.project1.get_codebase_config_directory())
         (self.project1.codebase_path / settings.SCANCODEIO_CONFIG_DIR).mkdir()
@@ -1207,6 +1220,10 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_run_model_deliver_project_subscriptions(self, mock_deliver):
         self.project1.add_webhook_subscription(target_url="https://localhost")
         run1 = self.create_run()
+
+        run1.deliver_project_subscriptions(has_next_run=True)
+        mock_deliver.assert_not_called()
+
         run1.deliver_project_subscriptions()
         mock_deliver.assert_called_once_with(pipeline_run=run1)
 
@@ -1823,6 +1840,23 @@ class ScanPipeModelsTest(TestCase):
         )
         self.assertNotIn(p1, DiscoveredPackage.objects.vulnerable())
         self.assertIn(p2, DiscoveredPackage.objects.vulnerable())
+
+    def test_scanpipe_discovered_package_queryset_dependency_methods(self):
+        project = Project.objects.create(name="project")
+        a = make_package(project, "pkg:type/a")
+        b = make_package(project, "pkg:type/b")
+        c = make_package(project, "pkg:type/c")
+        z = make_package(project, "pkg:type/z")
+        # Project -> A -> B -> C
+        # Project -> Z
+        make_dependency(project, for_package=a, resolved_to_package=b)
+        make_dependency(project, for_package=b, resolved_to_package=c)
+
+        project_packages_qs = project.discoveredpackages.order_by("name")
+        root_packages = project_packages_qs.root_packages()
+        self.assertEqual([a, z], list(root_packages))
+        non_root_packages = project_packages_qs.non_root_packages()
+        self.assertEqual([b, c], list(non_root_packages))
 
     @skipIf(sys.platform != "linux", "Ordering differs on macOS.")
     def test_scanpipe_codebase_resource_model_walk_method(self):

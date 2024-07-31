@@ -22,7 +22,11 @@
 
 import json
 import sys
+import uuid
 from pathlib import Path
+
+from django.core.exceptions import MultipleObjectsReturned
+from django.core.exceptions import ObjectDoesNotExist
 
 from attributecode.model import About
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
@@ -30,6 +34,7 @@ from packagedcode.licensing import get_license_detections_and_expression
 from packageurl import PackageURL
 from python_inspector.api import resolve_dependencies
 
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import cyclonedx
 from scanpipe.pipes import flag
@@ -106,6 +111,52 @@ def create_packages_and_dependencies(project, packages, resolved=False):
                     update_or_create_package(project, resolved_package)
             else:
                 update_or_create_dependency(project, dependency_data)
+
+
+def create_dependencies_from_packages_extra_data(project):
+    """
+    Create Dependency objects from the Package extra_data values.
+    The Package instances need to be saved first in the database before creating the
+    Dependency objects.
+    The dependencies declared in the SBOM are stored on the Package.extra_data field
+    and resolved as Dependency objects in this function.
+    """
+    project_packages = project.discoveredpackages.all()
+    created_count = 0
+
+    packages_with_depends_on = project_packages.filter(
+        extra_data__has_key="depends_on"
+    ).prefetch_related("codebase_resources")
+
+    for for_package in packages_with_depends_on:
+        datafile_resource = None
+        codebase_resources = for_package.codebase_resources.all()
+        if len(codebase_resources) == 1:
+            datafile_resource = codebase_resources[0]
+
+        for bom_ref in for_package.extra_data.get("depends_on", []):
+            try:
+                resolved_to_package = project_packages.get(extra_data__bom_ref=bom_ref)
+            except (ObjectDoesNotExist, MultipleObjectsReturned):
+                project.add_error(
+                    description=f"Could not find resolved_to package entry: {bom_ref}.",
+                    model="create_dependencies",
+                )
+                continue
+
+            DiscoveredDependency.objects.create(
+                project=project,
+                dependency_uid=str(uuid.uuid4()),
+                for_package=for_package,
+                resolved_to_package=resolved_to_package,
+                datafile_resource=datafile_resource,
+                is_runtime=True,
+                is_resolved=True,
+                is_direct=True,
+            )
+            created_count += 1
+
+    return created_count
 
 
 def get_packages_from_manifest(input_location, package_registry=None):

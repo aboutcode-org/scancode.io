@@ -1517,6 +1517,8 @@ class ProjectRelatedModel(UpdateMixin, models.Model):
         self.project = to_project
         self.save()
 
+        return self
+
 
 class ProjectMessage(UUIDPKModel, ProjectRelatedModel):
     """Stores messages such as errors and exceptions raised during a pipeline run."""
@@ -2973,6 +2975,20 @@ class DiscoveredPackageQuerySet(
             return super().filter(*args, **kwargs).for_package_url(purl_str)
 
         return super().filter(*args, **kwargs)
+
+    def non_root_packages(self):
+        """
+        Return packages that have at least one package parent.
+        Those are used as part of a ``Dependency.resolved_to`` FK.
+        """
+        return self.filter(resolved_from_dependencies__isnull=False)
+
+    def root_packages(self):
+        """
+        Return packages that are directly related to the Project.
+        Those packages are not used as part of a ``Dependency.resolved_to`` FK.
+        """
+        return self.filter(resolved_from_dependencies__isnull=True)
 
 
 class AbstractPackage(models.Model):
