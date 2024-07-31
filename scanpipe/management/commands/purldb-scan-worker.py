@@ -29,7 +29,6 @@ from scanpipe.management.commands import AddInputCommandMixin
 from scanpipe.management.commands import CreateProjectCommandMixin
 from scanpipe.management.commands import execute_project
 from scanpipe.models import Run
-from scanpipe.pipes import output
 from scanpipe.pipes import purldb
 
 
@@ -99,6 +98,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
                 scannable_uri_uuid = response["scannable_uri_uuid"]
                 download_url = response["download_url"]
                 pipelines = response["pipelines"]
+                webhook_url = response["webhook_url"]
             else:
                 self.stderr.write("Bad response from PurlDB: unable to get next job.")
                 continue
@@ -126,6 +126,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
                     scannable_uri_uuid=scannable_uri_uuid,
                     download_url=download_url,
                     pipelines=pipelines,
+                    webhook_url=webhook_url,
                     run_async=run_async,
                 )
 
@@ -146,7 +147,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
 
 
 def create_scan_project(
-    command, scannable_uri_uuid, download_url, pipelines, run_async=False
+    command, scannable_uri_uuid, download_url, pipelines, webhook_url, run_async=False
 ):
     """
     Create and return a Project for the scan project request with ID of
@@ -168,9 +169,8 @@ def create_scan_project(
             "scannable_uri_uuid": scannable_uri_uuid,
         }
     )
-    url = f"{purldb.PURLDB_API_URL}scan_queue/{scannable_uri_uuid}/index_package_scan/"
     project.add_webhook_subscription(
-        target_url=url,
+        target_url=webhook_url,
         trigger_on_each_run=False,
         include_summary=True,
         include_results=True,

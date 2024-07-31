@@ -34,7 +34,6 @@ from univers.version_range import InvalidVersionRange
 
 from scanpipe.pipes import LoopProgress
 from scanpipe.pipes import _clean_package_data
-from scanpipe.pipes import output
 
 
 class PurlDBException(Exception):
