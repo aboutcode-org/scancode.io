@@ -3546,6 +3546,18 @@ class DiscoveredPackage(
 class DiscoveredDependencyQuerySet(
     PackageURLQuerySetMixin, VulnerabilityQuerySetMixin, ProjectRelatedQuerySet
 ):
+    def project_dependencies(self):
+        return self.filter(for_package__isnull=True)
+
+    def package_dependencies(self):
+        return self.filter(for_package__isnull=False)
+
+    def resolved(self):
+        return self.filter(resolved_to_package__isnull=False)
+
+    def unresolved(self):
+        return self.filter(resolved_to_package__isnull=True)
+
     def prefetch_for_serializer(self):
         """
         Optimized prefetching for a QuerySet to be consumed by the
