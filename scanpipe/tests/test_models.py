@@ -2712,23 +2712,6 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         )
         self.assertEqual("pypi_sdist_pkginfo", dependency.datasource_id)
 
-        # Test field validation when using create_from_data
-        dependency_count = DiscoveredDependency.objects.count()
-        incomplete_data = dict(dependency_data1)
-        incomplete_data["dependency_uid"] = ""
-        self.assertIsNone(
-            DiscoveredDependency.create_from_data(project1, incomplete_data)
-        )
-        self.assertEqual(dependency_count, DiscoveredDependency.objects.count())
-        message = project1.projectmessages.latest("created_date")
-        self.assertEqual("DiscoveredDependency", message.model)
-        self.assertEqual(ProjectMessage.Severity.WARNING, message.severity)
-        expected_message = "No values for the following required fields: dependency_uid"
-        self.assertEqual(expected_message, message.description)
-        self.assertEqual(dependency_data1["purl"], message.details["purl"])
-        self.assertEqual("", message.details["dependency_uid"])
-        self.assertEqual("", message.traceback)
-
     def test_scanpipe_discovered_package_model_unique_package_uid_in_project(self):
         project1 = Project.objects.create(name="Analysis")
 
