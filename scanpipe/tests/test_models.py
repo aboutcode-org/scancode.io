@@ -1849,14 +1849,34 @@ class ScanPipeModelsTest(TestCase):
         z = make_package(project, "pkg:type/z")
         # Project -> A -> B -> C
         # Project -> Z
-        make_dependency(project, for_package=a, resolved_to_package=b)
-        make_dependency(project, for_package=b, resolved_to_package=c)
+        a_to_b = make_dependency(
+            project, for_package=a, resolved_to_package=b, dependency_uid="a_to_b"
+        )
+        b_to_c = make_dependency(
+            project, for_package=b, resolved_to_package=c, dependency_uid="b_to_c"
+        )
+        unresolved_dependency = make_dependency(project, dependency_uid="unresolved")
+
+        self.assertFalse(a_to_b.is_project_dependency)
+        self.assertTrue(a_to_b.is_for_package)
+        self.assertTrue(a_to_b.is_resolved_to_package)
+        self.assertTrue(unresolved_dependency.is_project_dependency)
+        self.assertFalse(unresolved_dependency.is_for_package)
+        self.assertFalse(unresolved_dependency.is_resolved_to_package)
 
         project_packages_qs = project.discoveredpackages.order_by("name")
         root_packages = project_packages_qs.root_packages()
         self.assertEqual([a, z], list(root_packages))
         non_root_packages = project_packages_qs.non_root_packages()
         self.assertEqual([b, c], list(non_root_packages))
+
+        dependency_qs = project.discovereddependencies
+        self.assertEqual(
+            [unresolved_dependency], list(dependency_qs.project_dependencies())
+        )
+        self.assertEqual([a_to_b, b_to_c], list(dependency_qs.package_dependencies()))
+        self.assertEqual([a_to_b, b_to_c], list(dependency_qs.resolved()))
+        self.assertEqual([unresolved_dependency], list(dependency_qs.unresolved()))
 
     @skipIf(sys.platform != "linux", "Ordering differs on macOS.")
     def test_scanpipe_codebase_resource_model_walk_method(self):
