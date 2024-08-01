@@ -2704,10 +2704,11 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
     def test_scanpipe_discovered_dependency_model_create_from_data(self):
         project1 = Project.objects.create(name="Analysis")
 
-        DiscoveredPackage.create_from_data(project1, package_data1)
+        package1 = DiscoveredPackage.create_from_data(project1, package_data1)
         CodebaseResource.objects.create(
             project=project1, path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO"
         )
+        # Unresolved dependency
         dependency = DiscoveredDependency.create_from_data(
             project1, dependency_data1, strip_datafile_path_root=False
         )
@@ -2731,6 +2732,17 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             dependency.datafile_path,
         )
         self.assertEqual("pypi_sdist_pkginfo", dependency.datasource_id)
+        self.assertFalse(dependency.is_project_dependency)
+        self.assertTrue(dependency.is_for_package)
+        self.assertFalse(dependency.is_resolved_to_package)
+
+        # Resolved project dependency, resolved_to_package provided as arg
+        dependency2 = DiscoveredDependency.create_from_data(
+            project1, dependency_data={}, resolved_to_package=package1
+        )
+        self.assertTrue(dependency2.is_project_dependency)
+        self.assertFalse(dependency2.is_for_package)
+        self.assertTrue(dependency2.is_resolved_to_package)
 
     def test_scanpipe_discovered_package_model_unique_package_uid_in_project(self):
         project1 = Project.objects.create(name="Analysis")
