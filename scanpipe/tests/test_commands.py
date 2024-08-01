@@ -68,7 +68,6 @@ class ScanPipeManagementCommandTest(TestCase):
     data = Path(__file__).parent / "data"
     pipeline_name = "analyze_docker_image"
     pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
-    purldb_update_status_url = f"{purldb.PURLDB_API_URL}scan_queue/update_status/"
 
     def test_scanpipe_management_command_create_project_base(self):
         out = StringIO()
@@ -717,7 +716,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(["Group1", "Group2"], runs[1]["selected_groups"])
 
     @mock.patch("scanpipe.models.Project.get_latest_output")
-    @mock.patch("scanpipe.pipes.purldb.request_post")
+    @mock.patch("requests.post")
     @mock.patch("requests.sessions.Session.get")
     @mock.patch("scanpipe.pipes.purldb.request_get")
     def test_scanpipe_management_command_purldb_scan_queue_worker(
@@ -733,9 +732,10 @@ class ScanPipeManagementCommandTest(TestCase):
             "scannable_uri_uuid": scannable_uri_uuid,
             "download_url": download_url,
             "pipelines": ["scan_single_package"],
+            "webhook_url": "http://server/api/scan_queue/index_package_scan/IjEi:1sZEvv:_br-G-VikC19M5RS2ToNZTGt81GLc6co7w72XHRmCKY/",
         }
         mock_request_post.return_value = {
-            "status": f"scan indexed for scannable uri {scannable_uri_uuid}"
+            "status": f"scan results for scannable_uri {scannable_uri_uuid} have been queued for indexing"
         }
         mock_get_latest_output.return_value = (
             self.data / "scancode" / "is-npm-1.0.0_summary.json"
@@ -783,9 +783,10 @@ class ScanPipeManagementCommandTest(TestCase):
             "scannable_uri_uuid": scannable_uri_uuid,
             "download_url": download_url,
             "pipelines": ["scan_single_package"],
+            "webhook_url": "http://server/api/scan_queue/index_package_scan/IjEi:1sZEvv:_br-G-VikC19M5RS2ToNZTGt81GLc6co7w72XHRmCKY/",
         }
         mock_request_post.return_value = {
-            "status": f"scan failed for scannable uri {scannable_uri_uuid}"
+            "status": f"updated scannable_uri {scannable_uri_uuid} scan_status to 'failed'"
         }
         mock_download_get.return_value = mock.Mock(
             content=b"\x00",
@@ -810,12 +811,9 @@ class ScanPipeManagementCommandTest(TestCase):
         mock_request_post.assert_called_once()
         mock_request_post_call = mock_request_post.mock_calls[0]
         mock_request_post_call_kwargs = mock_request_post_call.kwargs
+        purldb_update_status_url = f"{purldb.PURLDB_API_URL}scan_queue/{scannable_uri_uuid}/update_status/"
         self.assertEqual(
-            self.purldb_update_status_url, mock_request_post_call_kwargs["url"]
-        )
-        self.assertEqual(
-            "97627c6e-9acb-43e0-b8df-28bd92f2b7e5",
-            mock_request_post_call_kwargs["data"]["scannable_uri_uuid"],
+            purldb_update_status_url, mock_request_post_call_kwargs["url"]
         )
         self.assertEqual("failed", mock_request_post_call_kwargs["data"]["scan_status"])
         self.assertIn(
@@ -838,11 +836,13 @@ class ScanPipeManagementCommandTest(TestCase):
                 "scannable_uri_uuid": scannable_uri_uuid1,
                 "download_url": download_url1,
                 "pipelines": ["scan_single_package"],
+                "webhook_url": "http://server/api/scan_queue/index_package_scan/IjEi:1sZEvv:_br-G-VikC19M5RS2ToNZTGt81GLc6co7w72XHRmCKY/",
             },
             {
                 "scannable_uri_uuid": scannable_uri_uuid2,
                 "download_url": download_url2,
                 "pipelines": ["scan_single_package"],
+                "webhook_url": "http://server/api/scan_queue/index_package_scan/IjEi:1sZEvv:_br-G-VikC19M5RS2ToNZTGt21GLc6co7w72XHRmabc/",
             },
         ]
 
@@ -890,28 +890,21 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("Error during scan_single_package execution:", out_value)
         self.assertIn("Error log", out_value)
 
-        update_status_url = f"{purldb.PURLDB_API_URL}scan_queue/update_status/"
+        update_status_url1 = f"{purldb.PURLDB_API_URL}scan_queue/{scannable_uri_uuid1}/update_status/"
         mocked_post_calls = mock_request_post.call_args_list
         self.assertEqual(2, len(mocked_post_calls))
 
         mock_post_call1 = mocked_post_calls[0]
-        self.assertEqual(update_status_url, mock_post_call1.kwargs["url"])
-        self.assertEqual(
-            "97627c6e-9acb-43e0-b8df-28bd92f2b7e5",
-            mock_post_call1.kwargs["data"]["scannable_uri_uuid"],
-        )
+        self.assertEqual(update_status_url1, mock_post_call1.kwargs["url"])
         self.assertEqual("failed", mock_post_call1.kwargs["data"]["scan_status"])
         self.assertIn(
             "Exception occured during scan project:",
             mock_post_call1.kwargs["data"]["scan_log"],
         )
 
+        update_status_url2 = f"{purldb.PURLDB_API_URL}scan_queue/{scannable_uri_uuid2}/update_status/"
         mock_post_call2 = mocked_post_calls[1]
-        self.assertEqual(update_status_url, mock_post_call2.kwargs["url"])
-        self.assertEqual(
-            "0bbdcf88-ad07-4970-9272-7d5f4c82cc7b",
-            mock_post_call2.kwargs["data"]["scannable_uri_uuid"],
-        )
+        self.assertEqual(update_status_url2, mock_post_call2.kwargs["url"])
         self.assertEqual("failed", mock_post_call1.kwargs["data"]["scan_status"])
         self.assertIn(
             "Exception occured during scan project:",
