@@ -155,20 +155,9 @@ class ScanPipePurlDBTest(TestCase):
     def test_scanpipe_pipes_purldb_check_project_run_statuses(
         self, mock_is_available, mock_request_post
     ):
-        def mock_request_post_return(url, data, timeout):
-            return {
-                "scannable_uri_uuid": "97627c6e-9acb-43e0-b8df-28bd92f2b7e5",
-                "scan_status": "failed",
-                "project_extra_data": '{"scannable_uri_uuid": '
-                '"97627c6e-9acb-43e0-b8df-28bd92f2b7e5"}',
-            }
-
         mock_is_available.return_value = True
-        mock_request_post.side_effect = mock_request_post_return
-
-        self.project1.extra_data.update(
-            {"scannable_uri_uuid": "97627c6e-9acb-43e0-b8df-28bd92f2b7e5"}
-        )
+        scannable_uri_uuid = "97627c6e-9acb-43e0-b8df-28bd92f2b7e5"
+        self.project1.extra_data.update({"scannable_uri_uuid": scannable_uri_uuid})
         now = timezone.now()
 
         # Test poll_run_status on individual pipelines
@@ -198,8 +187,11 @@ class ScanPipePurlDBTest(TestCase):
         mock_request_post.assert_called_once()
         mock_request_post_call = mock_request_post.mock_calls[0]
         mock_request_post_call_kwargs = mock_request_post_call.kwargs
+        purldb_update_status_url = (
+            f"{purldb.PURLDB_API_URL}scan_queue/{scannable_uri_uuid}/update_status/"
+        )
+        self.assertEqual(purldb_update_status_url, mock_request_post_call_kwargs["url"])
         expected_data = {
-            "scannable_uri_uuid": "97627c6e-9acb-43e0-b8df-28bd92f2b7e5",
             "scan_status": "failed",
             "scan_log": "failed failed:\n\nfailed\n",
         }
@@ -219,6 +211,7 @@ class ScanPipePurlDBTest(TestCase):
         self.assertEqual(2, mock_request_post.call_count)
         mock_request_post_call = mock_request_post.mock_calls[0]
         mock_request_post_call_kwargs = mock_request_post_call.kwargs
+        self.assertEqual(purldb_update_status_url, mock_request_post_call_kwargs["url"])
         self.assertEqual(expected_data, mock_request_post_call_kwargs["data"])
         self.project1.runs.all().delete()
 
@@ -235,6 +228,7 @@ class ScanPipePurlDBTest(TestCase):
         self.assertEqual(3, mock_request_post.call_count)
         mock_request_post_call = mock_request_post.mock_calls[0]
         mock_request_post_call_kwargs = mock_request_post_call.kwargs
+        self.assertEqual(purldb_update_status_url, mock_request_post_call_kwargs["url"])
         self.assertEqual(expected_data, mock_request_post_call_kwargs["data"])
         self.project1.runs.all().delete()
 
