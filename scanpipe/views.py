@@ -1927,6 +1927,7 @@ class DiscoveredPackageDetailsView(
                     "field_name": "other_license_expression_spdx",
                     "label": "Other license expression (SPDX)",
                 },
+                "compliance_alert",
                 "extracted_license_statement",
                 "copyright",
                 "holder",

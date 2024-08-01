@@ -10,6 +10,9 @@
     line-height: 1.8rem;
     --spacing : 2rem;
   }
+  .tree summary {
+    display: inline-block;
+  }
   .tree summary::before{
     background-color: rgb(72, 199, 142);
     background-image: url('{% static "tree-views/expand-collapse.svg" %}');
@@ -51,9 +54,21 @@
             <i class="fas fa-plus"></i>
           </span>
         </button>
+        <button id="showVulnerableOnlyButton" class="button is-outlined is-small">
+          <span>Show Vulnerable only</span>
+          <span class="icon is-small">
+            <i class="fa-solid fa-bug"></i>
+          </span>
+        </button>
+        <button id="showComplianceAlertOnlyButton" class="button is-outlined is-small">
+          <span>Show Compliance Alert only</span>
+          <span class="icon is-small ">
+            <i class="fa-solid fa-scale-balanced"></i>
+          </span>
+        </button>
       </div>
 
-      <ul class="tree">
+      <ul id="tree" class="tree">
         <li>
           <details open>
             <summary class="has-text-weight-semibold">
@@ -69,6 +84,8 @@
 
 {% block scripts %}
 <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const treeContainer = document.getElementById('tree');
   const collapseAllButton = document.getElementById('collapseAll');
   const expendAllButton = document.getElementById('expendAll');
 
@@ -76,15 +93,65 @@
     document.querySelectorAll('details').forEach(details => {
       details.removeAttribute('open');
     });
+    showAllListItems();
   }
 
   function expendAllDetails() {
     document.querySelectorAll('details').forEach(details => {
       details.setAttribute('open', ''); // Adding 'open' attribute to open the details
     });
+    showAllListItems();
   }
 
   collapseAllButton.addEventListener('click', collapseAllDetails);
   expendAllButton.addEventListener('click', expendAllDetails);
+
+  // Following function are use to limit the display to specific elements.
+
+  function expandAncestors(detailsElement) {
+    let parent = detailsElement.parentElement.closest('details');
+    while (parent) {
+      parent.setAttribute('open', '');
+      parent.parentElement.style.display = '';
+      parent = parent.parentElement.closest('details');
+    }
+  }
+
+  function showAllListItems() {
+    const listItems = treeContainer.querySelectorAll('li');
+    listItems.forEach(item => {
+        item.style.display = '';
+    });
+  }
+
+  function hideAllListItems() {
+    const listItems = treeContainer.querySelectorAll('li');
+    listItems.forEach(item => {
+        item.style.display = 'none';
+    });
+  }
+
+  function handleItems(attribute, value) {
+    collapseAllDetails();
+    hideAllListItems();
+
+    const items = document.querySelectorAll(`li[${attribute}="${value}"]`);
+    items.forEach(item => {
+        item.style.display = 'block';
+        expandAncestors(item);
+    });
+  }
+
+  function handleVulnerableItems() {
+    handleItems('data-is-vulnerable', 'true');
+  }
+
+  function handleComplianceAlertItems() {
+    handleItems('data-compliance-alert', 'true');
+  }
+
+  showVulnerableOnlyButton.addEventListener('click', handleVulnerableItems);
+  showComplianceAlertOnlyButton.addEventListener('click', handleComplianceAlertItems);
+});
 </script>
 {% endblock %}
