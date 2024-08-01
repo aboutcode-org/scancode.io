@@ -2316,7 +2316,12 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
         return project_tree
 
     def get_node(self, package):
-        node = {"name": str(package)}
+        node = {
+            "name": str(package),
+            "url": package.get_absolute_url(),
+            "compliance_alert": package.compliance_alert,
+            "is_vulnerable": package.is_vulnerable,
+        }
         # Resolved dependencies
         children = [
             self.get_node(child_package)
@@ -2325,7 +2330,12 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
 
         unresolved_dependencies = package.declared_dependencies.unresolved()
         for dependency in unresolved_dependencies:
-            children.append({"name": dependency.package_url})
+            children.append(
+                {
+                    "name": dependency.package_url,
+                    "is_vulnerable": dependency.is_vulnerable,
+                }
+            )
 
         if children:
             node["children"] = children

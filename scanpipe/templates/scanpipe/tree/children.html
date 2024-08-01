@@ -1,0 +1,16 @@
+<ul>
+  {% for node in children %}
+    <li>
+      {% if node.children %}
+        <details class="my-1" open>
+          <summary>
+            {% include 'scanpipe/tree/node.html' with node=node only %}
+          </summary>
+          {% include 'scanpipe/tree/children.html' with children=node.children only %}
+        </details>
+      {% else %}
+        {% include 'scanpipe/tree/node.html' with node=node only %}
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>
