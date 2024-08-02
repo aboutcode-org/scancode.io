@@ -26,6 +26,15 @@ v34.7.2 (unreleased)
 - Add a new Dependency view that renders the project dependencies as a tree.
   https://github.com/nexB/scancode.io/issues/1145
 
+- The ``purldb-scan-worker`` command has been updated to send project results
+  back using the Project webhook subscriptions. This allows us to not have the
+  main task loop to monitor a single project run for completion in order to
+  return data, and allows us to have multiple scan projects active at once while
+  we use ``purldb-scan-worker``. A new option ``--max-concurrent-projects`` has
+  been added to set the number of purldb packages that can be requested and
+  processed at once.
+  https://github.com/nexB/scancode.io/issues/1287
+
 v34.7.1 (2024-07-15)
 --------------------
 
