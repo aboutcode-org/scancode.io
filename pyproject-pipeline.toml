@@ -3,7 +3,7 @@ requires = [ "flot>=0.7.0" ]
 build-backend = "flot.buildapi"
 
 [project]
-name = "pipeline"
+name = "aboutcode-pipeline"
 version = "1.0.0"
 description = ""
 license = { text = "Apache-2.0" }
