@@ -111,7 +111,7 @@ class CommonStepsMixin:
 
 
 class ProjectPipelineRun(BasePipelineRun):
-    def __init__(self, pipeline_class, run_instance):
+    def __init__(self, run_instance):
         """Load the Pipeline execution context from a Run database object."""
         self.run = run_instance
         self.project = run_instance.project
@@ -130,11 +130,11 @@ class ProjectPipelineRun(BasePipelineRun):
         self.run.set_current_step(message)
 
 
-class Pipeline(CommonStepsMixin, BasePipeline):
+class Pipeline(CommonStepsMixin, BasePipeline, ProjectPipelineRun):
     """Main class for all project related pipelines including common steps methods."""
 
     # Project wrapper ProjectPipelineRun class
-    run_class = ProjectPipelineRun
+    # run_class = ProjectPipelineRun
 
     # Flag specifying whether to download missing inputs as an initial step.
     download_inputs = True
@@ -146,16 +146,15 @@ class Pipeline(CommonStepsMixin, BasePipeline):
     # to target the Package list view with an active filtering.
     results_url = ""
 
-    # TODO
-    # @classmethod
-    # def get_steps(cls, groups=None):
-    #     """Inject the ``download_inputs`` step if enabled."""
-    #     steps = super().get_steps(groups)
-    #
-    #     if cls.download_inputs:
-    #         steps = (cls.download_missing_inputs,) + steps
-    #
-    #     return steps
+    @classmethod
+    def get_steps(cls, groups=None):
+        """Inject the ``download_inputs`` step if enabled."""
+        steps = super().get_steps(groups)
+
+        if cls.download_inputs:
+            steps = (cls.download_missing_inputs,) + steps
+
+        return steps
 
     def download_missing_inputs(self):
         """

@@ -41,19 +41,19 @@ Run: context (groups, steps), execution, logging, and results
 from pipeline import BasePipeline
 from pipeline import BasePipelineRun
 
-class DoSomething(BasePipeline):
+class DoSomething(BasePipeline, BasePipelineRun):
     @classmethod
     def steps(cls):
         return (cls.step1,)
     def step1(self):
         print("Message from step1")
 
-# 1. From the Pipeline class (preferred)
-run = DoSomething.make_run()
+# 1. Run pipeline
+run = DoSomething()
 run.execute()
 
-# 2. From the Run class
-run = BasePipelineRun(pipeline_class=DoSomething)
+# 2. Run pipeline with selected groups
+run = BasePipelineRun(selected_groups=["group1", "group2"])
 run.execute()
 """
 
@@ -94,13 +94,85 @@ def humanize_time(seconds):
     return message
 
 
+class LoopProgress:
+    """
+    A context manager for logging progress in loops.
+
+    Usage::
+
+        total_iterations = 100
+        logger = print  # Replace with your actual logger function
+
+        progress = LoopProgress(total_iterations, logger, progress_step=10)
+        for item in progress.iter(iterator):
+            "Your processing logic here"
+
+        with LoopProgress(total_iterations, logger, progress_step=10) as progress:
+            for item in progress.iter(iterator):
+                "Your processing logic here"
+    """
+
+    def __init__(self, total_iterations, logger, progress_step=10):
+        self.total_iterations = total_iterations
+        self.logger = logger
+        self.progress_step = progress_step
+        self.start_time = timer()
+        self.last_logged_progress = 0
+        self.current_iteration = 0
+
+    def get_eta(self, current_progress):
+        run_time = timer() - self.start_time
+        return round(run_time / current_progress * (100 - current_progress))
+
+    @property
+    def current_progress(self):
+        return int((self.current_iteration / self.total_iterations) * 100)
+
+    @property
+    def eta(self):
+        run_time = timer() - self.start_time
+        return round(run_time / self.current_progress * (100 - self.current_progress))
+
+    def log_progress(self):
+        reasons_to_skip = [
+            not self.logger,
+            not self.current_iteration > 0,
+            self.total_iterations <= self.progress_step,
+        ]
+        if any(reasons_to_skip):
+            return
+
+        if self.current_progress >= self.last_logged_progress + self.progress_step:
+            msg = (
+                f"Progress: {self.current_progress}% "
+                f"({self.current_iteration}/{self.total_iterations})"
+            )
+            if eta := self.eta:
+                msg += f" ETA: {humanize_time(eta)}"
+
+            self.logger(msg)
+            self.last_logged_progress = self.current_progress
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
+    def iter(self, iterator):
+        for item in iterator:
+            self.current_iteration += 1
+            self.log_progress()
+            yield item
+
+
 class BasePipelineRun:
     """Base class for all pipeline run (execution)."""
 
-    def __init__(self, pipeline_class, selected_groups=None, selected_steps=None):
+    def __init__(self, selected_groups=None, selected_steps=None):
         """Load the Pipeline class."""
-        self.pipeline_class = pipeline_class
-        self.pipeline_name = pipeline_class.__name__
+        self.pipeline_class = self.__class__
+        self.pipeline_name = self.pipeline_class.__name__
 
         self.selected_groups = selected_groups
         self.selected_steps = selected_steps or []
@@ -157,7 +229,7 @@ class BasePipelineRun:
             step_start_time = timer()
 
             try:
-                step(self)  # WARNING: self is a Run instance, not a Pipeline instance
+                step(self)
             except Exception as exception:
                 self.log("Pipeline failed")
                 return 1, self.output_from_exception(exception)
@@ -174,9 +246,6 @@ class BasePipelineRun:
 
 class BasePipeline:
     """Base class for all pipeline implementations."""
-
-    # Default PipelineRun class for executing the Pipeline.
-    run_class = BasePipelineRun
 
     # Flag indicating if the Pipeline is an add-on, meaning it cannot be run first.
     is_addon = False
@@ -259,7 +328,3 @@ class BasePipeline:
                 for group_name in getattr(step, "groups", [])
             )
         )
-
-    @classmethod
-    def make_run(cls, *args, **kwargs):
-        return cls.run_class(cls, *args, **kwargs)

@@ -27,6 +27,8 @@ from scanpipe.pipelines import Pipeline
 class WithGroups(Pipeline):
     """Include "grouped" steps."""
 
+    download_inputs = False
+
     @classmethod
     def steps(cls):
         return (
