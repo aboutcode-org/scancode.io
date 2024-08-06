@@ -391,6 +391,7 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
             "tag",
             "primary_language",
             "description",
+            "notes",
             "release_date",
             "parties",
             "keywords",

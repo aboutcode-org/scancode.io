@@ -1891,6 +1891,7 @@ class DiscoveredPackageDetailsView(
                 "source_packages",
                 "keywords",
                 "description",
+                "notes",
                 "tag",
             ],
             "icon_class": "fa-solid fa-circle-check",

@@ -35,6 +35,9 @@ v34.7.2 (unreleased)
   processed at once.
   https://github.com/nexB/scancode.io/issues/1287
 
+- Add notes field on the DiscoveredPackage model.
+  https://github.com/nexB/scancode.io/issues/1342
+
 v34.7.1 (2024-07-15)
 --------------------
 

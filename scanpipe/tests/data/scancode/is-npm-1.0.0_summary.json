@@ -164,6 +164,7 @@
       "tag": "",
       "primary_language": "JavaScript",
       "description": "Check if your code is running as an npm script",
+      "notes": "",
       "release_date": null,
       "parties": [
         {
