@@ -86,7 +86,7 @@ check-deploy:
 
 clean:
 	@echo "-> Clean the Python env"
-	rm -rf .venv/ .*_cache/ *.egg-info/ build/ dist/
+	rm -rf .venv/ .*cache/ *.egg-info/ build/ dist/
 	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
 
 migrate:
