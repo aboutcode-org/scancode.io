@@ -33,9 +33,9 @@
                 {% if pipeline_info.available_groups %}
                   <div class="ml-2 mt-1">
                     {% for group in pipeline_info.available_groups %}
-                      <label class="checkbox ml-1" for="id_{{ group }}">
+                      <label class="checkbox ml-1" for="id_{{ pipeline_name }}_{{ group }}">
                         <span class="tag is-warning has-text-weight-bold">
-                          <input type="checkbox" name="selected_groups" value="{{ group }}" id="id_{{ group }}" class="mr-1">
+                          <input type="checkbox" name="selected_groups" value="{{ group }}" id="id_{{ pipeline_name }}_{{ group }}" class="mr-1">
                           {{ group }}
                         </span>
                       </label>

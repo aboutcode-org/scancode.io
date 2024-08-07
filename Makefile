@@ -125,6 +125,10 @@ test:
 	@echo "-> Run the test suite"
 	${MANAGE} test --noinput
 
+fasttest:
+	@echo "-> Run the test suite without the PipelinesIntegrationTest"
+	${MANAGE} test --noinput --exclude-tag slow
+
 worker:
 	${MANAGE} rqworker --worker-class scancodeio.worker.ScanCodeIOWorker --queue-class scancodeio.worker.ScanCodeIOQueue --verbosity 2
 
@@ -152,4 +156,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run test docs bump docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run test fasttest docs bump docker-images offline-package
