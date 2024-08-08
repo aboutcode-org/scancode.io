@@ -41,6 +41,9 @@ v34.7.2 (unreleased)
 - Fix an issue with conflicting groups checkbox id in the Add pipeline modal.
   https://github.com/nexB/scancode.io/issues/1353
 
+- Move the BasePipeline class to a new `aboutcode.pipeline` module.
+  https://github.com/nexB/scancode.io/issues/1351
+
 v34.7.1 (2024-07-15)
 --------------------
 
