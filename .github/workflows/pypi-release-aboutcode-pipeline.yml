@@ -37,8 +37,8 @@ jobs:
           name: pypi_archives
           path: dist/*
 
-      # - name: Create a GitHub release
-      #   uses: softprops/action-gh-release@v1
-      #   with:
-      #     draft: true
-      #     files: dist/*
+      - name: Create a GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: false
+          files: dist/*
