@@ -152,10 +152,8 @@ class ScanPipePipelinesTest(TestCase):
 
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("do_nothing")
+        run.update(selected_steps=["step2", "not_existing_step"])
         pipeline = run.make_pipeline_instance()
-
-        run.selected_steps = ["step2", "not_existing_step"]
-        run.save()
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode)

@@ -31,18 +31,46 @@ from timeit import default_timer as timer
 module_logger = logging.getLogger(__name__)
 
 
-class BasePipeline:
-    """Base class for all pipeline implementations."""
+"""
+from aboutcode.pipeline import BasePipeline
+from aboutcode.pipeline import group
+
+class PrintMessages(BasePipeline):
+    @classmethod
+    def steps(cls):
+        return (cls.step1, cls.step2)
+
+    def step1(self):
+        print("Message from step1")
+
+    @group("foo")
+    def step2(self):
+        print("Message from step2")
+
+
+# 1. Execute pipeline
+DoSomething().execute()
+
+# 2. Execute pipeline with group selection
+run = DoSomething(selected_groups=["foo"])
+exitcode, error = run.execute()
+
+# 3. Execute pipeline with steps selection
+run = DoSomething(selected_steps=["step1"])
+exitcode, error = run.execute()
+"""
+
+
+class PipelineDefinition:
+    """
+    Encapsulate the code related to a Pipeline definition:
+    - Steps
+    - Attributes
+    - Documentation
+    """
 
     # Flag indicating if the Pipeline is an add-on, meaning it cannot be run first.
     is_addon = False
-
-    def __init__(self, run):
-        """Load the Run and Project instances."""
-        self.run = run
-        self.project = run.project
-        self.pipeline_name = run.pipeline_name
-        self.env = self.project.get_env()
 
     @classmethod
     def steps(cls):
@@ -125,13 +153,40 @@ class BasePipeline:
             )
         )
 
+
+class PipelineRun:
+    """
+    Encapsulate the code related to a Pipeline run (execution):
+    - Execution context: groups, steps
+    - Execution logic
+    - Logging
+    - Results
+    """
+
+    def __init__(self, selected_groups=None, selected_steps=None):
+        """Load the Pipeline class."""
+        self.pipeline_class = self.__class__
+        self.pipeline_name = self.__class__.__name__
+
+        self.selected_groups = selected_groups
+        self.selected_steps = selected_steps or []
+
+        self.execution_log = []
+        self.current_step = ""
+
+    def append_to_log(self, message):
+        self.execution_log.append(message)
+
+    def set_current_step(self, message):
+        self.current_step = message
+
     def log(self, message):
-        """Log the given `message` to the current module logger and Run instance."""
+        """Log the given `message` to the current module logger and execution_log."""
         now_local = datetime.now(timezone.utc).astimezone()
         timestamp = now_local.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
         message = f"{timestamp} {message}"
         module_logger.info(message)
-        self.run.append_to_log(message)
+        self.append_to_log(message)
 
     @staticmethod
     def output_from_exception(exception):
@@ -150,9 +205,10 @@ class BasePipeline:
         """Execute each steps in the order defined on this pipeline class."""
         self.log(f"Pipeline [{self.pipeline_name}] starting")
 
-        steps = self.get_steps(groups=self.run.selected_groups)
-        selected_steps = self.run.selected_steps
+        # TODO: This is located on the PipelineDefinition class
+        steps = self.pipeline_class.get_steps(groups=self.selected_groups)
 
+        # TODO: This is located on the PipelineDefinition class
         if initial_steps := self.get_initial_steps():
             steps = initial_steps + steps
 
@@ -162,11 +218,11 @@ class BasePipeline:
         for current_index, step in enumerate(steps, start=1):
             step_name = step.__name__
 
-            if selected_steps and step_name not in selected_steps:
+            if self.selected_steps and step_name not in self.selected_steps:
                 self.log(f"Step [{step_name}] skipped")
                 continue
 
-            self.run.set_current_step(f"{current_index}/{steps_count} {step_name}")
+            self.set_current_step(f"{current_index}/{steps_count} {step_name}")
             self.log(f"Step [{step_name}] starting")
             step_start_time = timer()
 
@@ -179,11 +235,18 @@ class BasePipeline:
             step_run_time = timer() - step_start_time
             self.log(f"Step [{step_name}] completed in {humanize_time(step_run_time)}")
 
-        self.run.set_current_step("")  # Reset the `current_step` field on completion
+        self.set_current_step("")  # Reset the `current_step` field on completion
         pipeline_run_time = timer() - pipeline_start_time
         self.log(f"Pipeline completed in {humanize_time(pipeline_run_time)}")
 
         return 0, ""
+
+
+class BasePipeline(PipelineDefinition, PipelineRun):
+    """
+    Base class for all pipeline implementations.
+    It combines the pipeline definition and execution logics.
+    """
 
 
 def group(*groups):
