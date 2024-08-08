@@ -135,14 +135,14 @@ class Pipeline(BasePipeline):
 
         - Example in a Pipeline step::
 
-        with self.save_errors(rootfs.DistroNotFound):
-            rootfs.scan_rootfs_for_system_packages(self.project, rfs)
+            with self.save_errors(rootfs.DistroNotFound):
+                rootfs.scan_rootfs_for_system_packages(self.project, rfs)
 
         - Example when iterating over resources::
 
-        for resource in self.project.codebaseresources.all():
-            with self.save_errors(Exception, resource=resource):
-                analyse(resource)
+            for resource in self.project.codebaseresources.all():
+                with self.save_errors(Exception, resource=resource):
+                    analyse(resource)
         """
         try:
             yield
