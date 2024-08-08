@@ -31,36 +31,6 @@ from timeit import default_timer as timer
 module_logger = logging.getLogger(__name__)
 
 
-"""
-from aboutcode.pipeline import BasePipeline
-from aboutcode.pipeline import group
-
-class PrintMessages(BasePipeline):
-    @classmethod
-    def steps(cls):
-        return (cls.step1, cls.step2)
-
-    def step1(self):
-        print("Message from step1")
-
-    @group("foo")
-    def step2(self):
-        print("Message from step2")
-
-
-# 1. Execute pipeline
-DoSomething().execute()
-
-# 2. Execute pipeline with group selection
-run = DoSomething(selected_groups=["foo"])
-exitcode, error = run.execute()
-
-# 3. Execute pipeline with steps selection
-run = DoSomething(selected_steps=["step1"])
-exitcode, error = run.execute()
-"""
-
-
 class PipelineDefinition:
     """
     Encapsulate the code related to a Pipeline definition:
