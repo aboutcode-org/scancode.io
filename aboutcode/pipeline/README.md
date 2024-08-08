@@ -5,7 +5,7 @@ Define and run pipelines.
 ### Install
 
 ```bash
-pip install aboutcode_pipeline
+pip install aboutcode.pipeline
 ```
 
 ### Define and execute a pipeline

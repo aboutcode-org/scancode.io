@@ -30,6 +30,8 @@ from timeit import default_timer as timer
 
 module_logger = logging.getLogger(__name__)
 
+__version__ = "0.1"
+
 
 class PipelineDefinition:
     """
