@@ -179,9 +179,9 @@ class ScanPipePipelinesTest(TestCase):
         pipeline.execute()
         self.assertIn("Step [download_missing_inputs]", run.log)
 
-        run = project1.add_pipeline("do_nothing")
+        run = project1.add_pipeline("profile_step")
         pipeline = run.make_pipeline_instance()
-        pipeline.download_inputs = False
+        self.assertFalse(pipeline.download_inputs)
         pipeline.execute()
         self.assertNotIn("Step [download_missing_inputs]", run.log)
 
