@@ -60,6 +60,9 @@ class PipelineDefinition:
 
         steps = cls.steps()
 
+        if initial_steps := cls.get_initial_steps():
+            steps = (*initial_steps, *steps)
+
         if groups is not None:
             steps = tuple(
                 step
@@ -175,13 +178,7 @@ class PipelineRun:
         """Execute each steps in the order defined on this pipeline class."""
         self.log(f"Pipeline [{self.pipeline_name}] starting")
 
-        # TODO: This is located on the PipelineDefinition class
         steps = self.pipeline_class.get_steps(groups=self.selected_groups)
-
-        # TODO: This is located on the PipelineDefinition class
-        if initial_steps := self.get_initial_steps():
-            steps = initial_steps + steps
-
         steps_count = len(steps)
         pipeline_start_time = timer()
 

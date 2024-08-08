@@ -23,12 +23,15 @@
 from scanpipe.pipelines import Pipeline
 
 
-class StepsAsAttribute(Pipeline):
-    """Declare steps as attribute."""
+class DownloadInput(Pipeline):
+    """Define the download_inputs attribute as True"""
 
-    download_inputs = False
+    download_inputs = True
+
+    @classmethod
+    def steps(cls):
+        return (cls.step1,)
 
     def step1(self):
-        return
-
-    steps = (step1,)
+        """Step1 doc."""
+        pass
