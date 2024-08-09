@@ -2,9 +2,9 @@ name: Build aboutcode.pipeline Python distributions and publish on PyPI
 
 on:
   workflow_dispatch:
-  # push:
-  #   tags:
-  #     - "aboutcode.pipeline/v*.*.*"
+  push:
+   tags:
+     - "aboutcode.pipeline/*"
 
 jobs:
   build-and-publish:
@@ -36,9 +36,3 @@ jobs:
         with:
           name: pypi_archives
           path: dist/*
-
-      - name: Create a GitHub release
-        uses: softprops/action-gh-release@v1
-        with:
-          draft: false
-          files: dist/*

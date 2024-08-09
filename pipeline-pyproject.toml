@@ -4,7 +4,7 @@ build-backend = "flot.buildapi"
 
 [project]
 name = "aboutcode.pipeline"
-version = "0.1"
+version = "0.1.0"
 description = "AboutCode Pipeline library. Execute code in steps."
 license = { text = "Apache-2.0" }
 readme = "aboutcode/pipeline/README.md"
@@ -31,6 +31,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/nexB/scancode.io"
 Documentation = "https://scancodeio.readthedocs.io/"
+Changelog = "https://github.com/nexB/scancode.io/tree/main/aboutcode/pipeline/CHANGELOG.md"
 Repository = "https://github.com/nexB/scancode.io/tree/main/aboutcode/pipeline"
 Issues = "https://github.com/nexB/scancode.io/issues"
 
