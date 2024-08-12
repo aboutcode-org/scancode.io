@@ -29,7 +29,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags')
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          password: ${{ secrets.PYPI_API_TOKEN_ABOUTCODE_PIPELINE }}
 
       - name: Upload built archives
         uses: actions/upload-artifact@v4
