@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import logging
 import traceback
@@ -58,7 +58,8 @@ class PipelineDefinition:
         if ``groups`` is not specified, include the step in the result.
         """
         if not callable(cls.steps):
-            raise TypeError("Use a ``steps(cls)`` classmethod to declare the steps.")
+            raise TypeError(
+                "Use a ``steps(cls)`` classmethod to declare the steps.")
 
         steps = cls.steps()
 
@@ -171,7 +172,8 @@ class PipelineRun:
         if exception.__cause__ and str(exception.__cause__) != str(exception):
             output += f"Cause: {exception.__cause__}\n\n"
 
-        traceback_formatted = "".join(traceback.format_tb(exception.__traceback__))
+        traceback_formatted = "".join(
+            traceback.format_tb(exception.__traceback__))
         output += f"Traceback:\n{traceback_formatted}"
 
         return output
@@ -202,9 +204,11 @@ class PipelineRun:
                 return 1, self.output_from_exception(exception)
 
             step_run_time = timer() - step_start_time
-            self.log(f"Step [{step_name}] completed in {humanize_time(step_run_time)}")
+            self.log(
+                f"Step [{step_name}] completed in {humanize_time(step_run_time)}")
 
-        self.set_current_step("")  # Reset the `current_step` field on completion
+        # Reset the `current_step` field on completion
+        self.set_current_step("")
         pipeline_run_time = timer() - pipeline_start_time
         self.log(f"Pipeline completed in {humanize_time(pipeline_run_time)}")
 

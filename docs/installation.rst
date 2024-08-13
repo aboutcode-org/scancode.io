@@ -40,10 +40,10 @@ required for the creation of the Docker image.
 
     git config --global core.autocrlf false
 
-**Clone the git** `ScanCode.io repo <https://github.com/nexB/scancode.io>`_,
+**Clone the git** `ScanCode.io repo <https://github.com/aboutcode-org/scancode.io>`_,
 create an **environment file**, and **build the Docker image**::
 
-    git clone https://github.com/nexB/scancode.io.git && cd scancode.io
+    git clone https://github.com/aboutcode-org/scancode.io.git && cd scancode.io
     make envfile
     docker compose build
 
@@ -108,7 +108,7 @@ An overview of the web application usage is available at :ref:`user_interface`.
 Upgrade the App
 ^^^^^^^^^^^^^^^
 
-**Update your local** `ScanCode.io repo <https://github.com/nexB/scancode.io>`_,
+**Update your local** `ScanCode.io repo <https://github.com/aboutcode-org/scancode.io>`_,
 and **build the Docker image**::
 
     cd scancode.io
@@ -123,7 +123,7 @@ and **build the Docker image**::
 
         docker compose run -u 0:0 web chown -R app:app /var/scancodeio/
 
-    See also https://github.com/nexB/scancode.io/issues/399
+    See also https://github.com/aboutcode-org/scancode.io/issues/399
 
 .. note::
     You need to rebuild the image whenever ScanCode.io's source code has been
@@ -283,9 +283,9 @@ For the :ref:`pipeline_collect_strings_gettext` pipeline, `gettext <https://www.
 Clone and Configure
 ^^^^^^^^^^^^^^^^^^^
 
- * Clone the `ScanCode.io GitHub repository <https://github.com/nexB/scancode.io>`_::
+ * Clone the `ScanCode.io GitHub repository <https://github.com/aboutcode-org/scancode.io>`_::
 
-    git clone https://github.com/nexB/scancode.io.git && cd scancode.io
+    git clone https://github.com/aboutcode-org/scancode.io.git && cd scancode.io
 
  * Inside the :guilabel:`scancode.io/` directory, install the required dependencies::
 
@@ -398,7 +398,7 @@ Helm Chart [Beta]
     The Helm Chart support for ScanCode.io is a community contribution effort.
     It is only tested on a few configurations and still under development.
     We welcome improvement suggestions and issue reports at
-    `ScanCode.io GitHub repo <https://github.com/nexB/scancode.io/issues>`_.
+    `ScanCode.io GitHub repo <https://github.com/aboutcode-org/scancode.io/issues>`_.
 
 Requirements
 ^^^^^^^^^^^^
@@ -478,13 +478,13 @@ Gitpod
 .. warning::
     The Gitpod support for ScanCode.io is a community contribution effort.
     We welcome improvement suggestions and issue reports at
-    `ScanCode.io GitHub repo <https://github.com/nexB/scancode.io/issues>`_.
+    `ScanCode.io GitHub repo <https://github.com/aboutcode-org/scancode.io/issues>`_.
 
 Installation
 ^^^^^^^^^^^^
 
 * Create a new Workspace and open it in VSCode Browser or your preferred IDE.
-  Provide the ScanCode.io GitHub repo URL: https://github.com/nexB/scancode.io
+  Provide the ScanCode.io GitHub repo URL: https://github.com/aboutcode-org/scancode.io
 
 * Open the "TERMINAL" window and create the ``.env`` file with::
 
