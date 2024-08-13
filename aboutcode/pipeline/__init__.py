@@ -58,8 +58,7 @@ class PipelineDefinition:
         if ``groups`` is not specified, include the step in the result.
         """
         if not callable(cls.steps):
-            raise TypeError(
-                "Use a ``steps(cls)`` classmethod to declare the steps.")
+            raise TypeError("Use a ``steps(cls)`` classmethod to declare the steps.")
 
         steps = cls.steps()
 
@@ -172,8 +171,7 @@ class PipelineRun:
         if exception.__cause__ and str(exception.__cause__) != str(exception):
             output += f"Cause: {exception.__cause__}\n\n"
 
-        traceback_formatted = "".join(
-            traceback.format_tb(exception.__traceback__))
+        traceback_formatted = "".join(traceback.format_tb(exception.__traceback__))
         output += f"Traceback:\n{traceback_formatted}"
 
         return output
@@ -204,8 +202,7 @@ class PipelineRun:
                 return 1, self.output_from_exception(exception)
 
             step_run_time = timer() - step_start_time
-            self.log(
-                f"Step [{step_name}] completed in {humanize_time(step_run_time)}")
+            self.log(f"Step [{step_name}] completed in {humanize_time(step_run_time)}")
 
         # Reset the `current_step` field on completion
         self.set_current_step("")
