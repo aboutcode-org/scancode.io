@@ -14,13 +14,13 @@ The ScanCode.io documentation is available here: https://scancodeio.readthedocs.
 If you have questions that are not covered by our
 `Documentation <https://scancodeio.readthedocs.io/en/latest/faq.html>`_ or
 `FAQs <https://scancodeio.readthedocs.io/en/latest/faq.html>`_,
-please ask them in `Discussions <https://github.com/nexB/scancode.io/discussions>`_.
+please ask them in `Discussions <https://github.com/aboutcode-org/scancode.io/discussions>`_.
 
 If you want to contribute to ScanCode.io, start with our
 `Contributing <https://scancodeio.readthedocs.io/en/latest/contributing.html>`_ page.
 
 A new GitHub action is now available at
-`scancode-action <https://github.com/nexB/scancode-action>`_
+`scancode-action <https://github.com/aboutcode-org/scancode-action>`_
 to run ScanCode.io pipelines from your GitHub Workflows.
 Visit https://scancodeio.readthedocs.io/en/latest/automation.html to learn more
 about automation.
@@ -56,8 +56,8 @@ ScanCode.io should be considered or used as legal advice. Consult an Attorney
 for any legal advice.
 
 
-.. |ci-tests| image:: https://github.com/nexB/scancode.io/actions/workflows/ci.yml/badge.svg?branch=main
-    :target: https://github.com/nexB/scancode.io/actions/workflows/ci.yml
+.. |ci-tests| image:: https://github.com/aboutcode-org/scancode.io/actions/workflows/ci.yml/badge.svg?branch=main
+    :target: https://github.com/aboutcode-org/scancode.io/actions/workflows/ci.yml
     :alt: CI Tests Status
 
 .. |docs-rtd| image:: https://readthedocs.org/projects/scancodeio/badge/?version=latest
