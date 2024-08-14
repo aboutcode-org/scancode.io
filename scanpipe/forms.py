@@ -42,8 +42,7 @@ class MultipleFileInput(forms.ClearableFileInput):
 
 class MultipleFileField(forms.FileField):
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault("widget", MultipleFileInput(
-            attrs={"class": "file-input"}))
+        kwargs.setdefault("widget", MultipleFileInput(attrs={"class": "file-input"}))
         super().__init__(*args, **kwargs)
 
     def clean(self, data, initial=None):
@@ -171,8 +170,7 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
         name_field.help_text = "The unique name of your project."
 
         # Do not include "add-on" pipelines in the context of the create Project form
-        pipeline_choices = scanpipe_app.get_pipeline_choices(
-            include_addon=False)
+        pipeline_choices = scanpipe_app.get_pipeline_choices(include_addon=False)
         self.fields["pipeline"].choices = pipeline_choices
 
     def clean_name(self):
@@ -207,8 +205,7 @@ class AddLabelsForm(forms.Form):
     labels = TagField(
         label="Add labels to this project:",
         widget=TagWidget(
-            attrs={"class": "input",
-                   "placeholder": "Comma-separated list of labels"}
+            attrs={"class": "input", "placeholder": "Comma-separated list of labels"}
         ),
     )
 
@@ -400,8 +397,7 @@ class ProjectSettingsForm(forms.ModelForm):
     ignored_dependency_scopes = KeyValueListField(
         label="Ignored dependency scopes",
         required=False,
-        help_text=convert_markdown_to_html(
-            ignored_dependency_scopes_help.strip()),
+        help_text=convert_markdown_to_html(ignored_dependency_scopes_help.strip()),
         widget=forms.Textarea(
             attrs={
                 "class": "textarea is-dynamic",
@@ -415,8 +411,7 @@ class ProjectSettingsForm(forms.ModelForm):
     ignored_vulnerabilities = ListTextarea(
         label="Ignored vulnerabilities",
         required=False,
-        help_text=convert_markdown_to_html(
-            ignored_vulnerabilities_help.strip()),
+        help_text=convert_markdown_to_html(ignored_vulnerabilities_help.strip()),
         widget=forms.Textarea(
             attrs={
                 "class": "textarea is-dynamic",
@@ -437,8 +432,7 @@ class ProjectSettingsForm(forms.ModelForm):
             "\nFeel free to modify its content according to your preferences and paste "
             "the entire HTML code into this field."
         ),
-        widget=forms.Textarea(
-            attrs={"class": "textarea is-dynamic", "rows": 3}),
+        widget=forms.Textarea(attrs={"class": "textarea is-dynamic", "rows": 3}),
     )
     product_name = forms.CharField(
         label="Product name",
@@ -495,8 +489,7 @@ class ProjectSettingsForm(forms.ModelForm):
 
 
 class ProjectCloneForm(forms.Form):
-    clone_name = forms.CharField(
-        widget=forms.TextInput(attrs={"class": "input"}))
+    clone_name = forms.CharField(widget=forms.TextInput(attrs={"class": "input"}))
     copy_inputs = forms.BooleanField(
         initial=True,
         required=False,
@@ -554,8 +547,7 @@ class PipelineRunStepSelectionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         if not kwargs.get("instance"):
-            raise ValueError(
-                "An Run object is required to instantiate this form.")
+            raise ValueError("An Run object is required to instantiate this form.")
 
         super().__init__(*args, **kwargs)
         pipeline_class = self.instance.pipeline_class

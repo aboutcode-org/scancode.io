@@ -55,11 +55,9 @@ class ProjectAdmin(ScanPipeBaseAdmin):
     ordering = ["-created_date"]
     fieldsets = [
         ("", {"fields": ("name", "slug", "notes", "extra_data", "settings", "uuid")}),
-        ("Links", {"fields": ("packages_link",
-         "dependencies_link", "resources_link")}),
+        ("Links", {"fields": ("packages_link", "dependencies_link", "resources_link")}),
     ]
-    readonly_fields = ["packages_link",
-                       "dependencies_link", "resources_link", "uuid"]
+    readonly_fields = ["packages_link", "dependencies_link", "resources_link", "uuid"]
 
     def get_queryset(self, request):
         return (
@@ -118,8 +116,7 @@ class CodebaseResourceAdmin(ScanPipeBaseAdmin):
     search_fields = [
         "path",
     ]
-    list_filter = ["project", "type",
-                   "programming_language", "compliance_alert"]
+    list_filter = ["project", "type", "programming_language", "compliance_alert"]
     ordering = ["project", "path"]
 
 

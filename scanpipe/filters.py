@@ -91,8 +91,7 @@ class ModelFieldValuesFilter(django_filters.ChoiceFilter):
 
         # Retrieve distinct values for the specified field.
         field_values = (
-            qs.order_by(field_name).values_list(
-                field_name, flat=True).distinct()
+            qs.order_by(field_name).values_list(field_name, flat=True).distinct()
         )
         value_choices = [
             (value, value) for value in field_values if value not in EMPTY_VALUES
@@ -248,11 +247,9 @@ class FilterSetUtilsMixin:
         for name, value in self.form.cleaned_data.items():
             field_name = self.filters[name].field_name
             if value == self.empty_value:
-                queryset = queryset.filter(
-                    **{f"{field_name}__in": EMPTY_VALUES})
+                queryset = queryset.filter(**{f"{field_name}__in": EMPTY_VALUES})
             elif value == self.any_value:
-                queryset = queryset.filter(
-                    ~Q(**{f"{field_name}__in": EMPTY_VALUES}))
+                queryset = queryset.filter(~Q(**{f"{field_name}__in": EMPTY_VALUES}))
             elif value == self.other_value and hasattr(queryset, "less_common"):
                 return queryset.less_common(name)
             else:
@@ -302,8 +299,7 @@ def parse_query_string_to_lookups(query_string, default_lookup_expr, default_fie
             search_value = term
             field_name = default_field
 
-        lookups &= Q(
-            **{f"{field_name}__{lookup_expr}": search_value}, _negated=negated)
+        lookups &= Q(**{f"{field_name}__{lookup_expr}": search_value}, _negated=negated)
 
     return lookups
 
@@ -420,8 +416,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         archived_count = Project.objects.filter(is_archived=True).count()
         self.filters["is_archived"].extra["widget"] = BulmaLinkWidget(
             choices=[
-                ("",
-                 f'<i class="fa-solid fa-seedling"></i> {active_count} Active'),
+                ("", f'<i class="fa-solid fa-seedling"></i> {active_count} Active'),
                 (
                     "true",
                     f'<i class="fa-solid fa-dice-d6"></i> {archived_count} Archived',
@@ -685,16 +680,14 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "tag",
             "resources_count",
         ],
-        grouped_fields={"package_url": [
-            "type", "namespace", "name", "version"]},
+        grouped_fields={"package_url": ["type", "namespace", "name", "version"]},
     )
     purl = PackageURLFilter(label="Package URL")
     is_vulnerable = IsVulnerable(field_name="affected_by_vulnerabilities")
     compliance_alert = django_filters.ChoiceFilter(
         choices=[(EMPTY_VAR, "None")] + CodebaseResource.Compliance.choices,
     )
-    copyright = django_filters.filters.CharFilter(
-        widget=HasValueDropdownWidget)
+    copyright = django_filters.filters.CharFilter(widget=HasValueDropdownWidget)
     declared_license_expression = django_filters.filters.CharFilter(
         widget=HasValueDropdownWidget
     )
@@ -774,8 +767,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "datafile_resource",
             "datasource_id",
         ],
-        grouped_fields={"package_url": [
-            "type", "namespace", "name", "version"]},
+        grouped_fields={"package_url": ["type", "namespace", "name", "version"]},
     )
     purl = PackageURLFilter(label="Package URL")
     type = ModelFieldValuesFilter()
@@ -851,8 +843,7 @@ class StatusFilter(django_filters.ChoiceFilter):
         status_values = (
             qs.order_by("status").values_list("status", flat=True).distinct()
         )
-        value_choices = [(status, status)
-                         for status in status_values if status]
+        value_choices = [(status, status) for status in status_values if status]
         return default_choices + value_choices
 
 
@@ -894,5 +885,4 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         if project:
             qs = CodebaseResource.objects.filter(project=project)
             status_filter = self.filters["status"]
-            status_filter.extra["choices"] = status_filter.get_status_choices(
-                qs)
+            status_filter.extra["choices"] = status_filter.get_status_choices(qs)

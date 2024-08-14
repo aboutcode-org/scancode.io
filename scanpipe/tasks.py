@@ -46,8 +46,7 @@ def report_failure(job, connection, type, value, traceback):
     try:
         run = get_run_instance(run_pk=job.id)
     except Run.DoesNotExist:
-        info(
-            f"FAILURE to get the Run instance with job.id={job.id}", "Unknown")
+        info(f"FAILURE to get the Run instance with job.id={job.id}", "Unknown")
         return
 
     run.set_task_ended(exitcode=1, output=f"value={value} trace={traceback}")
@@ -63,8 +62,7 @@ def execute_pipeline_task(run_pk):
     run.set_scancodeio_version()
     run.set_task_started(run_pk)
 
-    info(
-        f'Run pipeline: "{run.pipeline_name}" on project: "{project.name}"', run_pk)
+    info(f'Run pipeline: "{run.pipeline_name}" on project: "{project.name}"', run_pk)
 
     pipeline = run.make_pipeline_instance()
     exitcode, output = pipeline.execute()

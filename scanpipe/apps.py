@@ -89,12 +89,10 @@ class ScanPipeConfig(AppConfig):
         pipelines Python files found at `SCANCODEIO_PIPELINES_DIRS` locations.
         """
         entry_points = importlib_metadata.entry_points()
-        pipeline_entry_points = set(
-            entry_points.select(group="scancodeio_pipelines"))
+        pipeline_entry_points = set(entry_points.select(group="scancodeio_pipelines"))
 
         for entry_point in sorted(pipeline_entry_points):
-            self.register_pipeline(name=entry_point.name,
-                                   cls=entry_point.load())
+            self.register_pipeline(name=entry_point.name, cls=entry_point.load())
 
         pipelines_dirs = getattr(settings, "SCANCODEIO_PIPELINES_DIRS", [])
         logger.debug(f"Load user provided pipelines from {pipelines_dirs}")
@@ -224,15 +222,13 @@ class ScanPipeConfig(AppConfig):
         include the proper content, we want to raise an exception while the app
         is loading to warn system admins about the issue.
         """
-        policies_file_location = getattr(
-            settings, "SCANCODEIO_POLICIES_FILE", None)
+        policies_file_location = getattr(settings, "SCANCODEIO_POLICIES_FILE", None)
 
         if policies_file_location:
             policies_file = Path(policies_file_location).expanduser()
 
             if policies_file.exists():
-                logger.debug(style.SUCCESS(
-                    f"Load policies from {policies_file}"))
+                logger.debug(style.SUCCESS(f"Load policies from {policies_file}"))
                 policies = saneyaml.load(policies_file.read_text())
                 license_policies = policies.get("license_policies", [])
                 self.license_policies_index = self.get_policies_index(
@@ -255,8 +251,7 @@ class ScanPipeConfig(AppConfig):
 
     def sync_runs_and_jobs(self):
         """Synchronize ``QUEUED`` and ``RUNNING`` Run with their related Jobs."""
-        logger.info(
-            "Synchronizing QUEUED and RUNNING Run with their related Jobs...")
+        logger.info("Synchronizing QUEUED and RUNNING Run with their related Jobs...")
 
         run_model = self.get_model("Run")
         queued_or_running = run_model.objects.queued_or_running()

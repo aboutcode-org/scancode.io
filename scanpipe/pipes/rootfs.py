@@ -80,8 +80,7 @@ class RootFs:
     """A root filesystem."""
 
     location = attr.attrib(
-        metadata=dict(
-            doc="The root directory location where this rootfs lives.")
+        metadata=dict(doc="The root directory location where this rootfs lives.")
     )
 
     distro = attr.attrib(
@@ -97,8 +96,7 @@ class RootFs:
         Return RootFs objects collected from the project's "codebase" directory.
         Each directory in the input/ is considered as the root of a root filesystem.
         """
-        subdirs = [path for path in project.codebase_path.glob(
-            "*/") if path.is_dir()]
+        subdirs = [path for path in project.codebase_path.glob("*/") if path.is_dir()]
         for subdir in subdirs:
             rootfs_location = str(subdir.absolute())
             yield RootFs(location=rootfs_location)
@@ -172,8 +170,7 @@ def has_hash_diff(install_file, codebase_resource):
         # Find a suitable hash type that is present on both install_file and
         # codebase_resource, skip otherwise.
         share_hash_type = all(
-            [hasattr(install_file, hash_type), hasattr(
-                codebase_resource, hash_type)]
+            [hasattr(install_file, hash_type), hasattr(codebase_resource, hash_type)]
         )
 
         if not share_hash_type:
@@ -203,8 +200,7 @@ def package_getter(root_dir, **kwargs):
 
 def _create_system_package(project, purl, package):
     """Create system package and related resources."""
-    created_package = pipes.update_or_create_package(
-        project, package.to_dict())
+    created_package = pipes.update_or_create_package(project, package.to_dict())
 
     installed_files = []
     if hasattr(package, "resources"):
@@ -320,8 +316,7 @@ def match_not_analyzed(
     3. Relate each matched CodebaseResource to the matching DiscoveredPackage and
     set its status.
     """
-    known_resources = get_resource_with_md5(
-        project=project, status=reference_status)
+    known_resources = get_resource_with_md5(project=project, status=reference_status)
     known_resources_by_md5_size = {
         (
             r.md5,
@@ -330,8 +325,7 @@ def match_not_analyzed(
         for r in known_resources
     }
     count = 0
-    matchables = get_resource_with_md5(
-        project=project, status=not_analyzed_status)
+    matchables = get_resource_with_md5(project=project, status=not_analyzed_status)
     for matchable in matchables:
         key = (matchable.md5, matchable.size)
         matched = known_resources_by_md5_size.get(key)
