@@ -22,7 +22,7 @@
 
 FROM python:3.12-slim
 
-LABEL org.opencontainers.image.source="https://github.com/nexB/scancode.io"
+LABEL org.opencontainers.image.source="https://github.com/aboutcode-org/scancode.io"
 LABEL org.opencontainers.image.description="ScanCode.io"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 
