@@ -33,7 +33,7 @@ VERSION = "34.7.1"
 PROJECT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = PROJECT_DIR.parent
 SCAN_NOTICE = PROJECT_DIR.joinpath("scan.NOTICE").read_text()
-GITHUB_URL = "https://github.com/nexB/scancode.io"
+GITHUB_URL = "https://github.com/aboutcode-org/scancode.io"
 
 
 def get_version(version):
