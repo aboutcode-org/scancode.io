@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import difflib
 import io
@@ -268,7 +268,8 @@ class TabSetMixin:
             if not display_condition(self.object):
                 return
 
-        fields_data = self.get_fields_data(fields=tab_definition.get("fields", []))
+        fields_data = self.get_fields_data(
+            fields=tab_definition.get("fields", []))
 
         is_disabled = False
         if disable_condition := tab_definition.get("disable_condition"):
@@ -624,7 +625,8 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
 
     @staticmethod
     def get_license_clarity_data(scan_summary_json):
-        license_clarity_score = scan_summary_json.get("license_clarity_score", {})
+        license_clarity_score = scan_summary_json.get(
+            "license_clarity_score", {})
         return [
             {
                 "label": label,
@@ -680,7 +682,8 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         ]
 
         if missing_inputs:
-            filenames = [input_source.filename for input_source in missing_inputs]
+            filenames = [
+                input_source.filename for input_source in missing_inputs]
             missing_files = "\n- ".join(filenames)
             message = (
                 f"The following input files are not available on disk anymore:\n"
@@ -691,7 +694,8 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project = self.object
-        project_resources_url = reverse("project_resources", args=[project.slug])
+        project_resources_url = reverse(
+            "project_resources", args=[project.slug])
 
         self.check_for_missing_inputs(project)
 
@@ -706,7 +710,8 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         if scan_summary_file:
             with suppress(json.decoder.JSONDecodeError):
                 scan_summary_json = json.loads(scan_summary_file.read_text())
-                license_clarity = self.get_license_clarity_data(scan_summary_json)
+                license_clarity = self.get_license_clarity_data(
+                    scan_summary_json)
                 scan_summary = self.get_scan_summary_data(scan_summary_json)
 
         codebase_root = sorted(
@@ -921,7 +926,8 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
                 else:
                     field_values = (entry[field_name] for entry in qs_values)
 
-                context[f"{group_name}_{field_name}"] = self.get_summary(field_values)
+                context[f"{group_name}_{field_name}"] = self.get_summary(
+                    field_values)
 
         return context
 
@@ -939,7 +945,8 @@ class ProjectResourceStatusSummaryView(ConditionalLoginRequired, generic.DetailV
 
         # Order the status list by occurrences, higher first
         sorted_by_count = dict(
-            sorted(status_counter.items(), key=operator.itemgetter(1), reverse=True)
+            sorted(status_counter.items(),
+                   key=operator.itemgetter(1), reverse=True)
         )
 
         # Remove the "no status" entry from the top list
@@ -976,7 +983,8 @@ class ProjectResourceLicenseSummaryView(ConditionalLoginRequired, generic.Detail
 
         # Order the license list by the number of detections, higher first
         sorted_by_count = dict(
-            sorted(license_counter.items(), key=operator.itemgetter(1), reverse=True)
+            sorted(license_counter.items(),
+                   key=operator.itemgetter(1), reverse=True)
         )
 
         # Remove the "no licenses" entry from the top list
@@ -1035,12 +1043,14 @@ class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
         include_parent = current_dir and current_dir != root_directory
         if include_parent:
             tree.append(
-                get_node(name="..", is_dir=True, location=str(Path(current_dir).parent))
+                get_node(name="..", is_dir=True,
+                         location=str(Path(current_dir).parent))
             )
 
         for resources, is_dir in [(sorted(directories), True), (sorted(files), False)]:
             tree.extend(
-                get_node(name=name, is_dir=is_dir, location=f"{current_dir}/{name}")
+                get_node(name=name, is_dir=is_dir,
+                         location=f"{current_dir}/{name}")
                 for name in resources
             )
 
@@ -1112,7 +1122,8 @@ class ProjectDeleteView(ConditionalLoginRequired, generic.DeleteView):
             messages.error(self.request, error)
             return redirect(project)
 
-        messages.success(self.request, self.success_message.format(project.name))
+        messages.success(
+            self.request, self.success_message.format(project.name))
         return response_redirect
 
 
@@ -1144,7 +1155,8 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
                 count += 1
 
         if count:
-            messages.success(self.request, self.get_success_message(action, count))
+            messages.success(
+                self.request, self.get_success_message(action, count))
 
         return HttpResponseRedirect(self.success_url)
 
@@ -1157,7 +1169,8 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
             getattr(project, action)(**action_kwargs)
             return True
         except Project.DoesNotExist:
-            messages.error(self.request, f"Project {project_uuid} does not exist.")
+            messages.error(
+                self.request, f"Project {project_uuid} does not exist.")
         except RunInProgressError as error:
             messages.error(self.request, str(error))
         except (AttributeError, ValidationError):
@@ -1179,7 +1192,8 @@ class ProjectResetView(ConditionalLoginRequired, generic.DeleteView):
         except RunInProgressError as error:
             messages.error(self.request, error)
         else:
-            messages.success(self.request, self.success_message.format(project.name))
+            messages.success(
+                self.request, self.success_message.format(project.name))
 
         return redirect(project)
 
@@ -1250,7 +1264,8 @@ def delete_input_view(request, slug, input_uuid):
     if not project.can_change_inputs:
         raise Http404("Inputs cannot be deleted on this project.")
 
-    input_source = get_object_or_404(InputSource, uuid=input_uuid, project=project)
+    input_source = get_object_or_404(
+        InputSource, uuid=input_uuid, project=project)
     input_source.delete()
     messages.success(request, f"Input {input_source.filename} deleted.")
 
@@ -1336,7 +1351,8 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
         else:
             raise Http404("Format not supported.")
 
-        filename = output.safe_filename(f"scancodeio_{project.name}_{output_file.name}")
+        filename = output.safe_filename(
+            f"scancodeio_{project.name}_{output_file.name}")
 
         return FileResponse(
             output_file.open("rb"),
@@ -1352,7 +1368,8 @@ class ProjectRelatedViewMixin:
     def get_project(self):
         if not getattr(self, "project", None):
             project_qs = Project.objects.only(*self.only_fields)
-            self.project = get_object_or_404(project_qs, slug=self.kwargs["slug"])
+            self.project = get_object_or_404(
+                project_qs, slug=self.kwargs["slug"])
         return self.project
 
     def get_queryset(self):
@@ -1786,7 +1803,8 @@ class CodebaseResourceDetailsView(
 
         for entry in getattr(self.object, field_name):
             matches = entry.get("matches", [])
-            annotations.extend(self.get_annotations(matches, "license_expression"))
+            annotations.extend(self.get_annotations(
+                matches, "license_expression"))
 
         return annotations
 
@@ -1801,7 +1819,8 @@ class CodebaseResourceDetailsView(
             message = "WARNING: This resource is not available on disk."
             messages.warning(self.request, message)
 
-        license_annotations = self.get_license_annotations("license_detections")
+        license_annotations = self.get_license_annotations(
+            "license_detections")
         context["detected_values"] = {
             "licenses": license_annotations,
         }
@@ -1814,7 +1833,8 @@ class CodebaseResourceDetailsView(
             ("urls", "url"),
         ]
         for field_name, value_key in fields:
-            annotations = self.get_annotations(getattr(resource, field_name), value_key)
+            annotations = self.get_annotations(
+                getattr(resource, field_name), value_key)
             context["detected_values"][field_name] = annotations
 
         return context
@@ -2043,7 +2063,8 @@ class DiscoveredDependencyDetailsView(
         ),
         Prefetch(
             "datafile_resource",
-            queryset=CodebaseResource.objects.only("path", "name", "project_id"),
+            queryset=CodebaseResource.objects.only(
+                "path", "name", "project_id"),
         ),
     ]
     tabset = {
@@ -2092,7 +2113,8 @@ class DiscoveredDependencyDetailsView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["dependency_data"] = DiscoveredDependencySerializer(self.object).data
+        context["dependency_data"] = DiscoveredDependencySerializer(
+            self.object).data
         return context
 
 
@@ -2302,7 +2324,8 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
 
     def get_dependency_tree(self, project):
         root_packages = project.discoveredpackages.root_packages().order_by("name")
-        project_children = [self.get_node(package) for package in root_packages]
+        project_children = [self.get_node(package)
+                            for package in root_packages]
 
         project_tree = {
             "name": project.name,

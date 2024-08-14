@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from django.contrib import admin
 from django.urls import reverse
@@ -55,9 +55,11 @@ class ProjectAdmin(ScanPipeBaseAdmin):
     ordering = ["-created_date"]
     fieldsets = [
         ("", {"fields": ("name", "slug", "notes", "extra_data", "settings", "uuid")}),
-        ("Links", {"fields": ("packages_link", "dependencies_link", "resources_link")}),
+        ("Links", {"fields": ("packages_link",
+         "dependencies_link", "resources_link")}),
     ]
-    readonly_fields = ["packages_link", "dependencies_link", "resources_link", "uuid"]
+    readonly_fields = ["packages_link",
+                       "dependencies_link", "resources_link", "uuid"]
 
     def get_queryset(self, request):
         return (
@@ -116,7 +118,8 @@ class CodebaseResourceAdmin(ScanPipeBaseAdmin):
     search_fields = [
         "path",
     ]
-    list_filter = ["project", "type", "programming_language", "compliance_alert"]
+    list_filter = ["project", "type",
+                   "programming_language", "compliance_alert"]
     ordering = ["project", "path"]
 
 

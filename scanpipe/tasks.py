@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import logging
 
@@ -46,7 +46,8 @@ def report_failure(job, connection, type, value, traceback):
     try:
         run = get_run_instance(run_pk=job.id)
     except Run.DoesNotExist:
-        info(f"FAILURE to get the Run instance with job.id={job.id}", "Unknown")
+        info(
+            f"FAILURE to get the Run instance with job.id={job.id}", "Unknown")
         return
 
     run.set_task_ended(exitcode=1, output=f"value={value} trace={traceback}")
@@ -62,7 +63,8 @@ def execute_pipeline_task(run_pk):
     run.set_scancodeio_version()
     run.set_task_started(run_pk)
 
-    info(f'Run pipeline: "{run.pipeline_name}" on project: "{project.name}"', run_pk)
+    info(
+        f'Run pipeline: "{run.pipeline_name}" on project: "{project.name}"', run_pk)
 
     pipeline = run.make_pipeline_instance()
     exitcode, output = pipeline.execute()
