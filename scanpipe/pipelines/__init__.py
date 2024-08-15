@@ -204,7 +204,7 @@ class ProjectPipeline(CommonStepsMixin, BasePipeline):
         self.project.add_error(
             model=self.pipeline_name,
             exception=exception,
-            resource=resource,
+            object_instance=resource,
         )
 
     @contextmanager

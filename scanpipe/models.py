@@ -1231,8 +1231,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         model="",
         details=None,
         exception=None,
-        resource=None,
-        package=None,
+        object_instance=None,
     ):
         """
         Create a ProjectMessage record for this Project.
@@ -1255,13 +1254,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         details = details or {}
 
-        # Do not change the following field names as those have special behavior in
-        # templates.
-        if resource:
-            details["resource_path"] = resource.path
-        if package:
+        # The following field names have a special behavior in templates.
+        if isinstance(object_instance, CodebaseResource):
+            details["resource_path"] = object_instance.path
+
+        elif isinstance(object_instance, DiscoveredPackage):
             details.update(
-                {"package_url": package.package_url, "package_uuid": package.uuid}
+                {
+                    "package_url": object_instance.package_url,
+                    "package_uuid": object_instance.uuid,
+                }
             )
 
         return ProjectMessage.objects.create(
@@ -1279,13 +1281,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         model="",
         details=None,
         exception=None,
-        resource=None,
-        package=None,
+        object_instance=None,
     ):
         """Create an INFO ProjectMessage record for this project."""
         severity = ProjectMessage.Severity.INFO
         return self.add_message(
-            severity, description, model, details, exception, resource, package
+            severity,
+            description,
+            model,
+            details,
+            exception,
+            object_instance,
         )
 
     def add_warning(
@@ -1294,13 +1300,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         model="",
         details=None,
         exception=None,
-        resource=None,
-        package=None,
+        object_instance=None,
     ):
         """Create a WARNING ProjectMessage record for this project."""
         severity = ProjectMessage.Severity.WARNING
         return self.add_message(
-            severity, description, model, details, exception, resource, package
+            severity,
+            description,
+            model,
+            details,
+            exception,
+            object_instance,
         )
 
     def add_error(
@@ -1309,13 +1319,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         model="",
         details=None,
         exception=None,
-        resource=None,
-        package=None,
+        object_instance=None,
     ):
         """Create an ERROR ProjectMessage record using for this project."""
         severity = ProjectMessage.Severity.ERROR
         return self.add_message(
-            severity, description, model, details, exception, resource, package
+            severity,
+            description,
+            model,
+            details,
+            exception,
+            object_instance,
         )
 
     def get_absolute_url(self):
@@ -1608,7 +1622,7 @@ class SaveProjectMessageMixin:
             model=self.__class__,
             details=model_to_dict(self),
             exception=exception,
-            resource=resource,
+            object_instance=resource,
         )
 
     def add_errors(self, exceptions):
@@ -2831,7 +2845,7 @@ class CodebaseResource(
                 model=DiscoveredPackage,
                 details=package_data,
                 exception=exception,
-                resource=self,
+                object_instance=self,
             )
         else:
             self.add_package(package)
