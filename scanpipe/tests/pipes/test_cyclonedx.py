@@ -167,6 +167,7 @@ class ScanPipeCycloneDXPipesTest(TestCase):
             "extracted_license_statement": "OFL-1.1\nApache-2.0",
             "version": "0.10.2",
             "extra_data": {
+                "bom_ref": "pkg:pypi/toml@0.10.2?extension=tar.gz",
                 "externalReferences": {
                     "advisories": ["https://cyclonedx.org/advisories"],
                     "bom": ["https://cyclonedx.org/bom"],
@@ -197,6 +198,22 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         package_data = cyclonedx.cyclonedx_component_to_package_data(component)
         expected = {"name": "a:/b:name", "version": "1.0", "type": "type"}
         self.assertEqual(expected, package_data)
+
+    def test_scanpipe_cyclonedx_get_bom_instance_from_file(self):
+        input_location = self.data / "missing_schema.json"
+        with self.assertRaises(ValueError) as cm:
+            cyclonedx.get_bom_instance_from_file(input_location)
+        expected_error = (
+            'CycloneDX document "missing_schema.json" is not valid:\n'
+            "Additional properties are not allowed ('invalid_entry' was unexpected)"
+        )
+        self.assertIn(expected_error, str(cm.exception))
+
+        input_location = self.data / "laravel-7.12.0" / "bom.1.4.json"
+        bom = cyclonedx.get_bom_instance_from_file(input_location)
+        self.assertIsInstance(bom, Bom)
+        self.assertEqual(62, len(bom.components))
+        self.assertEqual(63, len(bom.dependencies))
 
     def test_scanpipe_cyclonedx_resolve_cyclonedx_packages(self):
         input_location = self.data / "missing_schema.json"
@@ -236,12 +253,28 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         packages = cyclonedx.resolve_cyclonedx_packages(input_location)
         self.assertEqual(62, len(packages))
 
+    def test_scanpipe_cyclonedx_resolve_cyclonedx_packages_dependencies(self):
+        input_location = self.data / "laravel-7.12.0" / "bom.1.4.json"
+        packages = cyclonedx.resolve_cyclonedx_packages(input_location)
+        self.assertEqual(62, len(packages))
+
+        extra_data = packages[0]["extra_data"]
+        self.assertEqual("asm89/stack-cors-1.3.0.0", extra_data["bom_ref"])
+        expected_depends_on = [
+            "symfony/http-foundation-5.4.16.0",
+            "symfony/http-kernel-5.4.16.0",
+        ]
+        self.assertEqual(expected_depends_on, extra_data["depends_on"])
+
     def test_scanpipe_cyclonedx_resolve_cyclonedx_packages_pre_validation(self):
         # This SBOM includes multiple deserialization issues that are "fixed"
         # by the pre-validation cleanup.
         input_location = self.data / "broken_sbom.json"
         package_data = cyclonedx.resolve_cyclonedx_packages(input_location)
-        self.assertEqual([{"name": "asgiref"}], package_data)
+        self.assertEqual(
+            [{"extra_data": {"bom_ref": "pkg:pypi/asgiref@3.3.0"}, "name": "asgiref"}],
+            package_data,
+        )
 
     def test_scanpipe_cyclonedx_cleanup_components_properties(self):
         cyclonedx_document_json = {

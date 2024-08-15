@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 # Python version can be specified with `$ PYTHON_EXE=python3.x make conf`
 PYTHON_EXE?=python3
@@ -68,10 +68,10 @@ doc8:
 	@${ACTIVATE} doc8 --max-line-length 100 --ignore-path docs/_build/ --quiet docs/
 
 valid:
-	@echo "-> Run Ruff linter"
-	@${ACTIVATE} ruff check --fix
 	@echo "-> Run Ruff format"
 	@${ACTIVATE} ruff format
+	@echo "-> Run Ruff linter"
+	@${ACTIVATE} ruff check --fix
 
 check:
 	@echo "-> Run Ruff linter validation (pycodestyle, bandit, isort, and more)"
@@ -86,7 +86,7 @@ check-deploy:
 
 clean:
 	@echo "-> Clean the Python env"
-	rm -rf .venv/ .*_cache/ *.egg-info/ build/ dist/
+	rm -rf .venv/ .*cache/ *.egg-info/ build/ dist/
 	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
 
 migrate:
@@ -125,6 +125,10 @@ test:
 	@echo "-> Run the test suite"
 	${MANAGE} test --noinput
 
+fasttest:
+	@echo "-> Run the test suite without the PipelinesIntegrationTest"
+	${MANAGE} test --noinput --exclude-tag slow
+
 worker:
 	${MANAGE} rqworker --worker-class scancodeio.worker.ScanCodeIOWorker --queue-class scancodeio.worker.ScanCodeIOQueue --verbosity 2
 
@@ -152,4 +156,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run test docs bump docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run test fasttest docs bump docker-images offline-package

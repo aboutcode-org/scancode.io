@@ -237,7 +237,7 @@ Using cURL to provide download URLs:
     content_type="Content-Type: application/json"
     data='{
         "input_urls": [
-            "https://github.com/nexB/debian-inspector/archive/refs/tags/v21.5.25.zip",
+            "https://github.com/aboutcode-org/debian-inspector/archive/refs/tags/v21.5.25.zip",
             "https://github.com/package-url/packageurl-python/archive/refs/tags/0.9.4.tar.gz"
        ]
     }'

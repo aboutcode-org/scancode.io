@@ -65,6 +65,7 @@ from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.models import RunNotAllowedToStart
 from scanpipe.models import UUIDTaggedItem
+from scanpipe.models import WebhookSubscription
 from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.models import get_project_work_directory
 from scanpipe.models import normalize_package_url_data
@@ -174,8 +175,11 @@ class ScanPipeModelsTest(TestCase):
             "scanpipe.DiscoveredDependency": 0,
             "scanpipe.DiscoveredPackage": 1,
             "scanpipe.DiscoveredPackage_codebase_resources": 1,
+            "scanpipe.InputSource": 0,
             "scanpipe.ProjectMessage": 0,
             "scanpipe.Run": 1,
+            "scanpipe.WebhookDelivery": 0,
+            "scanpipe.WebhookSubscription": 0,
         }
         self.assertEqual(expected, delete_log)
         # Make sure the labels were deleted too.
@@ -235,7 +239,9 @@ class ScanPipeModelsTest(TestCase):
         new_file_path1.touch()
         run1 = self.project1.add_pipeline("analyze_docker_image", selected_groups=["g"])
         run2 = self.project1.add_pipeline("find_vulnerabilities")
-        subscription1 = self.project1.add_webhook_subscription("http://domain.url")
+        subscription1 = self.project1.add_webhook_subscription(
+            target_url="http://domain.url"
+        )
 
         cloned_project = self.project1.clone("cloned project")
         self.assertIsInstance(cloned_project, Project)
@@ -535,7 +541,7 @@ class ScanPipeModelsTest(TestCase):
 
     def test_scanpipe_project_model_add_webhook_subscription(self):
         self.assertEqual(0, self.project1.webhooksubscriptions.count())
-        self.project1.add_webhook_subscription("https://localhost")
+        self.project1.add_webhook_subscription(target_url="https://localhost")
         self.assertEqual(1, self.project1.webhooksubscriptions.count())
 
     def test_scanpipe_project_model_get_next_run(self):
@@ -591,6 +597,19 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_project_related_queryset_get_or_none(self):
         self.assertIsNone(CodebaseResource.objects.get_or_none(path="path/"))
         self.assertIsNone(DiscoveredPackage.objects.get_or_none(name="name"))
+
+    def test_scanpipe_project_related_model_clone(self):
+        subscription1 = self.project1.add_webhook_subscription(
+            target_url="http://domain.url"
+        )
+
+        new_project = Project.objects.create(name="New Project")
+        subscription1.clone(to_project=new_project)
+
+        cloned_subscription = new_project.webhooksubscriptions.get()
+        subscription1 = self.project1.webhooksubscriptions.get()
+        self.assertEqual(new_project, cloned_subscription.project)
+        self.assertNotEqual(cloned_subscription.pk, subscription1.pk)
 
     def test_scanpipe_project_get_codebase_config_directory(self):
         self.assertIsNone(self.project1.get_codebase_config_directory())
@@ -854,7 +873,9 @@ class ScanPipeModelsTest(TestCase):
             run1.set_scancodeio_version()
         self.assertEqual("v32.3.0-28-g0000000", run1.scancodeio_version)
 
-        expected = "https://github.com/nexB/scancode.io/compare/0000000..ffffffff"
+        expected = (
+            "https://github.com/aboutcode-org/scancode.io/compare/0000000..ffffffff"
+        )
         with mock.patch("scancodeio.__version__", "v31.0.0-1-gffffffff"):
             self.assertEqual(expected, run1.get_diff_url())
 
@@ -1199,8 +1220,12 @@ class ScanPipeModelsTest(TestCase):
 
     @mock.patch("scanpipe.models.WebhookSubscription.deliver")
     def test_scanpipe_run_model_deliver_project_subscriptions(self, mock_deliver):
-        self.project1.add_webhook_subscription("https://localhost")
+        self.project1.add_webhook_subscription(target_url="https://localhost")
         run1 = self.create_run()
+
+        run1.deliver_project_subscriptions(has_next_run=True)
+        mock_deliver.assert_not_called()
+
         run1.deliver_project_subscriptions()
         mock_deliver.assert_called_once_with(pipeline_run=run1)
 
@@ -1818,6 +1843,23 @@ class ScanPipeModelsTest(TestCase):
         self.assertNotIn(p1, DiscoveredPackage.objects.vulnerable())
         self.assertIn(p2, DiscoveredPackage.objects.vulnerable())
 
+    def test_scanpipe_discovered_package_queryset_dependency_methods(self):
+        project = Project.objects.create(name="project")
+        a = make_package(project, "pkg:type/a")
+        b = make_package(project, "pkg:type/b")
+        c = make_package(project, "pkg:type/c")
+        z = make_package(project, "pkg:type/z")
+        # Project -> A -> B -> C
+        # Project -> Z
+        make_dependency(project, for_package=a, resolved_to_package=b)
+        make_dependency(project, for_package=b, resolved_to_package=c)
+
+        project_packages_qs = project.discoveredpackages.order_by("name")
+        root_packages = project_packages_qs.root_packages()
+        self.assertEqual([a, z], list(root_packages))
+        non_root_packages = project_packages_qs.non_root_packages()
+        self.assertEqual([b, c], list(non_root_packages))
+
     @skipIf(sys.platform != "linux", "Ordering differs on macOS.")
     def test_scanpipe_codebase_resource_model_walk_method(self):
         fixtures = self.data / "asgiref" / "asgiref-3.3.0_walk_test_fixtures.json"
@@ -1910,36 +1952,54 @@ class ScanPipeModelsTest(TestCase):
         result = [r.path for r in resource1.walk()]
         self.assertEqual(expected_paths, result)
 
+    def test_scanpipe_webhook_subscription_model_create(self):
+        webhook = WebhookSubscription.objects.create(
+            project=self.project1,
+            target_url="https://url",
+        )
+        self.assertEqual("https://url", webhook.target_url)
+        self.assertFalse(webhook.trigger_on_each_run)
+        self.assertFalse(webhook.include_summary)
+        self.assertFalse(webhook.include_results)
+        self.assertTrue(webhook.is_active)
+
     @mock.patch("requests.post")
     def test_scanpipe_webhook_subscription_model_deliver_method(self, mock_post):
-        webhook = self.project1.add_webhook_subscription("https://localhost")
-        self.assertFalse(webhook.delivered)
+        webhook = self.project1.add_webhook_subscription(target_url="https://url")
         run1 = self.create_run()
 
         mock_post.side_effect = RequestException("Error from exception")
-        self.assertFalse(webhook.deliver(pipeline_run=run1))
-        webhook.refresh_from_db()
-        self.assertEqual("Error from exception", webhook.delivery_error)
-        self.assertFalse(webhook.delivered)
-        self.assertFalse(webhook.success)
+        webhook_delivery = webhook.deliver(pipeline_run=run1)
+        self.assertEqual(run1, webhook_delivery.run)
+        self.assertEqual("", webhook_delivery.response_text)
+        self.assertIsNone(webhook_delivery.response_status_code)
+        self.assertEqual("Error from exception", webhook_delivery.delivery_error)
+        self.assertFalse(webhook_delivery.delivered)
+        self.assertFalse(webhook_delivery.success)
 
         mock_post.side_effect = None
         mock_post.return_value = mock.Mock(status_code=404, text="text")
-        self.assertTrue(webhook.deliver(pipeline_run=run1))
-        webhook.refresh_from_db()
-        self.assertTrue(webhook.delivered)
-        self.assertFalse(webhook.success)
-        self.assertEqual("text", webhook.response_text)
+        webhook_delivery = webhook.deliver(pipeline_run=run1)
+        self.assertEqual(run1, webhook_delivery.run)
+        self.assertEqual("text", webhook_delivery.response_text)
+        self.assertEqual(404, webhook_delivery.response_status_code)
+        self.assertEqual("", webhook_delivery.delivery_error)
+        self.assertTrue(webhook_delivery.delivered)
+        self.assertFalse(webhook_delivery.success)
 
         mock_post.return_value = mock.Mock(status_code=200, text="text")
-        self.assertTrue(webhook.deliver(pipeline_run=run1))
-        webhook.refresh_from_db()
-        self.assertTrue(webhook.delivered)
-        self.assertTrue(webhook.success)
-        self.assertEqual("text", webhook.response_text)
+        webhook_delivery = webhook.deliver(pipeline_run=run1)
+        self.assertEqual(run1, webhook_delivery.run)
+        self.assertEqual("text", webhook_delivery.response_text)
+        self.assertEqual(200, webhook_delivery.response_status_code)
+        self.assertEqual("", webhook_delivery.delivery_error)
+        self.assertTrue(webhook_delivery.delivered)
+        self.assertTrue(webhook_delivery.success)
+
+        self.assertEqual(3, webhook.deliveries.count())
 
     def test_scanpipe_webhook_subscription_model_get_payload(self):
-        webhook = self.project1.add_webhook_subscription("https://localhost")
+        webhook = self.project1.add_webhook_subscription(target_url="https://localhost")
         run1 = self.create_run()
         payload = webhook.get_payload(run1)
 
@@ -1998,6 +2058,13 @@ class ScanPipeModelsTest(TestCase):
         del payload["project"]["created_date"]
         del payload["run"]["created_date"]
         self.assertDictEqual(expected, payload)
+
+        webhook.include_summary = True
+        webhook.include_results = True
+        webhook.save()
+        payload = webhook.get_payload(run1)
+        self.assertIn("summary", payload)
+        self.assertIn("results", payload)
 
     def test_scanpipe_discovered_package_model_extract_purl_data(self):
         package_data = {}
@@ -2275,6 +2342,7 @@ class ScanPipeModelsTest(TestCase):
             "resolved_from_dependencies",
             "parent_packages",
             "children_packages",
+            "notes",
         ]
 
         package_data_only_field = ["datasource_id", "dependencies"]

@@ -39,6 +39,7 @@ from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.pipelines import CommonStepsMixin
 from scanpipe.pipelines import InputFilesError
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import deploy_to_develop
@@ -52,6 +53,7 @@ from scanpipe.tests import FIXTURES_REGEN
 from scanpipe.tests import make_package
 from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
+from scanpipe.tests.pipelines.download_inputs import DownloadInput
 from scanpipe.tests.pipelines.profile_step import ProfileStep
 from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
 from scanpipe.tests.pipelines.with_groups import WithGroups
@@ -152,10 +154,8 @@ class ScanPipePipelinesTest(TestCase):
 
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("do_nothing")
+        run.update(selected_steps=["step2", "not_existing_step"])
         pipeline = run.make_pipeline_instance()
-
-        run.selected_steps = ["step2", "not_existing_step"]
-        run.save()
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode)
@@ -173,15 +173,19 @@ class ScanPipePipelinesTest(TestCase):
 
     def test_scanpipe_pipeline_class_download_inputs_attribute(self):
         project1 = Project.objects.create(name="Analysis")
-        run = project1.add_pipeline("do_nothing")
+        run = project1.add_pipeline("download_inputs")
         pipeline = run.make_pipeline_instance()
         self.assertTrue(pipeline.download_inputs)
+        expected = (CommonStepsMixin.download_missing_inputs,)
+        self.assertEqual(expected, pipeline.get_initial_steps())
+        expected = (CommonStepsMixin.download_missing_inputs, DownloadInput.step1)
+        self.assertEqual(expected, pipeline.get_steps())
         pipeline.execute()
         self.assertIn("Step [download_missing_inputs]", run.log)
 
-        run = project1.add_pipeline("do_nothing")
+        run = project1.add_pipeline("profile_step")
         pipeline = run.make_pipeline_instance()
-        pipeline.download_inputs = False
+        self.assertFalse(pipeline.download_inputs)
         pipeline.execute()
         self.assertNotIn("Step [download_missing_inputs]", run.log)
 
@@ -1415,6 +1419,24 @@ class PipelinesIntegrationTest(TestCase):
                 package.declared_license_expression,
             )
             self.assertEqual(expected["filename"], package.filename)
+
+    def test_scanpipe_load_sbom_pipeline_cyclonedx_with_dependencies_integration(self):
+        pipeline_name = "load_sbom"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data / "cyclonedx" / "laravel-7.12.0" / "bom.1.4.json"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(62, project1.discoveredpackages.count())
+        self.assertEqual(112, project1.discovereddependencies.count())
+        dependency = project1.discovereddependencies.all()[0]
+        self.assertEqual("bom.1.4.json", str(dependency.datafile_resource))
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("uuid.uuid4")

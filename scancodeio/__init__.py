@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import os
 import sys
@@ -33,7 +33,7 @@ VERSION = "34.7.1"
 PROJECT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = PROJECT_DIR.parent
 SCAN_NOTICE = PROJECT_DIR.joinpath("scan.NOTICE").read_text()
-GITHUB_URL = "https://github.com/nexB/scancode.io"
+GITHUB_URL = "https://github.com/aboutcode-org/scancode.io"
 
 
 def get_version(version):
@@ -115,7 +115,8 @@ def combined_run():
     os.environ.setdefault("SECRET_KEY", secret_key)
     os.environ.setdefault("SCANCODEIO_DB_ENGINE", "django.db.backends.sqlite3")
     os.environ.setdefault("SCANCODEIO_DB_NAME", "scancodeio.sqlite3")
-    os.environ.setdefault("SCANCODEIO_PROCESSES", "0")  # Disable multiprocessing
+    # Disable multiprocessing
+    os.environ.setdefault("SCANCODEIO_PROCESSES", "0")
 
     sys.argv.insert(1, "run")
     execute_from_command_line(sys.argv)

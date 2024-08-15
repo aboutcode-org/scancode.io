@@ -13,6 +13,40 @@ v34.7.2 (unreleased)
   related to the Pipeline run.
   https://github.com/nexB/scancode.io/pull/1330
 
+- Expands on the existing WebhookSubscription model by adding a few fields to
+  configure the behavior of the Webhooks, and moves some of the fields to a new
+  WebhookDelivery model, which captures the results of a WebhookSubscription
+  "delivery".
+  https://github.com/nexB/scancode.io/issues/1325
+
+- Add support for creating dependencies using the ``load_sboms`` pipeline on CycloneDX
+  SBOM inputs.
+  https://github.com/nexB/scancode.io/issues/1145
+
+- Add a new Dependency view that renders the project dependencies as a tree.
+  https://github.com/nexB/scancode.io/issues/1145
+
+- The ``purldb-scan-worker`` command has been updated to send project results
+  back using the Project webhook subscriptions. This allows us to not have the
+  main task loop to monitor a single project run for completion in order to
+  return data, and allows us to have multiple scan projects active at once while
+  we use ``purldb-scan-worker``. A new option ``--max-concurrent-projects`` has
+  been added to set the number of purldb packages that can be requested and
+  processed at once.
+  https://github.com/nexB/scancode.io/issues/1287
+
+- Add notes field on the DiscoveredPackage model.
+  https://github.com/nexB/scancode.io/issues/1342
+
+- Fix an issue with conflicting groups checkbox id in the Add pipeline modal.
+  https://github.com/nexB/scancode.io/issues/1353
+
+- Move the BasePipeline class to a new `aboutcode.pipeline` module.
+  https://github.com/nexB/scancode.io/issues/1351
+
+- Update link references of ownership from nexB to aboutcode-org
+  https://github.com/aboutcode-org/scancode.io/issues/1350
+
 v34.7.1 (2024-07-15)
 --------------------
 

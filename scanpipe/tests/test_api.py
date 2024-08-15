@@ -41,6 +41,7 @@ from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.api.serializers import ProjectMessageSerializer
+from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import get_model_serializer
 from scanpipe.api.serializers import get_serializer_fields
 from scanpipe.models import CodebaseRelation
@@ -493,6 +494,48 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(data["labels"], sorted(response.data["labels"]))
         project = Project.objects.get(name=data["name"])
         self.assertEqual(data["labels"], sorted(project.labels.names()))
+
+    def test_scanpipe_api_project_create_webhooks(self):
+        data = {
+            "name": "Project1",
+            "webhooks": [
+                {
+                    "target_url": "https://1.com",
+                    "trigger_on_each_run": False,
+                    "include_summary": False,
+                    "include_results": False,
+                    "is_active": False,
+                },
+                {
+                    "target_url": "https://2.com",
+                    "trigger_on_each_run": True,
+                    "include_summary": True,
+                    "include_results": True,
+                    "is_active": True,
+                },
+            ],
+        }
+
+        serializer = ProjectSerializer(data=data)
+        self.assertTrue(serializer.is_valid(), msg=serializer.errors)
+
+        response = self.csrf_client.post(self.project_list_url, data, format="json")
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+
+        project = Project.objects.get(name=data["name"])
+        # Ordered by -created_date by default
+        webhook_subscriptions = project.webhooksubscriptions.all()
+        self.assertEqual("https://2.com", webhook_subscriptions[0].target_url)
+        self.assertTrue(webhook_subscriptions[0].trigger_on_each_run)
+        self.assertTrue(webhook_subscriptions[0].include_summary)
+        self.assertTrue(webhook_subscriptions[0].include_results)
+        self.assertTrue(webhook_subscriptions[0].is_active)
+
+        self.assertEqual("https://1.com", webhook_subscriptions[1].target_url)
+        self.assertFalse(webhook_subscriptions[1].trigger_on_each_run)
+        self.assertFalse(webhook_subscriptions[1].include_summary)
+        self.assertFalse(webhook_subscriptions[1].include_results)
+        self.assertFalse(webhook_subscriptions[1].is_active)
 
     def test_scanpipe_api_project_results_generator(self):
         results_generator = JSONResultsGenerator(self.project1)
@@ -1005,7 +1048,7 @@ class ScanPipeAPITest(TransactionTestCase):
             get_model_serializer(None)
 
     def test_scanpipe_api_serializer_get_serializer_fields(self):
-        self.assertEqual(48, len(get_serializer_fields(DiscoveredPackage)))
+        self.assertEqual(49, len(get_serializer_fields(DiscoveredPackage)))
         self.assertEqual(14, len(get_serializer_fields(DiscoveredDependency)))
         self.assertEqual(37, len(get_serializer_fields(CodebaseResource)))
         self.assertEqual(5, len(get_serializer_fields(CodebaseRelation)))

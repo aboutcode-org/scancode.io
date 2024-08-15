@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
 import logging
@@ -32,9 +32,8 @@ from packageurl import PackageURL
 from univers.version_range import RANGE_CLASS_BY_SCHEMES
 from univers.version_range import InvalidVersionRange
 
-from scanpipe.pipes import LoopProgress
+from aboutcode.pipeline import LoopProgress
 from scanpipe.pipes import _clean_package_data
-from scanpipe.pipes import poll_until_success
 
 
 class PurlDBException(Exception):
@@ -426,38 +425,6 @@ def get_next_download_url(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
         return response
 
 
-def send_results_to_purldb(
-    scannable_uri_uuid,
-    scan_results_location,
-    scan_summary_location,
-    project_extra_data,
-    timeout=DEFAULT_TIMEOUT,
-    api_url=PURLDB_API_URL,
-):
-    """
-    Send project results to purldb for the package handeled by the ScannableURI
-    with uuid of `scannable_uri_uuid`
-    """
-    with open(scan_results_location, "rb") as scan_results_file:
-        with open(scan_summary_location, "rb") as scan_summary_file:
-            data = {
-                "scannable_uri_uuid": scannable_uri_uuid,
-                "scan_status": "scanned",
-                "project_extra_data": json.dumps(project_extra_data),
-            }
-            files = {
-                "scan_results_file": scan_results_file,
-                "scan_summary_file": scan_summary_file,
-            }
-            response = request_post(
-                url=f"{api_url}scan_queue/update_status/",
-                timeout=timeout,
-                data=data,
-                files=files,
-            )
-    return response
-
-
 def update_status(
     scannable_uri_uuid,
     status,
@@ -467,12 +434,11 @@ def update_status(
 ):
     """Update the status of a ScannableURI on a PurlDB scan queue"""
     data = {
-        "scannable_uri_uuid": scannable_uri_uuid,
         "scan_status": status,
         "scan_log": scan_log,
     }
     response = request_post(
-        url=f"{api_url}scan_queue/update_status/",
+        url=f"{api_url}scan_queue/{scannable_uri_uuid}/update_status/",
         timeout=timeout,
         data=data,
     )
@@ -486,18 +452,29 @@ def create_project_name(download_url, scannable_uri_uuid):
     return f"{slugify(download_url)}-{scannable_uri_uuid[0:8]}"
 
 
-def poll_run_status(project, sleep=10):
+def check_project_run_statuses(project, logger=None):
     """
-    Poll the status of all runs of `project`. Raise a PurlDBException with a
-    message containing the log of the run if the run has stopped, failed, or
-    gone stale, otherwise return None.
+    If any of the runs of this Project has failed, stopped, or gone stale,
+    update the status of the Scannable URI associated with this Project to
+    `failed` and send back a log of the failed runs.
     """
-    runs = project.runs.all()
-    for run in runs:
-        if not poll_until_success(check=get_run_status, sleep=sleep, run=run):
-            status = get_run_status(run)
-            msg = f"Run ended with status {status}:\n\n{run.log}"
-            raise PurlDBException(msg)
+    failed_runs = project.runs.failed()
+    if failed_runs.exists():
+        failure_msgs = []
+        for failed_run in failed_runs:
+            msg = f"{failed_run.pipeline_name} failed:\n\n{failed_run.log}\n"
+            failure_msgs.append(msg)
+        failure_msg = "\n".join(failure_msgs)
+
+        if logger:
+            logger(failure_msg)
+
+        scannable_uri_uuid = project.extra_data.get("scannable_uri_uuid")
+        update_status(
+            scannable_uri_uuid=scannable_uri_uuid,
+            status="failed",
+            scan_log=failure_msg,
+        )
 
 
 def get_run_status(run, **kwargs):
