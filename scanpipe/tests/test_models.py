@@ -2436,6 +2436,29 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue("e" in paths)
         self.assertTrue("a" in paths)
 
+    def test_scanpipe_model_codebase_resource_compliance_alert_queryset_mixin(self):
+        severities = CodebaseResource.Compliance
+        make_resource_file(self.project1, path="none")
+        make_resource_file(self.project1, path="ok", compliance_alert=severities.OK)
+        warning = make_resource_file(
+            self.project1, path="warning", compliance_alert=severities.WARNING
+        )
+        error = make_resource_file(
+            self.project1, path="error", compliance_alert=severities.ERROR
+        )
+        missing = make_resource_file(
+            self.project1, path="missing", compliance_alert=severities.MISSING
+        )
+
+        qs = CodebaseResource.objects.order_by("path")
+        self.assertQuerySetEqual(qs.compliance_issues(severities.ERROR), [error])
+        self.assertQuerySetEqual(
+            qs.compliance_issues(severities.WARNING), [error, warning]
+        )
+        self.assertQuerySetEqual(
+            qs.compliance_issues(severities.MISSING), [error, missing, warning]
+        )
+
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
     """
