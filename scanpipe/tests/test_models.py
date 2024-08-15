@@ -873,7 +873,9 @@ class ScanPipeModelsTest(TestCase):
             run1.set_scancodeio_version()
         self.assertEqual("v32.3.0-28-g0000000", run1.scancodeio_version)
 
-        expected = "https://github.com/nexB/scancode.io/compare/0000000..ffffffff"
+        expected = (
+            "https://github.com/aboutcode-org/scancode.io/compare/0000000..ffffffff"
+        )
         with mock.patch("scancodeio.__version__", "v31.0.0-1-gffffffff"):
             self.assertEqual(expected, run1.get_diff_url())
 
@@ -2360,6 +2362,7 @@ class ScanPipeModelsTest(TestCase):
             "resolved_from_dependencies",
             "parent_packages",
             "children_packages",
+            "notes",
         ]
 
         package_data_only_field = ["datasource_id", "dependencies"]
@@ -2452,6 +2455,29 @@ class ScanPipeModelsTest(TestCase):
         paths = [str(resource.path) for resource in project.codebaseresources.elfs()]
         self.assertTrue("e" in paths)
         self.assertTrue("a" in paths)
+
+    def test_scanpipe_model_codebase_resource_compliance_alert_queryset_mixin(self):
+        severities = CodebaseResource.Compliance
+        make_resource_file(self.project1, path="none")
+        make_resource_file(self.project1, path="ok", compliance_alert=severities.OK)
+        warning = make_resource_file(
+            self.project1, path="warning", compliance_alert=severities.WARNING
+        )
+        error = make_resource_file(
+            self.project1, path="error", compliance_alert=severities.ERROR
+        )
+        missing = make_resource_file(
+            self.project1, path="missing", compliance_alert=severities.MISSING
+        )
+
+        qs = CodebaseResource.objects.order_by("path")
+        self.assertQuerySetEqual(qs.compliance_issues(severities.ERROR), [error])
+        self.assertQuerySetEqual(
+            qs.compliance_issues(severities.WARNING), [error, warning]
+        )
+        self.assertQuerySetEqual(
+            qs.compliance_issues(severities.MISSING), [error, missing, warning]
+        )
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):

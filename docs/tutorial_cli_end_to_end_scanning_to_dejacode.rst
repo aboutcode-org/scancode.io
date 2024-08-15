@@ -58,9 +58,9 @@ Fetch codebase to scan
 
 **Local Project Codebase**: Ensure you have a local checkout of your project's codebase.
 
-We are using this repo for our tutorial: https://github.com/nexB/scancode-workbench
+We are using this repo for our tutorial: https://github.com/aboutcode-org/scancode-workbench
 
-We download the following: https://github.com/nexB/scancode-workbench/archive/refs/tags/v4.0.2.tar.gz
+We download the following: https://github.com/aboutcode-org/scancode-workbench/archive/refs/tags/v4.0.2.tar.gz
 
 Extract the checkout and delete the archive:
 
@@ -186,8 +186,8 @@ we need to ensure that we have a product set up for this project in DejaCode.
             -d '{
                     "name": "scancode-workbench",
                     "version": "4.0.2",
-                    "vcs_url": "https://github.com/nexB/scancode-workbench.git",
-                    "homepage_url": "https://github.com/nexB/scancode-workbench"
+                    "vcs_url": "https://github.com/aboutcode-org/scancode-workbench.git",
+                    "homepage_url": "https://github.com/aboutcode-org/scancode-workbench"
                 }'
 
     .. tip::
@@ -217,8 +217,8 @@ we need to ensure that we have a product set up for this project in DejaCode.
             "description":"",
             "copyright":"",
             "contact":"",
-            "homepage_url":"https://github.com/nexB/scancode-workbench",
-            "vcs_url":"https://github.com/nexB/scancode-workbench.git",
+            "homepage_url":"https://github.com/aboutcode-org/scancode-workbench",
+            "vcs_url":"https://github.com/aboutcode-org/scancode-workbench.git",
             "code_view_url":"",
             "bug_tracking_url":"",
             "primary_language":"",

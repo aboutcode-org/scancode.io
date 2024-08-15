@@ -179,7 +179,7 @@ copy ``~/docker/alpine-base.tar`` to the foo project :guilabel:`input/` director
 You can also provide URLs of files to be downloaded to the foo project
 :guilabel:`input/` directory::
 
-    $ scanpipe add-input --project foo --input-url https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar
+    $ scanpipe add-input --project foo --input-url https://github.com/aboutcode-org/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar
 
 .. note:: Docker images can be provided as input using their Docker reference
     with the ``docker://docker-reference`` syntax. For example::
@@ -194,7 +194,7 @@ You can also provide URLs of files to be downloaded to the foo project
 .. note:: Git repositories are supported as input using their Git clone URL in the
     ``https://<host>[:<port>]/<path-to-git-repo>.git`` syntax. For example::
 
-    $ [...] --input-url https://github.com/nexB/scancode.io.git
+    $ [...] --input-url https://github.com/aboutcode-org/scancode.io.git
 
 
 `$ scanpipe add-pipeline --project PROJECT PIPELINE_NAME [PIPELINE_NAME ...]`
@@ -263,6 +263,19 @@ Optional arguments:
 
 Refer to :ref:`Mount projects workspace <mount_projects_workspace_volume>` to access
 your outputs on the host machine when running with Docker.
+
+`$ scanpipe check-compliance --project PROJECT`
+-----------------------------------------------
+
+Check for compliance issues in Project.
+Exit with a non-zero status if compliance issues are present in the project.
+The compliance alert indicates how the license expression complies with provided
+policies.
+
+Optional arguments:
+
+- ``--fail-level {ERROR,WARNING,MISSING}`` Compliance alert level that will cause the
+  command to exit with a non-zero status. Default is ERROR.
 
 `$ scanpipe archive-project --project PROJECT`
 ----------------------------------------------

@@ -30,12 +30,14 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.tests.pipelines.do_nothing import DoNothing
+from scanpipe.tests.pipelines.download_inputs import DownloadInput
 from scanpipe.tests.pipelines.profile_step import ProfileStep
 from scanpipe.tests.pipelines.raise_exception import RaiseException
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
 scanpipe_app.register_pipeline("do_nothing", DoNothing)
+scanpipe_app.register_pipeline("download_inputs", DownloadInput)
 scanpipe_app.register_pipeline("profile_step", ProfileStep)
 scanpipe_app.register_pipeline("raise_exception", RaiseException)
 

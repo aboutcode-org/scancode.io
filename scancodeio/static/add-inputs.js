@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //
-// http://nexb.com and https://github.com/nexB/scancode.io
+// http://nexb.com and https://github.com/aboutcode-org/scancode.io
 // The ScanCode.io software is licensed under the Apache License version 2.0.
 // Data generated with ScanCode.io is provided as-is without warranties.
 // ScanCode is a trademark of nexB Inc.
@@ -18,15 +18,15 @@
 // for any legal advice.
 //
 // ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-// Visit https://github.com/nexB/scancode.io for support and download.
+// Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-const fileInput = document.querySelector('#id_input_files');
+const fileInput = document.querySelector("#id_input_files");
 fileInput.onchange = updateFiles;
 
 // Update the list of files to be uploaded in the UI
 function updateFiles() {
   if (fileInput.files.length > 0) {
-    const fileName = document.querySelector('#inputs_file_name');
+    const fileName = document.querySelector("#inputs_file_name");
     fileName.innerHTML = "";
     for (let file of fileInput.files) {
       fileName.innerHTML += `<span class="is-block">${file.name}</span>`;
@@ -48,18 +48,18 @@ function dropHandler(event) {
   for (let file of droppedFiles) {
     updatedFiles.push(file);
   }
-  
+
   const dataTransfer = new DataTransfer();
   for (let file of updatedFiles) {
     dataTransfer.items.add(file);
   }
-  
+
   fileInput.files = dataTransfer.files;
   updateFiles();
 }
 
 // Handle drag and drop events
-const inputFilesBox = document.querySelector('#input_files_box');
+const inputFilesBox = document.querySelector("#input_files_box");
 inputFilesBox.addEventListener("dragenter", disableEvent);
 inputFilesBox.addEventListener("dragover", disableEvent);
 inputFilesBox.addEventListener("drop", dropHandler);

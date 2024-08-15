@@ -24,7 +24,7 @@ automation methods such as a cron job or a git hook::
     # Configure the following variables to your needs
     PROJECT_NAME = f"scan-{datetime.now().isoformat()}"
     INPUT_URLS = [
-        "https://github.com/nexB/scancode.io/archive/refs/tags/v32.4.0.zip",
+        "https://github.com/aboutcode-org/scancode.io/archive/refs/tags/v32.4.0.zip",
     ]
     PIPELINES = [
         "inspect_packages",

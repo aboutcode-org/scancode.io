@@ -42,7 +42,10 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import Run
+from scanpipe.models import WebhookSubscription
 from scanpipe.pipes import purldb
+from scanpipe.tests import make_package
+from scanpipe.tests import make_resource_file
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -68,7 +71,6 @@ class ScanPipeManagementCommandTest(TestCase):
     data = Path(__file__).parent / "data"
     pipeline_name = "analyze_docker_image"
     pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
-    purldb_update_status_url = f"{purldb.PURLDB_API_URL}scan_queue/update_status/"
 
     def test_scanpipe_management_command_create_project_base(self):
         out = StringIO()
@@ -717,7 +719,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(["Group1", "Group2"], runs[1]["selected_groups"])
 
     @mock.patch("scanpipe.models.Project.get_latest_output")
-    @mock.patch("scanpipe.pipes.purldb.request_post")
+    @mock.patch("requests.post")
     @mock.patch("requests.sessions.Session.get")
     @mock.patch("scanpipe.pipes.purldb.request_get")
     def test_scanpipe_management_command_purldb_scan_queue_worker(
@@ -729,13 +731,16 @@ class ScanPipeManagementCommandTest(TestCase):
     ):
         scannable_uri_uuid = "97627c6e-9acb-43e0-b8df-28bd92f2b7e5"
         download_url = "https://registry.npmjs.org/asdf/-/asdf-1.2.2.tgz"
+        webhook_url = "http://server/api/scan_queue/index_package_scan/IjEi:1sZEvv:_br-G-VikC19M5RS2ToNZTGt81GLc6co7w72XHRmCKY/"
         mock_request_get.return_value = {
             "scannable_uri_uuid": scannable_uri_uuid,
             "download_url": download_url,
             "pipelines": ["scan_single_package"],
+            "webhook_url": webhook_url,
         }
         mock_request_post.return_value = {
-            "status": f"scan indexed for scannable uri {scannable_uri_uuid}"
+            "status": f"scan results for scannable_uri {scannable_uri_uuid} "
+            "have been queued for indexing"
         }
         mock_get_latest_output.return_value = (
             self.data / "scancode" / "is-npm-1.0.0_summary.json"
@@ -746,6 +751,8 @@ class ScanPipeManagementCommandTest(TestCase):
             status_code=200,
             url=download_url,
         )
+
+        self.assertFalse(WebhookSubscription.objects.exists())
 
         options = [
             "--max-loops",
@@ -770,22 +777,10 @@ class ScanPipeManagementCommandTest(TestCase):
         project_name = purldb.create_project_name(download_url, scannable_uri_uuid)
         project = Project.objects.get(name=project_name)
         self.assertEqual(scannable_uri_uuid, project.extra_data["scannable_uri_uuid"])
-
-        mock_request_post.assert_called_once()
-        mock_request_post_call = mock_request_post.mock_calls[0]
-        mock_request_post_call_kwargs = mock_request_post_call.kwargs
-        self.assertEqual(
-            self.purldb_update_status_url, mock_request_post_call_kwargs["url"]
-        )
-        expected_data = {
-            "scannable_uri_uuid": "97627c6e-9acb-43e0-b8df-28bd92f2b7e5",
-            "scan_status": "scanned",
-            "project_extra_data": '{"scannable_uri_uuid": '
-            '"97627c6e-9acb-43e0-b8df-28bd92f2b7e5"}',
-        }
-        self.assertEqual(expected_data, mock_request_post_call_kwargs["data"])
-        self.assertTrue(mock_request_post_call_kwargs["files"]["scan_results_file"])
-        self.assertTrue(mock_request_post_call_kwargs["files"]["scan_summary_file"])
+        # Ensure a webhook subscription is created
+        self.assertEqual(1, project.webhooksubscriptions.count())
+        webhook_subscription = project.webhooksubscriptions.first()
+        self.assertEqual(webhook_url, webhook_subscription.target_url)
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("requests.sessions.Session.get")
@@ -799,9 +794,11 @@ class ScanPipeManagementCommandTest(TestCase):
             "scannable_uri_uuid": scannable_uri_uuid,
             "download_url": download_url,
             "pipelines": ["scan_single_package"],
+            "webhook_url": "http://server/api/scan_queue/index_package_scan/IjEi:1sZEvv:_br-G-VikC19M5RS2ToNZTGt81GLc6co7w72XHRmCKY/",
         }
         mock_request_post.return_value = {
-            "status": f"scan failed for scannable uri {scannable_uri_uuid}"
+            "status": f"updated scannable_uri {scannable_uri_uuid} "
+            "scan_status to 'failed'"
         }
         mock_download_get.return_value = mock.Mock(
             content=b"\x00",
@@ -826,13 +823,10 @@ class ScanPipeManagementCommandTest(TestCase):
         mock_request_post.assert_called_once()
         mock_request_post_call = mock_request_post.mock_calls[0]
         mock_request_post_call_kwargs = mock_request_post_call.kwargs
-        self.assertEqual(
-            self.purldb_update_status_url, mock_request_post_call_kwargs["url"]
+        purldb_update_status_url = (
+            f"{purldb.PURLDB_API_URL}scan_queue/{scannable_uri_uuid}/update_status/"
         )
-        self.assertEqual(
-            "97627c6e-9acb-43e0-b8df-28bd92f2b7e5",
-            mock_request_post_call_kwargs["data"]["scannable_uri_uuid"],
-        )
+        self.assertEqual(purldb_update_status_url, mock_request_post_call_kwargs["url"])
         self.assertEqual("failed", mock_request_post_call_kwargs["data"]["scan_status"])
         self.assertIn(
             "Exception occured during scan project:",
@@ -854,11 +848,13 @@ class ScanPipeManagementCommandTest(TestCase):
                 "scannable_uri_uuid": scannable_uri_uuid1,
                 "download_url": download_url1,
                 "pipelines": ["scan_single_package"],
+                "webhook_url": "http://server/api/scan_queue/index_package_scan/IjEi:1sZEvv:_br-G-VikC19M5RS2ToNZTGt81GLc6co7w72XHRmCKY/",
             },
             {
                 "scannable_uri_uuid": scannable_uri_uuid2,
                 "download_url": download_url2,
                 "pipelines": ["scan_single_package"],
+                "webhook_url": "http://server/api/scan_queue/index_package_scan/IjEi:1sZEvv:_br-G-VikC19M5RS2ToNZTGt21GLc6co7w72XHRmabc/",
             },
         ]
 
@@ -906,33 +902,76 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("Error during scan_single_package execution:", out_value)
         self.assertIn("Error log", out_value)
 
-        update_status_url = f"{purldb.PURLDB_API_URL}scan_queue/update_status/"
+        update_status_url1 = (
+            f"{purldb.PURLDB_API_URL}scan_queue/{scannable_uri_uuid1}/update_status/"
+        )
         mocked_post_calls = mock_request_post.call_args_list
         self.assertEqual(2, len(mocked_post_calls))
 
         mock_post_call1 = mocked_post_calls[0]
-        self.assertEqual(update_status_url, mock_post_call1.kwargs["url"])
-        self.assertEqual(
-            "97627c6e-9acb-43e0-b8df-28bd92f2b7e5",
-            mock_post_call1.kwargs["data"]["scannable_uri_uuid"],
-        )
+        self.assertEqual(update_status_url1, mock_post_call1.kwargs["url"])
         self.assertEqual("failed", mock_post_call1.kwargs["data"]["scan_status"])
         self.assertIn(
             "Exception occured during scan project:",
             mock_post_call1.kwargs["data"]["scan_log"],
         )
 
-        mock_post_call2 = mocked_post_calls[1]
-        self.assertEqual(update_status_url, mock_post_call2.kwargs["url"])
-        self.assertEqual(
-            "0bbdcf88-ad07-4970-9272-7d5f4c82cc7b",
-            mock_post_call2.kwargs["data"]["scannable_uri_uuid"],
+        update_status_url2 = (
+            f"{purldb.PURLDB_API_URL}scan_queue/{scannable_uri_uuid2}/update_status/"
         )
+        mock_post_call2 = mocked_post_calls[1]
+        self.assertEqual(update_status_url2, mock_post_call2.kwargs["url"])
         self.assertEqual("failed", mock_post_call1.kwargs["data"]["scan_status"])
         self.assertIn(
             "Exception occured during scan project:",
             mock_post_call2.kwargs["data"]["scan_log"],
         )
+
+    def test_scanpipe_management_command_check_compliance(self):
+        project = Project.objects.create(name="my_project")
+
+        out = StringIO()
+        options = ["--project", project.name]
+        with self.assertRaises(SystemExit) as cm:
+            call_command("check-compliance", *options, stdout=out)
+        self.assertEqual(cm.exception.code, 0)
+        out_value = out.getvalue().strip()
+        self.assertEqual("", out_value)
+
+        make_resource_file(
+            project,
+            path="warning",
+            compliance_alert=CodebaseResource.Compliance.WARNING,
+        )
+        make_package(
+            project,
+            package_url="pkg:generic/name@1.0",
+            compliance_alert=CodebaseResource.Compliance.ERROR,
+        )
+
+        out = StringIO()
+        options = ["--project", project.name]
+        with self.assertRaises(SystemExit) as cm:
+            call_command("check-compliance", *options, stderr=out)
+        self.assertEqual(cm.exception.code, 1)
+        out_value = out.getvalue().strip()
+        expected = (
+            "1 compliance issues detected on this project." "\nPackage:\n - error: 1"
+        )
+        self.assertEqual(expected, out_value)
+
+        out = StringIO()
+        options = ["--project", project.name, "--fail-level", "WARNING"]
+        with self.assertRaises(SystemExit) as cm:
+            call_command("check-compliance", *options, stderr=out)
+        self.assertEqual(cm.exception.code, 1)
+        out_value = out.getvalue().strip()
+        expected = (
+            "2 compliance issues detected on this project."
+            "\nPackage:\n - error: 1"
+            "\nResource:\n - warning: 1"
+        )
+        self.assertEqual(expected, out_value)
 
 
 class ScanPipeManagementCommandMixinTest(TestCase):

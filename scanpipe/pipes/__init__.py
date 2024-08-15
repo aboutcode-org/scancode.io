@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import difflib
 import logging
@@ -29,11 +29,9 @@ from contextlib import suppress
 from datetime import datetime
 from itertools import islice
 from pathlib import Path
-from timeit import default_timer as timer
 
 from django.db.models import Count
 
-from scanpipe import humanize_time
 from scanpipe.models import AbstractTaskFieldsModel
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
@@ -399,78 +397,6 @@ def count_group_by(queryset, field_name):
 def get_bin_executable(filename):
     """Return the location of the `filename` executable binary."""
     return str(Path(sys.executable).parent / filename)
-
-
-class LoopProgress:
-    """
-    A context manager for logging progress in loops.
-
-    Usage::
-
-        total_iterations = 100
-        logger = print  # Replace with your actual logger function
-
-        progress = LoopProgress(total_iterations, logger, progress_step=10)
-        for item in progress.iter(iterator):
-            "Your processing logic here"
-
-        with LoopProgress(total_iterations, logger, progress_step=10) as progress:
-            for item in progress.iter(iterator):
-                "Your processing logic here"
-    """
-
-    def __init__(self, total_iterations, logger, progress_step=10):
-        self.total_iterations = total_iterations
-        self.logger = logger
-        self.progress_step = progress_step
-        self.start_time = timer()
-        self.last_logged_progress = 0
-        self.current_iteration = 0
-
-    def get_eta(self, current_progress):
-        run_time = timer() - self.start_time
-        return round(run_time / current_progress * (100 - current_progress))
-
-    @property
-    def current_progress(self):
-        return int((self.current_iteration / self.total_iterations) * 100)
-
-    @property
-    def eta(self):
-        run_time = timer() - self.start_time
-        return round(run_time / self.current_progress * (100 - self.current_progress))
-
-    def log_progress(self):
-        reasons_to_skip = [
-            not self.logger,
-            not self.current_iteration > 0,
-            self.total_iterations <= self.progress_step,
-        ]
-        if any(reasons_to_skip):
-            return
-
-        if self.current_progress >= self.last_logged_progress + self.progress_step:
-            msg = (
-                f"Progress: {self.current_progress}% "
-                f"({self.current_iteration}/{self.total_iterations})"
-            )
-            if eta := self.eta:
-                msg += f" ETA: {humanize_time(eta)}"
-
-            self.logger(msg)
-            self.last_logged_progress = self.current_progress
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        pass
-
-    def iter(self, iterator):
-        for item in iterator:
-            self.current_iteration += 1
-            self.log_progress()
-            yield item
 
 
 def get_text_str_diff_ratio(str_a, str_b):
