@@ -2061,6 +2061,33 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                 print(output_str)
 
 
+class ComplianceAlertQuerySetMixin:
+    def compliance_issues(self, severity):
+        """
+        Retrieve compliance issues based on severity.
+        Supported values are 'error', 'warning', and 'missing'.
+        """
+        compliance = self.model.Compliance
+        severity = severity.lower()
+
+        severity_mapping = {
+            "error": [compliance.ERROR.value],
+            "warning": [compliance.ERROR.value, compliance.WARNING.value],
+            "missing": [
+                compliance.ERROR.value,
+                compliance.WARNING.value,
+                compliance.MISSING.value,
+            ],
+        }
+
+        if severity not in severity_mapping:
+            raise ValueError(
+                f"Supported severities are: {', '.join(severity_mapping.keys())}"
+            )
+
+        return self.filter(compliance_alert__in=severity_mapping[severity])
+
+
 def convert_glob_to_django_regex(glob_pattern):
     """
     Convert a glob pattern to an equivalent django regex pattern
@@ -2073,7 +2100,7 @@ def convert_glob_to_django_regex(glob_pattern):
     return escaped_pattern
 
 
-class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
+class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuerySet):
     def prefetch_for_serializer(self):
         """
         Optimized prefetching for a QuerySet to be consumed by the
@@ -2965,7 +2992,10 @@ class VulnerabilityQuerySetMixin:
 
 
 class DiscoveredPackageQuerySet(
-    VulnerabilityQuerySetMixin, PackageURLQuerySetMixin, ProjectRelatedQuerySet
+    VulnerabilityQuerySetMixin,
+    PackageURLQuerySetMixin,
+    ComplianceAlertQuerySetMixin,
+    ProjectRelatedQuerySet,
 ):
     def with_resources_count(self):
         count_subquery = Subquery(

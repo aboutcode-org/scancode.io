@@ -47,6 +47,10 @@ v34.7.2 (unreleased)
 - Update link references of ownership from nexB to aboutcode-org
   https://github.com/aboutcode-org/scancode.io/issues/1350
 
+- Add a new ``check-compliance`` management command to check for compliance issues in
+  a project.
+  https://github.com/nexB/scancode.io/issues/1182
+
 v34.7.1 (2024-07-15)
 --------------------
 

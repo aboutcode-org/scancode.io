@@ -264,6 +264,19 @@ Optional arguments:
 Refer to :ref:`Mount projects workspace <mount_projects_workspace_volume>` to access
 your outputs on the host machine when running with Docker.
 
+`$ scanpipe check-compliance --project PROJECT`
+-----------------------------------------------
+
+Check for compliance issues in Project.
+Exit with a non-zero status if compliance issues are present in the project.
+The compliance alert indicates how the license expression complies with provided
+policies.
+
+Optional arguments:
+
+- ``--fail-level {ERROR,WARNING,MISSING}`` Compliance alert level that will cause the
+  command to exit with a non-zero status. Default is ERROR.
+
 `$ scanpipe archive-project --project PROJECT`
 ----------------------------------------------
 

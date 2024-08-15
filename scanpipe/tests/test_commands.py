@@ -44,6 +44,8 @@ from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.models import WebhookSubscription
 from scanpipe.pipes import purldb
+from scanpipe.tests import make_package
+from scanpipe.tests import make_resource_file
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -924,6 +926,52 @@ class ScanPipeManagementCommandTest(TestCase):
             "Exception occured during scan project:",
             mock_post_call2.kwargs["data"]["scan_log"],
         )
+
+    def test_scanpipe_management_command_check_compliance(self):
+        project = Project.objects.create(name="my_project")
+
+        out = StringIO()
+        options = ["--project", project.name]
+        with self.assertRaises(SystemExit) as cm:
+            call_command("check-compliance", *options, stdout=out)
+        self.assertEqual(cm.exception.code, 0)
+        out_value = out.getvalue().strip()
+        self.assertEqual("", out_value)
+
+        make_resource_file(
+            project,
+            path="warning",
+            compliance_alert=CodebaseResource.Compliance.WARNING,
+        )
+        make_package(
+            project,
+            package_url="pkg:generic/name@1.0",
+            compliance_alert=CodebaseResource.Compliance.ERROR,
+        )
+
+        out = StringIO()
+        options = ["--project", project.name]
+        with self.assertRaises(SystemExit) as cm:
+            call_command("check-compliance", *options, stderr=out)
+        self.assertEqual(cm.exception.code, 1)
+        out_value = out.getvalue().strip()
+        expected = (
+            "1 compliance issues detected on this project." "\nPackage:\n - error: 1"
+        )
+        self.assertEqual(expected, out_value)
+
+        out = StringIO()
+        options = ["--project", project.name, "--fail-level", "WARNING"]
+        with self.assertRaises(SystemExit) as cm:
+            call_command("check-compliance", *options, stderr=out)
+        self.assertEqual(cm.exception.code, 1)
+        out_value = out.getvalue().strip()
+        expected = (
+            "2 compliance issues detected on this project."
+            "\nPackage:\n - error: 1"
+            "\nResource:\n - warning: 1"
+        )
+        self.assertEqual(expected, out_value)
 
 
 class ScanPipeManagementCommandMixinTest(TestCase):
