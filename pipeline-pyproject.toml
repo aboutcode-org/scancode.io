@@ -29,11 +29,11 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/nexB/scancode.io"
+Homepage = "https://github.com/aboutcode-org/scancode.io"
 Documentation = "https://scancodeio.readthedocs.io/"
-Changelog = "https://github.com/nexB/scancode.io/tree/main/aboutcode/pipeline/CHANGELOG.md"
-Repository = "https://github.com/nexB/scancode.io/tree/main/aboutcode/pipeline"
-Issues = "https://github.com/nexB/scancode.io/issues"
+Changelog = "https://github.com/aboutcode-org/scancode.io/tree/main/aboutcode/pipeline/CHANGELOG.md"
+Repository = "https://github.com/aboutcode-org/scancode.io/tree/main/aboutcode/pipeline"
+Issues = "https://github.com/aboutcode-org/scancode.io/issues"
 
 [tool.flot]
 includes = [

@@ -873,7 +873,9 @@ class ScanPipeModelsTest(TestCase):
             run1.set_scancodeio_version()
         self.assertEqual("v32.3.0-28-g0000000", run1.scancodeio_version)
 
-        expected = "https://github.com/nexB/scancode.io/compare/0000000..ffffffff"
+        expected = (
+            "https://github.com/aboutcode-org/scancode.io/compare/0000000..ffffffff"
+        )
         with mock.patch("scancodeio.__version__", "v31.0.0-1-gffffffff"):
             self.assertEqual(expected, run1.get_diff_url())
 

@@ -44,6 +44,9 @@ v34.7.2 (unreleased)
 - Move the BasePipeline class to a new `aboutcode.pipeline` module.
   https://github.com/nexB/scancode.io/issues/1351
 
+- Update link references of ownership from nexB to aboutcode-org
+  https://github.com/aboutcode-org/scancode.io/issues/1350
+
 v34.7.1 (2024-07-15)
 --------------------
 

@@ -304,7 +304,7 @@ VULNERABLECODE
 ^^^^^^^^^^^^^^
 
 You have the option to either deploy your instance of
-`VulnerableCode <https://github.com/nexB/vulnerablecode/>`_
+`VulnerableCode <https://github.com/aboutcode-org/vulnerablecode/>`_
 or connect to the `public instance <https://public.vulnerablecode.io/>`_.
 
 To configure your local environment, set the ``VULNERABLECODE_URL`` in your ``.env``
