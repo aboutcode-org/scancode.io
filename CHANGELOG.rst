@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.7.2 (unreleased)
+v34.8.0 (2024-08-15)
 --------------------
 
 - Add a new ``enrich_with_purldb`` add-on pipeline to enrich the discovered packages
