@@ -22,15 +22,14 @@
 
 from aboutcode.pipeline import group
 from scanpipe import pipes
-from scanpipe.pipelines import Pipeline
+from scanpipe.pipelines.match_to_matchcode import MatchToMatchCode
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import matchcode
-from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
 
 
-class DeployToDevelop(Pipeline):
+class DeployToDevelop(MatchToMatchCode):
     """
     Establish relationships between two code trees: deployment and development.
 
@@ -65,16 +64,16 @@ class DeployToDevelop(Pipeline):
             cls.flag_ignored_resources,
             cls.map_about_files,
             cls.map_checksum,
-            cls.match_archives_to_purldb,
+            cls.check_matchcode_service_availability,
+            cls.send_project_json_to_matchcode,
+            cls.poll_matching_results,
+            cls.create_packages_from_match_results,
             cls.find_java_packages,
             cls.map_java_to_class,
             cls.map_jar_to_source,
             cls.map_javascript,
             cls.map_elf,
             cls.map_go,
-            cls.match_directories_to_purldb,
-            cls.match_resources_to_purldb,
-            cls.map_javascript_post_purldb_match,
             cls.map_javascript_path,
             cls.map_javascript_colocation,
             cls.map_thirdparty_npm_packages,
@@ -155,19 +154,6 @@ class DeployToDevelop(Pipeline):
         """Map using SHA1 checksum."""
         d2d.map_checksum(project=self.project, checksum_field="sha1", logger=self.log)
 
-    def match_archives_to_purldb(self):
-        """Match selected package archives by extension to PurlDB."""
-        if not purldb.is_available():
-            self.log("PurlDB is not available. Skipping.")
-            return
-
-        d2d.match_purldb_resources(
-            project=self.project,
-            extensions=self.purldb_package_extensions,
-            matcher_func=d2d.match_purldb_package,
-            logger=self.log,
-        )
-
     @group("Java")
     def find_java_packages(self):
         """Find the java package of the .java source files."""
@@ -200,30 +186,6 @@ class DeployToDevelop(Pipeline):
     def map_go(self):
         """Map Go binaries to their sources."""
         d2d.map_go_paths(project=self.project, logger=self.log)
-
-    def match_directories_to_purldb(self):
-        """Match selected directories in PurlDB."""
-        if not purldb.is_available():
-            self.log("PurlDB is not available. Skipping.")
-            return
-
-        d2d.match_purldb_directories(
-            project=self.project,
-            logger=self.log,
-        )
-
-    def match_resources_to_purldb(self):
-        """Match selected files by extension in PurlDB."""
-        if not purldb.is_available():
-            self.log("PurlDB is not available. Skipping.")
-            return
-
-        d2d.match_purldb_resources(
-            project=self.project,
-            extensions=self.purldb_resource_extensions,
-            matcher_func=d2d.match_purldb_resource,
-            logger=self.log,
-        )
 
     @group("JavaScript")
     def map_javascript_post_purldb_match(self):
