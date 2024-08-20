@@ -3928,12 +3928,22 @@ class PackageScore(UUIDPKModel, PackageScoreMixin):
         }
 
         date_str = scorecard_data.score_date
+
+        formats = ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%SZ"]
+
         if date_str:
-            naive_datetime = datetime.strptime(date_str, "%Y-%m-%d")
+            naive_datetime = None
+
+            for fmt in formats:
+                try:
+                    naive_datetime = datetime.strptime(date_str, fmt)
+                except ValueError:
+                    continue
 
             score_date = timezone.make_aware(
                 naive_datetime, timezone.get_current_timezone()
             )
+
         else:
             score_date = timezone.now()
 

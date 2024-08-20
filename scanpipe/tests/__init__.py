@@ -23,6 +23,7 @@
 import json
 import os
 from datetime import datetime
+from pathlib import Path
 from unittest import mock
 
 from django.apps import apps
@@ -268,5 +269,7 @@ license_policies_index = {
 
 scorecard_data = None
 
-with open("data/scorecode/scorecard_response.json") as file:
+data = Path(__file__).parent / "data"
+
+with open(f"{data}/scorecode/scorecard_response.json") as file:
     scorecard_data = json.load(file)

@@ -1245,7 +1245,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_name = "get_scorecard_info_packages"
         project1 = Project.objects.create(name="Analysis")
         package1 = DiscoveredPackage.create_from_data(project1, package_data1)
-        package1.vcs_url = "https://github.com/nexB/scancode-toolkit"
+        package1.vcs_url = "https://github.com/ossf/scorecard"
         package1.save()
 
         run = project1.add_pipeline(pipeline_name)
@@ -1270,7 +1270,7 @@ class PipelinesIntegrationTest(TestCase):
             msg=out,
         )
 
-        self.assertEqual("https://github.com/nexB/scancode-toolkit", package1.vcs_url)
+        self.assertEqual("https://github.com/ossf/scorecard", package1.vcs_url)
 
     def test_scanpipe_resolve_dependencies_pipeline_integration(self):
         pipeline_name = "resolve_dependencies"

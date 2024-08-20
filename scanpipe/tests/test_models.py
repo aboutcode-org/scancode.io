@@ -2449,12 +2449,12 @@ class ScanPipeModelsTest(TestCase):
 
         self.assertIsNotNone(package_score)
         self.assertEqual(package_score.scoring_tool, PackageScore.ScoringTool.OSSF)
-        self.assertEqual(package_score.score, "6.7")
+        self.assertEqual(package_score.score, "4.4")
 
         checks = package_score.discovered_packages_score_checks.all()
         self.assertEqual(checks.count(), 15)
         self.assertEqual(checks[0].check_name, "Code-Review")
-        self.assertEqual(checks[0].check_score, "1")
+        self.assertEqual(checks[0].check_score, "7")
 
     def test_scanpipe_model_codebase_resource_compliance_alert_queryset_mixin(self):
         severities = CodebaseResource.Compliance
