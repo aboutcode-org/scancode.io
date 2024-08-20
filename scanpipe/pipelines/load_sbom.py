@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import resolve
@@ -46,6 +46,7 @@ class LoadSBOM(ScanCodebase):
             cls.get_sbom_inputs,
             cls.get_packages_from_sboms,
             cls.create_packages_from_sboms,
+            cls.create_dependencies_from_sboms,
         )
 
     def get_sbom_inputs(self):
@@ -62,8 +63,12 @@ class LoadSBOM(ScanCodebase):
         )
 
     def create_packages_from_sboms(self):
-        """Create the packages and dependencies from the SBOM, in the database."""
+        """Create the packages declared in the SBOMs."""
         resolve.create_packages_and_dependencies(
             project=self.project,
             packages=self.packages,
         )
+
+    def create_dependencies_from_sboms(self):
+        """Create the dependency relationship declared in the SBOMs."""
+        resolve.create_dependencies_from_packages_extra_data(project=self.project)

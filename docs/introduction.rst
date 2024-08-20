@@ -80,7 +80,7 @@ Dependencies and Internal Tools
 
 ScanCode.io is essentially a `Django <https://www.djangoproject.com/>`_-based
 application wrapper around the
-`ScanCode Toolkit <https://github.com/nexB/scancode-toolkit>`_ scanning engine.
+`ScanCode Toolkit <https://github.com/aboutcode-org/scancode-toolkit>`_ scanning engine.
 
 The **Django framework** is leveraged for many aspects of ScanCode.io:
 
@@ -91,13 +91,13 @@ The **Django framework** is leveraged for many aspects of ScanCode.io:
 
 .. note::
     Multiple applications from the Django eco-system are also included,
-    see the `setup.cfg <https://github.com/nexB/scancode.io/blob/main/setup.cfg>`_ file
+    see the `setup.cfg <https://github.com/aboutcode-org/scancode.io/blob/main/setup.cfg>`_ file
     for an exhaustive list of dependencies.
 
 The second essential part of ScanCode.io is the **ScanCode Toolkit**, which is used
 for archives extraction and as the scanning engine.
 
-The nexB `container-inspector <https://github.com/nexB/container-inspector>`_ library
+The nexB `container-inspector <https://github.com/aboutcode-org/container-inspector>`_ library
 is also a key component of ScanCode.io as this tool is used to analyse Docker
 images, containers, root filesystems, and virtual machine images.
 

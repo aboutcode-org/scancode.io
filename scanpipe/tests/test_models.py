@@ -876,7 +876,9 @@ class ScanPipeModelsTest(TestCase):
             run1.set_scancodeio_version()
         self.assertEqual("v32.3.0-28-g0000000", run1.scancodeio_version)
 
-        expected = "https://github.com/nexB/scancode.io/compare/0000000..ffffffff"
+        expected = (
+            "https://github.com/aboutcode-org/scancode.io/compare/0000000..ffffffff"
+        )
         with mock.patch("scancodeio.__version__", "v31.0.0-1-gffffffff"):
             self.assertEqual(expected, run1.get_diff_url())
 
@@ -1844,6 +1846,23 @@ class ScanPipeModelsTest(TestCase):
         self.assertNotIn(p1, DiscoveredPackage.objects.vulnerable())
         self.assertIn(p2, DiscoveredPackage.objects.vulnerable())
 
+    def test_scanpipe_discovered_package_queryset_dependency_methods(self):
+        project = Project.objects.create(name="project")
+        a = make_package(project, "pkg:type/a")
+        b = make_package(project, "pkg:type/b")
+        c = make_package(project, "pkg:type/c")
+        z = make_package(project, "pkg:type/z")
+        # Project -> A -> B -> C
+        # Project -> Z
+        make_dependency(project, for_package=a, resolved_to_package=b)
+        make_dependency(project, for_package=b, resolved_to_package=c)
+
+        project_packages_qs = project.discoveredpackages.order_by("name")
+        root_packages = project_packages_qs.root_packages()
+        self.assertEqual([a, z], list(root_packages))
+        non_root_packages = project_packages_qs.non_root_packages()
+        self.assertEqual([b, c], list(non_root_packages))
+
     @skipIf(sys.platform != "linux", "Ordering differs on macOS.")
     def test_scanpipe_codebase_resource_model_walk_method(self):
         fixtures = self.data / "asgiref" / "asgiref-3.3.0_walk_test_fixtures.json"
@@ -2327,6 +2346,7 @@ class ScanPipeModelsTest(TestCase):
             "parent_packages",
             "children_packages",
             "discovered_packages_score",
+            "notes",
         ]
 
         package_data_only_field = ["datasource_id", "dependencies"]
@@ -2435,7 +2455,30 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(checks.count(), 15)
         self.assertEqual(checks[0].check_name, "Code-Review")
         self.assertEqual(checks[0].check_score, "1")
+        
+    def test_scanpipe_model_codebase_resource_compliance_alert_queryset_mixin(self):
+        severities = CodebaseResource.Compliance
+        make_resource_file(self.project1, path="none")
+        make_resource_file(self.project1, path="ok", compliance_alert=severities.OK)
+        warning = make_resource_file(
+            self.project1, path="warning", compliance_alert=severities.WARNING
+        )
+        error = make_resource_file(
+            self.project1, path="error", compliance_alert=severities.ERROR
+        )
+        missing = make_resource_file(
+            self.project1, path="missing", compliance_alert=severities.MISSING
+        )
 
+        qs = CodebaseResource.objects.order_by("path")
+        self.assertQuerySetEqual(qs.compliance_issues(severities.ERROR), [error])
+        self.assertQuerySetEqual(
+            qs.compliance_issues(severities.WARNING), [error, warning]
+        )
+        self.assertQuerySetEqual(
+            qs.compliance_issues(severities.MISSING), [error, missing, warning]
+        )
+        
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
     """

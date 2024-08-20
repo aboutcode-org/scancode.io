@@ -150,18 +150,14 @@ class ScanPipePurlDBTest(TestCase):
         results = purldb.get_next_download_url()
         self.assertFalse(results)
 
-    def test_scanpipe_pipes_purldb_get_run_status(self):
-        now = timezone.now()
-        run = self.create_run(
-            pipeline="succeed",
-            task_start_date=now,
-            task_end_date=now,
-            task_exitcode=0,
-        )
-        status = purldb.get_run_status(run=run)
-        self.assertEqual("success", status)
-
-    def test_scanpipe_pipes_purldb_poll_run_status(self):
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    @mock.patch("scanpipe.pipes.purldb.is_available")
+    def test_scanpipe_pipes_purldb_check_project_run_statuses(
+        self, mock_is_available, mock_request_post
+    ):
+        mock_is_available.return_value = True
+        scannable_uri_uuid = "97627c6e-9acb-43e0-b8df-28bd92f2b7e5"
+        self.project1.extra_data.update({"scannable_uri_uuid": scannable_uri_uuid})
         now = timezone.now()
 
         # Test poll_run_status on individual pipelines
@@ -172,7 +168,10 @@ class ScanPipePurlDBTest(TestCase):
             task_end_date=now,
             task_exitcode=0,
         )
-        purldb.poll_run_status(project=self.project1)
+        purldb.check_project_run_statuses(
+            project=self.project1,
+        )
+        mock_request_post.assert_not_called()
         self.project1.runs.all().delete()
 
         self.create_run(
@@ -182,9 +181,21 @@ class ScanPipePurlDBTest(TestCase):
             task_exitcode=1,
             log="failed",
         )
-        with self.assertRaises(purldb.PurlDBException) as context:
-            purldb.poll_run_status(project=self.project1)
-            self.assertIn("failed", context.exception)
+        purldb.check_project_run_statuses(
+            project=self.project1,
+        )
+        mock_request_post.assert_called_once()
+        mock_request_post_call = mock_request_post.mock_calls[0]
+        mock_request_post_call_kwargs = mock_request_post_call.kwargs
+        purldb_update_status_url = (
+            f"{purldb.PURLDB_API_URL}scan_queue/{scannable_uri_uuid}/update_status/"
+        )
+        self.assertEqual(purldb_update_status_url, mock_request_post_call_kwargs["url"])
+        expected_data = {
+            "scan_status": "failed",
+            "scan_log": "failed failed:\n\nfailed\n",
+        }
+        self.assertEqual(expected_data, mock_request_post_call_kwargs["data"])
         self.project1.runs.all().delete()
 
         self.create_run(
@@ -194,9 +205,14 @@ class ScanPipePurlDBTest(TestCase):
             task_exitcode=99,
             log="stopped",
         )
-        with self.assertRaises(purldb.PurlDBException) as context:
-            purldb.poll_run_status(project=self.project1)
-            self.assertIn("stopped", context.exception)
+        purldb.check_project_run_statuses(
+            project=self.project1,
+        )
+        self.assertEqual(2, mock_request_post.call_count)
+        mock_request_post_call = mock_request_post.mock_calls[0]
+        mock_request_post_call_kwargs = mock_request_post_call.kwargs
+        self.assertEqual(purldb_update_status_url, mock_request_post_call_kwargs["url"])
+        self.assertEqual(expected_data, mock_request_post_call_kwargs["data"])
         self.project1.runs.all().delete()
 
         self.create_run(
@@ -206,29 +222,14 @@ class ScanPipePurlDBTest(TestCase):
             task_exitcode=88,
             log="stale",
         )
-        with self.assertRaises(purldb.PurlDBException) as context:
-            purldb.poll_run_status(project=self.project1)
-            self.assertIn("stale", context.exception)
-        self.project1.runs.all().delete()
-
-        # Test pipelines success, then failure
-        self.assertEqual(0, self.project1.runs.count())
-        self.create_run(
-            pipeline="succeed",
-            task_start_date=now,
-            task_end_date=now,
-            task_exitcode=0,
+        purldb.check_project_run_statuses(
+            project=self.project1,
         )
-        self.create_run(
-            pipeline="failed",
-            task_start_date=now,
-            task_end_date=now,
-            task_exitcode=1,
-            log="failed",
-        )
-        with self.assertRaises(purldb.PurlDBException) as context:
-            purldb.poll_run_status(project=self.project1)
-            self.assertIn("failed", context.exception)
+        self.assertEqual(3, mock_request_post.call_count)
+        mock_request_post_call = mock_request_post.mock_calls[0]
+        mock_request_post_call_kwargs = mock_request_post_call.kwargs
+        self.assertEqual(purldb_update_status_url, mock_request_post_call_kwargs["url"])
+        self.assertEqual(expected_data, mock_request_post_call_kwargs["data"])
         self.project1.runs.all().delete()
 
     def test_scanpipe_pipes_purldb_create_project_name(self):

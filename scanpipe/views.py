@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import difflib
 import io
@@ -1891,6 +1891,7 @@ class DiscoveredPackageDetailsView(
                 "source_packages",
                 "keywords",
                 "description",
+                "notes",
                 "tag",
             ],
             "icon_class": "fa-solid fa-circle-check",
@@ -2281,3 +2282,41 @@ class LicenseDetailsView(
             return licenses[key]
         except KeyError:
             raise Http404(f"License {key} not found.")
+
+
+class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
+    model = Project
+    template_name = "scanpipe/project_dependency_tree.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        try:
+            dependency_tree = self.get_dependency_tree(project=self.object)
+        except RecursionError:
+            context["recursion_error"] = True
+            return context
+
+        context["dependency_tree"] = dependency_tree
+        return context
+
+    def get_dependency_tree(self, project):
+        root_packages = project.discoveredpackages.root_packages().order_by("name")
+        project_children = [self.get_node(package) for package in root_packages]
+
+        project_tree = {
+            "name": project.name,
+            "children": project_children,
+        }
+
+        return project_tree
+
+    def get_node(self, package):
+        node = {"name": str(package)}
+        children = [
+            self.get_node(child_package)
+            for child_package in package.children_packages.all()
+        ]
+        if children:
+            node["children"] = children
+        return node

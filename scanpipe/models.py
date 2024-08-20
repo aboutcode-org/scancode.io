@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import inspect
 import json
@@ -1234,8 +1234,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         model="",
         details=None,
         exception=None,
-        resource=None,
-        package=None,
+        object_instance=None,
     ):
         """
         Create a ProjectMessage record for this Project.
@@ -1258,13 +1257,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         details = details or {}
 
-        # Do not change the following field names as those have special behavior in
-        # templates.
-        if resource:
-            details["resource_path"] = resource.path
-        if package:
+        # The following field names have a special behavior in templates.
+        if isinstance(object_instance, CodebaseResource):
+            details["resource_path"] = object_instance.path
+
+        elif isinstance(object_instance, DiscoveredPackage):
             details.update(
-                {"package_url": package.package_url, "package_uuid": package.uuid}
+                {
+                    "package_url": object_instance.package_url,
+                    "package_uuid": object_instance.uuid,
+                }
             )
 
         return ProjectMessage.objects.create(
@@ -1282,13 +1284,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         model="",
         details=None,
         exception=None,
-        resource=None,
-        package=None,
+        object_instance=None,
     ):
         """Create an INFO ProjectMessage record for this project."""
         severity = ProjectMessage.Severity.INFO
         return self.add_message(
-            severity, description, model, details, exception, resource, package
+            severity,
+            description,
+            model,
+            details,
+            exception,
+            object_instance,
         )
 
     def add_warning(
@@ -1297,13 +1303,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         model="",
         details=None,
         exception=None,
-        resource=None,
-        package=None,
+        object_instance=None,
     ):
         """Create a WARNING ProjectMessage record for this project."""
         severity = ProjectMessage.Severity.WARNING
         return self.add_message(
-            severity, description, model, details, exception, resource, package
+            severity,
+            description,
+            model,
+            details,
+            exception,
+            object_instance,
         )
 
     def add_error(
@@ -1312,13 +1322,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         model="",
         details=None,
         exception=None,
-        resource=None,
-        package=None,
+        object_instance=None,
     ):
         """Create an ERROR ProjectMessage record using for this project."""
         severity = ProjectMessage.Severity.ERROR
         return self.add_message(
-            severity, description, model, details, exception, resource, package
+            severity,
+            description,
+            model,
+            details,
+            exception,
+            object_instance,
         )
 
     def get_absolute_url(self):
@@ -1611,7 +1625,7 @@ class SaveProjectMessageMixin:
             model=self.__class__,
             details=model_to_dict(self),
             exception=exception,
-            resource=resource,
+            object_instance=resource,
         )
 
     def add_errors(self, exceptions):
@@ -2050,6 +2064,33 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                 print(output_str)
 
 
+class ComplianceAlertQuerySetMixin:
+    def compliance_issues(self, severity):
+        """
+        Retrieve compliance issues based on severity.
+        Supported values are 'error', 'warning', and 'missing'.
+        """
+        compliance = self.model.Compliance
+        severity = severity.lower()
+
+        severity_mapping = {
+            "error": [compliance.ERROR.value],
+            "warning": [compliance.ERROR.value, compliance.WARNING.value],
+            "missing": [
+                compliance.ERROR.value,
+                compliance.WARNING.value,
+                compliance.MISSING.value,
+            ],
+        }
+
+        if severity not in severity_mapping:
+            raise ValueError(
+                f"Supported severities are: {', '.join(severity_mapping.keys())}"
+            )
+
+        return self.filter(compliance_alert__in=severity_mapping[severity])
+
+
 def convert_glob_to_django_regex(glob_pattern):
     """
     Convert a glob pattern to an equivalent django regex pattern
@@ -2062,7 +2103,7 @@ def convert_glob_to_django_regex(glob_pattern):
     return escaped_pattern
 
 
-class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
+class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuerySet):
     def prefetch_for_serializer(self):
         """
         Optimized prefetching for a QuerySet to be consumed by the
@@ -2719,7 +2760,7 @@ class CodebaseResource(
 
         Paths are returned in lower-cased sorted path order to reflect the
         behavior of the `commoncode.resource.Resource.children()`
-        https://github.com/nexB/commoncode/blob/main/src/commoncode/resource.py
+        https://github.com/aboutcode-org/commoncode/blob/main/src/commoncode/resource.py
 
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.VirtualCodebase class API.
@@ -2792,7 +2833,7 @@ class CodebaseResource(
 
         This is a workaround ScanCode-toolkit breaking down long lines and creating an
         artificially higher number of lines, see:
-        https://github.com/nexB/scancode.io/issues/292#issuecomment-901766139
+        https://github.com/aboutcode-org/scancode.io/issues/292#issuecomment-901766139
         """
         for line_number, lines_group in groupby(numbered_lines, key=itemgetter(0)):
             yield line_number, "".join(line for _, line in lines_group)
@@ -2834,7 +2875,7 @@ class CodebaseResource(
                 model=DiscoveredPackage,
                 details=package_data,
                 exception=exception,
-                resource=self,
+                object_instance=self,
             )
         else:
             self.add_package(package)
@@ -2954,7 +2995,10 @@ class VulnerabilityQuerySetMixin:
 
 
 class DiscoveredPackageQuerySet(
-    VulnerabilityQuerySetMixin, PackageURLQuerySetMixin, ProjectRelatedQuerySet
+    VulnerabilityQuerySetMixin,
+    PackageURLQuerySetMixin,
+    ComplianceAlertQuerySetMixin,
+    ProjectRelatedQuerySet,
 ):
     def with_resources_count(self):
         count_subquery = Subquery(
@@ -2978,6 +3022,20 @@ class DiscoveredPackageQuerySet(
             return super().filter(*args, **kwargs).for_package_url(purl_str)
 
         return super().filter(*args, **kwargs)
+
+    def non_root_packages(self):
+        """
+        Return packages that have at least one package parent.
+        Those are used as part of a ``Dependency.resolved_to`` FK.
+        """
+        return self.filter(resolved_from_dependencies__isnull=False)
+
+    def root_packages(self):
+        """
+        Return packages that are directly related to the Project.
+        Those packages are not used as part of a ``Dependency.resolved_to`` FK.
+        """
+        return self.filter(resolved_from_dependencies__isnull=True)
 
 
 class AbstractPackage(models.Model):
@@ -3245,6 +3303,7 @@ class DiscoveredPackage(
         help_text=_("Unique identifier for this package."),
     )
     keywords = models.JSONField(default=list, blank=True)
+    notes = models.TextField(blank=True)
     source_packages = models.JSONField(default=list, blank=True)
     tag = models.CharField(blank=True, max_length=50)
 

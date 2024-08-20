@@ -16,6 +16,12 @@
   </div>
 
   <div class="container is-fluid mb-3">
+    <a href="{% url 'project_dependency_tree' project.slug %}" class="is-pulled-right">
+      <span class="icon">
+        <i class="fa-solid fa-sitemap"></i>
+      </span>
+      <span>View the dependency tree</span>
+    </a>
     <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
       {% include 'scanpipe/includes/list_view_thead.html' %}
       <tbody>
