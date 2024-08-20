@@ -2455,7 +2455,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(checks.count(), 15)
         self.assertEqual(checks[0].check_name, "Code-Review")
         self.assertEqual(checks[0].check_score, "1")
-        
+
     def test_scanpipe_model_codebase_resource_compliance_alert_queryset_mixin(self):
         severities = CodebaseResource.Compliance
         make_resource_file(self.project1, path="none")
@@ -2478,7 +2478,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertQuerySetEqual(
             qs.compliance_issues(severities.MISSING), [error, missing, warning]
         )
-        
+
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
     """
