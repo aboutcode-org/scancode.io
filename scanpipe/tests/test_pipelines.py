@@ -1242,7 +1242,7 @@ class PipelinesIntegrationTest(TestCase):
     def test_scanpipe_get_scorecard_info_packages_integration(
         self, mock_is_configured, mock_is_available
     ):
-        pipeline_name = "get_scorecard_info_packages"
+        pipeline_name = "fetch_scorecode_info"
         project1 = Project.objects.create(name="Analysis")
         package1 = DiscoveredPackage.create_from_data(project1, package_data1)
         package1.vcs_url = "https://github.com/ossf/scorecard"
