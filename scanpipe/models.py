@@ -3918,7 +3918,7 @@ class PackageScore(UUIDPKModel, PackageScoreMixin):
     @classmethod
     @transaction.atomic()
     def create_from_data(cls, DiscoveredPackage, scorecard_data, scoring_tool=None):
-        """Create ScoreCard Object from ScoreCard Object"""
+        """Create ScoreCard object from scorecard data and discovered package"""
         final_data = {
             "score": scorecard_data.score,
             "scoring_tool_version": scorecard_data.scoring_tool_version,
@@ -3958,18 +3958,14 @@ class PackageScore(UUIDPKModel, PackageScoreMixin):
         # Create associated scorecard_checks
         checks_data = scorecard_data.checks
 
-        ScorecardCheck.objects.bulk_create(
-            [
-                ScorecardCheck(
-                    check_name=check_data.check_name,
-                    check_score=check_data.check_score,
-                    reason=check_data.reason or "",
-                    details=check_data.details or [],
-                    for_package_score=scorecard_object,
-                )
-                for check_data in checks_data
-            ]
-        )
+        for check_data in checks_data:
+            ScorecardCheck.objects.create(
+                check_name=check_data.check_name,
+                check_score=check_data.check_score,
+                reason=check_data.reason or "",
+                details=check_data.details or [],
+                for_package_score=scorecard_object,
+            )
 
         return scorecard_object
 

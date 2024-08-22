@@ -28,28 +28,10 @@ from scanpipe.pipelines import Pipeline
 
 class FetchScoreCodeInfo(Pipeline):
     """
-    Pipeline to fetch ScoreCode information for packages and dependencies.
+    Fetch ScoreCode information for packages and dependencies.
 
-    This pipeline retrieves ScoreCode data for each package in the project and
-    stores it in the corresponding package instances
-
-    Attributes
-    ----------
-        download_inputs (bool): Indicates whether inputs should be downloaded.
-        is_addon (bool): Indicates whether this pipeline is an add-on.
-
-    Methods
-    -------
-        steps(cls):
-            Defines the steps for the pipeline.
-
-        check_scorecode_service_availability(self):
-            Checks if the ScoreCode service is configured and available.
-
-        lookup_save_packages_scorecode_info(self):
-            Fetches ScoreCode information for each discovered package in the project
-            and saves the information to the respective package instances.
-
+    This pipeline retrieves ScoreCode data for each package in the project
+    and stores it in the corresponding package instances.
     """
 
     download_inputs = False
@@ -70,7 +52,7 @@ class FetchScoreCodeInfo(Pipeline):
         if not scorecard.is_available():
             raise Exception("scorecode service is not available.")
 
-    def lookup_save_packages_scorecode_info(self):
+    def fetch_packages_scorecode_info(self):
         """Fetch scorecode information for each of the project's discovered packages."""
         packages = self.project.discoveredpackages.all()
         scorecard_packages_data = scorecard.fetch_scorecard_info(
@@ -86,4 +68,4 @@ class FetchScoreCodeInfo(Pipeline):
             )
 
         else:
-            raise Exception("No Data Found for the packages")
+            raise Exception("No data found for the packages")
