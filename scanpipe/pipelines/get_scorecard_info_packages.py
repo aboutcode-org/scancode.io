@@ -41,7 +41,7 @@ class FetchScoreCodeInfo(Pipeline):
     def steps(cls):
         return (
             cls.check_scorecode_service_availability,
-            cls.lookup_save_packages_scorecode_info,
+            cls.fetch_packages_scorecode_info,
         )
 
     def check_scorecode_service_availability(self):
