@@ -74,7 +74,7 @@ class MatchToMatchCode(Pipeline):
 
     def poll_matching_results(self):
         """Wait until the match results are ready by polling the match run status."""
-        matchcode.poll_until_success(self.run_url)
+        matchcode.poll_run_url_status(self.run_url)
 
     def create_packages_from_match_results(self):
         """Create DiscoveredPackages from match results."""
