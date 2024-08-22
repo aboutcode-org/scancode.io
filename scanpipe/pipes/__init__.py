@@ -442,26 +442,17 @@ def poll_until_success(check, sleep=10, **kwargs):
     function.
     """
     run_status = AbstractTaskFieldsModel.Status
-    # Continue looping if the run instance has the following statuses
-    CONTINUE_STATUSES = [
-        run_status.NOT_STARTED,
-        run_status.QUEUED,
-        run_status.RUNNING,
-    ]
     # Return False if the run instance has the following statuses
     FAIL_STATUSES = [
         run_status.FAILURE,
         run_status.STOPPED,
         run_status.STALE,
     ]
-
     while True:
         status = check(**kwargs)
+
         if status == run_status.SUCCESS:
             return True
-
-        if status in CONTINUE_STATUSES:
-            continue
 
         if status in FAIL_STATUSES:
             return False
