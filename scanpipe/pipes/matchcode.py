@@ -266,8 +266,9 @@ def send_project_json_to_matchcode(
             timeout=timeout,
             files=files,
         )
+    match_url = response["url"]
     run_url = response["runs"][0]["url"]
-    return run_url
+    return match_url, run_url
 
 
 def get_run_url_status(run_url, **kwargs):
@@ -299,19 +300,26 @@ def poll_run_url_status(run_url, sleep=10):
         raise MatchCodeIOException(msg)
 
 
-def get_match_results(run_url):
+def create_match_results_url(match_url):
     """
-    Given the `run_url` for a pipeline running the matchcode matching pipeline,
-    return the match results for that run.
+    Given the `match_url` for a project running the matchcode matching pipeline,
+    return the match results URL from `match_url`.
     """
-    response = request_get(run_url)
-    project_url = response["project"]
     # `project_url` can have params, such as "?format=json"
-    if "?" in project_url:
-        project_url, _ = project_url.split("?")
-    project_url = project_url.rstrip("/")
-    results_url = project_url + "/results/"
-    return request_get(results_url)
+    if "?" in match_url:
+        match_url, _ = match_url.split("?")
+    match_url = match_url.rstrip("/")
+    match_url = match_url + "/results/"
+    return match_url
+
+
+def get_match_results(match_url):
+    """
+    Given the `match_url` for a project running the matchcode matching pipeline,
+    return the match results.
+    """
+    match_results_url = create_match_results_url(match_url)
+    return request_get(match_results_url)
 
 
 def map_match_results(match_results):
