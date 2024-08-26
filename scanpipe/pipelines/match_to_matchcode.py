@@ -70,7 +70,9 @@ class MatchToMatchCode(Pipeline):
 
     def send_project_json_to_matchcode(self):
         """Create a JSON scan of the project Codebase and send it to MatchCode.io."""
-        self.match_url, self.run_url = matchcode.send_project_json_to_matchcode(self.project)
+        self.match_url, self.run_url = matchcode.send_project_json_to_matchcode(
+            self.project
+        )
 
     def poll_matching_results(self):
         """Wait until the match results are ready by polling the match run status."""

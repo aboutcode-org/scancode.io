@@ -288,10 +288,10 @@ class MatchCodePipesTest(TestCase):
         match_url = (
             "http://192.168.1.12/api/matching/65bf1e6d-6bff-4841-9c9b-db5cf25edfa7/"
         )
-        expected_match_url = (
-            "http://192.168.1.12/api/matching/65bf1e6d-6bff-4841-9c9b-db5cf25edfa7/results/"
+        expected_match_url = "http://192.168.1.12/api/matching/65bf1e6d-6bff-4841-9c9b-db5cf25edfa7/results/"
+        self.assertEqual(
+            expected_match_url, matchcode.create_match_results_url(match_url)
         )
-        self.assertEqual(expected_match_url, matchcode.create_match_results_url(match_url))
 
     @mock.patch("scanpipe.pipes.matchcode.request_get")
     @mock.patch("scanpipe.pipes.matchcode.is_available")
@@ -299,16 +299,6 @@ class MatchCodePipesTest(TestCase):
         self, mock_is_available, mock_request_get
     ):
         mock_is_available.return_value = True
-
-        request_get_check_response_loc = (
-            self.data
-            / "matchcode"
-            / "match_to_matchcode"
-            / "request_get_check_response.json"
-        )
-        with open(request_get_check_response_loc) as f:
-            mock_request_get_check_return = json.load(f)
-
         request_get_results_response_loc = (
             self.data
             / "matchcode"
@@ -318,7 +308,6 @@ class MatchCodePipesTest(TestCase):
         with open(request_get_results_response_loc) as f:
             mock_request_get_results_return = json.load(f)
         mock_request_get.side_effect = [
-            mock_request_get_check_return,
             mock_request_get_results_return,
         ]
 
@@ -326,7 +315,6 @@ class MatchCodePipesTest(TestCase):
             "http://192.168.1.12/api/matching/65bf1e6d-6bff-4841-9c9b-db5cf25edfa7/"
         )
         match_results = matchcode.get_match_results(match_url)
-
         self.assertEqual(mock_request_get_results_return, match_results)
 
     def test_scanpipe_pipes_matchcode_fingerprint_codebase_resources(self):
