@@ -153,7 +153,7 @@ on the codebase in our current directory.
 
     docker run --rm \
       -v "$(pwd)":/code \
-      ghcr.io/nexb/scancode.io:latest \
+      ghcr.io/aboutcode-org/scancode.io:latest \
       sh -c "run inspect_packages:StaticResolver /code" \
       > results.json
 

@@ -23,7 +23,7 @@ you may use the Docker image to run pipelines as a single command:
 
   docker run --rm \
     -v "$(pwd)":/codedrop \
-    ghcr.io/nexb/scancode.io:latest \
+    ghcr.io/aboutcode-org/scancode.io:latest \
     sh -c "run scan_codebase /codedrop" \
     > results.json
 

@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.7.2 (unreleased)
+v34.8.0 (2024-08-15)
 --------------------
 
 - Add a new ``enrich_with_purldb`` add-on pipeline to enrich the discovered packages
@@ -50,6 +50,9 @@ v34.7.2 (unreleased)
 - Add a new ``check-compliance`` management command to check for compliance issues in
   a project.
   https://github.com/nexB/scancode.io/issues/1182
+
+- Fix issues in ``match_to_matchcode`` where the incorrect polling function was
+  used and match results were not properly collected.
 
 v34.7.1 (2024-07-15)
 --------------------
