@@ -37,6 +37,8 @@ from django.db.models.expressions import Subquery
 from django.db.models.functions import Concat
 from django.template.defaultfilters import pluralize
 
+from commoncode.fileutils import file_name
+from commoncode import command
 from commoncode.paths import common_prefix
 from elf_inspector.dwarf import get_dwarf_paths
 from extractcode import EXTRACT_SUFFIX
@@ -1886,3 +1888,37 @@ def map_go_paths(project, logger=None):
             map_types=["go_file_paths"],
             logger=logger,
         )
+
+
+def convert_dex_to_java(project, logger=None):
+    """
+    Convert dex files to Java source files using jadx
+    """
+    project_files = project.codebaseresources.files().no_status()
+    to_resources = project_files.to_codebase().filter(extension=".dex")
+
+    resource_count = to_resources.count()
+    if logger:
+        logger(f"Running jadx on {resource_count:,d} .dex resources")
+
+    for resource in to_resources.iterator(chunk_size=2000):
+        run_jadx(resource.location)
+
+
+def run_jadx(location):
+    """
+    Run the program `jadx` on the classes.dex file at `location`
+
+    This will decompile the classes.dex file into Java source files.
+    """
+    rc, result, err = command.execute(
+        cmd_loc="jadx",
+        args=[
+            "-d",
+            location,
+        ],
+        to_files=False,
+    )
+
+    if rc != 0:
+        raise Exception(err)
