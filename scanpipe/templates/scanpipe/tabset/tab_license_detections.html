@@ -2,14 +2,15 @@
     <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
         <thead>
           <tr>
-            <th>License Expression</th>
-            <th>Origin Resource Path</th>
+            <th>License expression</th>
+            <th>Origin resource path</th>
+            <th>Matched text</th>
             <th>Rule URL</th>
             <th>Score</th>
             <th>Matcher</th>
-            <th>Match Length</th>
-            <th>Match Coverage</th>
-            <th>Rule Relevance</th>
+            <th>Match length</th>
+            <th>Match coverage</th>
+            <th>Rule relevance</th>
           </tr>
         </thead>
         <tbody>
@@ -22,7 +23,17 @@
                 <a href="{% url 'resource_detail' project.slug match.from_file %}#detection">{{ match.from_file }}</a>
             </td>
             <td class="break-all">
-                {{ match.rule_url }}
+              {{ match.matched_text }}
+            </td>
+            <td class="break-all">
+              {% if match.rule_url %}
+              <a href="{{match.rule_url}}">
+                {{ match.rule_identifier }}
+                <i class="fa-solid fa-up-right-from-square is-small"></i>
+              </a>
+              {% else %}
+                {{ match.rule_identifier }}
+              {% endif %}
             </td>
             <td class="break-all">
                 {{ match.score }}
@@ -47,7 +58,7 @@
     <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
         <thead>
           <tr>
-            <th>Detection Log</th>
+            <th>Detection log</th>
           </tr>
         </thead>
         <tbody>
@@ -64,9 +75,9 @@
     <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
         <thead>
           <tr>
-            <th>Resource Path</th>
-            <th>Start Line</th>
-            <th>End Line</th>
+            <th>Resource path</th>
+            <th>Start line</th>
+            <th>End line</th>
           </tr>
         </thead>
         <tbody>
