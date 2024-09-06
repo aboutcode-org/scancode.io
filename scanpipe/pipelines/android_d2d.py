@@ -54,10 +54,9 @@ class AndroidAPKDeployToDevelop(DeployToDevelop):
             cls.get_inputs,
             cls.extract_inputs_to_codebase_directory,
             cls.extract_archives,
+            cls.convert_dex_to_java,
             cls.collect_and_create_codebase_resources,
-            cls.convert_dex_to_java
             cls.map_checksum,
-            # substring matching step
             cls.find_java_packages,
             cls.map_java_to_class,
             cls.map_jar_to_source,

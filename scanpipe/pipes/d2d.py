@@ -37,6 +37,10 @@ from django.db.models.expressions import Subquery
 from django.db.models.functions import Concat
 from django.template.defaultfilters import pluralize
 
+from os.path import abspath
+from os.path import expanduser
+from os.path import join
+from commoncode import fileutils
 from commoncode.fileutils import file_name
 from commoncode import command
 from commoncode.paths import common_prefix
@@ -1890,19 +1894,15 @@ def map_go_paths(project, logger=None):
         )
 
 
-def convert_dex_to_java(project, logger=None):
-    """
-    Convert dex files to Java source files using jadx
-    """
-    project_files = project.codebaseresources.files().no_status()
-    to_resources = project_files.to_codebase().filter(extension=".dex")
-
-    resource_count = to_resources.count()
-    if logger:
-        logger(f"Running jadx on {resource_count:,d} .dex resources")
-
-    for resource in to_resources.iterator(chunk_size=2000):
-        run_jadx(resource.location)
+def convert_dex_to_java(project):
+    location = project.codebase_path
+    abs_location = abspath(expanduser(location))
+    for top, _, files in fileutils.walk(abs_location):
+        for f in files:
+            if not f.endswith('.dex'):
+                continue
+            loc = join(top, f)
+            run_jadx(location=loc)
 
 
 def run_jadx(location):
@@ -1915,6 +1915,7 @@ def run_jadx(location):
         cmd_loc="jadx",
         args=[
             "-d",
+            f"{file_name(location)}-java",
             location,
         ],
         to_files=False,
