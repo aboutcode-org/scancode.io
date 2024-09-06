@@ -1,6 +1,11 @@
 Changelog
 =========
 
+v34.8.1 (2024-09-06)
+--------------------
+
+- Upgrade Django to security release 5.1.1 and related dependencies.
+
 v34.8.0 (2024-08-15)
 --------------------
 
