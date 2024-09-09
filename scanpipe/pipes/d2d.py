@@ -24,6 +24,9 @@ from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
 from dataclasses import dataclass
+from os.path import abspath
+from os.path import expanduser
+from os.path import join
 from pathlib import Path
 from re import match as regex_match
 
@@ -37,12 +40,8 @@ from django.db.models.expressions import Subquery
 from django.db.models.functions import Concat
 from django.template.defaultfilters import pluralize
 
-from os.path import abspath
-from os.path import expanduser
-from os.path import join
-from commoncode import fileutils
-from commoncode.fileutils import file_name
 from commoncode import command
+from commoncode import fileutils
 from commoncode.paths import common_prefix
 from elf_inspector.dwarf import get_dwarf_paths
 from extractcode import EXTRACT_SUFFIX
@@ -1894,12 +1893,17 @@ def map_go_paths(project, logger=None):
         )
 
 
-def convert_dex_to_java(project):
+def convert_dex_to_java(project, to_only=False):
+    """
+    Decompile .dex files in `project` into Java source code using `jadx`. If
+    `to_only` is True, then only the .dex files in the to/ codebase are
+    decompiled, otherwise all .dex files in `project are decompiled.
+    """
     location = project.codebase_path
     abs_location = abspath(expanduser(location))
     for top, _, files in fileutils.walk(abs_location):
         for f in files:
-            if not f.endswith('.dex'):
+            if not f.endswith(".dex") or (to_only and (FROM in top)):
                 continue
             loc = join(top, f)
             run_jadx(location=loc)
@@ -1911,15 +1915,12 @@ def run_jadx(location):
 
     This will decompile the classes.dex file into Java source files.
     """
-    rc, result, err = command.execute(
+    command.execute(
         cmd_loc="jadx",
         args=[
             "-d",
-            f"{file_name(location)}-java",
+            f"{location}-out",
             location,
         ],
         to_files=False,
     )
-
-    if rc != 0:
-        raise Exception(err)

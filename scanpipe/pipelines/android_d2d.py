@@ -20,8 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-from aboutcode.pipeline import group
-from scanpipe import pipes
 from scanpipe.pipelines.deploy_to_develop import DeployToDevelop
 from scanpipe.pipes import d2d
 
@@ -58,13 +56,8 @@ class AndroidAPKDeployToDevelop(DeployToDevelop):
             cls.collect_and_create_codebase_resources,
             cls.map_checksum,
             cls.find_java_packages,
-            cls.map_java_to_class,
-            cls.map_jar_to_source,
-            cls.flag_mapped_resources_archives_and_ignored_directories,
-            cls.remove_packages_without_resources,
-            cls.flag_deployed_from_resources_with_missing_license,
-            cls.create_local_files_packages,
+            cls.map_path,
         )
 
     def convert_dex_to_java(self):
-        d2d.convert_dex_to_java(self.project)
+        d2d.convert_dex_to_java(self.project, to_only=True)
