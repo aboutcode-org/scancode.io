@@ -3917,7 +3917,8 @@ class PackageScore(UUIDPKModel, PackageScoreMixin):
 
     @classmethod
     @transaction.atomic()
-    def create_from_data(cls, DiscoveredPackage, scorecard_data, scoring_tool=None):
+    def create_from_scorecard_data(cls, discovered_package, scorecard_data,
+                             scoring_tool=None):
         """Create ScoreCard object from scorecard data and discovered package"""
         final_data = {
             "score": scorecard_data.score,
@@ -3951,23 +3952,29 @@ class PackageScore(UUIDPKModel, PackageScoreMixin):
 
         scorecard_object = cls.objects.create(
             **final_data,
-            discovered_package=DiscoveredPackage,
+            discovered_package=discovered_package,
             scoring_tool=scoring_tool,
         )
 
-        # Create associated scorecard_checks
-        checks_data = scorecard_data.checks
-
-        for check_data in checks_data:
+        for check in scorecard_data.checks:
             ScorecardCheck.objects.create(
-                check_name=check_data.check_name,
-                check_score=check_data.check_score,
-                reason=check_data.reason or "",
-                details=check_data.details or [],
+                check_name=check.check_name,
+                check_score=check.check_score,
+                reason=check.reason or "",
+                details=check.details or [],
                 for_package_score=scorecard_object,
             )
 
         return scorecard_object
+
+    @classmethod
+    def create_from_package_and_scorecard(cls, scorecard_data, package):
+        score_object = cls.create_from_data(
+            discovered_package=package,
+            scorecard_data=scorecard_data,
+            scoring_tool="ossf_scorecard",
+        )
+        score_object.save()
 
 
 class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
@@ -3985,13 +3992,13 @@ class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
     )
 
     @classmethod
-    def create_from_data(cls, package_score, check_data):
+    def create_from_data(cls, package_score, check):
         """Create a ScorecardCheck instance from provided data."""
         final_data = {
-            "check_name": check_data.get("name"),
-            "check_score": check_data.get("score"),
-            "reason": check_data.get("reason"),
-            "details": check_data.get("details", []),
+            "check_name": check.get("name"),
+            "check_score": check.get("score"),
+            "reason": check.get("reason"),
+            "details": check.get("details", []),
             "for_package_score": package_score,
         }
         return cls.objects.create(**final_data)

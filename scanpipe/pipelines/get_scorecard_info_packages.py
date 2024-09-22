@@ -54,18 +54,16 @@ class FetchScoreCodeInfo(Pipeline):
 
     def fetch_packages_scorecode_info(self):
         """Fetch scorecode information for each of the project's discovered packages."""
-        packages = self.project.discoveredpackages.all()
-        scorecard_packages_data = scorecard.fetch_scorecard_info(
-            packages=packages,
-            logger=self.log,
-        )
+        for package in self.project.discoveredpackages.all():
 
-        if scorecard_packages_data:
-            scorecard.save_scorecard_info(
-                package_scorecard_data=scorecard_packages_data,
-                cls=PackageScore,
-                logger=self.log,
-            )
+            scorecard_data = scorecard.fetch_scorecard_info(package=package)
 
-        else:
-            raise Exception("No data found for the packages")
+            if scorecard_data:
+                PackageScore.create_from_package_and_scorecard(
+                    scorecard_data=scorecard_data,
+                    package=package,
+                )
+
+            else:
+                #We Want to create error instead of exception
+                raise Exception("No data found for the package")
