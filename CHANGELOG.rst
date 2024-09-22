@@ -1,6 +1,11 @@
 Changelog
 =========
 
+v34.8.1 (2024-09-06)
+--------------------
+
+- Upgrade Django to security release 5.1.1 and related dependencies.
+
 v34.8.0 (2024-08-15)
 --------------------
 
@@ -50,6 +55,9 @@ v34.8.0 (2024-08-15)
 - Add a new ``check-compliance`` management command to check for compliance issues in
   a project.
   https://github.com/nexB/scancode.io/issues/1182
+
+- Fix issues in ``match_to_matchcode`` where the incorrect polling function was
+  used and match results were not properly collected.
 
 v34.7.1 (2024-07-15)
 --------------------
