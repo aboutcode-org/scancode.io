@@ -14,7 +14,7 @@ you simply start by creating a :ref:`new project <user_interface_create_new_proj
 and run the appropriate pipeline.
 
 ScanCode.io offers several :ref:`built_in_pipelines` depending on your input, see
-the :ref:`faq_which_pipeline` bellow.
+the :ref:`faq_which_pipeline` below.
 
 As an alternative, I you simply which to run a pipeline without installing ScanCode.io
 you may use the Docker image to run pipelines as a single command:
@@ -271,7 +271,7 @@ data older than 7 days::
 
     @daily scanpipe flush-projects --retain-days 7 --no-input
 
-.. note:: If you are use Docker for running ScanCode.io, you can run the scanpipe
+.. note:: If you are using Docker for running ScanCode.io, you can run the scanpipe
   ``flush-projects`` command using::
 
     docker compose run --rm web scanpipe flush-projects
