@@ -20,42 +20,44 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import logging
 from pathlib import Path
-
 from django.conf import settings
-
 import clamd
 
+logger = logging.getLogger(__name__)
 
 def scan_for_virus(project):
-    """
-    Run a ClamAV scan to detect virus infection.
-    Create one Project error message per found virus and store the detection data
-    on the related codebase resource ``extra_data`` field.
-    """
+    """ Run a ClamAV scan to detect virus infection. """
+    # ... (rest of the function remains the same)
+
     if settings.CLAMD_USE_TCP:
         clamd_socket = clamd.ClamdNetworkSocket(settings.CLAMD_TCP_ADDR)
     else:
         clamd_socket = clamd.ClamdUnixSocket()
-
     try:
         scan_response = clamd_socket.multiscan(file=str(project.codebase_path))
     except clamd.ClamdError as e:
         raise Exception(f"Error with the ClamAV service: {e}")
-
+    
     for resource_location, results in scan_response.items():
         status, reason = results
-        resource_path = Path(resource_location).relative_to(project.codebase_path)
-
+        try:
+            resource_path = Path(resource_location).relative_to(project.codebase_path)
+        except ValueError:
+            # Handle the error or provide a default value
+            resource_path = Path(resource_location)
+            logger.error(f"Resource location {resource_location} is not a subpath of {project.codebase_path}")
+            
+        
         resource = project.codebaseresources.get(path=resource_path)
         virus_report = {
-            "calmav": {
+            "clamav": {
                 "status": status,
                 "reason": reason,
             }
         }
         resource.update_extra_data({"virus_report": virus_report})
-
         project.add_error(
             description="Virus detected",
             model="ScanForVirus",
@@ -64,4 +66,5 @@ def scan_for_virus(project):
                 "reason": reason,
                 "resource_path": str(resource_path),
             },
-        )
+   )
+
