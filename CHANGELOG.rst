@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v34.8.2 (unreleased)
+--------------------
+
+- Add ``android_analysis`` to ``extra_requires``. This installs the package
+  ``android_inspector``, which provides a pipeline for Android APK
+  deploy-to-development analysis.
+
 v34.8.1 (2024-09-06)
 --------------------
 
