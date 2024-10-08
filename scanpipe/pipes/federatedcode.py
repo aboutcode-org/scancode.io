@@ -52,11 +52,11 @@ def is_configured():
     return True, ""
 
 
-def clone_repository(package_repo_url, logger=None):
+def clone_repository(repo_url, logger=None):
     """Clone repository to local_path."""
     local_dir = tempfile.mkdtemp()
 
-    authenticated_repo_url = package_repo_url.replace(
+    authenticated_repo_url = repo_url.replace(
         "https://",
         f"https://{settings.FEDERATEDCODE_GIT_SERVICE_TOKEN}@",
     )
@@ -74,18 +74,20 @@ def clone_repository(package_repo_url, logger=None):
 
 
 def get_package_repository(package, logger=None):
+    """Return the Git repository URL and scan path for a given package."""
     package_base_dir = hashid.get_package_base_dir(purl=package.purl)
     package_repo_name = package_base_dir.parts[0]
 
-    package_scan_file = package_base_dir / package.version / "scan.json"
+    package_scan_path = package_base_dir / package.version / "scan.json"
     package_git_repo_url = urljoin(
         settings.FEDERATEDCODE_GIT_ACCOUNT, f"{package_repo_name}.git"
     )
 
-    return package_scan_file, package_git_repo_url
+    return package_git_repo_url, package_scan_path
 
 
 def add_scan_result(project, repo, package_scan_file, logger=None):
+    """Add package scan result to the local Git repository."""
     relative_scan_file_path = Path(*package_scan_file.parts[1:])
 
     write_to = Path(repo.working_dir) / relative_scan_file_path
@@ -99,16 +101,16 @@ def add_scan_result(project, repo, package_scan_file, logger=None):
     return relative_scan_file_path
 
 
-def commit_and_push_changes(repo, file_to_commit, purl, logger=None):
+def commit_and_push_changes(
+    repo, file_to_commit, purl, remote_name="origin", logger=None
+):
+    """Commit and push changes to remote repository."""
     author_name = settings.FEDERATEDCODE_GIT_SERVICE_NAME
     author_email = settings.FEDERATEDCODE_GIT_SERVICE_EMAIL
-    add_or_update = "Update"
 
-    if file_to_commit in repo.untracked_files:
-        add_or_update = "Add"
-
+    change_type = "Add" if file_to_commit in repo.untracked_files else "Update"
     commit_message = f"""\
-    {add_or_update} scan result for {purl}
+    {change_type} scan result for {purl}
 
     Tool: pkg:github/aboutcode-org/scancode.io@v{VERSION}
     Reference: https://{settings.ALLOWED_HOSTS[0]}/
@@ -119,5 +121,5 @@ def commit_and_push_changes(repo, file_to_commit, purl, logger=None):
     default_branch = repo.active_branch.name
 
     repo.index.add([file_to_commit])
-    repo.index.commit(textwrap.dedent(commit_message).strip())
-    repo.git.push("origin", default_branch, "--no-verify")
+    repo.index.commit(textwrap.dedent(commit_message))
+    repo.git.push(remote_name, default_branch)

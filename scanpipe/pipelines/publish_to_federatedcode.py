@@ -44,6 +44,7 @@ class PublishToFederatedCode(Pipeline):
         )
 
     def get_package(self):
+        """Get the package associated with the scan."""
         has_single_package_scan = any(
             run.pipeline_name == "scan_single_package"
             for run in self.project.runs.all()
@@ -66,18 +67,20 @@ class PublishToFederatedCode(Pipeline):
         self.package = self.project.discoveredpackages.first()
 
     def get_package_repository(self):
-        self.package_scan_file, self.package_git_repo = (
+        """Get the Git repository URL and scan path for a given package."""
+        self.package_git_repo, self.package_scan_file = (
             federatedcode.get_package_repository(package=self.package, logger=self.log)
         )
 
     def clone_repository(self):
         """Clone repository to local_path."""
         self.repo = federatedcode.clone_repository(
-            package_repo_url=self.package_git_repo,
+            repo_url=self.package_git_repo,
             logger=self.log,
         )
 
     def add_scan_result(self):
+        """Add package scan result to the local Git repository."""
         self.relative_file_path = federatedcode.add_scan_result(
             project=self.project,
             repo=self.repo,
@@ -86,12 +89,15 @@ class PublishToFederatedCode(Pipeline):
         )
 
     def commit_and_push_changes(self):
+        """Commit and push changes to remote repository."""
         federatedcode.commit_and_push_changes(
             repo=self.repo,
             file_to_commit=str(self.relative_file_path),
             purl=self.package.purl,
             logger=self.log,
         )
+        self.log(f"Scan for '{self.package.purl}' pushed to '{self.package_git_repo}'")
 
     def delete_local_clone(self):
+        """Remove local clone."""
         shutil.rmtree(self.repo.working_dir)
