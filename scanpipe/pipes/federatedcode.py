@@ -78,7 +78,7 @@ def get_package_repository(package, logger=None):
     package_base_dir = hashid.get_package_base_dir(purl=package.purl)
     package_repo_name = package_base_dir.parts[0]
 
-    package_scan_path = package_base_dir / package.version / "scan.json"
+    package_scan_path = package_base_dir / package.version / "scancodeio.json"
     package_git_repo_url = urljoin(
         settings.FEDERATEDCODE_GIT_ACCOUNT, f"{package_repo_name}.git"
     )
