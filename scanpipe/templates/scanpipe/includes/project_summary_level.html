@@ -2,7 +2,7 @@
 <nav class="level is-mobile">
   <div class="level-item has-text-centered">
     <div>
-      <p class="heading">Packages</p>
+      <p class="heading"><a href="{% url 'project_packages' project.slug %}">Packages</a></p>
       <p class="{{ title_class }} is-flex is-align-items-center is-justify-content-center">
         {% if project.package_count %}
           <a href="{% url 'project_packages' project.slug %}">
@@ -22,7 +22,7 @@
   </div>
   <div class="level-item has-text-centered">
     <div>
-      <p class="heading">Dependencies</p>
+      <p class="heading"><a href="{% url 'project_dependencies' project.slug %}">Dependencies</a></p>
       <p class="{{ title_class }} is-flex is-align-items-center is-justify-content-center">
         {% if project.dependency_count %}
           <a href="{% url 'project_dependencies' project.slug %}">
@@ -42,7 +42,7 @@
   </div>
   <div class="level-item has-text-centered">
     <div>
-      <p class="heading">Resources</p>
+      <p class="heading"><a href="{{ project_resources_url }}">Resources</a></p>
       <p class="{{ title_class }}">
         {% if project.resource_count %}
           <a href="{{ project_resources_url }}">
@@ -68,7 +68,7 @@
   {% endif %}
   <div class="level-item has-text-centered">
     <div>
-      <p class="heading">Messages</p>
+      <p class="heading"><a href="{% url 'project_messages' project.slug %}">Messages</a></p>
       <p class="{{ title_class }}">
         {% if project.message_count %}
           <a href="{% url 'project_messages' project.slug %}">
