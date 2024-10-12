@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from importlib.resources import Package
 import io
 import json
 import shutil
@@ -2249,6 +2250,17 @@ class ScanPipeModelsTest(TestCase):
         package.update(declared_license_expression=license_expression)
         self.assertEqual("error", package.compliance_alert)
 
+        # Adding globbing support test
+    scanpipe_app.license_policies_index = {
+        'mit-*': {'compliance_alert': 'Approved'},
+        'cc-*-nc-*': {'compliance_alert': 'Warning'},
+        'LicenseRef-*': {'compliance_alert': 'Warning'}
+    }
+
+    license_expression = "mit-custom AND cc-by-nc-4.0 OR LicenseRef-example"
+    Package.update(declared_license_expression=license_expression)
+    self.assertEqual("warning", package.compliance_alert)  
+ 
         # Reset the index value
         scanpipe_app.license_policies_index = None
 
