@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-import shutil
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import federatedcode
@@ -100,4 +99,4 @@ class PublishToFederatedCode(Pipeline):
 
     def delete_local_clone(self):
         """Remove local clone."""
-        shutil.rmtree(self.repo.working_dir)
+        federatedcode.delete_local_clone(repo=self.repo)
