@@ -26,6 +26,7 @@ import logging
 import re
 import shutil
 import uuid
+import re
 from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
@@ -2427,6 +2428,7 @@ class ComplianceAlertMixin(models.Model):
 
         super().save(*args, **kwargs)
 
+
     def compute_compliance_alert(self):
         """Compute and return the compliance_alert value from the licenses policies."""
         license_expression = getattr(self, self.license_expression_field, "")
@@ -2434,17 +2436,30 @@ class ComplianceAlertMixin(models.Model):
             return ""
 
         alerts = []
-        policy_index = scanpipe_app.license_policies_index
+        policy_index = getattr(scanpipe_app,'license_policies_index',None)
+
+        if policy_index is None:
+            raise ValueError(
+                "policy_index is not defined. Please check your policies configuration."
+                )
 
         licensing = get_licensing()
         parsed = licensing.parse(license_expression, simple=True)
         license_keys = licensing.license_keys(parsed)
 
-        for license_key in license_keys:
-            if policy := policy_index.get(license_key):
-                alerts.append(policy.get("compliance_alert") or self.Compliance.OK)
-            else:
-                alerts.append(self.Compliance.MISSING)
+        # Pre-compile patterns for efficiency and case-insensitive matching
+    compiled_patterns = {pattern: re.compile(pattern.replace('*', '.*'),re.IGNORECASE) for pattern in policy_index}
+
+    for license_key in license_keys: 
+        missing_policy = True
+        for pattern, compiled_pattern in compiled_patterns.items():
+            if compiled_pattern.match(license_key):
+                missing_policy = False
+                alerts.append(policy_index[pattern].get("compliance_alert") or self.Compliance.OK)
+                break
+        if missing_policy:
+            alerts.append(self.Compliance.MISSING)
+
 
         compliance_ordered_by_severity = [
             self.Compliance.ERROR,
