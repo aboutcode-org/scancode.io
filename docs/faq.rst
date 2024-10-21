@@ -58,7 +58,7 @@ Here are some general guidelines based on different input scenarios:
   resolve packages from their package requirements, use the
   :ref:`resolve_dependencies <pipeline_resolve_dependencies>` pipeline.
 - When you have application **package archives/codebases** and optionally also
-  their **pre-resolved dependenices** and you want to **inspect packages**
+  their **pre-resolved dependenices** and you want to do a fast scan to **inspect packages**
   present in the package manifests and dependency, use the
   :ref:`inspect_packages <pipeline_inspect_packages>` pipeline.
 - For scenarios involving both a **development and deployment codebase**, consider using

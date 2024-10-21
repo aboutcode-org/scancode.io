@@ -387,15 +387,15 @@ Optional arguments:
 - ``--format {json,spdx,cyclonedx,attribution}``: Specify the output format.
   **The default format is JSON**.
 
-For example, running the ``inspect_packages`` pipeline on a manifest file:
+For example, running the ``resolve_dependencies`` pipeline on a manifest file:
 
 .. code-block:: bash
 
-    $ run inspect_packages path/to/package.json > results.json
+    $ run resolve_dependencies path/to/package.json > results.json
 
 .. tip:: Use the "pipeline_name:group1,group2" syntax to select steps groups::
 
-    $ run inspect_packages:StaticResolver package.json > results.json
+    $ run resolve_dependencies:StaticResolver package.json > results.json
 
 In the following example, running the ``scan_codebase`` followed by the
 ``find_vulnerabilities`` pipelines on a codebase directory:

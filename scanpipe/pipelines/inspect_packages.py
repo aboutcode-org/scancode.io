@@ -27,14 +27,16 @@ from scanpipe.pipes import scancode
 
 class InspectPackages(ScanCodebase):
     """
-    Inspect a codebase for packages and pre-resolved dependencies.
+    Inspect a codebase for packages and dependencies.
 
     This pipeline inspects a codebase for application packages
     and their dependencies using package manifests and dependency
     lockfiles. It does not resolve dependencies, it does instead
     collect already pre-resolved dependencies from lockfiles, and
     direct dependencies (possibly not resolved) as found in
-    package manifests' dependency sections.
+    package manifests' dependency sections. This is a fast scan to get
+    all the PackageUrls present from packages and dependencies, without
+    performing package assembly or license/copyright scans.
 
     See documentation for the list of supported package manifests and
     dependency lockfiles:
@@ -64,12 +66,3 @@ class InspectPackages(ScanCodebase):
             package_only=True,
             progress_logger=self.log,
         )
-
-    @group("StaticResolver")
-    def resolve_dependencies(self):
-        """
-        Create packages and dependency relationships from
-        lockfiles or manifests containing pre-resolved
-        dependencies.
-        """
-        scancode.resolve_dependencies(project=self.project)
