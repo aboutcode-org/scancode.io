@@ -8,6 +8,10 @@ v34.8.2 (unreleased)
   ``android_inspector``, which provides a pipeline for Android APK
   deploy-to-development analysis.
 
+- Remove the sleep time in the context of testing ``matchcode.poll_run_url_status``
+  to speed up the test.
+  https://github.com/aboutcode-org/scancode.io/issues/1411
+
 v34.8.1 (2024-09-06)
 --------------------
 

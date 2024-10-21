@@ -140,7 +140,7 @@ class MatchCodePipesTest(TestCase):
                 "status": run_status.SUCCESS,
             },
         ]
-        return_value = matchcode.poll_run_url_status(run_url)
+        return_value = matchcode.poll_run_url_status(run_url, sleep=0)
         self.assertEqual(True, return_value)
 
         # Failure
@@ -169,7 +169,7 @@ class MatchCodePipesTest(TestCase):
             },
         ]
         with self.assertRaises(Exception) as context:
-            matchcode.poll_run_url_status(run_url)
+            matchcode.poll_run_url_status(run_url, sleep=0)
         self.assertTrue("failure message" in str(context.exception))
 
         # Stopped
@@ -198,7 +198,7 @@ class MatchCodePipesTest(TestCase):
             },
         ]
         with self.assertRaises(Exception) as context:
-            matchcode.poll_run_url_status(run_url)
+            matchcode.poll_run_url_status(run_url, sleep=0)
         self.assertTrue("stop message" in str(context.exception))
 
         # Stale
@@ -227,7 +227,7 @@ class MatchCodePipesTest(TestCase):
             },
         ]
         with self.assertRaises(Exception) as context:
-            matchcode.poll_run_url_status(run_url)
+            matchcode.poll_run_url_status(run_url, sleep=0)
         self.assertTrue("stale message" in str(context.exception))
 
     def test_scanpipe_pipes_matchcode_map_match_results(self):
