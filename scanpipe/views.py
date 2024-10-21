@@ -902,7 +902,7 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
             },
             "dependency": {
                 "queryset": project.discovereddependencies,
-                "fields": ["type", "is_runtime", "is_optional", "is_resolved"],
+                "fields": ["type", "is_runtime", "is_optional", "is_pinned"],
             },
         }
 
@@ -1576,8 +1576,8 @@ class DiscoveredDependencyListView(
             "filter_fieldname": "is_optional",
         },
         {
-            "field_name": "is_resolved",
-            "filter_fieldname": "is_resolved",
+            "field_name": "is_pinned",
+            "filter_fieldname": "is_pinned",
         },
         {
             "field_name": "is_direct",
@@ -2096,7 +2096,7 @@ class DiscoveredDependencyDetailsView(
                 "resolved_to_package_uid",
                 "is_runtime",
                 "is_optional",
-                "is_resolved",
+                "is_pinned",
                 "is_direct",
             ],
             "icon_class": "fa-solid fa-info-circle",

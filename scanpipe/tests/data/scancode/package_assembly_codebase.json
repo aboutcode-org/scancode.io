@@ -62,7 +62,7 @@
           "matches": [
             {
               "license_expression": "mit",
-              "spdx_license_expression": "MIT",
+              "license_expression_spdx": "MIT",
               "from_file": "package_assembly_codebase.tar.gz-extract/test/get_package_resources/package.json",
               "start_line": 1,
               "end_line": 1,
@@ -238,7 +238,7 @@
               "matches": [
                 {
                   "license_expression": "mit",
-                  "spdx_license_expression": "MIT",
+                  "license_expression_spdx": "MIT",
                   "from_file": "package_assembly_codebase.tar.gz-extract/test/get_package_resources/package.json",
                   "start_line": 1,
                   "end_line": 1,
