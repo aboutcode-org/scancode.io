@@ -12,6 +12,10 @@ v34.8.2 (unreleased)
   to speed up the test.
   https://github.com/aboutcode-org/scancode.io/issues/1411
 
+- Add ability to specify the CycloneDX output spec version using the ``output``
+  management command and providing the ``cyclonedx:VERSION`` syntax as format value.
+  https://github.com/aboutcode-org/scancode-action/issues/8
+
 v34.8.1 (2024-09-06)
 --------------------
 

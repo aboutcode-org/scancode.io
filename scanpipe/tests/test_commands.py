@@ -482,6 +482,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
     def test_scanpipe_management_command_output(self):
         project = Project.objects.create(name="my_project")
+        make_package(project, package_url="pkg:generic/name@1.0")
 
         out = StringIO()
         options = ["--project", project.name, "--no-color"]
@@ -512,10 +513,7 @@ class ScanPipeManagementCommandTest(TestCase):
         out = StringIO()
         options = ["--project", project.name, "--no-color"]
         options.extend(["--format", "WRONG"])
-        message = (
-            "Error: argument --format: invalid choice: 'WRONG' "
-            "(choose from 'json', 'csv', 'xlsx', 'spdx', 'cyclonedx', 'attribution')"
-        )
+        message = "Error: argument --format: invalid choice: 'WRONG'"
         with self.assertRaisesMessage(CommandError, message):
             call_command("output", *options, stdout=out)
 
@@ -533,6 +531,22 @@ class ScanPipeManagementCommandTest(TestCase):
         out_value = out.getvalue().strip()
         self.assertIn('"tool_name": "scanpipe"', out_value)
         self.assertIn('"notice": "Generated with ScanCode.io', out_value)
+
+        out = StringIO()
+        options = ["--project", project.name, "--no-color"]
+        options.extend(["--format", "cyclonedx", "--print"])
+        call_command("output", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        self.assertIn('"bomFormat": "CycloneDX"', out_value)
+        self.assertIn('"specVersion": "1.6",', out_value)
+
+        out = StringIO()
+        options = ["--project", project.name, "--no-color"]
+        options.extend(["--format", "cyclonedx:1.5", "--print"])
+        call_command("output", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        self.assertIn('"bomFormat": "CycloneDX"', out_value)
+        self.assertIn('"specVersion": "1.5",', out_value)
 
     def test_scanpipe_management_command_delete_project(self):
         project = Project.objects.create(name="my_project")

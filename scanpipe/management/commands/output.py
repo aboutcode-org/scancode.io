@@ -25,9 +25,12 @@ from django.core.management.base import CommandError
 from scanpipe.management.commands import ProjectCommand
 from scanpipe.pipes import output
 
+SUPPORTED_FORMATS = ["json", "csv", "xlsx", "attribution", "spdx", "cyclonedx"]
+
 
 class Command(ProjectCommand):
-    help = "Output project results as JSON, XLSX, SPDX, and CycloneDX."
+    help = "Output project results as JSON, XLSX, Attribution, SPDX, and CycloneDX."
+    print_to_stdout = False
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -35,8 +38,12 @@ class Command(ProjectCommand):
             "--format",
             default=["json"],
             nargs="+",
-            choices=["json", "csv", "xlsx", "spdx", "cyclonedx", "attribution"],
-            help="Specifies the output serialization format for the results.",
+            metavar=f"{{{','.join(SUPPORTED_FORMATS)}}}",
+            help=(
+                "Specifies the output format for the results. "
+                "To specify a CycloneDX spec version (default to latest), use the "
+                'syntax "cyclonedx:VERSION", e.g. "cyclonedx:1.5".'
+            ),
         )
         parser.add_argument(
             "--print",
@@ -46,33 +53,53 @@ class Command(ProjectCommand):
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
-        print_to_stdout = options["print"]
+        self.print_to_stdout = options["print"]
         formats = options["format"]
 
-        if print_to_stdout and len(formats) > 1:
+        if self.print_to_stdout and len(formats) > 1:
             raise CommandError(
                 "--print cannot be used when multiple formats are provided."
             )
 
-        if print_to_stdout and ("xlsx" in formats or "csv" in formats):
+        if self.print_to_stdout and ("xlsx" in formats or "csv" in formats):
             raise CommandError("--print is not compatible with xlsx and csv formats.")
 
-        for format_ in formats:
-            output_function = {
-                "json": output.to_json,
-                "csv": output.to_csv,
-                "xlsx": output.to_xlsx,
-                "spdx": output.to_spdx,
-                "cyclonedx": output.to_cyclonedx,
-                "attribution": output.to_attribution,
-            }.get(format_)
+        for output_format in formats:
+            self.handle_output(output_format)
 
-            output_file = output_function(self.project)
+    def handle_output(self, output_format):
+        output_kwargs = {}
+        if ":" in output_format:
+            output_format, version = output_format.split(":", maxsplit=1)
+            if output_format != "cyclonedx":
+                raise CommandError(
+                    'The ":" version syntax is only supported for the cyclonedx '
+                    "format."
+                )
+            output_kwargs["version"] = version
 
-            if isinstance(output_file, list):
-                output_file = "\n".join([str(path) for path in output_file])
+        output_function = {
+            "json": output.to_json,
+            "csv": output.to_csv,
+            "xlsx": output.to_xlsx,
+            "spdx": output.to_spdx,
+            "cyclonedx": output.to_cyclonedx,
+            "attribution": output.to_attribution,
+        }.get(output_format)
 
-            if options["print"]:
-                self.stdout.write(output_file.read_text())
-            elif self.verbosity > 0:
-                self.stdout.write(str(output_file), self.style.SUCCESS)
+        if not output_function:
+            msg = f"Error: argument --format: invalid choice: '{output_format}'"
+            raise CommandError(msg)
+
+        try:
+            output_file = output_function(self.project, **output_kwargs)
+        except Exception as e:
+            raise CommandError(e)
+
+        if isinstance(output_file, list):
+            output_file = "\n".join([str(path) for path in output_file])
+
+        if self.print_to_stdout:
+            self.stdout.write(output_file.read_text())
+        elif self.verbosity > 0:
+            self.stdout.write(str(output_file), self.style.SUCCESS)
