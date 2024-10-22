@@ -264,6 +264,9 @@ Optional arguments:
 Refer to :ref:`Mount projects workspace <mount_projects_workspace_volume>` to access
 your outputs on the host machine when running with Docker.
 
+.. tip:: To specify a CycloneDX spec version (default to latest), use the syntax
+  ``cyclonedx:VERSION`` as format value. For example: ``--format cyclonedx:1.5``.
+
 `$ scanpipe check-compliance --project PROJECT`
 -----------------------------------------------
 
