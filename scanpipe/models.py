@@ -561,6 +561,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     notes = models.TextField(blank=True)
     settings = models.JSONField(default=dict, blank=True)
     labels = TaggableManager(through=UUIDTaggedItem)
+    project_purl = models.CharField(
+        max_length=2048,
+        blank=True,
+        help_text=_("Project Package URL."),
+    )
 
     objects = ProjectQuerySet.as_manager()
 
@@ -704,6 +709,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """Clone this project using the provided ``clone_name`` as new project name."""
         new_project = Project.objects.create(
             name=clone_name,
+            project_purl=self.project_purl,
             settings=self.settings if copy_settings else {},
         )
 
