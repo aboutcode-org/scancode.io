@@ -21,12 +21,14 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 
+from packageurl import PackageURL
+
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import federatedcode
 
 
 class PublishToFederatedCode(Pipeline):
-    """Publish package scan to FederatedCode Git repository."""
+    """Publish package scan to FederatedCode."""
 
     download_inputs = False
     is_addon = True
@@ -34,7 +36,7 @@ class PublishToFederatedCode(Pipeline):
     @classmethod
     def steps(cls):
         return (
-            cls.get_package,
+            cls.get_project_purl,
             cls.get_package_repository,
             cls.clone_repository,
             cls.add_scan_result,
@@ -42,33 +44,42 @@ class PublishToFederatedCode(Pipeline):
             cls.delete_local_clone,
         )
 
-    def get_package(self):
-        """Get the package associated with the scan."""
-        has_single_package_scan = any(
-            run.pipeline_name == "scan_single_package"
-            for run in self.project.runs.all()
-            if run.task_exitcode == 0
+    def get_project_purl(self):
+        """Get the PURL for the project."""
+        all_executed_pipeline_successful = all(
+            run.task_succeeded for run in self.project.runs.executed()
         )
 
-        if not has_single_package_scan:
-            raise Exception("Run ``scan_single_package`` pipeline to get package scan.")
+        source_is_download_url = any(
+            source.download_url for source in self.project.inputsources.all()
+        )
 
-        if not self.project.discoveredpackages.count() == 1:
-            raise Exception("Scan should be for single package.")
+        if not all_executed_pipeline_successful:
+            raise Exception("Make sure all the pipelines has completed successfully.")
 
-        if not self.project.discoveredpackages.first().version:
-            raise Exception("Scan package is missing version.")
+        if not source_is_download_url:
+            raise Exception("Project input should be download_url.")
+
+        if not self.project.project_purl:
+            raise Exception("Missing Project PURL.")
+
+        project_package_url = PackageURL.from_string(self.project.project_purl)
+
+        if not project_package_url.version:
+            raise Exception("Missing version in Project PURL.")
 
         configured, error = federatedcode.is_configured()
         if not configured:
             raise Exception(error)
 
-        self.package = self.project.discoveredpackages.first()
+        self.project_package_url = project_package_url
 
     def get_package_repository(self):
         """Get the Git repository URL and scan path for a given package."""
         self.package_git_repo, self.package_scan_file = (
-            federatedcode.get_package_repository(package=self.package, logger=self.log)
+            federatedcode.get_package_repository(
+                project_purl=self.project_package_url, logger=self.log
+            )
         )
 
     def clone_repository(self):
@@ -92,10 +103,13 @@ class PublishToFederatedCode(Pipeline):
         federatedcode.commit_and_push_changes(
             repo=self.repo,
             file_to_commit=str(self.relative_file_path),
-            purl=self.package.purl,
+            purl=str(self.project_package_url),
             logger=self.log,
         )
-        self.log(f"Scan for '{self.package.purl}' pushed to '{self.package_git_repo}'")
+        self.log(
+            f"Scan result for '{str(self.project_package_url)}' "
+            f"pushed to '{self.package_git_repo}'"
+        )
 
     def delete_local_clone(self):
         """Remove local clone."""

@@ -53,13 +53,13 @@ def is_configured():
     return True, ""
 
 
-def get_package_repository(package, logger=None):
+def get_package_repository(project_purl, logger=None):
     """Return the Git repository URL and scan path for a given package."""
     FEDERATEDCODE_GIT_ACCOUNT_URL = f'{settings.FEDERATEDCODE_GIT_ACCOUNT.rstrip("/")}/'
-    package_base_dir = hashid.get_package_base_dir(purl=package.purl)
+    package_base_dir = hashid.get_package_base_dir(purl=str(project_purl))
     package_repo_name = package_base_dir.parts[0]
 
-    package_scan_path = package_base_dir / package.version / "scancodeio.json"
+    package_scan_path = package_base_dir / project_purl.version / "scancodeio.json"
     package_git_repo_url = urljoin(
         FEDERATEDCODE_GIT_ACCOUNT_URL, f"{package_repo_name}.git"
     )
@@ -124,7 +124,7 @@ def commit_and_push_changes(
 
     repo.index.add([file_to_commit])
     repo.index.commit(textwrap.dedent(commit_message))
-    repo.git.push(remote_name, default_branch)
+    repo.git.push(remote_name, default_branch, "--no-verify")
 
 
 def delete_local_clone(repo):
