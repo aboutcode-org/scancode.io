@@ -26,7 +26,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from django.test import TestCase
-
+from packageurl import PackageURL
 import git
 
 from scanpipe import models
@@ -43,14 +43,15 @@ class ScanPipeFederatedCodeTest(TestCase):
         "https://github.com/test/",
     )
     def test_scanpipe_pipes_federatedcode_get_package_repository(self):
-        package = make_package(
+        make_package(
             project=self.project1,
             package_url="pkg:npm/foobar@v1.2.3",
             version="v.1.2.3",
         )
+        project_purl = PackageURL.from_string("pkg:npm/foobar@v1.2.3")
         expected_git_repo = "https://github.com/test/aboutcode-packages-03f1.git"
         expected_scan_path = "aboutcode-packages-03f1/npm/foobar/v1.2.3/scancodeio.json"
-        git_repo, scan_path = federatedcode.get_package_repository(package=package)
+        git_repo, scan_path = federatedcode.get_package_repository(project_purl=project_purl)
 
         self.assertEqual(expected_git_repo, git_repo)
         self.assertEqual(expected_scan_path, str(scan_path))
