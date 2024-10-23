@@ -8,6 +8,14 @@ v34.8.2 (unreleased)
   ``android_inspector``, which provides a pipeline for Android APK
   deploy-to-development analysis.
 
+- Remove the sleep time in the context of testing ``matchcode.poll_run_url_status``
+  to speed up the test.
+  https://github.com/aboutcode-org/scancode.io/issues/1411
+
+- Add ability to specify the CycloneDX output spec version using the ``output``
+  management command and providing the ``cyclonedx:VERSION`` syntax as format value.
+  https://github.com/aboutcode-org/scancode-action/issues/8
+
 v34.8.1 (2024-09-06)
 --------------------
 
