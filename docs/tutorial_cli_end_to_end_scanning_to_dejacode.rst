@@ -7,7 +7,7 @@ The focus of this tutorial is to guide you through scanning a codebase end to en
 starting with the dependency resolution, through the scanning proper, and finally
 the upload of the scan in DejaCode, using DepLock and ScanCode.io.
 
-This is designed to run a faster, simple **inspect_packages** ScanCode.io pipeline.
+This is designed to run a faster, simple **resolve_dependencies** ScanCode.io pipeline.
 
 
 .. note::
@@ -146,7 +146,7 @@ Run ScanCode Package Detection
 -------------------------------
 
 Execute the following command to run the ScanCode scanner
-with **inspect_packages** pipeline with static resolution
+with **resolve_dependencies** pipeline with static resolution
 on the codebase in our current directory.
 
 .. code-block:: shell
@@ -154,7 +154,7 @@ on the codebase in our current directory.
     docker run --rm \
       -v "$(pwd)":/code \
       ghcr.io/aboutcode-org/scancode.io:latest \
-      sh -c "run inspect_packages:StaticResolver /code" \
+      sh -c "run resolve_dependencies:StaticResolver /code" \
       > results.json
 
 
