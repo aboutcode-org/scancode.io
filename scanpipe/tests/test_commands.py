@@ -970,7 +970,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(cm.exception.code, 1)
         out_value = out.getvalue().strip()
         expected = (
-            "1 compliance issues detected on this project.\n[Package]\n > ERROR: 1"
+            "1 compliance issues detected on this project.\n[packages]\n > ERROR: 1"
         )
         self.assertEqual(expected, out_value)
 
@@ -982,8 +982,8 @@ class ScanPipeManagementCommandTest(TestCase):
         out_value = out.getvalue().strip()
         expected = (
             "2 compliance issues detected on this project."
-            "\n[Package]\n > ERROR: 1"
-            "\n[Resource]\n > WARNING: 1"
+            "\n[packages]\n > ERROR: 1"
+            "\n[resources]\n > WARNING: 1"
         )
         self.assertEqual(expected, out_value)
 

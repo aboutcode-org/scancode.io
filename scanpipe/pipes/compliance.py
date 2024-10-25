@@ -77,29 +77,35 @@ def group_compliance_alerts_by_severity(queryset):
     return dict(compliance_alerts)
 
 
-def get_project_compliance_issues(project, fail_level="error"):
+def get_project_compliance_alerts(project, fail_level="error"):
     """
-    Retrieve compliance issues for a given project at a specified severity level.
+    Retrieve compliance alerts for a given project at a specified severity level.
 
-    This function checks for compliance issues in the provided project, filtering them
+    This function checks for compliance alerts in the provided project, filtering them
     by the specified severity level (e.g., "error", "warning"). It gathers compliance
-    issues for both discovered packages and codebase resources, and returns them in
+    alerts for both discovered packages and codebase resources, and returns them in
     a structured dictionary.
     """
-    package_qs = project.discoveredpackages.compliance_issues(severity=fail_level)
-    package_qs = package_qs.only(*PACKAGE_URL_FIELDS, "compliance_alert")
-    resource_qs = project.codebaseresources.compliance_issues(severity=fail_level)
-    resource_qs = resource_qs.only("path", "compliance_alert")
+    package_qs = (
+        project.discoveredpackages.compliance_issues(severity=fail_level)
+        .only(*PACKAGE_URL_FIELDS, "compliance_alert")
+        .order_by(*PACKAGE_URL_FIELDS)
+    )
+    resource_qs = (
+        project.codebaseresources.compliance_issues(severity=fail_level)
+        .only("path", "compliance_alert")
+        .order_by("path")
+    )
 
     queryset_mapping = {
-        "Package": package_qs,
-        "Resource": resource_qs,
+        "packages": package_qs,
+        "resources": resource_qs,
     }
 
-    project_compliance_issues = {
+    project_compliance_alerts = {
         model_name: compliance_alerts
         for model_name, queryset in queryset_mapping.items()
         if (compliance_alerts := group_compliance_alerts_by_severity(queryset))
     }
 
-    return project_compliance_issues
+    return project_compliance_alerts

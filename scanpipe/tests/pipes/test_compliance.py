@@ -23,14 +23,14 @@
 from django.test import TestCase
 
 from scanpipe.models import CodebaseResource
-from scanpipe.pipes.compliance import get_project_compliance_issues
+from scanpipe.pipes.compliance import get_project_compliance_alerts
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
 
 
 class ScanPipeCompliancePipesTest(TestCase):
-    def test_scanpipe_compliance_get_project_compliance_issues(self):
+    def test_scanpipe_compliance_get_project_compliance_alerts(self):
         project = make_project()
         make_resource_file(
             project,
@@ -43,13 +43,13 @@ class ScanPipeCompliancePipesTest(TestCase):
             compliance_alert=CodebaseResource.Compliance.ERROR,
         )
 
-        compliance_issues = get_project_compliance_issues(project)
-        expected = {"Package": {"error": ["pkg:generic/name@1.0"]}}
-        self.assertEqual(expected, compliance_issues)
+        compliance_alerts = get_project_compliance_alerts(project)
+        expected = {"packages": {"error": ["pkg:generic/name@1.0"]}}
+        self.assertEqual(expected, compliance_alerts)
 
-        compliance_issues = get_project_compliance_issues(project, fail_level="warning")
+        compliance_alerts = get_project_compliance_alerts(project, fail_level="warning")
         expected = {
-            "Package": {"error": ["pkg:generic/name@1.0"]},
-            "Resource": {"warning": ["path/"]},
+            "packages": {"error": ["pkg:generic/name@1.0"]},
+            "resources": {"warning": ["path/"]},
         }
-        self.assertEqual(expected, compliance_issues)
+        self.assertEqual(expected, compliance_alerts)

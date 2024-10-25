@@ -54,6 +54,9 @@ from scanpipe.models import Run
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.output import JSONResultsGenerator
 from scanpipe.tests import dependency_data1
+from scanpipe.tests import make_package
+from scanpipe.tests import make_project
+from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
@@ -1028,6 +1031,40 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {"status": "Output file NOT_FOUND not found"}
         self.assertEqual(expected, response.data)
+
+    def test_scanpipe_api_project_action_compliance(self):
+        project = make_project()
+        url = reverse("project-compliance", args=[project.uuid])
+        response = self.csrf_client.get(url)
+        expected = {"compliance_alerts": {}}
+        self.assertEqual(expected, response.data)
+
+        make_resource_file(
+            project,
+            path="path/",
+            compliance_alert=CodebaseResource.Compliance.WARNING,
+        )
+        make_package(
+            project,
+            package_url="pkg:generic/name@1.0",
+            compliance_alert=CodebaseResource.Compliance.ERROR,
+        )
+
+        response = self.csrf_client.get(url)
+        expected = {
+            "compliance_alerts": {"packages": {"error": ["pkg:generic/name@1.0"]}}
+        }
+        self.assertEqual(expected, response.data)
+
+        data = {"fail_level": "WARNING"}
+        response = self.csrf_client.get(url, data=data)
+        expected = {
+            "compliance_alerts": {
+                "packages": {"error": ["pkg:generic/name@1.0"]},
+                "resources": {"warning": ["path/"]},
+            }
+        }
+        self.assertDictEqual(expected, response.data)
 
     def test_scanpipe_api_serializer_get_model_serializer(self):
         self.assertEqual(

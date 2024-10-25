@@ -23,7 +23,7 @@
 import sys
 
 from scanpipe.management.commands import ProjectCommand
-from scanpipe.pipes.compliance import get_project_compliance_issues
+from scanpipe.pipes.compliance import get_project_compliance_alerts
 
 
 class Command(ProjectCommand):
@@ -49,22 +49,22 @@ class Command(ProjectCommand):
     def handle(self, *args, **options):
         super().handle(*args, **options)
         fail_level = options["fail_level"]
-        compliance_issues = get_project_compliance_issues(self.project, fail_level)
+        compliance_alerts = get_project_compliance_alerts(self.project, fail_level)
 
-        compliance_issues_count = sum(
+        compliance_alerts_count = sum(
             len(issues_by_severity)
-            for model_issues in compliance_issues.values()
-            for issues_by_severity in model_issues.values()
+            for model_alerts in compliance_alerts.values()
+            for issues_by_severity in model_alerts.values()
         )
-        if not compliance_issues_count:
+        if not compliance_alerts_count:
             sys.exit(0)
 
         if self.verbosity > 0:
             msg = [
-                f"{compliance_issues_count} compliance issues detected on "
+                f"{compliance_alerts_count} compliance issues detected on "
                 f"this project."
             ]
-            for label, issues in compliance_issues.items():
+            for label, issues in compliance_alerts.items():
                 msg.append(f"[{label}]")
                 for severity, entries in issues.items():
                     msg.append(f" > {severity.upper()}: {len(entries)}")
