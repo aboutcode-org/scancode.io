@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.8.2 (unreleased)
+v34.8.2 (2024-10-28)
 --------------------
 
 - Add ``android_analysis`` to ``extra_requires``. This installs the package
