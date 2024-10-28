@@ -39,7 +39,7 @@ similar to the following:
   such as mit and gpl-3.0, which represents the ScanCode license key to match
   against detected licenses in the scan results.
 - A policy is defined with a ``label`` and a ``compliance_alert``.
-  The labels can be customized to your prefered wording.
+  The labels can be customized to your preferred wording.
 - The ``compliance_alert`` accepts 3 values:
 
    - ``''`` (empty string)
@@ -50,7 +50,7 @@ Policies File Location
 ----------------------
 
 By default, ScanCode.io will look for a ``policies.yml`` file at the root of its
-codebase.
+app codebase.
 
 Alternatively, you can configure the location of policies files using the
 dedicated :ref:`scancodeio_settings_policies_file` setting in your ``.env`` file.
@@ -140,6 +140,21 @@ detected licenses, and computed at the codebase resource level, for example:
       "[...]": "[...]"
     }
 
-The compliance alert are also displayed in the Web UI:
+Web UI
+------
 
-.. image:: images/tutorial-license-policies-results.png
+Compliance alerts are visible directly in the Web user interface through the following:
+
+* A summary panel in the project detail view:
+
+.. image:: images/tutorial-policies-compliance-alerts-panel.png
+
+* A dedicated column within the Packages and Resources list tables:
+
+.. image:: images/tutorial-policies-compliance-alerts-column.png
+
+REST API
+--------
+
+For more details on retrieving compliance data via the REST API, refer to the
+:ref:`rest_api_compliance` section.

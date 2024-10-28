@@ -21,6 +21,9 @@ v34.8.2 (unreleased)
   ``?fail_level={ERROR,WARNING,MISSING}`` parameter.
   https://github.com/aboutcode-org/scancode.io/issues/1346
 
+- Add new ``Compliance alerts`` panel in the project detail view.
+  https://github.com/aboutcode-org/scancode.io/issues/1346
+
 v34.8.1 (2024-09-06)
 --------------------
 
