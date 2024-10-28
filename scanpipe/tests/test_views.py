@@ -840,6 +840,26 @@ class ScanPipeViewsTest(TestCase):
         )
         self.assertContains(response, expected_input2)
 
+    @mock.patch.object(Project, "policies_enabled", new_callable=mock.PropertyMock)
+    def test_scanpipe_views_project_compliance_panel_view(self, mock_policies_enabled):
+        url = reverse("project_compliance_panel", args=[self.project1.slug])
+        make_package(
+            self.project1,
+            package_url="pkg:generic/name@1.0",
+            compliance_alert=CodebaseResource.Compliance.ERROR,
+        )
+
+        mock_policies_enabled.return_value = False
+        response = self.client.get(url)
+        self.assertEqual(404, response.status_code)
+
+        mock_policies_enabled.return_value = True
+        response = self.client.get(url)
+        self.assertContains(response, "Compliance alerts")
+        self.assertContains(response, "1 Error")
+        expected = f"/project/{self.project1.slug}/packages/?compliance_alert=error"
+        self.assertContains(response, expected)
+
     def test_scanpipe_views_pipeline_help_view(self):
         url = reverse("pipeline_help", args=["not_existing_pipeline"])
         response = self.client.get(url)
