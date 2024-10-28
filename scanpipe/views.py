@@ -89,10 +89,10 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.pipes import compliance
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
 from scanpipe.pipes import purldb
-from scanpipe.pipes import compliance
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -1085,8 +1085,13 @@ class ProjectCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        project = self.object
+
+        if not project.policies_enabled:
+            raise Http404
+
         compliance_alerts = compliance.get_project_compliance_alerts(
-            project=self.object,
+            project=project,
             fail_level="missing",
         )
         context["compliance_alerts"] = compliance_alerts
