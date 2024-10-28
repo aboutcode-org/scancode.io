@@ -504,6 +504,26 @@ class ScanPipeViewsTest(TestCase):
         expected = ["Dir", "Zdir", "a", "z", "a.txt", "z.txt"]
         self.assertEqual(expected, [path.name for path in codebase_root])
 
+    @mock.patch.object(Project, "policies_enabled", new_callable=mock.PropertyMock)
+    def test_scanpipe_views_project_details_compliance_panel_availability(
+        self, mock_policies_enabled
+    ):
+        url = self.project1.get_absolute_url()
+        make_package(
+            self.project1,
+            package_url="pkg:generic/name@1.0",
+            compliance_alert=CodebaseResource.Compliance.ERROR,
+        )
+
+        expected_url = reverse("project_compliance_panel", args=[self.project1.slug])
+        mock_policies_enabled.return_value = False
+        response = self.client.get(url)
+        self.assertNotContains(response, expected_url)
+
+        mock_policies_enabled.return_value = True
+        response = self.client.get(url)
+        self.assertContains(response, expected_url)
+
     def test_scanpipe_views_project_create_view(self):
         url = reverse("project_add")
         response = self.client.get(url)
