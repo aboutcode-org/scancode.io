@@ -1,0 +1,16 @@
+<div class="column is-half">
+  <nav id="compliance-panel" class="panel is-info">
+    <p class="panel-heading py-2 is-size-6">
+      Compliance alerts
+    </p>
+    {% for model_name, model_alerts in compliance_alerts.items  %}
+      <span class="panel-block has-background-light">{{ model_name|title }}</span>
+      {% for severity, instances_str in model_alerts.items %}
+        <a class="panel-block break-word" href="{% url 'project_detail' project.slug %}{{ model_name }}/?compliance_alert={{ severity }}">
+          > {{ severity|title }}
+          <span class="tag is-rounded ml-1">{{ instances_str|length }}</span>
+        </a>
+      {% endfor %}
+    {% endfor %}
+  </nav>
+</div>

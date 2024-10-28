@@ -92,6 +92,7 @@ from scanpipe.models import RunInProgressError
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
 from scanpipe.pipes import purldb
+from scanpipe.pipes import compliance
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -1075,6 +1076,20 @@ class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
         context["codebase_breadcrumbs"] = self.get_breadcrumbs(current_dir)
         context["project_details_url"] = self.object.get_absolute_url()
 
+        return context
+
+
+class ProjectCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
+    model = Project
+    template_name = "scanpipe/panels/project_compliance.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        compliance_alerts = compliance.get_project_compliance_alerts(
+            project=self.object,
+            fail_level="missing",
+        )
+        context["compliance_alerts"] = compliance_alerts
         return context
 
 

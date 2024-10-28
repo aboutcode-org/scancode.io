@@ -207,6 +207,11 @@ urlpatterns = [
         name="project_resource_license_summary",
     ),
     path(
+        "project/<slug:slug>/compliance_panel/",
+        views.ProjectCompliancePanelView.as_view(),
+        name="project_compliance_panel",
+    ),
+    path(
         "project/<slug:slug>/",
         views.ProjectDetailView.as_view(),
         name="project_detail",
