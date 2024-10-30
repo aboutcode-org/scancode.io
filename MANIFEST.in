@@ -15,6 +15,7 @@ include .VERSION
 
 graft scancodeio
 graft scanpipe
+graft aboutcode
 graft docs
 graft etc
 graft .github/workflows
