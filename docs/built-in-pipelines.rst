@@ -45,7 +45,7 @@ Analyse Docker Windows Image
 .. _pipeline_collect_strings_gettext:
 
 Collect string with Xgettext (addon)
----------------------------------------------
+------------------------------------
 .. autoclass:: scanpipe.pipelines.collect_strings_gettext.CollectStringsGettext()
     :members:
     :member-order: bysource
