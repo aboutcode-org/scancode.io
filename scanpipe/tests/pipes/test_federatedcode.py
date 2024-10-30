@@ -40,7 +40,7 @@ class ScanPipeFederatedCodeTest(TestCase):
         self.project1 = models.Project.objects.create(name="Analysis")
 
     @patch(
-        "scanpipe.pipes.federatedcode.settings.FEDERATEDCODE_GIT_ACCOUNT",
+        "scanpipe.pipes.federatedcode.settings.FEDERATEDCODE_GIT_ACCOUNT_URL",
         "https://github.com/test/",
     )
     def test_scanpipe_pipes_federatedcode_get_package_repository(self):
@@ -49,7 +49,7 @@ class ScanPipeFederatedCodeTest(TestCase):
             package_url="pkg:npm/foobar@v1.2.3",
             version="v.1.2.3",
         )
-        project_purl = PackageURL.from_string("pkg:npm/foobar@v1.2.3")
+        project_purl = "pkg:npm/foobar@v1.2.3"
         expected_git_repo = "https://github.com/test/aboutcode-packages-03f1.git"
         expected_scan_path = "aboutcode-packages-03f1/npm/foobar/v1.2.3/scancodeio.json"
         git_repo, scan_path = federatedcode.get_package_repository(

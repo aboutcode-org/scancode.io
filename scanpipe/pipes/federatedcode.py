@@ -21,48 +21,66 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 
+import logging
 import shutil
 import tempfile
 import textwrap
 from pathlib import Path
 from urllib.parse import urljoin
 
+import requests
 from git import Repo
+from packageurl import PackageURL
 
 from aboutcode import hashid
 from scancodeio import VERSION
 from scancodeio import settings
 from scanpipe.pipes.output import JSONResultsGenerator
 
+logger = logging.getLogger(__name__)
+
 
 def is_configured():
     """Return True if the required FederatedCode settings have been set."""
-    missing_vars = []
-    if not settings.FEDERATEDCODE_GIT_ACCOUNT:
-        missing_vars.append("FEDERATEDCODE_GIT_ACCOUNT")
-    if not settings.FEDERATEDCODE_GIT_SERVICE_TOKEN:
-        missing_vars.append("FEDERATEDCODE_GIT_SERVICE_TOKEN")
-    if not settings.FEDERATEDCODE_GIT_SERVICE_NAME:
-        missing_vars.append("FEDERATEDCODE_GIT_SERVICE_NAME")
-    if not settings.FEDERATEDCODE_GIT_SERVICE_EMAIL:
-        missing_vars.append("FEDERATEDCODE_GIT_SERVICE_EMAIL")
+    if all(
+        [
+            settings.FEDERATEDCODE_GIT_ACCOUNT_URL,
+            settings.FEDERATEDCODE_GIT_SERVICE_TOKEN,
+            settings.FEDERATEDCODE_GIT_SERVICE_EMAIL,
+            settings.FEDERATEDCODE_GIT_SERVICE_NAME,
+        ]
+    ):
+        return True
+    return False
 
-    if missing_vars:
-        return False, f'Missing environment variables: {", ".join(missing_vars)}'
 
-    return True, ""
+def is_available():
+    """Return True if the configured Git account is available."""
+    if not is_configured():
+        return False
+
+    try:
+        response = requests.head(settings.FEDERATEDCODE_GIT_ACCOUNT_URL, timeout=5)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as request_exception:
+        logger.debug(f"FederatedCode is_available() error: {request_exception}")
+        return False
+
+    return response.status_code == requests.codes.ok
 
 
 def get_package_repository(project_purl, logger=None):
     """Return the Git repository URL and scan path for a given package."""
-    FEDERATEDCODE_GIT_ACCOUNT_URL = f'{settings.FEDERATEDCODE_GIT_ACCOUNT.rstrip("/")}/'
-    package_base_dir = hashid.get_package_base_dir(purl=str(project_purl))
+    project_package_url = PackageURL.from_string(project_purl)
+
+    git_account_url = f'{settings.FEDERATEDCODE_GIT_ACCOUNT_URL.rstrip("/")}/'
+    package_base_dir = hashid.get_package_base_dir(purl=project_purl)
     package_repo_name = package_base_dir.parts[0]
 
-    package_scan_path = package_base_dir / project_purl.version / "scancodeio.json"
-    package_git_repo_url = urljoin(
-        FEDERATEDCODE_GIT_ACCOUNT_URL, f"{package_repo_name}.git"
+    package_scan_path = (
+        package_base_dir / project_package_url.version / "scancodeio.json"
     )
+    package_git_repo_url = urljoin(git_account_url, f"{package_repo_name}.git")
 
     return package_git_repo_url, package_scan_path
 

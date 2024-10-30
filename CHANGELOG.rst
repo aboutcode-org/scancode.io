@@ -1,6 +1,15 @@
 Changelog
 =========
 
+v34.9.0 (unreleased)
+--------------------
+
+- Add a new ``PublishToFederatedCode`` pipeline (addon) to push scan result
+  to FederatedCode.
+  https://github.com/nexB/scancode.io/pull/1400
+
+- Add new ``project_purl`` field to project model. https://github.com/nexB/scancode.io/pull/1400
+
 v34.8.2 (2024-10-28)
 --------------------
 

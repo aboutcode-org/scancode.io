@@ -28,7 +28,13 @@ from scanpipe.pipes import federatedcode
 
 
 class PublishToFederatedCode(Pipeline):
-    """Publish package scan to FederatedCode."""
+    """
+    Publish package scan to FederatedCode.
+
+    This pipeline commits the project scan result in FederatedCode Git repository.
+    It uses ``Project PURL`` to determine the Git repository and the
+    exact directory path where the scan should be stored.
+    """
 
     download_inputs = False
     is_addon = True
@@ -36,7 +42,7 @@ class PublishToFederatedCode(Pipeline):
     @classmethod
     def steps(cls):
         return (
-            cls.get_project_purl,
+            cls.check_federatedcode_eligibility,
             cls.get_package_repository,
             cls.clone_repository,
             cls.add_scan_result,
@@ -44,8 +50,23 @@ class PublishToFederatedCode(Pipeline):
             cls.delete_local_clone,
         )
 
-    def get_project_purl(self):
-        """Get the PURL for the project."""
+    def check_federatedcode_eligibility(self):
+        """
+        Check if the project fulfills the following criteria for
+        pushing the project result to FederatedCode.
+
+        Criteria:
+            - FederatedCode is configured and available.
+            - All pipelines have completed successfully.
+            - Source is a download_url.
+            - Must have ``project_purl`` with version.
+        """
+        if not federatedcode.is_configured():
+            raise Exception("FederatedCode is not configured.")
+
+        if not federatedcode.is_available():
+            raise Exception("FederatedCode Git account is not available.")
+
         all_executed_pipeline_successful = all(
             run.task_succeeded for run in self.project.runs.executed()
         )
@@ -68,17 +89,11 @@ class PublishToFederatedCode(Pipeline):
         if not project_package_url.version:
             raise Exception("Missing version in Project PURL.")
 
-        configured, error = federatedcode.is_configured()
-        if not configured:
-            raise Exception(error)
-
-        self.project_package_url = project_package_url
-
     def get_package_repository(self):
         """Get the Git repository URL and scan path for a given package."""
         self.package_git_repo, self.package_scan_file = (
             federatedcode.get_package_repository(
-                project_purl=self.project_package_url, logger=self.log
+                project_purl=self.project.project_purl, logger=self.log
             )
         )
 
@@ -103,11 +118,11 @@ class PublishToFederatedCode(Pipeline):
         federatedcode.commit_and_push_changes(
             repo=self.repo,
             file_to_commit=str(self.relative_file_path),
-            purl=str(self.project_package_url),
+            purl=self.project.project_purl,
             logger=self.log,
         )
         self.log(
-            f"Scan result for '{str(self.project_package_url)}' "
+            f"Scan result for '{self.project.project_purl}' "
             f"pushed to '{self.package_git_repo}'"
         )
 
