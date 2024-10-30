@@ -1,6 +1,12 @@
 Changelog
 =========
 
+v34.8.3 (unreleased)
+--------------------
+
+- Include the ``aboutcode`` module in the wheel and source distribution.
+  https://github.com/aboutcode-org/scancode.io/issues/1423
+
 v34.8.2 (2024-10-28)
 --------------------
 
