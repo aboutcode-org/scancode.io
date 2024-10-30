@@ -10,7 +10,7 @@ The goal here is to guide you on how to understand and review your scan
 results using the ScanCode.io web interface.
 
 .. tip::
-    As a perquisite, follow the :ref:`tutorial_web_ui_analyze_docker_image` tutorial
+    As a pre-requisite, follow the :ref:`tutorial_web_ui_analyze_docker_image` tutorial
     to have a better understanding of the information included here.
 
 .. image:: images/tutorial-web-ui-project-list.png

@@ -21,10 +21,9 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import sys
-from collections import defaultdict
 
 from scanpipe.management.commands import ProjectCommand
-from scanpipe.models import PACKAGE_URL_FIELDS
+from scanpipe.pipes.compliance import get_project_compliance_alerts
 
 
 class Command(ProjectCommand):
@@ -50,42 +49,27 @@ class Command(ProjectCommand):
     def handle(self, *args, **options):
         super().handle(*args, **options)
         fail_level = options["fail_level"]
-        total_compliance_issues_count = 0
+        compliance_alerts = get_project_compliance_alerts(self.project, fail_level)
 
-        package_qs = self.project.discoveredpackages.compliance_issues(
-            severity=fail_level
-        ).only(*PACKAGE_URL_FIELDS, "compliance_alert")
-
-        resource_qs = self.project.codebaseresources.compliance_issues(
-            severity=fail_level
-        ).only("path", "compliance_alert")
-
-        queryset_mapping = {
-            "Package": package_qs,
-            "Resource": resource_qs,
-        }
-
-        results = {}
-        for label, queryset in queryset_mapping.items():
-            compliance_issues = defaultdict(list)
-            for instance in queryset:
-                compliance_issues[instance.compliance_alert].append(str(instance))
-                total_compliance_issues_count += 1
-            if compliance_issues:
-                results[label] = dict(compliance_issues)
-
-        if not total_compliance_issues_count:
+        compliance_alerts_count = sum(
+            len(issues_by_severity)
+            for model_alerts in compliance_alerts.values()
+            for issues_by_severity in model_alerts.values()
+        )
+        if not compliance_alerts_count:
             sys.exit(0)
 
         if self.verbosity > 0:
             msg = [
-                f"{total_compliance_issues_count} compliance issues detected on "
+                f"{compliance_alerts_count} compliance issues detected on "
                 f"this project."
             ]
-            for label, issues in results.items():
-                msg.append(f"{label}:")
+            for label, issues in compliance_alerts.items():
+                msg.append(f"[{label}]")
                 for severity, entries in issues.items():
-                    msg.append(f" - {severity}: {len(entries)}")
+                    msg.append(f" > {severity.upper()}: {len(entries)}")
+                    if self.verbosity > 1:
+                        msg.append("   " + "\n   ".join(entries))
 
             self.stderr.write("\n".join(msg))
 

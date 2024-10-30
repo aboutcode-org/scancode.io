@@ -320,10 +320,41 @@ Data:
         "status": "The project project_name has been archived."
     }
 
+.. _rest_api_compliance:
+
+Compliance
+^^^^^^^^^^
+
+This action returns a list of compliance alerts for a project,
+filtered by severity level.
+The severity level can be customized using the ``fail_level`` query parameter.
+Defaults to ``ERROR`` if not provided.
+
+``GET /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/compliance/?fail_level=WARNING``
+
+Data:
+    - ``fail_level``: ``ERROR``, ``WARNING``, ``MISSING``.
+
+.. code-block:: json
+
+    {
+        "compliance_alerts": {
+            "packages": {
+                "warning": [
+                    "pkg:generic/package@1.0",
+                    "pkg:generic/package@2.0"
+                ],
+                "error": [
+                    "pkg:generic/package@3.0"
+                ]
+            }
+        }
+    }
+
 Reset
 ^^^^^
 
-This action will delete all related database entrie and all data on disks except for
+This action will delete all related database entries and all data on disks except for
 the :guilabel:`input/` directory.
 
 ``POST /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/reset/``
