@@ -1406,6 +1406,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         return self.resource_count == 1
 
+    @property
+    def policies_enabled(self):
+        """Return True if the policies are enabled."""
+        return scanpipe_app.policies_enabled
+
 
 class GroupingQuerySetMixin:
     most_common_limit = settings.SCANCODEIO_MOST_COMMON_LIMIT
