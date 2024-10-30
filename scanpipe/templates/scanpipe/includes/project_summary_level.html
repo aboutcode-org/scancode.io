@@ -2,14 +2,14 @@
 <nav class="level is-mobile">
   <div class="level-item has-text-centered">
     <div>
-      <p class="heading">Packages</p>
+      <a href="{% url 'project_packages' project.slug %}" class="heading panel is-info panel-heading is-size-6 button"  onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"> Packages </a>
       <p class="{{ title_class }} is-flex is-align-items-center is-justify-content-center">
         {% if project.package_count %}
-          <a href="{% url 'project_packages' project.slug %}">
+        <a href="{% url 'project_packages' project.slug %}">
             {{ project.package_count|intcomma }}
           </a>
           {% if project.vulnerable_package_count %}
-            <a href="{% url 'project_packages' project.slug %}?is_vulnerable=yes" class="has-text-danger is-size-5 ml-2">
+             <a href="{% url 'project_packages' project.slug %}?is_vulnerable=yes">  
               {{ project.vulnerable_package_count|intcomma }}
               <i class="fa-solid fa-bug is-size-6"></i>
             </a>
@@ -22,14 +22,14 @@
   </div>
   <div class="level-item has-text-centered">
     <div>
-      <p class="heading">Dependencies</p>
+      <a href="{% url 'project_dependencies' project.slug %}" class="heading panel is-info panel-heading is-size-6 button"  onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"> Dependencies</a>
       <p class="{{ title_class }} is-flex is-align-items-center is-justify-content-center">
         {% if project.dependency_count %}
           <a href="{% url 'project_dependencies' project.slug %}">
             {{ project.dependency_count|intcomma }}
           </a>
           {% if project.vulnerable_dependency_count %}
-            <a href="{% url 'project_dependencies' project.slug %}?is_vulnerable=yes" class="has-text-danger is-size-5 ml-2">
+           <a href="{% url 'project_dependencies' project.slug %}?is_vulnerable=yes" class="has-text-danger is-size-5 ml-2">
               {{ project.vulnerable_dependency_count|intcomma }}
               <i class="fa-solid fa-bug is-size-6"></i>
             </a>
@@ -42,10 +42,10 @@
   </div>
   <div class="level-item has-text-centered">
     <div>
-      <p class="heading">Resources</p>
+     <a href="{{ project_resources_url }}" class="heading panel is-info panel-heading is-size-6 button"  onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"> Resources </a>
       <p class="{{ title_class }}">
         {% if project.resource_count %}
-          <a href="{{ project_resources_url }}">
+           <a href="{{ project_resources_url }}">
             {{ project.resource_count|intcomma }}
           </a>
         {% else %}
@@ -59,7 +59,7 @@
       <div>
         <p class="heading">Relations</p>
         <p class="{{ title_class }}">
-          <a href="{% url 'project_relations' project.slug %}">
+           <a href="{% url 'project_relations' project.slug %}">
             {{ project.relation_count|intcomma }}
           </a>
         </p>
@@ -68,10 +68,10 @@
   {% endif %}
   <div class="level-item has-text-centered">
     <div>
-      <p class="heading">Messages</p>
+       <a href="{% url 'project_messages' project.slug %}" class="heading panel is-info panel-heading is-size-6 button" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"> Messages </a>
       <p class="{{ title_class }}">
         {% if project.message_count %}
-          <a href="{% url 'project_messages' project.slug %}">
+         <a href="{% url 'project_messages' project.slug %}"> 
             {{ project.message_count|intcomma }}
           </a>
         {% else %}
