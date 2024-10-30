@@ -2031,7 +2031,7 @@ class ScanPipeModelsTest(TestCase):
                     "total": 0,
                     "is_runtime": 0,
                     "is_optional": 0,
-                    "is_resolved": 0,
+                    "is_pinned": 0,
                 },
                 "codebase_relations_summary": {},
                 "results_url": f"/api/projects/{self.project1.uuid}/results/",
@@ -2723,7 +2723,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual("install", dependency.scope)
         self.assertTrue(dependency.is_runtime)
         self.assertFalse(dependency.is_optional)
-        self.assertFalse(dependency.is_resolved)
+        self.assertFalse(dependency.is_pinned)
         self.assertEqual(
             "pkg:pypi/dask?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692",
             dependency.dependency_uid,

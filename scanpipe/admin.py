@@ -152,7 +152,7 @@ class DiscoveredDependencyAdmin(ScanPipeBaseAdmin):
         "scope",
         "is_runtime",
         "is_optional",
-        "is_resolved",
+        "is_pinned",
         "is_direct",
         "project",
     ]
@@ -171,7 +171,7 @@ class DiscoveredDependencyAdmin(ScanPipeBaseAdmin):
         "scope",
         "is_runtime",
         "is_optional",
-        "is_resolved",
+        "is_pinned",
         "is_direct",
     ]
     ordering = ["project", "dependency_uid"]
