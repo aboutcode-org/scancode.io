@@ -28,7 +28,6 @@ from unittest.mock import patch
 from django.test import TestCase
 
 import git
-from packageurl import PackageURL
 
 from scanpipe import models
 from scanpipe.pipes import federatedcode
