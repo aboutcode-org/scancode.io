@@ -92,7 +92,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
               "license_expression": "mit",
-              "spdx_license_expression": "MIT"
+              "license_expression_spdx": "MIT"
             }
           ],
           "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
@@ -133,7 +133,7 @@
       "scope": "devDependencies",
       "is_runtime": false,
       "is_optional": true,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:npm/ava?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -363,10 +363,10 @@
               "purl": "pkg:npm/ava",
               "scope": "devDependencies",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {},
               "is_runtime": false,
               "is_optional": true,
-              "is_resolved": false,
               "resolved_package": {},
               "extracted_requirement": "0.0.3"
             }
@@ -396,7 +396,7 @@
                   "rule_relevance": 100,
                   "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
                   "license_expression": "mit",
-                  "spdx_license_expression": "MIT"
+                  "license_expression_spdx": "MIT"
                 }
               ],
               "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
@@ -460,7 +460,7 @@
               "rule_relevance": 100,
               "rule_identifier": "mit_30.RULE",
               "license_expression": "mit",
-              "spdx_license_expression": "MIT"
+              "license_expression_spdx": "MIT"
             }
           ],
           "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",

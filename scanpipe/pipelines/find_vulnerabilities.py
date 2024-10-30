@@ -62,7 +62,7 @@ class FindVulnerabilities(Pipeline):
 
     def lookup_dependencies_vulnerabilities(self):
         """Check for vulnerabilities for each of the project's discovered dependency."""
-        dependencies = self.project.discovereddependencies.filter(is_resolved=True)
+        dependencies = self.project.discovereddependencies.filter(is_pinned=True)
         vulnerablecode.fetch_vulnerabilities(
             packages=dependencies,
             ignore_set=self.project.ignored_vulnerabilities_set,

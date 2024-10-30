@@ -151,7 +151,7 @@ def create_dependencies_from_packages_extra_data(project):
                 resolved_to_package=resolved_to_package,
                 datafile_resource=datafile_resource,
                 is_runtime=True,
-                is_resolved=True,
+                is_pinned=True,
                 is_direct=True,
             )
             created_count += 1

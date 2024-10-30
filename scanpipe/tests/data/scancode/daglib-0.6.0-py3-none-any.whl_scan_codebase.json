@@ -89,7 +89,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
               "license_expression": "mit",
-              "spdx_license_expression": "MIT"
+              "license_expression_spdx": "MIT"
             }
           ],
           "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
@@ -111,7 +111,7 @@
               "rule_relevance": 100,
               "rule_identifier": "pypi_mit_license.RULE",
               "license_expression": "mit",
-              "spdx_license_expression": "MIT"
+              "license_expression_spdx": "MIT"
             }
           ],
           "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
@@ -199,7 +199,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
               "license_expression": "mit",
-              "spdx_license_expression": "MIT"
+              "license_expression_spdx": "MIT"
             }
           ],
           "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
@@ -221,7 +221,7 @@
               "rule_relevance": 100,
               "rule_identifier": "pypi_mit_license.RULE",
               "license_expression": "mit",
-              "spdx_license_expression": "MIT"
+              "license_expression_spdx": "MIT"
             }
           ],
           "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
@@ -260,7 +260,7 @@
       "scope": "install",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/dask?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -276,7 +276,7 @@
       "scope": "install",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/dask?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -292,7 +292,7 @@
       "scope": "graphviz",
       "is_runtime": true,
       "is_optional": true,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/graphviz?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -308,7 +308,7 @@
       "scope": "graphviz",
       "is_runtime": true,
       "is_optional": true,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/graphviz?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -324,7 +324,7 @@
       "scope": "ipycytoscape",
       "is_runtime": true,
       "is_optional": true,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/ipycytoscape?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -340,7 +340,7 @@
       "scope": "ipycytoscape",
       "is_runtime": true,
       "is_optional": true,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/ipycytoscape?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -356,7 +356,7 @@
       "scope": "install",
       "is_runtime": true,
       "is_optional": true,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/networkx?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -372,7 +372,7 @@
       "scope": "install",
       "is_runtime": true,
       "is_optional": true,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/networkx?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -455,10 +455,10 @@
               "purl": "pkg:pypi/dask",
               "scope": "install",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,
-              "is_resolved": false,
               "resolved_package": {},
               "extracted_requirement": "<2023.0.0,>=2022.7.1"
             },
@@ -466,10 +466,10 @@
               "purl": "pkg:pypi/graphviz",
               "scope": "graphviz",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
-              "is_resolved": false,
               "resolved_package": {},
               "extracted_requirement": "<0.21,>=0.20"
             },
@@ -477,10 +477,10 @@
               "purl": "pkg:pypi/ipycytoscape",
               "scope": "ipycytoscape",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
-              "is_resolved": false,
               "resolved_package": {},
               "extracted_requirement": "<2.0.0,>=1.3.3"
             },
@@ -488,10 +488,10 @@
               "purl": "pkg:pypi/networkx",
               "scope": "install",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
-              "is_resolved": false,
               "resolved_package": {},
               "extracted_requirement": "<3.0.0,>=2.8.5"
             }
@@ -578,7 +578,7 @@
                   "rule_relevance": 100,
                   "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
                   "license_expression": "mit",
-                  "spdx_license_expression": "MIT"
+                  "license_expression_spdx": "MIT"
                 }
               ],
               "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
@@ -600,7 +600,7 @@
                   "rule_relevance": 100,
                   "rule_identifier": "pypi_mit_license.RULE",
                   "license_expression": "mit",
-                  "spdx_license_expression": "MIT"
+                  "license_expression_spdx": "MIT"
                 }
               ],
               "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
@@ -769,7 +769,7 @@
               "rule_relevance": 100,
               "rule_identifier": "mit.LICENSE",
               "license_expression": "mit",
-              "spdx_license_expression": "MIT"
+              "license_expression_spdx": "MIT"
             }
           ],
           "identifier": "mit-cacd5c0c-204a-85c2-affc-e4c125b2492a",
@@ -873,10 +873,10 @@
               "purl": "pkg:pypi/dask",
               "scope": "install",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,
-              "is_resolved": false,
               "resolved_package": {},
               "extracted_requirement": "<2023.0.0,>=2022.7.1"
             },
@@ -884,10 +884,10 @@
               "purl": "pkg:pypi/graphviz",
               "scope": "graphviz",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
-              "is_resolved": false,
               "resolved_package": {},
               "extracted_requirement": "<0.21,>=0.20"
             },
@@ -895,10 +895,10 @@
               "purl": "pkg:pypi/ipycytoscape",
               "scope": "ipycytoscape",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
-              "is_resolved": false,
               "resolved_package": {},
               "extracted_requirement": "<2.0.0,>=1.3.3"
             },
@@ -906,10 +906,10 @@
               "purl": "pkg:pypi/networkx",
               "scope": "install",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
-              "is_resolved": false,
               "resolved_package": {},
               "extracted_requirement": "<3.0.0,>=2.8.5"
             }
@@ -996,7 +996,7 @@
                   "rule_relevance": 100,
                   "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
                   "license_expression": "mit",
-                  "spdx_license_expression": "MIT"
+                  "license_expression_spdx": "MIT"
                 }
               ],
               "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
@@ -1018,7 +1018,7 @@
                   "rule_relevance": 100,
                   "rule_identifier": "pypi_mit_license.RULE",
                   "license_expression": "mit",
-                  "spdx_license_expression": "MIT"
+                  "license_expression_spdx": "MIT"
                 }
               ],
               "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
