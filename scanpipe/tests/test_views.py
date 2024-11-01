@@ -504,6 +504,26 @@ class ScanPipeViewsTest(TestCase):
         expected = ["Dir", "Zdir", "a", "z", "a.txt", "z.txt"]
         self.assertEqual(expected, [path.name for path in codebase_root])
 
+    @mock.patch.object(Project, "policies_enabled", new_callable=mock.PropertyMock)
+    def test_scanpipe_views_project_details_compliance_panel_availability(
+        self, mock_policies_enabled
+    ):
+        url = self.project1.get_absolute_url()
+        make_package(
+            self.project1,
+            package_url="pkg:generic/name@1.0",
+            compliance_alert=CodebaseResource.Compliance.ERROR,
+        )
+
+        expected_url = reverse("project_compliance_panel", args=[self.project1.slug])
+        mock_policies_enabled.return_value = False
+        response = self.client.get(url)
+        self.assertNotContains(response, expected_url)
+
+        mock_policies_enabled.return_value = True
+        response = self.client.get(url)
+        self.assertContains(response, expected_url)
+
     def test_scanpipe_views_project_create_view(self):
         url = reverse("project_add")
         response = self.client.get(url)
@@ -839,6 +859,26 @@ class ScanPipeViewsTest(TestCase):
             'id="id_selected_steps_1">'
         )
         self.assertContains(response, expected_input2)
+
+    @mock.patch.object(Project, "policies_enabled", new_callable=mock.PropertyMock)
+    def test_scanpipe_views_project_compliance_panel_view(self, mock_policies_enabled):
+        url = reverse("project_compliance_panel", args=[self.project1.slug])
+        make_package(
+            self.project1,
+            package_url="pkg:generic/name@1.0",
+            compliance_alert=CodebaseResource.Compliance.ERROR,
+        )
+
+        mock_policies_enabled.return_value = False
+        response = self.client.get(url)
+        self.assertEqual(404, response.status_code)
+
+        mock_policies_enabled.return_value = True
+        response = self.client.get(url)
+        self.assertContains(response, "Compliance alerts")
+        self.assertContains(response, "1 Error")
+        expected = f"/project/{self.project1.slug}/packages/?compliance_alert=error"
+        self.assertContains(response, expected)
 
     def test_scanpipe_views_pipeline_help_view(self):
         url = reverse("pipeline_help", args=["not_existing_pipeline"])

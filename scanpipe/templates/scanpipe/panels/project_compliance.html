@@ -1,0 +1,24 @@
+{% load humanize %}
+{% if compliance_alerts %}
+  <div class="column is-half">
+    <nav id="compliance-panel" class="panel is-info">
+      <p class="panel-heading py-2 is-size-6">
+        Compliance alerts
+      </p>
+      {% for model_name, model_alerts in compliance_alerts.items  %}
+        <div class="panel-block">
+          <span class="pr-1">
+            {{ model_name|title }}
+          </span>
+          {% for severity, instances_str in model_alerts.items %}
+            <a href="{% url 'project_detail' project.slug %}{{ model_name }}/?compliance_alert={{ severity }}">
+              <span class="tag is-rounded ml-1 {% if severity == 'error' %}is-danger{% elif severity == 'warning' %}is-warning{% endif %}">
+                {{ instances_str|length|intcomma }} {{ severity|title }}
+              </span>
+            </a>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </nav>
+  </div>
+{% endif %}

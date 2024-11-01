@@ -22,6 +22,7 @@
 
 import json
 import os
+import uuid
 from datetime import datetime
 from pathlib import Path
 from unittest import mock
@@ -31,6 +32,7 @@ from django.apps import apps
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import Project
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.download_inputs import DownloadInput
 from scanpipe.tests.pipelines.profile_step import ProfileStep
@@ -45,6 +47,11 @@ scanpipe_app.register_pipeline("raise_exception", RaiseException)
 
 FIXTURES_REGEN = os.environ.get("SCANCODEIO_TEST_FIXTURES_REGEN", False)
 mocked_now = mock.Mock(now=lambda: datetime(2010, 10, 10, 10, 10, 10))
+
+
+def make_project(name=None, **extra):
+    name = name or str(uuid.uuid4())[:8]
+    return Project.objects.create(name=name, **extra)
 
 
 def make_resource_file(project, path, **extra):

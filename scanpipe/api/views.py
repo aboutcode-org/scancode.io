@@ -48,6 +48,7 @@ from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.pipes import output
+from scanpipe.pipes.compliance import get_project_compliance_alerts
 from scanpipe.views import project_results_json_response
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -378,6 +379,29 @@ class ProjectViewSet(
             for output in project.output_root
         ]
         return Response(output_data)
+
+    @action(detail=True, methods=["get"])
+    def compliance(self, request, *args, **kwargs):
+        """
+        Retrieve compliance alerts for a project.
+
+        This endpoint returns a list of compliance alerts for the given project,
+        filtered by severity level. The severity level can be customized using the
+        `fail_level` query parameter.
+
+        Query Parameters:
+        `fail_level`: Specifies the severity level of the alerts to be retrieved.
+        Accepted values are: "ERROR", "WARNING", and "MISSING".
+        Defaults to "ERROR" if not provided.
+
+        Example:
+          GET /api/projects/{project_id}/compliance/?fail_level=WARNING
+
+        """
+        project = self.get_object()
+        fail_level = request.query_params.get("fail_level", "error")
+        compliance_alerts = get_project_compliance_alerts(project, fail_level)
+        return Response({"compliance_alerts": compliance_alerts})
 
 
 class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
