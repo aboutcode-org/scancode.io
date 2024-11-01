@@ -451,6 +451,32 @@ class ScanPipeManagementCommandTest(TestCase):
         )
         self.assertIn(expected, output)
 
+    def test_scanpipe_management_command_list_pipelines(self):
+        options = []
+        out = StringIO()
+        call_command("list-pipelines", *options, stdout=out)
+        output = out.getvalue()
+        self.assertIn("analyze_docker_image", output)
+        self.assertIn("Analyze Docker images.", output)
+        self.assertIn("(addon)", output)
+        self.assertNotIn("[extract_images]", output)
+        self.assertNotIn("Extract images from input tarballs.", output)
+
+        options = ["--verbosity=2"]
+        out = StringIO()
+        call_command("list-pipelines", *options, stdout=out)
+        output = out.getvalue()
+        self.assertIn("[extract_images]", output)
+        self.assertIn("Extract images from input tarballs.", output)
+
+        options = ["--verbosity=0"]
+        out = StringIO()
+        call_command("list-pipelines", *options, stdout=out)
+        output = out.getvalue()
+        self.assertIn("analyze_docker_image", output)
+        self.assertNotIn("Analyze Docker images.", output)
+        self.assertIn("(addon)", output)
+
     def test_scanpipe_management_command_list_project(self):
         project1 = Project.objects.create(name="project1")
         project2 = Project.objects.create(name="project2")
