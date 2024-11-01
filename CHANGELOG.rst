@@ -7,6 +7,9 @@ v34.9.0 (unreleased)
 - Add ability to declared pipeline selected groups in create project REST API endpoint.
   https://github.com/aboutcode-org/scancode.io/issues/1426
 
+- Add a new ``list-pipelines`` management command.
+  https://github.com/aboutcode-org/scancode.io/issues/1397
+
 v34.8.3 (2024-10-30)
 --------------------
 
