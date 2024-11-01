@@ -20,9 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from ossf_scorecard import scorecard
 
-from scanpipe.models import PackageScore
+from scorecode import ossf_scorecard
+
+from scanpipe.models import DiscoveredPackageScore
 from scanpipe.pipelines import Pipeline
 
 
@@ -46,24 +47,22 @@ class FetchScoreCodeInfo(Pipeline):
 
     def check_scorecode_service_availability(self):
         """Check if the scorecode service is configured and available."""
-        if not scorecard.is_configured():
-            raise Exception("scorecode service is not configured.")
-
-        if not scorecard.is_available():
+        if not ossf_scorecard.is_available():
             raise Exception("scorecode service is not available.")
 
     def fetch_packages_scorecode_info(self):
         """Fetch scorecode information for each of the project's discovered packages."""
         for package in self.project.discoveredpackages.all():
-
-            scorecard_data = scorecard.fetch_scorecard_info(package=package)
+            scorecard_data = ossf_scorecard.fetch_scorecard_info(
+                package=package, logger=None
+            )
 
             if scorecard_data:
-                PackageScore.create_from_package_and_scorecard(
+                DiscoveredPackageScore.create_from_package_and_scorecard(
                     scorecard_data=scorecard_data,
                     package=package,
                 )
 
             else:
-                #We Want to create error instead of exception
+                # We Want to create error instead of exception
                 raise Exception("No data found for the package")

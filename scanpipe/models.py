@@ -75,8 +75,6 @@ from extractcode import EXTRACT_SUFFIX
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licensing
 from matchcode_toolkit.fingerprinting import IGNORED_DIRECTORY_FINGERPRINTS
-from ossf_scorecard.contrib.django.models import PackageScoreMixin
-from ossf_scorecard.contrib.django.models import ScorecardChecksMixin
 from packagedcode.models import build_package_uid
 from packagedcode.utils import get_base_purl
 from packageurl import PackageURL
@@ -89,6 +87,8 @@ from rq.command import send_stop_job_command
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
 from rq.job import JobStatus
+from scorecode.contrib.django.models import PackageScoreMixin
+from scorecode.contrib.django.models import ScorecardChecksMixin
 from taggit.managers import TaggableManager
 from taggit.models import GenericUUIDTaggedItemBase
 from taggit.models import TaggedItemBase
@@ -3901,7 +3901,7 @@ class DiscoveredDependency(
         )
 
 
-class PackageScore(UUIDPKModel, PackageScoreMixin):
+class DiscoveredPackageScore(UUIDPKModel, PackageScoreMixin):
     def __str__(self):
         return self.score or str(self.uuid)
 
@@ -3917,8 +3917,9 @@ class PackageScore(UUIDPKModel, PackageScoreMixin):
 
     @classmethod
     @transaction.atomic()
-    def create_from_scorecard_data(cls, discovered_package, scorecard_data,
-                             scoring_tool=None):
+    def create_from_scorecard_data(
+        cls, discovered_package, scorecard_data, scoring_tool=None
+    ):
         """Create ScoreCard object from scorecard data and discovered package"""
         final_data = {
             "score": scorecard_data.score,
@@ -3957,24 +3958,18 @@ class PackageScore(UUIDPKModel, PackageScoreMixin):
         )
 
         for check in scorecard_data.checks:
-            ScorecardCheck.objects.create(
-                check_name=check.check_name,
-                check_score=check.check_score,
-                reason=check.reason or "",
-                details=check.details or [],
-                for_package_score=scorecard_object,
-            )
+            ScorecardCheck.create_from_data(package_score=scorecard_object, check=check)
 
         return scorecard_object
 
     @classmethod
     def create_from_package_and_scorecard(cls, scorecard_data, package):
-        score_object = cls.create_from_data(
+        score_object = cls.create_from_scorecard_data(
             discovered_package=package,
             scorecard_data=scorecard_data,
-            scoring_tool="ossf_scorecard",
+            scoring_tool="ossf-scorecard",
         )
-        score_object.save()
+        return score_object
 
 
 class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
@@ -3982,7 +3977,7 @@ class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
         return self.check_score or str(self.uuid)
 
     for_package_score = models.ForeignKey(
-        PackageScore,
+        DiscoveredPackageScore,
         related_name="discovered_packages_score_checks",
         help_text=_("The checks for which the score is given"),
         on_delete=models.CASCADE,
@@ -3995,12 +3990,13 @@ class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
     def create_from_data(cls, package_score, check):
         """Create a ScorecardCheck instance from provided data."""
         final_data = {
-            "check_name": check.get("name"),
-            "check_score": check.get("score"),
-            "reason": check.get("reason"),
-            "details": check.get("details", []),
+            "check_name": check.check_name,
+            "check_score": check.check_score,
+            "reason": check.reason or "",
+            "details": check.details if check.details is not None else [],
             "for_package_score": package_score,
         }
+
         return cls.objects.create(**final_data)
 
 

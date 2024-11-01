@@ -49,18 +49,18 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
-from ossf_scorecard.contrib.models import PackageScoreMixin
 from packagedcode.models import PackageData
 from packageurl import PackageURL
 from requests.exceptions import RequestException
 from rq.job import JobStatus
+from scorecode.models import PackageScore
 
 from scancodeio import __version__ as scancodeio_version
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
-from scanpipe.models import PackageScore
+from scanpipe.models import DiscoveredPackageScore
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
@@ -2442,13 +2442,15 @@ class ScanPipeModelsTest(TestCase):
 
     def test_scorecard_models(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
-        scorecard_obj = PackageScoreMixin.from_data(scorecard_data)
-        package_score = PackageScore.create_from_data(
-            package, scorecard_obj, PackageScore.ScoringTool.OSSF
+        scorecard_obj = PackageScore.from_data(scorecard_data)
+        package_score = DiscoveredPackageScore.create_from_package_and_scorecard(
+            package=package, scorecard_data=scorecard_obj
         )
 
         self.assertIsNotNone(package_score)
-        self.assertEqual(package_score.scoring_tool, PackageScore.ScoringTool.OSSF)
+        self.assertEqual(
+            package_score.scoring_tool, DiscoveredPackageScore.ScoringTool.OSSF
+        )
         self.assertEqual(package_score.score, "4.4")
 
         checks = package_score.discovered_packages_score_checks.all()
