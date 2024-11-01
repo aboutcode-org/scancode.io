@@ -230,6 +230,21 @@ dependency_data3 = {
     "datasource_id": "pypi_sdist_pkginfo",
 }
 
+dependency_data4 = {
+    "purl": "pkg:npm/wrap-ansi-cjs",
+    "package_type": "npm",
+    "extracted_requirement": "npm:wrap-ansi@^7.0.0",
+    "scope": "devDependencies",
+    "is_runtime": False,
+    "is_optional": True,
+    "is_pinned": False,
+    "is_direct": True,
+    "dependency_uid": "pkg:npm/wrap-ansi-cjs?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692",
+    "for_package_uid": "",
+    "datafile_path": "",
+    "datasource_id": "npm_package_lock_json",
+}
+
 license_policies = [
     {
         "license_key": "apache-2.0",

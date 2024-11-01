@@ -36,6 +36,7 @@ from scanpipe.models import Run
 from scanpipe.pipes import purldb
 from scanpipe.tests import dependency_data2
 from scanpipe.tests import dependency_data3
+from scanpipe.tests import dependency_data4
 from scanpipe.tests import make_package
 from scanpipe.tests import package_data1
 
@@ -79,6 +80,14 @@ class ScanPipePurlDBTest(TestCase):
         result = purldb.get_unique_unresolved_purls(self.project1)
 
         self.assertEqual(expected, result)
+
+    def test_scanpipe_pipes_purldb_get_unique_unresolved_purls_error(self):
+        DiscoveredDependency.create_from_data(self.project1, dependency_data4)
+        result = purldb.get_unique_unresolved_purls(self.project1)
+
+        self.assertEqual(set(), result)
+        error_message = self.project1.projectmessages.all()[0]
+        self.assertEqual("Invalid exctracted requirement", error_message.description)
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.is_available")
