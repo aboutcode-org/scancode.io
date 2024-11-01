@@ -86,6 +86,14 @@ class OrderedMultiplePipelineChoiceField(serializers.MultipleChoiceField):
 
         # Adds support for providing pipeline names as a comma-separated single string.
         data = [item.strip() for value in data for item in value.split(",")]
+
+        # Pipeline validation
+        for pipeline in data:
+            pipeline_name, _ = scanpipe_app.extract_group_from_pipeline(pipeline)
+            pipeline_name = scanpipe_app.get_new_pipeline_name(pipeline_name)
+            if pipeline_name not in scanpipe_app.pipelines:
+                self.fail("invalid_choice", input=pipeline_name)
+
         return data
 
     def to_representation(self, value):
