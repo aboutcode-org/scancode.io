@@ -195,7 +195,7 @@ dependency_data1 = {
     "scope": "install",
     "is_runtime": True,
     "is_optional": False,
-    "is_resolved": False,
+    "is_pinned": False,
     "dependency_uid": "pkg:pypi/dask?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692",
     "for_package_uid": for_package_uid,
     "datafile_path": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
@@ -209,7 +209,7 @@ dependency_data2 = {
     "scope": "dependencies",
     "is_runtime": True,
     "is_optional": False,
-    "is_resolved": True,
+    "is_pinned": True,
     "dependency_uid": (
         "pkg:gem/appraisal@2.2.0?uuid=1907f061-911b-4980-a2d4-ae1a9ed871a9"
     ),
@@ -225,7 +225,7 @@ dependency_data3 = {
     "scope": "install",
     "is_runtime": True,
     "is_optional": False,
-    "is_resolved": False,
+    "is_pinned": False,
     "dependency_uid": "pkg:pypi/dask?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692",
     "for_package_uid": for_package_uid,
     "datafile_path": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",

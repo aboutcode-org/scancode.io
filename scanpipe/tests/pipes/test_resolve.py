@@ -248,7 +248,7 @@ class ScanPipeResolvePipesTest(TestCase):
         self.assertEqual(parent, dependency.for_package)
         self.assertEqual(child, dependency.resolved_to_package)
         self.assertTrue(dependency.is_runtime)
-        self.assertTrue(dependency.is_resolved)
+        self.assertTrue(dependency.is_pinned)
         self.assertTrue(dependency.is_direct)
         self.assertFalse(dependency.is_optional)
 

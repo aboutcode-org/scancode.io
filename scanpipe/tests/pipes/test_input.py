@@ -174,7 +174,7 @@ class ScanPipeInputPipesTest(TestCase):
             "scope": "install",
             "is_runtime": "True",
             "is_optional": None,
-            "is_resolved": None,
+            "is_pinned": None,
             "dependency_uid": "pkg:pypi/typing-extensions?uuid=57a6f83a-1763",
             "for_package_uid": "pkg:pypi/asgiref@3.6.0?uuid=0aa676d0-240c-4838",
             "datafile_path": "asgiref-3.6.0.dist-info/METADATA",

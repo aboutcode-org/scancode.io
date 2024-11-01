@@ -3703,7 +3703,7 @@ class DiscoveredDependency(
         default=False,
         help_text=_("True if this dependency is an optional dependency"),
     )
-    is_resolved = models.BooleanField(
+    is_pinned = models.BooleanField(
         default=False,
         help_text=_(
             "True if this dependency version requirement has been pinned "
@@ -3725,7 +3725,7 @@ class DiscoveredDependency(
         verbose_name_plural = "discovered dependencies"
         ordering = [
             "-is_runtime",
-            "-is_resolved",
+            "-is_pinned",
             "is_optional",
             "dependency_uid",
             "for_package",
@@ -3736,7 +3736,7 @@ class DiscoveredDependency(
             models.Index(fields=["scope"]),
             models.Index(fields=["is_runtime"]),
             models.Index(fields=["is_optional"]),
-            models.Index(fields=["is_resolved"]),
+            models.Index(fields=["is_pinned"]),
             models.Index(fields=["is_direct"]),
         ]
         constraints = [
