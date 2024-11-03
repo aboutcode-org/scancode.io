@@ -3920,6 +3920,24 @@ class DiscoveredPackageScore(UUIDPKModel, PackageScoreMixin):
         null=True,
     )
 
+    def parse_score_date(date_str, formats=None):
+        """Parse a date string into a timezone-aware datetime object,
+        or return None if parsing fails."""
+        if not formats:
+            formats = ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%SZ"]
+
+        if date_str:
+            for fmt in formats:
+                try:
+                    naive_datetime = datetime.strptime(date_str, fmt)
+                    return timezone.make_aware(naive_datetime,
+                                               timezone.get_current_timezone())
+                except ValueError:
+                    continue
+
+        # Return None if date_str is None or parsing fails
+        return None
+
     @classmethod
     @transaction.atomic()
     def create_from_scorecard_data(
@@ -3932,29 +3950,8 @@ class DiscoveredPackageScore(UUIDPKModel, PackageScoreMixin):
             "scoring_tool_documentation_url": (
                 scorecard_data.scoring_tool_documentation_url
             ),
+            "score_date": cls.parse_score_date(scorecard_data.score_date),
         }
-
-        date_str = scorecard_data.score_date
-
-        formats = ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%SZ"]
-
-        if date_str:
-            naive_datetime = None
-
-            for fmt in formats:
-                try:
-                    naive_datetime = datetime.strptime(date_str, fmt)
-                except ValueError:
-                    continue
-
-            score_date = timezone.make_aware(
-                naive_datetime, timezone.get_current_timezone()
-            )
-
-        else:
-            score_date = timezone.now()
-
-        final_data["score_date"] = score_date
 
         scorecard_object = cls.objects.create(
             **final_data,
