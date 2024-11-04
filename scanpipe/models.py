@@ -3994,15 +3994,13 @@ class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
     @classmethod
     def create_from_data(cls, package_score, check):
         """Create a ScorecardCheck instance from provided data."""
-        final_data = {
-            "check_name": check.check_name,
-            "check_score": check.check_score,
-            "reason": check.reason or "",
-            "details": check.details if check.details is not None else [],
-            "for_package_score": package_score,
-        }
-
-        return cls.objects.create(**final_data)
+        return cls.objects.create(
+            check_name=check.check_name,
+            check_score=check.check_score,
+            reason=check.reason or "",
+            details=check.details or [],
+            for_package_score=package_score,
+        )
 
 
 def normalize_package_url_data(purl_mapping, ignore_nulls=False):
