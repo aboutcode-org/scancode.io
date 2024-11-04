@@ -132,6 +132,20 @@
             </div>
 
             <div class="panel">
+              <p id="policies" class="panel-heading py-2 is-size-6">Policies</p>
+              <div class="panel-block is-block px-4">
+                {% if project.policies_enabled %}
+                  Policies are <strong>enabled</strong> for this project.
+                {% else %}
+                  Policies are <strong>not enabled</strong> for this project.
+                {% endif %}
+                <p class="help">
+                  See <a target="_blank" href="https://scancodeio.readthedocs.io/en/latest/tutorial_license_policies.html">License Policies and Compliance Alerts documentation</a> for details.
+                </p>
+              </div>
+            </div>
+
+            <div class="panel">
               <p id="dejacode" class="panel-heading py-2 is-size-6">DejaCode</p>
               <div class="panel-block is-block px-4">
                 <div class="field">

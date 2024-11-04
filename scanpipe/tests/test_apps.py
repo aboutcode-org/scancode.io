@@ -30,10 +30,8 @@ from django.test import TestCase
 from django.test import override_settings
 from django.utils import timezone
 
-from scanpipe.apps import ScanPipeConfig
 from scanpipe.models import Project
 from scanpipe.models import Run
-from scanpipe.tests import license_policies
 from scanpipe.tests import license_policies_index
 from scanpipe.tests.pipelines.register_from_file import RegisterFromFile
 
@@ -43,14 +41,6 @@ scanpipe_app = apps.get_app_config("scanpipe")
 class ScanPipeAppsTest(TestCase):
     data = Path(__file__).parent / "data"
     pipelines_location = Path(__file__).parent / "pipelines"
-
-    def test_scanpipe_apps_get_policies_index(self):
-        self.assertEqual({}, ScanPipeConfig.get_policies_index([], "license_key"))
-        policies_index = ScanPipeConfig.get_policies_index(
-            policies_list=license_policies,
-            key="license_key",
-        )
-        self.assertEqual(license_policies_index, policies_index)
 
     def test_scanpipe_apps_set_policies(self):
         scanpipe_app.license_policies_index = {}

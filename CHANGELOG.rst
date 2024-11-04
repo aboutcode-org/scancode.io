@@ -10,6 +10,9 @@ v34.9.0 (unreleased)
 - Add a new ``list-pipelines`` management command.
   https://github.com/aboutcode-org/scancode.io/issues/1397
 
+- Refactor the policies related code to its own module.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
 v34.8.3 (2024-10-30)
 --------------------
 
