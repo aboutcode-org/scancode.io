@@ -233,7 +233,6 @@ class ScanPipeConfig(AppConfig):
             policies = load_policies_file(policies_file)
             logger.debug(style.SUCCESS(f"Loaded policies from {policies_file}"))
             self.license_policies_index = make_license_policy_index(policies)
-            print(self.license_policies_index)
         else:
             logger.debug(style.WARNING("Policies file not found."))
 
