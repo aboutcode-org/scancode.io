@@ -134,14 +134,24 @@
             <div class="panel">
               <p id="policies" class="panel-heading py-2 is-size-6">Policies</p>
               <div class="panel-block is-block px-4">
-                {% if project.policies_enabled %}
-                  Policies are <strong>enabled</strong> for this project.
-                {% else %}
-                  Policies are <strong>not enabled</strong> for this project.
-                {% endif %}
-                <p class="help">
-                  See <a target="_blank" href="https://scancodeio.readthedocs.io/en/latest/tutorial_license_policies.html">License Policies and Compliance Alerts documentation</a> for details.
-                </p>
+                <div>
+                  {% if project.policies_enabled %}
+                    <i class="fa-solid fa-check"></i>
+                    Policies are <strong>enabled</strong> for this project.
+                  {% else %}
+                    <i class="fa-solid fa-xmark"></i>
+                    Policies are <strong>not enabled</strong> for this project.
+                  {% endif %}
+                </div>
+                <div class="field mt-2">
+                  <label class="label" for="{{ form.policies.id_for_label }}">
+                    {{ form.policies.label }}
+                  </label>
+                  <div class="control">
+                    {{ form.policies }}
+                  </div>
+                  <p class="help">{{ form.policies.help_text|urlize }}</p>
+                </div>
               </div>
             </div>
 

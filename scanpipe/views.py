@@ -1429,7 +1429,6 @@ class CodebaseResourceListView(
         },
         {
             "field_name": "compliance_alert",
-            "condition": scanpipe_app.policies_enabled,
             "filter_fieldname": "compliance_alert",
             "filter_is_right": True,
         },
@@ -1460,11 +1459,6 @@ class CodebaseResourceListView(
             .order_by("path")
         )
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["display_compliance_alert"] = scanpipe_app.policies_enabled
-        return context
-
 
 class DiscoveredPackageListView(
     ConditionalLoginRequired,
@@ -1488,7 +1482,6 @@ class DiscoveredPackageListView(
         },
         {
             "field_name": "compliance_alert",
-            "condition": scanpipe_app.policies_enabled,
             "filter_fieldname": "compliance_alert",
         },
         {
@@ -1520,11 +1513,6 @@ class DiscoveredPackageListView(
             .with_resources_count()
             .order_by_package_url()
         )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["display_compliance_alert"] = scanpipe_app.policies_enabled
-        return context
 
 
 class DiscoveredDependencyListView(

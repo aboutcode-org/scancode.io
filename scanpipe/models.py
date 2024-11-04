@@ -92,9 +92,8 @@ from taggit.models import TaggedItemBase
 
 import scancodeio
 from scanpipe import humanize_time
+from scanpipe import policies
 from scanpipe import tasks
-from scanpipe.policies import load_policies_file
-from scanpipe.policies import make_license_policy_index
 
 logger = logging.getLogger(__name__)
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -1424,11 +1423,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         3. the global app settings license policies
         """
         if policies_from_settings := self.get_env("policies"):
-            return make_license_policy_index(policies_from_settings)
+            policies_dict = policies_from_settings
+            if isinstance(policies_from_settings, str):
+                policies_dict = policies.load_policies_yaml(policies_from_settings)
+            return policies.make_license_policy_index(policies_dict)
 
         elif policies_file := self.get_input_policies_file():
-            policies_dict = load_policies_file(policies_file)
-            return make_license_policy_index(policies_dict)
+            policies_dict = policies.load_policies_file(policies_file)
+            return policies.make_license_policy_index(policies_dict)
 
         else:
             return scanpipe_app.license_policies_index
@@ -1441,7 +1443,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     @property
     def policies_enabled(self):
         """Return True if the policies are enabled for this project."""
-        # return scanpipe_app.policies_enabled
         return bool(self.policy_index)
 
 
@@ -2461,7 +2462,7 @@ class ComplianceAlertMixin(models.Model):
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
-        if scanpipe_app.policies_enabled:
+        if self.policies_enabled:
             loaded_license_expression = getattr(self, "_loaded_license_expression", "")
             license_expression = getattr(self, self.license_expression_field, "")
             if license_expression != loaded_license_expression:
@@ -2470,6 +2471,10 @@ class ComplianceAlertMixin(models.Model):
                     kwargs["update_fields"].append("compliance_alert")
 
         super().save(*args, **kwargs)
+
+    @cached_property
+    def policies_enabled(self):
+        return self.project.policies_enabled
 
     def compute_compliance_alert(self):
         """Compute and return the compliance_alert value from the licenses policies."""

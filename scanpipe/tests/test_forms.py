@@ -137,6 +137,7 @@ class ScanPipeFormsTest(TestCase):
         expected = {
             "ignored_patterns": ["*.ext", "dir/*"],
             "ignored_vulnerabilities": None,
+            "policies": "",
             "ignored_dependency_scopes": None,
             "product_name": "",
             "product_version": "",
@@ -191,6 +192,7 @@ class ScanPipeFormsTest(TestCase):
                 {"package_type": "pypi", "scope": "tests"},
             ],
             "attribution_template": "",
+            "policies": "",
             "product_name": "",
             "product_version": "",
         }
