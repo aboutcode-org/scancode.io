@@ -93,6 +93,8 @@ from taggit.models import TaggedItemBase
 import scancodeio
 from scanpipe import humanize_time
 from scanpipe import tasks
+from scanpipe.policies import load_policies_file
+from scanpipe.policies import make_license_policy_index
 
 logger = logging.getLogger(__name__)
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -1412,10 +1414,35 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         return self.resource_count == 1
 
+    def get_policy_index(self):
+        """
+        Return the policy index for this project instance.
+
+        The policies are loaded from the following locations in that order:
+        1. the project local settings
+        2. the "policies.yml" file in the project input/ directory
+        3. the global app settings license policies
+        """
+        if policies_from_settings := self.get_env("policies"):
+            return make_license_policy_index(policies_from_settings)
+
+        elif policies_file := self.get_input_policies_file():
+            policies_dict = load_policies_file(policies_file)
+            return make_license_policy_index(policies_dict)
+
+        else:
+            return scanpipe_app.license_policies_index
+
+    @cached_property
+    def policy_index(self):
+        """Return the cached policy index for this project instance."""
+        return self.get_policy_index()
+
     @property
     def policies_enabled(self):
-        """Return True if the policies are enabled."""
-        return scanpipe_app.policies_enabled
+        """Return True if the policies are enabled for this project."""
+        # return scanpipe_app.policies_enabled
+        return bool(self.policy_index)
 
 
 class GroupingQuerySetMixin:
@@ -2450,13 +2477,15 @@ class ComplianceAlertMixin(models.Model):
         if not license_expression:
             return ""
 
-        alerts = []
-        policy_index = scanpipe_app.license_policies_index
+        policy_index = self.project.policy_index
+        if not policy_index:
+            return
 
         licensing = get_licensing()
         parsed = licensing.parse(license_expression, simple=True)
         license_keys = licensing.license_keys(parsed)
 
+        alerts = []
         for license_key in license_keys:
             if policy := policy_index.get(license_key):
                 alerts.append(policy.get("compliance_alert") or self.Compliance.OK)
