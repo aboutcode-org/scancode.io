@@ -251,6 +251,10 @@ license_policies = [
     },
 ]
 
+global_policies = {
+    "license_policies": license_policies,
+}
+
 license_policies_index = {
     "gpl-3.0": {
         "color_code": "#c83025",
