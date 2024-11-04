@@ -780,44 +780,56 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if config_directory.exists():
             return config_directory
 
-    def get_input_config_file(self):
+    def get_file_from_work_directory(self, filename):
         """
-        Return the ``scancode-config.yml`` file from the input/ directory
+        Return the ``filename`` file from the input/ directory
         or from the codebase/ immediate subdirectories.
 
         Priority order:
-        1. If a config file exists directly in the input/ directory, return it.
-        2. If exactly one config file exists in a codebase/ immediate subdirectory,
-        return it.
-        3. If multiple config files are found in subdirectories, report an error.
+        1. If a ``filename`` file exists directly in the input/ directory, return it.
+        2. If exactly one ``filename`` file exists in a codebase/ immediate
+        subdirectory, return it.
+        3. If multiple ``filename`` files are found in subdirectories, report an error.
         """
-        config_filename = settings.SCANCODEIO_CONFIG_FILE
+        # Check for the ``filename`` file in the root of the input/ directory.
+        root_file = self.input_path / filename
+        if root_file.exists():
+            return root_file
 
-        # Check for the config file in the root of the input/ directory.
-        root_config_file = self.input_path / config_filename
-        if root_config_file.exists():
-            return root_config_file
+        # Search for files in immediate codebase/ subdirectories.
+        subdir_files = list(self.codebase_path.glob(f"*/{filename}"))
 
-        # Search for config files in immediate codebase/ subdirectories.
-        subdir_config_files = list(self.codebase_path.glob(f"*/{config_filename}"))
+        # If exactly one file is found in codebase/ subdirectories, return it.
+        if len(subdir_files) == 1:
+            return subdir_files[0]
 
-        # If exactly one config file is found in codebase/ subdirectories, return it.
-        if len(subdir_config_files) == 1:
-            return subdir_config_files[0]
-
-        # If multiple config files are found, report an error.
-        if len(subdir_config_files) > 1:
+        # If multiple files are found, report an error.
+        if len(subdir_files) > 1:
             self.add_warning(
-                f"More than one {config_filename} found. "
+                f"More than one {filename} found. "
                 f"Could not determine which one to use.",
                 model="Project",
                 details={
                     "resources": [
-                        str(path.relative_to(self.work_path))
-                        for path in subdir_config_files
+                        str(path.relative_to(self.work_path)) for path in subdir_files
                     ]
                 },
             )
+
+    def get_input_config_file(self):
+        """
+        Return the ``scancode-config.yml`` file from the input/ directory
+        or from the codebase/ immediate subdirectories.
+        """
+        config_filename = settings.SCANCODEIO_CONFIG_FILE
+        return self.get_file_from_work_directory(config_filename)
+
+    def get_input_policies_file(self):
+        """
+        Return the "policies.yml" file from the input/ directory
+        or from the codebase/ immediate subdirectories.
+        """
+        return self.get_file_from_work_directory("policies.yml")
 
     def get_settings_as_yml(self):
         """Return the ``settings`` file content as yml, suitable for a config file."""

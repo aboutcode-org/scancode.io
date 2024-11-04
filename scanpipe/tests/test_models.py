@@ -657,6 +657,14 @@ class ScanPipeModelsTest(TestCase):
         # Search for config files *ONLY* in immediate codebase/ subdirectories.
         self.assertIsNone(self.project1.get_input_config_file())
 
+    def test_scanpipe_project_get_input_policies_file(self):
+        self.assertIsNone(self.project1.get_input_policies_file())
+
+        policies_file = self.project1.input_path / "policies.yml"
+        policies_file.touch()
+        policies_file_location = str(self.project1.get_input_policies_file())
+        self.assertTrue(policies_file_location.endswith("input/policies.yml"))
+
     def test_scanpipe_project_get_settings_as_yml(self):
         self.assertEqual("{}\n", self.project1.get_settings_as_yml())
 
