@@ -2472,6 +2472,10 @@ class ComplianceAlertMixin(models.Model):
 
         super().save(*args, **kwargs)
 
+    @property
+    def policy_index(self):
+        return self.project.policy_index
+
     @cached_property
     def policies_enabled(self):
         return self.project.policies_enabled
@@ -2482,7 +2486,7 @@ class ComplianceAlertMixin(models.Model):
         if not license_expression:
             return ""
 
-        policy_index = self.project.policy_index
+        policy_index = self.policy_index
         if not policy_index:
             return
 

@@ -13,6 +13,11 @@ v34.9.0 (unreleased)
 - Refactor the policies related code to its own module.
   https://github.com/aboutcode-org/scancode.io/issues/386
 
+- Added support for project-specific license policies and compliance alerts.
+  Enhance Project model to handle policies from local settings, project input
+  "policies.yml" files, or global app settings.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
 v34.8.3 (2024-10-30)
 --------------------
 
