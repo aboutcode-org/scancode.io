@@ -425,7 +425,7 @@ class ScanPipePipelinesTest(TestCase):
         with mock.patch("scanpipe.pipes.flag.flag_ignored_patterns") as mock_flag:
             mock_flag.return_value = None
             pipeline.flag_ignored_resources()
-        patterns_args = ['*.ext', '*/scancode-config.yml', '*/policies.yml']
+        patterns_args = ["*.ext", "*/scancode-config.yml", "*/policies.yml"]
         mock_flag.assert_called_with(project1, patterns=patterns_args)
 
     def test_scanpipe_pipeline_class_extract_archive(self):
