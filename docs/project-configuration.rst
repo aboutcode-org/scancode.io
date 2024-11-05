@@ -163,3 +163,10 @@ You can provide ``VCID`` from VulnerableCode or any aliases such as ``CVE`` or
      - OSV-2020-871
      - BIT-django-2024-24680
      - PYSEC-2024-28
+
+.. _project_configuration_settings_policies:
+
+policies
+^^^^^^^^
+
+TODO

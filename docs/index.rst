@@ -44,6 +44,7 @@ you’ll find information on:
     custom-pipelines
     scanpipe-pipes
     project-configuration
+    policies
     data-models
     output-files
     command-line-interface
