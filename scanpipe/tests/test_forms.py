@@ -26,6 +26,7 @@ from unittest import mock
 from django.test import TestCase
 
 import requests
+import saneyaml
 
 from scanpipe.forms import EditInputSourceTagForm
 from scanpipe.forms import InputsBaseForm
@@ -35,6 +36,8 @@ from scanpipe.forms import ProjectSettingsForm
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.tests.pipelines.do_nothing import DoNothing
+from scanpipe.tests import global_policies
+from scanpipe.tests import license_policies_index
 
 
 class ScanPipeFormsTest(TestCase):
@@ -204,6 +207,28 @@ class ScanPipeFormsTest(TestCase):
             ]
         }
         self.assertEqual(expected, project.get_env())
+
+    def test_scanpipe_forms_project_settings_form_policies(self):
+        data = {
+            "name": self.project1.name,
+            "policies": "{not valid}",
+        }
+        form = ProjectSettingsForm(data=data, instance=self.project1)
+        self.assertFalse(form.is_valid())
+        expected = {
+            "policies": [
+                "The `license_policies` key is missing from provided policies data."
+            ]
+        }
+        self.assertEqual(expected, form.errors)
+
+        policies_as_yaml = saneyaml.dump(global_policies)
+        data["policies"] = policies_as_yaml
+        form = ProjectSettingsForm(data=data, instance=self.project1)
+        self.assertTrue(form.is_valid())
+        project = form.save()
+        self.assertEqual(policies_as_yaml.strip(), project.settings["policies"])
+        self.assertEqual(license_policies_index, project.get_policy_index())
 
     def test_scanpipe_forms_edit_input_source_tag_form(self):
         data = {}
