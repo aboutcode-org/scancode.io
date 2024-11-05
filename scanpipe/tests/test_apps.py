@@ -56,7 +56,7 @@ class ScanPipeAppsTest(TestCase):
             self.assertEqual({}, scanpipe_app.license_policies_index)
 
         scanpipe_app.license_policies_index = {}
-        policies_files = self.data / "policy" / "policies.yml"
+        policies_files = self.data / "policies" / "policies.yml"
         with override_settings(SCANCODEIO_POLICIES_FILE=str(policies_files)):
             scanpipe_app.set_policies()
             self.assertEqual(

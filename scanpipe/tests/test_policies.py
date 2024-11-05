@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from pathlib import Path
+from unittest import mock
 
 from django.apps import apps
 from django.core.exceptions import ValidationError
@@ -32,6 +33,7 @@ from scanpipe.policies import make_license_policy_index
 from scanpipe.policies import validate_policies
 from scanpipe.tests import global_policies
 from scanpipe.tests import license_policies_index
+from scanpipe.tests import make_project
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -44,12 +46,12 @@ class ScanPipePoliciesTest(TestCase):
         with self.assertRaises(ValidationError):
             load_policies_yaml(policies_yaml)
 
-        policies_files = self.data / "policy" / "policies.yml"
+        policies_files = self.data / "policies" / "policies.yml"
         policies_dict = load_policies_yaml(policies_files.read_text())
         self.assertIn("license_policies", policies_dict)
 
     def test_scanpipe_policies_load_policies_file(self):
-        policies_files = self.data / "policy" / "policies.yml"
+        policies_files = self.data / "policies" / "policies.yml"
         policies_dict = load_policies_file(policies_files)
         self.assertIn("license_policies", policies_dict)
 
@@ -83,3 +85,45 @@ class ScanPipePoliciesTest(TestCase):
         self.assertEqual(
             license_policies_index, make_license_policy_index(global_policies)
         )
+
+    def test_scanpipe_policies_scan_codebase_pipeline_integration(self):
+        pipeline_name = "scan_codebase"
+        project1 = make_project()
+
+        input_location = self.data / "policies" / "include_policies_file.zip"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        # Capture the real method's return value
+        real_get_policy_index = project1.get_policy_index
+
+        with mock.patch("scanpipe.models.Project.get_policy_index") as mock_get_index:
+            mock_get_index.side_effect = real_get_policy_index
+            exitcode, out = pipeline.execute()
+        mock_get_index.assert_called_once()
+
+        self.assertEqual(0, exitcode, msg=out)
+        resource_qs = project1.codebaseresources
+        self.assertEqual(6, resource_qs.count())
+
+        resource = resource_qs.get(name="apache-2.0.LICENSE")
+        self.assertEqual("apache-2.0", resource.detected_license_expression)
+        self.assertEqual("ok", resource.compliance_alert)
+        resource = resource_qs.get(name="gpl-2.0.LICENSE")
+        self.assertEqual("gpl-2.0", resource.detected_license_expression)
+        self.assertEqual("error", resource.compliance_alert)
+        resource = resource_qs.get(name="public-domain.LICENSE")
+        self.assertEqual("public-domain", resource.detected_license_expression)
+        self.assertEqual("missing", resource.compliance_alert)
+
+        expected = "codebase/include_policies_file.zip-extract/policies.yml"
+        project_policies_file = project1.get_input_policies_file()
+        self.assertTrue(str(project_policies_file).endswith(expected))
+        self.assertTrue(project1.policies_enabled)
+        expected_index = {
+            "apache-2.0": {"license_key": "apache-2.0", "compliance_alert": ""},
+            "gpl-2.0": {"license_key": "gpl-2.0", "compliance_alert": "error"},
+        }
+        self.assertEqual(expected_index, project1.get_policy_index())
