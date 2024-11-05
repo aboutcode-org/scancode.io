@@ -35,9 +35,9 @@ from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectSettingsForm
 from scanpipe.models import Project
 from scanpipe.models import Run
-from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests import global_policies
 from scanpipe.tests import license_policies_index
+from scanpipe.tests.pipelines.do_nothing import DoNothing
 
 
 class ScanPipeFormsTest(TestCase):
