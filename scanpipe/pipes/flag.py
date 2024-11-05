@@ -62,6 +62,14 @@ REVIEW_DANGLING_LEGAL_FILE = "review-dangling-legal-file"
 NOT_DEPLOYED = "not-deployed"
 
 
+# Target files that should be ignored during processing as those are related to the app
+# configuration.
+DEFAULT_IGNORED_PATTERNS = [
+    "*/scancode-config.yml",
+    "*/policies.yml",
+]
+
+
 def flag_empty_files(project):
     """Flag empty files as ignored."""
     qs = (

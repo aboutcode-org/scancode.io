@@ -118,6 +118,11 @@ class ScanPipePoliciesTest(TestCase):
         self.assertEqual("public-domain", resource.detected_license_expression)
         self.assertEqual("missing", resource.compliance_alert)
 
+        resource = resource_qs.get(name="policies.yml")
+        self.assertEqual("ignored-pattern", resource.status)
+        self.assertEqual("", resource.detected_license_expression)
+        self.assertEqual("", resource.compliance_alert)
+
         expected = "codebase/include_policies_file.zip-extract/policies.yml"
         project_policies_file = project1.get_input_policies_file()
         self.assertTrue(str(project_policies_file).endswith(expected))
