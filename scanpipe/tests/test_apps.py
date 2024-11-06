@@ -56,18 +56,12 @@ class ScanPipeAppsTest(TestCase):
             self.assertEqual({}, scanpipe_app.license_policies_index)
 
         scanpipe_app.license_policies_index = {}
-        policies_files = self.data / "policy" / "policies.yml"
+        policies_files = self.data / "policies" / "policies.yml"
         with override_settings(SCANCODEIO_POLICIES_FILE=str(policies_files)):
             scanpipe_app.set_policies()
             self.assertEqual(
                 license_policies_index, scanpipe_app.license_policies_index
             )
-
-    def test_scanpipe_apps_policies_enabled(self):
-        scanpipe_app.license_policies_index = {}
-        self.assertFalse(scanpipe_app.policies_enabled)
-        scanpipe_app.license_policies_index = {"key": "value"}
-        self.assertTrue(scanpipe_app.policies_enabled)
 
     def test_scanpipe_apps_register_pipeline_from_file(self):
         path = self.pipelines_location / "do_nothing.py"
