@@ -107,6 +107,7 @@ class ScanPipePoliciesTest(TestCase):
 
         self.assertEqual(0, exitcode, msg=out)
         resource_qs = project1.codebaseresources
+        print(resource_qs)  # DEBUG statement
         self.assertEqual(6, resource_qs.count())
 
         resource = resource_qs.get(name="apache-2.0.LICENSE")
