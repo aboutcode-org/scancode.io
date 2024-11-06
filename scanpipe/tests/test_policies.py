@@ -27,6 +27,7 @@ from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
+from scanpipe.pipes.input import copy_input
 from scanpipe.policies import load_policies_file
 from scanpipe.policies import load_policies_yaml
 from scanpipe.policies import make_license_policy_index
@@ -132,3 +133,27 @@ class ScanPipePoliciesTest(TestCase):
             "gpl-2.0": {"license_key": "gpl-2.0", "compliance_alert": "error"},
         }
         self.assertEqual(expected_index, project1.get_policy_index())
+
+    def test_scanpipe_policies_through_scancode_config_file(self):
+        project1 = make_project()
+        self.assertEqual({}, project1.get_env())
+
+        test_config_file = self.data / "policies" / "scancode-config.yml"
+        copy_input(test_config_file, project1.input_path)
+
+        expected = {
+            "policies": [
+                {
+                    "license_policies": [
+                        {"license_key": "mpl-2.0", "compliance_alert": "warning"},
+                        {"license_key": "gpl-3.0", "compliance_alert": "error"},
+                    ]
+                }
+            ]
+        }
+        self.assertEqual(expected, project1.get_env())
+
+        config = {"policies": None}
+        project1.settings = config
+        project1.save()
+        self.assertEqual(expected, project1.get_env())

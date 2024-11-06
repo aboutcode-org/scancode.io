@@ -169,4 +169,9 @@ You can provide ``VCID`` from VulnerableCode or any aliases such as ``CVE`` or
 policies
 ^^^^^^^^
 
-TODO
+For detailed information about the policies system, refer to :ref:`policies`.
+
+Instead of providing a separate ``policies.yml`` file, policies can be directly
+defined within the project configuration.
+This can be done through the web UI, see :ref:`user_interface_project_settings`,
+or by using a ``scancode-config.yml`` file.

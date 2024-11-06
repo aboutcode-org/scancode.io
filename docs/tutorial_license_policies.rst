@@ -14,7 +14,7 @@ and their license compliance data in an application's codebase.
 ScanCode.io also gives users the ability to define a set of **license policies** to
 have their projects checked against with a **compliance system**.
 
-Refer to :ref:`policies` for extensive details about the policies system.
+Refer to :ref:`policies` for details about the policies system.
 
 Instructions
 ------------
@@ -93,7 +93,7 @@ in the project:
 
     $ scanpipe check-compliance --project cuckoo-filter-with-policies --verbosity 2
 
-.. code-block:: json
+.. code-block:: bash
 
     5 compliance issues detected on this project.
     [packages]
