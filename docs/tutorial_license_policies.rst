@@ -95,16 +95,15 @@ in the project:
 
 .. code-block:: bash
 
-    5 compliance issues detected on this project.
+    4 compliance issues detected on this project.
     [packages]
      > ERROR: 3
        pkg:pypi/cuckoo-filter@.
        pkg:pypi/cuckoo-filter@1.0.6
        pkg:pypi/cuckoo-filter@1.0.6
     [resources]
-     > ERROR: 2
+     > ERROR: 1
        cuckoo_filter-1.0.6.tar.gz-extract/cuckoo_filter-1.0.6/README.md
-       policies.yml
 
 .. tip::
     In case of compliance alerts, the command returns a non-zero exit code which
