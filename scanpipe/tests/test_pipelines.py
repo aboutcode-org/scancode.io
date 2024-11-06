@@ -76,10 +76,10 @@ class ScanPipePipelinesTest(TestCase):
             "description": "Description section of the doc string.",
             "summary": "Do nothing, in 2 steps.",
             "steps": [
-                {"name": "step1", "doc": "Step1 doc.", "groups": []},
-                {"name": "step2", "doc": "Step2 doc.", "groups": []},
+                {"name": "step1", "doc": "Step1 doc.", "options": []},
+                {"name": "step2", "doc": "Step2 doc.", "options": []},
             ],
-            "available_groups": [],
+            "available_options": [],
         }
         self.assertEqual(expected, DoNothing.get_info())
 
@@ -87,9 +87,9 @@ class ScanPipePipelinesTest(TestCase):
             "summary": "Profile a step using the @profile decorator.",
             "description": "",
             "steps": [
-                {"name": "step", "doc": "", "groups": []},
+                {"name": "step", "doc": "", "options": []},
             ],
-            "available_groups": [],
+            "available_options": [],
         }
         self.assertEqual(expected, ProfileStep.get_info())
 
@@ -312,8 +312,8 @@ class ScanPipePipelinesTest(TestCase):
 
     def test_scanpipe_pipeline_class_get_graph(self):
         expected = [
-            {"name": "step1", "doc": "Step1 doc.", "groups": []},
-            {"name": "step2", "doc": "Step2 doc.", "groups": []},
+            {"name": "step1", "doc": "Step1 doc.", "options": []},
+            {"name": "step2", "doc": "Step2 doc.", "options": []},
         ]
         self.assertEqual(expected, DoNothing.get_graph())
 
@@ -346,36 +346,36 @@ class ScanPipePipelinesTest(TestCase):
         expected = "Use a ``steps(cls)`` classmethod to declare the steps."
         self.assertEqual(expected, str(cm.exception))
 
-    def test_scanpipe_pipeline_class_get_steps_with_groups(self):
+    def test_scanpipe_pipeline_class_get_steps_with_options(self):
         expected = (
             WithGroups.grouped_with_foo_and_bar,
             WithGroups.grouped_with_bar,
             WithGroups.grouped_with_excluded,
-            WithGroups.no_groups,
+            WithGroups.no_options,
         )
         self.assertEqual(expected, WithGroups.get_steps())
 
-        expected = (WithGroups.no_groups,)
-        self.assertEqual(expected, WithGroups.get_steps(groups=[]))
-        self.assertEqual(expected, WithGroups.get_steps(groups=["not"]))
+        expected = (WithGroups.no_options,)
+        self.assertEqual(expected, WithGroups.get_steps(options=[]))
+        self.assertEqual(expected, WithGroups.get_steps(options=["not"]))
 
         expected = (
             WithGroups.grouped_with_foo_and_bar,
             WithGroups.grouped_with_bar,
-            WithGroups.no_groups,
+            WithGroups.no_options,
         )
-        self.assertEqual(expected, WithGroups.get_steps(groups=["bar"]))
-        self.assertEqual(expected, WithGroups.get_steps(groups=["foo", "bar"]))
+        self.assertEqual(expected, WithGroups.get_steps(options=["bar"]))
+        self.assertEqual(expected, WithGroups.get_steps(options=["foo", "bar"]))
 
         expected = (
             WithGroups.grouped_with_foo_and_bar,
-            WithGroups.no_groups,
+            WithGroups.no_options,
         )
-        self.assertEqual(expected, WithGroups.get_steps(groups=["foo"]))
+        self.assertEqual(expected, WithGroups.get_steps(options=["foo"]))
 
-    def test_scanpipe_pipeline_class_get_available_groups(self):
-        self.assertEqual(["bar", "excluded", "foo"], WithGroups.get_available_groups())
-        self.assertEqual([], DoNothing.get_available_groups())
+    def test_scanpipe_pipeline_class_get_available_options(self):
+        self.assertEqual(["bar", "excluded", "foo"], WithGroups.get_available_options())
+        self.assertEqual([], DoNothing.get_available_options())
 
     def test_scanpipe_pipeline_class_env_loaded_from_config_file(self):
         project1 = Project.objects.create(name="Analysis")
@@ -854,7 +854,7 @@ class PipelinesIntegrationTest(TestCase):
 
         run = project1.add_pipeline(
             pipeline_name=pipeline_name,
-            selected_groups=["StaticResolver"],
+            selected_options=["StaticResolver"],
         )
         pipeline = run.make_pipeline_instance()
 
@@ -882,7 +882,7 @@ class PipelinesIntegrationTest(TestCase):
 
         run = project1.add_pipeline(
             pipeline_name=pipeline_name,
-            selected_groups=["StaticResolver"],
+            selected_options=["StaticResolver"],
         )
         pipeline = run.make_pipeline_instance()
 
@@ -911,7 +911,7 @@ class PipelinesIntegrationTest(TestCase):
 
         run = project1.add_pipeline(
             pipeline_name=pipeline_name,
-            selected_groups=["StaticResolver"],
+            selected_options=["StaticResolver"],
         )
         pipeline = run.make_pipeline_instance()
 
@@ -938,7 +938,7 @@ class PipelinesIntegrationTest(TestCase):
 
         run = project1.add_pipeline(
             pipeline_name=pipeline_name,
-            selected_groups=["StaticResolver"],
+            selected_options=["StaticResolver"],
         )
         pipeline = run.make_pipeline_instance()
 
@@ -964,7 +964,7 @@ class PipelinesIntegrationTest(TestCase):
 
         run = project1.add_pipeline(
             pipeline_name=pipeline_name,
-            selected_groups=["StaticResolver"],
+            selected_options=["StaticResolver"],
         )
         pipeline = run.make_pipeline_instance()
 

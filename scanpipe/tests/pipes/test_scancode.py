@@ -570,7 +570,7 @@ class ScanPipeScancodePipesTest(TestCase):
 
         run = project1.add_pipeline(
             pipeline_name=pipeline_name,
-            selected_groups=[],
+            selected_options=[],
         )
         pipeline = run.make_pipeline_instance()
         exitcode, out = pipeline.execute()

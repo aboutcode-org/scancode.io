@@ -22,9 +22,9 @@
     <div class="has-text-centered py-2">
       {% for step in pipeline_info.steps %}
         <span class="tag is-info has-text-weight-semibold">{{ step.name }}</span>
-        {% if step.groups %}
-          {% for group in step.groups %}
-            <span class="tag is-warning has-text-weight-semibold">{{ group }}</span>
+        {% if step.options %}
+          {% for option in step.options %}
+            <span class="tag is-warning has-text-weight-semibold">{{ option }}</span>
           {% endfor %}
         {% endif %}
         <div>{{ step.doc|safe }}</div>

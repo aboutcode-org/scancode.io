@@ -21,7 +21,7 @@
         {
           "pipeline_name": "map_deploy_to_develop",
           "status": "not_started",
-          "selected_groups": null,
+          "selected_options": null,
           "selected_steps": null,
           "scancodeio_version": "",
           "task_id": null,

@@ -135,25 +135,25 @@ class ScanPipeAppsTest(TestCase):
             "analyze_docker_image", scanpipe_app.get_new_pipeline_name("docker")
         )
 
-    def test_scanpipe_apps_extract_group_from_pipeline(self):
+    def test_scanpipe_apps_extract_option_from_pipeline(self):
         pipeline = "map_deploy_to_develop"
 
         pipeline_str = pipeline
-        pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline_str)
+        pipeline_name, options = scanpipe_app.extract_option_from_pipeline(pipeline_str)
         self.assertEqual(pipeline, pipeline_name)
-        self.assertEqual(None, groups)
+        self.assertEqual(None, options)
 
         pipeline_str = "map_deploy_to_develop:"
-        pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline_str)
+        pipeline_name, options = scanpipe_app.extract_option_from_pipeline(pipeline_str)
         self.assertEqual(pipeline, pipeline_name)
-        self.assertEqual([], groups)
+        self.assertEqual([], options)
 
-        pipeline_str = "map_deploy_to_develop:group1"
-        pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline_str)
+        pipeline_str = "map_deploy_to_develop:option1"
+        pipeline_name, options = scanpipe_app.extract_option_from_pipeline(pipeline_str)
         self.assertEqual(pipeline, pipeline_name)
-        self.assertEqual(["group1"], groups)
+        self.assertEqual(["option1"], options)
 
-        pipeline_str = "map_deploy_to_develop:group1,group2"
-        pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline_str)
+        pipeline_str = "map_deploy_to_develop:option1,option2"
+        pipeline_name, options = scanpipe_app.extract_option_from_pipeline(pipeline_str)
         self.assertEqual(pipeline, pipeline_name)
-        self.assertEqual(["group1", "group2"], groups)
+        self.assertEqual(["option1", "option2"], options)

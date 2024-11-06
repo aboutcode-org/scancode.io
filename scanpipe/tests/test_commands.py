@@ -115,7 +115,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "--pipeline",
             self.pipeline_name,
             "--pipeline",
-            "analyze_root_filesystem_or_vm_image:group1,group2",
+            "analyze_root_filesystem_or_vm_image:option1,option2",
             "--pipeline",
             "scan_package",  # old name backward compatibility
         ]
@@ -129,7 +129,7 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
         self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
         run = project.runs.get(pipeline_name="analyze_root_filesystem_or_vm_image")
-        self.assertEqual(["group1", "group2"], run.selected_groups)
+        self.assertEqual(["option1", "option2"], run.selected_options)
 
     def test_scanpipe_management_command_create_project_inputs(self):
         out = StringIO()
@@ -271,7 +271,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         pipelines = [
             self.pipeline_name,
-            "analyze_root_filesystem_or_vm_image:group1,group2",
+            "analyze_root_filesystem_or_vm_image:option1,option2",
             "scan_package",  # old name backward compatibility
         ]
 
@@ -294,7 +294,7 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
         self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
         run = project.runs.get(pipeline_name="analyze_root_filesystem_or_vm_image")
-        self.assertEqual(["group1", "group2"], run.selected_groups)
+        self.assertEqual(["option1", "option2"], run.selected_options)
 
         options = ["--project", project.name, "non-existing"]
         expected = "non-existing is not a valid pipeline"
@@ -321,14 +321,14 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(expected, out.getvalue())
 
         project.runs.filter(pipeline_name=pipeline_names[0]).update(
-            task_exitcode=0, selected_groups=["group1", "group2"]
+            task_exitcode=0, selected_options=["option1", "option2"]
         )
         project.runs.filter(pipeline_name=pipeline_names[1]).update(task_exitcode=1)
 
         out = StringIO()
         call_command("show-pipeline", *options, stdout=out)
         expected = (
-            " [SUCCESS] analyze_docker_image (group1,group2)\n"
+            " [SUCCESS] analyze_docker_image (option1,option2)\n"
             " [FAILURE] analyze_root_filesystem_or_vm_image\n"
         )
         self.assertEqual(expected, out.getvalue())
@@ -740,12 +740,12 @@ class ScanPipeManagementCommandTest(TestCase):
         json_data = json.loads(out.getvalue())
         self.assertEqual(3, len(json_data["files"]))
 
-        # Multiple pipeline and selected_groups are supported
+        # Multiple pipeline and selected_options are supported
         out = StringIO()
         with redirect_stdout(out):
             options = [
                 "inspect_packages:StaticResolver",
-                "do_nothing:Group1,Group2",
+                "do_nothing:Option1,Option2",
                 input_location,
             ]
             call_command("run", *options)
@@ -753,10 +753,10 @@ class ScanPipeManagementCommandTest(TestCase):
         json_data = json.loads(out.getvalue())
         runs = json_data["headers"][0]["runs"]
         self.assertEqual("inspect_packages", runs[0]["pipeline_name"])
-        self.assertEqual(["StaticResolver"], runs[0]["selected_groups"])
+        self.assertEqual(["StaticResolver"], runs[0]["selected_options"])
 
         self.assertEqual("do_nothing", runs[1]["pipeline_name"])
-        self.assertEqual(["Group1", "Group2"], runs[1]["selected_groups"])
+        self.assertEqual(["Option1", "Option2"], runs[1]["selected_options"])
 
     @mock.patch("scanpipe.models.Project.get_latest_output")
     @mock.patch("requests.post")
@@ -1052,7 +1052,7 @@ class ScanPipeManagementCommandMixinTest(TestCase):
 
         pipelines = [
             self.pipeline_name,
-            "analyze_root_filesystem_or_vm_image:group1,group2",
+            "analyze_root_filesystem_or_vm_image:option1,option2",
             "scan_package",
         ]
         project = self.create_project_command.create_project(
@@ -1065,7 +1065,7 @@ class ScanPipeManagementCommandMixinTest(TestCase):
         ]
         self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
         run = project.runs.get(pipeline_name="analyze_root_filesystem_or_vm_image")
-        self.assertEqual(["group1", "group2"], run.selected_groups)
+        self.assertEqual(["option1", "option2"], run.selected_options)
 
     def test_scanpipe_management_command_mixin_create_project_inputs(self):
         expected = "non-existing not found or not a file"

@@ -36,7 +36,7 @@ __version__ = "0.1.0"
 class PipelineDefinition:
     """
     Encapsulate the code related to a Pipeline definition:
-    - Steps
+    - Steps (both Default and Optional)
     - Attributes
     - Documentation
     """
@@ -49,13 +49,13 @@ class PipelineDefinition:
         raise NotImplementedError
 
     @classmethod
-    def get_steps(cls, groups=None):
+    def get_steps(cls, options=None):
         """
         Return the list of steps defined in the ``steps`` class method.
 
-        If the optional ``groups`` parameter is provided, only include steps labeled
-        with groups that intersect with the provided list. If a step has no groups or
-        if ``groups`` is not specified, include the step in the result.
+        If the optional ``options`` parameter is provided, only include steps labeled
+        with options that intersect with the provided list. If a step has no options or
+        if ``options`` is not specified, include the step in the result.
         """
         if not callable(cls.steps):
             raise TypeError("Use a ``steps(cls)`` classmethod to declare the steps.")
@@ -65,12 +65,12 @@ class PipelineDefinition:
         if initial_steps := cls.get_initial_steps():
             steps = (*initial_steps, *steps)
 
-        if groups is not None:
+        if options is not None:
             steps = tuple(
                 step
                 for step in steps
-                if not getattr(step, "groups", [])
-                or set(getattr(step, "groups")).intersection(groups)
+                if not getattr(step, "options", [])
+                or set(getattr(step, "options")).intersection(options)
             )
 
         return steps
@@ -95,7 +95,7 @@ class PipelineDefinition:
             {
                 "name": step.__name__,
                 "doc": getdoc(step),
-                "groups": getattr(step, "groups", []),
+                "options": getattr(step, "options", []),
             }
             for step in cls.get_steps()
         ]
@@ -110,7 +110,7 @@ class PipelineDefinition:
             "summary": summary,
             "description": description,
             "steps": steps,
-            "available_groups": cls.get_available_groups(),
+            "available_options": cls.get_available_options(),
         }
 
     @classmethod
@@ -119,12 +119,12 @@ class PipelineDefinition:
         return cls.get_info()["summary"]
 
     @classmethod
-    def get_available_groups(cls):
+    def get_available_options(cls):
         return sorted(
             set(
-                group_name
+                option_name
                 for step in cls.get_steps()
-                for group_name in getattr(step, "groups", [])
+                for option_name in getattr(step, "options", [])
             )
         )
 
@@ -132,18 +132,18 @@ class PipelineDefinition:
 class PipelineRun:
     """
     Encapsulate the code related to a Pipeline run (execution):
-    - Execution context: groups, steps
+    - Execution context: options, steps
     - Execution logic
     - Logging
     - Results
     """
 
-    def __init__(self, selected_groups=None, selected_steps=None):
+    def __init__(self, selected_options=None, selected_steps=None):
         """Load the Pipeline class."""
         self.pipeline_class = self.__class__
         self.pipeline_name = self.__class__.__name__
 
-        self.selected_groups = selected_groups
+        self.selected_options = selected_options
         self.selected_steps = selected_steps or []
 
         self.execution_log = []
@@ -180,7 +180,7 @@ class PipelineRun:
         """Execute each steps in the order defined on this pipeline class."""
         self.log(f"Pipeline [{self.pipeline_name}] starting")
 
-        steps = self.pipeline_class.get_steps(groups=self.selected_groups)
+        steps = self.pipeline_class.get_steps(options=self.selected_options)
         steps_count = len(steps)
         pipeline_start_time = timer()
 
@@ -219,14 +219,14 @@ class BasePipeline(PipelineDefinition, PipelineRun):
     """
 
 
-def group(*groups):
-    """Mark a function as part of a particular group."""
+def option(*options):
+    """Mark a function as part of a particular option."""
 
     def decorator(obj):
-        if hasattr(obj, "groups"):
-            obj.groups = obj.groups.union(groups)
+        if hasattr(obj, "options"):
+            obj.options = obj.options.union(options)
         else:
-            setattr(obj, "groups", set(groups))
+            setattr(obj, "options", set(options))
         return obj
 
     return decorator

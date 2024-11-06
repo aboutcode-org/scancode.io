@@ -87,11 +87,11 @@ class ScanPipeConfig(AppConfig):
 
     def load_pipelines(self):
         """
-        Load pipelines from the "scancodeio_pipelines" entry point group and from the
+        Load pipelines from the "scancodeio_pipelines" entry point option and from the
         pipelines Python files found at `SCANCODEIO_PIPELINES_DIRS` locations.
         """
         entry_points = importlib_metadata.entry_points()
-        pipeline_entry_points = set(entry_points.select(group="scancodeio_pipelines"))
+        pipeline_entry_points = set(entry_points.select(option="scancodeio_pipelines"))
 
         for entry_point in sorted(pipeline_entry_points):
             self.register_pipeline(name=entry_point.name, cls=entry_point.load())
@@ -197,15 +197,15 @@ class ScanPipeConfig(AppConfig):
         return pipeline_name
 
     @staticmethod
-    def extract_group_from_pipeline(pipeline):
+    def extract_option_from_pipeline(pipeline):
         pipeline_name = pipeline
-        groups = None
+        options = None
 
         if ":" in pipeline:
             pipeline_name, value = pipeline.split(":", maxsplit=1)
-            groups = value.split(",") if value else []
+            options = value.split(",") if value else []
 
-        return pipeline_name, groups
+        return pipeline_name, options
 
     def get_scancode_licenses(self):
         """

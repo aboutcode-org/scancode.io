@@ -23,7 +23,7 @@
 from django.template.defaultfilters import pluralize
 
 from scanpipe.management.commands import ProjectCommand
-from scanpipe.management.commands import extract_group_from_pipelines
+from scanpipe.management.commands import extract_option_from_pipelines
 from scanpipe.management.commands import validate_pipelines
 
 
@@ -42,11 +42,11 @@ class Command(ProjectCommand):
     def handle(self, *pipelines, **options):
         super().handle(*pipelines, **options)
 
-        pipelines_data = extract_group_from_pipelines(pipelines)
+        pipelines_data = extract_option_from_pipelines(pipelines)
         pipelines_data = validate_pipelines(pipelines_data)
 
-        for pipeline_name, selected_groups in pipelines_data.items():
-            self.project.add_pipeline(pipeline_name, selected_groups=selected_groups)
+        for pipeline_name, selected_options in pipelines_data.items():
+            self.project.add_pipeline(pipeline_name, selected_options=selected_options)
 
         pipeline_names = pipelines_data.keys()
 

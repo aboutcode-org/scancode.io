@@ -227,16 +227,16 @@ def validate_copy_from(copy_from):
             raise CommandError(f"{copy_from} is not a directory")
 
 
-def extract_group_from_pipelines(pipelines):
+def extract_option_from_pipelines(pipelines):
     """
-    Add support for the ":group1,group2" suffix in pipeline data.
+    Add support for the ":option1,option2" suffix in pipeline data.
 
     For example: "map_deploy_to_develop:Java,JavaScript"
     """
     pipelines_data = {}
     for pipeline in pipelines:
-        pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline)
-        pipelines_data[pipeline_name] = groups
+        pipeline_name, options = scanpipe_app.extract_option_from_pipeline(pipeline)
+        pipelines_data[pipeline_name] = options
     return pipelines_data
 
 
@@ -253,8 +253,8 @@ def validate_pipelines(pipelines_data):
     """Raise an error if one of the `pipeline_names` is not available."""
     # Backward compatibility with old pipeline names.
     pipelines_data = {
-        scanpipe_app.get_new_pipeline_name(pipeline_name): groups
-        for pipeline_name, groups in pipelines_data.items()
+        scanpipe_app.get_new_pipeline_name(pipeline_name): options
+        for pipeline_name, options in pipelines_data.items()
     }
 
     for pipeline_name in pipelines_data.keys():
@@ -297,7 +297,7 @@ def validate_project_inputs(pipelines, input_files, copy_from):
     input_files_data = {}
 
     if pipelines:
-        pipelines_data = extract_group_from_pipelines(pipelines)
+        pipelines_data = extract_option_from_pipelines(pipelines)
         pipelines_data = validate_pipelines(pipelines_data)
 
     if input_files:
@@ -364,8 +364,8 @@ def handle_copy_codebase(project, copy_from, command=None):
 def add_project_inputs(
     project, pipelines_data, input_files_data, input_urls, copy_from, command=None
 ):
-    for pipeline_name, selected_groups in pipelines_data.items():
-        project.add_pipeline(pipeline_name, selected_groups=selected_groups)
+    for pipeline_name, selected_options in pipelines_data.items():
+        project.add_pipeline(pipeline_name, selected_options=selected_options)
 
     if input_files_data:
         handle_input_files(

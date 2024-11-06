@@ -50,10 +50,10 @@ class Command(BaseCommand):
                 for step_info in steps:
                     step_name = step_info["name"]
                     step_doc = step_info["doc"].replace("\n", "\n   ")
-                    step_groups = step_info["groups"]
+                    step_options = step_info["options"]
                     self.stdout.write(f" > [{step_name}]: {step_doc}")
-                    if step_groups:
-                        self.stdout.write(f"   {{Group}}: {','.join(step_groups)}")
+                    if step_options:
+                        self.stdout.write(f"   {{Option}}: {','.join(step_options)}")
 
             if verbosity >= 1:
                 self.stdout.write("\n")

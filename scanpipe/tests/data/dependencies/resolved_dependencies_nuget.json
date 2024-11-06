@@ -15,7 +15,7 @@
         {
           "pipeline_name": "resolve_dependencies",
           "status": "not_started",
-          "selected_groups": [
+          "selected_options": [
             "StaticResolver"
           ],
           "selected_steps": null,

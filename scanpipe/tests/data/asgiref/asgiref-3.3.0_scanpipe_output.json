@@ -28,7 +28,7 @@
           "pipeline_name": "scan_codebase",
           "status": "not_started",
           "description": "Scan a codebase for application packages, licenses, and copyrights.",
-          "selected_groups": null,
+          "selected_options": null,
           "selected_steps": null,
           "uuid": "311727fe-1d8d-4324-b298-976582616a9f",
           "created_date": "2024-10-30T10:37:43.293477Z",

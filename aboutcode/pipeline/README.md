@@ -24,11 +24,11 @@ class PrintMessages(BasePipeline):
 PrintMessages().execute()
 ```
 
-### Groups and steps selection
+### Options and steps selection
 
 ```python
 from aboutcode.pipeline import BasePipeline
-from aboutcode.pipeline import group
+from aboutcode.pipeline import option
 
 class PrintMessages(BasePipeline):
     @classmethod
@@ -38,13 +38,13 @@ class PrintMessages(BasePipeline):
     def step1(self):
         print("Message from step1")
 
-    @group("foo")
+    @option("foo")
     def step2(self):
         print("Message from step2")
 
 
-# Execute pipeline with group selection
-run = PrintMessages(selected_groups=["foo"])
+# Execute pipeline with option selection
+run = PrintMessages(selected_options=["foo"])
 exitcode, error = run.execute()
 
 # Execute pipeline with steps selection

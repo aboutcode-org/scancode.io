@@ -29,7 +29,7 @@
     "scancodeio_version": "",
     "description": "Scan a codebase for application packages, licenses, and copyrights.",
     "current_step": "",
-    "selected_groups": null,
+    "selected_options": null,
     "selected_steps": null
   }
 },

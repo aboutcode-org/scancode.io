@@ -121,7 +121,7 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
             "pipeline_name",
             "status",
             "description",
-            "selected_groups",
+            "selected_options",
             "selected_steps",
             "project",
             "uuid",
@@ -322,9 +322,9 @@ class ProjectSerializer(
             project.add_input_source(download_url=url)
 
         for pipeline in pipelines:
-            pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline)
+            pipeline_name, options = scanpipe_app.extract_group_from_pipeline(pipeline)
             pipeline_name = scanpipe_app.get_new_pipeline_name(pipeline_name)
-            project.add_pipeline(pipeline_name, execute_now, selected_groups=groups)
+            project.add_pipeline(pipeline_name, execute_now, selected_options=options)
 
         if webhook_url:
             project.add_webhook_subscription(target_url=webhook_url)

@@ -20,7 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-from aboutcode.pipeline import group
+from aboutcode.pipeline import option
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import scancode
 
@@ -65,7 +65,7 @@ class InspectPackages(ScanCodebase):
             progress_logger=self.log,
         )
 
-    @group("StaticResolver")
+    @option("StaticResolver")
     def resolve_dependencies(self):
         """
         Create packages and dependency relationships from

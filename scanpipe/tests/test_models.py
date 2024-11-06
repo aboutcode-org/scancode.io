@@ -238,7 +238,7 @@ class ScanPipeModelsTest(TestCase):
         self.project1.update(settings={"product_name": "My Product"})
         new_file_path1 = self.project1.input_path / "file.zip"
         new_file_path1.touch()
-        run1 = self.project1.add_pipeline("analyze_docker_image", selected_groups=["g"])
+        run1 = self.project1.add_pipeline("analyze_docker_image", selected_options=["g"])
         run2 = self.project1.add_pipeline("find_vulnerabilities")
         subscription1 = self.project1.add_webhook_subscription(
             target_url="http://domain.url"
@@ -276,7 +276,7 @@ class ScanPipeModelsTest(TestCase):
             [run.pipeline_name for run in runs],
         )
         self.assertNotEqual(run1.pk, runs[0].pk)
-        self.assertEqual(run1.selected_groups, runs[0].selected_groups)
+        self.assertEqual(run1.selected_options, runs[0].selected_options)
         self.assertNotEqual(run2.pk, runs[1].pk)
         self.assertEqual(1, len(cloned_project2.webhooksubscriptions.all()))
         cloned_subscription = cloned_project2.webhooksubscriptions.get()
@@ -931,19 +931,19 @@ class ScanPipeModelsTest(TestCase):
         run1 = Run.objects.get(pk=run1.pk)
         self.assertEqual("", run1.current_step)
 
-    def test_scanpipe_run_model_selected_groups(self):
+    def test_scanpipe_run_model_selected_options(self):
         run1 = Run.objects.create(project=self.project1)
-        self.assertEqual(None, run1.selected_groups)
+        self.assertEqual(None, run1.selected_options)
 
         # Empty list has not the same behavior as None
-        run1.update(selected_groups=[])
-        self.assertEqual([], run1.selected_groups)
+        run1.update(selected_options=[])
+        self.assertEqual([], run1.selected_options)
 
-        run1.update(selected_groups=["foo"])
-        self.assertEqual(["foo"], run1.selected_groups)
+        run1.update(selected_options=["foo"])
+        self.assertEqual(["foo"], run1.selected_options)
 
-        run1.update(selected_groups=["foo", "bar"])
-        self.assertEqual(["foo", "bar"], run1.selected_groups)
+        run1.update(selected_options=["foo", "bar"])
+        self.assertEqual(["foo", "bar"], run1.selected_options)
 
     def test_scanpipe_run_model_pipeline_class_property(self):
         run1 = Run.objects.create(project=self.project1, pipeline_name="do_nothing")
@@ -2081,7 +2081,7 @@ class ScanPipeModelsTest(TestCase):
                 "pipeline_name": "pipeline",
                 "status": run1.status,
                 "description": "",
-                "selected_groups": None,
+                "selected_options": None,
                 "selected_steps": None,
                 "uuid": str(run1.uuid),
                 "scancodeio_version": "",
@@ -2562,21 +2562,21 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         run1.start()
         mock_execute_task.assert_called_once()
 
-    def test_scanpipe_project_model_add_pipeline_selected_groups(self):
+    def test_scanpipe_project_model_add_pipeline_selected_options(self):
         project1 = Project.objects.create(name="Analysis")
         pipeline_name = "scan_codebase"
 
-        run1 = project1.add_pipeline(pipeline_name, selected_groups=[])
-        self.assertEqual([], run1.selected_groups)
+        run1 = project1.add_pipeline(pipeline_name, selected_options=[])
+        self.assertEqual([], run1.selected_options)
 
-        run2 = project1.add_pipeline(pipeline_name, selected_groups=["foo"])
-        self.assertEqual(["foo"], run2.selected_groups)
+        run2 = project1.add_pipeline(pipeline_name, selected_options=["foo"])
+        self.assertEqual(["foo"], run2.selected_options)
 
-        run3 = project1.add_pipeline(pipeline_name, selected_groups=["foo", "bar"])
-        self.assertEqual(["foo", "bar"], run3.selected_groups)
+        run3 = project1.add_pipeline(pipeline_name, selected_options=["foo", "bar"])
+        self.assertEqual(["foo", "bar"], run3.selected_options)
 
         with self.assertRaises(ValidationError):
-            project1.add_pipeline(pipeline_name, selected_groups={})
+            project1.add_pipeline(pipeline_name, selected_options={})
 
     def test_scanpipe_project_model_add_info(self):
         project1 = Project.objects.create(name="Analysis")
@@ -2704,7 +2704,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual("adduser", package.name)
         self.assertEqual("3.118", package.version)
         self.assertEqual("arch=all", package.qualifiers)
-        self.assertEqual("add and remove users and groups", package.description)
+        self.assertEqual("add and remove users and options", package.description)
         self.assertEqual("849", package.size)
         expected = "gpl-2.0 AND gpl-2.0-plus"
         self.assertEqual(expected, package.declared_license_expression)

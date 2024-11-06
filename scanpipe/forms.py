@@ -126,7 +126,7 @@ class CheckboxChoiceField(forms.MultipleChoiceField):
     widget = forms.CheckboxSelectMultiple
 
 
-class SelectedGroupsCheckboxChoiceField(CheckboxChoiceField):
+class SelectedOptionsCheckboxChoiceField(CheckboxChoiceField):
     def valid_value(self, value):
         """Accept all values."""
         return True
@@ -142,14 +142,14 @@ class PipelineBaseForm(forms.Form):
         initial=True,
         required=False,
     )
-    selected_groups = SelectedGroupsCheckboxChoiceField(required=False)
+    selected_options = SelectedOptionsCheckboxChoiceField(required=False)
 
     def handle_pipeline(self, project):
         pipeline = self.cleaned_data["pipeline"]
         execute_now = self.cleaned_data["execute_now"]
-        selected_groups = self.cleaned_data.get("selected_groups", [])
+        selected_options = self.cleaned_data.get("selected_options", [])
         if pipeline:
-            project.add_pipeline(pipeline, execute_now, selected_groups)
+            project.add_pipeline(pipeline, execute_now, selected_options)
 
 
 class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
@@ -161,7 +161,7 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
             "input_urls",
             "pipeline",
             "execute_now",
-            "selected_groups",
+            "selected_options",
         ]
 
     def __init__(self, *args, **kwargs):

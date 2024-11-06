@@ -103,7 +103,7 @@ Optional arguments:
 - ``--pipeline PIPELINES`` Pipelines names to add on the project.
 
 .. tip::
-    Use the "pipeline_name:group1,group2" syntax to select steps groups:
+    Use the "pipeline_name:option1,option2" syntax to select steps options:
 
     ``--pipeline map_deploy_to_develop:Java,JavaScript``
 
@@ -230,7 +230,7 @@ add the docker pipeline to your project::
     $ scanpipe add-pipeline --project foo analyze_docker_image
 
 .. tip::
-    Use the "pipeline_name:group1,group2" syntax to select steps groups:
+    Use the "pipeline_name:option1,option2" syntax to select steps options:
 
     ``--pipeline map_deploy_to_develop:Java,JavaScript``
 
@@ -417,7 +417,7 @@ For example, running the ``inspect_packages`` pipeline on a manifest file:
 
     $ run inspect_packages path/to/package.json > results.json
 
-.. tip:: Use the "pipeline_name:group1,group2" syntax to select steps groups::
+.. tip:: Use the "pipeline_name:option1,option2" syntax to select steps options::
 
     $ run inspect_packages:StaticResolver package.json > results.json
 

@@ -20,39 +20,39 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from aboutcode.pipeline import group
+from aboutcode.pipeline import option
 from scanpipe.pipelines import Pipeline
 
 
-class WithGroups(Pipeline):
-    """Include "grouped" steps."""
+class WithOptions(Pipeline):
+    """Include step options."""
 
     download_inputs = False
 
     @classmethod
     def steps(cls):
         return (
-            cls.grouped_with_foo_and_bar,
-            cls.grouped_with_bar,
-            cls.grouped_with_excluded,
-            cls.no_groups,
+            cls.with_foo_and_bar_options,
+            cls.with_bar_option,
+            cls.with_excluded_option,
+            cls.no_options,
         )
 
-    @group("foo", "bar")
-    def grouped_with_foo_and_bar(self):
+    @option("foo", "bar")
+    def with_foo_and_bar_options(self):
         """Step1 doc."""
         pass
 
-    @group("bar")
-    def grouped_with_bar(self):
+    @option("bar")
+    def with_bar_option(self):
         """Step2 doc."""
         pass
 
-    @group("excluded")
-    def grouped_with_excluded(self):
+    @option("excluded")
+    def with_excluded_option(self):
         """Step2 doc."""
         pass
 
-    def no_groups(self):
+    def no_options(self):
         """Step2 doc."""
         pass

@@ -176,7 +176,7 @@ class ProjectPipeline(CommonStepsMixin, BasePipeline):
         self.pipeline_class = run_instance.pipeline_class
         self.pipeline_name = run_instance.pipeline_name
 
-        self.selected_groups = run_instance.selected_groups
+        self.selected_options = run_instance.selected_options
         self.selected_steps = run_instance.selected_steps
 
     @classmethod

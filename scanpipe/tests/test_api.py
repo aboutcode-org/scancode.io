@@ -457,7 +457,7 @@ class ScanPipeAPITest(TransactionTestCase):
         )
 
         data = {
-            "name": "Mix of string and list plus selected groups",
+            "name": "Mix of string and list plus selected options",
             "pipeline": [
                 "analyze_docker_image",
                 "inspect_packages:StaticResolver,scan_single_package",
@@ -473,13 +473,13 @@ class ScanPipeAPITest(TransactionTestCase):
             "scan_single_package", response.data["runs"][2]["pipeline_name"]
         )
         self.assertEqual(
-            ["StaticResolver"], response.data["runs"][1]["selected_groups"]
+            ["StaticResolver"], response.data["runs"][1]["selected_options"]
         )
         runs = Project.objects.get(name=data["name"]).runs.all()
         self.assertEqual("analyze_docker_image", runs[0].pipeline_name)
         self.assertEqual("inspect_packages", runs[1].pipeline_name)
         self.assertEqual("scan_single_package", runs[2].pipeline_name)
-        self.assertEqual(["StaticResolver"], runs[1].selected_groups)
+        self.assertEqual(["StaticResolver"], runs[1].selected_options)
 
     def test_scanpipe_api_project_create_pipeline_old_name_compatibility(self):
         data = {
@@ -518,7 +518,7 @@ class ScanPipeAPITest(TransactionTestCase):
         project = Project.objects.get(name=data["name"])
         self.assertEqual(data["labels"], sorted(project.labels.names()))
 
-    def test_scanpipe_api_project_create_pipeline_groups(self):
+    def test_scanpipe_api_project_create_pipeline_options(self):
         data = {
             "name": "Project1",
             "pipeline": "inspect_packages:StaticResolver",
@@ -526,11 +526,11 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(
-            ["StaticResolver"], response.data["runs"][0]["selected_groups"]
+            ["StaticResolver"], response.data["runs"][0]["selected_options"]
         )
         run = Project.objects.get(name="Project1").runs.get()
         self.assertEqual("inspect_packages", run.pipeline_name)
-        self.assertEqual(["StaticResolver"], run.selected_groups)
+        self.assertEqual(["StaticResolver"], run.selected_options)
 
     def test_scanpipe_api_project_create_webhooks(self):
         data = {
@@ -651,7 +651,7 @@ class ScanPipeAPITest(TransactionTestCase):
     def test_scanpipe_api_project_action_pipelines(self):
         url = reverse("project-pipelines")
         response = self.csrf_client.get(url)
-        expected = ["name", "summary", "description", "steps", "available_groups"]
+        expected = ["name", "summary", "description", "steps", "available_options"]
         self.assertEqual(expected, list(response.data[0].keys()))
 
     def test_scanpipe_api_project_action_resources(self):
@@ -888,17 +888,17 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual({"status": "Pipeline added."}, response.data)
         self.assertEqual("analyze_docker_image", self.project1.runs.get().pipeline_name)
 
-    def test_scanpipe_api_project_action_add_pipeline_groups(self):
+    def test_scanpipe_api_project_action_add_pipeline_options(self):
         url = reverse("project-add-pipeline", args=[self.project1.uuid])
         data = {
-            "pipeline": "analyze_docker_image:group1,group2",
+            "pipeline": "analyze_docker_image:option1,option2",
             "execute_now": False,
         }
         response = self.csrf_client.post(url, data=data)
         self.assertEqual({"status": "Pipeline added."}, response.data)
         run = self.project1.runs.get()
         self.assertEqual("analyze_docker_image", run.pipeline_name)
-        self.assertEqual(["group1", "group2"], run.selected_groups)
+        self.assertEqual(["option1", "option2"], run.selected_options)
 
     def test_scanpipe_api_project_action_add_input(self):
         url = reverse("project-add-input", args=[self.project1.uuid])

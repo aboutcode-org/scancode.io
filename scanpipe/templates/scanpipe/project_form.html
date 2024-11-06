@@ -70,7 +70,7 @@
             </div>
 
             <div class="field">
-              {{ form.selected_groups }}
+              {{ form.selected_options }}
             </div>
 
             <div class="columns mt-3 is-variable is-1">
@@ -132,45 +132,45 @@
     });
   </script>
 
-  {{ pipelines_available_groups|json_script:"pipelines_available_groups" }}
+  {{ pipelines_available_options|json_script:"pipelines_available_options" }}
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      const availableGroupsDataSource = document.getElementById("pipelines_available_groups");
-      const availableGroupsMapping = JSON.parse(availableGroupsDataSource.textContent);
+      const availableOptionsDataSource = document.getElementById("pipelines_available_options");
+      const availableOptionsMapping = JSON.parse(availableOptionsDataSource.textContent);
 
       const pipelineSelect = document.getElementById("id_pipeline");
-      const idSelectedGroups = document.getElementById("id_selected_groups");
+      const idSelectedOptions = document.getElementById("id_selected_options");
 
-      function clearSelectedGroups() {
-        idSelectedGroups.innerHTML = "";
+      function clearSelectedOptions() {
+        idSelectedOptions.innerHTML = "";
       }
 
-      function buildCheckbox(group) {
-        const id = `id_${group}`;
+      function buildCheckbox(option) {
+        const id = `id_${option}`;
         return `
           <label class="checkbox ml-2" for="${id}">
             <span class="tag is-warning has-text-weight-bold">
-              <input type="checkbox" name="selected_groups" value="${group}" id="${id}" class="mr-1">
-              ${group}
+              <input type="checkbox" name="selected_options" value="${option}" id="${id}" class="mr-1">
+              ${option}
             </span>
           </label>`;
       }
 
       function handlePipelineChange() {
-        clearSelectedGroups();
+        clearSelectedOptions();
 
         const selectedPipelineName = pipelineSelect.value;
         if (!selectedPipelineName) return;
 
-        const availableGroups = availableGroupsMapping[selectedPipelineName];
-        if (availableGroups && availableGroups.length > 0) {
+        const availableOptions = availableOptionsMapping[selectedPipelineName];
+        if (availableOptions && availableOptions.length > 0) {
           const strongElement = document.createElement('strong');
           strongElement.innerHTML = '<i class="fa-solid fa-circle-arrow-right"></i> Include:';
-          idSelectedGroups.appendChild(strongElement);
+          idSelectedOptions.appendChild(strongElement);
 
-          availableGroups.forEach((group) => {
-            const checkboxHtml = buildCheckbox(group);
-            idSelectedGroups.insertAdjacentHTML('beforeend', checkboxHtml);
+          availableOptions.forEach((option) => {
+            const checkboxHtml = buildCheckbox(option);
+            idSelectedOptions.insertAdjacentHTML('beforeend', checkboxHtml);
           });
         }
       }

@@ -722,7 +722,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if copy_pipelines:
             for run in self.runs.all():
                 new_project.add_pipeline(
-                    run.pipeline_name, execute_now, selected_groups=run.selected_groups
+                    run.pipeline_name, execute_now, selected_options=run.selected_options
                 )
 
         if copy_subscriptions:
@@ -1168,7 +1168,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         for uploaded_file in uploads:
             self.add_upload(uploaded_file)
 
-    def add_pipeline(self, pipeline_name, execute_now=False, selected_groups=None):
+    def add_pipeline(self, pipeline_name, execute_now=False, selected_options=None):
         """
         Create a new Run instance with the provided `pipeline` on the current project.
 
@@ -1182,13 +1182,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if not pipeline_class:
             raise ValueError(f"Unknown pipeline: {pipeline_name}")
 
-        validate_none_or_list(selected_groups)
+        validate_none_or_list(selected_options)
 
         run = Run.objects.create(
             project=self,
             pipeline_name=pipeline_name,
             description=pipeline_class.get_summary(),
-            selected_groups=selected_groups,
+            selected_options=selected_options,
         )
 
         # Do not start the pipeline execution, even if explicitly requested,
@@ -1878,7 +1878,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     scancodeio_version = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True)
     current_step = models.CharField(max_length=256, blank=True)
-    selected_groups = models.JSONField(
+    selected_options = models.JSONField(
         null=True, blank=True, validators=[validate_none_or_list]
     )
     selected_steps = models.JSONField(
