@@ -285,6 +285,9 @@ your outputs on the host machine when running with Docker.
 .. tip:: To specify a CycloneDX spec version (default to latest), use the syntax
   ``cyclonedx:VERSION`` as format value. For example: ``--format cyclonedx:1.5``.
 
+
+.. _cli_check_compliance:
+
 `$ scanpipe check-compliance --project PROJECT`
 -----------------------------------------------
 

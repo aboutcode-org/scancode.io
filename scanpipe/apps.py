@@ -236,11 +236,6 @@ class ScanPipeConfig(AppConfig):
         else:
             logger.debug(style.WARNING("Policies file not found."))
 
-    @property
-    def policies_enabled(self):
-        """Return True if the policies were provided and loaded properly."""
-        return bool(self.license_policies_index)
-
     def sync_runs_and_jobs(self):
         """Synchronize ``QUEUED`` and ``RUNNING`` Run with their related Jobs."""
         logger.info("Synchronizing QUEUED and RUNNING Run with their related Jobs...")

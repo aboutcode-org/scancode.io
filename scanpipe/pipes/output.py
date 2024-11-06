@@ -457,7 +457,7 @@ def to_xlsx(project):
         "license_clues",
     ]
 
-    if not scanpipe_app.policies_enabled:
+    if not project.policies_enabled:
         exclude_fields.append("compliance_alert")
 
     model_names = [
