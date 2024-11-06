@@ -108,7 +108,7 @@ class ScanPipePoliciesTest(TestCase):
         self.assertEqual(0, exitcode, msg=out)
         resource_qs = project1.codebaseresources
         self.maxDiff = None
-        print(resource_qs)  # DEBUG statement
+        print(resource_qs.all())  # DEBUG statement
         self.assertEqual([], resource_qs.all())  # DEBUG statement
         self.assertEqual(6, resource_qs.count())
 
