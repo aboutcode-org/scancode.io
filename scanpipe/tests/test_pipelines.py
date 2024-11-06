@@ -46,6 +46,7 @@ from scanpipe.pipelines import deploy_to_develop
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import root_filesystem
 from scanpipe.pipelines import scan_single_package
+from scanpipe.pipes import flag
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
@@ -425,7 +426,7 @@ class ScanPipePipelinesTest(TestCase):
         with mock.patch("scanpipe.pipes.flag.flag_ignored_patterns") as mock_flag:
             mock_flag.return_value = None
             pipeline.flag_ignored_resources()
-        patterns_args = ["*.ext", "*/scancode-config.yml", "*/policies.yml"]
+        patterns_args = ["*.ext", *flag.DEFAULT_IGNORED_PATTERNS]
         mock_flag.assert_called_with(project1, patterns=patterns_args)
 
     def test_scanpipe_pipeline_class_extract_archive(self):
