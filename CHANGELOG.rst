@@ -18,6 +18,10 @@ v34.9.0 (unreleased)
   "policies.yml" files, or global app settings.
   https://github.com/aboutcode-org/scancode.io/issues/386
 
+- Refactor the ``group`` decorator for pipeline steps as ``optional_step``.
+  The steps decorated as optional are not included by default anymore.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
 v34.8.3 (2024-10-30)
 --------------------
 

@@ -28,7 +28,8 @@ PrintMessages().execute()
 
 ```python
 from aboutcode.pipeline import BasePipeline
-from aboutcode.pipeline import group
+from aboutcode.pipeline import optional_step
+
 
 class PrintMessages(BasePipeline):
     @classmethod
@@ -38,7 +39,7 @@ class PrintMessages(BasePipeline):
     def step1(self):
         print("Message from step1")
 
-    @group("foo")
+    @optional_step("foo")
     def step2(self):
         print("Message from step2")
 

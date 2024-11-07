@@ -151,7 +151,9 @@ class ScanPipePipelinesTest(TestCase):
     @mock.patch("scanpipe.tests.pipelines.do_nothing.DoNothing.step2")
     def test_scanpipe_pipeline_class_execute_with_selected_steps(self, step2, step1):
         step1.__name__ = "step1"
+        step1.groups = []
         step2.__name__ = "step2"
+        step2.groups = []
 
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("do_nothing")
@@ -347,17 +349,10 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual(expected, str(cm.exception))
 
     def test_scanpipe_pipeline_class_get_steps_with_groups(self):
-        expected = (
-            WithGroups.grouped_with_foo_and_bar,
-            WithGroups.grouped_with_bar,
-            WithGroups.grouped_with_excluded,
-            WithGroups.no_groups,
-        )
-        self.assertEqual(expected, WithGroups.get_steps())
-
         expected = (WithGroups.no_groups,)
+        self.assertEqual(expected, WithGroups.get_steps())
         self.assertEqual(expected, WithGroups.get_steps(groups=[]))
-        self.assertEqual(expected, WithGroups.get_steps(groups=["not"]))
+        self.assertEqual(expected, WithGroups.get_steps(groups=["not_defined"]))
 
         expected = (
             WithGroups.grouped_with_foo_and_bar,

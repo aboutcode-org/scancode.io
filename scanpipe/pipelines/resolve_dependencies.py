@@ -20,7 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-from aboutcode.pipeline import group
+from aboutcode.pipeline import optional_step
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import resolve
 from scanpipe.pipes import scancode
@@ -57,7 +57,7 @@ class ResolveDependencies(ScanCodebase):
         """Locate package manifest files with a supported package resolver."""
         self.manifest_resources = resolve.get_manifest_resources(self.project)
 
-    @group("StaticResolver")
+    @optional_step("StaticResolver")
     def scan_for_application_packages(self):
         """
         Scan and assemble application packages from package manifests
@@ -70,7 +70,7 @@ class ResolveDependencies(ScanCodebase):
             progress_logger=self.log,
         )
 
-    @group("StaticResolver")
+    @optional_step("StaticResolver")
     def create_packages_and_dependencies(self):
         """
         Create the statically resolved packages and their dependencies
@@ -78,7 +78,7 @@ class ResolveDependencies(ScanCodebase):
         """
         scancode.process_package_data(self.project, static_resolve=True)
 
-    @group("DynamicResolver")
+    @optional_step("DynamicResolver")
     def get_packages_from_manifest(self):
         """
         Resolve package data from lockfiles/requirement files with package
@@ -91,7 +91,7 @@ class ResolveDependencies(ScanCodebase):
             model="get_packages_from_manifest",
         )
 
-    @group("DynamicResolver")
+    @optional_step("DynamicResolver")
     def create_resolved_packages(self):
         """
         Create the dynamically resolved packages and their dependencies

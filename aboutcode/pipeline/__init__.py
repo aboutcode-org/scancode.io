@@ -22,6 +22,7 @@
 
 import logging
 import traceback
+import warnings
 from datetime import datetime
 from datetime import timezone
 from pydoc import getdoc
@@ -53,25 +54,24 @@ class PipelineDefinition:
         """
         Return the list of steps defined in the ``steps`` class method.
 
-        If the optional ``groups`` parameter is provided, only include steps labeled
-        with groups that intersect with the provided list. If a step has no groups or
-        if ``groups`` is not specified, include the step in the result.
+        By default, all steps decorated with ``optional_step`` are not included.
+        A list of optional steps can be included using the ``groups`` parameter.
         """
         if not callable(cls.steps):
             raise TypeError("Use a ``steps(cls)`` classmethod to declare the steps.")
 
         steps = cls.steps()
+        groups = groups or []
 
         if initial_steps := cls.get_initial_steps():
             steps = (*initial_steps, *steps)
 
-        if groups is not None:
-            steps = tuple(
-                step
-                for step in steps
-                if not getattr(step, "groups", [])
-                or set(getattr(step, "groups")).intersection(groups)
-            )
+        steps = tuple(
+            step
+            for step in steps
+            if not getattr(step, "groups", [])
+            or set(getattr(step, "groups")).intersection(groups)
+        )
 
         return steps
 
@@ -123,7 +123,7 @@ class PipelineDefinition:
         return sorted(
             set(
                 group_name
-                for step in cls.get_steps()
+                for step in cls.steps()
                 for group_name in getattr(step, "groups", [])
             )
         )
@@ -219,8 +219,8 @@ class BasePipeline(PipelineDefinition, PipelineRun):
     """
 
 
-def group(*groups):
-    """Mark a function as part of a particular group."""
+def optional_step(*groups):
+    """Mark a step function as optional and part of a group."""
 
     def decorator(obj):
         if hasattr(obj, "groups"):
@@ -230,6 +230,17 @@ def group(*groups):
         return obj
 
     return decorator
+
+
+def group(*groups):
+    """Backward compatibility."""
+    warnings.warn(
+        "The `group` decorator is deprecated and will be "
+        "removed in a future release. Use `optional_step` instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return optional_step(*groups)
 
 
 def humanize_time(seconds):
