@@ -126,6 +126,20 @@ Using cURL:
     To tag the ``upload_file``, you can provide the tag value using the
     ``upload_file_tag`` field.
 
+.. tip::
+
+    You can declare multiple pipelines to be executed at the project creation using a
+    list of pipeline names or a comma-separated string:
+
+    - ``"pipeline": ["scan_single_package", "scan_for_virus"]``
+    - ``"pipeline": "scan_single_package,scan_for_virus"``
+
+.. tip::
+
+    Use the "pipeline_name:group1,group2" syntax to select steps groups:
+
+    ``"pipeline": "map_deploy_to_develop:Java,JavaScript"``
+
 Using Python and the **"requests"** library:
 
 .. code-block:: python

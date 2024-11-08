@@ -4,11 +4,34 @@ Changelog
 v34.9.0 (unreleased)
 --------------------
 
+- Add ability to declared pipeline selected groups in create project REST API endpoint.
+  https://github.com/aboutcode-org/scancode.io/issues/1426
+
+- Add a new ``list-pipelines`` management command.
+  https://github.com/aboutcode-org/scancode.io/issues/1397
+
+- Refactor the policies related code to its own module.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
+- Add support for project-specific license policies and compliance alerts.
+  Enhance Project model to handle policies from local settings, project input
+  "policies.yml" files, or global app settings.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
 - Add a new ``PublishToFederatedCode`` pipeline (addon) to push scan result
   to FederatedCode.
   https://github.com/nexB/scancode.io/pull/1400
 
 - Add new ``project_purl`` field to project model. https://github.com/nexB/scancode.io/pull/1400
+
+v34.8.3 (2024-10-30)
+--------------------
+
+- Include the ``aboutcode`` module in the wheel and source distribution.
+  https://github.com/aboutcode-org/scancode.io/issues/1423
+
+- Update ScanCode-toolkit to v32.3.0
+  https://github.com/aboutcode-org/scancode.io/issues/1418
 
 v34.8.2 (2024-10-28)
 --------------------

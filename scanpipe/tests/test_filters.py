@@ -244,11 +244,11 @@ class ScanPipeFilterTest(TestCase):
         d1 = DiscoveredDependency.create_from_data(self.project1, dependency_data1)
         d2 = DiscoveredDependency.create_from_data(self.project1, dependency_data2)
 
-        filterset = DependencyFilterSet(data={"is_resolved": ""})
+        filterset = DependencyFilterSet(data={"is_pinned": ""})
         self.assertEqual(2, len(filterset.qs))
-        filterset = DependencyFilterSet(data={"is_resolved": True})
+        filterset = DependencyFilterSet(data={"is_pinned": True})
         self.assertEqual([d2], list(filterset.qs))
-        filterset = DependencyFilterSet(data={"is_resolved": False})
+        filterset = DependencyFilterSet(data={"is_pinned": False})
         self.assertEqual([d1], list(filterset.qs))
 
         filterset = DependencyFilterSet(data={"type": ""})

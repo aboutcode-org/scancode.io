@@ -163,3 +163,15 @@ You can provide ``VCID`` from VulnerableCode or any aliases such as ``CVE`` or
      - OSV-2020-871
      - BIT-django-2024-24680
      - PYSEC-2024-28
+
+.. _project_configuration_settings_policies:
+
+policies
+^^^^^^^^
+
+For detailed information about the policies system, refer to :ref:`policies`.
+
+Instead of providing a separate ``policies.yml`` file, policies can be directly
+defined within the project configuration.
+This can be done through the web UI, see :ref:`user_interface_project_settings`,
+or by using a ``scancode-config.yml`` file.

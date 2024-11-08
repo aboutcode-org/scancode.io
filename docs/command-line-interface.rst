@@ -54,16 +54,23 @@ ScanPipe's own commands are listed under the ``[scanpipe]`` section::
     $ scanpipe --help
     ...
     [scanpipe]
-        add-input
-        add-pipeline
-        archive-project
-        create-project
-        delete-project
-        execute
-        list-project
-        output
-        show-pipeline
-        status
+      add-input
+      add-pipeline
+      archive-project
+      check-compliance
+      create-project
+      create-user
+      delete-project
+      execute
+      flush-projects
+      list-pipelines
+      list-project
+      output
+      purldb-scan-worker
+      reset-project
+      run
+      show-pipeline
+      status
 
 
 `$ scanpipe <subcommand> --help`
@@ -125,6 +132,17 @@ Optional arguments:
 
 .. warning::
     Pipelines are added and are executed in order.
+
+
+`$ scanpipe list-pipeline [--verbosity {0,1,2,3}]`
+--------------------------------------------------
+
+Displays a list of available pipelines.
+Use ``--verbosity=2`` to include details of each pipeline's steps."
+
+Optional arguments:
+
+- ``--verbosity {0,1,2}`` Verbosity level.
 
 
 `$ scanpipe list-project [--search SEARCH] [--include-archived]`
@@ -266,6 +284,9 @@ your outputs on the host machine when running with Docker.
 
 .. tip:: To specify a CycloneDX spec version (default to latest), use the syntax
   ``cyclonedx:VERSION`` as format value. For example: ``--format cyclonedx:1.5``.
+
+
+.. _cli_check_compliance:
 
 `$ scanpipe check-compliance --project PROJECT`
 -----------------------------------------------

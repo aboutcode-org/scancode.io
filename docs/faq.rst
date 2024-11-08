@@ -278,3 +278,8 @@ data older than 7 days::
 
   See :ref:`command_line_interface` chapter for more information about the scanpipe
   command.
+
+How can I provide my license policies ?
+---------------------------------------
+
+For detailed information about the policies system, refer to :ref:`policies`.

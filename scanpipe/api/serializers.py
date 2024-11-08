@@ -69,8 +69,12 @@ class PipelineChoicesMixin:
         self.fields["pipeline"].choices = scanpipe_app.get_pipeline_choices()
 
 
-class OrderedMultipleChoiceField(serializers.MultipleChoiceField):
-    """Forcing outputs as list() in place of set() to keep the ordering integrity."""
+class OrderedMultiplePipelineChoiceField(serializers.MultipleChoiceField):
+    """
+    Forcing outputs as list() in place of set() to keep the ordering integrity.
+    The field validation is bypassed and delegated to the ``project.add_pipeline``
+    method called in the ``ProjectSerializer.create`` method.
+    """
 
     def to_internal_value(self, data):
         if isinstance(data, str):
@@ -80,15 +84,17 @@ class OrderedMultipleChoiceField(serializers.MultipleChoiceField):
         if not self.allow_empty and len(data) == 0:
             self.fail("empty")
 
-        # Backward compatibility with old pipeline names.
-        # This will need to be refactored in case this OrderedMultipleChoiceField
-        # class is used for another field that is not ``pipeline`` related.
-        data = [scanpipe_app.get_new_pipeline_name(pipeline) for pipeline in data]
+        # Adds support for providing pipeline names as a comma-separated single string.
+        data = [item.strip() for value in data for item in value.split(",")]
 
-        return [
-            super(serializers.MultipleChoiceField, self).to_internal_value(item)
-            for item in data
-        ]
+        # Pipeline validation
+        for pipeline in data:
+            pipeline_name, _ = scanpipe_app.extract_group_from_pipeline(pipeline)
+            pipeline_name = scanpipe_app.get_new_pipeline_name(pipeline_name)
+            if pipeline_name not in scanpipe_app.pipelines:
+                self.fail("invalid_choice", input=pipeline_name)
+
+        return data
 
     def to_representation(self, value):
         return [self.choice_strings_to_values.get(str(item), item) for item in value]
@@ -163,7 +169,7 @@ class ProjectSerializer(
     TaggitSerializer,
     serializers.ModelSerializer,
 ):
-    pipeline = OrderedMultipleChoiceField(
+    pipeline = OrderedMultiplePipelineChoiceField(
         choices=(),
         required=False,
         write_only=True,
@@ -269,7 +275,7 @@ class ProjectSerializer(
             "total": base_qs.count(),
             "is_runtime": base_qs.filter(is_runtime=True).count(),
             "is_optional": base_qs.filter(is_optional=True).count(),
-            "is_resolved": base_qs.filter(is_resolved=True).count(),
+            "is_pinned": base_qs.filter(is_pinned=True).count(),
         }
 
     def get_codebase_relations_summary(self, project):
@@ -303,7 +309,7 @@ class ProjectSerializer(
         upload_file = validated_data.pop("upload_file", None)
         upload_file_tag = validated_data.pop("upload_file_tag", "")
         input_urls = validated_data.pop("input_urls", [])
-        pipeline = validated_data.pop("pipeline", [])
+        pipelines = validated_data.pop("pipeline", [])
         execute_now = validated_data.pop("execute_now", False)
         webhook_url = validated_data.pop("webhook_url", None)
         webhooks = validated_data.pop("webhooks", [])
@@ -316,8 +322,10 @@ class ProjectSerializer(
         for url in input_urls:
             project.add_input_source(download_url=url)
 
-        for pipeline_name in pipeline:
-            project.add_pipeline(pipeline_name, execute_now)
+        for pipeline in pipelines:
+            pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline)
+            pipeline_name = scanpipe_app.get_new_pipeline_name(pipeline_name)
+            project.add_pipeline(pipeline_name, execute_now, selected_groups=groups)
 
         if webhook_url:
             project.add_webhook_subscription(target_url=webhook_url)
@@ -449,7 +457,7 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
             "scope",
             "is_runtime",
             "is_optional",
-            "is_resolved",
+            "is_pinned",
             "is_direct",
             "dependency_uid",
             "for_package_uid",

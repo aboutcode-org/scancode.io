@@ -289,7 +289,7 @@ def feed_purldb(packages, chunk_size, logger=logger.info):
 
 def get_unique_resolved_purls(project):
     """Return PURLs from project's resolved DiscoveredDependencies."""
-    packages_resolved = project.discovereddependencies.filter(is_resolved=True)
+    packages_resolved = project.discovereddependencies.filter(is_pinned=True)
 
     distinct_results = packages_resolved.values("type", "namespace", "name", "version")
 
@@ -300,7 +300,7 @@ def get_unique_resolved_purls(project):
 def get_unique_unresolved_purls(project):
     """Return PURLs from project's unresolved DiscoveredDependencies."""
     packages_unresolved = project.discovereddependencies.filter(
-        is_resolved=False
+        is_pinned=False
     ).exclude(extracted_requirement="*")
 
     distinct_unresolved_results = packages_unresolved.values(

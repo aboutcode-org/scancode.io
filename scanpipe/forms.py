@@ -33,6 +33,8 @@ from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.pipelines import convert_markdown_to_html
 from scanpipe.pipes import fetch
+from scanpipe.policies import load_policies_yaml
+from scanpipe.policies import validate_policies
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -379,6 +381,7 @@ class ProjectSettingsForm(forms.ModelForm):
         "ignored_patterns",
         "ignored_dependency_scopes",
         "ignored_vulnerabilities",
+        "policies",
         "attribution_template",
         "product_name",
         "product_version",
@@ -419,6 +422,25 @@ class ProjectSettingsForm(forms.ModelForm):
                 "rows": 2,
                 "placeholder": "VCID-q4q6-yfng-aaag\nCVE-2024-27351",
             },
+        ),
+    )
+    policies = forms.CharField(
+        label="License policies",
+        required=False,
+        help_text=(
+            "Refer to the documentation for syntax details: "
+            "https://scancodeio.readthedocs.io/en/latest/tutorial_license_policies.html"
+        ),
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea is-dynamic",
+                "rows": 3,
+                "placeholder": (
+                    "license_policies:\n"
+                    "-   license_key: gpl-2.0\n"
+                    "    compliance_alert: error"
+                ),
+            }
         ),
     )
     attribution_template = forms.CharField(
@@ -501,6 +523,12 @@ class ProjectSettingsForm(forms.ModelForm):
         }
         project.settings.update(config)
         project.save(update_fields=["settings"])
+
+    def clean_policies(self):
+        if policies := self.cleaned_data.get("policies"):
+            policies_dict = load_policies_yaml(policies)
+            validate_policies(policies_dict)
+        return policies
 
 
 class ProjectCloneForm(forms.Form):

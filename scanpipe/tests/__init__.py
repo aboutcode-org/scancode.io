@@ -193,7 +193,7 @@ dependency_data1 = {
     "scope": "install",
     "is_runtime": True,
     "is_optional": False,
-    "is_resolved": False,
+    "is_pinned": False,
     "dependency_uid": "pkg:pypi/dask?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692",
     "for_package_uid": for_package_uid,
     "datafile_path": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
@@ -207,7 +207,7 @@ dependency_data2 = {
     "scope": "dependencies",
     "is_runtime": True,
     "is_optional": False,
-    "is_resolved": True,
+    "is_pinned": True,
     "dependency_uid": (
         "pkg:gem/appraisal@2.2.0?uuid=1907f061-911b-4980-a2d4-ae1a9ed871a9"
     ),
@@ -223,7 +223,7 @@ dependency_data3 = {
     "scope": "install",
     "is_runtime": True,
     "is_optional": False,
-    "is_resolved": False,
+    "is_pinned": False,
     "dependency_uid": "pkg:pypi/dask?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692",
     "for_package_uid": for_package_uid,
     "datafile_path": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
@@ -234,38 +234,36 @@ license_policies = [
     {
         "license_key": "apache-2.0",
         "label": "Approved License",
-        "color_code": "#008000",
         "compliance_alert": "",
     },
     {
         "license_key": "mpl-2.0",
         "label": "Restricted License",
-        "color_code": "#ffcc33",
         "compliance_alert": "warning",
     },
     {
         "license_key": "gpl-3.0",
         "label": "Prohibited License",
-        "color_code": "#c83025",
         "compliance_alert": "error",
     },
 ]
 
+global_policies = {
+    "license_policies": license_policies,
+}
+
 license_policies_index = {
     "gpl-3.0": {
-        "color_code": "#c83025",
         "compliance_alert": "error",
         "label": "Prohibited License",
         "license_key": "gpl-3.0",
     },
     "apache-2.0": {
-        "color_code": "#008000",
         "compliance_alert": "",
         "label": "Approved License",
         "license_key": "apache-2.0",
     },
     "mpl-2.0": {
-        "color_code": "#ffcc33",
         "compliance_alert": "warning",
         "label": "Restricted License",
         "license_key": "mpl-2.0",

@@ -92,6 +92,7 @@ from taggit.models import TaggedItemBase
 
 import scancodeio
 from scanpipe import humanize_time
+from scanpipe import policies
 from scanpipe import tasks
 
 logger = logging.getLogger(__name__)
@@ -786,44 +787,56 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if config_directory.exists():
             return config_directory
 
-    def get_input_config_file(self):
+    def get_file_from_work_directory(self, filename):
         """
-        Return the ``scancode-config.yml`` file from the input/ directory
+        Return the ``filename`` file from the input/ directory
         or from the codebase/ immediate subdirectories.
 
         Priority order:
-        1. If a config file exists directly in the input/ directory, return it.
-        2. If exactly one config file exists in a codebase/ immediate subdirectory,
-        return it.
-        3. If multiple config files are found in subdirectories, report an error.
+        1. If a ``filename`` file exists directly in the input/ directory, return it.
+        2. If exactly one ``filename`` file exists in a codebase/ immediate
+        subdirectory, return it.
+        3. If multiple ``filename`` files are found in subdirectories, report an error.
         """
-        config_filename = settings.SCANCODEIO_CONFIG_FILE
+        # Check for the ``filename`` file in the root of the input/ directory.
+        root_file = self.input_path / filename
+        if root_file.exists():
+            return root_file
 
-        # Check for the config file in the root of the input/ directory.
-        root_config_file = self.input_path / config_filename
-        if root_config_file.exists():
-            return root_config_file
+        # Search for files in immediate codebase/ subdirectories.
+        subdir_files = list(self.codebase_path.glob(f"*/{filename}"))
 
-        # Search for config files in immediate codebase/ subdirectories.
-        subdir_config_files = list(self.codebase_path.glob(f"*/{config_filename}"))
+        # If exactly one file is found in codebase/ subdirectories, return it.
+        if len(subdir_files) == 1:
+            return subdir_files[0]
 
-        # If exactly one config file is found in codebase/ subdirectories, return it.
-        if len(subdir_config_files) == 1:
-            return subdir_config_files[0]
-
-        # If multiple config files are found, report an error.
-        if len(subdir_config_files) > 1:
+        # If multiple files are found, report an error.
+        if len(subdir_files) > 1:
             self.add_warning(
-                f"More than one {config_filename} found. "
+                f"More than one {filename} found. "
                 f"Could not determine which one to use.",
                 model="Project",
                 details={
                     "resources": [
-                        str(path.relative_to(self.work_path))
-                        for path in subdir_config_files
+                        str(path.relative_to(self.work_path)) for path in subdir_files
                     ]
                 },
             )
+
+    def get_input_config_file(self):
+        """
+        Return the ``scancode-config.yml`` file from the input/ directory
+        or from the codebase/ immediate subdirectories.
+        """
+        config_filename = settings.SCANCODEIO_CONFIG_FILE
+        return self.get_file_from_work_directory(config_filename)
+
+    def get_input_policies_file(self):
+        """
+        Return the "policies.yml" file from the input/ directory
+        or from the codebase/ immediate subdirectories.
+        """
+        return self.get_file_from_work_directory("policies.yml")
 
     def get_settings_as_yml(self):
         """Return the ``settings`` file content as yml, suitable for a config file."""
@@ -1406,10 +1419,37 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         return self.resource_count == 1
 
+    def get_policy_index(self):
+        """
+        Return the policy index for this project instance.
+
+        The policies are loaded from the following locations in that order:
+        1. the project local settings
+        2. the "policies.yml" file in the project input/ directory
+        3. the global app settings license policies
+        """
+        if policies_from_settings := self.get_env("policies"):
+            policies_dict = policies_from_settings
+            if isinstance(policies_from_settings, str):
+                policies_dict = policies.load_policies_yaml(policies_from_settings)
+            return policies.make_license_policy_index(policies_dict)
+
+        elif policies_file := self.get_input_policies_file():
+            policies_dict = policies.load_policies_file(policies_file)
+            return policies.make_license_policy_index(policies_dict)
+
+        else:
+            return scanpipe_app.license_policies_index
+
+    @cached_property
+    def policy_index(self):
+        """Return the cached policy index for this project instance."""
+        return self.get_policy_index()
+
     @property
     def policies_enabled(self):
-        """Return True if the policies are enabled."""
-        return scanpipe_app.policies_enabled
+        """Return True if the policies are enabled for this project."""
+        return bool(self.policy_index)
 
 
 class GroupingQuerySetMixin:
@@ -2428,7 +2468,7 @@ class ComplianceAlertMixin(models.Model):
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
-        if scanpipe_app.policies_enabled:
+        if self.policies_enabled:
             loaded_license_expression = getattr(self, "_loaded_license_expression", "")
             license_expression = getattr(self, self.license_expression_field, "")
             if license_expression != loaded_license_expression:
@@ -2438,19 +2478,29 @@ class ComplianceAlertMixin(models.Model):
 
         super().save(*args, **kwargs)
 
+    @property
+    def policy_index(self):
+        return self.project.policy_index
+
+    @cached_property
+    def policies_enabled(self):
+        return self.project.policies_enabled
+
     def compute_compliance_alert(self):
         """Compute and return the compliance_alert value from the licenses policies."""
         license_expression = getattr(self, self.license_expression_field, "")
         if not license_expression:
             return ""
 
-        alerts = []
-        policy_index = scanpipe_app.license_policies_index
+        policy_index = self.policy_index
+        if not policy_index:
+            return
 
         licensing = get_licensing()
         parsed = licensing.parse(license_expression, simple=True)
         license_keys = licensing.license_keys(parsed)
 
+        alerts = []
         for license_key in license_keys:
             if policy := policy_index.get(license_key):
                 alerts.append(policy.get("compliance_alert") or self.Compliance.OK)
@@ -3706,7 +3756,7 @@ class DiscoveredDependency(
         default=False,
         help_text=_("True if this dependency is an optional dependency"),
     )
-    is_resolved = models.BooleanField(
+    is_pinned = models.BooleanField(
         default=False,
         help_text=_(
             "True if this dependency version requirement has been pinned "
@@ -3728,7 +3778,7 @@ class DiscoveredDependency(
         verbose_name_plural = "discovered dependencies"
         ordering = [
             "-is_runtime",
-            "-is_resolved",
+            "-is_pinned",
             "is_optional",
             "dependency_uid",
             "for_package",
@@ -3739,7 +3789,7 @@ class DiscoveredDependency(
             models.Index(fields=["scope"]),
             models.Index(fields=["is_runtime"]),
             models.Index(fields=["is_optional"]),
-            models.Index(fields=["is_resolved"]),
+            models.Index(fields=["is_pinned"]),
             models.Index(fields=["is_direct"]),
         ]
         constraints = [
