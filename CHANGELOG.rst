@@ -22,7 +22,7 @@ v34.9.0 (unreleased)
   to FederatedCode.
   https://github.com/nexB/scancode.io/pull/1400
 
-- Add new ``project_purl`` field to project model. https://github.com/nexB/scancode.io/pull/1400
+- Add new ``purl`` field to project model. https://github.com/nexB/scancode.io/pull/1400
 
 v34.8.3 (2024-10-30)
 --------------------
