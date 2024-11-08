@@ -481,25 +481,25 @@ class ProjectSettingsForm(forms.ModelForm):
         fields = [
             "name",
             "notes",
-            "project_purl",
+            "purl",
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "input"}),
             "notes": forms.Textarea(attrs={"rows": 3, "class": "textarea is-dynamic"}),
-            "project_purl": forms.TextInput(attrs={"class": "input"}),
+            "purl": forms.TextInput(attrs={"class": "input"}),
         }
 
-    def clean_project_purl(self):
+    def clean_purl(self):
         """Validate the Project PURL."""
-        project_purl = self.cleaned_data.get("project_purl")
+        purl = self.cleaned_data.get("purl")
 
-        if project_purl:
+        if purl:
             try:
-                PackageURL.from_string(project_purl)
+                PackageURL.from_string(purl)
             except ValueError:
-                raise forms.ValidationError("Project PURL must be a valid PackageURL")
+                raise forms.ValidationError("PURL must be a valid PackageURL")
 
-        return project_purl
+        return purl
 
     def __init__(self, *args, **kwargs):
         """Load initial values from Project ``settings`` field."""

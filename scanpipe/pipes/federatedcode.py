@@ -85,6 +85,46 @@ def get_package_repository(project_purl, logger=None):
     return package_git_repo_url, package_scan_path
 
 
+def check_federatedcode_eligibility(project):
+    """
+    Check if the project fulfills the following criteria for
+    pushing the project result to FederatedCode.
+
+    Criteria:
+        - FederatedCode is configured and available.
+        - All pipelines have completed successfully.
+        - Source is a download_url.
+        - Must have ``project_purl`` with version.
+    """
+    if not is_configured():
+        raise Exception("FederatedCode is not configured.")
+
+    if not is_available():
+        raise Exception("FederatedCode Git account is not available.")
+
+    all_executed_pipeline_successful = all(
+        run.task_succeeded for run in project.runs.executed()
+    )
+
+    source_is_download_url = any(
+        source.download_url for source in project.inputsources.all()
+    )
+
+    if not all_executed_pipeline_successful:
+        raise Exception("Make sure all the pipelines has completed successfully.")
+
+    if not source_is_download_url:
+        raise Exception("Project input should be download_url.")
+
+    if not project.purl:
+        raise Exception("Missing Project PURL.")
+
+    project_package_url = PackageURL.from_string(project.purl)
+
+    if not project_package_url.version:
+        raise Exception("Missing version in Project PURL.")
+
+
 def clone_repository(repo_url, logger=None):
     """Clone repository to local_path."""
     local_dir = tempfile.mkdtemp()

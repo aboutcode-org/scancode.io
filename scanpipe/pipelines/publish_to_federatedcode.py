@@ -21,8 +21,6 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 
-from packageurl import PackageURL
-
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import federatedcode
 
@@ -54,46 +52,14 @@ class PublishToFederatedCode(Pipeline):
         """
         Check if the project fulfills the following criteria for
         pushing the project result to FederatedCode.
-
-        Criteria:
-            - FederatedCode is configured and available.
-            - All pipelines have completed successfully.
-            - Source is a download_url.
-            - Must have ``project_purl`` with version.
         """
-        if not federatedcode.is_configured():
-            raise Exception("FederatedCode is not configured.")
-
-        if not federatedcode.is_available():
-            raise Exception("FederatedCode Git account is not available.")
-
-        all_executed_pipeline_successful = all(
-            run.task_succeeded for run in self.project.runs.executed()
-        )
-
-        source_is_download_url = any(
-            source.download_url for source in self.project.inputsources.all()
-        )
-
-        if not all_executed_pipeline_successful:
-            raise Exception("Make sure all the pipelines has completed successfully.")
-
-        if not source_is_download_url:
-            raise Exception("Project input should be download_url.")
-
-        if not self.project.project_purl:
-            raise Exception("Missing Project PURL.")
-
-        project_package_url = PackageURL.from_string(self.project.project_purl)
-
-        if not project_package_url.version:
-            raise Exception("Missing version in Project PURL.")
+        federatedcode.check_federatedcode_eligibility(project=self.project)
 
     def get_package_repository(self):
         """Get the Git repository URL and scan path for a given package."""
         self.package_git_repo, self.package_scan_file = (
             federatedcode.get_package_repository(
-                project_purl=self.project.project_purl, logger=self.log
+                project_purl=self.project.purl, logger=self.log
             )
         )
 
@@ -118,11 +84,11 @@ class PublishToFederatedCode(Pipeline):
         federatedcode.commit_and_push_changes(
             repo=self.repo,
             file_to_commit=str(self.relative_file_path),
-            purl=self.project.project_purl,
+            purl=self.project.purl,
             logger=self.log,
         )
         self.log(
-            f"Scan result for '{self.project.project_purl}' "
+            f"Scan result for '{self.project.purl}' "
             f"pushed to '{self.package_git_repo}'"
         )
 

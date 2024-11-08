@@ -562,10 +562,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     notes = models.TextField(blank=True)
     settings = models.JSONField(default=dict, blank=True)
     labels = TaggableManager(through=UUIDTaggedItem)
-    project_purl = models.CharField(
+    purl = models.CharField(
         max_length=2048,
         blank=True,
-        help_text=_("Project Package URL."),
+        help_text=_(
+            "Package URL for the project, used for pushing project scan result to "
+            "FederatedCode. This should be the PURL of the input."
+        ),
     )
 
     objects = ProjectQuerySet.as_manager()
@@ -710,7 +713,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """Clone this project using the provided ``clone_name`` as new project name."""
         new_project = Project.objects.create(
             name=clone_name,
-            project_purl=self.project_purl,
+            purl=self.purl,
             settings=self.settings if copy_settings else {},
         )
 
