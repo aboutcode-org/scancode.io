@@ -486,7 +486,12 @@ class ProjectSettingsForm(forms.ModelForm):
         widgets = {
             "name": forms.TextInput(attrs={"class": "input"}),
             "notes": forms.Textarea(attrs={"rows": 3, "class": "textarea is-dynamic"}),
-            "purl": forms.TextInput(attrs={"class": "input", "placeholder": "pkg:npm/lodash@4.0.1",}),
+            "purl": forms.TextInput(
+                attrs={
+                    "class": "input",
+                    "placeholder": "pkg:npm/lodash@4.0.1",
+                }
+            ),
         }
 
     def clean_purl(self):
