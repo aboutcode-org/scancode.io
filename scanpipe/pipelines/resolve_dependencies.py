@@ -34,7 +34,17 @@ class ResolveDependencies(ScanCodebase):
     that contain dependency requirements, and resolves these
     to a concrete set of package versions.
 
-    Supports resolving packages for:
+    Supports statically resolving packages for:
+    - JavaScript: Npm, Yarn, Pnpm packages
+    - Python: python, poetry packages
+    - Swift packages
+    - Cocoapods packages
+    - Nuget packages
+    Note: Please run deplock from https://github.com/aboutcode-org/dependency-inspector
+    to generate the appropriate lockfiles as a pre-requisite to statically resolve
+    dependencies for the supported package ecosystems.
+
+    Supports dynamically resolving packages for:
     - Python: using python-inspector, using requirements.txt and
     setup.py manifests as inputs
     """
