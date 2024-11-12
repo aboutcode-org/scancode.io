@@ -2435,11 +2435,9 @@ class ComplianceAlertMixin(models.Model):
 
         alerts = []
         policy_index = scanpipe_app.license_policies_index
-
         licensing = get_licensing()
         parsed = licensing.parse(license_expression, simple=True)
         license_keys = licensing.license_keys(parsed)
-
         for license_key in license_keys:
             missing_policy = True 
             for policy, policy_data in policy_index.items(): 
