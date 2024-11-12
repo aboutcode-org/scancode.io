@@ -87,7 +87,9 @@ class ScanPipePurlDBTest(TestCase):
 
         self.assertEqual(set(), result)
         error_message = self.project1.projectmessages.all()[0]
-        self.assertEqual("Invalid exctracted requirement", error_message.description)
+        self.assertEqual(
+            "Extracted requirement is not a valid version", error_message.description
+        )
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.is_available")

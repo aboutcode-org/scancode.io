@@ -320,9 +320,9 @@ def get_unique_unresolved_purls(project):
                 vers = range_class.from_native(extracted_requirement)
             except (InvalidVersionRange, InvalidVersion) as exception:
                 if exception is InvalidVersionRange:
-                    description = "Invalid VersionRange"
+                    description = "Version range is invalid or unsupported"
                 else:
-                    description = "Invalid exctracted requirement"
+                    description = "Extracted requirement is not a valid version"
                 details = {
                     "purl": purl,
                     "extracted_requirement": extracted_requirement,
