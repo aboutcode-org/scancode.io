@@ -2,7 +2,7 @@
 <nav class="level is-mobile">
   <div class="level-item has-text-centered">
     <div>
-      <a href="{% url 'project_packages' project.slug %}" class="heading panel is-info panel-heading is-size-6 button"  onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"> Packages </a>
+      <a href="{% url 'project_packages' project.slug %}" class="panel is-info panel-heading is-size-6 button"  onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"> Packages </a>
       <p class="{{ title_class }} is-flex is-align-items-center is-justify-content-center">
         {% if project.package_count %}
         <a href="{% url 'project_packages' project.slug %}">
@@ -22,7 +22,7 @@
   </div>
   <div class="level-item has-text-centered">
     <div>
-      <a href="{% url 'project_dependencies' project.slug %}" class="heading panel is-info panel-heading is-size-6 button"  onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"> Dependencies</a>
+      <a href="{% url 'project_dependencies' project.slug %}" class="panel is-info panel-heading is-size-6 button"  onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"> Dependencies</a>
       <p class="{{ title_class }} is-flex is-align-items-center is-justify-content-center">
         {% if project.dependency_count %}
           <a href="{% url 'project_dependencies' project.slug %}">
@@ -42,7 +42,7 @@
   </div>
   <div class="level-item has-text-centered">
     <div>
-     <a href="{{ project_resources_url }}" class="heading panel is-info panel-heading is-size-6 button"  onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"> Resources </a>
+     <a href="{{ project_resources_url }}" class="panel is-info panel-heading is-size-6 button"  onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"> Resources </a>
       <p class="{{ title_class }}">
         {% if project.resource_count %}
            <a href="{{ project_resources_url }}">
@@ -68,7 +68,7 @@
   {% endif %}
   <div class="level-item has-text-centered">
     <div>
-       <a href="{% url 'project_messages' project.slug %}" class="heading panel is-info panel-heading is-size-6 button" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"> Messages </a>
+       <a href="{% url 'project_messages' project.slug %}" class="panel is-info panel-heading is-size-6 button" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"> Messages </a>
       <p class="{{ title_class }}">
         {% if project.message_count %}
          <a href="{% url 'project_messages' project.slug %}"> 
