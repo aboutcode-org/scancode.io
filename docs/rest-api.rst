@@ -136,7 +136,7 @@ Using cURL:
 
 .. tip::
 
-    Use the "pipeline_name:group1,group2" syntax to select steps groups:
+    Use the "pipeline_name:option1,option2" syntax to select optional steps:
 
     ``"pipeline": "map_deploy_to_develop:Java,JavaScript"``
 
@@ -293,7 +293,7 @@ Data:
     - ``execute_now``: ``true`` or ``false``
 
 .. tip::
-    Use the "pipeline_name:group1,group2" syntax to select steps groups:
+    Use the "pipeline_name:option1,option2" syntax to select optional steps:
 
     ``"pipeline": "map_deploy_to_develop:Java,JavaScript"``
 

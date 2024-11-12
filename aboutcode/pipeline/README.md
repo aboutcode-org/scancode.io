@@ -24,7 +24,7 @@ class PrintMessages(BasePipeline):
 PrintMessages().execute()
 ```
 
-### Groups and steps selection
+### Options and steps selection
 
 ```python
 from aboutcode.pipeline import BasePipeline
