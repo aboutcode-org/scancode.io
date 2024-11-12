@@ -566,8 +566,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         max_length=2048,
         blank=True,
         help_text=_(
-            "Package URL for the project, used for pushing project scan result to "
-            "FederatedCode. This should be the PURL of the input."
+            "Package URL (PURL) for the project, required for pushing the project's "
+            "scan result to FederatedCode. For example, if the input is an input URL "
+            "like https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz, the "
+            "corresponding PURL would be pkg:npm/lodash@4.17.21."
         ),
     )
 

@@ -69,7 +69,7 @@ class ScanPipeFederatedCodeTest(TestCase):
         self.assertIn("npm/foobar/v1.2.3/scancodeio.json", repo.untracked_files)
         shutil.rmtree(repo.working_dir)
 
-    def test_scancpipe_pipes_federatedcode_delete_local_clone(self):
+    def test_scanpipe_pipes_federatedcode_delete_local_clone(self):
         local_dir = tempfile.mkdtemp()
         repo = git.Repo.init(local_dir)
         federatedcode.delete_local_clone(repo)

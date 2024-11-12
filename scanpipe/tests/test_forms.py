@@ -230,6 +230,24 @@ class ScanPipeFormsTest(TestCase):
         self.assertEqual(policies_as_yaml.strip(), project.settings["policies"])
         self.assertEqual(license_policies_index, project.get_policy_index())
 
+    def test_scanpipe_forms_project_settings_form_purl(self):
+        data_invalid_purl = {
+            "name": "proj name",
+            "purl": "pkg/npm/lodash@4.17.21",
+        }
+        data_valid_purl = {
+            "name": "proj name",
+            "purl": "pkg:npm/lodash@4.17.21",
+        }
+
+        form1 = ProjectSettingsForm(data=data_invalid_purl)
+        self.assertFalse(form1.is_valid())
+
+        form2 = ProjectSettingsForm(data=data_valid_purl)
+        self.assertTrue(form2.is_valid())
+        obj = form2.save()
+        self.assertEqual("pkg:npm/lodash@4.17.21", obj.purl)
+
     def test_scanpipe_forms_edit_input_source_tag_form(self):
         data = {}
         form = EditInputSourceTagForm(data=data)

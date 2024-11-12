@@ -33,7 +33,7 @@
                   <div class="control">
                     {{ form.purl }}
                   </div>
-                  <p class="help">{{ form.purl.help_text }}</p>
+                  <p class="help">{{ form.purl.help_text|urlize }}</p>
                 </div>
                 <div class="field">
                   <label class="label" for="{{ form.notes.id_for_label }}">

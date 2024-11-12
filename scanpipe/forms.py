@@ -489,7 +489,7 @@ class ProjectSettingsForm(forms.ModelForm):
             "purl": forms.TextInput(
                 attrs={
                     "class": "input",
-                    "placeholder": "pkg:npm/lodash@4.0.1",
+                    "placeholder": "pkg:npm/lodash@4.7.21",
                 }
             ),
         }
