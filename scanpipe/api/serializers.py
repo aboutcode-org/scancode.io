@@ -209,6 +209,7 @@ class ProjectSerializer(
             "name",
             "url",
             "uuid",
+            "purl",
             "upload_file",
             "upload_file_tag",
             "input_urls",

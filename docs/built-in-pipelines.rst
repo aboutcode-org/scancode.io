@@ -188,6 +188,20 @@ Populate PurlDB (addon)
     :members:
     :member-order: bysource
 
+.. _pipeline_publish_to_federatedcode:
+
+Publish To FederatedCode (addon)
+--------------------------------
+
+.. warning::
+    This pipeline requires access to a FederatedCode service.
+    Refer to :ref:`scancodeio_settings_federatedcode` to configure access to
+    FederatedCode in your ScanCode.io instance.
+
+.. autoclass:: scanpipe.pipelines.publish_to_federatedcode.PublishToFederatedCode()
+    :members:
+    :member-order: bysource
+
 .. _pipeline_scan_codebase:
 
 Scan Codebase
