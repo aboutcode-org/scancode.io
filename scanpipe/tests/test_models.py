@@ -2047,6 +2047,7 @@ class ScanPipeModelsTest(TestCase):
             "project": {
                 "name": "Analysis",
                 "uuid": str(self.project1.uuid),
+                "purl": "",
                 "is_archived": False,
                 "notes": "",
                 "labels": [],

@@ -22,6 +22,12 @@ v34.9.0 (unreleased)
   The steps decorated as optional are not included by default anymore.
   https://github.com/aboutcode-org/scancode.io/issues/386
 
+- Add a new ``PublishToFederatedCode`` pipeline (addon) to push scan result
+  to FederatedCode.
+  https://github.com/nexB/scancode.io/pull/1400
+
+- Add new ``purl`` field to project model. https://github.com/nexB/scancode.io/pull/1400
+
 v34.8.3 (2024-10-30)
 --------------------
 

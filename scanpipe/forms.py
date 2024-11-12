@@ -25,6 +25,7 @@ from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
 
+from packageurl import PackageURL
 from taggit.forms import TagField
 from taggit.forms import TagWidget
 
@@ -480,11 +481,30 @@ class ProjectSettingsForm(forms.ModelForm):
         fields = [
             "name",
             "notes",
+            "purl",
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "input"}),
             "notes": forms.Textarea(attrs={"rows": 3, "class": "textarea is-dynamic"}),
+            "purl": forms.TextInput(
+                attrs={
+                    "class": "input",
+                    "placeholder": "pkg:npm/lodash@4.7.21",
+                }
+            ),
         }
+
+    def clean_purl(self):
+        """Validate the Project PURL."""
+        purl = self.cleaned_data.get("purl")
+
+        if purl:
+            try:
+                PackageURL.from_string(purl)
+            except ValueError:
+                raise forms.ValidationError("PURL must be a valid PackageURL")
+
+        return purl
 
     def __init__(self, *args, **kwargs):
         """Load initial values from Project ``settings`` field."""
