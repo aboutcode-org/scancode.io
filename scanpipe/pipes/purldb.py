@@ -31,6 +31,7 @@ import requests
 from packageurl import PackageURL
 from univers.version_range import RANGE_CLASS_BY_SCHEMES
 from univers.version_range import InvalidVersionRange
+from univers.versions import InvalidVersion
 
 from aboutcode.pipeline import LoopProgress
 from scanpipe.pipes import _clean_package_data
@@ -300,28 +301,43 @@ def get_unique_resolved_purls(project):
 def get_unique_unresolved_purls(project):
     """Return PURLs from project's unresolved DiscoveredDependencies."""
     packages_unresolved = project.discovereddependencies.filter(
-        is_pinned=False
+        is_pinned=False,
     ).exclude(extracted_requirement="*")
 
-    distinct_unresolved_results = packages_unresolved.values(
+    distinct_unpinned_results = packages_unresolved.values(
         "type", "namespace", "name", "extracted_requirement"
     )
 
-    distinct_unresolved = {tuple(item.values()) for item in distinct_unresolved_results}
+    distinct_unpinned = {tuple(item.values()) for item in distinct_unpinned_results}
 
     packages = set()
-    for item in distinct_unresolved:
+    for item in distinct_unpinned:
         pkg_type, namespace, name, extracted_requirement = item
         if range_class := RANGE_CLASS_BY_SCHEMES.get(pkg_type):
+            purl = PackageURL(type=pkg_type, namespace=namespace, name=name)
+
             try:
                 vers = range_class.from_native(extracted_requirement)
-            except InvalidVersionRange:
+            except (InvalidVersionRange, InvalidVersion) as exception:
+                if exception is InvalidVersionRange:
+                    description = "Version range is invalid or unsupported"
+                else:
+                    description = "Extracted requirement is not a valid version"
+                details = {
+                    "purl": purl,
+                    "extracted_requirement": extracted_requirement,
+                }
+                project.add_error(
+                    description=description,
+                    model="get_unique_unresolved_purls",
+                    details=details,
+                    exception=exception,
+                )
                 continue
 
             if not vers.constraints:
                 continue
 
-            purl = PackageURL(type=pkg_type, namespace=namespace, name=name)
             packages.add((str(purl), str(vers)))
 
     return packages
