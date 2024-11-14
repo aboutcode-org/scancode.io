@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.9.0 (unreleased)
+v34.9.0 (2024-11-14)
 --------------------
 
 - Add ability to declared pipeline selected groups in create project REST API endpoint.
