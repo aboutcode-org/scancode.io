@@ -80,7 +80,8 @@ def is_available():
         return False
 
     try:
-        response = session.head(MATCHCODEIO_API_URL)
+        test_url = f'{MATCHCODEIO_API_URL.rstrip("/")}/matching/'
+        response = session.head(test_url)
         response.raise_for_status()
     except requests.exceptions.RequestException as request_exception:
         logger.debug(f"{label} is_available() error: {request_exception}")
