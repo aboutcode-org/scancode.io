@@ -685,6 +685,32 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.get(url)
         self.assertEqual("error", response.data["results"][0]["compliance_alert"])
 
+    def test_scanpipe_api_project_action_resources_filterset(self):
+        make_resource_file(
+            self.project1,
+            path="path/",
+        )
+        url = reverse("project-resources", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(2, response.data["count"])
+
+        response = self.csrf_client.get(url + "?path=path/")
+        self.assertEqual(1, response.data["count"])
+        package = response.data["results"][0]
+        self.assertEqual("path/", package["path"])
+
+        response = self.csrf_client.get(url + "?path=unknown")
+        self.assertEqual(0, response.data["count"])
+
+        response = self.csrf_client.get(url + "?compliance_alert=a")
+        self.assertEqual(400, response.status_code)
+        expected = {
+            "compliance_alert": [
+                "Select a valid choice. a is not one of the available choices."
+            ]
+        }
+        self.assertEqual(expected, response.data["errors"])
+
     def test_scanpipe_api_project_action_packages(self):
         url = reverse("project-packages", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
@@ -696,6 +722,24 @@ class ScanPipeAPITest(TransactionTestCase):
         package = response.data["results"][0]
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package["purl"])
         self.assertEqual("adduser", package["name"])
+
+    def test_scanpipe_api_project_action_packages_filterset(self):
+        make_package(self.project1, package_url="pkg:generic/name@1.0")
+        url = reverse("project-packages", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(2, response.data["count"])
+
+        response = self.csrf_client.get(url + "?version=1.0")
+        self.assertEqual(1, response.data["count"])
+        package = response.data["results"][0]
+        self.assertEqual("pkg:generic/name@1.0", package["purl"])
+
+        response = self.csrf_client.get(url + "?version=2.0")
+        self.assertEqual(0, response.data["count"])
+
+        response = self.csrf_client.get(url + "?size=a")
+        self.assertEqual(400, response.status_code)
+        self.assertEqual({"size": ["Enter a number."]}, response.data["errors"])
 
     def test_scanpipe_api_project_action_dependencies(self):
         url = reverse("project-dependencies", args=[self.project1.uuid])
