@@ -6,6 +6,10 @@ Built-in Pipelines
 Pipelines in ScanCode.io are Python scripts that facilitate code analysis by
 executing a sequence of steps. The platform provides the following built-in pipelines:
 
+.. note::
+    Some pipelines have optional steps which are enabled only when they are
+    selected explicitly.
+
 .. tip::
     If you are unsure which pipeline suits your requirements best, check out the
     :ref:`faq_which_pipeline` section for guidance.

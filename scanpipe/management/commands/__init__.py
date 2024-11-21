@@ -229,7 +229,7 @@ def validate_copy_from(copy_from):
 
 def extract_group_from_pipelines(pipelines):
     """
-    Add support for the ":group1,group2" suffix in pipeline data.
+    Add support for the ":option1,option2" suffix in pipeline data.
 
     For example: "map_deploy_to_develop:Java,JavaScript"
     """

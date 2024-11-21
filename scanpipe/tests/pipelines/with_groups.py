@@ -20,7 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from aboutcode.pipeline import group
+from aboutcode.pipeline import optional_step
 from scanpipe.pipelines import Pipeline
 
 
@@ -38,17 +38,17 @@ class WithGroups(Pipeline):
             cls.no_groups,
         )
 
-    @group("foo", "bar")
+    @optional_step("foo", "bar")
     def grouped_with_foo_and_bar(self):
         """Step1 doc."""
         pass
 
-    @group("bar")
+    @optional_step("bar")
     def grouped_with_bar(self):
         """Step2 doc."""
         pass
 
-    @group("excluded")
+    @optional_step("excluded")
     def grouped_with_excluded(self):
         """Step2 doc."""
         pass
