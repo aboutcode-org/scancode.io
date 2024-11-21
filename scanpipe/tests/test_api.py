@@ -685,6 +685,37 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.get(url)
         self.assertEqual("error", response.data["results"][0]["compliance_alert"])
 
+    def test_scanpipe_api_project_action_resources_filterset(self):
+        make_resource_file(
+            self.project1,
+            path="path/",
+        )
+        url = reverse("project-resources", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(2, response.data["count"])
+
+        response = self.csrf_client.get(url + "?path=path/")
+        self.assertEqual(1, response.data["count"])
+        package = response.data["results"][0]
+        self.assertEqual("path/", package["path"])
+
+        response = self.csrf_client.get(url + "?path=unknown")
+        self.assertEqual(0, response.data["count"])
+
+        response = self.csrf_client.get(url + "?compliance_alert=a")
+        self.assertEqual(400, response.status_code)
+        expected = {
+            "compliance_alert": [
+                "Select a valid choice. a is not one of the available choices."
+            ]
+        }
+        self.assertEqual(expected, response.data["errors"])
+
+        # Using a field name available on the Project model to make sure the
+        # ProjectFilterSet is bypassed.
+        response = self.csrf_client.get(url + "?slug=aaa")
+        self.assertEqual(2, response.data["count"])
+
     def test_scanpipe_api_project_action_packages(self):
         url = reverse("project-packages", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
@@ -696,6 +727,24 @@ class ScanPipeAPITest(TransactionTestCase):
         package = response.data["results"][0]
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package["purl"])
         self.assertEqual("adduser", package["name"])
+
+    def test_scanpipe_api_project_action_packages_filterset(self):
+        make_package(self.project1, package_url="pkg:generic/name@1.0")
+        url = reverse("project-packages", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(2, response.data["count"])
+
+        response = self.csrf_client.get(url + "?version=1.0")
+        self.assertEqual(1, response.data["count"])
+        package = response.data["results"][0]
+        self.assertEqual("pkg:generic/name@1.0", package["purl"])
+
+        response = self.csrf_client.get(url + "?version=2.0")
+        self.assertEqual(0, response.data["count"])
+
+        response = self.csrf_client.get(url + "?size=a")
+        self.assertEqual(400, response.status_code)
+        self.assertEqual({"size": ["Enter a number."]}, response.data["errors"])
 
     def test_scanpipe_api_project_action_dependencies(self):
         url = reverse("project-dependencies", args=[self.project1.uuid])
@@ -730,6 +779,15 @@ class ScanPipeAPITest(TransactionTestCase):
             "from_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
         }
         self.assertEqual(expected, relation)
+
+    def test_scanpipe_api_project_action_relations_filterset(self):
+        url = reverse("project-relations", args=[self.project1.uuid])
+        response = self.csrf_client.get(url + "?map_type=about_file")
+        self.assertEqual(0, response.data["count"])
+
+        map_type = self.codebase_relation1.map_type
+        response = self.csrf_client.get(url + f"?map_type={map_type}")
+        self.assertEqual(1, response.data["count"])
 
     def test_scanpipe_api_project_action_messages(self):
         url = reverse("project-messages", args=[self.project1.uuid])
