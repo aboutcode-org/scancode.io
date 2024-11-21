@@ -880,7 +880,7 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         ]
 
     def __init__(self, *args, **kwargs):
-        project = kwargs.pop("project")
+        project = kwargs.pop("project", None)
         super().__init__(*args, **kwargs)
         if project:
             qs = CodebaseResource.objects.filter(project=project)

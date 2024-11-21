@@ -780,6 +780,15 @@ class ScanPipeAPITest(TransactionTestCase):
         }
         self.assertEqual(expected, relation)
 
+    def test_scanpipe_api_project_action_relations_filterset(self):
+        url = reverse("project-relations", args=[self.project1.uuid])
+        response = self.csrf_client.get(url + "?map_type=about_file")
+        self.assertEqual(0, response.data["count"])
+
+        map_type = self.codebase_relation1.map_type
+        response = self.csrf_client.get(url + f"?map_type={map_type}")
+        self.assertEqual(1, response.data["count"])
+
     def test_scanpipe_api_project_action_messages(self):
         url = reverse("project-messages", args=[self.project1.uuid])
         ProjectMessage.objects.create(

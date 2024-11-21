@@ -1,6 +1,15 @@
 Changelog
 =========
 
+v34.9.1 (unreleased)
+--------------------
+
+- Add the ability to filter on Project endpoint API actions.
+  The list of ``resources``, ``packages``, ``dependencies``, ``relations``, and
+  ``messages`` can be filtered providing the ``?field_name=value`` in the URL
+  parameters.
+  https://github.com/aboutcode-org/scancode.io/issues/1449
+
 v34.9.0 (2024-11-14)
 --------------------
 
