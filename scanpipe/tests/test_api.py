@@ -711,6 +711,11 @@ class ScanPipeAPITest(TransactionTestCase):
         }
         self.assertEqual(expected, response.data["errors"])
 
+        # Using a field name available on the Project model to make sure the
+        # ProjectFilterSet is bypassed.
+        response = self.csrf_client.get(url + "?slug=aaa")
+        self.assertEqual(2, response.data["count"])
+
     def test_scanpipe_api_project_action_packages(self):
         url = reverse("project-packages", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
