@@ -151,7 +151,9 @@ class ScanPipePipelinesTest(TestCase):
     @mock.patch("scanpipe.tests.pipelines.do_nothing.DoNothing.step2")
     def test_scanpipe_pipeline_class_execute_with_selected_steps(self, step2, step1):
         step1.__name__ = "step1"
+        step1.groups = []
         step2.__name__ = "step2"
+        step2.groups = []
 
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("do_nothing")
@@ -347,17 +349,10 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual(expected, str(cm.exception))
 
     def test_scanpipe_pipeline_class_get_steps_with_groups(self):
-        expected = (
-            WithGroups.grouped_with_foo_and_bar,
-            WithGroups.grouped_with_bar,
-            WithGroups.grouped_with_excluded,
-            WithGroups.no_groups,
-        )
-        self.assertEqual(expected, WithGroups.get_steps())
-
         expected = (WithGroups.no_groups,)
+        self.assertEqual(expected, WithGroups.get_steps())
         self.assertEqual(expected, WithGroups.get_steps(groups=[]))
-        self.assertEqual(expected, WithGroups.get_steps(groups=["not"]))
+        self.assertEqual(expected, WithGroups.get_steps(groups=["not_defined"]))
 
         expected = (
             WithGroups.grouped_with_foo_and_bar,
@@ -1242,8 +1237,11 @@ class PipelinesIntegrationTest(TestCase):
     def test_scanpipe_resolve_dependencies_pipeline_integration(self):
         pipeline_name = "resolve_dependencies"
         project1 = Project.objects.create(name="Analysis")
+        selected_groups = ["DynamicResolver"]
 
-        run = project1.add_pipeline(pipeline_name)
+        run = project1.add_pipeline(
+            pipeline_name=pipeline_name, selected_groups=selected_groups
+        )
         pipeline = run.make_pipeline_instance()
 
         project1.move_input_from(tempfile.mkstemp()[1])
@@ -1257,8 +1255,11 @@ class PipelinesIntegrationTest(TestCase):
     def test_scanpipe_resolve_dependencies_pipeline_integration_empty_manifest(self):
         pipeline_name = "resolve_dependencies"
         project1 = Project.objects.create(name="Analysis")
+        selected_groups = ["DynamicResolver"]
 
-        run = project1.add_pipeline(pipeline_name)
+        run = project1.add_pipeline(
+            pipeline_name=pipeline_name, selected_groups=selected_groups
+        )
         pipeline = run.make_pipeline_instance()
 
         project1.move_input_from(tempfile.mkstemp(suffix="requirements.txt")[1])
@@ -1272,11 +1273,14 @@ class PipelinesIntegrationTest(TestCase):
     def test_scanpipe_resolve_dependencies_pipeline_integration_misc(self):
         pipeline_name = "resolve_dependencies"
         project1 = Project.objects.create(name="Analysis")
+        selected_groups = ["DynamicResolver"]
 
         input_location = self.data / "manifests" / "requirements.txt"
         project1.copy_input_from(input_location)
 
-        run = project1.add_pipeline(pipeline_name)
+        run = project1.add_pipeline(
+            pipeline_name=pipeline_name, selected_groups=selected_groups
+        )
         pipeline = run.make_pipeline_instance()
 
         exitcode, out = pipeline.execute()
@@ -1289,8 +1293,11 @@ class PipelinesIntegrationTest(TestCase):
     ):
         pipeline_name = "resolve_dependencies"
         project1 = Project.objects.create(name="Analysis")
+        selected_groups = ["DynamicResolver"]
 
-        run = project1.add_pipeline(pipeline_name)
+        run = project1.add_pipeline(
+            pipeline_name=pipeline_name, selected_groups=selected_groups
+        )
         pipeline = run.make_pipeline_instance()
 
         project1.move_input_from(tempfile.mkstemp(suffix="requirements.txt")[1])
@@ -1450,12 +1457,15 @@ class PipelinesIntegrationTest(TestCase):
         mock_request.return_value = None
         pipeline_name = "map_deploy_to_develop"
         project1 = Project.objects.create(name="Analysis", uuid=forced_uuid)
+        selected_groups = ["Java"]
 
         jar_location = self.data / "d2d" / "jars"
         project1.copy_input_from(jar_location / "from-flume-ng-node-1.9.0.zip")
         project1.copy_input_from(jar_location / "to-flume-ng-node-1.9.0.zip")
 
-        run = project1.add_pipeline(pipeline_name)
+        run = project1.add_pipeline(
+            pipeline_name=pipeline_name, selected_groups=selected_groups
+        )
         pipeline = run.make_pipeline_instance()
 
         exitcode, out = pipeline.execute()
@@ -1504,12 +1514,15 @@ class PipelinesIntegrationTest(TestCase):
         mock_request.return_value = None
         pipeline_name = "map_deploy_to_develop"
         project1 = Project.objects.create(name="Analysis", uuid=forced_uuid)
+        selected_groups = ["Java"]
 
         data_dir = self.data / "d2d" / "about_files"
         project1.copy_input_from(data_dir / "from-with-about-file.zip")
         project1.copy_input_from(data_dir / "to-with-jar.zip")
 
-        run = project1.add_pipeline(pipeline_name)
+        run = project1.add_pipeline(
+            pipeline_name=pipeline_name, selected_groups=selected_groups
+        )
         pipeline = run.make_pipeline_instance()
 
         exitcode, out = pipeline.execute()

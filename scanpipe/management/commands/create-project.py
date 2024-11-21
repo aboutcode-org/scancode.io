@@ -42,7 +42,8 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
             help=(
                 "Pipelines names to add to the project. "
                 "The pipelines are added and executed based on their given order. "
-                'Groups can be provided using the "pipeline_name:group1,group2" syntax.'
+                'Groups can be provided using the "pipeline_name:option1,option2" '
+                "syntax."
             ),
         )
         parser.add_argument(

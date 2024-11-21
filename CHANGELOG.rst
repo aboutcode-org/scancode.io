@@ -18,6 +18,10 @@ v34.9.0 (2024-11-14)
   "policies.yml" files, or global app settings.
   https://github.com/aboutcode-org/scancode.io/issues/386
 
+- Refactor the ``group`` decorator for pipeline steps as ``optional_step``.
+  The steps decorated as optional are not included by default anymore.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
 - Add a new ``PublishToFederatedCode`` pipeline (addon) to push scan result
   to FederatedCode.
   https://github.com/nexB/scancode.io/pull/1400
