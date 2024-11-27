@@ -442,44 +442,23 @@ class ScanPipeAPITest(TransactionTestCase):
             "scan_single_package", response.data["runs"][1]["pipeline_name"]
         )
 
+        # Not supported as the comma `,` is used as the separator for optional steps.
         data = {
             "name": "Multi string",
             "pipeline": "analyze_docker_image,scan_single_package",
         }
         response = self.csrf_client.post(self.project_list_url, data)
-        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
-        self.assertEqual(2, len(response.data["runs"]))
-        self.assertEqual(
-            "analyze_docker_image", response.data["runs"][0]["pipeline_name"]
-        )
-        self.assertEqual(
-            "scan_single_package", response.data["runs"][1]["pipeline_name"]
-        )
-
-        data = {
-            "name": "Mix of string and list plus selected groups",
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {
             "pipeline": [
-                "analyze_docker_image",
-                "inspect_packages:StaticResolver,scan_single_package",
-            ],
+                ErrorDetail(
+                    string='"analyze_docker_image,scan_single_package" is not a valid '
+                    "choice.",
+                    code="invalid_choice",
+                )
+            ]
         }
-        response = self.csrf_client.post(self.project_list_url, data)
-        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
-        self.assertEqual(
-            "analyze_docker_image", response.data["runs"][0]["pipeline_name"]
-        )
-        self.assertEqual("inspect_packages", response.data["runs"][1]["pipeline_name"])
-        self.assertEqual(
-            "scan_single_package", response.data["runs"][2]["pipeline_name"]
-        )
-        self.assertEqual(
-            ["StaticResolver"], response.data["runs"][1]["selected_groups"]
-        )
-        runs = Project.objects.get(name=data["name"]).runs.all()
-        self.assertEqual("analyze_docker_image", runs[0].pipeline_name)
-        self.assertEqual("inspect_packages", runs[1].pipeline_name)
-        self.assertEqual("scan_single_package", runs[2].pipeline_name)
-        self.assertEqual(["StaticResolver"], runs[1].selected_groups)
+        self.assertEqual(expected, response.data)
 
     def test_scanpipe_api_project_create_pipeline_old_name_compatibility(self):
         data = {
@@ -531,6 +510,31 @@ class ScanPipeAPITest(TransactionTestCase):
         run = Project.objects.get(name="Project1").runs.get()
         self.assertEqual("inspect_packages", run.pipeline_name)
         self.assertEqual(["StaticResolver"], run.selected_groups)
+
+        data = {
+            "name": "Mix of string and list plus selected groups",
+            "pipeline": [
+                "map_deploy_to_develop:Java,JavaScript",
+                "inspect_packages:StaticResolver",
+            ],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(
+            "map_deploy_to_develop", response.data["runs"][0]["pipeline_name"]
+        )
+        self.assertEqual("inspect_packages", response.data["runs"][1]["pipeline_name"])
+        self.assertEqual(
+            ["Java", "JavaScript"], response.data["runs"][0]["selected_groups"]
+        )
+        self.assertEqual(
+            ["StaticResolver"], response.data["runs"][1]["selected_groups"]
+        )
+        runs = Project.objects.get(name=data["name"]).runs.all()
+        self.assertEqual("map_deploy_to_develop", runs[0].pipeline_name)
+        self.assertEqual("inspect_packages", runs[1].pipeline_name)
+        self.assertEqual(["Java", "JavaScript"], runs[0].selected_groups)
+        self.assertEqual(["StaticResolver"], runs[1].selected_groups)
 
     def test_scanpipe_api_project_create_webhooks(self):
         data = {
