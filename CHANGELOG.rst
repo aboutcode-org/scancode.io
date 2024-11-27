@@ -10,6 +10,13 @@ v34.9.1 (unreleased)
   parameters.
   https://github.com/aboutcode-org/scancode.io/issues/1449
 
+- Fix the ability to provide multiple optional step when defining pipelines in the
+  REST API.
+  The support for providing pipeline names as a comma-separated single string was
+  remove as the comma is used as the optional step separator.
+  Use a list of pipeline names instead.
+  https://github.com/aboutcode-org/scancode.io/issues/1454
+
 v34.9.0 (2024-11-14)
 --------------------
 
