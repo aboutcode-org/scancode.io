@@ -17,6 +17,10 @@ v34.9.1 (unreleased)
   Use a list of pipeline names instead.
   https://github.com/aboutcode-org/scancode.io/issues/1454
 
+- Make the header row of tables sticky to the top of the screen so it is always
+  visible.
+  https://github.com/aboutcode-org/scancode.io/issues/1457
+
 v34.9.0 (2024-11-14)
 --------------------
 
