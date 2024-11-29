@@ -1,0 +1,76 @@
+{% extends "scanpipe/base.html" %}
+
+{% block title %}ScanCode.io: {{ project.name }} - Dependency tree{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Dependency tree" %}
+      </div>
+    </section>
+  </div>
+
+  <div class="container is-max-widescreen mb-3">
+    {% if recursion_error %}
+      <article class="message is-danger">
+        <div class="message-body">
+          The dependency tree cannot be rendered as it contains circular references.
+          {{ message|linebreaksbr }}
+        </div>
+      </article>
+    {% endif %}
+    <div id="tree"></div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6"></script>
+  {{ dependency_tree|json_script:"dependency_tree" }}
+  {{ row_count|json_script:"row_count" }}
+  {{ max_depth|json_script:"max_depth" }}
+  <script>
+    const data = JSON.parse(document.getElementById("dependency_tree").textContent);
+    const hierarchyData = d3.hierarchy(data);
+    const columnWidth = 110;
+    const rowWidth = 25;
+    const columnCount = hierarchyData.height;
+    const rowCount = hierarchyData.links().length;
+    const width = columnWidth * (columnCount + 1);
+    const height = rowWidth * (rowCount + 1);
+
+    function indent() {
+      return (root) => {
+        root.eachBefore((node, i) => {
+          node.y = node.depth;
+          node.x = i;
+        });
+      };
+    }
+
+    // https://observablehq.com/plot/marks/tree
+    const plot = Plot.plot({
+      axis: null,
+      margin: 10,
+      marginLeft: 40,
+      marginRight: 160,
+      width: width,
+      height: height,
+      marks: [
+        Plot.tree(hierarchyData.leaves(), {
+          path: (node) => node.ancestors().reverse().map(({ data: { name } }) => name).join("|"),
+          delimiter: "|",
+          treeLayout: indent,
+          strokeWidth: 1,
+          curve: "step-before",
+          fontSize: 14,
+          textStroke: "none"
+        })
+      ]
+    });
+
+    document.getElementById("tree").appendChild(plot);
+  </script>
+{% endblock %}

@@ -1,6 +1,143 @@
 Changelog
 =========
 
+v34.9.1 (unreleased)
+--------------------
+
+- Add the ability to filter on Project endpoint API actions.
+  The list of ``resources``, ``packages``, ``dependencies``, ``relations``, and
+  ``messages`` can be filtered providing the ``?field_name=value`` in the URL
+  parameters.
+  https://github.com/aboutcode-org/scancode.io/issues/1449
+
+- Fix the ability to provide multiple optional step when defining pipelines in the
+  REST API.
+  The support for providing pipeline names as a comma-separated single string was
+  remove as the comma is used as the optional step separator.
+  Use a list of pipeline names instead.
+  https://github.com/aboutcode-org/scancode.io/issues/1454
+
+- Make the header row of tables sticky to the top of the screen so it is always
+  visible.
+  https://github.com/aboutcode-org/scancode.io/issues/1457
+
+v34.9.0 (2024-11-14)
+--------------------
+
+- Add ability to declared pipeline selected groups in create project REST API endpoint.
+  https://github.com/aboutcode-org/scancode.io/issues/1426
+
+- Add a new ``list-pipelines`` management command.
+  https://github.com/aboutcode-org/scancode.io/issues/1397
+
+- Refactor the policies related code to its own module.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
+- Add support for project-specific license policies and compliance alerts.
+  Enhance Project model to handle policies from local settings, project input
+  "policies.yml" files, or global app settings.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
+- Refactor the ``group`` decorator for pipeline steps as ``optional_step``.
+  The steps decorated as optional are not included by default anymore.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
+- Add a new ``PublishToFederatedCode`` pipeline (addon) to push scan result
+  to FederatedCode.
+  https://github.com/nexB/scancode.io/pull/1400
+
+- Add new ``purl`` field to project model. https://github.com/nexB/scancode.io/pull/1400
+
+v34.8.3 (2024-10-30)
+--------------------
+
+- Include the ``aboutcode`` module in the wheel and source distribution.
+  https://github.com/aboutcode-org/scancode.io/issues/1423
+
+- Update ScanCode-toolkit to v32.3.0
+  https://github.com/aboutcode-org/scancode.io/issues/1418
+
+v34.8.2 (2024-10-28)
+--------------------
+
+- Add ``android_analysis`` to ``extra_requires``. This installs the package
+  ``android_inspector``, which provides a pipeline for Android APK
+  deploy-to-development analysis.
+
+- Remove the sleep time in the context of testing ``matchcode.poll_run_url_status``
+  to speed up the test.
+  https://github.com/aboutcode-org/scancode.io/issues/1411
+
+- Add ability to specify the CycloneDX output spec version using the ``output``
+  management command and providing the ``cyclonedx:VERSION`` syntax as format value.
+  https://github.com/aboutcode-org/scancode-action/issues/8
+
+- Add new ``compliance`` REST API action that list all compliance alert for a given
+  project. The severity level can be provided using the
+  ``?fail_level={ERROR,WARNING,MISSING}`` parameter.
+  https://github.com/aboutcode-org/scancode.io/issues/1346
+
+- Add new ``Compliance alerts`` panel in the project detail view.
+  https://github.com/aboutcode-org/scancode.io/issues/1346
+
+v34.8.1 (2024-09-06)
+--------------------
+
+- Upgrade Django to security release 5.1.1 and related dependencies.
+
+v34.8.0 (2024-08-15)
+--------------------
+
+- Add a new ``enrich_with_purldb`` add-on pipeline to enrich the discovered packages
+  with data available in the PurlDB.
+  https://github.com/nexB/scancode.io/issues/1182
+
+- Add the ability to define a results_url on the Pipeline class.
+  When available, that link is displayed in the UI to easily reach the results view
+  related to the Pipeline run.
+  https://github.com/nexB/scancode.io/pull/1330
+
+- Expands on the existing WebhookSubscription model by adding a few fields to
+  configure the behavior of the Webhooks, and moves some of the fields to a new
+  WebhookDelivery model, which captures the results of a WebhookSubscription
+  "delivery".
+  https://github.com/nexB/scancode.io/issues/1325
+
+- Add support for creating dependencies using the ``load_sboms`` pipeline on CycloneDX
+  SBOM inputs.
+  https://github.com/nexB/scancode.io/issues/1145
+
+- Add a new Dependency view that renders the project dependencies as a tree.
+  https://github.com/nexB/scancode.io/issues/1145
+
+- The ``purldb-scan-worker`` command has been updated to send project results
+  back using the Project webhook subscriptions. This allows us to not have the
+  main task loop to monitor a single project run for completion in order to
+  return data, and allows us to have multiple scan projects active at once while
+  we use ``purldb-scan-worker``. A new option ``--max-concurrent-projects`` has
+  been added to set the number of purldb packages that can be requested and
+  processed at once.
+  https://github.com/nexB/scancode.io/issues/1287
+
+- Add notes field on the DiscoveredPackage model.
+  https://github.com/nexB/scancode.io/issues/1342
+
+- Fix an issue with conflicting groups checkbox id in the Add pipeline modal.
+  https://github.com/nexB/scancode.io/issues/1353
+
+- Move the BasePipeline class to a new `aboutcode.pipeline` module.
+  https://github.com/nexB/scancode.io/issues/1351
+
+- Update link references of ownership from nexB to aboutcode-org
+  https://github.com/aboutcode-org/scancode.io/issues/1350
+
+- Add a new ``check-compliance`` management command to check for compliance issues in
+  a project.
+  https://github.com/nexB/scancode.io/issues/1182
+
+- Fix issues in ``match_to_matchcode`` where the incorrect polling function was
+  used and match results were not properly collected.
+
 v34.7.1 (2024-07-15)
 --------------------
 

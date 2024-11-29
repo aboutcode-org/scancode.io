@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,13 +18,14 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from django import forms
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
 
+from packageurl import PackageURL
 from taggit.forms import TagField
 from taggit.forms import TagWidget
 
@@ -32,6 +33,8 @@ from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.pipelines import convert_markdown_to_html
 from scanpipe.pipes import fetch
+from scanpipe.policies import load_policies_yaml
+from scanpipe.policies import validate_policies
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -47,7 +50,7 @@ class MultipleFileField(forms.FileField):
 
     def clean(self, data, initial=None):
         single_file_clean = super().clean
-        if isinstance(data, (list, tuple)):
+        if isinstance(data, list | tuple):
             result = [single_file_clean(entry, initial) for entry in data]
         else:
             result = single_file_clean(data, initial)
@@ -378,6 +381,7 @@ class ProjectSettingsForm(forms.ModelForm):
         "ignored_patterns",
         "ignored_dependency_scopes",
         "ignored_vulnerabilities",
+        "policies",
         "attribution_template",
         "product_name",
         "product_version",
@@ -420,6 +424,25 @@ class ProjectSettingsForm(forms.ModelForm):
             },
         ),
     )
+    policies = forms.CharField(
+        label="License policies",
+        required=False,
+        help_text=(
+            "Refer to the documentation for syntax details: "
+            "https://scancodeio.readthedocs.io/en/latest/tutorial_license_policies.html"
+        ),
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea is-dynamic",
+                "rows": 3,
+                "placeholder": (
+                    "license_policies:\n"
+                    "-   license_key: gpl-2.0\n"
+                    "    compliance_alert: error"
+                ),
+            }
+        ),
+    )
     attribution_template = forms.CharField(
         label="Attribution template",
         required=False,
@@ -458,11 +481,30 @@ class ProjectSettingsForm(forms.ModelForm):
         fields = [
             "name",
             "notes",
+            "purl",
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "input"}),
             "notes": forms.Textarea(attrs={"rows": 3, "class": "textarea is-dynamic"}),
+            "purl": forms.TextInput(
+                attrs={
+                    "class": "input",
+                    "placeholder": "pkg:npm/lodash@4.7.21",
+                }
+            ),
         }
+
+    def clean_purl(self):
+        """Validate the Project PURL."""
+        purl = self.cleaned_data.get("purl")
+
+        if purl:
+            try:
+                PackageURL.from_string(purl)
+            except ValueError:
+                raise forms.ValidationError("PURL must be a valid PackageURL")
+
+        return purl
 
     def __init__(self, *args, **kwargs):
         """Load initial values from Project ``settings`` field."""
@@ -486,6 +528,12 @@ class ProjectSettingsForm(forms.ModelForm):
         }
         project.settings.update(config)
         project.save(update_fields=["settings"])
+
+    def clean_policies(self):
+        if policies := self.cleaned_data.get("policies"):
+            policies_dict = load_policies_yaml(policies)
+            validate_policies(policies_dict)
+        return policies
 
 
 class ProjectCloneForm(forms.Form):

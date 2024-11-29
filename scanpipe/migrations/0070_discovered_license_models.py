@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("scanpipe", "0063_run_selected_steps"),
+        ("scanpipe", "0069_project_purl"),
     ]
 
     operations = [

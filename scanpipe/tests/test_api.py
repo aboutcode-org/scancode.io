@@ -41,6 +41,7 @@ from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.api.serializers import ProjectMessageSerializer
+from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import get_model_serializer
 from scanpipe.api.serializers import get_serializer_fields
 from scanpipe.models import CodebaseRelation
@@ -53,6 +54,9 @@ from scanpipe.models import Run
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.output import JSONResultsGenerator
 from scanpipe.tests import dependency_data1
+from scanpipe.tests import make_package
+from scanpipe.tests import make_project
+from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
@@ -209,7 +213,7 @@ class ScanPipeAPITest(TransactionTestCase):
             "total": 1,
             "is_runtime": 1,
             "is_optional": 0,
-            "is_resolved": 0,
+            "is_pinned": 0,
         }
         self.assertEqual(expected, response.data["discovered_dependencies_summary"])
 
@@ -438,6 +442,7 @@ class ScanPipeAPITest(TransactionTestCase):
             "scan_single_package", response.data["runs"][1]["pipeline_name"]
         )
 
+        # Not supported as the comma `,` is used as the separator for optional steps.
         data = {
             "name": "Multi string",
             "pipeline": "analyze_docker_image,scan_single_package",
@@ -447,10 +452,8 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {
             "pipeline": [
                 ErrorDetail(
-                    string=(
-                        '"analyze_docker_image,scan_single_package" '
-                        "is not a valid choice."
-                    ),
+                    string='"analyze_docker_image,scan_single_package" is not a valid '
+                    "choice.",
                     code="invalid_choice",
                 )
             ]
@@ -493,6 +496,87 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(data["labels"], sorted(response.data["labels"]))
         project = Project.objects.get(name=data["name"])
         self.assertEqual(data["labels"], sorted(project.labels.names()))
+
+    def test_scanpipe_api_project_create_pipeline_groups(self):
+        data = {
+            "name": "Project1",
+            "pipeline": "inspect_packages:StaticResolver",
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(
+            ["StaticResolver"], response.data["runs"][0]["selected_groups"]
+        )
+        run = Project.objects.get(name="Project1").runs.get()
+        self.assertEqual("inspect_packages", run.pipeline_name)
+        self.assertEqual(["StaticResolver"], run.selected_groups)
+
+        data = {
+            "name": "Mix of string and list plus selected groups",
+            "pipeline": [
+                "map_deploy_to_develop:Java,JavaScript",
+                "inspect_packages:StaticResolver",
+            ],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(
+            "map_deploy_to_develop", response.data["runs"][0]["pipeline_name"]
+        )
+        self.assertEqual("inspect_packages", response.data["runs"][1]["pipeline_name"])
+        self.assertEqual(
+            ["Java", "JavaScript"], response.data["runs"][0]["selected_groups"]
+        )
+        self.assertEqual(
+            ["StaticResolver"], response.data["runs"][1]["selected_groups"]
+        )
+        runs = Project.objects.get(name=data["name"]).runs.all()
+        self.assertEqual("map_deploy_to_develop", runs[0].pipeline_name)
+        self.assertEqual("inspect_packages", runs[1].pipeline_name)
+        self.assertEqual(["Java", "JavaScript"], runs[0].selected_groups)
+        self.assertEqual(["StaticResolver"], runs[1].selected_groups)
+
+    def test_scanpipe_api_project_create_webhooks(self):
+        data = {
+            "name": "Project1",
+            "webhooks": [
+                {
+                    "target_url": "https://1.com",
+                    "trigger_on_each_run": False,
+                    "include_summary": False,
+                    "include_results": False,
+                    "is_active": False,
+                },
+                {
+                    "target_url": "https://2.com",
+                    "trigger_on_each_run": True,
+                    "include_summary": True,
+                    "include_results": True,
+                    "is_active": True,
+                },
+            ],
+        }
+
+        serializer = ProjectSerializer(data=data)
+        self.assertTrue(serializer.is_valid(), msg=serializer.errors)
+
+        response = self.csrf_client.post(self.project_list_url, data, format="json")
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+
+        project = Project.objects.get(name=data["name"])
+        # Ordered by -created_date by default
+        webhook_subscriptions = project.webhooksubscriptions.all()
+        self.assertEqual("https://2.com", webhook_subscriptions[0].target_url)
+        self.assertTrue(webhook_subscriptions[0].trigger_on_each_run)
+        self.assertTrue(webhook_subscriptions[0].include_summary)
+        self.assertTrue(webhook_subscriptions[0].include_results)
+        self.assertTrue(webhook_subscriptions[0].is_active)
+
+        self.assertEqual("https://1.com", webhook_subscriptions[1].target_url)
+        self.assertFalse(webhook_subscriptions[1].trigger_on_each_run)
+        self.assertFalse(webhook_subscriptions[1].include_summary)
+        self.assertFalse(webhook_subscriptions[1].include_results)
+        self.assertFalse(webhook_subscriptions[1].is_active)
 
     def test_scanpipe_api_project_results_generator(self):
         results_generator = JSONResultsGenerator(self.project1)
@@ -605,6 +689,37 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.get(url)
         self.assertEqual("error", response.data["results"][0]["compliance_alert"])
 
+    def test_scanpipe_api_project_action_resources_filterset(self):
+        make_resource_file(
+            self.project1,
+            path="path/",
+        )
+        url = reverse("project-resources", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(2, response.data["count"])
+
+        response = self.csrf_client.get(url + "?path=path/")
+        self.assertEqual(1, response.data["count"])
+        package = response.data["results"][0]
+        self.assertEqual("path/", package["path"])
+
+        response = self.csrf_client.get(url + "?path=unknown")
+        self.assertEqual(0, response.data["count"])
+
+        response = self.csrf_client.get(url + "?compliance_alert=a")
+        self.assertEqual(400, response.status_code)
+        expected = {
+            "compliance_alert": [
+                "Select a valid choice. a is not one of the available choices."
+            ]
+        }
+        self.assertEqual(expected, response.data["errors"])
+
+        # Using a field name available on the Project model to make sure the
+        # ProjectFilterSet is bypassed.
+        response = self.csrf_client.get(url + "?slug=aaa")
+        self.assertEqual(2, response.data["count"])
+
     def test_scanpipe_api_project_action_packages(self):
         url = reverse("project-packages", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
@@ -616,6 +731,24 @@ class ScanPipeAPITest(TransactionTestCase):
         package = response.data["results"][0]
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package["purl"])
         self.assertEqual("adduser", package["name"])
+
+    def test_scanpipe_api_project_action_packages_filterset(self):
+        make_package(self.project1, package_url="pkg:generic/name@1.0")
+        url = reverse("project-packages", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(2, response.data["count"])
+
+        response = self.csrf_client.get(url + "?version=1.0")
+        self.assertEqual(1, response.data["count"])
+        package = response.data["results"][0]
+        self.assertEqual("pkg:generic/name@1.0", package["purl"])
+
+        response = self.csrf_client.get(url + "?version=2.0")
+        self.assertEqual(0, response.data["count"])
+
+        response = self.csrf_client.get(url + "?size=a")
+        self.assertEqual(400, response.status_code)
+        self.assertEqual({"size": ["Enter a number."]}, response.data["errors"])
 
     def test_scanpipe_api_project_action_dependencies(self):
         url = reverse("project-dependencies", args=[self.project1.uuid])
@@ -650,6 +783,15 @@ class ScanPipeAPITest(TransactionTestCase):
             "from_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
         }
         self.assertEqual(expected, relation)
+
+    def test_scanpipe_api_project_action_relations_filterset(self):
+        url = reverse("project-relations", args=[self.project1.uuid])
+        response = self.csrf_client.get(url + "?map_type=about_file")
+        self.assertEqual(0, response.data["count"])
+
+        map_type = self.codebase_relation1.map_type
+        response = self.csrf_client.get(url + f"?map_type={map_type}")
+        self.assertEqual(1, response.data["count"])
 
     def test_scanpipe_api_project_action_messages(self):
         url = reverse("project-messages", args=[self.project1.uuid])
@@ -816,7 +958,9 @@ class ScanPipeAPITest(TransactionTestCase):
         }
         response = self.csrf_client.post(url, data=data)
         self.assertEqual({"status": "Pipeline added."}, response.data)
-        self.assertEqual("analyze_docker_image", self.project1.runs.get().pipeline_name)
+        run = self.project1.runs.get()
+        self.assertEqual("analyze_docker_image", run.pipeline_name)
+        self.assertEqual(["group1", "group2"], run.selected_groups)
 
     def test_scanpipe_api_project_action_add_input(self):
         url = reverse("project-add-input", args=[self.project1.uuid])
@@ -986,6 +1130,40 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"status": "Output file NOT_FOUND not found"}
         self.assertEqual(expected, response.data)
 
+    def test_scanpipe_api_project_action_compliance(self):
+        project = make_project()
+        url = reverse("project-compliance", args=[project.uuid])
+        response = self.csrf_client.get(url)
+        expected = {"compliance_alerts": {}}
+        self.assertEqual(expected, response.data)
+
+        make_resource_file(
+            project,
+            path="path/",
+            compliance_alert=CodebaseResource.Compliance.WARNING,
+        )
+        make_package(
+            project,
+            package_url="pkg:generic/name@1.0",
+            compliance_alert=CodebaseResource.Compliance.ERROR,
+        )
+
+        response = self.csrf_client.get(url)
+        expected = {
+            "compliance_alerts": {"packages": {"error": ["pkg:generic/name@1.0"]}}
+        }
+        self.assertEqual(expected, response.data)
+
+        data = {"fail_level": "WARNING"}
+        response = self.csrf_client.get(url, data=data)
+        expected = {
+            "compliance_alerts": {
+                "packages": {"error": ["pkg:generic/name@1.0"]},
+                "resources": {"warning": ["path/"]},
+            }
+        }
+        self.assertDictEqual(expected, response.data)
+
     def test_scanpipe_api_serializer_get_model_serializer(self):
         self.assertEqual(
             DiscoveredPackageSerializer, get_model_serializer(DiscoveredPackage)
@@ -1005,7 +1183,7 @@ class ScanPipeAPITest(TransactionTestCase):
             get_model_serializer(None)
 
     def test_scanpipe_api_serializer_get_serializer_fields(self):
-        self.assertEqual(48, len(get_serializer_fields(DiscoveredPackage)))
+        self.assertEqual(49, len(get_serializer_fields(DiscoveredPackage)))
         self.assertEqual(14, len(get_serializer_fields(DiscoveredDependency)))
         self.assertEqual(37, len(get_serializer_fields(CodebaseResource)))
         self.assertEqual(5, len(get_serializer_fields(CodebaseRelation)))

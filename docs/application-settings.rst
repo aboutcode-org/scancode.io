@@ -304,7 +304,7 @@ VULNERABLECODE
 ^^^^^^^^^^^^^^
 
 You have the option to either deploy your instance of
-`VulnerableCode <https://github.com/nexB/vulnerablecode/>`_
+`VulnerableCode <https://github.com/aboutcode-org/vulnerablecode/>`_
 or connect to the `public instance <https://public.vulnerablecode.io/>`_.
 
 To configure your local environment, set the ``VULNERABLECODE_URL`` in your ``.env``
@@ -337,6 +337,28 @@ If authentication is enabled on your MatchCode.io instance, you can provide the
 API key using ``MATCHCODEIO_API_KEY``::
 
     MATCHCODEIO_API_KEY=insert_your_api_key_here
+
+.. _scancodeio_settings_federatedcode:
+
+FEDERATEDCODE
+^^^^^^^^^^^^^
+
+FederatedCode is decentralized and federated metadata for software applications
+stored in Git repositories.
+
+
+To configure your local environment, set the following in your ``.env`` file::
+
+    FEDERATEDCODE_GIT_ACCOUNT_URL=https://<Address to your git account>/
+
+    FEDERATEDCODE_GIT_SERVICE_TOKEN=insert_your_git_api_key_here
+
+Also provide the name and email that will be used to sign off on commits to Git repositories::
+
+    FEDERATEDCODE_GIT_SERVICE_NAME=insert_name_here
+
+    FEDERATEDCODE_GIT_SERVICE_EMAIL=insert_email_here
+
 
 .. _scancodeio_settings_fetch_authentication:
 
@@ -397,6 +419,12 @@ If your credentials are stored in a
 location on disk using::
 
     SCANCODEIO_NETRC_LOCATION="~/.netrc"
+
+If you are deploying ScanCode.io using Docker and you wish to use a netrc file,
+you can provide it to the Docker container by moving the netrc file to
+``/etc/scancodeio/.netrc`` and then updating the ``.env`` file with the line::
+
+    SCANCODEIO_NETRC_LOCATION="/etc/scancodeio/.netrc"
 
 .. _scancodeio_settings_skopeo_credentials:
 

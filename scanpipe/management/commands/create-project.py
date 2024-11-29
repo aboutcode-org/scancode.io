@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from django.core.management import CommandError
 from django.core.management.base import BaseCommand
@@ -42,7 +42,8 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
             help=(
                 "Pipelines names to add to the project. "
                 "The pipelines are added and executed based on their given order. "
-                'Groups can be provided using the "pipeline_name:group1,group2" syntax.'
+                'Groups can be provided using the "pipeline_name:option1,option2" '
+                "syntax."
             ),
         )
         parser.add_argument(

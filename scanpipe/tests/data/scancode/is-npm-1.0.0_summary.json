@@ -95,7 +95,7 @@
               "rule_relevance": 100,
               "rule_identifier": "mit_30.RULE",
               "license_expression": "mit",
-              "spdx_license_expression": "MIT"
+              "license_expression_spdx": "MIT"
             }
           ],
           "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
@@ -164,6 +164,7 @@
       "tag": "",
       "primary_language": "JavaScript",
       "description": "Check if your code is running as an npm script",
+      "notes": "",
       "release_date": null,
       "parties": [
         {
@@ -215,7 +216,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
               "license_expression": "mit",
-              "spdx_license_expression": "MIT"
+              "license_expression_spdx": "MIT"
             }
           ],
           "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",

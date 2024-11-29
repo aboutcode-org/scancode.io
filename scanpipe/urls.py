@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from django.urls import include
 from django.urls import path
@@ -80,6 +80,11 @@ urlpatterns = [
         "project/<slug:slug>/dependencies/",
         views.DiscoveredDependencyListView.as_view(),
         name="project_dependencies",
+    ),
+    path(
+        "project/<slug:slug>/dependency_tree/",
+        views.ProjectDependencyTreeView.as_view(),
+        name="project_dependency_tree",
     ),
     path(
         "project/<slug:slug>/relations/",
@@ -210,6 +215,11 @@ urlpatterns = [
         "project/<slug:slug>/license_detection_summary/",
         views.ProjectLicenseDetectionSummaryView.as_view(),
         name="project_license_detection_summary",
+    ),
+    path(
+        "project/<slug:slug>/compliance_panel/",
+        views.ProjectCompliancePanelView.as_view(),
+        name="project_compliance_panel",
     ),
     path(
         "project/<slug:slug>/",

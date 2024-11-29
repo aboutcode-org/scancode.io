@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
 
@@ -44,10 +44,16 @@ from scanpipe.api.serializers import PipelineSerializer
 from scanpipe.api.serializers import ProjectMessageSerializer
 from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import RunSerializer
+from scanpipe.filters import DependencyFilterSet
+from scanpipe.filters import PackageFilterSet
+from scanpipe.filters import ProjectMessageFilterSet
+from scanpipe.filters import RelationFilterSet
+from scanpipe.filters import ResourceFilterSet
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.pipes import output
+from scanpipe.pipes.compliance import get_project_compliance_alerts
 from scanpipe.views import project_results_json_response
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -189,55 +195,63 @@ class ProjectViewSet(
         ]
         return Response(pipeline_data)
 
-    @action(detail=True)
+    def get_filtered_response(
+        self, request, queryset, filterset_class, serializer_class
+    ):
+        """
+        Handle filtering, pagination, and serialization of a "detail" action.
+        This requires to set filterset_class=None in the @action decorator parameter
+        to bypass the Project filterset.
+        """
+        filterset = filterset_class(data=request.GET, queryset=queryset)
+        if not filterset.is_valid():
+            message = {"errors": filterset.errors}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        queryset = filterset.qs
+        paginated_qs = self.paginate_queryset(queryset)
+        serializer = serializer_class(paginated_qs, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    @action(detail=True, filterset_class=None)
     def resources(self, request, *args, **kwargs):
         project = self.get_object()
         queryset = project.codebaseresources.prefetch_related("discovered_packages")
+        return self.get_filtered_response(
+            request, queryset, ResourceFilterSet, CodebaseResourceSerializer
+        )
 
-        paginated_qs = self.paginate_queryset(queryset)
-        serializer = CodebaseResourceSerializer(paginated_qs, many=True)
-
-        return self.get_paginated_response(serializer.data)
-
-    @action(detail=True)
+    @action(detail=True, filterset_class=None)
     def packages(self, request, *args, **kwargs):
         project = self.get_object()
         queryset = project.discoveredpackages.all()
+        return self.get_filtered_response(
+            request, queryset, PackageFilterSet, DiscoveredPackageSerializer
+        )
 
-        paginated_qs = self.paginate_queryset(queryset)
-        serializer = DiscoveredPackageSerializer(paginated_qs, many=True)
-
-        return self.get_paginated_response(serializer.data)
-
-    @action(detail=True)
+    @action(detail=True, filterset_class=None)
     def dependencies(self, request, *args, **kwargs):
         project = self.get_object()
         queryset = project.discovereddependencies.all()
+        return self.get_filtered_response(
+            request, queryset, DependencyFilterSet, DiscoveredDependencySerializer
+        )
 
-        paginated_qs = self.paginate_queryset(queryset)
-        serializer = DiscoveredDependencySerializer(paginated_qs, many=True)
-
-        return self.get_paginated_response(serializer.data)
-
-    @action(detail=True)
+    @action(detail=True, filterset_class=None)
     def relations(self, request, *args, **kwargs):
         project = self.get_object()
         queryset = project.codebaserelations.all()
+        return self.get_filtered_response(
+            request, queryset, RelationFilterSet, CodebaseRelationSerializer
+        )
 
-        paginated_qs = self.paginate_queryset(queryset)
-        serializer = CodebaseRelationSerializer(paginated_qs, many=True)
-
-        return self.get_paginated_response(serializer.data)
-
-    @action(detail=True)
+    @action(detail=True, filterset_class=None)
     def messages(self, request, *args, **kwargs):
         project = self.get_object()
         queryset = project.projectmessages.all()
-
-        paginated_qs = self.paginate_queryset(queryset)
-        serializer = ProjectMessageSerializer(paginated_qs, many=True)
-
-        return self.get_paginated_response(serializer.data)
+        return self.get_filtered_response(
+            request, queryset, ProjectMessageFilterSet, ProjectMessageSerializer
+        )
 
     @action(detail=True, methods=["get"])
     def file_content(self, request, *args, **kwargs):
@@ -378,6 +392,29 @@ class ProjectViewSet(
             for output in project.output_root
         ]
         return Response(output_data)
+
+    @action(detail=True, methods=["get"])
+    def compliance(self, request, *args, **kwargs):
+        """
+        Retrieve compliance alerts for a project.
+
+        This endpoint returns a list of compliance alerts for the given project,
+        filtered by severity level. The severity level can be customized using the
+        `fail_level` query parameter.
+
+        Query Parameters:
+        `fail_level`: Specifies the severity level of the alerts to be retrieved.
+        Accepted values are: "ERROR", "WARNING", and "MISSING".
+        Defaults to "ERROR" if not provided.
+
+        Example:
+          GET /api/projects/{project_id}/compliance/?fail_level=WARNING
+
+        """
+        project = self.get_object()
+        fail_level = request.query_params.get("fail_level", "error")
+        compliance_alerts = get_project_compliance_alerts(project, fail_level)
+        return Response({"compliance_alerts": compliance_alerts})
 
 
 class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):

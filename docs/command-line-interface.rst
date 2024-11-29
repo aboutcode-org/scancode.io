@@ -54,16 +54,23 @@ ScanPipe's own commands are listed under the ``[scanpipe]`` section::
     $ scanpipe --help
     ...
     [scanpipe]
-        add-input
-        add-pipeline
-        archive-project
-        create-project
-        delete-project
-        execute
-        list-project
-        output
-        show-pipeline
-        status
+      add-input
+      add-pipeline
+      archive-project
+      check-compliance
+      create-project
+      create-user
+      delete-project
+      execute
+      flush-projects
+      list-pipelines
+      list-project
+      output
+      purldb-scan-worker
+      reset-project
+      run
+      show-pipeline
+      status
 
 
 `$ scanpipe <subcommand> --help`
@@ -96,7 +103,7 @@ Optional arguments:
 - ``--pipeline PIPELINES`` Pipelines names to add on the project.
 
 .. tip::
-    Use the "pipeline_name:group1,group2" syntax to select steps groups:
+    Use the "pipeline_name:option1,option2" syntax to select optional steps:
 
     ``--pipeline map_deploy_to_develop:Java,JavaScript``
 
@@ -125,6 +132,17 @@ Optional arguments:
 
 .. warning::
     Pipelines are added and are executed in order.
+
+
+`$ scanpipe list-pipeline [--verbosity {0,1,2,3}]`
+--------------------------------------------------
+
+Displays a list of available pipelines.
+Use ``--verbosity=2`` to include details of each pipeline's steps."
+
+Optional arguments:
+
+- ``--verbosity {0,1,2}`` Verbosity level.
 
 
 `$ scanpipe list-project [--search SEARCH] [--include-archived]`
@@ -179,7 +197,7 @@ copy ``~/docker/alpine-base.tar`` to the foo project :guilabel:`input/` director
 You can also provide URLs of files to be downloaded to the foo project
 :guilabel:`input/` directory::
 
-    $ scanpipe add-input --project foo --input-url https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar
+    $ scanpipe add-input --project foo --input-url https://github.com/aboutcode-org/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar
 
 .. note:: Docker images can be provided as input using their Docker reference
     with the ``docker://docker-reference`` syntax. For example::
@@ -194,7 +212,7 @@ You can also provide URLs of files to be downloaded to the foo project
 .. note:: Git repositories are supported as input using their Git clone URL in the
     ``https://<host>[:<port>]/<path-to-git-repo>.git`` syntax. For example::
 
-    $ [...] --input-url https://github.com/nexB/scancode.io.git
+    $ [...] --input-url https://github.com/aboutcode-org/scancode.io.git
 
 
 `$ scanpipe add-pipeline --project PROJECT PIPELINE_NAME [PIPELINE_NAME ...]`
@@ -212,7 +230,7 @@ add the docker pipeline to your project::
     $ scanpipe add-pipeline --project foo analyze_docker_image
 
 .. tip::
-    Use the "pipeline_name:group1,group2" syntax to select steps groups:
+    Use the "pipeline_name:option1,option2" syntax to select optional steps:
 
     ``--pipeline map_deploy_to_develop:Java,JavaScript``
 
@@ -263,6 +281,25 @@ Optional arguments:
 
 Refer to :ref:`Mount projects workspace <mount_projects_workspace_volume>` to access
 your outputs on the host machine when running with Docker.
+
+.. tip:: To specify a CycloneDX spec version (default to latest), use the syntax
+  ``cyclonedx:VERSION`` as format value. For example: ``--format cyclonedx:1.5``.
+
+
+.. _cli_check_compliance:
+
+`$ scanpipe check-compliance --project PROJECT`
+-----------------------------------------------
+
+Check for compliance issues in Project.
+Exit with a non-zero status if compliance issues are present in the project.
+The compliance alert indicates how the license expression complies with provided
+policies.
+
+Optional arguments:
+
+- ``--fail-level {ERROR,WARNING,MISSING}`` Compliance alert level that will cause the
+  command to exit with a non-zero status. Default is ERROR.
 
 `$ scanpipe archive-project --project PROJECT`
 ----------------------------------------------
@@ -380,7 +417,7 @@ For example, running the ``inspect_packages`` pipeline on a manifest file:
 
     $ run inspect_packages path/to/package.json > results.json
 
-.. tip:: Use the "pipeline_name:group1,group2" syntax to select steps groups::
+.. tip:: Use the "pipeline_name:option1,option2" syntax to select optional steps::
 
     $ run inspect_packages:StaticResolver package.json > results.json
 

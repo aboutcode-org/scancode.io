@@ -21,7 +21,9 @@
         {
           "pipeline_name": "map_deploy_to_develop",
           "status": "not_started",
-          "selected_groups": null,
+          "selected_groups": [
+            "Java"
+          ],
           "selected_steps": null,
           "scancodeio_version": "",
           "task_id": null,
@@ -440,7 +442,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -651,7 +653,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -719,7 +721,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -787,7 +789,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -855,7 +857,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -923,7 +925,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -991,7 +993,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -1059,7 +1061,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -1127,7 +1129,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -1195,7 +1197,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -1263,7 +1265,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -1331,7 +1333,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -1548,7 +1550,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1563,7 +1565,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 99.0,
@@ -1578,7 +1580,7 @@
               "rule_relevance": 99,
               "rule_identifier": "maven_pom_12.RULE",
               "license_expression": "bsd-new",
-              "spdx_license_expression": "BSD-3-Clause"
+              "license_expression_spdx": "BSD-3-Clause"
             },
             {
               "score": 100.0,
@@ -1593,7 +1595,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1608,7 +1610,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1623,7 +1625,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1638,7 +1640,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_19.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -1653,7 +1655,7 @@
               "rule_relevance": 100,
               "rule_identifier": "lgpl-2.1_40.RULE",
               "license_expression": "lgpl-2.1",
-              "spdx_license_expression": "LGPL-2.1-only"
+              "license_expression_spdx": "LGPL-2.1-only"
             },
             {
               "score": 99.0,
@@ -1668,7 +1670,7 @@
               "rule_relevance": 99,
               "rule_identifier": "pypi_public_domain.RULE",
               "license_expression": "public-domain",
-              "spdx_license_expression": "LicenseRef-scancode-public-domain"
+              "license_expression_spdx": "LicenseRef-scancode-public-domain"
             },
             {
               "score": 100.0,
@@ -1683,7 +1685,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_188.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1698,7 +1700,7 @@
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_1.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1713,7 +1715,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1728,7 +1730,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1743,7 +1745,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1758,7 +1760,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1773,7 +1775,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1788,7 +1790,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1803,7 +1805,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1818,7 +1820,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1833,7 +1835,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1848,7 +1850,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1863,7 +1865,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1878,7 +1880,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1893,7 +1895,7 @@
               "rule_relevance": 100,
               "rule_identifier": "cddl-1.0_or_gpl-2.0_with_classpath-exception-2.0_1.RULE",
               "license_expression": "cddl-1.0 OR gpl-2.0 WITH classpath-exception-2.0",
-              "spdx_license_expression": "CDDL-1.0 OR GPL-2.0-only WITH Classpath-exception-2.0"
+              "license_expression_spdx": "CDDL-1.0 OR GPL-2.0-only WITH Classpath-exception-2.0"
             },
             {
               "score": 100.0,
@@ -1908,7 +1910,7 @@
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_21.RULE",
               "license_expression": "bsd-new",
-              "spdx_license_expression": "BSD-3-Clause"
+              "license_expression_spdx": "BSD-3-Clause"
             },
             {
               "score": 100.0,
@@ -1923,7 +1925,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1938,7 +1940,7 @@
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_1.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1953,7 +1955,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1968,7 +1970,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -1983,7 +1985,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1998,7 +2000,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -2013,7 +2015,7 @@
               "rule_relevance": 100,
               "rule_identifier": "mit_51.RULE",
               "license_expression": "mit",
-              "spdx_license_expression": "MIT"
+              "license_expression_spdx": "MIT"
             },
             {
               "score": 100.0,
@@ -2028,7 +2030,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2043,7 +2045,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2058,7 +2060,7 @@
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_5.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2073,7 +2075,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2088,7 +2090,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2103,7 +2105,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2118,7 +2120,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2133,7 +2135,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2148,7 +2150,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2163,7 +2165,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2178,7 +2180,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2193,7 +2195,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_209.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2208,7 +2210,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_209.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2223,7 +2225,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_209.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2238,7 +2240,7 @@
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_5.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2253,7 +2255,7 @@
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_5.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2268,7 +2270,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2283,7 +2285,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_143.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2298,7 +2300,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2313,7 +2315,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -2328,7 +2330,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2343,7 +2345,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -2358,7 +2360,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2373,7 +2375,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -2388,7 +2390,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2403,7 +2405,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -2418,7 +2420,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2433,7 +2435,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -2448,7 +2450,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2463,7 +2465,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -2478,7 +2480,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2493,7 +2495,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -2508,7 +2510,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0_and_bsd_new_and_epl_1_0_and_lgpl_2_1_and_public_domain_and__cddl_1_0_or_gpl_2_0_with_classpath_exception_2_0__and_mit-89f48bad-a653-527d-8324-71e8d9738745",
@@ -2817,7 +2819,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0.LICENSE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-ab23f79b-ec38-9a8a-9b23-85059407f34d",
@@ -2927,7 +2929,7 @@
               "rule_relevance": 95,
               "rule_identifier": "apache-2.0_product_includes_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-482220ca-c07b-bf59-66ed-6e7eaf9f3b1e",

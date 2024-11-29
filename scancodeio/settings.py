@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import sys
 import tempfile
@@ -246,7 +246,9 @@ LOGIN_REDIRECT_URL = "project_list"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+        ),
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
@@ -417,3 +419,10 @@ MATCHCODEIO_URL = env.str("MATCHCODEIO_URL", default="")
 MATCHCODEIO_USER = env.str("MATCHCODEIO_USER", default="")
 MATCHCODEIO_PASSWORD = env.str("MATCHCODEIO_PASSWORD", default="")
 MATCHCODEIO_API_KEY = env.str("MATCHCODEIO_API_KEY", default="")
+
+# FederatedCode integration
+
+FEDERATEDCODE_GIT_ACCOUNT_URL = env.str("FEDERATEDCODE_GIT_ACCOUNT_URL", default="")
+FEDERATEDCODE_GIT_SERVICE_TOKEN = env.str("FEDERATEDCODE_GIT_SERVICE_TOKEN", default="")
+FEDERATEDCODE_GIT_SERVICE_NAME = env.str("FEDERATEDCODE_GIT_SERVICE_NAME", default="")
+FEDERATEDCODE_GIT_SERVICE_EMAIL = env.str("FEDERATEDCODE_GIT_SERVICE_EMAIL", default="")

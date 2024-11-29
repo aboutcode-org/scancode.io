@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import shlex
 
@@ -258,6 +258,14 @@ class FilterSetUtilsMixin:
 
         return queryset
 
+    @classmethod
+    def filter_for_lookup(cls, field, lookup_type):
+        """Add support for JSONField storing "list" using the JSONListFilter."""
+        if isinstance(field, models.JSONField) and field.default is list:
+            return JSONContainsFilter, {}
+
+        return super().filter_for_lookup(field, lookup_type)
+
 
 def parse_query_string_to_lookups(query_string, default_lookup_expr, default_field):
     """Parse a query string and convert it into queryset lookups using Q objects."""
@@ -390,6 +398,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         field_name="labels__slug",
         distinct=True,
     )
+    extra_data = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
         model = Project
@@ -492,7 +501,6 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "status",
         "type",
-        "programming_language",
         "tag",
         "compliance_alert",
         "in_package",
@@ -522,7 +530,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "related_from__from_resource__path",
         ],
     )
-    programming_language = django_filters.AllValuesFilter()
+
     compliance_alert = django_filters.ChoiceFilter(
         choices=[(EMPTY_VAR, "None")] + CodebaseResource.Compliance.choices,
     )
@@ -533,6 +541,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         label="Relation map type",
         field_name="related_from__map_type",
     )
+    extra_data = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
         model = CodebaseResource
@@ -575,20 +584,13 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_readme",
             "is_top_level",
             "is_key_file",
+            "extra_data",
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         license_expression_filter = self.filters["detected_license_expression"]
         license_expression_filter.extra["widget"] = HasValueDropdownWidget()
-
-    @classmethod
-    def filter_for_lookup(cls, field, lookup_type):
-        """Add support for JSONField storing "list" using the JSONListFilter."""
-        if isinstance(field, models.JSONField) and field.default == list:
-            return JSONContainsFilter, {}
-
-        return super().filter_for_lookup(field, lookup_type)
 
 
 class IsVulnerable(django_filters.ChoiceFilter):
@@ -706,6 +708,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     )
     is_private = StrictBooleanFilter()
     is_virtual = StrictBooleanFilter()
+    extra_data = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
         model = DiscoveredPackage
@@ -741,6 +744,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "tag",
             "is_private",
             "is_virtual",
+            "extra_data",
         ]
 
 
@@ -750,7 +754,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "scope",
         "is_runtime",
         "is_optional",
-        "is_resolved",
+        "is_pinned",
         "is_direct",
         "datasource_id",
         "is_vulnerable",
@@ -771,7 +775,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "scope",
             "is_runtime",
             "is_optional",
-            "is_resolved",
+            "is_pinned",
             "is_direct",
             "for_package",
             "resolved_to_package",
@@ -786,7 +790,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     datasource_id = ModelFieldValuesFilter()
     is_runtime = StrictBooleanFilter()
     is_optional = StrictBooleanFilter()
-    is_resolved = StrictBooleanFilter()
+    is_pinned = StrictBooleanFilter()
     is_direct = StrictBooleanFilter()
     is_vulnerable = IsVulnerable(field_name="affected_by_vulnerabilities")
 
@@ -805,7 +809,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "scope",
             "is_runtime",
             "is_optional",
-            "is_resolved",
+            "is_pinned",
             "is_direct",
             "datasource_id",
             "is_vulnerable",
@@ -917,6 +921,7 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     )
     map_type = django_filters.ChoiceFilter(choices=MAP_TYPE_CHOICES)
     status = StatusFilter(field_name="to_resource__status")
+    extra_data = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
         model = CodebaseRelation
@@ -924,10 +929,11 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "search",
             "map_type",
             "status",
+            "extra_data",
         ]
 
     def __init__(self, *args, **kwargs):
-        project = kwargs.pop("project")
+        project = kwargs.pop("project", None)
         super().__init__(*args, **kwargs)
         if project:
             qs = CodebaseResource.objects.filter(project=project)

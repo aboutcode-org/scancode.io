@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import shutil
 import traceback
@@ -229,7 +229,7 @@ def validate_copy_from(copy_from):
 
 def extract_group_from_pipelines(pipelines):
     """
-    Add support for the ":group1,group2" suffix in pipeline data.
+    Add support for the ":option1,option2" suffix in pipeline data.
 
     For example: "map_deploy_to_develop:Java,JavaScript"
     """

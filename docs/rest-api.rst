@@ -126,6 +126,19 @@ Using cURL:
     To tag the ``upload_file``, you can provide the tag value using the
     ``upload_file_tag`` field.
 
+.. tip::
+
+    You can declare multiple pipelines to be executed at the project creation using a
+    list of pipeline names:
+
+    ``"pipeline": ["scan_single_package", "scan_for_virus"]``
+
+.. tip::
+
+    Use the "pipeline_name:option1,option2" syntax to select optional steps:
+
+    ``"pipeline": "map_deploy_to_develop:Java,JavaScript"``
+
 Using Python and the **"requests"** library:
 
 .. code-block:: python
@@ -237,7 +250,7 @@ Using cURL to provide download URLs:
     content_type="Content-Type: application/json"
     data='{
         "input_urls": [
-            "https://github.com/nexB/debian-inspector/archive/refs/tags/v21.5.25.zip",
+            "https://github.com/aboutcode-org/debian-inspector/archive/refs/tags/v21.5.25.zip",
             "https://github.com/package-url/packageurl-python/archive/refs/tags/0.9.4.tar.gz"
        ]
     }'
@@ -279,7 +292,7 @@ Data:
     - ``execute_now``: ``true`` or ``false``
 
 .. tip::
-    Use the "pipeline_name:group1,group2" syntax to select steps groups:
+    Use the "pipeline_name:option1,option2" syntax to select optional steps:
 
     ``"pipeline": "map_deploy_to_develop:Java,JavaScript"``
 
@@ -320,10 +333,41 @@ Data:
         "status": "The project project_name has been archived."
     }
 
+.. _rest_api_compliance:
+
+Compliance
+^^^^^^^^^^
+
+This action returns a list of compliance alerts for a project,
+filtered by severity level.
+The severity level can be customized using the ``fail_level`` query parameter.
+Defaults to ``ERROR`` if not provided.
+
+``GET /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/compliance/?fail_level=WARNING``
+
+Data:
+    - ``fail_level``: ``ERROR``, ``WARNING``, ``MISSING``.
+
+.. code-block:: json
+
+    {
+        "compliance_alerts": {
+            "packages": {
+                "warning": [
+                    "pkg:generic/package@1.0",
+                    "pkg:generic/package@2.0"
+                ],
+                "error": [
+                    "pkg:generic/package@3.0"
+                ]
+            }
+        }
+    }
+
 Reset
 ^^^^^
 
-This action will delete all related database entrie and all data on disks except for
+This action will delete all related database entries and all data on disks except for
 the :guilabel:`input/` directory.
 
 ``POST /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/reset/``
@@ -388,6 +432,9 @@ Lists all ``packages`` of a given ``project``.
         }
     ]
 
+The list supports filtering by most fields using the ``?field_name=value`` query
+parameter syntax.
+
 Resources
 ^^^^^^^^^
 
@@ -407,6 +454,40 @@ This action lists all ``resources`` of a given ``project``.
             "[...]": "[...]"
         }
     ]
+
+The list supports filtering by most fields using the ``?field_name=value`` query
+parameter syntax.
+
+Dependencies
+^^^^^^^^^^^^
+
+Lists all ``dependencies`` of a given ``project``.
+
+``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/dependencies/``
+
+.. code-block:: json
+
+    [
+        {
+            "purl": "pkg:pypi/appdirs@1.4.4",
+            "extracted_requirement": "==1.4.4",
+            "scope": "test",
+            "is_runtime": true,
+            "is_optional": true,
+            "is_pinned": true,
+            "is_direct": true,
+            "dependency_uid": "pkg:pypi/appdirs@1.4.4?uuid=0033a678-2003-420d-8c83-c4071e646f4e",
+            "for_package_uid": "pkg:pypi/platformdirs@4.2.1?uuid=6d90ce5b-a3f8-4110-a4bd-2da5a8930d29",
+            "resolved_to_package_uid": null,
+            "datafile_path": "platformdirs-4.2.1.dist-info/METADATA",
+            "datasource_id": "pypi_wheel_metadata",
+            "package_type": "pypi",
+            "[...]": "[...]"
+        },
+    ]
+
+The list supports filtering by most fields using the ``?field_name=value`` query
+parameter syntax.
 
 Results
 ^^^^^^^

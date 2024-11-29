@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import csv
 import decimal
@@ -413,7 +413,7 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
         value = [mapping[mapping_key] for mapping in value]
 
     # convert these to text lines, remove duplicates
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, list | tuple):
         value = ordered_unique(str(v) for v in value if v)
         value = "\n".join(value)
 
@@ -457,7 +457,7 @@ def to_xlsx(project):
         "license_clues",
     ]
 
-    if not scanpipe_app.policies_enabled:
+    if not project.policies_enabled:
         exclude_fields.append("compliance_alert")
 
     model_names = [
@@ -839,7 +839,7 @@ def get_unique_licenses(packages):
     Return an empty list if the packages do not have licenses.
 
     Replace by the following one-liner once this toolkit issues is fixed:
-    https://github.com/nexB/scancode-toolkit/issues/3425
+    https://github.com/aboutcode-org/scancode-toolkit/issues/3425
     licenses = set(license for package in packages for license in package["licenses"])
     """
     seen_license_keys = set()

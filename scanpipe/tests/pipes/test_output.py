@@ -35,7 +35,7 @@ from django.test import TestCase
 
 import xlsxwriter
 from licensedcode.cache import get_licensing
-from lxml import etree  # nosec
+from lxml import etree
 from scancode_config import __version__ as scancode_toolkit_version
 
 from scanpipe import pipes
@@ -51,9 +51,7 @@ from scanpipe.tests import package_data1
 
 
 def make_config_directory(project):
-    """
-    Make and return the `project` config directory.
-    """
+    """Make and return the `project` config directory."""
     config_directory = project.codebase_path / settings.SCANCODEIO_CONFIG_DIR
     config_directory.mkdir(exist_ok=True)
     return config_directory
@@ -63,9 +61,7 @@ class ScanPipeOutputPipesTest(TestCase):
     data = Path(__file__).parent.parent / "data"
 
     def assertResultsEqual(self, expected_file, results, regen=FIXTURES_REGEN):
-        """
-        Set `regen` to True to regenerate the expected results.
-        """
+        """Set `regen` to True to regenerate the expected results."""
         if regen:
             expected_file.write_text(results)
 
@@ -247,7 +243,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
         project = Project.objects.get(name="asgiref")
         package = project.discoveredpackages.get(
-            uuid="d10827fc-bcd1-4c10-ad6c-972dd4defa9c"
+            uuid="b5035991-5b4b-40be-b68b-1c9c528078cd"
         )
 
         package.other_license_expression_spdx = "Apache-2.0 AND LicenseRef-test"
@@ -289,8 +285,10 @@ class ScanPipeOutputPipesTest(TestCase):
         a = make_package(project, "pkg:type/a")
         b = make_package(project, "pkg:type/b")
         c = make_package(project, "pkg:type/c")
+        make_package(project, "pkg:type/z")
 
-        # A -> B -> C
+        # Project -> A -> B -> C
+        # Project -> Z
         make_dependency(project, for_package=a, resolved_to_package=b)
         make_dependency(project, for_package=b, resolved_to_package=c)
 
@@ -300,12 +298,13 @@ class ScanPipeOutputPipesTest(TestCase):
 
         expected = [
             {
-                "dependsOn": ["pkg:type/a", "pkg:type/b", "pkg:type/c"],
+                "dependsOn": ["pkg:type/a", "pkg:type/b", "pkg:type/c", "pkg:type/z"],
                 "ref": str(project.uuid),
             },
             {"dependsOn": ["pkg:type/b"], "ref": "pkg:type/a"},
             {"dependsOn": ["pkg:type/c"], "ref": "pkg:type/b"},
             {"ref": "pkg:type/c"},
+            {"ref": "pkg:type/z"},
         ]
         self.assertEqual(expected, results_json["dependencies"])
 
@@ -711,9 +710,7 @@ def get_cell_texts(original_text, test_dir, workbook_name):
     """
 
     class Row:
-        """
-        A mock Row with a single attribute storing a long string
-        """
+        """A mock Row with a single attribute storing a long string"""
 
         def __init__(self, foo):
             self.foo = foo
@@ -748,7 +745,7 @@ def get_cell_texts(original_text, test_dir, workbook_name):
     # Using lxml.etree.parse to parse untrusted XML data is known to be vulnerable
     # to XML attacks. This is not an issue here as we are parsing a properly crafted
     # test file, not a maliciously crafted one.
-    sstet = etree.parse(str(shared_strings))  # nosec
+    sstet = etree.parse(str(shared_strings))  # noqa: S320
     # in our special case the text we care is the last element of the XML
 
     return [t.text for t in sstet.getroot().iter()]

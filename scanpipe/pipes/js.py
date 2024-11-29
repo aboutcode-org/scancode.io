@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import hashlib
 import json
@@ -78,7 +78,7 @@ def sha1(content):
     # The following hash is not used in any security context. It is only used
     # to generate a value for matching purposes, collisions are acceptable and
     # "content" is not coming from user-generated input.
-    return hashlib.sha1(content.encode()).hexdigest()  # nosec
+    return hashlib.sha1(content.encode(), usedforsecurity=False).hexdigest()
 
 
 def source_content_sha1_list(map_file):

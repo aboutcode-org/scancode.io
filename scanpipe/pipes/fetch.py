@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,14 +18,14 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import cgi
 import json
 import logging
 import os
 import re
-import subprocess  # nosec
+import subprocess
 import tempfile
 from collections import namedtuple
 from pathlib import Path
@@ -68,7 +68,7 @@ def run_command_safely(command_args):
 
     Raise a SubprocessError if the exit code was non-zero.
     """
-    completed_process = subprocess.run(  # nosec
+    completed_process = subprocess.run(  # noqa: S603
         command_args,
         capture_output=True,
         text=True,

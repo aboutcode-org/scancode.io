@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,21 +18,23 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
 import logging
 
 from django.conf import settings
+from django.template.defaultfilters import pluralize
 from django.utils.text import slugify
 
 import requests
 from packageurl import PackageURL
 from univers.version_range import RANGE_CLASS_BY_SCHEMES
 from univers.version_range import InvalidVersionRange
+from univers.versions import InvalidVersion
 
-from scanpipe.pipes import LoopProgress
-from scanpipe.pipes import poll_until_success
+from aboutcode.pipeline import LoopProgress
+from scanpipe.pipes import _clean_package_data
 
 
 class PurlDBException(Exception):
@@ -64,6 +66,30 @@ if PURLDB_API_KEY:
 
 DEFAULT_TIMEOUT = 60
 
+# This key can be used for filtering
+ENRICH_EXTRA_DATA_KEY = "enrich_with_purldb"
+
+# Subset of fields kept when multiple entries are found in the PurlDB.
+CROSS_VERSION_COMMON_FIELDS = [
+    "primary_language",
+    "description",
+    "parties",
+    "keywords",
+    "homepage_url",
+    "bug_tracking_url",
+    "code_view_url",
+    "vcs_url",
+    "repository_homepage_url",
+    "copyright",
+    "holder",
+    "declared_license_expression",
+    "declared_license_expression_spdx",
+    "other_license_expression",
+    "other_license_expression_spdx",
+    "extracted_license_statement",
+    "notice_text",
+]
+
 
 def is_configured():
     """Return True if the required PurlDB settings have been set."""
@@ -87,7 +113,16 @@ def is_available():
     return response.status_code == requests.codes.ok
 
 
-def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
+def check_service_availability(*args):
+    """Check if the PurlDB service if configured and available."""
+    if not is_configured():
+        raise Exception(f"{label} is not configured.")
+
+    if not is_available():
+        raise Exception(f"{label} is not available.")
+
+
+def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT, raise_on_error=False):
     """Wrap the HTTP request calls on the API."""
     if not url:
         return
@@ -98,13 +133,17 @@ def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
     if payload:
         params.update(payload)
 
-    logger.debug(f"{label}: url={url} params={params}")
+    logger.debug(f"[{label}] Requesting URL: {url} with params: {params}")
     try:
         response = session.get(url, params=params, timeout=timeout)
         response.raise_for_status()
         return response.json()
-    except (requests.RequestException, ValueError, TypeError) as exception:
-        logger.debug(f"{label} [Exception] {exception}")
+    except requests.RequestException:  # raise_for_status
+        return
+    except (ValueError, TypeError) as exception:
+        logger.debug(f"[{label}] Request to {url} failed with exception: {exception}")
+        if raise_on_error:
+            raise PurlDBException(exception)
 
 
 def request_post(url, data=None, headers=None, files=None, timeout=DEFAULT_TIMEOUT):
@@ -251,7 +290,7 @@ def feed_purldb(packages, chunk_size, logger=logger.info):
 
 def get_unique_resolved_purls(project):
     """Return PURLs from project's resolved DiscoveredDependencies."""
-    packages_resolved = project.discovereddependencies.filter(is_resolved=True)
+    packages_resolved = project.discovereddependencies.filter(is_pinned=True)
 
     distinct_results = packages_resolved.values("type", "namespace", "name", "version")
 
@@ -262,28 +301,43 @@ def get_unique_resolved_purls(project):
 def get_unique_unresolved_purls(project):
     """Return PURLs from project's unresolved DiscoveredDependencies."""
     packages_unresolved = project.discovereddependencies.filter(
-        is_resolved=False
+        is_pinned=False,
     ).exclude(extracted_requirement="*")
 
-    distinct_unresolved_results = packages_unresolved.values(
+    distinct_unpinned_results = packages_unresolved.values(
         "type", "namespace", "name", "extracted_requirement"
     )
 
-    distinct_unresolved = {tuple(item.values()) for item in distinct_unresolved_results}
+    distinct_unpinned = {tuple(item.values()) for item in distinct_unpinned_results}
 
     packages = set()
-    for item in distinct_unresolved:
+    for item in distinct_unpinned:
         pkg_type, namespace, name, extracted_requirement = item
         if range_class := RANGE_CLASS_BY_SCHEMES.get(pkg_type):
+            purl = PackageURL(type=pkg_type, namespace=namespace, name=name)
+
             try:
                 vers = range_class.from_native(extracted_requirement)
-            except InvalidVersionRange:
+            except (InvalidVersionRange, InvalidVersion) as exception:
+                if exception is InvalidVersionRange:
+                    description = "Version range is invalid or unsupported"
+                else:
+                    description = "Extracted requirement is not a valid version"
+                details = {
+                    "purl": purl,
+                    "extracted_requirement": extracted_requirement,
+                }
+                project.add_error(
+                    description=description,
+                    model="get_unique_unresolved_purls",
+                    details=details,
+                    exception=exception,
+                )
                 continue
 
             if not vers.constraints:
                 continue
 
-            purl = PackageURL(type=pkg_type, namespace=namespace, name=name)
             packages.add((str(purl), str(vers)))
 
     return packages
@@ -339,18 +393,37 @@ def populate_purldb_with_discovered_dependencies(project, logger=logger.info):
     )
 
 
-def get_package_by_purl(package_url):
-    """Get a Package details entry providing its `package_url`."""
-    if results := find_packages({"purl": str(package_url)}):
-        return results[0]
-
-
 def find_packages(payload):
     """Get Packages using provided `payload` filters on the PurlDB package list."""
     package_api_url = f"{PURLDB_API_URL}packages/"
     response = request_get(package_api_url, payload=payload)
     if response and response.get("count") > 0:
         return response.get("results")
+
+
+def get_packages_for_purl(package_url):
+    """Get Package details entries providing a `package_url`."""
+    payload = {
+        "purl": str(package_url),
+        "sort": "-version",
+    }
+    return find_packages(payload)
+
+
+def collect_data_for_purl(package_url, raise_on_error=False):
+    collect_api_url = f"{PURLDB_API_URL}collect/"
+    payload = {
+        "purl": str(package_url),
+        "sort": "-version",
+    }
+    purldb_entries = request_get(
+        url=collect_api_url,
+        payload=payload,
+        raise_on_error=raise_on_error,
+    )
+
+    if purldb_entries:
+        return purldb_entries
 
 
 def get_next_download_url(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
@@ -368,38 +441,6 @@ def get_next_download_url(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
         return response
 
 
-def send_results_to_purldb(
-    scannable_uri_uuid,
-    scan_results_location,
-    scan_summary_location,
-    project_extra_data,
-    timeout=DEFAULT_TIMEOUT,
-    api_url=PURLDB_API_URL,
-):
-    """
-    Send project results to purldb for the package handeled by the ScannableURI
-    with uuid of `scannable_uri_uuid`
-    """
-    with open(scan_results_location, "rb") as scan_results_file:
-        with open(scan_summary_location, "rb") as scan_summary_file:
-            data = {
-                "scannable_uri_uuid": scannable_uri_uuid,
-                "scan_status": "scanned",
-                "project_extra_data": json.dumps(project_extra_data),
-            }
-            files = {
-                "scan_results_file": scan_results_file,
-                "scan_summary_file": scan_summary_file,
-            }
-            response = request_post(
-                url=f"{api_url}scan_queue/update_status/",
-                timeout=timeout,
-                data=data,
-                files=files,
-            )
-    return response
-
-
 def update_status(
     scannable_uri_uuid,
     status,
@@ -409,12 +450,11 @@ def update_status(
 ):
     """Update the status of a ScannableURI on a PurlDB scan queue"""
     data = {
-        "scannable_uri_uuid": scannable_uri_uuid,
         "scan_status": status,
         "scan_log": scan_log,
     }
     response = request_post(
-        url=f"{api_url}scan_queue/update_status/",
+        url=f"{api_url}scan_queue/{scannable_uri_uuid}/update_status/",
         timeout=timeout,
         data=data,
     )
@@ -428,21 +468,90 @@ def create_project_name(download_url, scannable_uri_uuid):
     return f"{slugify(download_url)}-{scannable_uri_uuid[0:8]}"
 
 
-def poll_run_status(project, sleep=10):
+def check_project_run_statuses(project, logger=None):
     """
-    Poll the status of all runs of `project`. Raise a PurlDBException with a
-    message containing the log of the run if the run has stopped, failed, or
-    gone stale, otherwise return None.
+    If any of the runs of this Project has failed, stopped, or gone stale,
+    update the status of the Scannable URI associated with this Project to
+    `failed` and send back a log of the failed runs.
     """
-    runs = project.runs.all()
-    for run in runs:
-        if not poll_until_success(check=get_run_status, sleep=sleep, run=run):
-            status = get_run_status(run)
-            msg = f"Run ended with status {status}:\n\n{run.log}"
-            raise PurlDBException(msg)
+    failed_runs = project.runs.failed()
+    if failed_runs.exists():
+        failure_msgs = []
+        for failed_run in failed_runs:
+            msg = f"{failed_run.pipeline_name} failed:\n\n{failed_run.log}\n"
+            failure_msgs.append(msg)
+        failure_msg = "\n".join(failure_msgs)
+
+        if logger:
+            logger(failure_msg)
+
+        scannable_uri_uuid = project.extra_data.get("scannable_uri_uuid")
+        update_status(
+            scannable_uri_uuid=scannable_uri_uuid,
+            status="failed",
+            scan_log=failure_msg,
+        )
 
 
 def get_run_status(run, **kwargs):
     """Refresh the values of `run` and return its status"""
     run.refresh_from_db()
     return run.status
+
+
+def enrich_package(package):
+    """Enrich the provided ``package`` with the PurlDB data."""
+    package_url = package.package_url
+    project = package.project
+
+    try:
+        purldb_entries = collect_data_for_purl(package_url, raise_on_error=True)
+    except PurlDBException as exception:
+        project.add_error(model="PurlDB", exception=exception, object_instance=package)
+        return
+
+    if not purldb_entries:
+        return
+
+    if len(purldb_entries) == 1:
+        # Single match, all the PurlDB data are used to enrich the package.
+        purldb_entry = purldb_entries[0]
+    else:
+        project.add_warning(
+            model="PurlDB",
+            description=(
+                f'Multiple entries found in the PurlDB for "{package_url}". '
+                f"Using data from the most recent version."
+            ),
+            object_instance=package,
+        )
+        # Do not set version-specific fields, such as the download_url.
+        purldb_entry = {
+            field: value
+            for field, value in purldb_entries[0].items()
+            if field in CROSS_VERSION_COMMON_FIELDS
+        }
+
+    # Remove package_uid as it is not relevant to capture the value from PurlDB.
+    purldb_entry.pop("package_uid", None)
+    package_data = _clean_package_data(purldb_entry)
+    if updated_fields := package.update_from_data(package_data):
+        package.update_extra_data({ENRICH_EXTRA_DATA_KEY: updated_fields})
+        return updated_fields
+
+
+def enrich_discovered_packages(project, logger=logger.info):
+    """Enrich all project discovered packages with the PurlDB data."""
+    packages = project.discoveredpackages.all()
+
+    updated_package_count = 0
+    for package in packages:
+        if updated_fields := enrich_package(package):
+            logger(f"{package} {updated_fields}")
+            updated_package_count += 1
+
+    logger(
+        f"{updated_package_count} discovered package{pluralize(updated_package_count)} "
+        f"enriched with the PurlDB."
+    )
+    return updated_package_count

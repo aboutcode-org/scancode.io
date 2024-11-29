@@ -41,9 +41,7 @@ class ScanPipeDockerPipesTest(TestCase):
     maxDiff = None
 
     def assertResultsEqual(self, expected_file, results, regen=FIXTURES_REGEN):
-        """
-        Set `regen` to True to regenerate the expected results.
-        """
+        """Set `regen` to True to regenerate the expected results."""
         if regen:
             expected_file.write_text(results)
 

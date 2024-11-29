@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import difflib
 import io
@@ -91,6 +91,7 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.pipes import compliance
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
 from scanpipe.pipes import purldb
@@ -344,7 +345,7 @@ class TabSetMixin:
             "datasource_ids",
         ]
 
-        if isinstance(field_value, (list, dict)):
+        if isinstance(field_value, list | dict):
             if field_name not in detection_fields:
                 with suppress(Exception):
                     field_value = render_as_yaml(field_value)
@@ -815,7 +816,8 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             # no pipelines are assigned to the project
             if (not pipeline_runs and not pipeline_class.is_addon)
             # at least one pipeline already exists on the project
-            or pipeline_runs and (name in project_run_names or pipeline_class.is_addon)
+            or pipeline_runs
+            and (name in project_run_names or pipeline_class.is_addon)
         ]
         return pipeline_choices
 
@@ -826,6 +828,9 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
 
     form_class = ProjectSettingsForm
     success_message = 'The project "{}" settings have been updated.'
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related("webhooksubscriptions")
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -840,7 +845,9 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        project = self.get_object()
         context["archive_form"] = ArchiveProjectForm()
+        context["webhook_subscriptions"] = project.webhooksubscriptions.all()
         return context
 
     @staticmethod
@@ -920,7 +927,7 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
             },
             "dependency": {
                 "queryset": project.discovereddependencies,
-                "fields": ["type", "is_runtime", "is_optional", "is_resolved"],
+                "fields": ["type", "is_runtime", "is_optional", "is_pinned"],
             },
         }
 
@@ -1109,6 +1116,25 @@ class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
         context["codebase_breadcrumbs"] = self.get_breadcrumbs(current_dir)
         context["project_details_url"] = self.object.get_absolute_url()
 
+        return context
+
+
+class ProjectCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
+    model = Project
+    template_name = "scanpipe/panels/project_compliance.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        project = self.object
+
+        if not project.policies_enabled:
+            raise Http404
+
+        compliance_alerts = compliance.get_project_compliance_alerts(
+            project=project,
+            fail_level="missing",
+        )
+        context["compliance_alerts"] = compliance_alerts
         return context
 
 
@@ -1443,7 +1469,6 @@ class CodebaseResourceListView(
         },
         {
             "field_name": "compliance_alert",
-            "condition": scanpipe_app.policies_enabled,
             "filter_fieldname": "compliance_alert",
             "filter_is_right": True,
         },
@@ -1474,11 +1499,6 @@ class CodebaseResourceListView(
             .order_by("path")
         )
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["display_compliance_alert"] = scanpipe_app.policies_enabled
-        return context
-
 
 class DiscoveredPackageListView(
     ConditionalLoginRequired,
@@ -1502,7 +1522,6 @@ class DiscoveredPackageListView(
         },
         {
             "field_name": "compliance_alert",
-            "condition": scanpipe_app.policies_enabled,
             "filter_fieldname": "compliance_alert",
         },
         {
@@ -1534,11 +1553,6 @@ class DiscoveredPackageListView(
             .with_resources_count()
             .order_by_package_url()
         )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["display_compliance_alert"] = scanpipe_app.policies_enabled
-        return context
 
 
 class DiscoveredDependencyListView(
@@ -1590,8 +1604,8 @@ class DiscoveredDependencyListView(
             "filter_fieldname": "is_optional",
         },
         {
-            "field_name": "is_resolved",
-            "filter_fieldname": "is_resolved",
+            "field_name": "is_pinned",
+            "filter_fieldname": "is_pinned",
         },
         {
             "field_name": "is_direct",
@@ -1635,7 +1649,6 @@ class DiscoveredLicenseListView(
         "detection_count",
         {
             "field_name": "compliance_alert",
-            "condition": scanpipe_app.policies_enabled,
             "filter_fieldname": "compliance_alert",
         },
     ]
@@ -1655,7 +1668,7 @@ class DiscoveredLicenseListView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["display_compliance_alert"] = scanpipe_app.policies_enabled
+        context["display_compliance_alert"] = self.get_project().policies_enabled
         return context
 
 
@@ -1974,6 +1987,7 @@ class DiscoveredPackageDetailsView(
                 "source_packages",
                 "keywords",
                 "description",
+                "notes",
                 "tag",
             ],
             "icon_class": "fa-solid fa-circle-check",
@@ -2095,9 +2109,13 @@ class DiscoveredPackagePurlDBTabView(ConditionalLoginRequired, generic.DetailVie
         if not purldb.is_configured():
             raise Http404("PurlDB access is not configured.")
 
-        if purldb_entry := purldb.get_package_by_purl(self.object.package_url):
-            fields = self.get_fields_data(purldb_entry)
+        if purldb_entries := purldb.get_packages_for_purl(self.object.package_url):
+            # Always display the most recent version entry.
+            fields = self.get_fields_data(purldb_entries[0])
             context["tab_data"] = {"fields": fields}
+            # Display a warning if multiple packages found in PurlDB for this purl.
+            if len(purldb_entries) > 1:
+                context["has_multiple_purldb_entries"] = True
 
         return context
 
@@ -2162,7 +2180,7 @@ class DiscoveredDependencyDetailsView(
                 "resolved_to_package_uid",
                 "is_runtime",
                 "is_optional",
-                "is_resolved",
+                "is_pinned",
                 "is_direct",
             ],
             "icon_class": "fa-solid fa-info-circle",
@@ -2215,15 +2233,14 @@ class DiscoveredLicenseDetailsView(
 def run_detail_view(request, uuid):
     template = "scanpipe/modals/run_modal_content.html"
     run_qs = Run.objects.select_related("project").prefetch_related(
-        "project__webhooksubscriptions",
+        "webhook_deliveries"
     )
     run = get_object_or_404(run_qs, uuid=uuid)
-    project = run.project
 
     context = {
         "run": run,
-        "project": project,
-        "webhook_subscriptions": project.webhooksubscriptions.all(),
+        "project": run.project,
+        "webhook_deliveries": run.webhook_deliveries.all(),
     }
 
     return render(request, template, context)
@@ -2398,3 +2415,41 @@ class LicenseDetailsView(
             return licenses[key]
         except KeyError:
             raise Http404(f"License {key} not found.")
+
+
+class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
+    model = Project
+    template_name = "scanpipe/project_dependency_tree.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        try:
+            dependency_tree = self.get_dependency_tree(project=self.object)
+        except RecursionError:
+            context["recursion_error"] = True
+            return context
+
+        context["dependency_tree"] = dependency_tree
+        return context
+
+    def get_dependency_tree(self, project):
+        root_packages = project.discoveredpackages.root_packages().order_by("name")
+        project_children = [self.get_node(package) for package in root_packages]
+
+        project_tree = {
+            "name": project.name,
+            "children": project_children,
+        }
+
+        return project_tree
+
+    def get_node(self, package):
+        node = {"name": str(package)}
+        children = [
+            self.get_node(child_package)
+            for child_package in package.children_packages.all()
+        ]
+        if children:
+            node["children"] = children
+        return node

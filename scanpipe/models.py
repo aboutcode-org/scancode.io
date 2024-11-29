@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import inspect
 import json
@@ -92,6 +92,7 @@ from taggit.models import TaggedItemBase
 
 import scancodeio
 from scanpipe import humanize_time
+from scanpipe import policies
 from scanpipe import tasks
 
 logger = logging.getLogger(__name__)
@@ -561,6 +562,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     notes = models.TextField(blank=True)
     settings = models.JSONField(default=dict, blank=True)
     labels = TaggableManager(through=UUIDTaggedItem)
+    purl = models.CharField(
+        max_length=2048,
+        blank=True,
+        help_text=_(
+            "Package URL (PURL) for the project, required for pushing the project's "
+            "scan result to FederatedCode. For example, if the input is an input URL "
+            "like https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz, the "
+            "corresponding PURL would be pkg:npm/lodash@4.17.21."
+        ),
+    )
 
     objects = ProjectQuerySet.as_manager()
 
@@ -637,12 +648,15 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         self.labels.clear()
 
         relationships = [
+            self.webhookdeliveries,
+            self.webhooksubscriptions,
             self.projectmessages,
             self.codebaserelations,
             self.discovereddependencies,
             self.discoveredlicenses,
             self.codebaseresources,
             self.runs,
+            self.inputsources,
         ]
 
         for qs in relationships:
@@ -700,35 +714,34 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         execute_now=False,
     ):
         """Clone this project using the provided ``clone_name`` as new project name."""
-        cloned_project = Project.objects.create(
+        new_project = Project.objects.create(
             name=clone_name,
+            purl=self.purl,
             settings=self.settings if copy_settings else {},
         )
 
         if labels := self.labels.names():
-            cloned_project.labels.add(*labels)
+            new_project.labels.add(*labels)
 
         if copy_inputs:
             # Clone the InputSource instances
             for input_source in self.inputsources.all():
-                input_source.pk = None
-                input_source.project = cloned_project
-                input_source.save()
+                input_source.clone(to_project=new_project)
             # Copy the files from the input work directory
             for input_location in self.inputs():
-                cloned_project.copy_input_from(input_location)
+                new_project.copy_input_from(input_location)
 
         if copy_pipelines:
             for run in self.runs.all():
-                cloned_project.add_pipeline(
+                new_project.add_pipeline(
                     run.pipeline_name, execute_now, selected_groups=run.selected_groups
                 )
 
         if copy_subscriptions:
             for subscription in self.webhooksubscriptions.all():
-                cloned_project.add_webhook_subscription(subscription.target_url)
+                subscription.clone(to_project=new_project)
 
-        return cloned_project
+        return new_project
 
     def _raise_if_run_in_progress(self):
         """
@@ -780,44 +793,56 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if config_directory.exists():
             return config_directory
 
-    def get_input_config_file(self):
+    def get_file_from_work_directory(self, filename):
         """
-        Return the ``scancode-config.yml`` file from the input/ directory
+        Return the ``filename`` file from the input/ directory
         or from the codebase/ immediate subdirectories.
 
         Priority order:
-        1. If a config file exists directly in the input/ directory, return it.
-        2. If exactly one config file exists in a codebase/ immediate subdirectory,
-        return it.
-        3. If multiple config files are found in subdirectories, report an error.
+        1. If a ``filename`` file exists directly in the input/ directory, return it.
+        2. If exactly one ``filename`` file exists in a codebase/ immediate
+        subdirectory, return it.
+        3. If multiple ``filename`` files are found in subdirectories, report an error.
         """
-        config_filename = settings.SCANCODEIO_CONFIG_FILE
+        # Check for the ``filename`` file in the root of the input/ directory.
+        root_file = self.input_path / filename
+        if root_file.exists():
+            return root_file
 
-        # Check for the config file in the root of the input/ directory.
-        root_config_file = self.input_path / config_filename
-        if root_config_file.exists():
-            return root_config_file
+        # Search for files in immediate codebase/ subdirectories.
+        subdir_files = list(self.codebase_path.glob(f"*/{filename}"))
 
-        # Search for config files in immediate codebase/ subdirectories.
-        subdir_config_files = list(self.codebase_path.glob(f"*/{config_filename}"))
+        # If exactly one file is found in codebase/ subdirectories, return it.
+        if len(subdir_files) == 1:
+            return subdir_files[0]
 
-        # If exactly one config file is found in codebase/ subdirectories, return it.
-        if len(subdir_config_files) == 1:
-            return subdir_config_files[0]
-
-        # If multiple config files are found, report an error.
-        if len(subdir_config_files) > 1:
+        # If multiple files are found, report an error.
+        if len(subdir_files) > 1:
             self.add_warning(
-                f"More than one {config_filename} found. "
+                f"More than one {filename} found. "
                 f"Could not determine which one to use.",
                 model="Project",
                 details={
                     "resources": [
-                        str(path.relative_to(self.work_path))
-                        for path in subdir_config_files
+                        str(path.relative_to(self.work_path)) for path in subdir_files
                     ]
                 },
             )
+
+    def get_input_config_file(self):
+        """
+        Return the ``scancode-config.yml`` file from the input/ directory
+        or from the codebase/ immediate subdirectories.
+        """
+        config_filename = settings.SCANCODEIO_CONFIG_FILE
+        return self.get_file_from_work_directory(config_filename)
+
+    def get_input_policies_file(self):
+        """
+        Return the "policies.yml" file from the input/ directory
+        or from the codebase/ immediate subdirectories.
+        """
+        return self.get_file_from_work_directory("policies.yml")
 
     def get_settings_as_yml(self):
         """Return the ``settings`` file content as yml, suitable for a config file."""
@@ -931,7 +956,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if not extensions:
             return self.input_path.glob(pattern)
 
-        if not isinstance(extensions, (list, tuple)):
+        if not isinstance(extensions, list | tuple):
             raise TypeError("extensions should be a list or tuple")
 
         return (
@@ -1185,12 +1210,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         return run
 
-    def add_webhook_subscription(self, target_url):
+    def add_webhook_subscription(self, **kwargs):
         """
         Create a new WebhookSubscription instance with the provided `target_url` for
         the current project.
         """
-        return WebhookSubscription.objects.create(project=self, target_url=target_url)
+        return WebhookSubscription.objects.create(project=self, **kwargs)
 
     @cached_property
     def can_start_pipelines(self):
@@ -1231,7 +1256,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         model="",
         details=None,
         exception=None,
-        resource=None,
+        object_instance=None,
     ):
         """
         Create a ProjectMessage record for this Project.
@@ -1253,9 +1278,18 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             description = str(exception)
 
         details = details or {}
-        if resource:
-            # Do not change this field name as it has special behavior in templates.
-            details["resource_path"] = resource.path
+
+        # The following field names have a special behavior in templates.
+        if isinstance(object_instance, CodebaseResource):
+            details["resource_path"] = object_instance.path
+
+        elif isinstance(object_instance, DiscoveredPackage):
+            details.update(
+                {
+                    "package_url": object_instance.package_url,
+                    "package_uuid": object_instance.uuid,
+                }
+            )
 
         return ProjectMessage.objects.create(
             project=self,
@@ -1272,12 +1306,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         model="",
         details=None,
         exception=None,
-        resource=None,
+        object_instance=None,
     ):
         """Create an INFO ProjectMessage record for this project."""
         severity = ProjectMessage.Severity.INFO
         return self.add_message(
-            severity, description, model, details, exception, resource
+            severity,
+            description,
+            model,
+            details,
+            exception,
+            object_instance,
         )
 
     def add_warning(
@@ -1286,12 +1325,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         model="",
         details=None,
         exception=None,
-        resource=None,
+        object_instance=None,
     ):
         """Create a WARNING ProjectMessage record for this project."""
         severity = ProjectMessage.Severity.WARNING
         return self.add_message(
-            severity, description, model, details, exception, resource
+            severity,
+            description,
+            model,
+            details,
+            exception,
+            object_instance,
         )
 
     def add_error(
@@ -1300,12 +1344,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         model="",
         details=None,
         exception=None,
-        resource=None,
+        object_instance=None,
     ):
         """Create an ERROR ProjectMessage record using for this project."""
         severity = ProjectMessage.Severity.ERROR
         return self.add_message(
-            severity, description, model, details, exception, resource
+            severity,
+            description,
+            model,
+            details,
+            exception,
+            object_instance,
         )
 
     def get_absolute_url(self):
@@ -1404,6 +1453,38 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         project, False otherwise.
         """
         return self.resource_count == 1
+
+    def get_policy_index(self):
+        """
+        Return the policy index for this project instance.
+
+        The policies are loaded from the following locations in that order:
+        1. the project local settings
+        2. the "policies.yml" file in the project input/ directory
+        3. the global app settings license policies
+        """
+        if policies_from_settings := self.get_env("policies"):
+            policies_dict = policies_from_settings
+            if isinstance(policies_from_settings, str):
+                policies_dict = policies.load_policies_yaml(policies_from_settings)
+            return policies.make_license_policy_index(policies_dict)
+
+        elif policies_file := self.get_input_policies_file():
+            policies_dict = policies.load_policies_file(policies_file)
+            return policies.make_license_policy_index(policies_dict)
+
+        else:
+            return scanpipe_app.license_policies_index
+
+    @cached_property
+    def policy_index(self):
+        """Return the cached policy index for this project instance."""
+        return self.get_policy_index()
+
+    @property
+    def policies_enabled(self):
+        """Return True if the policies are enabled for this project."""
+        return bool(self.policy_index)
 
 
 class GroupingQuerySetMixin:
@@ -1527,6 +1608,17 @@ class ProjectRelatedModel(UpdateMixin, models.Model):
     def model_fields(cls):
         return [field.name for field in cls._meta.get_fields()]
 
+    def clone(self, to_project):
+        """Clone this instance as a new instance of the provided ``to_project``."""
+        if to_project == self.project:
+            raise ValueError("Cannot clone instance into the same project.")
+
+        self.pk = None
+        self.project = to_project
+        self.save()
+
+        return self
+
 
 class ProjectMessage(UUIDPKModel, ProjectRelatedModel):
     """Stores messages such as errors and exceptions raised during a pipeline run."""
@@ -1616,7 +1708,7 @@ class SaveProjectMessageMixin:
             model=self.__class__,
             details=model_to_dict(self),
             exception=exception,
-            resource=resource,
+            object_instance=resource,
         )
 
     def add_errors(self, exceptions):
@@ -2007,10 +2099,21 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         """Return a pipelines instance using this Run pipeline_class."""
         return self.pipeline_class(self)
 
-    def deliver_project_subscriptions(self):
-        """Triggers related project webhook subscriptions."""
-        for subscription in self.project.webhooksubscriptions.all():
-            subscription.deliver(pipeline_run=self)
+    def deliver_project_subscriptions(self, has_next_run=False):
+        """Triggers related project Webhook subscriptions."""
+        webhooks = self.project.webhooksubscriptions.active()
+
+        if has_next_run:
+            webhooks = webhooks.filter(trigger_on_each_run=True)
+
+        for webhook in webhooks:
+            webhook.deliver(pipeline_run=self)
+
+    @property
+    def results_url(self):
+        """Return the rendered ``results_url`` if defined on the Pipeline class."""
+        if results_url := self.pipeline_class.results_url:
+            return results_url.format(**self.project.__dict__)
 
     def profile(self, print_results=False):
         """
@@ -2044,6 +2147,36 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                 print(output_str)
 
 
+class ComplianceAlertQuerySetMixin:
+    def compliance_issues(self, severity):
+        """
+        Retrieve compliance issues based on severity.
+        Supported values are 'error', 'warning', and 'missing'.
+        """
+        compliance = self.model.Compliance
+        severity = severity.lower()
+
+        severity_mapping = {
+            "error": [compliance.ERROR.value],
+            "warning": [compliance.ERROR.value, compliance.WARNING.value],
+            "missing": [
+                compliance.ERROR.value,
+                compliance.WARNING.value,
+                compliance.MISSING.value,
+            ],
+        }
+
+        if severity not in severity_mapping:
+            raise ValueError(
+                f"Supported severities are: {', '.join(severity_mapping.keys())}"
+            )
+
+        return self.filter(compliance_alert__in=severity_mapping[severity])
+
+    def has_compliance_alert(self):
+        return self.filter(Q(compliance_alert__exact=CodebaseResource.Compliance.ERROR))
+
+
 def convert_glob_to_django_regex(glob_pattern):
     """
     Convert a glob pattern to an equivalent django regex pattern
@@ -2056,15 +2189,7 @@ def convert_glob_to_django_regex(glob_pattern):
     return escaped_pattern
 
 
-class ComplianceAlertQuerySetMixin:
-    def has_compliance_alert(self):
-        return self.filter(Q(compliance_alert__exact=CodebaseResource.Compliance.ERROR))
-
-
-class CodebaseResourceQuerySet(
-    ComplianceAlertQuerySetMixin,
-    ProjectRelatedQuerySet,
-):
+class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuerySet):
     def prefetch_for_serializer(self):
         """
         Optimized prefetching for a QuerySet to be consumed by the
@@ -2392,7 +2517,7 @@ class ComplianceAlertMixin(models.Model):
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
-        if scanpipe_app.policies_enabled:
+        if self.policies_enabled:
             loaded_license_expression = getattr(self, "_loaded_license_expression", "")
             license_expression = getattr(self, self.license_expression_field, "")
             if license_expression != loaded_license_expression:
@@ -2402,19 +2527,29 @@ class ComplianceAlertMixin(models.Model):
 
         super().save(*args, **kwargs)
 
+    @property
+    def policy_index(self):
+        return self.project.policy_index
+
+    @cached_property
+    def policies_enabled(self):
+        return self.project.policies_enabled
+
     def compute_compliance_alert(self):
         """Compute and return the compliance_alert value from the licenses policies."""
         license_expression = getattr(self, self.license_expression_field, "")
         if not license_expression:
             return ""
 
-        alerts = []
-        policy_index = scanpipe_app.license_policies_index
+        policy_index = self.policy_index
+        if not policy_index:
+            return
 
         licensing = get_licensing()
         parsed = licensing.parse(license_expression, simple=True)
         license_keys = licensing.license_keys(parsed)
 
+        alerts = []
         for license_key in license_keys:
             if policy := policy_index.get(license_key):
                 alerts.append(policy.get("compliance_alert") or self.Compliance.OK)
@@ -2732,7 +2867,7 @@ class CodebaseResource(
 
         Paths are returned in lower-cased sorted path order to reflect the
         behavior of the `commoncode.resource.Resource.children()`
-        https://github.com/nexB/commoncode/blob/main/src/commoncode/resource.py
+        https://github.com/aboutcode-org/commoncode/blob/main/src/commoncode/resource.py
 
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.VirtualCodebase class API.
@@ -2756,8 +2891,7 @@ class CodebaseResource(
         for child in self.children().iterator():
             if topdown:
                 yield child
-            for subchild in child.walk(topdown=topdown):
-                yield subchild
+            yield from child.walk(topdown=topdown)
             if not topdown:
                 yield child
 
@@ -2782,7 +2916,7 @@ class CodebaseResource(
         # This workaround ensures that the entire content of map files is displayed.
         file_type = get_type(self.location)
         if file_type.is_js_map:
-            with open(self.location, "r") as file:
+            with open(self.location) as file:
                 content = json.load(file)
 
             return json.dumps(content, indent=2)
@@ -2806,7 +2940,7 @@ class CodebaseResource(
 
         This is a workaround ScanCode-toolkit breaking down long lines and creating an
         artificially higher number of lines, see:
-        https://github.com/nexB/scancode.io/issues/292#issuecomment-901766139
+        https://github.com/aboutcode-org/scancode.io/issues/292#issuecomment-901766139
         """
         for line_number, lines_group in groupby(numbered_lines, key=itemgetter(0)):
             yield line_number, "".join(line for _, line in lines_group)
@@ -2848,7 +2982,7 @@ class CodebaseResource(
                 model=DiscoveredPackage,
                 details=package_data,
                 exception=exception,
-                resource=self,
+                object_instance=self,
             )
         else:
             self.add_package(package)
@@ -2969,8 +3103,8 @@ class VulnerabilityQuerySetMixin:
 
 class DiscoveredPackageQuerySet(
     VulnerabilityQuerySetMixin,
-    ComplianceAlertQuerySetMixin,
     PackageURLQuerySetMixin,
+    ComplianceAlertQuerySetMixin,
     ProjectRelatedQuerySet,
 ):
     def with_resources_count(self):
@@ -2994,6 +3128,27 @@ class DiscoveredPackageQuerySet(
         Minimum requirements to render a Package link in the UI.
         """
         return self.only("uuid", *PACKAGE_URL_FIELDS)
+
+    def filter(self, *args, **kwargs):
+        """Add support for using ``package_url`` as a field lookup."""
+        if purl_str := kwargs.pop("package_url", None):
+            return super().filter(*args, **kwargs).for_package_url(purl_str)
+
+        return super().filter(*args, **kwargs)
+
+    def non_root_packages(self):
+        """
+        Return packages that have at least one package parent.
+        Those are used as part of a ``Dependency.resolved_to`` FK.
+        """
+        return self.filter(resolved_from_dependencies__isnull=False)
+
+    def root_packages(self):
+        """
+        Return packages that are directly related to the Project.
+        Those packages are not used as part of a ``Dependency.resolved_to`` FK.
+        """
+        return self.filter(resolved_from_dependencies__isnull=True)
 
 
 class AbstractPackage(models.Model):
@@ -3261,6 +3416,7 @@ class DiscoveredPackage(
         help_text=_("Unique identifier for this package."),
     )
     keywords = models.JSONField(default=list, blank=True)
+    notes = models.TextField(blank=True)
     source_packages = models.JSONField(default=list, blank=True)
     tag = models.CharField(blank=True, max_length=50)
 
@@ -3586,8 +3742,7 @@ class DiscoveredDependency(
     manifest or lockfile.
     """
 
-    # Overrides the `project` field from `ProjectRelatedModel` to set the proper
-    # `related_name`.
+    # Overrides the `project` field to set the proper `related_name`.
     project = models.ForeignKey(
         Project,
         related_name="discovereddependencies",
@@ -3656,7 +3811,7 @@ class DiscoveredDependency(
         default=False,
         help_text=_("True if this dependency is an optional dependency"),
     )
-    is_resolved = models.BooleanField(
+    is_pinned = models.BooleanField(
         default=False,
         help_text=_(
             "True if this dependency version requirement has been pinned "
@@ -3678,7 +3833,7 @@ class DiscoveredDependency(
         verbose_name_plural = "discovered dependencies"
         ordering = [
             "-is_runtime",
-            "-is_resolved",
+            "-is_pinned",
             "is_optional",
             "dependency_uid",
             "for_package",
@@ -3689,7 +3844,7 @@ class DiscoveredDependency(
             models.Index(fields=["scope"]),
             models.Index(fields=["is_runtime"]),
             models.Index(fields=["is_optional"]),
-            models.Index(fields=["is_resolved"]),
+            models.Index(fields=["is_pinned"]),
             models.Index(fields=["is_direct"]),
         ]
         constraints = [
@@ -4052,12 +4207,61 @@ def normalize_package_url_data(purl_mapping, ignore_nulls=False):
     return normalized_purl_mapping
 
 
+class WebhookSubscriptionQuerySet(ProjectRelatedQuerySet):
+    def active(self):
+        return self.filter(is_active=True)
+
+
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
-    target_url = models.URLField(_("Target URL"), max_length=1024)
-    created_date = models.DateTimeField(auto_now_add=True, editable=False)
-    response_status_code = models.PositiveIntegerField(null=True, blank=True)
-    response_text = models.TextField(blank=True)
-    delivery_error = models.TextField(blank=True)
+    """
+    A model to define Webhook subscriptions for Project pipeline execution events.
+
+    This model captures the necessary details to configure a Webhook, including the
+    target URL and the specific events that trigger the Webhook.
+    It allows for customization on whether  the Webhook should be triggered on each
+    pipeline run and whether to include summary or result data in the payload.
+    """
+
+    target_url = models.URLField(
+        _("Target URL"),
+        max_length=1024,
+        blank=False,
+        help_text=_(
+            "The URL to which the POST request will be sent when the Webhook is "
+            "triggered."
+        ),
+    )
+    trigger_on_each_run = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Trigger the Webhook after each individual pipeline run instead of only "
+            "after all runs are completed."
+        ),
+    )
+    include_summary = models.BooleanField(
+        default=False,
+        help_text=_("Include the entire summary data in the payload."),
+    )
+    include_results = models.BooleanField(
+        default=False,
+        help_text=_("Include the entire results data in the payload."),
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text=_(
+            "Indicates whether the Webhook is currently active and should be triggered."
+        ),
+    )
+    created_date = models.DateTimeField(
+        auto_now_add=True,
+        editable=False,
+        help_text=_("The date and time when the Webhook subscription was created."),
+    )
+
+    objects = WebhookSubscriptionQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["-created_date"]
 
     def __str__(self):
         return str(self.uuid)
@@ -4066,6 +4270,7 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         """Return the Webhook payload generated from project and pipeline_run data."""
         from scanpipe.api.serializers import ProjectSerializer
         from scanpipe.api.serializers import RunSerializer
+        from scanpipe.pipes.output import to_json
 
         project_serializer = ProjectSerializer(
             instance=self.project,
@@ -4080,36 +4285,135 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             "run": run_serializer.data,
         }
 
+        if self.include_summary:
+            summary_file = self.project.get_latest_output(filename="summary")
+            summary = json.loads(summary_file.read_text()) if summary_file else {}
+            payload["summary"] = summary
+
+        if self.include_results:
+            results_file = to_json(self.project)
+            payload["results"] = json.loads(results_file.read_text())
+
         return payload
 
-    def deliver(self, pipeline_run):
+    def deliver(self, pipeline_run, timeout=10):
         """Deliver this Webhook by sending a POST request to the `target_url`."""
-        payload = self.get_payload(pipeline_run)
+        logger.info(f"Delivering Webhook {self.uuid}")
 
-        logger.info(f"Sending Webhook uuid={self.uuid}.")
+        if not self.is_active:
+            logger.info(f"Webhook {self.uuid} is not active.")
+            return False
+
+        payload = self.get_payload(pipeline_run)
+        delivery = WebhookDelivery(
+            project=self.project,
+            webhook_subscription=self,
+            run=pipeline_run,
+            target_url=self.target_url,
+            payload=payload,
+        )
+
         try:
             response = requests.post(
                 url=self.target_url,
                 data=json.dumps(payload, cls=DjangoJSONEncoder),
                 headers={"Content-Type": "application/json"},
-                timeout=10,
+                timeout=timeout,
             )
         except requests.exceptions.RequestException as exception:
-            logger.info(exception)
-            self.update(delivery_error=str(exception))
-            return False
+            logger.error(exception)
+            delivery.delivery_error = str(exception)
+            delivery.save()
+            return delivery
 
-        self.update(
-            response_status_code=response.status_code,
-            response_text=response.text,
-        )
+        delivery.response_status_code = response.status_code
+        delivery.response_text = response.text
+        delivery.save()
 
-        if self.success:
-            logger.info(f"Webhook uuid={self.uuid} delivered and received.")
+        if delivery.success:
+            logger.info(f"Webhook {self.uuid} delivered successfully.")
         else:
-            logger.info(f"Webhook uuid={self.uuid} returned a {response.status_code}.")
+            logger.info(f"Webhook {self.uuid} returned a {response.status_code}.")
 
-        return True
+        return delivery
+
+
+class WebhookDelivery(UUIDPKModel, ProjectRelatedModel):
+    """
+    Stores historical data for Webhook deliveries.
+
+    This model keeps track of each delivery attempt made by a Webhook subscription,
+    including the payload sent, the response received, and any errors that occurred
+    during the delivery process.
+    """
+
+    # Overrides the `project` field to set the proper `related_name`.
+    project = models.ForeignKey(
+        Project,
+        related_name="webhookdeliveries",
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+    webhook_subscription = models.ForeignKey(
+        WebhookSubscription,
+        related_name="deliveries",
+        editable=False,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        help_text=_("The Webhook subscription associated with this delivery."),
+    )
+    run = models.ForeignKey(
+        Run,
+        related_name="webhook_deliveries",
+        editable=False,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        help_text=_("The Pipeline Run associated with this delivery."),
+    )
+    target_url = models.URLField(
+        _("Target URL"),
+        max_length=1024,
+        blank=False,
+        help_text=_(
+            "Stores a copy of the Webhook target URL in case the subscription object "
+            "is deleted."
+        ),
+    )
+    sent_date = models.DateTimeField(
+        auto_now_add=True,
+        editable=False,
+        help_text=_("The date and time when the Webhook was sent."),
+    )
+    payload = models.JSONField(
+        blank=True,
+        default=dict,
+        help_text=_("The JSON payload that was sent to the target URL."),
+    )
+    response_status_code = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=_(
+            "The HTTP status code received in response to the Webhook request."
+        ),
+    )
+    response_text = models.TextField(
+        blank=True,
+        help_text=_("The text response received from the target URL."),
+    )
+    delivery_error = models.TextField(
+        blank=True,
+        help_text=_("Any error messages encountered during the Webhook delivery."),
+    )
+
+    class Meta:
+        verbose_name = _("webhook delivery")
+        verbose_name_plural = _("webhook deliveries")
+        ordering = ["-sent_date"]
+
+    def __str__(self):
+        return f"Webhook uuid={self.uuid} posted at {self.sent_date}"
 
     @property
     def delivered(self):

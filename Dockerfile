@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,18 +18,18 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-FROM --platform=linux/amd64 python:3.12-slim
+FROM python:3.12-slim
 
-LABEL org.opencontainers.image.source="https://github.com/nexB/scancode.io"
+LABEL org.opencontainers.image.source="https://github.com/aboutcode-org/scancode.io"
 LABEL org.opencontainers.image.description="ScanCode.io"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 
 ENV APP_NAME scancodeio
 ENV APP_USER app
 ENV APP_DIR /opt/$APP_NAME
-ENV VIRTUAL_ENV /opt/$APP_NAME/venv
+ENV VENV_LOCATION /opt/$APP_NAME/.venv
 
 # Force Python unbuffered stdout and stderr (they are flushed to terminal immediately)
 ENV PYTHONUNBUFFERED 1
@@ -78,9 +78,9 @@ WORKDIR $APP_DIR
 USER $APP_USER
 
 # Create the virtualenv
-RUN python -m venv $VIRTUAL_ENV
+RUN python -m venv $VENV_LOCATION
 # Enable the virtualenv, similar effect as "source activate"
-ENV PATH $VIRTUAL_ENV/bin:$PATH
+ENV PATH $VENV_LOCATION/bin:$PATH
 
 # Create static/ and workspace/ directories
 RUN mkdir -p /var/$APP_NAME/static/ \

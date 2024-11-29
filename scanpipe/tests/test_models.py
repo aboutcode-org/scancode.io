@@ -46,8 +46,10 @@ from django.test import TestCase
 from django.test import TransactionTestCase
 from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
+from django.urls import reverse
 from django.utils import timezone
 
+import saneyaml
 from packagedcode.models import PackageData
 from packageurl import PackageURL
 from requests.exceptions import RequestException
@@ -64,6 +66,7 @@ from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.models import RunNotAllowedToStart
 from scanpipe.models import UUIDTaggedItem
+from scanpipe.models import WebhookSubscription
 from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.models import get_project_work_directory
 from scanpipe.models import normalize_package_url_data
@@ -174,8 +177,11 @@ class ScanPipeModelsTest(TestCase):
             "scanpipe.DiscoveredLicense": 0,
             "scanpipe.DiscoveredPackage": 1,
             "scanpipe.DiscoveredPackage_codebase_resources": 1,
+            "scanpipe.InputSource": 0,
             "scanpipe.ProjectMessage": 0,
             "scanpipe.Run": 1,
+            "scanpipe.WebhookDelivery": 0,
+            "scanpipe.WebhookSubscription": 0,
         }
         self.assertEqual(expected, delete_log)
         # Make sure the labels were deleted too.
@@ -235,7 +241,9 @@ class ScanPipeModelsTest(TestCase):
         new_file_path1.touch()
         run1 = self.project1.add_pipeline("analyze_docker_image", selected_groups=["g"])
         run2 = self.project1.add_pipeline("find_vulnerabilities")
-        subscription1 = self.project1.add_webhook_subscription("http://domain.url")
+        subscription1 = self.project1.add_webhook_subscription(
+            target_url="http://domain.url"
+        )
 
         cloned_project = self.project1.clone("cloned project")
         self.assertIsInstance(cloned_project, Project)
@@ -381,9 +389,9 @@ class ScanPipeModelsTest(TestCase):
         self.project1.copy_input_from(self.data / "aboutcode" / "notice.NOTICE")
         self.project1.add_input_source(filename="missing.zip", is_uploaded=True)
 
-        uuid1, uuid2 = [
+        uuid1, uuid2 = (
             str(input_source.uuid) for input_source in self.project1.inputsources.all()
-        ]
+        )
 
         expected = [
             {
@@ -535,7 +543,7 @@ class ScanPipeModelsTest(TestCase):
 
     def test_scanpipe_project_model_add_webhook_subscription(self):
         self.assertEqual(0, self.project1.webhooksubscriptions.count())
-        self.project1.add_webhook_subscription("https://localhost")
+        self.project1.add_webhook_subscription(target_url="https://localhost")
         self.assertEqual(1, self.project1.webhooksubscriptions.count())
 
     def test_scanpipe_project_model_get_next_run(self):
@@ -592,6 +600,19 @@ class ScanPipeModelsTest(TestCase):
         self.assertIsNone(CodebaseResource.objects.get_or_none(path="path/"))
         self.assertIsNone(DiscoveredPackage.objects.get_or_none(name="name"))
 
+    def test_scanpipe_project_related_model_clone(self):
+        subscription1 = self.project1.add_webhook_subscription(
+            target_url="http://domain.url"
+        )
+
+        new_project = Project.objects.create(name="New Project")
+        subscription1.clone(to_project=new_project)
+
+        cloned_subscription = new_project.webhooksubscriptions.get()
+        subscription1 = self.project1.webhooksubscriptions.get()
+        self.assertEqual(new_project, cloned_subscription.project)
+        self.assertNotEqual(cloned_subscription.pk, subscription1.pk)
+
     def test_scanpipe_project_get_codebase_config_directory(self):
         self.assertIsNone(self.project1.get_codebase_config_directory())
         (self.project1.codebase_path / settings.SCANCODEIO_CONFIG_DIR).mkdir()
@@ -637,6 +658,45 @@ class ScanPipeModelsTest(TestCase):
         sub_dir1_config_file.touch()
         # Search for config files *ONLY* in immediate codebase/ subdirectories.
         self.assertIsNone(self.project1.get_input_config_file())
+
+    def test_scanpipe_project_get_input_policies_file(self):
+        self.assertIsNone(self.project1.get_input_policies_file())
+
+        policies_file = self.project1.input_path / "policies.yml"
+        policies_file.touch()
+        policies_file_location = str(self.project1.get_input_policies_file())
+        self.assertTrue(policies_file_location.endswith("input/policies.yml"))
+
+    def test_scanpipe_project_model_get_policy_index(self):
+        scanpipe_app.license_policies_index = None
+        self.assertFalse(self.project1.policies_enabled)
+
+        policies_from_app_settings = {"from": "scanpipe_app"}
+        scanpipe_app.license_policies_index = policies_from_app_settings
+        self.assertEqual(policies_from_app_settings, self.project1.get_policy_index())
+
+        policies_from_input_dir = {"license_policies": [{"license_key": "input_dir"}]}
+        policies_file = self.project1.input_path / "policies.yml"
+        policies_file.touch()
+        policies_as_yaml = saneyaml.dump(policies_from_input_dir)
+        policies_file.write_text(policies_as_yaml)
+        expected_index_from_input = {"input_dir": {"license_key": "input_dir"}}
+        self.assertEqual(expected_index_from_input, self.project1.get_policy_index())
+        # Refresh the instance to bypass the cached_property cache.
+        self.project1 = Project.objects.get(uuid=self.project1.uuid)
+        self.assertTrue(self.project1.policies_enabled)
+
+        policies_from_project_env = {
+            "license_policies": [{"license_key": "project_env"}]
+        }
+        config = {"policies": policies_from_project_env}
+        self.project1.settings = config
+        self.project1.save()
+        expected_index_from_env = {"project_env": {"license_key": "project_env"}}
+        self.assertEqual(expected_index_from_env, self.project1.get_policy_index())
+
+        # Reset the index value
+        scanpipe_app.license_policies_index = None
 
     def test_scanpipe_project_get_settings_as_yml(self):
         self.assertEqual("{}\n", self.project1.get_settings_as_yml())
@@ -854,7 +914,9 @@ class ScanPipeModelsTest(TestCase):
             run1.set_scancodeio_version()
         self.assertEqual("v32.3.0-28-g0000000", run1.scancodeio_version)
 
-        expected = "https://github.com/nexB/scancode.io/compare/0000000..ffffffff"
+        expected = (
+            "https://github.com/aboutcode-org/scancode.io/compare/0000000..ffffffff"
+        )
         with mock.patch("scancodeio.__version__", "v31.0.0-1-gffffffff"):
             self.assertEqual(expected, run1.get_diff_url())
 
@@ -1199,10 +1261,27 @@ class ScanPipeModelsTest(TestCase):
 
     @mock.patch("scanpipe.models.WebhookSubscription.deliver")
     def test_scanpipe_run_model_deliver_project_subscriptions(self, mock_deliver):
-        self.project1.add_webhook_subscription("https://localhost")
+        self.project1.add_webhook_subscription(target_url="https://localhost")
         run1 = self.create_run()
+
+        run1.deliver_project_subscriptions(has_next_run=True)
+        mock_deliver.assert_not_called()
+
         run1.deliver_project_subscriptions()
         mock_deliver.assert_called_once_with(pipeline_run=run1)
+
+    def test_scanpipe_run_model_results_url(self):
+        run1 = self.create_run(pipeline="scan_codebase")
+        self.assertEqual("", run1.pipeline_class.results_url)
+        self.assertIsNone(run1.results_url)
+
+        run2 = self.create_run(pipeline="find_vulnerabilities")
+        self.assertEqual(
+            "/project/{slug}/packages/?is_vulnerable=yes",
+            run2.pipeline_class.results_url,
+        )
+        packages_url = reverse("project_packages", args=[self.project1.slug])
+        self.assertEqual(f"{packages_url}?is_vulnerable=yes", run2.results_url)
 
     def test_scanpipe_run_model_profile_method(self):
         run1 = self.create_run()
@@ -1363,7 +1442,7 @@ class ScanPipeModelsTest(TestCase):
         copy_input(map_file_path, self.project1.codebase_path)
         resource = self.project1.codebaseresources.create(path="main.js.map")
 
-        with open(map_file_path, "r") as file:
+        with open(map_file_path) as file:
             expected = json.load(file)
 
         result = json.loads(resource.file_content)
@@ -1793,6 +1872,8 @@ class ScanPipeModelsTest(TestCase):
         for purl, expected_count in inputs:
             qs = DiscoveredPackage.objects.for_package_url(purl)
             self.assertEqual(expected_count, qs.count(), msg=purl)
+            qs2 = DiscoveredPackage.objects.filter(package_url=purl)
+            self.assertEqual(expected_count, qs2.count(), msg=purl)
 
     def test_scanpipe_discovered_package_queryset_vulnerable(self):
         p1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
@@ -1802,6 +1883,23 @@ class ScanPipeModelsTest(TestCase):
         )
         self.assertNotIn(p1, DiscoveredPackage.objects.vulnerable())
         self.assertIn(p2, DiscoveredPackage.objects.vulnerable())
+
+    def test_scanpipe_discovered_package_queryset_dependency_methods(self):
+        project = Project.objects.create(name="project")
+        a = make_package(project, "pkg:type/a")
+        b = make_package(project, "pkg:type/b")
+        c = make_package(project, "pkg:type/c")
+        z = make_package(project, "pkg:type/z")
+        # Project -> A -> B -> C
+        # Project -> Z
+        make_dependency(project, for_package=a, resolved_to_package=b)
+        make_dependency(project, for_package=b, resolved_to_package=c)
+
+        project_packages_qs = project.discoveredpackages.order_by("name")
+        root_packages = project_packages_qs.root_packages()
+        self.assertEqual([a, z], list(root_packages))
+        non_root_packages = project_packages_qs.non_root_packages()
+        self.assertEqual([b, c], list(non_root_packages))
 
     @skipIf(sys.platform != "linux", "Ordering differs on macOS.")
     def test_scanpipe_codebase_resource_model_walk_method(self):
@@ -1895,36 +1993,54 @@ class ScanPipeModelsTest(TestCase):
         result = [r.path for r in resource1.walk()]
         self.assertEqual(expected_paths, result)
 
+    def test_scanpipe_webhook_subscription_model_create(self):
+        webhook = WebhookSubscription.objects.create(
+            project=self.project1,
+            target_url="https://url",
+        )
+        self.assertEqual("https://url", webhook.target_url)
+        self.assertFalse(webhook.trigger_on_each_run)
+        self.assertFalse(webhook.include_summary)
+        self.assertFalse(webhook.include_results)
+        self.assertTrue(webhook.is_active)
+
     @mock.patch("requests.post")
     def test_scanpipe_webhook_subscription_model_deliver_method(self, mock_post):
-        webhook = self.project1.add_webhook_subscription("https://localhost")
-        self.assertFalse(webhook.delivered)
+        webhook = self.project1.add_webhook_subscription(target_url="https://url")
         run1 = self.create_run()
 
         mock_post.side_effect = RequestException("Error from exception")
-        self.assertFalse(webhook.deliver(pipeline_run=run1))
-        webhook.refresh_from_db()
-        self.assertEqual("Error from exception", webhook.delivery_error)
-        self.assertFalse(webhook.delivered)
-        self.assertFalse(webhook.success)
+        webhook_delivery = webhook.deliver(pipeline_run=run1)
+        self.assertEqual(run1, webhook_delivery.run)
+        self.assertEqual("", webhook_delivery.response_text)
+        self.assertIsNone(webhook_delivery.response_status_code)
+        self.assertEqual("Error from exception", webhook_delivery.delivery_error)
+        self.assertFalse(webhook_delivery.delivered)
+        self.assertFalse(webhook_delivery.success)
 
         mock_post.side_effect = None
         mock_post.return_value = mock.Mock(status_code=404, text="text")
-        self.assertTrue(webhook.deliver(pipeline_run=run1))
-        webhook.refresh_from_db()
-        self.assertTrue(webhook.delivered)
-        self.assertFalse(webhook.success)
-        self.assertEqual("text", webhook.response_text)
+        webhook_delivery = webhook.deliver(pipeline_run=run1)
+        self.assertEqual(run1, webhook_delivery.run)
+        self.assertEqual("text", webhook_delivery.response_text)
+        self.assertEqual(404, webhook_delivery.response_status_code)
+        self.assertEqual("", webhook_delivery.delivery_error)
+        self.assertTrue(webhook_delivery.delivered)
+        self.assertFalse(webhook_delivery.success)
 
         mock_post.return_value = mock.Mock(status_code=200, text="text")
-        self.assertTrue(webhook.deliver(pipeline_run=run1))
-        webhook.refresh_from_db()
-        self.assertTrue(webhook.delivered)
-        self.assertTrue(webhook.success)
-        self.assertEqual("text", webhook.response_text)
+        webhook_delivery = webhook.deliver(pipeline_run=run1)
+        self.assertEqual(run1, webhook_delivery.run)
+        self.assertEqual("text", webhook_delivery.response_text)
+        self.assertEqual(200, webhook_delivery.response_status_code)
+        self.assertEqual("", webhook_delivery.delivery_error)
+        self.assertTrue(webhook_delivery.delivered)
+        self.assertTrue(webhook_delivery.success)
+
+        self.assertEqual(3, webhook.deliveries.count())
 
     def test_scanpipe_webhook_subscription_model_get_payload(self):
-        webhook = self.project1.add_webhook_subscription("https://localhost")
+        webhook = self.project1.add_webhook_subscription(target_url="https://localhost")
         run1 = self.create_run()
         payload = webhook.get_payload(run1)
 
@@ -1932,6 +2048,7 @@ class ScanPipeModelsTest(TestCase):
             "project": {
                 "name": "Analysis",
                 "uuid": str(self.project1.uuid),
+                "purl": "",
                 "is_archived": False,
                 "notes": "",
                 "labels": [],
@@ -1956,7 +2073,7 @@ class ScanPipeModelsTest(TestCase):
                     "total": 0,
                     "is_runtime": 0,
                     "is_optional": 0,
-                    "is_resolved": 0,
+                    "is_pinned": 0,
                 },
                 "codebase_relations_summary": {},
                 "results_url": f"/api/projects/{self.project1.uuid}/results/",
@@ -1983,6 +2100,13 @@ class ScanPipeModelsTest(TestCase):
         del payload["project"]["created_date"]
         del payload["run"]["created_date"]
         self.assertDictEqual(expected, payload)
+
+        webhook.include_summary = True
+        webhook.include_results = True
+        webhook.save()
+        payload = webhook.get_payload(run1)
+        self.assertIn("summary", payload)
+        self.assertIn("results", payload)
 
     def test_scanpipe_discovered_package_model_extract_purl_data(self):
         package_data = {}
@@ -2260,6 +2384,7 @@ class ScanPipeModelsTest(TestCase):
             "resolved_from_dependencies",
             "parent_packages",
             "children_packages",
+            "notes",
         ]
 
         package_data_only_field = ["datasource_id", "dependencies"]
@@ -2352,6 +2477,29 @@ class ScanPipeModelsTest(TestCase):
         paths = [str(resource.path) for resource in project.codebaseresources.elfs()]
         self.assertTrue("e" in paths)
         self.assertTrue("a" in paths)
+
+    def test_scanpipe_model_codebase_resource_compliance_alert_queryset_mixin(self):
+        severities = CodebaseResource.Compliance
+        make_resource_file(self.project1, path="none")
+        make_resource_file(self.project1, path="ok", compliance_alert=severities.OK)
+        warning = make_resource_file(
+            self.project1, path="warning", compliance_alert=severities.WARNING
+        )
+        error = make_resource_file(
+            self.project1, path="error", compliance_alert=severities.ERROR
+        )
+        missing = make_resource_file(
+            self.project1, path="missing", compliance_alert=severities.MISSING
+        )
+
+        qs = CodebaseResource.objects.order_by("path")
+        self.assertQuerySetEqual(qs.compliance_issues(severities.ERROR), [error])
+        self.assertQuerySetEqual(
+            qs.compliance_issues(severities.WARNING), [error, warning]
+        )
+        self.assertQuerySetEqual(
+            qs.compliance_issues(severities.MISSING), [error, missing, warning]
+        )
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
@@ -2617,7 +2765,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual("install", dependency.scope)
         self.assertTrue(dependency.is_runtime)
         self.assertFalse(dependency.is_optional)
-        self.assertFalse(dependency.is_resolved)
+        self.assertFalse(dependency.is_pinned)
         self.assertEqual(
             "pkg:pypi/dask?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692",
             dependency.dependency_uid,
