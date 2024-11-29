@@ -129,10 +129,9 @@ Using cURL:
 .. tip::
 
     You can declare multiple pipelines to be executed at the project creation using a
-    list of pipeline names or a comma-separated string:
+    list of pipeline names:
 
-    - ``"pipeline": ["scan_single_package", "scan_for_virus"]``
-    - ``"pipeline": "scan_single_package,scan_for_virus"``
+    ``"pipeline": ["scan_single_package", "scan_for_virus"]``
 
 .. tip::
 
