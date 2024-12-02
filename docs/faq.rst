@@ -16,7 +16,7 @@ and run the appropriate pipeline.
 ScanCode.io offers several :ref:`built_in_pipelines` depending on your input, see
 the :ref:`faq_which_pipeline` below.
 
-As an alternative, I you simply which to run a pipeline without installing ScanCode.io
+As an alternative, If you simply which to run a pipeline without installing ScanCode.io
 you may use the Docker image to run pipelines as a single command:
 
 .. code-block:: bash
@@ -41,7 +41,7 @@ Here are some general guidelines based on different input scenarios:
 - If you have a **Docker image** as input, use the
   :ref:`analyze_docker_image <pipeline_analyze_docker_image>` pipeline.
 - For a full **codebase compressed as an archive**, optionally also with
-  it's **pre-resolved dependenices**, and want to detect all the packages
+  it's **pre-resolved dependencies**, and want to detect all the packages
   present linked with their respective files, use the
   :ref:`scan_codebase <pipeline_scan_codebase>` pipeline.
 - If you have a **single package archive**, and you want to get information
@@ -58,7 +58,7 @@ Here are some general guidelines based on different input scenarios:
   resolve packages from their package requirements, use the
   :ref:`resolve_dependencies <pipeline_resolve_dependencies>` pipeline.
 - When you have application **package archives/codebases** and optionally also
-  their **pre-resolved dependenices** and you want to **inspect packages**
+  their **pre-resolved dependencies** and you want to **inspect packages**
   present in the package manifests and dependency, use the
   :ref:`inspect_packages <pipeline_inspect_packages>` pipeline.
 - For scenarios involving both a **development and deployment codebase**, consider using
@@ -102,8 +102,8 @@ data:
 .. image:: images/license-clarity-scan-summary.png
 
 In contrast, the :ref:`scan_codebase <pipeline_scan_codebase>` pipeline is more of a
-general purpose pipeline and make no such single package assumption.
-It does not not compute such summary.
+general purpose pipeline and makes no such single package assumption.
+It does not compute such summary.
 
 You can also have a look at the different steps for each pipeline from the
 :ref:`built_in_pipelines` documentation.
@@ -278,3 +278,8 @@ data older than 7 days::
 
   See :ref:`command_line_interface` chapter for more information about the scanpipe
   command.
+
+How can I provide my license policies ?
+---------------------------------------
+
+For detailed information about the policies system, refer to :ref:`policies`.

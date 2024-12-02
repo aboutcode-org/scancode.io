@@ -6,6 +6,10 @@ Built-in Pipelines
 Pipelines in ScanCode.io are Python scripts that facilitate code analysis by
 executing a sequence of steps. The platform provides the following built-in pipelines:
 
+.. note::
+    Some pipelines have optional steps which are enabled only when they are
+    selected explicitly.
+
 .. tip::
     If you are unsure which pipeline suits your requirements best, check out the
     :ref:`faq_which_pipeline` section for guidance.
@@ -185,6 +189,20 @@ Populate PurlDB (addon)
     ScanCode.io instance.
 
 .. autoclass:: scanpipe.pipelines.populate_purldb.PopulatePurlDB()
+    :members:
+    :member-order: bysource
+
+.. _pipeline_publish_to_federatedcode:
+
+Publish To FederatedCode (addon)
+--------------------------------
+
+.. warning::
+    This pipeline requires access to a FederatedCode service.
+    Refer to :ref:`scancodeio_settings_federatedcode` to configure access to
+    FederatedCode in your ScanCode.io instance.
+
+.. autoclass:: scanpipe.pipelines.publish_to_federatedcode.PublishToFederatedCode()
     :members:
     :member-order: bysource
 

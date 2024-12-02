@@ -84,9 +84,6 @@ class OrderedMultiplePipelineChoiceField(serializers.MultipleChoiceField):
         if not self.allow_empty and len(data) == 0:
             self.fail("empty")
 
-        # Adds support for providing pipeline names as a comma-separated single string.
-        data = [item.strip() for value in data for item in value.split(",")]
-
         # Pipeline validation
         for pipeline in data:
             pipeline_name, _ = scanpipe_app.extract_group_from_pipeline(pipeline)
@@ -209,6 +206,7 @@ class ProjectSerializer(
             "name",
             "url",
             "uuid",
+            "purl",
             "upload_file",
             "upload_file_tag",
             "input_urls",

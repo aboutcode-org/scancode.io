@@ -1,0 +1,6 @@
+policies:
+ - license_policies:
+    - license_key: mpl-2.0
+      compliance_alert: warning
+    - license_key: gpl-3.0
+      compliance_alert: error

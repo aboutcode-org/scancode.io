@@ -1,7 +1,27 @@
 Changelog
 =========
 
-v34.9.0 (unreleased)
+v34.9.1 (unreleased)
+--------------------
+
+- Add the ability to filter on Project endpoint API actions.
+  The list of ``resources``, ``packages``, ``dependencies``, ``relations``, and
+  ``messages`` can be filtered providing the ``?field_name=value`` in the URL
+  parameters.
+  https://github.com/aboutcode-org/scancode.io/issues/1449
+
+- Fix the ability to provide multiple optional step when defining pipelines in the
+  REST API.
+  The support for providing pipeline names as a comma-separated single string was
+  remove as the comma is used as the optional step separator.
+  Use a list of pipeline names instead.
+  https://github.com/aboutcode-org/scancode.io/issues/1454
+
+- Make the header row of tables sticky to the top of the screen so it is always
+  visible.
+  https://github.com/aboutcode-org/scancode.io/issues/1457
+
+v34.9.0 (2024-11-14)
 --------------------
 
 - Add ability to declared pipeline selected groups in create project REST API endpoint.
@@ -9,6 +29,24 @@ v34.9.0 (unreleased)
 
 - Add a new ``list-pipelines`` management command.
   https://github.com/aboutcode-org/scancode.io/issues/1397
+
+- Refactor the policies related code to its own module.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
+- Add support for project-specific license policies and compliance alerts.
+  Enhance Project model to handle policies from local settings, project input
+  "policies.yml" files, or global app settings.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
+- Refactor the ``group`` decorator for pipeline steps as ``optional_step``.
+  The steps decorated as optional are not included by default anymore.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
+- Add a new ``PublishToFederatedCode`` pipeline (addon) to push scan result
+  to FederatedCode.
+  https://github.com/nexB/scancode.io/pull/1400
+
+- Add new ``purl`` field to project model. https://github.com/nexB/scancode.io/pull/1400
 
 v34.8.3 (2024-10-30)
 --------------------

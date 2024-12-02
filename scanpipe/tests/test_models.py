@@ -49,6 +49,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
+import saneyaml
 from packagedcode.models import PackageData
 from packageurl import PackageURL
 from requests.exceptions import RequestException
@@ -659,6 +660,45 @@ class ScanPipeModelsTest(TestCase):
         sub_dir1_config_file.touch()
         # Search for config files *ONLY* in immediate codebase/ subdirectories.
         self.assertIsNone(self.project1.get_input_config_file())
+
+    def test_scanpipe_project_get_input_policies_file(self):
+        self.assertIsNone(self.project1.get_input_policies_file())
+
+        policies_file = self.project1.input_path / "policies.yml"
+        policies_file.touch()
+        policies_file_location = str(self.project1.get_input_policies_file())
+        self.assertTrue(policies_file_location.endswith("input/policies.yml"))
+
+    def test_scanpipe_project_model_get_policy_index(self):
+        scanpipe_app.license_policies_index = None
+        self.assertFalse(self.project1.policies_enabled)
+
+        policies_from_app_settings = {"from": "scanpipe_app"}
+        scanpipe_app.license_policies_index = policies_from_app_settings
+        self.assertEqual(policies_from_app_settings, self.project1.get_policy_index())
+
+        policies_from_input_dir = {"license_policies": [{"license_key": "input_dir"}]}
+        policies_file = self.project1.input_path / "policies.yml"
+        policies_file.touch()
+        policies_as_yaml = saneyaml.dump(policies_from_input_dir)
+        policies_file.write_text(policies_as_yaml)
+        expected_index_from_input = {"input_dir": {"license_key": "input_dir"}}
+        self.assertEqual(expected_index_from_input, self.project1.get_policy_index())
+        # Refresh the instance to bypass the cached_property cache.
+        self.project1 = Project.objects.get(uuid=self.project1.uuid)
+        self.assertTrue(self.project1.policies_enabled)
+
+        policies_from_project_env = {
+            "license_policies": [{"license_key": "project_env"}]
+        }
+        config = {"policies": policies_from_project_env}
+        self.project1.settings = config
+        self.project1.save()
+        expected_index_from_env = {"project_env": {"license_key": "project_env"}}
+        self.assertEqual(expected_index_from_env, self.project1.get_policy_index())
+
+        # Reset the index value
+        scanpipe_app.license_policies_index = None
 
     def test_scanpipe_project_get_settings_as_yml(self):
         self.assertEqual("{}\n", self.project1.get_settings_as_yml())
@@ -2010,6 +2050,7 @@ class ScanPipeModelsTest(TestCase):
             "project": {
                 "name": "Analysis",
                 "uuid": str(self.project1.uuid),
+                "purl": "",
                 "is_archived": False,
                 "notes": "",
                 "labels": [],

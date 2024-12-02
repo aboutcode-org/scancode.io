@@ -26,6 +26,7 @@ from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import flag
+from scanpipe.tests import make_resource_file
 
 
 class ScanPipeFlagPipesTest(TestCase):
@@ -78,6 +79,15 @@ class ScanPipeFlagPipesTest(TestCase):
         self.assertEqual("ignored-pattern", self.resource1.status)
         self.assertEqual("ignored-pattern", self.resource2.status)
         self.assertEqual("ignored-pattern", self.resource3.status)
+
+        make_resource_file(self.project1, "policies.yml")
+        make_resource_file(self.project1, "path/policies.yml")
+        make_resource_file(self.project1, "path/deeper/policies.yml")
+        make_resource_file(self.project1, "path/other-policies.yml")
+        updated = flag.flag_ignored_patterns(
+            self.project1, flag.DEFAULT_IGNORED_PATTERNS
+        )
+        self.assertEqual(3, updated)
 
     def test_scanpipe_pipes_flag_flag_not_analyzed_codebase_resources(self):
         resource1 = CodebaseResource.objects.create(

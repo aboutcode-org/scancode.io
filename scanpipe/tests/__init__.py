@@ -232,42 +232,55 @@ dependency_data3 = {
     "datasource_id": "pypi_sdist_pkginfo",
 }
 
+dependency_data4 = {
+    "purl": "pkg:npm/wrap-ansi-cjs",
+    "package_type": "npm",
+    "extracted_requirement": "npm:wrap-ansi@^7.0.0",
+    "scope": "devDependencies",
+    "is_runtime": False,
+    "is_optional": True,
+    "is_pinned": False,
+    "is_direct": True,
+    "dependency_uid": "pkg:npm/wrap-ansi-cjs?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692",
+    "for_package_uid": "",
+    "datafile_path": "",
+    "datasource_id": "npm_package_lock_json",
+}
+
 license_policies = [
     {
         "license_key": "apache-2.0",
         "label": "Approved License",
-        "color_code": "#008000",
         "compliance_alert": "",
     },
     {
         "license_key": "mpl-2.0",
         "label": "Restricted License",
-        "color_code": "#ffcc33",
         "compliance_alert": "warning",
     },
     {
         "license_key": "gpl-3.0",
         "label": "Prohibited License",
-        "color_code": "#c83025",
         "compliance_alert": "error",
     },
 ]
 
+global_policies = {
+    "license_policies": license_policies,
+}
+
 license_policies_index = {
     "gpl-3.0": {
-        "color_code": "#c83025",
         "compliance_alert": "error",
         "label": "Prohibited License",
         "license_key": "gpl-3.0",
     },
     "apache-2.0": {
-        "color_code": "#008000",
         "compliance_alert": "",
         "label": "Approved License",
         "license_key": "apache-2.0",
     },
     "mpl-2.0": {
-        "color_code": "#ffcc33",
         "compliance_alert": "warning",
         "label": "Restricted License",
         "license_key": "mpl-2.0",

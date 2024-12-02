@@ -44,6 +44,11 @@ from scanpipe.api.serializers import PipelineSerializer
 from scanpipe.api.serializers import ProjectMessageSerializer
 from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import RunSerializer
+from scanpipe.filters import DependencyFilterSet
+from scanpipe.filters import PackageFilterSet
+from scanpipe.filters import ProjectMessageFilterSet
+from scanpipe.filters import RelationFilterSet
+from scanpipe.filters import ResourceFilterSet
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
@@ -190,55 +195,63 @@ class ProjectViewSet(
         ]
         return Response(pipeline_data)
 
-    @action(detail=True)
+    def get_filtered_response(
+        self, request, queryset, filterset_class, serializer_class
+    ):
+        """
+        Handle filtering, pagination, and serialization of a "detail" action.
+        This requires to set filterset_class=None in the @action decorator parameter
+        to bypass the Project filterset.
+        """
+        filterset = filterset_class(data=request.GET, queryset=queryset)
+        if not filterset.is_valid():
+            message = {"errors": filterset.errors}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        queryset = filterset.qs
+        paginated_qs = self.paginate_queryset(queryset)
+        serializer = serializer_class(paginated_qs, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    @action(detail=True, filterset_class=None)
     def resources(self, request, *args, **kwargs):
         project = self.get_object()
         queryset = project.codebaseresources.prefetch_related("discovered_packages")
+        return self.get_filtered_response(
+            request, queryset, ResourceFilterSet, CodebaseResourceSerializer
+        )
 
-        paginated_qs = self.paginate_queryset(queryset)
-        serializer = CodebaseResourceSerializer(paginated_qs, many=True)
-
-        return self.get_paginated_response(serializer.data)
-
-    @action(detail=True)
+    @action(detail=True, filterset_class=None)
     def packages(self, request, *args, **kwargs):
         project = self.get_object()
         queryset = project.discoveredpackages.all()
+        return self.get_filtered_response(
+            request, queryset, PackageFilterSet, DiscoveredPackageSerializer
+        )
 
-        paginated_qs = self.paginate_queryset(queryset)
-        serializer = DiscoveredPackageSerializer(paginated_qs, many=True)
-
-        return self.get_paginated_response(serializer.data)
-
-    @action(detail=True)
+    @action(detail=True, filterset_class=None)
     def dependencies(self, request, *args, **kwargs):
         project = self.get_object()
         queryset = project.discovereddependencies.all()
+        return self.get_filtered_response(
+            request, queryset, DependencyFilterSet, DiscoveredDependencySerializer
+        )
 
-        paginated_qs = self.paginate_queryset(queryset)
-        serializer = DiscoveredDependencySerializer(paginated_qs, many=True)
-
-        return self.get_paginated_response(serializer.data)
-
-    @action(detail=True)
+    @action(detail=True, filterset_class=None)
     def relations(self, request, *args, **kwargs):
         project = self.get_object()
         queryset = project.codebaserelations.all()
+        return self.get_filtered_response(
+            request, queryset, RelationFilterSet, CodebaseRelationSerializer
+        )
 
-        paginated_qs = self.paginate_queryset(queryset)
-        serializer = CodebaseRelationSerializer(paginated_qs, many=True)
-
-        return self.get_paginated_response(serializer.data)
-
-    @action(detail=True)
+    @action(detail=True, filterset_class=None)
     def messages(self, request, *args, **kwargs):
         project = self.get_object()
         queryset = project.projectmessages.all()
-
-        paginated_qs = self.paginate_queryset(queryset)
-        serializer = ProjectMessageSerializer(paginated_qs, many=True)
-
-        return self.get_paginated_response(serializer.data)
+        return self.get_filtered_response(
+            request, queryset, ProjectMessageFilterSet, ProjectMessageSerializer
+        )
 
     @action(detail=True, methods=["get"])
     def file_content(self, request, *args, **kwargs):

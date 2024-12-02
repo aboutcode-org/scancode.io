@@ -129,14 +129,13 @@ Using cURL:
 .. tip::
 
     You can declare multiple pipelines to be executed at the project creation using a
-    list of pipeline names or a comma-separated string:
+    list of pipeline names:
 
-    - ``"pipeline": ["scan_single_package", "scan_for_virus"]``
-    - ``"pipeline": "scan_single_package,scan_for_virus"``
+    ``"pipeline": ["scan_single_package", "scan_for_virus"]``
 
 .. tip::
 
-    Use the "pipeline_name:group1,group2" syntax to select steps groups:
+    Use the "pipeline_name:option1,option2" syntax to select optional steps:
 
     ``"pipeline": "map_deploy_to_develop:Java,JavaScript"``
 
@@ -293,7 +292,7 @@ Data:
     - ``execute_now``: ``true`` or ``false``
 
 .. tip::
-    Use the "pipeline_name:group1,group2" syntax to select steps groups:
+    Use the "pipeline_name:option1,option2" syntax to select optional steps:
 
     ``"pipeline": "map_deploy_to_develop:Java,JavaScript"``
 
@@ -433,6 +432,9 @@ Lists all ``packages`` of a given ``project``.
         }
     ]
 
+The list supports filtering by most fields using the ``?field_name=value`` query
+parameter syntax.
+
 Resources
 ^^^^^^^^^
 
@@ -452,6 +454,40 @@ This action lists all ``resources`` of a given ``project``.
             "[...]": "[...]"
         }
     ]
+
+The list supports filtering by most fields using the ``?field_name=value`` query
+parameter syntax.
+
+Dependencies
+^^^^^^^^^^^^
+
+Lists all ``dependencies`` of a given ``project``.
+
+``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/dependencies/``
+
+.. code-block:: json
+
+    [
+        {
+            "purl": "pkg:pypi/appdirs@1.4.4",
+            "extracted_requirement": "==1.4.4",
+            "scope": "test",
+            "is_runtime": true,
+            "is_optional": true,
+            "is_pinned": true,
+            "is_direct": true,
+            "dependency_uid": "pkg:pypi/appdirs@1.4.4?uuid=0033a678-2003-420d-8c83-c4071e646f4e",
+            "for_package_uid": "pkg:pypi/platformdirs@4.2.1?uuid=6d90ce5b-a3f8-4110-a4bd-2da5a8930d29",
+            "resolved_to_package_uid": null,
+            "datafile_path": "platformdirs-4.2.1.dist-info/METADATA",
+            "datasource_id": "pypi_wheel_metadata",
+            "package_type": "pypi",
+            "[...]": "[...]"
+        },
+    ]
+
+The list supports filtering by most fields using the ``?field_name=value`` query
+parameter syntax.
 
 Results
 ^^^^^^^

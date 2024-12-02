@@ -338,6 +338,28 @@ API key using ``MATCHCODEIO_API_KEY``::
 
     MATCHCODEIO_API_KEY=insert_your_api_key_here
 
+.. _scancodeio_settings_federatedcode:
+
+FEDERATEDCODE
+^^^^^^^^^^^^^
+
+FederatedCode is decentralized and federated metadata for software applications
+stored in Git repositories.
+
+
+To configure your local environment, set the following in your ``.env`` file::
+
+    FEDERATEDCODE_GIT_ACCOUNT_URL=https://<Address to your git account>/
+
+    FEDERATEDCODE_GIT_SERVICE_TOKEN=insert_your_git_api_key_here
+
+Also provide the name and email that will be used to sign off on commits to Git repositories::
+
+    FEDERATEDCODE_GIT_SERVICE_NAME=insert_name_here
+
+    FEDERATEDCODE_GIT_SERVICE_EMAIL=insert_email_here
+
+
 .. _scancodeio_settings_fetch_authentication:
 
 Fetch Authentication
