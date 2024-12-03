@@ -39,6 +39,7 @@ from packageurl.contrib.django.filters import PackageURLFilter
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
+from scanpipe.models import DiscoveredLicense
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
@@ -529,6 +530,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "related_from__from_resource__path",
         ],
     )
+
     compliance_alert = django_filters.ChoiceFilter(
         choices=[(EMPTY_VAR, "None")] + CodebaseResource.Compliance.choices,
     )
@@ -587,8 +589,8 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        license_expression_filer = self.filters["detected_license_expression"]
-        license_expression_filer.extra["widget"] = HasValueDropdownWidget()
+        license_expression_filter = self.filters["detected_license_expression"]
+        license_expression_filter.extra["widget"] = HasValueDropdownWidget()
 
 
 class IsVulnerable(django_filters.ChoiceFilter):
@@ -619,6 +621,19 @@ class DiscoveredPackageSearchFilter(QuerySearchFilter):
             return super().filter(qs, value)
 
         search_fields = ["type", "namespace", "name", "version"]
+        lookups = Q()
+        for field_names in search_fields:
+            lookups |= Q(**{f"{field_names}__{self.lookup_expr}": value})
+
+        return qs.filter(lookups)
+
+
+class DiscoveredLicenseSearchFilter(QuerySearchFilter):
+    def filter(self, qs, value):
+        if not value:
+            return qs
+
+        search_fields = ["license_expression", "license_expression_spdx"]
         lookups = Q()
         for field_names in search_fields:
             lookups |= Q(**{f"{field_names}__{self.lookup_expr}": value})
@@ -798,6 +813,44 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_direct",
             "datasource_id",
             "is_vulnerable",
+        ]
+
+
+class LicenseFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    dropdown_widget_fields = [
+        "compliance_alert",
+        "license_expression",
+        "license_expression_spdx",
+    ]
+
+    search = DiscoveredLicenseSearchFilter(
+        label="Search", field_name="name", lookup_expr="icontains"
+    )
+    sort = GroupOrderingFilter(
+        label="Sort",
+        fields=[
+            "detection_count",
+            "identifier",
+            "license_expression",
+            "license_expression_spdx",
+            "compliance_alert",
+        ],
+    )
+    license_expression = django_filters.AllValuesFilter()
+    license_expression_spdx = django_filters.AllValuesFilter()
+    compliance_alert = django_filters.ChoiceFilter(
+        choices=[(EMPTY_VAR, "None")] + CodebaseResource.Compliance.choices,
+    )
+
+    class Meta:
+        model = DiscoveredLicense
+        fields = [
+            "search",
+            "identifier",
+            "detection_count",
+            "license_expression",
+            "license_expression_spdx",
+            "compliance_alert",
         ]
 
 
