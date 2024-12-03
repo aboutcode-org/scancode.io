@@ -1892,10 +1892,10 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     scancodeio_version = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True)
     current_step = models.CharField(max_length=256, blank=True)
-    selected_steps = models.JSONField(
+    selected_groups = models.JSONField(
         null=True, blank=True, validators=[validate_none_or_list]
     )
-    selected_groups = models.JSONField(
+    selected_steps = models.JSONField(
         null=True, blank=True, validators=[validate_none_or_list]
     )
 
