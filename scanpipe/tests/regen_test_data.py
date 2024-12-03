@@ -26,6 +26,8 @@ from pathlib import Path
 from django.core.management import call_command
 from django.test import TestCase
 
+import requests
+
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
 from scanpipe.pipes import input
@@ -149,3 +151,32 @@ class RegenTestData(TestCase):
                 "package": True,
             },
         )
+
+    def test_regenerate_scorecard_data(self):
+        """
+        Regenerate and save scorecard data by directly calling the OSSF Scorecard
+        API
+        """
+        scorecard_data_file = self.data / "scorecode" / "scorecard_response.json"
+        platform, org, repo = "github.com", "nexB", "scancode-toolkit"
+
+        OSSF_SCORECARD_API_URL = "https://api.securityscorecards.dev"
+
+        url = f"{OSSF_SCORECARD_API_URL}/projects/{platform}/{org}/{repo}"
+
+        try:
+            # Fetch the scorecard data from the API
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            scorecard_data = response.json()
+
+            scorecard_data_file.parent.mkdir(parents=True, exist_ok=True)
+
+            scorecard_data_file.write_text(json.dumps(scorecard_data, indent=2))
+
+            print(f"Scorecard data successfully saved to {scorecard_data_file}")
+
+        except requests.exceptions.Timeout:
+            print("The request timed out.")
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching scorecard data: {e}")
