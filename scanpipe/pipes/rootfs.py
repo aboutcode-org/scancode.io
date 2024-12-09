@@ -275,7 +275,7 @@ def scan_rootfs_for_system_packages(project, rootfs):
         _create_system_package(project, purl, package)
 
     namespace_counts = Counter(seen_namespaces)
-    # we overwite namespace only when there are multiple
+    # we overwrite namespace only when there are multiple
     # namespaces in the packages
     if not len(namespace_counts.keys()) > 1:
         return

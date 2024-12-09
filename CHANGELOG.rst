@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.9.1 (unreleased)
+v34.9.1 (2024-12-09)
 --------------------
 
 - Add the ability to filter on Project endpoint API actions.
