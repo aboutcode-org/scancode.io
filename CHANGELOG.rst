@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.9.2 (unreleased)
+v34.9.2 (2024-12-10)
 --------------------
 
 - Fix an issue with the ``scan_rootfs_for_system_packages`` pipe when a namespace is
