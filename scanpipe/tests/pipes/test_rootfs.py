@@ -26,10 +26,13 @@ from unittest import mock
 from django.test import TestCase
 
 from commoncode.archive import extract_tar
+from container_inspector.distro import Distro
+from packagedcode.models import PackageWithResources
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import rootfs
+from scanpipe.pipes.rootfs import RootFs
 
 
 class ScanPipeRootfsPipesTest(TestCase):
@@ -159,3 +162,61 @@ class ScanPipeRootfsPipesTest(TestCase):
         self.assertEqual("ignored-media-file", resource1.status)
         self.assertEqual("ignored-media-file", resource2.status)
         self.assertEqual("", resource3.status)
+
+    @mock.patch("scanpipe.pipes.rootfs.RootFs.get_installed_packages")
+    def test_scanpipe_pipes_rootfs_scan_rootfs_for_system_packages(
+        self, mock_get_installed_packages
+    ):
+        project = Project.objects.create(name="Analysis")
+        rootfs_instance = RootFs(location="")
+        rootfs_instance.distro = Distro(identifier="debian")
+
+        system_packages = [
+            (
+                "pkg:deb/ubuntu/libncurses5@1.0",
+                PackageWithResources(
+                    type="deb",
+                    namespace="ubuntu",
+                    name="libncurses5",
+                    version="1.0",
+                ),
+            ),
+            (
+                # Same namespace
+                "pkg:deb/ubuntu/libncurses5@2.0",
+                PackageWithResources(
+                    type="deb",
+                    namespace="ubuntu",
+                    name="libncurses5",
+                    version="2.0",
+                ),
+            ),
+            (
+                # Different namespace
+                "pkg:deb/other/libncurses5@3.0",
+                PackageWithResources(
+                    type="deb",
+                    namespace="debian",
+                    name="libncurses5",
+                    version="3.0",
+                ),
+            ),
+            (
+                # This package has no namespace on purpose.
+                "pkg:deb/libndp0@1.4-2ubuntu0.16.04.1",
+                PackageWithResources(
+                    type="deb",
+                    name="libndp0",
+                    version="1.4-2ubuntu0.16.04.1",
+                ),
+            ),
+        ]
+
+        mock_get_installed_packages.return_value = system_packages
+        rootfs.scan_rootfs_for_system_packages(project, rootfs_instance)
+
+        package_qs = project.discoveredpackages.all()
+        self.assertEqual(4, package_qs.count())
+        self.assertEqual(0, package_qs.filter(namespace="ubuntu").count())
+        # All namespaces updated to "debian" as the most common namespace
+        self.assertEqual(4, package_qs.filter(namespace="debian").count())

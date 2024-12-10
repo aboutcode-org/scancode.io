@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v34.9.2 (unreleased)
+--------------------
+
+- Fix an issue with the ``scan_rootfs_for_system_packages`` pipe when a namespace is
+  missing for the discovered packages.
+  https://github.com/aboutcode-org/scancode.io/issues/1462
+
 v34.9.1 (2024-12-09)
 --------------------
 
