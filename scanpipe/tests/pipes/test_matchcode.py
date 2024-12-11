@@ -337,6 +337,32 @@ class MatchCodePipesTest(TestCase):
         codebase_resource1.refresh_from_db()
         codebase_resource2.refresh_from_db()
 
-        expected_extra_data = {"halo1": "000000b8ef420f7e84c8c74c691315f0a06ac4f0"}
+        expected_extra_data = {
+            "halo1": "000000bb07ba9a3efeafb3b1f182d1ce676466dc",
+            "snippets": [
+                {"position": 0, "snippet": "a222da2349af431e00eda7db2e3927c9"},
+                {"position": 9, "snippet": "41afe78186e3ab44d03fc23f610fbf01"},
+                {"position": 12, "snippet": "8b76e8aaec35ef10ca5028ed6fbc2f3e"},
+                {"position": 27, "snippet": "de2c6a569b9b2bb8465bfee051198610"},
+                {"position": 28, "snippet": "9d406cbede0f5656e9e206c48b2b9706"},
+                {"position": 29, "snippet": "d45754ec18c24a4d598d8ad82606cbff"},
+                {"position": 44, "snippet": "6b3f26c03647ea3b278b545d86bf05ea"},
+                {"position": 49, "snippet": "c0bb0e522f0148fd64ddf024d3bd7011"},
+                {"position": 63, "snippet": "3600ad4853cbcb1df467d53db5c16bd7"},
+                {"position": 78, "snippet": "21a4946fda5c3fa0a8eaf926860f11ae"},
+                {"position": 86, "snippet": "f810ec1f64235fcd2b25ad96415fc4ee"},
+                {"position": 101, "snippet": "b534e5e3867ba340df1f6e525205e0aa"},
+                {"position": 102, "snippet": "0ecde2653b775c17ab3ac657fc99cb1b"},
+                {"position": 117, "snippet": "75a3cec7239416c7dde11c1142a0fe87"},
+                {"position": 123, "snippet": "edaa60b3d6bceed9cfb1f0e9684d690e"},
+                {"position": 138, "snippet": "f2de939f879b7ab7490a25e83e0ca0df"},
+                {"position": 153, "snippet": "6a37eed93df6eab45335471ffdf45e4e"},
+                {"position": 154, "snippet": "03eee824319f4a9d37e1f77791767978"},
+                {"position": 159, "snippet": "8907fe2bac6b5ab7bd777d5f4dd38c89"},
+                {"position": 163, "snippet": "b4191cd30ca5a2f8affdf89fa83eca55"},
+                {"position": 174, "snippet": "4559ff1b65f8eb1117edc0572829698d"},
+                {"position": 175, "snippet": "cca770f84ad46cbdcac4d27456ce6c00"},
+            ],
+        }
         self.assertEqual(expected_extra_data, codebase_resource1.extra_data)
         self.assertFalse(codebase_resource2.extra_data)
