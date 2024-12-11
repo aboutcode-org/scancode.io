@@ -1,6 +1,14 @@
 Changelog
 =========
 
+v34.9.3 (unreleased)
+--------------------
+
+- Refine the available settings for RQ_QUEUES:
+  * Rename the RQ_QUEUES sub-settings to SCANCODEIO_RQ_REDIS_*
+  * Add SCANCODEIO_RQ_REDIS_SSL setting to enable SSL.
+  https://github.com/aboutcode-org/scancode.io/issues/1465
+
 v34.9.2 (2024-12-10)
 --------------------
 

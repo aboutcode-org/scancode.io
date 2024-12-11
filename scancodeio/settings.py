@@ -356,10 +356,16 @@ CRISPY_TEMPLATE_PACK = "bootstrap3"
 
 RQ_QUEUES = {
     "default": {
-        "HOST": env.str("SCANCODEIO_REDIS_HOST", default="localhost"),
-        "PORT": env.str("SCANCODEIO_REDIS_PORT", default="6379"),
-        "PASSWORD": env.str("SCANCODEIO_REDIS_PASSWORD", default=""),
-        "DEFAULT_TIMEOUT": env.int("SCANCODEIO_REDIS_DEFAULT_TIMEOUT", default=360),
+        "HOST": env.str("SCANCODEIO_RQ_REDIS_HOST", default="localhost"),
+        "PORT": env.str("SCANCODEIO_RQ_REDIS_PORT", default="6379"),
+        "DB": env.int("SCANCODEIO_RQ_REDIS_DB", default=0),
+        "USERNAME": env.str("SCANCODEIO_RQ_REDIS_USERNAME", default=None),
+        "PASSWORD": env.str("SCANCODEIO_RQ_REDIS_PASSWORD", default=""),
+        "DEFAULT_TIMEOUT": env.int("SCANCODEIO_RQ_REDIS_DEFAULT_TIMEOUT", default=360),
+        # Enable SSL for Redis connections when deploying ScanCode.io in environments
+        # where Redis is hosted on a separate system (e.g., cloud deployment or remote
+        # Redis server) to secure data in transit.
+        "SSL": env.bool("SCANCODEIO_RQ_REDIS_SSL", default=False),
     },
 }
 
