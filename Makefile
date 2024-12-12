@@ -21,7 +21,7 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 # Python version can be specified with `$ PYTHON_EXE=python3.x make conf`
-PYTHON_EXE?=python3.13
+PYTHON_EXE?=python3
 VENV_LOCATION=.venv
 ACTIVATE?=. ${VENV_LOCATION}/bin/activate;
 MANAGE=${VENV_LOCATION}/bin/python manage.py
