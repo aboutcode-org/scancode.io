@@ -265,6 +265,7 @@ class ScanPipeManagementCommandTest(TestCase):
             expected, sorted([path.name for path in project.codebase_path.iterdir()])
         )
 
+    @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_management_command_add_pipeline(self):
         out = StringIO()
 
