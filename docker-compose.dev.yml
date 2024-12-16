@@ -7,9 +7,13 @@
 
 services:
   web:
+    env_file:
+      - docker.dev.env
     volumes:
       - ./scanpipe:/opt/scancodeio/scanpipe
 
   worker:
+    env_file:
+      - docker.dev.env
     volumes:
       - ./scanpipe:/opt/scancodeio/scanpipe
