@@ -229,7 +229,12 @@ Supported Platforms
     #. **macOS** 10.14 and up
 
 .. warning::
-     On **Windows** ScanCode.io can **only** be :ref:`run_with_docker`.
+    On **Windows** ScanCode.io can **only** be :ref:`run_with_docker`.
+    Alternatively, you can run a local checkout with the Docker compose stack using the
+    dedicated command::
+
+        make run-docker-dev
+
 
 Pre-installation Checklist
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
