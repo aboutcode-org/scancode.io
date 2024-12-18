@@ -343,7 +343,10 @@ production servers.
         make sqlitedb
 
 .. warning::
-    Choosing SQLite over PostgreSQL has some caveats. Check this `link
+    SQLite is not recommended as a database backend. Certain built-in pipelines
+    depend on PostgreSQL-specific features and will fail when using SQLite.
+    For full functionality and reliability, PostgreSQL should be used.
+    Check this `link
     <https://docs.djangoproject.com/en/dev/ref/databases/#sqlite-notes>`_
     for more details.
 
