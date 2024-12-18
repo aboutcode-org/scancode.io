@@ -123,7 +123,7 @@ run:
 
 run-docker-dev:
 	@echo "-> Run the Docker compose services in dev mode (hot reload on code changes)"
-	docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build --watch
 
 test:
 	@echo "-> Run the test suite"
