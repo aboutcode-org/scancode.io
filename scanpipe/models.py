@@ -2432,20 +2432,19 @@ class ComplianceAlertMixin(models.Model):
         license_expression = getattr(self, self.license_expression_field, "")
         if not license_expression:
             return ""
-
         alerts = []
         policy_index = scanpipe_app.license_policies_index
-
         licensing = get_licensing()
         parsed = licensing.parse(license_expression, simple=True)
         license_keys = licensing.license_keys(parsed)
-
         for license_key in license_keys:
             missing_policy = True 
             for policy, policy_data in policy_index.items(): 
                 if re.match(policy, license_key): 
                     missing_policy = False 
-                    alerts.append(policy_data.get("compliance_alert") or self.Compliance.OK) 
+                    alerts.append(
+                        policy_data.get("compliance_alert") or self.Compliance.OK
+                        ) 
                     break 
             if missing_policy: 
                 alerts.append(self.Compliance.MISSING)
@@ -2455,11 +2454,9 @@ class ComplianceAlertMixin(models.Model):
             self.Compliance.WARNING,
             self.Compliance.MISSING,
         ]
-
         for compliance_severity in compliance_ordered_by_severity:
             if compliance_severity in alerts:
                 return compliance_severity
-
         return self.Compliance.OK
 
 
