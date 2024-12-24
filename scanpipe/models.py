@@ -2441,10 +2441,15 @@ class ComplianceAlertMixin(models.Model):
         license_keys = licensing.license_keys(parsed)
 
         for license_key in license_keys:
-            if policy := policy_index.get(license_key):
-                alerts.append(policy.get("compliance_alert") or self.Compliance.OK)
-            else:
-                alerts.append(self.Compliance.MISSING)
+            missing_policy = True 
+            for policy, policy_data in policy_index.items(): 
+                if re.match(policy, license_key): 
+                    missing_policy = False 
+                    alerts.append(policy_data.get("compliance_alert") or self.Compliance.OK) 
+                    break 
+                if missing_policy: 
+                    alerts.append(self.Compliance.MISSING)
+
 
         compliance_ordered_by_severity = [
             self.Compliance.ERROR,
