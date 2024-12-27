@@ -25,6 +25,7 @@ from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
+from scanpipe.pipes import input
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
@@ -130,7 +131,10 @@ class DeployToDevelop(Pipeline):
 
         for input_files, codebase_path in inputs_with_codebase_path_destination:
             for input_file_path in input_files:
-                self.extract_archive(input_file_path, codebase_path)
+                if input.is_archive(input_file_path):
+                    self.extract_archive(input_file_path, codebase_path)
+                else:
+                    input.copy_input(input_file_path, codebase_path)
 
         # Reload the project env post-extraction as the scancode-config.yml file
         # may be located in one of the extracted archives.
@@ -199,7 +203,7 @@ class DeployToDevelop(Pipeline):
 
     @optional_step("Go")
     def map_go(self):
-        """Map Go binaries to their sources."""
+        """Map Go binaries to their sources using paths."""
         d2d.map_go_paths(project=self.project, logger=self.log)
 
     @optional_step("Rust")
