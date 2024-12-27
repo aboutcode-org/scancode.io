@@ -1797,8 +1797,14 @@ def map_elfs(project, logger=None):
         try:
             paths = get_elf_file_dwarf_paths(resource.location_path)
             resource.update_extra_data(paths)
-        except Exception as e:
-            logger(f"Can not parse {resource.location_path!r} {e!r}")
+        except Exception as exception:
+            project.add_warning(
+                exception=exception,
+                object_instance=resource,
+                description=f"Cannot parse binary at {resource.path}",
+                model="map_elfs",
+                details={"path": resource.path},
+            )
 
     if logger:
         logger(
@@ -1863,8 +1869,14 @@ def map_go_paths(project, logger=None):
         try:
             paths = get_go_file_paths(resource.location_path)
             resource.update_extra_data(paths)
-        except Exception as e:
-            logger(f"Can not parse {resource.location_path!r} {e!r}")
+        except Exception as exception:
+            project.add_warning(
+                exception=exception,
+                object_instance=resource,
+                description=f"Cannot parse binary at {resource.path}",
+                model="map_go_paths",
+                details={"path": resource.path},
+            )
 
     if logger:
         logger(
