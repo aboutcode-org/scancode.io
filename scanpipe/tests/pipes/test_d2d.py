@@ -1529,3 +1529,39 @@ class ScanPipeD2DPipesTest(TestCase):
                 project=self.project1, status="requires-review"
             ).count(),
         )
+
+    def test_scanpipe_pipes_d2d_map_rust_paths(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-rust/to-trustier-binary-linux.tar.gz",
+            self.data / "d2d-rust/from-trustier-source.tar.gz",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_rust_paths(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            2,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="rust_symbols"
+            ).count(),
+        )
+        self.assertEqual(
+            0,
+            CodebaseResource.objects.filter(
+                project=self.project1, status="requires-review"
+            ).count(),
+        )

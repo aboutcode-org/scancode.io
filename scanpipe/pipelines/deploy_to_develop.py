@@ -72,6 +72,7 @@ class DeployToDevelop(Pipeline):
             cls.map_javascript,
             cls.map_elf,
             cls.map_go,
+            cls.map_rust,
             cls.match_directories_to_purldb,
             cls.match_resources_to_purldb,
             cls.map_javascript_post_purldb_match,
@@ -200,6 +201,11 @@ class DeployToDevelop(Pipeline):
     def map_go(self):
         """Map Go binaries to their sources."""
         d2d.map_go_paths(project=self.project, logger=self.log)
+
+    @optional_step("Rust")
+    def map_rust(self):
+        """Map Rust binaries to their sources using symbols."""
+        d2d.map_rust_paths(project=self.project, logger=self.log)
 
     def match_directories_to_purldb(self):
         """Match selected directories in PurlDB."""

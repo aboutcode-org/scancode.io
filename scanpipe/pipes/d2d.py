@@ -42,6 +42,7 @@ from elf_inspector.dwarf import get_dwarf_paths
 from extractcode import EXTRACT_SUFFIX
 from go_inspector.plugin import collect_and_parse_symbols
 from packagedcode.npm import NpmPackageJsonHandler
+from rust_inspector.binary import collect_and_parse_rust_symbols
 from summarycode.classify import LEGAL_STARTS_ENDS
 
 from aboutcode.pipeline import LoopProgress
@@ -57,6 +58,8 @@ from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
 from scanpipe.pipes import resolve
 from scanpipe.pipes import scancode
+from scanpipe.pipes import symbolmap
+from scanpipe.pipes import symbols
 
 FROM = "from/"
 TO = "to/"
@@ -1884,5 +1887,56 @@ def map_go_paths(project, logger=None):
             from_resources,
             from_resources_index,
             map_types=["go_file_paths"],
+            logger=logger,
+        )
+
+
+def map_rust_paths(project, logger=None):
+    """Map Rust binaries to their source in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    to_resources = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .has_no_relation()
+        .executable_binaries()
+    )
+
+    # Collect source symbols from rust source files
+    rust_from_resources = from_resources.filter(extension=".rs")
+    symbols.collect_and_store_tree_sitter_symbols_and_strings(
+        project=project,
+        logger=logger,
+        project_files=rust_from_resources,
+    )
+
+    # Collect binary symbols from rust binaries
+    for resource in to_resources:
+        try:
+            binary_symbols = collect_and_parse_rust_symbols(resource.location_path)
+            resource.update_extra_data(binary_symbols)
+        except Exception as e:
+            logger(f"Can not parse {resource.location_path!r} {e!r}")
+
+    if logger:
+        logger(
+            f"Mapping {to_resources.count():,d} to/ resources using symbols "
+            f"with {rust_from_resources.count():,d} from/ resources."
+        )
+
+    resource_iterator = to_resources.iterator(chunk_size=2000)
+    progress = LoopProgress(to_resources.count(), logger)
+    for to_resource in progress.iter(resource_iterator):
+        binary_symbols = to_resource.extra_data.get("rust_symbols")
+        if not binary_symbols:
+            continue
+
+        if logger:
+            logger(f"Mapping source files to binary at {to_resource.path}")
+
+        symbolmap.map_resources_with_symbols(
+            to_resource=to_resource,
+            from_resources=rust_from_resources,
+            binary_symbols=binary_symbols,
+            map_type="rust_symbols",
             logger=logger,
         )
