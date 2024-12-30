@@ -33,6 +33,10 @@ The approach is to create a set of symbols obtained from the rust binary for
 each of them and match them to the symbols obtained from the source
 """
 
+MATCHING_RATIO_RUST = 0.5
+SMALL_FILE_SYMBOLS_THRESHOLD = 20
+MATCHING_RATIO_RUST_SMALL_FILE = 0.4
+
 
 def map_resources_with_symbols(
     to_resource, from_resources, binary_symbols, map_type, logger=None
@@ -65,11 +69,11 @@ def map_resources_with_symbols(
 
     # If there are any non-test files in the rust source files which
     # are not mapped, we mark the binary as REQUIRES_REVIEW
-    if paths_not_mapped and any(
+    has_non_test_unmapped_files = any(
         [True for path in paths_not_mapped if "/tests/" not in path]
-    ):
-        to_resource.status = flag.REQUIRES_REVIEW
-        to_resource.save()
+    )
+    if paths_not_mapped and has_non_test_unmapped_files:
+        to_resource.update(status=flag.REQUIRES_REVIEW)
         if logger:
             logger(
                 f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT mapped for: "
@@ -111,10 +115,14 @@ def match_source_symbols_to_binary(source_symbols, binary_symbols):
         "common_symbols_ratio": common_symbols_ratio,
     }
 
-    if common_symbols_ratio > 0.5 or common_symbols_unique_ratio > 0.5:
+    if (
+        common_symbols_ratio > MATCHING_RATIO_RUST
+        or common_symbols_unique_ratio > MATCHING_RATIO_RUST
+    ):
         return True, stats
-    elif source_symbols_count > 20 and (
-        common_symbols_ratio > 0.4 or common_symbols_unique_ratio > 0.4
+    elif source_symbols_count > SMALL_FILE_SYMBOLS_THRESHOLD and (
+        common_symbols_ratio > MATCHING_RATIO_RUST_SMALL_FILE
+        or common_symbols_unique_ratio > MATCHING_RATIO_RUST_SMALL_FILE
     ):
         return True, stats
     else:
