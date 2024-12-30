@@ -339,11 +339,14 @@ class CodebaseResourceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CodebaseResource
+        # This fields ordering is sued as-is by the ``output`a modules that depend on
+        # the serializers.
         fields = [
             "path",
             "type",
             "name",
             "status",
+            "for_packages",
             "tag",
             "extension",
             "size",
@@ -373,7 +376,6 @@ class CodebaseResourceSerializer(serializers.ModelSerializer):
             "holders",
             "authors",
             "package_data",
-            "for_packages",
             "emails",
             "urls",
             "extra_data",
