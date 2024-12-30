@@ -46,6 +46,7 @@ from scanpipe.pipelines import deploy_to_develop
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import root_filesystem
 from scanpipe.pipelines import scan_single_package
+from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
@@ -1493,7 +1494,14 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_instance.get_inputs()
         with mock.patch("scanpipe.pipes.scancode.extract_archive") as extract_archive:
             extract_archive.return_value = {"path/to/resource": ["error1", "error2"]}
-            pipeline_instance.extract_inputs_to_codebase_directory()
+            inputs_with_codebase_path_destination = [
+                (pipeline_instance.from_files, project1.codebase_path / d2d.FROM),
+                (pipeline_instance.to_files, project1.codebase_path / d2d.TO),
+            ]
+
+            for input_files, codebase_path in inputs_with_codebase_path_destination:
+                for input_file_path in input_files:
+                    pipeline_instance.extract_archive(input_file_path, codebase_path)
 
         projects_errors = project1.projectmessages.all()
         self.assertEqual(2, len(projects_errors))

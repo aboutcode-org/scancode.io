@@ -49,6 +49,7 @@ COMPLIANCE_SOURCEMIRROR = "compliance-sourcemirror"
 
 ABOUT_MAPPED = "about-mapped"
 MAPPED = "mapped"
+MAPPED_BY_SYMBOL = "mapped-by-symbol"
 ARCHIVE_PROCESSED = "archive-processed"
 MATCHED_TO_PURLDB_PACKAGE = "matched-to-purldb-package"
 MATCHED_TO_PURLDB_RESOURCE = "matched-to-purldb-resource"

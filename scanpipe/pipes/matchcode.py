@@ -188,6 +188,10 @@ def fingerprint_codebase_directories(project, to_codebase_only=False):
     resources = project.codebaseresources.all()
     if to_codebase_only:
         resources = resources.to_codebase()
+
+    if not resources.directories():
+        return
+
     virtual_codebase = codebase.get_basic_virtual_codebase(resources)
     virtual_codebase = compute_codebase_directory_fingerprints(virtual_codebase)
     save_directory_fingerprints(
