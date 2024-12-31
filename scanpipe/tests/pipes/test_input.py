@@ -118,6 +118,17 @@ class ScanPipeInputPipesTest(TestCase):
         self.assertEqual(8, project1.discovereddependencies.count())
         self.assertEqual(0, project1.codebaserelations.count())
 
+    def test_scanpipe_pipes_input_load_inventory_from_xlsx_layers_sheet(self):
+        project1 = Project.objects.create(name="Analysis")
+        input_location = self.data / "outputs" / "docker_ghcr.io_kyverno_sbom.xlsx"
+        input.load_inventory_from_xlsx(project1, input_location)
+        project1.refresh_from_db()
+        expected_location = (
+            self.data / "outputs" / "docker_ghcr.io_kyverno_sbom_expected.json"
+        )
+        expected = json.loads(expected_location.read_text())
+        self.assertEqual(expected, project1.extra_data)
+
     def test_scanpipe_pipes_input_load_inventory_from_project_xlsx_output(self):
         fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
