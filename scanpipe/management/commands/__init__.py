@@ -150,6 +150,28 @@ class RunStatusCommandMixin:
             self.stdout.write(line)
 
 
+class PipelineCommandMixin:
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
+        parser.add_argument(
+            "--pipeline",
+            action="append",
+            dest="pipelines",
+            default=list(),
+            help=(
+                "Pipelines names to add to the project. "
+                "The pipelines are added and executed based on their given order. "
+                'Groups can be provided using the "pipeline_name:option1,option2" '
+                "syntax."
+            ),
+        )
+        parser.add_argument(
+            "--execute",
+            action="store_true",
+            help="Execute the pipelines right after the project creation.",
+        )
+
+
 class AddInputCommandMixin:
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -502,6 +524,9 @@ class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
         execute=False,
         run_async=False,
     ):
+        if execute and not pipelines:
+            raise CommandError("The --execute option requires one or more pipelines.")
+
         return create_project(
             name=name,
             pipelines=pipelines,
