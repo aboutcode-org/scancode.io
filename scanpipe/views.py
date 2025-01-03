@@ -442,15 +442,30 @@ class ExportXLSXMixin:
 
     export_xlsx_query_param = "export_xlsx"
 
-    def export_xlsx_file_response(self):
-        filtered_qs = self.filterset.qs
-        output_file = io.BytesIO()
-        with xlsxwriter.Workbook(output_file) as workbook:
-            output.queryset_to_xlsx_worksheet(filtered_qs, workbook)
+    def get_export_xlsx_queryset(self):
+        return self.filterset.qs
 
-        filename = f"{self.project.name}_{self.model._meta.model_name}.xlsx"
+    def get_export_xlsx_filename(self):
+        return f"{self.project.name}_{self.model._meta.model_name}.xlsx"
+
+    def get_export_xlsx_extra_fields(self):
+        return []
+
+    def export_xlsx_file_response(self):
+        output_file = io.BytesIO()
+        queryset = self.get_export_xlsx_queryset()
+        extra_fields = self.get_export_xlsx_extra_fields()
+        with xlsxwriter.Workbook(output_file) as workbook:
+            output.queryset_to_xlsx_worksheet(
+                queryset, workbook, extra_fields=extra_fields
+            )
+
         output_file.seek(0)
-        return FileResponse(output_file, as_attachment=True, filename=filename)
+        return FileResponse(
+            output_file,
+            as_attachment=True,
+            filename=self.get_export_xlsx_filename(),
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1137,11 +1152,11 @@ class ProjectDeleteView(ConditionalLoginRequired, generic.DeleteView):
 
 
 @method_decorator(require_POST, name="dispatch")
-class ProjectActionView(ConditionalLoginRequired, generic.ListView):
+class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListView):
     """Call a method for each instance of the selection."""
 
     model = Project
-    allowed_actions = ["archive", "delete", "reset"]
+    allowed_actions = ["archive", "delete", "reset", "report"]
     success_url = reverse_lazy("project_list")
 
     def post(self, request, *args, **kwargs):
@@ -1149,17 +1164,20 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
         if action not in self.allowed_actions:
             raise Http404
 
-        selected_ids = request.POST.get("selected_ids", "").split(",")
+        self.selected_project_ids = request.POST.get("selected_ids", "").split(",")
         count = 0
 
         action_kwargs = {}
+        if action == "report":
+            return self.export_xlsx_file_response()
+
         if action == "archive":
             archive_form = ArchiveProjectForm(request.POST)
             if not archive_form.is_valid():
                 raise Http404
             action_kwargs = archive_form.cleaned_data
 
-        for project_uuid in selected_ids:
+        for project_uuid in self.selected_project_ids:
             if self.perform_action(action, project_uuid, action_kwargs):
                 count += 1
 
@@ -1185,6 +1203,18 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
 
     def get_success_message(self, action, count):
         return f"{count} projects have been {action}."
+
+    def get_export_xlsx_queryset(self):
+        projects = Project.objects.filter(pk__in=self.selected_project_ids)
+        packages = DiscoveredPackage.objects.filter(project__in=projects)
+        packages = packages.select_related("project")
+        return packages
+
+    def get_export_xlsx_extra_fields(self):
+        return ["project"]
+
+    def get_export_xlsx_filename(self):
+        return "report.xlsx"
 
 
 class ProjectResetView(ConditionalLoginRequired, generic.DeleteView):

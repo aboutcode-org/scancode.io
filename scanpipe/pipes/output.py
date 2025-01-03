@@ -294,7 +294,9 @@ model_name_to_worksheet_name = {
 }
 
 
-def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
+def queryset_to_xlsx_worksheet(
+    queryset, workbook, exclude_fields=None, extra_fields=None
+):
     """
     Add a new worksheet to the ``workbook`` ``xlsxwriter.Workbook`` using the
     ``queryset``. The ``queryset`` "model_name" is used as a name for the
@@ -312,7 +314,10 @@ def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
 
     fields = get_serializer_fields(model_class)
     exclude_fields = exclude_fields or []
+    extra_fields = extra_fields or []
     fields = [field for field in fields if field not in exclude_fields]
+    if extra_fields:
+        fields.extend(extra_fields)
 
     return _add_xlsx_worksheet(
         workbook=workbook,
