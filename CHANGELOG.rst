@@ -9,6 +9,8 @@ v34.9.3 (unreleased)
   * Add SCANCODEIO_RQ_REDIS_SSL setting to enable SSL.
   https://github.com/aboutcode-org/scancode.io/issues/1465
 
+- Add support for Python 3.13.
+
 v34.9.2 (2024-12-10)
 --------------------
 
