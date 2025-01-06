@@ -8,7 +8,7 @@ v34.9.4 (unreleased)
   A top previous/next page navigation was added in the header for consistency with other
   list views.
   Any paginated view can now be navigated using the left/right keyboard keys.
-  https://github.com/aboutcode-org/scancode.io/issues/1465
+  https://github.com/aboutcode-org/scancode.io/issues/1200
 
 v34.9.3 (2024-12-31)
 --------------------
