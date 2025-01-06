@@ -286,7 +286,11 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
 
 
 def scan_resources(
-    resource_qs, scan_func, save_func, scan_func_kwargs=None, progress_logger=None
+    resource_qs,
+    scan_func,
+    save_func,
+    scan_func_kwargs=None,
+    progress_logger=None,
 ):
     """
     Run the `scan_func` on the codebase resources of the provided `resource_qs`.
@@ -346,7 +350,15 @@ def scan_resources(
                     "Please ensure that there is at least 2 GB of available memory per "
                     "CPU core for successful execution."
                 )
-                raise broken_pool_error from InsufficientResourcesError(message)
+
+                resource.project.add_error(
+                    exception=broken_pool_error,
+                    model="scan_resources",
+                    description=message,
+                    object_instance=resource,
+                )
+                continue
+
             save_func(resource, scan_results, scan_errors)
 
 
