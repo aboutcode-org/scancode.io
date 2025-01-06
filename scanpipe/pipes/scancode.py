@@ -34,6 +34,7 @@ from pathlib import Path
 from django.apps import apps
 from django.conf import settings
 from django.db.models import ObjectDoesNotExist
+from django.db.models import Q
 
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
@@ -57,6 +58,13 @@ logger = logging.getLogger("scanpipe.pipes")
 """
 Utilities to deal with ScanCode toolkit features and objects.
 """
+
+# skip large data files which are causing memory spikes
+# See https://github.com/aboutcode-org/scancode-toolkit/issues/3711
+# TODO: this has to be removed once the issue is fixed
+SKIP_DATA_FILE_EXTENSIONS = [".json", ".xml", ".yaml", ".yml"]
+SKIP_DATA_FILE_SIZE = 1048576
+
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -310,9 +318,17 @@ def scan_resources(
     if not scan_func_kwargs:
         scan_func_kwargs = {}
 
-    resource_count = resource_qs.count()
+    # Skip scannning data files larger than 1 MB
+    if not scan_func == scan_for_package_data:
+        resource_qs.filter(
+            Q(extension__in=SKIP_DATA_FILE_EXTENSIONS)
+            & Q(size__gte=SKIP_DATA_FILE_SIZE)
+        ).update(status=flag.IGNORED_LARGE_DATA_FILE)
+    scan_resource_qs = resource_qs.filter(~Q(status=flag.IGNORED_LARGE_DATA_FILE))
+
+    resource_count = scan_resource_qs.count()
     logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")
-    resource_iterator = resource_qs.iterator(chunk_size=2000)
+    resource_iterator = scan_resource_qs.iterator(chunk_size=2000)
     progress = LoopProgress(resource_count, logger=progress_logger)
     max_workers = get_max_workers(keep_available=1)
 
@@ -350,14 +366,7 @@ def scan_resources(
                     "Please ensure that there is at least 2 GB of available memory per "
                     "CPU core for successful execution."
                 )
-
-                resource.project.add_error(
-                    exception=broken_pool_error,
-                    model="scan_resources",
-                    description=message,
-                    object_instance=resource,
-                )
-                continue
+                raise broken_pool_error from InsufficientResourcesError(message)
 
             save_func(resource, scan_results, scan_errors)
 
