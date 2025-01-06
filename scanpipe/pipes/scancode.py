@@ -63,7 +63,7 @@ Utilities to deal with ScanCode toolkit features and objects.
 # See https://github.com/aboutcode-org/scancode-toolkit/issues/3711
 # TODO: this has to be removed once the issue is fixed
 SKIP_DATA_FILE_EXTENSIONS = [".json", ".xml", ".yaml", ".yml"]
-SKIP_DATA_FILE_SIZE = 1048576
+SKIP_DATA_FILE_SIZE = 5242880
 
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -318,7 +318,7 @@ def scan_resources(
     if not scan_func_kwargs:
         scan_func_kwargs = {}
 
-    # Skip scannning data files larger than 1 MB
+    # Skip scannning data files larger than 5 MB
     if not scan_func == scan_for_package_data:
         resource_qs.filter(
             Q(extension__in=SKIP_DATA_FILE_EXTENSIONS)
