@@ -10,6 +10,12 @@ v34.9.4 (unreleased)
   Any paginated view can now be navigated using the left/right keyboard keys.
   https://github.com/aboutcode-org/scancode.io/issues/1200
 
+- Add support for importing the ``extra_data`` value from the JSON input with the
+  ``load_inventory`` pipeline.
+  When multiple JSON files are provided as inputs, the ``extra`` is prefixed with
+  the input filename.
+  https://github.com/aboutcode-org/scancode.io/issues/926
+
 v34.9.3 (2024-12-31)
 --------------------
 

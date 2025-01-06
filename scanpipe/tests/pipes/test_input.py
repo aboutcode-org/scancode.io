@@ -109,6 +109,25 @@ class ScanPipeInputPipesTest(TestCase):
         self.assertEqual(57, project.codebaseresources.count())
         self.assertEqual(18, project.codebaserelations.count())
 
+    def test_scanpipe_pipes_scancode_load_inventory_extra_data(self):
+        project = Project.objects.create(name="1")
+        input_location = self.data / "asgiref" / "asgiref-3.3.0_scanpipe_output.json"
+        scan_data = json.loads(input_location.read_text())
+        extra_data = {"key": "value"}
+        scan_data["headers"][0]["extra_data"] = extra_data
+
+        input.load_inventory_from_scanpipe(project, scan_data)
+        project.refresh_from_db()
+        self.assertEqual(extra_data, project.extra_data)
+
+        project.extra_data = {}
+        project.save()
+        input.load_inventory_from_scanpipe(
+            project, scan_data, extra_data_prefix="file.ext"
+        )
+        project.refresh_from_db()
+        self.assertEqual({"file.ext": extra_data}, project.extra_data)
+
     def test_scanpipe_pipes_input_load_inventory_from_xlsx(self):
         project1 = Project.objects.create(name="Analysis")
         input_location = self.data / "outputs" / "asgiref-3.6.0-output.xlsx"
