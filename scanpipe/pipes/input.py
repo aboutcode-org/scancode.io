@@ -19,6 +19,8 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
+
+import os
 import shutil
 from pathlib import Path
 
@@ -41,11 +43,14 @@ from scanpipe.pipes.output import mappings_key_by_fieldname
 def copy_input(input_location, dest_path):
     """Copy the ``input_location`` (file or directory) to the ``dest_path``."""
     input_path = Path(input_location)
-    destination = Path(dest_path) / input_path.name
+    destination_dir = Path(dest_path)
+    destination = destination_dir / input_path.name
 
     if input_path.is_dir():
         shutil.copytree(input_location, destination)
     else:
+        if not os.path.exists(destination_dir):
+            os.makedirs(destination_dir)
         shutil.copyfile(input_location, destination)
 
     return destination
