@@ -148,6 +148,14 @@ class ScanPipeInputPipesTest(TestCase):
         expected = json.loads(expected_location.read_text())
         self.assertEqual(expected, project1.extra_data)
 
+        project1.extra_data = {}
+        project1.save()
+        input.load_inventory_from_xlsx(
+            project1, input_location, extra_data_prefix="file.ext"
+        )
+        project1.refresh_from_db()
+        self.assertEqual({"file.ext": expected}, project1.extra_data)
+
     def test_scanpipe_pipes_input_load_inventory_from_project_xlsx_output(self):
         fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})

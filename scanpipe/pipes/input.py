@@ -197,10 +197,13 @@ def clean_xlsx_data_to_model_data(model_class, xlsx_data):
     return cleaned_data
 
 
-def load_inventory_from_xlsx(project, input_location):
+def load_inventory_from_xlsx(project, input_location, extra_data_prefix=None):
     """
     Create packages, dependencies, resources, and relations loaded from XLSX file
     located at ``input_location``.
+
+    An ``extra_data_prefix`` can be provided in case multiple input files are loaded
+    into the same project. The prefix is usually the filename of the input.
     """
     workbook = openpyxl.load_workbook(input_location, read_only=True, data_only=True)
 
@@ -217,4 +220,7 @@ def load_inventory_from_xlsx(project, input_location):
 
     if "LAYERS" in workbook:
         layers_data = get_worksheet_data(worksheet=workbook["LAYERS"])
-        project.update_extra_data({"layers": layers_data})
+        extra_data = {"layers": layers_data}
+        if extra_data_prefix:
+            extra_data = {extra_data_prefix: extra_data}
+        project.update_extra_data(extra_data)

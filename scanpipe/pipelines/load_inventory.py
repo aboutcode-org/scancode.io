@@ -61,7 +61,9 @@ class LoadInventory(Pipeline):
             extra_data_prefix = None if is_single_input else input_path.name
 
             if input_path.suffix.endswith(".xlsx"):
-                input.load_inventory_from_xlsx(self.project, input_path)
+                input.load_inventory_from_xlsx(
+                    self.project, input_path, extra_data_prefix
+                )
                 continue
 
             scan_data = json.loads(input_path.read_text())
@@ -69,9 +71,11 @@ class LoadInventory(Pipeline):
 
             if tool_name == "scancode-toolkit":
                 input.load_inventory_from_toolkit_scan(self.project, input_path)
+
             elif tool_name == "scanpipe":
                 input.load_inventory_from_scanpipe(
                     self.project, scan_data, extra_data_prefix
                 )
+
             else:
                 raise Exception(f"Input not supported: {str(input_path)} ")
