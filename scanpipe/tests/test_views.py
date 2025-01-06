@@ -135,8 +135,8 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url, data=data)
 
         expected = (
-            '<input class="input " type="search" placeholder="Search projects" '
-            'name="search" value="query">'
+            '<input class="input is-smaller" type="search" '
+            'placeholder="Search projects" name="search" value="query">'
         )
         self.assertContains(response, expected, html=True)
 
