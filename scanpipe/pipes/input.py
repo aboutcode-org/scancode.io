@@ -203,3 +203,7 @@ def load_inventory_from_xlsx(project, input_location):
             cleaned_data = clean_xlsx_data_to_model_data(model_class, row_data)
             if cleaned_data:
                 object_maker_func(project, cleaned_data)
+
+    if "LAYERS" in workbook:
+        layers_data = get_worksheet_data(worksheet=workbook["LAYERS"])
+        project.update_extra_data({"layers": layers_data})
