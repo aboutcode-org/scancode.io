@@ -257,7 +257,8 @@ class ArchiveProjectForm(forms.Form):
 
 
 class ProjectOutputDownloadForm(forms.Form):
-    output_formats = forms.MultipleChoiceField(
+    output_format = forms.ChoiceField(
+        label="Choose the output format to include in the ZIP file",
         choices=[
             ("json", "JSON"),
             ("xlsx", "XLSX"),
@@ -266,7 +267,8 @@ class ProjectOutputDownloadForm(forms.Form):
             ("attribution", "Attribution"),
         ],
         required=True,
-        widget=forms.CheckboxSelectMultiple,
+        initial="json",
+        widget=forms.RadioSelect,
     )
 
 

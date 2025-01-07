@@ -1230,20 +1230,20 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
         if not outputs_download_form.is_valid():
             return HttpResponseRedirect(self.success_url)
 
-        # TODO:
-        # output_formats = outputs_download_form.cleaned_data["output_formats"]
+        output_format = outputs_download_form.cleaned_data["output_format"]
+        output_function = output.FORMAT_TO_FUNCTION_MAPPING.get(output_format)
         projects = self.get_projects_queryset()
 
         # In-memory file storage for the zip archive
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
             for project in projects:
-                output_file = output.to_xlsx(project)
+                output_file = output_function(project)
                 filename = output.safe_filename(f"{project.name}_{output_file.name}")
                 with open(output_file, "rb") as f:
                     zip_file.writestr(filename, f.read())
 
-        zip_buffer.seek(0)  # Move the buffer's cursor to the beginning
+        zip_buffer.seek(0)
         return FileResponse(
             zip_buffer,
             as_attachment=True,

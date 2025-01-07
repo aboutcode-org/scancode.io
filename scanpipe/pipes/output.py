@@ -898,3 +898,12 @@ def to_attribution(project):
 
     output_file.write_text(rendered_template)
     return output_file
+
+
+FORMAT_TO_FUNCTION_MAPPING = {
+    "json": to_json,
+    "xlsx": to_xlsx,
+    "spdx": to_spdx,
+    "cyclonedx": to_cyclonedx,
+    "attribution": to_attribution,
+}

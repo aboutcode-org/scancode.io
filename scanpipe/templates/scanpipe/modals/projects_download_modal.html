@@ -7,10 +7,7 @@
     </header>
     <form action="{% url 'project_action' %}" method="post" id="download-projects-form">{% csrf_token %}
       <section class="modal-card-body">
-        <p class="mb-2">
-          Choose the formats to include in the ZIP file:
-        </p>
-        <ul class="mb-5">
+        <ul class="mb-3">
           {{ outputs_download_form.as_ul }}
         </ul>
       </section>
