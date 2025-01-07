@@ -20,6 +20,10 @@ v34.9.4 (unreleased)
   and let the data loading process handle the data issues.
   https://github.com/aboutcode-org/scancode.io/issues/1515
 
+- Add a report action on project list to export XLSX containing packages from selected
+  projects.
+  https://github.com/aboutcode-org/scancode.io/issues/1437
+
 v34.9.3 (2024-12-31)
 --------------------
 
