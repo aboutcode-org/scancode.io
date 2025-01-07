@@ -16,6 +16,17 @@ v34.9.4 (unreleased)
   the input filename.
   https://github.com/aboutcode-org/scancode.io/issues/926
 
+- Disable CycloneDX document strict validation, which halts the entire loading process,
+  and let the data loading process handle the data issues.
+  https://github.com/aboutcode-org/scancode.io/issues/1515
+
+- Add a report action on project list to export XLSX containing packages from selected
+  projects.
+  https://github.com/aboutcode-org/scancode.io/issues/1437
+
+- Add a download action on project list to enable bulk download of Project output files.
+  https://github.com/aboutcode-org/scancode.io/issues/1518
+
 v34.9.3 (2024-12-31)
 --------------------
 
