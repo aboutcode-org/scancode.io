@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-from django.db.models import Q
 
 NO_STATUS = ""
 
@@ -113,10 +112,9 @@ def flag_and_ignore_files_over_max_size(resource_qs, file_size_limit):
     if not file_size_limit:
         return resource_qs
 
-    resource_qs.filter(size__gte=file_size_limit).update(
+    return resource_qs.filter(size__gte=file_size_limit).update(
         status=IGNORED_BY_MAX_FILE_SIZE
     )
-    return resource_qs.filter(~Q(status=IGNORED_BY_MAX_FILE_SIZE))
 
 
 def analyze_scanned_files(project):

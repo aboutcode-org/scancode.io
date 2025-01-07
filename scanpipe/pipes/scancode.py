@@ -34,6 +34,7 @@ from pathlib import Path
 from django.apps import apps
 from django.conf import settings
 from django.db.models import ObjectDoesNotExist
+from django.db.models import Q
 
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
@@ -313,14 +314,16 @@ def scan_resources(
 
     # Skip scannning files larger than the specified max size
     if not scan_func == scan_for_package_data:
-        resource_qs = flag.flag_and_ignore_files_over_max_size(
+        flag.flag_and_ignore_files_over_max_size(
             resource_qs=resource_qs,
             file_size_limit=settings.SCANCODEIO_SCAN_MAX_FILE_SIZE,
         )
 
-    resource_count = resource_qs.count()
+    scan_resource_qs = resource_qs.filter(~Q(status=flag.IGNORED_BY_MAX_FILE_SIZE))
+
+    resource_count = scan_resource_qs.count()
     logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")
-    resource_iterator = resource_qs.iterator(chunk_size=2000)
+    resource_iterator = scan_resource_qs.iterator(chunk_size=2000)
     progress = LoopProgress(resource_count, logger=progress_logger)
     max_workers = get_max_workers(keep_available=1)
 

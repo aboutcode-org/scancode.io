@@ -457,12 +457,10 @@ class ScanPipeScancodePipesTest(TestCase):
 
             exitcode, out = pipeline.execute()
             self.assertEqual(0, exitcode, msg=out)
-            self.assertEqual(
-                project1.codebaseresources.get(
-                    path="to-trustier-binary-linux.tar.gz-extract/trustier"
-                ).status,
-                flag.IGNORED_BY_MAX_FILE_SIZE,
+            resource1 = project1.codebaseresources.get(
+                path="to-trustier-binary-linux.tar.gz-extract/trustier"
             )
+            self.assertEqual(resource1.status, flag.IGNORED_BY_MAX_FILE_SIZE)
 
     def test_scanpipe_pipes_scancode_make_results_summary(self, regen=FIXTURES_REGEN):
         # Ensure the policies index is empty to avoid any side effect on results
