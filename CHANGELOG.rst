@@ -16,6 +16,10 @@ v34.9.4 (unreleased)
   the input filename.
   https://github.com/aboutcode-org/scancode.io/issues/926
 
+- Disable CycloneDX document strict validation, which halts the entire loading process,
+  and let the data loading process handle the data issues.
+  https://github.com/aboutcode-org/scancode.io/issues/1515
+
 v34.9.3 (2024-12-31)
 --------------------
 
