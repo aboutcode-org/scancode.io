@@ -50,10 +50,15 @@ class MatchToMatchCode(Pipeline):
     def steps(cls):
         return (
             cls.check_matchcode_service_availability,
+            cls.fingerprint_codebase_resources,
             cls.send_project_json_to_matchcode,
             cls.poll_matching_results,
             cls.create_packages_from_match_results,
         )
+
+    def fingerprint_codebase_resources(self):
+        """Compute resource fingerprints for snippet matching"""
+        matchcode.fingerprint_codebase_resources(self.project)
 
     def check_matchcode_service_availability(self):
         """Check if the MatchCode.io service if configured and available."""
