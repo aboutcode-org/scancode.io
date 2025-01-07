@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+from django.db.models import Q
+
 NO_STATUS = ""
 
 SCANNED = "scanned"
@@ -43,7 +45,7 @@ IGNORED_NOT_INTERESTING = "ignored-not-interesting"
 IGNORED_DEFAULT_IGNORES = "ignored-default-ignores"
 IGNORED_DATA_FILE_NO_CLUES = "ignored-data-file-no-clues"
 IGNORED_DOC_FILE = "ignored-doc-file"
-IGNORED_LARGE_DATA_FILE = "ignored-large-data-file"
+IGNORED_BY_MAX_FILE_SIZE = "ignored-by-max-file-size"
 
 COMPLIANCE_LICENSES = "compliance-licenses"
 COMPLIANCE_SOURCEMIRROR = "compliance-sourcemirror"
@@ -101,6 +103,20 @@ def flag_ignored_patterns(project, patterns):
         update_count += qs.update(status=IGNORED_PATTERN)
 
     return update_count
+
+
+def flag_and_ignore_files_over_max_size(resource_qs, file_size_limit):
+    """
+    Flag codebase resources which are over the max file size for scanning
+    and return all other files within the file size limit.
+    """
+    if not file_size_limit:
+        return resource_qs
+
+    resource_qs.filter(size__gte=file_size_limit).update(
+        status=IGNORED_BY_MAX_FILE_SIZE
+    )
+    return resource_qs.filter(~Q(status=IGNORED_BY_MAX_FILE_SIZE))
 
 
 def analyze_scanned_files(project):
