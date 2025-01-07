@@ -1,0 +1,23 @@
+<div class="modal" id="modal-projects-report">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Report of selected projects</p>
+      <button class="delete" aria-label="close"></button>
+    </header>
+    <form action="{% url 'project_action' %}" method="post" id="report-projects-form">{% csrf_token %}
+      <section class="modal-card-body">
+        <div class="notification is-info has-text-weight-semibold">
+          All the packages for the selected projects will be included in an XLSX report.
+        </div>
+      </section>
+      <input type="hidden" name="action" value="report">
+      <footer class="modal-card-foot is-flex is-justify-content-space-between">
+        <button class="button has-text-weight-semibold" type="reset">Cancel</button>
+        <button class="button is-success" type="button" data-action-trigger="report-projects">
+          Download XLSX<span class="icon ml-1"><i class="fa-solid fa-download"></i></span>
+        </button>
+      </footer>
+    </form>
+  </div>
+</div>
