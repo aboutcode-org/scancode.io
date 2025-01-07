@@ -24,6 +24,7 @@ import difflib
 import io
 import json
 import operator
+import zipfile
 from collections import Counter
 from contextlib import suppress
 from pathlib import Path
@@ -79,6 +80,7 @@ from scanpipe.forms import EditInputSourceTagForm
 from scanpipe.forms import PipelineRunStepSelectionForm
 from scanpipe.forms import ProjectCloneForm
 from scanpipe.forms import ProjectForm
+from scanpipe.forms import ProjectOutputDownloadForm
 from scanpipe.forms import ProjectSettingsForm
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
@@ -589,6 +591,7 @@ class ProjectListView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["archive_form"] = ArchiveProjectForm()
+        context["outputs_download_form"] = ProjectOutputDownloadForm()
         return context
 
     def get_queryset(self):
@@ -1156,7 +1159,7 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
     """Call a method for each instance of the selection."""
 
     model = Project
-    allowed_actions = ["archive", "delete", "reset", "report"]
+    allowed_actions = ["archive", "delete", "reset", "report", "download"]
     success_url = reverse_lazy("project_list")
 
     def post(self, request, *args, **kwargs):
@@ -1170,6 +1173,9 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
         action_kwargs = {}
         if action == "report":
             return self.export_xlsx_file_response()
+
+        if action == "download":
+            return self.download_outputs_zip_response()
 
         if action == "archive":
             archive_form = ArchiveProjectForm(request.POST)
@@ -1204,8 +1210,11 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
     def get_success_message(self, action, count):
         return f"{count} projects have been {action}."
 
+    def get_projects_queryset(self):
+        return Project.objects.filter(pk__in=self.selected_project_ids)
+
     def get_export_xlsx_queryset(self):
-        projects = Project.objects.filter(pk__in=self.selected_project_ids)
+        projects = self.get_projects_queryset()
         packages = DiscoveredPackage.objects.filter(project__in=projects)
         packages = packages.select_related("project")
         return packages
@@ -1215,6 +1224,31 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
 
     def get_export_xlsx_filename(self):
         return "report.xlsx"
+
+    def download_outputs_zip_response(self):
+        outputs_download_form = ProjectOutputDownloadForm(self.request.POST)
+        if not outputs_download_form.is_valid():
+            return HttpResponseRedirect(self.success_url)
+
+        # TODO:
+        # output_formats = outputs_download_form.cleaned_data["output_formats"]
+        projects = self.get_projects_queryset()
+
+        # In-memory file storage for the zip archive
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            for project in projects:
+                output_file = output.to_xlsx(project)
+                filename = output.safe_filename(f"{project.name}_{output_file.name}")
+                with open(output_file, "rb") as f:
+                    zip_file.writestr(filename, f.read())
+
+        zip_buffer.seek(0)  # Move the buffer's cursor to the beginning
+        return FileResponse(
+            zip_buffer,
+            as_attachment=True,
+            filename="scancodeio_output_files.zip",
+        )
 
 
 class ProjectResetView(ConditionalLoginRequired, generic.DeleteView):

@@ -24,6 +24,9 @@ v34.9.4 (unreleased)
   projects.
   https://github.com/aboutcode-org/scancode.io/issues/1437
 
+- Add a download action on project list to enable bulk download of Project output files.
+  https://github.com/aboutcode-org/scancode.io/issues/1518
+
 v34.9.3 (2024-12-31)
 --------------------
 

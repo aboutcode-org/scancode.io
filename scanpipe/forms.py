@@ -256,6 +256,20 @@ class ArchiveProjectForm(forms.Form):
     )
 
 
+class ProjectOutputDownloadForm(forms.Form):
+    output_formats = forms.MultipleChoiceField(
+        choices=[
+            ("json", "JSON"),
+            ("xlsx", "XLSX"),
+            ("spdx", "SPDX"),
+            ("cyclonedx", "CycloneDX"),
+            ("attribution", "Attribution"),
+        ],
+        required=True,
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+
 class ListTextarea(forms.CharField):
     """
     A Django form field that displays as a textarea and converts each line of input
