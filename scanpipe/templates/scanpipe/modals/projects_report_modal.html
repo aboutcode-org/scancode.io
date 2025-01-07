@@ -7,8 +7,8 @@
     </header>
     <form action="{% url 'project_action' %}" method="post" id="report-projects-form">{% csrf_token %}
       <section class="modal-card-body">
-        <div class="notification is-warning has-text-weight-semibold">
-          The selected projects packages will be included in an XLSX report.
+        <div class="notification is-info has-text-weight-semibold">
+          All the packages for the selected projects will be included in an XLSX report.
         </div>
       </section>
       <input type="hidden" name="action" value="report">
