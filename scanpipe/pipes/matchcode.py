@@ -362,3 +362,9 @@ def create_packages_from_match_results(project, match_results):
             package_data=matched_package,
             status=flag.MATCHED_TO_PURLDB_PACKAGE,
         )
+    match_resources = match_results.get("files", [])
+    for match_resource in match_resources:
+        match_resource_extra_data = match_resource["extra_data"]
+        if match_resource_extra_data:
+            resource = project.codebaseresources.get(path=match_resource["path"])
+            resource.update_extra_data(match_resource_extra_data)
