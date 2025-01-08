@@ -561,7 +561,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     )
     notes = models.TextField(blank=True)
     settings = models.JSONField(default=dict, blank=True)
-    labels = TaggableManager(through=UUIDTaggedItem)
+    labels = TaggableManager(through=UUIDTaggedItem, ordering=["name"])
     purl = models.CharField(
         max_length=2048,
         blank=True,
