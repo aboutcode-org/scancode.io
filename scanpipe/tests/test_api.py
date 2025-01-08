@@ -489,13 +489,13 @@ class ScanPipeAPITest(TransactionTestCase):
     def test_scanpipe_api_project_create_labels(self):
         data = {
             "name": "Project1",
-            "labels": ["label1", "label2"],
+            "labels": ["label2", "label1"],
         }
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
-        self.assertEqual(data["labels"], sorted(response.data["labels"]))
+        self.assertEqual(sorted(data["labels"]), response.data["labels"])
         project = Project.objects.get(name=data["name"])
-        self.assertEqual(data["labels"], sorted(project.labels.names()))
+        self.assertEqual(sorted(data["labels"]), list(project.labels.names()))
 
     def test_scanpipe_api_project_create_pipeline_groups(self):
         data = {

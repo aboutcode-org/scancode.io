@@ -245,15 +245,19 @@ class FilterSetUtilsMixin:
         `empty_value` to any filters.
         """
         for name, value in self.form.cleaned_data.items():
-            field_name = self.filters[name].field_name
-            if value == self.empty_value:
+            filter_field = self.filters[name]
+            field_name = filter_field.field_name
+
+            if isinstance(filter_field, QuerySearchFilter):
+                queryset = filter_field.filter(queryset, value)
+            elif value == self.empty_value:
                 queryset = queryset.filter(**{f"{field_name}__in": EMPTY_VALUES})
             elif value == self.any_value:
                 queryset = queryset.filter(~Q(**{f"{field_name}__in": EMPTY_VALUES}))
             elif value == self.other_value and hasattr(queryset, "less_common"):
                 return queryset.less_common(name)
             else:
-                queryset = self.filters[name].filter(queryset, value)
+                queryset = filter_field.filter(queryset, value)
 
         return queryset
 

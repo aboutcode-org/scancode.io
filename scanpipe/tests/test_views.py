@@ -358,7 +358,7 @@ class ScanPipeViewsTest(TestCase):
         data["add-labels-submit"] = ""
         response = self.client.post(url, data, follow=True)
         self.assertContains(response, "Label(s) added.")
-        self.assertEqual(["label1", "label2"], sorted(self.project1.labels.names()))
+        self.assertEqual(["label1", "label2"], list(self.project1.labels.names()))
 
     def test_scanpipe_views_project_delete_label(self):
         self.project1.labels.add("label1")
