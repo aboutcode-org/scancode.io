@@ -64,8 +64,9 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
         run_async = options["async"]
         timestamp = datetime.now().strftime("%y%m%d_%H%M%S")
         project_name_suffix = options.get("project_name_suffix") or timestamp
+        input_directory = options["input-directory"]
 
-        directory = Path(options["input-directory"])
+        directory = Path(input_directory)
         if not directory.exists():
             raise CommandError("The directory does not exist.")
 

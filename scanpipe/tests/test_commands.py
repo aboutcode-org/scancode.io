@@ -194,6 +194,36 @@ class ScanPipeManagementCommandTest(TestCase):
             "Project other_project created with work directory", out.getvalue()
         )
 
+    def test_scanpipe_management_command_batch_create(self):
+        expected = "the following arguments are required: input-directory"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("batch-create")
+
+        input_directory = self.data / "commands" / "batch-create"
+        options = [
+            "--pipeline",
+            "scan_package",
+            "--note",
+            "Some notes",
+            "--label",
+            "label1",
+            "--label",
+            "label2",
+            "--project-name-suffix",
+            "suffix",
+        ]
+
+        out = StringIO()
+        call_command("batch-create", str(input_directory), *options, stdout=out)
+        self.assertIn("Project a.txt suffix created", out.getvalue())
+        self.assertIn("Project b.txt suffix created", out.getvalue())
+
+        self.assertEqual(2, Project.objects.count())
+        project = Project.objects.all()[0]
+        self.assertEqual("Some notes", project.notes)
+        self.assertEqual(["label1", "label2"], list(project.labels.names()))
+        self.assertEqual("scan_single_package", project.runs.get().pipeline_name)
+
     def test_scanpipe_management_command_add_input_file(self):
         out = StringIO()
 
@@ -1097,7 +1127,7 @@ class ScanPipeManagementCommandMixinTest(TestCase):
         self.assertEqual("tag", tagged_source.tag)
 
     def test_scanpipe_management_command_mixin_create_project_execute(self):
-        expected = "The execute argument requires one or more pipelines."
+        expected = "The --execute option requires one or more pipelines."
         with self.assertRaisesMessage(CommandError, expected):
             self.create_project_command.create_project(name="my_project", execute=True)
 
