@@ -1,13 +1,50 @@
 Changelog
 =========
 
-v34.9.3 (unreleased)
+v34.9.4 (unreleased)
+--------------------
+
+- Improve Project list page navigation.
+  A top previous/next page navigation was added in the header for consistency with other
+  list views.
+  Any paginated view can now be navigated using the left/right keyboard keys.
+  https://github.com/aboutcode-org/scancode.io/issues/1200
+
+- Add support for importing the ``extra_data`` value from the JSON input with the
+  ``load_inventory`` pipeline.
+  When multiple JSON files are provided as inputs, the ``extra`` is prefixed with
+  the input filename.
+  https://github.com/aboutcode-org/scancode.io/issues/926
+
+- Disable CycloneDX document strict validation, which halts the entire loading process,
+  and let the data loading process handle the data issues.
+  https://github.com/aboutcode-org/scancode.io/issues/1515
+
+- Add a report action on project list to export XLSX containing packages from selected
+  projects.
+  https://github.com/aboutcode-org/scancode.io/issues/1437
+
+- Add a download action on project list to enable bulk download of Project output files.
+  https://github.com/aboutcode-org/scancode.io/issues/1518
+
+- Add labels to Project level search.
+  The labels are now always presented in alphabetical order for consistency.
+  https://github.com/aboutcode-org/scancode.io/issues/1520
+
+v34.9.3 (2024-12-31)
 --------------------
 
 - Refine the available settings for RQ_QUEUES:
   * Rename the RQ_QUEUES sub-settings to SCANCODEIO_RQ_REDIS_*
   * Add SCANCODEIO_RQ_REDIS_SSL setting to enable SSL.
   https://github.com/aboutcode-org/scancode.io/issues/1465
+
+- Add support to map binaries to source files using symbols
+  for rust binaries and source files. This adds also using
+  ``rust-inspector`` to extract symbols from rust binaries.
+  This is a new optional ``Rust`` step in the
+  ``map_deploy_to_develop`` pipeline.
+  https://github.com/aboutcode-org/scancode.io/issues/1435
 
 v34.9.2 (2024-12-10)
 --------------------

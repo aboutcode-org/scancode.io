@@ -245,15 +245,19 @@ class FilterSetUtilsMixin:
         `empty_value` to any filters.
         """
         for name, value in self.form.cleaned_data.items():
-            field_name = self.filters[name].field_name
-            if value == self.empty_value:
+            filter_field = self.filters[name]
+            field_name = filter_field.field_name
+
+            if isinstance(filter_field, QuerySearchFilter):
+                queryset = filter_field.filter(queryset, value)
+            elif value == self.empty_value:
                 queryset = queryset.filter(**{f"{field_name}__in": EMPTY_VALUES})
             elif value == self.any_value:
                 queryset = queryset.filter(~Q(**{f"{field_name}__in": EMPTY_VALUES}))
             elif value == self.other_value and hasattr(queryset, "less_common"):
                 return queryset.less_common(name)
             else:
-                queryset = self.filters[name].filter(queryset, value)
+                queryset = filter_field.filter(queryset, value)
 
         return queryset
 
@@ -266,7 +270,7 @@ class FilterSetUtilsMixin:
         return super().filter_for_lookup(field, lookup_type)
 
 
-def parse_query_string_to_lookups(query_string, default_lookup_expr, default_field):
+def parse_query_string_to_lookups(query_string, default_lookup_expr, search_fields):
     """Parse a query string and convert it into queryset lookups using Q objects."""
     lookups = Q()
     terms = shlex.split(query_string)
@@ -295,11 +299,14 @@ def parse_query_string_to_lookups(query_string, default_lookup_expr, default_fie
                 field_name = field_name[1:]
                 negated = True
 
+            lookups &= Q(
+                **{f"{field_name}__{lookup_expr}": search_value}, _negated=negated
+            )
+
         else:
             search_value = term
-            field_name = default_field
-
-        lookups &= Q(**{f"{field_name}__{lookup_expr}": search_value}, _negated=negated)
+            for field_name in search_fields:
+                lookups |= Q(**{f"{field_name}__{lookup_expr}": search_value})
 
     return lookups
 
@@ -323,6 +330,10 @@ class QuerySearchFilter(django_filters.CharFilter):
 
     field_class = QuerySearchField
 
+    def __init__(self, search_fields=None, lookup_expr="icontains", *args, **kwargs):
+        super().__init__(lookup_expr=lookup_expr, *args, **kwargs)
+        self.search_fields = search_fields or []
+
     def filter(self, qs, value):
         if not value:
             return qs
@@ -330,11 +341,11 @@ class QuerySearchFilter(django_filters.CharFilter):
         lookups = parse_query_string_to_lookups(
             query_string=value,
             default_lookup_expr=self.lookup_expr,
-            default_field=self.field_name,
+            search_fields=self.search_fields,
         )
 
         try:
-            return qs.filter(lookups)
+            return qs.filter(lookups).distinct()
         except FieldError:
             return qs.none()
 
@@ -347,7 +358,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     ]
 
     search = QuerySearchFilter(
-        label="Search", field_name="name", lookup_expr="icontains"
+        label="Search", search_fields=["name", "labels__name"], lookup_expr="icontains"
     )
     sort = django_filters.OrderingFilter(
         label="Sort",
@@ -508,7 +519,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
     search = QuerySearchFilter(
         label="Search",
-        field_name="path",
+        search_fields=["path"],
         lookup_expr="icontains",
     )
     sort = django_filters.OrderingFilter(
@@ -615,15 +626,7 @@ class DiscoveredPackageSearchFilter(QuerySearchFilter):
         if value.startswith("pkg:"):
             return qs.for_package_url(value)
 
-        if ":" in value:
-            return super().filter(qs, value)
-
-        search_fields = ["type", "namespace", "name", "version"]
-        lookups = Q()
-        for field_names in search_fields:
-            lookups |= Q(**{f"{field_names}__{self.lookup_expr}": value})
-
-        return qs.filter(lookups)
+        return super().filter(qs, value)
 
 
 class GroupOrderingFilter(django_filters.OrderingFilter):
@@ -662,7 +665,9 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     ]
 
     search = DiscoveredPackageSearchFilter(
-        label="Search", field_name="name", lookup_expr="icontains"
+        label="Search",
+        search_fields=["type", "namespace", "name", "version"],
+        lookup_expr="icontains",
     )
     sort = GroupOrderingFilter(
         label="Sort",
@@ -746,7 +751,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     ]
 
     search = QuerySearchFilter(
-        label="Search", field_name="name", lookup_expr="icontains"
+        label="Search", search_fields=["name"], lookup_expr="icontains"
     )
     sort = GroupOrderingFilter(
         label="Sort",
@@ -803,7 +808,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
 class ProjectMessageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = QuerySearchFilter(
-        label="Search", field_name="description", lookup_expr="icontains"
+        label="Search", search_fields=["description"], lookup_expr="icontains"
     )
     sort = django_filters.OrderingFilter(
         label="Sort",
@@ -855,7 +860,7 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
     search = QuerySearchFilter(
         label="Search",
-        field_name="to_resource__path",
+        search_fields=["to_resource__path"],
         lookup_expr="icontains",
     )
     sort = django_filters.OrderingFilter(

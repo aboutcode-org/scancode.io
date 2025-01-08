@@ -256,6 +256,22 @@ class ArchiveProjectForm(forms.Form):
     )
 
 
+class ProjectOutputDownloadForm(forms.Form):
+    output_format = forms.ChoiceField(
+        label="Choose the output format to include in the ZIP file",
+        choices=[
+            ("json", "JSON"),
+            ("xlsx", "XLSX"),
+            ("spdx", "SPDX"),
+            ("cyclonedx", "CycloneDX"),
+            ("attribution", "Attribution"),
+        ],
+        required=True,
+        initial="json",
+        widget=forms.RadioSelect,
+    )
+
+
 class ListTextarea(forms.CharField):
     """
     A Django form field that displays as a textarea and converts each line of input

@@ -816,13 +816,13 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected, self.project1.get_ignored_vulnerabilities_set())
 
     def test_scanpipe_project_model_labels(self):
-        self.project1.labels.add("label1", "label2")
+        self.project1.labels.add("label2", "label1")
         self.assertEqual(2, UUIDTaggedItem.objects.count())
-        self.assertEqual(["label1", "label2"], sorted(self.project1.labels.names()))
+        self.assertEqual(["label1", "label2"], list(self.project1.labels.names()))
 
         self.project1.labels.remove("label1")
         self.assertEqual(1, UUIDTaggedItem.objects.count())
-        self.assertEqual(["label2"], sorted(self.project1.labels.names()))
+        self.assertEqual(["label2"], list(self.project1.labels.names()))
 
         self.project1.labels.clear()
         self.assertEqual(0, UUIDTaggedItem.objects.count())

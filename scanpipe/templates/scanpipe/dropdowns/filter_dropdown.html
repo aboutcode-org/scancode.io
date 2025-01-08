@@ -1,6 +1,11 @@
 <div class="dropdown is-right is-hoverable">
   <div class="dropdown-trigger">
-    <button class="button" aria-haspopup="true">
+    <button class="button is-smaller" aria-haspopup="true">
+      {% if icon_class %}
+        <span class="icon has-text-grey">
+          <i class="{{ icon_class }}"></i>
+        </span>
+      {% endif %}
       <span>{{ filter_form_field.label }}</span>
       <span class="icon is-small">
         <i class="fa-solid fa-angle-down" aria-hidden="true"></i>
