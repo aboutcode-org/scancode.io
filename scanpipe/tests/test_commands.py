@@ -93,6 +93,15 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual("", out.getvalue())
         self.assertTrue(Project.objects.get(name="my_project"))
 
+    def test_scanpipe_management_command_create_project_labels(self):
+        out = StringIO()
+        options = ["--label", "label1", "--label", "label2"]
+
+        call_command("create-project", "my_project", *options, stdout=out)
+        self.assertIn("Project my_project created", out.getvalue())
+        project = Project.objects.get(name="my_project")
+        self.assertEqual(["label1", "label2"], list(project.labels.names()))
+
     def test_scanpipe_management_command_create_project_notes(self):
         out = StringIO()
         notes = "Some notes about my project"

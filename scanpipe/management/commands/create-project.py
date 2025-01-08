@@ -36,10 +36,6 @@ class Command(
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument("name", help="Project name.")
-        parser.add_argument(
-            "--notes",
-            help="Optional notes about the project.",
-        )
 
     def handle(self, *args, **options):
         self.verbosity = options["verbosity"]
@@ -49,6 +45,7 @@ class Command(
         input_urls = options["input_urls"]
         copy_from = options["copy_codebase"]
         notes = options["notes"]
+        labels = options["labels"]
         execute = options["execute"]
         run_async = options["async"]
 
@@ -59,6 +56,7 @@ class Command(
             input_urls=input_urls,
             copy_from=copy_from,
             notes=notes,
+            labels=labels,
             execute=execute,
             run_async=run_async,
         )

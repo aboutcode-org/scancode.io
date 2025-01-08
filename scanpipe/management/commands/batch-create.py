@@ -58,6 +58,8 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
     def handle(self, *args, **options):
         self.verbosity = options["verbosity"]
         pipelines = options["pipelines"]
+        notes = options["notes"]
+        labels = options["labels"]
         execute = options["execute"]
         run_async = options["async"]
         timestamp = datetime.now().strftime("%y%m%d_%H%M%S")
@@ -75,6 +77,8 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
                     name=project_name,
                     pipelines=pipelines,
                     input_files=[str(file_path)],
+                    notes=notes,
+                    labels=labels,
                     execute=execute,
                     run_async=run_async,
                 )

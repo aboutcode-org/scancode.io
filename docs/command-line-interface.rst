@@ -83,7 +83,8 @@ For example::
     $ scanpipe create-project --help
     usage: scanpipe create-project [--input-file INPUTS_FILES]
         [--input-url INPUT_URLS] [--copy-codebase SOURCE_DIRECTORY]
-        [--pipeline PIPELINES] [--execute] [--async]
+        [--pipeline PIPELINES] [--label LABELS] [--notes NOTES]
+        [--execute] [--async]
         name
 
     Create a ScanPipe project.
@@ -123,6 +124,10 @@ Optional arguments:
 
 - ``--copy-codebase SOURCE_DIRECTORY`` Copy the content of the provided source directory
   into the :guilabel:`codebase/` work directory.
+
+- ``--notes NOTES`` Optional notes about the project.
+
+- ``--label LABELS`` Optional labels for the project.
 
 - ``--execute`` Execute the pipelines right after project creation.
 
