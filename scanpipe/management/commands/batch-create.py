@@ -49,10 +49,12 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
         )
         parser.add_argument(
             "--input-list",
+            metavar="FILENAME.csv",
             help=(
-                "A CSV file containing the list of project name and input URLs. "
-                "The first column is the project name and the second column a list of "
-                "comma-separated input URLs (Download URL, PURL, Docker reference)",
+                "Path to a CSV file with project names and input URLs. "
+                "The first column must contain project names, and the second column "
+                "should list comma-separated input URLs (e.g., Download URL, PURL, or "
+                "Docker reference)."
             ),
         )
         parser.add_argument(

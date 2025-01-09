@@ -141,18 +141,38 @@ Optional arguments:
 
 .. _cli_batch_create:
 
-`$ scanpipe batch-create <input-directory>`
--------------------------------------------
+`$ scanpipe batch-create [--input-directory INPUT_DIRECTORY] [--input-list FILENAME.csv]`
+-----------------------------------------------------------------------------------------
 
-Processes files in the specified ``input-directory`` by creating a project
-for each file.
-Each project is uniquely named using the filename and a timestamp.
+Processes files from the specified ``INPUT_DIRECTORY`` or rows from ``FILENAME.csv``,
+creating a project for each file or row.
+
+- Use ``--input-directory`` to specify a local directory. Each file in the directory
+  will result in a project, uniquely named using the filename and a timestamp.
+
+- Use ``--input-list`` to specify a ``FILENAME.csv``. Each row in the CSV will be used
+  to create a project based on the data provided.
+
 Supports specifying pipelines and asynchronous execution.
 
-Required arguments:
+Required arguments (one of):
 
 - ``input-directory`` The path to the directory containing the input files to process.
   Ensure the directory exists and contains the files you want to use.
+
+- ``input-list`` Path to a CSV file with project names and input URLs.
+  The first column must contain project names, and the second column should list
+  comma-separated input URLs (e.g., Download URL, PURL, or Docker reference).
+
+  **CSV content example**:
+
+  +----------------+---------------------------------+
+  | project_name   | input_urls                      |
+  +================+=================================+
+  | project-1      | https://url.com/file.ext        |
+  +----------------+---------------------------------+
+  | project-2      | pkg:deb/debian/curl@7.50.3      |
+  +----------------+---------------------------------+
 
 Optional arguments:
 
