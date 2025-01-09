@@ -31,6 +31,10 @@ v34.9.4 (unreleased)
   The labels are now always presented in alphabetical order for consistency.
   https://github.com/aboutcode-org/scancode.io/issues/1520
 
+- Add a ``batch-create`` management command that allows to create multiple projects
+  at once from a directory containing input files.
+  https://github.com/aboutcode-org/scancode.io/issues/1437
+
 v34.9.3 (2024-12-31)
 --------------------
 

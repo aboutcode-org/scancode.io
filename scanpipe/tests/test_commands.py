@@ -93,6 +93,15 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual("", out.getvalue())
         self.assertTrue(Project.objects.get(name="my_project"))
 
+    def test_scanpipe_management_command_create_project_labels(self):
+        out = StringIO()
+        options = ["--label", "label1", "--label", "label2"]
+
+        call_command("create-project", "my_project", *options, stdout=out)
+        self.assertIn("Project my_project created", out.getvalue())
+        project = Project.objects.get(name="my_project")
+        self.assertEqual(["label1", "label2"], list(project.labels.names()))
+
     def test_scanpipe_management_command_create_project_notes(self):
         out = StringIO()
         notes = "Some notes about my project"
@@ -184,6 +193,89 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn(
             "Project other_project created with work directory", out.getvalue()
         )
+
+    def test_scanpipe_management_command_batch_create(self):
+        expected = "You must provide either --input-directory or --input-list as input."
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("batch-create")
+
+        input_directory = self.data / "commands" / "batch-create-directory"
+        options = [
+            "--input-directory",
+            str(input_directory),
+            "--pipeline",
+            "scan_package",
+            "--note",
+            "Some notes",
+            "--label",
+            "label1",
+            "--label",
+            "label2",
+            "--project-name-suffix",
+            "suffix",
+        ]
+
+        out = StringIO()
+        call_command("batch-create", *options, stdout=out)
+        self.assertIn("Project a.txt suffix created", out.getvalue())
+        self.assertIn("Project b.txt suffix created", out.getvalue())
+
+        self.assertEqual(2, Project.objects.count())
+        project = Project.objects.get(name="a.txt suffix")
+        self.assertEqual("Some notes", project.notes)
+        self.assertEqual(["label1", "label2"], list(project.labels.names()))
+        self.assertEqual("scan_single_package", project.runs.get().pipeline_name)
+        self.assertEqual(["a.txt"], project.input_files)
+
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_management_command_batch_create_input_list_csv(self, mock_get):
+        mock_responses = [
+            mock.Mock(
+                content=b"\x00",
+                headers={},
+                status_code=200,
+                url="https://example.com/source.zip",
+            ),
+            mock.Mock(
+                content=b"\x00",
+                headers={},
+                status_code=200,
+                url="https://example.com/binary.bin",
+            ),
+            mock.Mock(
+                content=b"\x00",
+                headers={},
+                status_code=200,
+                url="https://example.com/filename.zip",
+            ),
+        ]
+        mock_get.side_effect = mock_responses
+
+        input_list = self.data / "commands" / "batch-create-list" / "project_list.csv"
+        options = [
+            "--input-list",
+            str(input_list),
+            "--pipeline",
+            "map_deploy_to_develop",
+        ]
+
+        out = StringIO()
+        call_command("batch-create", *options, stdout=out)
+        self.assertIn("Project project-v1", out.getvalue())
+        self.assertIn("Project project-v2", out.getvalue())
+
+        self.assertEqual(2, Project.objects.count())
+        project1 = Project.objects.filter(name__contains="project-v1")[0]
+        self.assertEqual("map_deploy_to_develop", project1.runs.get().pipeline_name)
+        self.assertEqual(["binary.bin", "source.zip"], sorted(project1.input_files))
+        input_source = project1.inputsources.get(filename="source.zip")
+        self.assertEqual("from", input_source.tag)
+        input_source = project1.inputsources.get(filename="binary.bin")
+        self.assertEqual("to", input_source.tag)
+
+        project2 = Project.objects.filter(name__contains="project-v2")[0]
+        self.assertEqual("map_deploy_to_develop", project1.runs.get().pipeline_name)
+        self.assertEqual(["filename.zip"], sorted(project2.input_files))
 
     def test_scanpipe_management_command_add_input_file(self):
         out = StringIO()
@@ -1088,7 +1180,7 @@ class ScanPipeManagementCommandMixinTest(TestCase):
         self.assertEqual("tag", tagged_source.tag)
 
     def test_scanpipe_management_command_mixin_create_project_execute(self):
-        expected = "The execute argument requires one or more pipelines."
+        expected = "The --execute option requires one or more pipelines."
         with self.assertRaisesMessage(CommandError, expected):
             self.create_project_command.create_project(name="my_project", execute=True)
 
