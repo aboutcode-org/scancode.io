@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import csv
 from datetime import datetime
 from pathlib import Path
 
@@ -28,7 +29,6 @@ from django.core.management.base import BaseCommand
 
 from scanpipe.management.commands import CreateProjectCommandMixin
 from scanpipe.management.commands import PipelineCommandMixin
-from scanpipe.pipes.output import safe_filename
 
 
 class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
@@ -41,10 +41,18 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
-            "input-directory",
+            "--input-directory",
             help=(
                 "The path to the directory containing the input files to process. "
                 "Ensure the directory exists and contains the files you want to use."
+            ),
+        )
+        parser.add_argument(
+            "--input-list",
+            help=(
+                "A CSV file containing the list of project name and input URLs. "
+                "The first column is the project name and the second column a list of "
+                "comma-separated input URLs (Download URL, PURL, Docker reference)",
             ),
         )
         parser.add_argument(
@@ -57,29 +65,79 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
 
     def handle(self, *args, **options):
         self.verbosity = options["verbosity"]
-        pipelines = options["pipelines"]
-        notes = options["notes"]
-        labels = options["labels"]
-        execute = options["execute"]
-        run_async = options["async"]
+
+        input_directory = options["input_directory"]
+        input_list = options["input_list"]
+
+        if not (input_directory or input_list):
+            raise CommandError(
+                "You must provide either --input-directory or --input-list as input."
+            )
+
+        if input_directory:
+            self.handle_input_directory(**options)
+
+        if input_list:
+            self.handle_input_list(**options)
+
+    def handle_input_directory(self, **options):
         timestamp = datetime.now().strftime("%y%m%d_%H%M%S")
         project_name_suffix = options.get("project_name_suffix") or timestamp
-        input_directory = options["input-directory"]
 
-        directory = Path(input_directory)
+        directory = Path(options["input_directory"])
         if not directory.exists():
             raise CommandError("The directory does not exist.")
 
         for file_path in directory.rglob("*"):
             if file_path.is_file():
-                project_name = f"{safe_filename(file_path.name)} {project_name_suffix}"
-
+                project_name = f"{file_path.name} {project_name_suffix}"
                 self.create_project(
                     name=project_name,
-                    pipelines=pipelines,
+                    pipelines=options["pipelines"],
                     input_files=[str(file_path)],
-                    notes=notes,
-                    labels=labels,
-                    execute=execute,
-                    run_async=run_async,
+                    notes=options["notes"],
+                    labels=options["labels"],
+                    execute=options["execute"],
+                    run_async=options["async"],
                 )
+
+    def handle_input_list(self, **options):
+        input_file = Path(options["input_list"])
+        if not input_file.exists():
+            raise CommandError(f"The {input_file} file does not exist.")
+
+        timestamp = datetime.now().strftime("%y%m%d_%H%M%S")
+        project_name_suffix = options.get("project_name_suffix") or timestamp
+
+        project_list = process_csv(input_file)
+        for project_data in project_list:
+            project_name = f"{project_data["project_name"]} {project_name_suffix}"
+            input_urls = project_data["input_urls"].split(",")
+            self.create_project(
+                name=project_name,
+                pipelines=options["pipelines"],
+                input_urls=input_urls,
+                notes=options["notes"],
+                labels=options["labels"],
+                execute=options["execute"],
+                run_async=options["async"],
+            )
+
+
+def process_csv(file_path):
+    required_headers = {"project_name", "input_urls"}
+
+    with open(file_path, newline="", encoding="utf-8") as csvfile:
+        reader = csv.DictReader(csvfile)
+
+        # Validate headers
+        if not required_headers.issubset(reader.fieldnames):
+            raise ValueError(
+                f"The CSV file must contain the headers: {', '.join(required_headers)}"
+            )
+
+        project_list = [
+            {"project_name": row["project_name"], "input_urls": row["input_urls"]}
+            for row in reader
+        ]
+        return project_list
