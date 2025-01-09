@@ -108,6 +108,33 @@ It does not compute such summary.
 You can also have a look at the different steps for each pipeline from the
 :ref:`built_in_pipelines` documentation.
 
+How to create multiple projects at once?
+-----------------------------------------
+
+You can use the :ref:`cli_batch_create` command to create multiple projects
+simultaneously.
+This command processes all files in a specified input directory, creating one project
+per file.
+Each project is uniquely named using the file name and a timestamp by default.
+
+For example, to create multiple projects from files in a directory named
+``local-data/``::
+
+    $ docker compose run --rm \
+        --volume local-data/:/input-data:ro \
+        web scanpipe batch-create input-data/
+
+**Options**:
+
+- **Custom Pipelines**: Use the ``--pipeline`` option to add specific pipelines to the
+  projects.
+- **Asynchronous Execution**: Add ``--execute`` and ``--async`` to queue pipeline
+  execution for worker processing.
+- **Project Notes and Labels**: Use ``--notes`` and ``--label`` to include metadata.
+
+Each file in the input directory will result in the creation of a corresponding project,
+ready for pipeline execution.
+
 Can I run multiple pipelines in parallel?
 -----------------------------------------
 
@@ -279,7 +306,7 @@ data older than 7 days::
   See :ref:`command_line_interface` chapter for more information about the scanpipe
   command.
 
-How can I provide my license policies ?
+How can I provide my license policies?
 ---------------------------------------
 
 For detailed information about the policies system, refer to :ref:`policies`.

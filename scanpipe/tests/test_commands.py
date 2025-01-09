@@ -219,10 +219,11 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("Project b.txt suffix created", out.getvalue())
 
         self.assertEqual(2, Project.objects.count())
-        project = Project.objects.all()[0]
+        project = Project.objects.get(name="a.txt suffix")
         self.assertEqual("Some notes", project.notes)
         self.assertEqual(["label1", "label2"], list(project.labels.names()))
         self.assertEqual("scan_single_package", project.runs.get().pipeline_name)
+        self.assertEqual(["a.txt"], project.input_files)
 
     def test_scanpipe_management_command_add_input_file(self):
         out = StringIO()

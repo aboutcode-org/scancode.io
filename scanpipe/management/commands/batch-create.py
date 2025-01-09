@@ -33,7 +33,7 @@ from scanpipe.pipes.output import safe_filename
 
 class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
     help = (
-        "Processes files in the specified input directory by creating projects "
+        "Processes files in the specified input directory by creating a project "
         "for each file. Each project is uniquely named using the filename and a "
         "timestamp. Supports specifying pipelines and asynchronous execution."
     )

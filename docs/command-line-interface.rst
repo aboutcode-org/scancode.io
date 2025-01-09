@@ -57,6 +57,7 @@ ScanPipe's own commands are listed under the ``[scanpipe]`` section::
       add-input
       add-pipeline
       archive-project
+      batch-create
       check-compliance
       create-project
       create-user
@@ -138,6 +139,70 @@ Optional arguments:
 .. warning::
     Pipelines are added and are executed in order.
 
+.. _cli_batch_create:
+
+`$ scanpipe batch-create <input-directory>`
+-------------------------------------------
+
+Processes files in the specified ``input-directory`` by creating a project
+for each file.
+Each project is uniquely named using the filename and a timestamp.
+Supports specifying pipelines and asynchronous execution.
+
+Required arguments:
+
+- ``input-directory`` The path to the directory containing the input files to process.
+  Ensure the directory exists and contains the files you want to use.
+
+Optional arguments:
+
+- ``--project-name-suffix`` Optional custom suffix to append to project names.
+  If not provided, a timestamp (in the format [YYMMDD_HHMMSS]) will be used.
+
+- ``--pipeline PIPELINES`` Pipelines names to add on the project.
+
+- ``--notes NOTES`` Optional notes about the project.
+
+- ``--label LABELS`` Optional labels for the project.
+
+- ``--execute`` Execute the pipelines right after project creation.
+
+- ``--async`` Add the pipeline run to the tasks queue for execution by a worker instead
+  of running in the current thread.
+  Applies only when ``--execute`` is provided.
+
+Example: Processing Multiple Docker Images
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Assume multiple Docker images are available in a directory named ``local-data/`` on
+the host machine.
+To process these images with the ``analyze_docker_image`` pipeline using asynchronous
+execution::
+
+    $ docker compose run --rm \
+        --volume local-data/:/input-data:ro \
+        web scanpipe batch-create input-data/ \
+            --pipeline analyze_docker_image \
+            --label "Docker" \
+            --execute --async
+
+**Explanation**:
+
+- ``local-data/``: A directory on the host machine containing the Docker images to
+  process.
+- ``/input-data/``: The directory inside the container where ``local-data/`` is
+  mounted (read-only).
+- ``--pipeline analyze_docker_image``: Specifies the ``analyze_docker_image``
+  pipeline for processing each Docker image.
+- ``--label "Docker"``: Tagging all the projects with the "Docker" label to enable
+  easy search and filtering.
+- ``--execute``: Runs the pipeline immediately after creating a project for each
+  image.
+- ``--async``: Adds the pipeline run to the worker queue for asynchronous execution.
+
+Each Docker image in the ``local-data/`` directory will result in the creation of a
+project with the specified pipeline (``analyze_docker_image``) executed by worker
+services.
 
 `$ scanpipe list-pipeline [--verbosity {0,1,2,3}]`
 --------------------------------------------------
