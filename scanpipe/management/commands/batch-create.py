@@ -113,7 +113,8 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
 
         project_list = process_csv(input_file)
         for project_data in project_list:
-            project_name = f"{project_data["project_name"]} {project_name_suffix}"
+            project_name = project_data["project_name"]
+            project_name = f"{project_name} {project_name_suffix}"
             input_urls = project_data["input_urls"].split(",")
             self.create_project(
                 name=project_name,
