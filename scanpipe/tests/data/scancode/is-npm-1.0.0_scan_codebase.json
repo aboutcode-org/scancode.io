@@ -150,7 +150,6 @@
       "type": "file",
       "name": "is-npm-1.0.0.tgz",
       "status": "scanned",
-      "for_packages": [],
       "tag": "",
       "extension": ".tgz",
       "md5": "effb58881c1aca12da9d3a18335bdc3f",
@@ -176,6 +175,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -185,7 +185,6 @@
       "type": "directory",
       "name": "is-npm-1.0.0.tgz-extract",
       "status": "scanned",
-      "for_packages": [],
       "tag": "",
       "extension": ".tgz-extract",
       "md5": "",
@@ -211,6 +210,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -220,7 +220,6 @@
       "type": "directory",
       "name": "package",
       "status": "scanned",
-      "for_packages": [],
       "tag": "",
       "extension": "",
       "md5": "",
@@ -246,6 +245,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -255,9 +255,6 @@
       "type": "file",
       "name": "index.js",
       "status": "scanned",
-      "for_packages": [
-        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "",
       "extension": ".js",
       "md5": "bc4b18b0c8c32b94883d6fc1d675e919",
@@ -283,6 +280,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -292,9 +292,6 @@
       "type": "file",
       "name": "package.json",
       "status": "application-package",
-      "for_packages": [
-        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "",
       "extension": ".json",
       "md5": "c843e88ecb274d5d573c71be330bff8b",
@@ -417,6 +414,9 @@
           "declared_license_expression_spdx": "MIT"
         }
       ],
+      "for_packages": [
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -426,9 +426,6 @@
       "type": "file",
       "name": "readme.md",
       "status": "scanned",
-      "for_packages": [
-        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "",
       "extension": ".md",
       "md5": "a743e0abf08c28a37ecc4bef4dc02f8c",
@@ -489,6 +486,9 @@
       ],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [
         {

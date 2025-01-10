@@ -146,7 +146,6 @@
       "type": "directory",
       "name": "from",
       "status": "ignored-directory",
-      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -172,6 +171,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -181,7 +181,6 @@
       "type": "file",
       "name": "flume-ng-node-1.8.0-sources.ABOUT",
       "status": "not-deployed",
-      "for_packages": [],
       "tag": "from",
       "extension": ".ABOUT",
       "md5": "4f8ac19bc3661bbaac91fb8652b6c4cb",
@@ -207,6 +206,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -216,7 +216,6 @@
       "type": "file",
       "name": "flume-ng-node-1.9.0-sources.ABOUT",
       "status": "about-mapped",
-      "for_packages": [],
       "tag": "from",
       "extension": ".ABOUT",
       "md5": "c7fab493a90ebf247954e1e30582ba8f",
@@ -242,6 +241,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -251,7 +251,6 @@
       "type": "file",
       "name": "flume-ng-node-1.9.0-sources.LICENSE",
       "status": "about-mapped",
-      "for_packages": [],
       "tag": "from",
       "extension": ".LICENSE",
       "md5": "94c82ae800466538d15278d6be4feedc",
@@ -277,6 +276,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -286,7 +286,6 @@
       "type": "file",
       "name": "flume-ng-node-1.9.0-sources.NOTICE",
       "status": "about-mapped",
-      "for_packages": [],
       "tag": "from",
       "extension": ".NOTICE",
       "md5": "efd2af60c8501931cb9c736b5ad74f65",
@@ -312,6 +311,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -321,7 +321,6 @@
       "type": "file",
       "name": "flume-ng-node-1.9.0-sources.jar",
       "status": "not-deployed",
-      "for_packages": [],
       "tag": "from",
       "extension": ".jar",
       "md5": "890f2f18119ee83e5fc63fc438bd2367",
@@ -347,6 +346,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -356,7 +356,6 @@
       "type": "directory",
       "name": "flume-ng-node-1.9.0-sources.jar-extract",
       "status": "ignored-directory",
-      "for_packages": [],
       "tag": "from",
       "extension": ".jar-extract",
       "md5": "",
@@ -382,6 +381,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -391,7 +391,6 @@
       "type": "directory",
       "name": "flume-ng-node-1.9.0-sources.jar-extract",
       "status": "mapped",
-      "for_packages": [],
       "tag": "from",
       "extension": ".jar-extract",
       "md5": "",
@@ -417,6 +416,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -426,7 +426,6 @@
       "type": "directory",
       "name": "org",
       "status": "ignored-directory",
-      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -452,6 +451,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -461,7 +461,6 @@
       "type": "directory",
       "name": "apache",
       "status": "ignored-directory",
-      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -487,6 +486,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -496,7 +496,6 @@
       "type": "directory",
       "name": "flume",
       "status": "ignored-directory",
-      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -522,6 +521,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -531,7 +531,6 @@
       "type": "directory",
       "name": "node",
       "status": "ignored-directory",
-      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -557,6 +556,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -566,9 +566,6 @@
       "type": "file",
       "name": "ConfigurationProvider.java",
       "status": "scanned",
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=90cb6382-431c-4187-be76-d4f1a2199a2f"
-      ],
       "tag": "from",
       "extension": ".java",
       "md5": "318484f1071022f375cd0fd99e9fe844",
@@ -617,6 +614,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=90cb6382-431c-4187-be76-d4f1a2199a2f"
+      ],
       "emails": [],
       "urls": [
         {
@@ -634,7 +634,6 @@
       "type": "directory",
       "name": "to",
       "status": "ignored-directory",
-      "for_packages": [],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -660,6 +659,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {
@@ -672,9 +672,6 @@
       "type": "file",
       "name": "flume-ng-node-1.9.0.jar",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".jar",
       "md5": "659a690c671a37c498b837df1572bf55",
@@ -700,6 +697,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -709,9 +709,6 @@
       "type": "directory",
       "name": "flume-ng-node-1.9.0.jar-extract",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".jar-extract",
       "md5": "",
@@ -737,6 +734,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {
@@ -749,9 +749,6 @@
       "type": "directory",
       "name": "META-INF",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -777,6 +774,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {
@@ -789,9 +789,6 @@
       "type": "file",
       "name": "DEPENDENCIES",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": "",
       "md5": "5eb50b01261a885fd0de993f46ecc9eb",
@@ -817,6 +814,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -826,9 +826,6 @@
       "type": "file",
       "name": "LICENSE",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": "",
       "md5": "3b83ef96387f14655fc854ddc3c6bd57",
@@ -854,6 +851,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -863,9 +863,6 @@
       "type": "file",
       "name": "MANIFEST.MF",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".MF",
       "md5": "13d7452a4e969ebd58ac609d3efd4936",
@@ -891,6 +888,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -900,9 +900,6 @@
       "type": "directory",
       "name": "maven",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -928,6 +925,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {
@@ -940,9 +940,6 @@
       "type": "directory",
       "name": "org.apache.flume",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".flume",
       "md5": "",
@@ -968,6 +965,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {
@@ -980,9 +980,6 @@
       "type": "directory",
       "name": "flume-ng-node",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -1008,6 +1005,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {
@@ -1020,9 +1020,6 @@
       "type": "file",
       "name": "pom.properties",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".properties",
       "md5": "9135eb35a776e56eada1b3720a4ef83a",
@@ -1048,6 +1045,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1057,9 +1057,6 @@
       "type": "file",
       "name": "pom.xml",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".xml",
       "md5": "43bdb64cf3d14e0a43c8a5758e3a2620",
@@ -1085,6 +1082,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1094,9 +1094,6 @@
       "type": "directory",
       "name": "org",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -1122,6 +1119,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {
@@ -1134,9 +1134,6 @@
       "type": "directory",
       "name": "apache",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -1162,6 +1159,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {
@@ -1174,9 +1174,6 @@
       "type": "directory",
       "name": "flume",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -1202,6 +1199,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {
@@ -1214,9 +1214,6 @@
       "type": "directory",
       "name": "node",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -1242,6 +1239,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {
@@ -1254,9 +1254,6 @@
       "type": "file",
       "name": "AbstractConfigurationProvider$ChannelComponent.class",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".class",
       "md5": "4c09a598f46332add2e53c4737fc6acf",
@@ -1282,6 +1279,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1291,9 +1291,6 @@
       "type": "file",
       "name": "AbstractConfigurationProvider.class",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".class",
       "md5": "58bb3c2bc489a5cba79e72ac6fdac008",
@@ -1319,6 +1316,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1328,9 +1328,6 @@
       "type": "file",
       "name": "AbstractZooKeeperConfigurationProvider.class",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".class",
       "md5": "b5a1a31a17d70a66a30118b51862bde1",
@@ -1356,6 +1353,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1365,9 +1365,6 @@
       "type": "file",
       "name": "Application$1.class",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".class",
       "md5": "712ce8e290d886ad23b5b5aa21cb3e61",
@@ -1393,6 +1390,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1402,9 +1402,6 @@
       "type": "file",
       "name": "Application.class",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".class",
       "md5": "6a3fdabd9dca0f528d6b072eafa3c099",
@@ -1430,6 +1427,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1439,7 +1439,6 @@
       "type": "file",
       "name": "ConfigurationProvider.class",
       "status": "mapped",
-      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "a0a489cd3c4ee667d33bcc5ee20d7f2f",
@@ -1465,6 +1464,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1474,9 +1474,6 @@
       "type": "file",
       "name": "EnvVarResolverProperties.class",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".class",
       "md5": "6acf3c2cece5623fa48f8de4d6f619ac",
@@ -1502,6 +1499,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1511,9 +1511,6 @@
       "type": "file",
       "name": "MaterializedConfiguration.class",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".class",
       "md5": "e2d0468bf278193a1d8fe82cf88a19d6",
@@ -1539,6 +1536,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1548,9 +1548,6 @@
       "type": "file",
       "name": "PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.class",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".class",
       "md5": "8841a8f1510e091fa799458de77831d0",
@@ -1576,6 +1573,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1585,9 +1585,6 @@
       "type": "file",
       "name": "PollingPropertiesFileConfigurationProvider.class",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".class",
       "md5": "020ec7b6fc51e6932142595c36fa1efb",
@@ -1613,6 +1610,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1622,9 +1622,6 @@
       "type": "file",
       "name": "PollingZooKeeperConfigurationProvider$1.class",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".class",
       "md5": "4bcf06144b0ed84e62bc4d4a40511f4c",
@@ -1650,6 +1647,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1659,9 +1659,6 @@
       "type": "file",
       "name": "PollingZooKeeperConfigurationProvider.class",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".class",
       "md5": "532b3474093ccd976d10cefff49bf0e4",
@@ -1687,6 +1684,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1696,9 +1696,6 @@
       "type": "file",
       "name": "PropertiesFileConfigurationProvider.class",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".class",
       "md5": "022640c15e6a0e199a5e5476604ce920",
@@ -1724,6 +1721,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1733,9 +1733,6 @@
       "type": "file",
       "name": "SimpleMaterializedConfiguration.class",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".class",
       "md5": "876dbb6f8e3723450193a1d777936f2f",
@@ -1761,6 +1758,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1770,9 +1770,6 @@
       "type": "file",
       "name": "StaticZooKeeperConfigurationProvider.class",
       "status": "about-mapped",
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "to",
       "extension": ".class",
       "md5": "45c5f180d0b4decc4e75b00830004699",
@@ -1798,6 +1795,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}

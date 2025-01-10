@@ -443,7 +443,6 @@
       "type": "directory",
       "name": "etc",
       "status": "scanned",
-      "for_packages": [],
       "tag": "img-c19c05-layer-01-8a6376",
       "extension": "",
       "md5": "",
@@ -469,6 +468,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -478,7 +478,6 @@
       "type": "file",
       "name": "os-release",
       "status": "ignored-not-interesting",
-      "for_packages": [],
       "tag": "img-c19c05-layer-01-8a6376",
       "extension": "",
       "md5": "8589b473401e7ebcca5d97204405c887",
@@ -504,6 +503,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -513,7 +513,6 @@
       "type": "directory",
       "name": "usr",
       "status": "scanned",
-      "for_packages": [],
       "tag": "img-c19c05-layer-01-8a6376",
       "extension": "",
       "md5": "",
@@ -539,6 +538,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -548,7 +548,6 @@
       "type": "directory",
       "name": "share",
       "status": "scanned",
-      "for_packages": [],
       "tag": "img-c19c05-layer-01-8a6376",
       "extension": "",
       "md5": "",
@@ -574,6 +573,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -583,7 +583,6 @@
       "type": "directory",
       "name": "doc",
       "status": "scanned",
-      "for_packages": [],
       "tag": "img-c19c05-layer-01-8a6376",
       "extension": "",
       "md5": "",
@@ -609,6 +608,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -618,7 +618,6 @@
       "type": "directory",
       "name": "libncurses5",
       "status": "scanned",
-      "for_packages": [],
       "tag": "img-c19c05-layer-01-8a6376",
       "extension": "",
       "md5": "",
@@ -644,6 +643,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -653,9 +653,6 @@
       "type": "file",
       "name": "copyright",
       "status": "system-package",
-      "for_packages": [
-        "pkg:deb/ubuntu/libncurses5@6.1-1ubuntu1.18.04?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "img-c19c05-layer-01-8a6376",
       "extension": "",
       "md5": "bd73d1dbbd2e6374358baa205d6d9e66",
@@ -681,6 +678,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:deb/ubuntu/libncurses5@6.1-1ubuntu1.18.04?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -690,7 +690,6 @@
       "type": "directory",
       "name": "libndp0",
       "status": "scanned",
-      "for_packages": [],
       "tag": "img-c19c05-layer-01-8a6376",
       "extension": "",
       "md5": "",
@@ -716,6 +715,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -725,9 +725,6 @@
       "type": "file",
       "name": "copyright",
       "status": "system-package",
-      "for_packages": [
-        "pkg:deb/ubuntu/libndp0@1.4-2ubuntu0.16.04.1?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "img-c19c05-layer-01-8a6376",
       "extension": "",
       "md5": "3f4ecdd67d5b9427cdc66847bdd11cf4",
@@ -753,6 +750,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:deb/ubuntu/libndp0@1.4-2ubuntu0.16.04.1?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -762,7 +762,6 @@
       "type": "directory",
       "name": "var",
       "status": "scanned",
-      "for_packages": [],
       "tag": "img-c19c05-layer-01-8a6376",
       "extension": "",
       "md5": "",
@@ -788,6 +787,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -797,7 +797,6 @@
       "type": "directory",
       "name": "lib",
       "status": "scanned",
-      "for_packages": [],
       "tag": "img-c19c05-layer-01-8a6376",
       "extension": "",
       "md5": "",
@@ -823,6 +822,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -832,7 +832,6 @@
       "type": "directory",
       "name": "dpkg",
       "status": "scanned",
-      "for_packages": [],
       "tag": "img-c19c05-layer-01-8a6376",
       "extension": "",
       "md5": "",
@@ -858,6 +857,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -867,7 +867,6 @@
       "type": "directory",
       "name": "info",
       "status": "scanned",
-      "for_packages": [],
       "tag": "img-c19c05-layer-01-8a6376",
       "extension": "",
       "md5": "",
@@ -893,6 +892,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -902,9 +902,6 @@
       "type": "file",
       "name": "libncurses5:amd64.md5sums",
       "status": "system-package",
-      "for_packages": [
-        "pkg:deb/ubuntu/libncurses5@6.1-1ubuntu1.18.04?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "img-c19c05-layer-01-8a6376",
       "extension": ".md5sums",
       "md5": "9d18792b91935a5849328cb368005ec9",
@@ -930,6 +927,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:deb/ubuntu/libncurses5@6.1-1ubuntu1.18.04?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -939,9 +939,6 @@
       "type": "file",
       "name": "libndp0:amd64.md5sums",
       "status": "system-package",
-      "for_packages": [
-        "pkg:deb/ubuntu/libndp0@1.4-2ubuntu0.16.04.1?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "tag": "img-c19c05-layer-01-8a6376",
       "extension": ".md5sums",
       "md5": "7cb818062922c437df1902c18862455a",
@@ -967,6 +964,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:deb/ubuntu/libndp0@1.4-2ubuntu0.16.04.1?arch=amd64&uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -976,7 +976,6 @@
       "type": "file",
       "name": "status",
       "status": "no-licenses",
-      "for_packages": [],
       "tag": "img-c19c05-layer-01-8a6376",
       "extension": "",
       "md5": "c84949a17802e6732fc604acc8627a4b",
@@ -1002,6 +1001,7 @@
       "holders": [],
       "authors": [],
       "package_data": [],
+      "for_packages": [],
       "emails": [
         {
           "email": "ubuntu-devel-discuss@lists.ubuntu.com",

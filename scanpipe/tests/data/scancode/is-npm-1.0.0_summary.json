@@ -58,9 +58,6 @@
       "type": "file",
       "name": "readme.md",
       "status": "application-package",
-      "for_packages": [
-        "pkg:npm/is-npm@1.0.0?uuid=ba110d49-b6f2-4c86-8d89-a6fd34838ca8"
-      ],
       "tag": "",
       "extension": ".md",
       "size": 477,
@@ -125,6 +122,9 @@
       ],
       "authors": [],
       "package_data": [],
+      "for_packages": [
+        "pkg:npm/is-npm@1.0.0?uuid=ba110d49-b6f2-4c86-8d89-a6fd34838ca8"
+      ],
       "emails": [],
       "urls": [
         {
