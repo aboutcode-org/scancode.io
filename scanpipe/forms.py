@@ -288,45 +288,6 @@ class ProjectReportForm(forms.Form):
         widget=forms.RadioSelect,
     )
 
-    # TODO: Remove duplication
-    def get_queryset(self):
-        from scanpipe.models import CodebaseRelation
-        from scanpipe.models import CodebaseResource
-        from scanpipe.models import DiscoveredDependency
-        from scanpipe.models import DiscoveredPackage
-        from scanpipe.models import ProjectMessage
-        from scanpipe.pipes import flag
-
-        querysets = {
-            "discoveredpackage": (
-                DiscoveredPackage.objects.order_by(
-                    "type",
-                    "namespace",
-                    "name",
-                    "version",
-                )
-            ),
-            "discovereddependency": (
-                DiscoveredDependency.objects.prefetch_for_serializer().order_by(
-                    "type",
-                    "namespace",
-                    "name",
-                    "version",
-                    "datasource_id",
-                )
-            ),
-            "codebaseresource": (
-                CodebaseResource.objects.without_symlinks().prefetch_for_serializer()
-            ),
-            "codebaserelation": (
-                CodebaseRelation.objects.select_related("from_resource", "to_resource")
-            ),
-            "projectmessage": ProjectMessage.objects.all(),
-            "todos": CodebaseResource.objects.files().status(flag.REQUIRES_REVIEW),
-        }
-
-        return querysets.get(self.cleaned_data["model_name"])
-
 
 class ListTextarea(forms.CharField):
     """

@@ -52,6 +52,11 @@ from scancode_config import __version__ as scancode_toolkit_version
 
 from scancodeio import SCAN_NOTICE
 from scancodeio import __version__ as scancodeio_version
+from scanpipe.models import CodebaseRelation
+from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
+from scanpipe.models import DiscoveredPackage
+from scanpipe.models import ProjectMessage
 from scanpipe.pipes import docker
 from scanpipe.pipes import flag
 from scanpipe.pipes import spdx
@@ -68,7 +73,7 @@ def get_queryset(project, model_name):
     """Return a consistent QuerySet for all supported outputs (json, xlsx, csv, ...)"""
     querysets = {
         "discoveredpackage": (
-            project.discoveredpackages.all().order_by(
+            DiscoveredPackage.objects.order_by(
                 "type",
                 "namespace",
                 "name",
@@ -76,9 +81,7 @@ def get_queryset(project, model_name):
             )
         ),
         "discovereddependency": (
-            project.discovereddependencies.all()
-            .prefetch_for_serializer()
-            .order_by(
+            DiscoveredDependency.objects.prefetch_for_serializer().order_by(
                 "type",
                 "namespace",
                 "name",
@@ -87,16 +90,20 @@ def get_queryset(project, model_name):
             )
         ),
         "codebaseresource": (
-            project.codebaseresources.without_symlinks().prefetch_for_serializer()
+            CodebaseResource.objects.without_symlinks().prefetch_for_serializer()
         ),
         "codebaserelation": (
-            project.codebaserelations.select_related("from_resource", "to_resource")
+            CodebaseRelation.objects.select_related("from_resource", "to_resource")
         ),
-        "projectmessage": project.projectmessages.all(),
-        # Not a Model per se, but a subset of CodebaseResource
-        "todos": (project.codebaseresources.files().status(flag.REQUIRES_REVIEW)),
+        "projectmessage": ProjectMessage.objects.all(),
+        "todos": CodebaseResource.objects.files().status(flag.REQUIRES_REVIEW),
     }
-    return querysets.get(model_name)
+
+    queryset = querysets.get(model_name)
+    if project:
+        queryset = queryset.filter(project=project)
+
+    return queryset
 
 
 def queryset_to_csv_file(queryset, fieldnames, output_file):

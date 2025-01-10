@@ -1236,7 +1236,8 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
         return Project.objects.filter(pk__in=self.selected_project_ids)
 
     def get_export_xlsx_queryset(self):
-        queryset = self.report_form.get_queryset()
+        model_name = self.report_form.cleaned_data["model_name"]
+        queryset = output.get_queryset(project=None, model_name=model_name)
         projects = self.get_projects_queryset()
         return queryset.filter(project__in=projects)
 
