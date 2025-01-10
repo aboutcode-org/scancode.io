@@ -53,6 +53,7 @@ from scancode_config import __version__ as scancode_toolkit_version
 from scancodeio import SCAN_NOTICE
 from scancodeio import __version__ as scancodeio_version
 from scanpipe.pipes import docker
+from scanpipe.pipes import flag
 from scanpipe.pipes import spdx
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -94,6 +95,30 @@ def get_queryset(project, model_name):
         "projectmessage": project.projectmessages.all(),
     }
     return querysets.get(model_name)
+
+
+TODO_FIELDS = [
+    "path",
+    "status",
+    "size",
+    "name",
+    "extension",
+    "programming_language",
+    "mime_type",
+    "tag",
+    "detected_license_expression",
+    "compliance_alert",
+    "project__name",
+]
+
+
+def get_todos_data(project):
+    """Return the list of Resources that requires review."""
+    return (
+        project.codebaseresources.files()
+        .filter(status=flag.REQUIRES_REVIEW)
+        .values(*TODO_FIELDS)
+    )
 
 
 def queryset_to_csv_file(queryset, fieldnames, output_file):
@@ -346,8 +371,12 @@ def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
 
     for row_index, record in enumerate(rows, start=1):
         row_errors = []
+        record_is_dict = isinstance(record, dict)
         for col_index, field in enumerate(fields):
-            value = getattr(record, field)
+            if record_is_dict:
+                value = record.get(field)
+            else:
+                value = getattr(record, field)
 
             if not value:
                 continue
@@ -480,6 +509,9 @@ def to_xlsx(project):
 
         if layers_data := docker.get_layers_data(project):
             _add_xlsx_worksheet(workbook, "LAYERS", layers_data, docker.layer_fields)
+
+        if todos_data := get_todos_data(project):
+            _add_xlsx_worksheet(workbook, "TODOS", todos_data, TODO_FIELDS)
 
     return output_file
 
