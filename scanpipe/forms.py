@@ -296,7 +296,6 @@ class ProjectReportForm(forms.Form):
         from scanpipe.models import DiscoveredPackage
         from scanpipe.models import ProjectMessage
         from scanpipe.pipes import flag
-        from scanpipe.pipes.output import TODO_FIELDS
 
         querysets = {
             "discoveredpackage": (
@@ -324,8 +323,7 @@ class ProjectReportForm(forms.Form):
             ),
             "projectmessage": ProjectMessage.objects.all(),
             "todos": (
-                CodebaseResource.objects.files()
-                .status(flag.REQUIRES_REVIEW)
+                CodebaseResource.objects.files().status(flag.REQUIRES_REVIEW)
                 # .only(*TODO_FIELDS)
             ),
         }

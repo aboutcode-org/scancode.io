@@ -214,8 +214,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:deb/ubuntu/libndp0@1.4-2ubuntu0.16.04.1?arch=amd64",
@@ -335,8 +334,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     }
   ],
   "dependencies": [],
@@ -374,8 +372,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "basic-rootfs.tar.gz-extract/etc/os-release",
@@ -410,8 +407,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "basic-rootfs.tar.gz-extract/usr",
@@ -446,8 +442,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "basic-rootfs.tar.gz-extract/usr/share",
@@ -482,8 +477,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "basic-rootfs.tar.gz-extract/usr/share/doc",
@@ -518,8 +512,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "basic-rootfs.tar.gz-extract/usr/share/doc/libncurses5",
@@ -554,8 +547,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "basic-rootfs.tar.gz-extract/usr/share/doc/libncurses5/copyright",
@@ -592,8 +584,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "basic-rootfs.tar.gz-extract/usr/share/doc/libndp0",
@@ -628,8 +619,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "basic-rootfs.tar.gz-extract/usr/share/doc/libndp0/copyright",
@@ -666,8 +656,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "basic-rootfs.tar.gz-extract/var",
@@ -702,8 +691,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "basic-rootfs.tar.gz-extract/var/lib",
@@ -738,8 +726,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "basic-rootfs.tar.gz-extract/var/lib/dpkg",
@@ -774,8 +761,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "basic-rootfs.tar.gz-extract/var/lib/dpkg/info",
@@ -810,8 +796,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "basic-rootfs.tar.gz-extract/var/lib/dpkg/info/libncurses5_amd64.md5sums",
@@ -846,8 +831,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "basic-rootfs.tar.gz-extract/var/lib/dpkg/info/libndp0_amd64.md5sums",
@@ -882,8 +866,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "basic-rootfs.tar.gz-extract/var/lib/dpkg/status",
@@ -945,8 +928,7 @@
           "start_line": 38
         }
       ],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     }
   ],
   "relations": []

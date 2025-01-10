@@ -140,8 +140,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/daglib@0.6.0",
@@ -251,8 +250,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     }
   ],
   "dependencies": [
@@ -270,8 +268,7 @@
       "datafile_path": "daglib-0.6.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/dask",
@@ -287,8 +284,7 @@
       "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/graphviz",
@@ -304,8 +300,7 @@
       "datafile_path": "daglib-0.6.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/graphviz",
@@ -321,8 +316,7 @@
       "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/ipycytoscape",
@@ -338,8 +332,7 @@
       "datafile_path": "daglib-0.6.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/ipycytoscape",
@@ -355,8 +348,7 @@
       "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/networkx",
@@ -372,8 +364,7 @@
       "datafile_path": "daglib-0.6.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/networkx",
@@ -389,8 +380,7 @@
       "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     }
   ],
   "files": [
@@ -633,8 +623,7 @@
       ],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "daglib-0.6.0-py3-none-any.whl-extract",
@@ -669,8 +658,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib",
@@ -705,8 +693,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info",
@@ -741,8 +728,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/LICENSE",
@@ -814,8 +800,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
@@ -1056,8 +1041,7 @@
       ],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/RECORD",
@@ -1094,8 +1078,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/WHEEL",
@@ -1132,8 +1115,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib/__init__.py",
@@ -1170,8 +1152,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib/dag.py",
@@ -1208,8 +1189,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib/task.py",
@@ -1246,8 +1226,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     }
   ],
   "relations": []

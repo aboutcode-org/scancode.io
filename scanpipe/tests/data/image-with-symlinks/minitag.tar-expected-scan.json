@@ -114,8 +114,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "minitag.tar-extract/887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0/lib/libcrypto.so.1.0.0",
@@ -150,8 +149,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "minitag.tar-extract/887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0/lib/libssl.so.1.0.0",
@@ -186,8 +184,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "minitag.tar-extract/887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0/usr",
@@ -222,8 +219,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "minitag.tar-extract/887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0/usr/lib",
@@ -258,8 +254,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "minitag.tar-extract/887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0/usr/lib/icu",
@@ -294,8 +289,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "minitag.tar-extract/887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0/usr/lib/icu/60.2",
@@ -330,8 +324,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "minitag.tar-extract/887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0/usr/lib/icu/60.2/pkgdata.inc",
@@ -366,8 +359,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     }
   ],
   "relations": []

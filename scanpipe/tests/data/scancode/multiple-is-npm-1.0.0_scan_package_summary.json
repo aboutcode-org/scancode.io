@@ -169,7 +169,6 @@
         }
       ],
       "extra_data": {},
-      "project": "Analysis",
       "content": "# is-npm [![Build Status](https://travis-ci.org/sindresorhus/is-npm.svg?branch=master)](https://travis-ci.org/sindresorhus/is-npm)\n\n> Check if your code is running as an [npm script](https://www.npmjs.org/doc/misc/npm-scripts.html)\n\n\n## Install\n\n```sh\n$ npm install --save is-npm\n```\n\n\n## Usage\n\n```js\nvar isNpm = require('is-npm');\nconsole.log(isNpm);\n```\n\n```sh\n$ node foo.js\n#=> false\n$ npm run foo\n#=> true\n```\n\n\n## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)\n"
     }
   ],
@@ -265,8 +264,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     }
   ]
 }

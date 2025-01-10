@@ -83,8 +83,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:maven/log4j/log4j@1.2.13",
@@ -137,8 +136,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     }
   ],
   "dependencies": [],
@@ -176,8 +174,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "from/flume-ng-node-1.8.0-sources.ABOUT",
@@ -212,8 +209,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.ABOUT",
@@ -248,8 +244,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.LICENSE",
@@ -284,8 +279,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.NOTICE",
@@ -320,8 +314,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar",
@@ -356,8 +349,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract",
@@ -392,8 +384,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract",
@@ -428,8 +419,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract/org",
@@ -464,8 +454,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract/org/apache",
@@ -500,8 +489,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume",
@@ -536,8 +524,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node",
@@ -572,8 +559,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/ConfigurationProvider.java",
@@ -641,8 +627,7 @@
       ],
       "extra_data": {
         "java_package": "org.apache.flume.node"
-      },
-      "project": "Analysis"
+      }
     },
     {
       "path": "to",
@@ -680,8 +665,7 @@
       "extra_data": {
         "directory_content": "00000015f6b057b61fd72b9c3429b9d20282eedf",
         "directory_structure": "00000015d76554188eea461e1a07cfb2adbb3c15"
-      },
-      "project": "Analysis"
+      }
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar",
@@ -718,8 +702,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract",
@@ -759,8 +742,7 @@
       "extra_data": {
         "directory_content": "00000014769057b41b550b8c2429b9d20282eedb",
         "directory_structure": "000000148220522c471263822fe986a2864cd08b"
-      },
-      "project": "Analysis"
+      }
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF",
@@ -800,8 +782,7 @@
       "extra_data": {
         "directory_content": "000000050112d33b752de62e0265b8d6866ae293",
         "directory_structure": "000000057863b0a9ab89d9bc4811a2d6144cf9ab"
-      },
-      "project": "Analysis"
+      }
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/DEPENDENCIES",
@@ -838,8 +819,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/LICENSE",
@@ -876,8 +856,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
@@ -914,8 +893,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven",
@@ -955,8 +933,7 @@
       "extra_data": {
         "directory_content": "000000028100c33213b86008020528d44042801b",
         "directory_structure": "00000002084a08825003091489160ca815610801"
-      },
-      "project": "Analysis"
+      }
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume",
@@ -996,8 +973,7 @@
       "extra_data": {
         "directory_content": "000000028100c33213b86008020528d44042801b",
         "directory_structure": "00000002121544006009e0c10381209a1212197c"
-      },
-      "project": "Analysis"
+      }
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node",
@@ -1037,8 +1013,7 @@
       "extra_data": {
         "directory_content": "000000028100c33213b86008020528d44042801b",
         "directory_structure": "0000000202a00930141226001804441005044108"
-      },
-      "project": "Analysis"
+      }
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.properties",
@@ -1075,8 +1050,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.xml",
@@ -1113,8 +1087,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org",
@@ -1154,8 +1127,7 @@
       "extra_data": {
         "directory_content": "0000000ffeb15fb49bd31b9c3429add31282eedf",
         "directory_structure": "0000000f18268fe56bf99797b01199f7ce38e313"
-      },
-      "project": "Analysis"
+      }
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache",
@@ -1195,8 +1167,7 @@
       "extra_data": {
         "directory_content": "0000000ffeb15fb49bd31b9c3429add31282eedf",
         "directory_structure": "0000000ff089e2d03d8f3196d03a490028be4485"
-      },
-      "project": "Analysis"
+      }
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume",
@@ -1236,8 +1207,7 @@
       "extra_data": {
         "directory_content": "0000000ffeb15fb49bd31b9c3429add31282eedf",
         "directory_structure": "0000000f25b5ec0e0491dcbddf370d52b70b5907"
-      },
-      "project": "Analysis"
+      }
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node",
@@ -1277,8 +1247,7 @@
       "extra_data": {
         "directory_content": "0000000ffeb15fb49bd31b9c3429add31282eedf",
         "directory_structure": "0000000f22941765f1862ea1a6b7eabafce8986a"
-      },
-      "project": "Analysis"
+      }
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider$ChannelComponent.class",
@@ -1315,8 +1284,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.class",
@@ -1353,8 +1321,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractZooKeeperConfigurationProvider.class",
@@ -1391,8 +1358,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application$1.class",
@@ -1429,8 +1395,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application.class",
@@ -1467,8 +1432,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/ConfigurationProvider.class",
@@ -1503,8 +1467,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/EnvVarResolverProperties.class",
@@ -1541,8 +1504,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/MaterializedConfiguration.class",
@@ -1579,8 +1541,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.class",
@@ -1617,8 +1578,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.class",
@@ -1655,8 +1615,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider$1.class",
@@ -1693,8 +1652,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.class",
@@ -1731,8 +1689,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PropertiesFileConfigurationProvider.class",
@@ -1769,8 +1726,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/SimpleMaterializedConfiguration.class",
@@ -1807,8 +1763,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/StaticZooKeeperConfigurationProvider.class",
@@ -1845,8 +1800,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     }
   ],
   "relations": [
@@ -1855,248 +1809,217 @@
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar",
       "status": "about-mapped",
       "map_type": "jar_to_source",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/DEPENDENCIES",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/LICENSE",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.properties",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.xml",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider$ChannelComponent.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractZooKeeperConfigurationProvider.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application$1.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/ConfigurationProvider.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/ConfigurationProvider.java",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/ConfigurationProvider.java"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/EnvVarResolverProperties.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/MaterializedConfiguration.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider$1.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PropertiesFileConfigurationProvider.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/SimpleMaterializedConfiguration.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/StaticZooKeeperConfigurationProvider.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
-      "project": "Analysis"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     }
   ]
 }

@@ -293,8 +293,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:deb/ubuntu/libndp0@1.4-2ubuntu0.16.04.1?arch=amd64",
@@ -434,8 +433,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     }
   ],
   "dependencies": [],
@@ -473,8 +471,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/etc/os-release",
@@ -509,8 +506,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/usr",
@@ -545,8 +541,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/usr/share",
@@ -581,8 +576,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/usr/share/doc",
@@ -617,8 +611,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/usr/share/doc/libncurses5",
@@ -653,8 +646,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/usr/share/doc/libncurses5/copyright",
@@ -691,8 +683,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/usr/share/doc/libndp0",
@@ -727,8 +718,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/usr/share/doc/libndp0/copyright",
@@ -765,8 +755,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/var",
@@ -801,8 +790,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/var/lib",
@@ -837,8 +825,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/var/lib/dpkg",
@@ -873,8 +860,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/var/lib/dpkg/info",
@@ -909,8 +895,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/var/lib/dpkg/info/libncurses5:amd64.md5sums",
@@ -947,8 +932,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/var/lib/dpkg/info/libndp0:amd64.md5sums",
@@ -985,8 +969,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/var/lib/dpkg/status",
@@ -1048,8 +1031,7 @@
           "start_line": 38
         }
       ],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     }
   ],
   "relations": []

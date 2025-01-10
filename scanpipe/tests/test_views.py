@@ -1126,7 +1126,7 @@ class ScanPipeViewsTest(TestCase):
             self.client.get(list_view_url)
 
         details_url = dep1.get_absolute_url()
-        with self.assertNumQueries(7):
+        with self.assertNumQueries(6):
             self.client.get(details_url)
 
     def test_scanpipe_views_codebase_relation_views(self):

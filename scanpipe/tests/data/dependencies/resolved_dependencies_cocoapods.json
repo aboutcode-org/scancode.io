@@ -81,8 +81,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AFNetworkActivityLogger@2.0.4",
@@ -133,8 +132,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/Analytics@4.1.8",
@@ -185,8 +183,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AppAuth@1.7.3",
@@ -237,8 +234,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/Appboy-iOS-SDK@4.4.4",
@@ -289,8 +285,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/appcenter-core@5.0.0",
@@ -341,8 +336,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AppCenterReactNativeShared@5.0.0",
@@ -393,8 +387,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/Base64@1.1.2",
@@ -443,8 +436,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/boost@1.76.0",
@@ -495,8 +487,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/ISO8601DateFormatter@0.7.1",
@@ -547,8 +538,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/Pulley@2.6.2",
@@ -599,8 +589,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/SwiftyJSON@5.0.2",
@@ -651,8 +640,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AFNetworking/NSURLConnection@2.7.0",
@@ -701,8 +689,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AFNetworking/NSURLSession@2.7.0",
@@ -751,8 +738,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AFNetworking/Reachability@2.7.0",
@@ -801,8 +787,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AFNetworking/Security@2.7.0",
@@ -851,8 +836,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AFNetworking/Serialization@2.7.0",
@@ -901,8 +885,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AppAuth/Core@1.7.3",
@@ -951,8 +934,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AppAuth/ExternalUserAgent@1.7.3",
@@ -1001,8 +983,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/Appboy-iOS-SDK/ContentCards@4.4.4",
@@ -1051,8 +1032,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/Appboy-iOS-SDK/Core@4.4.4",
@@ -1101,8 +1081,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/Appboy-iOS-SDK/InAppMessage@4.4.4",
@@ -1151,8 +1130,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/Appboy-iOS-SDK/NewsFeed@4.4.4",
@@ -1201,8 +1179,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/Appboy-iOS-SDK/UI@4.4.4",
@@ -1251,8 +1228,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AppCenter/Core@5.0.3",
@@ -1301,8 +1277,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     }
   ],
   "dependencies": [
@@ -1320,8 +1295,7 @@
       "datafile_path": "resolved_dependencies_cocoapods.zip-extract/artsy_eigen_Podfile.lock",
       "datasource_id": "cocoapods_podfile_lock",
       "package_type": "cocoapods",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AFNetworking/NSURLSession@2.7.0",
@@ -1337,8 +1311,7 @@
       "datafile_path": "resolved_dependencies_cocoapods.zip-extract/artsy_eigen_Podfile.lock",
       "datasource_id": "cocoapods_podfile_lock",
       "package_type": "cocoapods",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AFNetworking/Serialization@2.7.0",
@@ -1354,8 +1327,7 @@
       "datafile_path": "resolved_dependencies_cocoapods.zip-extract/artsy_eigen_Podfile.lock",
       "datasource_id": "cocoapods_podfile_lock",
       "package_type": "cocoapods",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AFNetworking/Serialization@2.7.0",
@@ -1371,8 +1343,7 @@
       "datafile_path": "resolved_dependencies_cocoapods.zip-extract/artsy_eigen_Podfile.lock",
       "datasource_id": "cocoapods_podfile_lock",
       "package_type": "cocoapods",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/ISO8601DateFormatter@0.7.1",
@@ -1388,8 +1359,7 @@
       "datafile_path": "resolved_dependencies_cocoapods.zip-extract/artsy_eigen_Podfile.lock",
       "datasource_id": "cocoapods_podfile_lock",
       "package_type": "cocoapods",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AppAuth/Core@1.7.3",
@@ -1405,8 +1375,7 @@
       "datafile_path": "resolved_dependencies_cocoapods.zip-extract/artsy_eigen_Podfile.lock",
       "datasource_id": "cocoapods_podfile_lock",
       "package_type": "cocoapods",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AppAuth/ExternalUserAgent@1.7.3",
@@ -1422,8 +1391,7 @@
       "datafile_path": "resolved_dependencies_cocoapods.zip-extract/artsy_eigen_Podfile.lock",
       "datasource_id": "cocoapods_podfile_lock",
       "package_type": "cocoapods",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AppCenter/Core@5.0.3",
@@ -1439,8 +1407,7 @@
       "datafile_path": "resolved_dependencies_cocoapods.zip-extract/artsy_eigen_Podfile.lock",
       "datasource_id": "cocoapods_podfile_lock",
       "package_type": "cocoapods",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/Appboy-iOS-SDK/Core@4.4.4",
@@ -1456,8 +1423,7 @@
       "datafile_path": "resolved_dependencies_cocoapods.zip-extract/artsy_eigen_Podfile.lock",
       "datasource_id": "cocoapods_podfile_lock",
       "package_type": "cocoapods",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/Appboy-iOS-SDK/Core@4.4.4",
@@ -1473,8 +1439,7 @@
       "datafile_path": "resolved_dependencies_cocoapods.zip-extract/artsy_eigen_Podfile.lock",
       "datasource_id": "cocoapods_podfile_lock",
       "package_type": "cocoapods",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/Appboy-iOS-SDK/Core@4.4.4",
@@ -1490,8 +1455,7 @@
       "datafile_path": "resolved_dependencies_cocoapods.zip-extract/artsy_eigen_Podfile.lock",
       "datasource_id": "cocoapods_podfile_lock",
       "package_type": "cocoapods",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/Appboy-iOS-SDK/NewsFeed@4.4.4",
@@ -1507,8 +1471,7 @@
       "datafile_path": "resolved_dependencies_cocoapods.zip-extract/artsy_eigen_Podfile.lock",
       "datasource_id": "cocoapods_podfile_lock",
       "package_type": "cocoapods",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/Appboy-iOS-SDK/UI@4.4.4",
@@ -1524,8 +1487,7 @@
       "datafile_path": "resolved_dependencies_cocoapods.zip-extract/artsy_eigen_Podfile.lock",
       "datasource_id": "cocoapods_podfile_lock",
       "package_type": "cocoapods",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:cocoapods/AppCenterReactNativeShared@5.0.0",
@@ -1541,8 +1503,7 @@
       "datafile_path": "resolved_dependencies_cocoapods.zip-extract/artsy_eigen_Podfile.lock",
       "datasource_id": "cocoapods_podfile_lock",
       "package_type": "cocoapods",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     }
   ],
   "files": [
@@ -1579,8 +1540,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "resolved_dependencies_cocoapods.zip-extract",
@@ -1615,8 +1575,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "resolved_dependencies_cocoapods.zip-extract/artsy_eigen_Podfile.lock",
@@ -3276,8 +3235,7 @@
       ],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     }
   ],
   "relations": []

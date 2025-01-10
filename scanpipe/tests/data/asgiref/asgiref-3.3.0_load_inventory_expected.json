@@ -149,8 +149,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Tool: scancode-toolkit"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/asgiref@3.3.0",
@@ -271,8 +270,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Tool: scancode-toolkit"
+      "affected_by_vulnerabilities": []
     }
   ],
   "dependencies": [
@@ -290,8 +288,7 @@
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": [],
-      "project": "Tool: scancode-toolkit"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/pytest",
@@ -307,8 +304,7 @@
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": [],
-      "project": "Tool: scancode-toolkit"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/pytest-asyncio",
@@ -324,8 +320,7 @@
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": [],
-      "project": "Tool: scancode-toolkit"
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/pytest-asyncio",
@@ -341,8 +336,7 @@
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": [],
-      "project": "Tool: scancode-toolkit"
+      "affected_by_vulnerabilities": []
     }
   ],
   "files": [
@@ -630,8 +624,7 @@
       ],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract",
@@ -666,8 +659,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
@@ -702,8 +694,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info",
@@ -738,8 +729,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
@@ -810,8 +800,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
@@ -1146,8 +1135,7 @@
       ],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/RECORD",
@@ -1184,8 +1172,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
@@ -1222,8 +1209,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
@@ -1260,8 +1246,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
@@ -1298,8 +1283,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
@@ -1336,8 +1320,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
@@ -1374,8 +1357,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
@@ -1412,8 +1394,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
@@ -1450,8 +1431,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
@@ -1488,8 +1468,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",
@@ -1526,8 +1505,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
@@ -1586,8 +1564,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
@@ -1624,8 +1601,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Tool: scancode-toolkit"
+      "extra_data": {}
     }
   ],
   "relations": []

@@ -123,8 +123,7 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     }
   ],
   "dependencies": [
@@ -142,8 +141,7 @@
       "datafile_path": "is-npm-1.0.0.tgz-extract/package/package.json",
       "datasource_id": "npm_package_json",
       "package_type": "npm",
-      "affected_by_vulnerabilities": [],
-      "project": "Analysis"
+      "affected_by_vulnerabilities": []
     }
   ],
   "files": [
@@ -180,8 +178,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "is-npm-1.0.0.tgz-extract",
@@ -216,8 +213,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "is-npm-1.0.0.tgz-extract/package",
@@ -252,8 +248,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "is-npm-1.0.0.tgz-extract/package/index.js",
@@ -290,8 +285,7 @@
       "package_data": [],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "is-npm-1.0.0.tgz-extract/package/package.json",
@@ -425,8 +419,7 @@
       ],
       "emails": [],
       "urls": [],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     },
     {
       "path": "is-npm-1.0.0.tgz-extract/package/readme.md",
@@ -519,8 +512,7 @@
           "start_line": 30
         }
       ],
-      "extra_data": {},
-      "project": "Analysis"
+      "extra_data": {}
     }
   ],
   "relations": []
