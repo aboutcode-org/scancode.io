@@ -192,6 +192,16 @@ class ScanPipeViewsTest(TestCase):
         )
         self.assertContains(response, expected, html=True)
 
+    def test_scanpipe_views_project_action_report_view(self):
+        url = reverse("project_action")
+        data = {
+            "action": "report",
+            "selected_ids": f"{self.project1.uuid}",
+            "model_name": "todos",
+        }
+        response = self.client.post(url, data=data, follow=True)
+        self.assertEqual("report.xlsx", response.filename)
+
     def test_scanpipe_views_project_details_is_archived(self):
         url = self.project1.get_absolute_url()
         expected1 = "WARNING: This project is archived and read-only."
