@@ -551,7 +551,13 @@ class ProjectListView(
         Prefetch(
             "runs",
             queryset=Run.objects.only(
-                "uuid", "pipeline_name", "project_id", "task_exitcode"
+                "uuid",
+                "pipeline_name",
+                "project_id",
+                "task_id",
+                "task_start_date",
+                "task_end_date",
+                "task_exitcode",
             ),
         ),
     ]

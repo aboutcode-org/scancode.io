@@ -336,6 +336,7 @@ class ProjectSerializer(
 class CodebaseResourceSerializer(serializers.ModelSerializer):
     for_packages = serializers.JSONField()
     compliance_alert = serializers.CharField()
+    project = serializers.CharField(source="project.name")
 
     class Meta:
         model = CodebaseResource
@@ -379,12 +380,14 @@ class CodebaseResourceSerializer(serializers.ModelSerializer):
             "emails",
             "urls",
             "extra_data",
+            "project",
         ]
 
 
 class DiscoveredPackageSerializer(serializers.ModelSerializer):
     purl = serializers.CharField(source="package_url")
     compliance_alert = serializers.CharField()
+    project = serializers.CharField(source="project.name")
 
     class Meta:
         model = DiscoveredPackage
@@ -438,6 +441,7 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
             "missing_resources",
             "modified_resources",
             "affected_by_vulnerabilities",
+            "project",
         ]
 
 
@@ -447,6 +451,7 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
     resolved_to_package_uid = serializers.ReadOnlyField()
     datafile_path = serializers.ReadOnlyField()
     package_type = serializers.ReadOnlyField(source="type")
+    project = serializers.CharField(source="project.name")
 
     class Meta:
         model = DiscoveredDependency
@@ -465,12 +470,14 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
             "datasource_id",
             "package_type",
             "affected_by_vulnerabilities",
+            "project",
         ]
 
 
 class CodebaseRelationSerializer(serializers.ModelSerializer):
     from_resource = serializers.ReadOnlyField(source="from_resource.path")
     to_resource = serializers.ReadOnlyField(source="to_resource.path")
+    project = serializers.CharField(source="project.name")
 
     class Meta:
         model = CodebaseRelation
@@ -480,11 +487,13 @@ class CodebaseRelationSerializer(serializers.ModelSerializer):
             "map_type",
             "score",
             "from_resource",
+            "project",
         ]
 
 
 class ProjectMessageSerializer(serializers.ModelSerializer):
     traceback = serializers.SerializerMethodField()
+    project = serializers.CharField(source="project.name")
 
     class Meta:
         model = ProjectMessage
@@ -496,6 +505,7 @@ class ProjectMessageSerializer(serializers.ModelSerializer):
             "details",
             "traceback",
             "created_date",
+            "project",
         ]
 
     def get_traceback(self, project_error):
