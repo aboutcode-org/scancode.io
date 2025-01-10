@@ -222,7 +222,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
         # Make sure the output can be generated even if the work_directory was wiped
         shutil.rmtree(project.work_directory)
-        with self.assertNumQueries(9):
+        with self.assertNumQueries(10):
             output_file = output.to_xlsx(project=project)
         self.assertIn(output_file.name, project.output_root)
 
@@ -496,34 +496,6 @@ class ScanPipeOutputPipesTest(TestCase):
 
         output_file = output.to_attribution(project=project)
         self.assertEqual("EMPTY_TEMPLATE", output_file.read_text())
-
-    def test_scanpipe_pipes_outputs_get_todos_data(self):
-        project = Project.objects.create(name="Analysis")
-        todos_data = output.get_todos_data(project)
-        self.assertEqual([], list(todos_data))
-
-        make_resource_file(
-            project=project, path="path/file1.ext", status=flag.REQUIRES_REVIEW
-        )
-        make_resource_file(project=project, path="path/file2.ext")
-
-        todos_data = output.get_todos_data(project)
-        expected = [
-            {
-                "path": "path/file1.ext",
-                "status": "requires-review",
-                "size": None,
-                "name": "file1.ext",
-                "extension": ".ext",
-                "programming_language": "",
-                "mime_type": "",
-                "tag": "path",
-                "detected_license_expression": "",
-                "compliance_alert": "",
-                "project__name": "Analysis",
-            }
-        ]
-        self.assertEqual(expected, list(todos_data))
 
 
 class ScanPipeXLSXOutputPipesTest(TestCase):

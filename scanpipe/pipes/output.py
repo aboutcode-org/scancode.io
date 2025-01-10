@@ -493,7 +493,7 @@ def to_xlsx(project):
             _add_xlsx_worksheet(workbook, "LAYERS", layers_data, docker.layer_fields)
 
         todos_queryset = get_queryset(project, "todos")
-        if todos_queryset.exists():
+        if todos_queryset:
             queryset_to_xlsx_worksheet(
                 todos_queryset, workbook, exclude_fields, worksheet_name="TODOS"
             )

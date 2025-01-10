@@ -322,9 +322,7 @@ class ProjectReportForm(forms.Form):
                 CodebaseRelation.objects.select_related("from_resource", "to_resource")
             ),
             "projectmessage": ProjectMessage.objects.all(),
-            "todos": (
-                CodebaseResource.objects.files().status(flag.REQUIRES_REVIEW)
-            ),
+            "todos": CodebaseResource.objects.files().status(flag.REQUIRES_REVIEW),
         }
 
         return querysets.get(self.cleaned_data["model_name"])
