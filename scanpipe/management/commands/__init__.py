@@ -38,7 +38,8 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.pipes import count_group_by
-from scanpipe.pipes.fetch import fetch_urls
+
+# from scanpipe.pipes.fetch import fetch_urls
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -354,24 +355,10 @@ def handle_input_files(project, input_files_data, command=None):
 
 
 def handle_input_urls(project, input_urls, command=None):
-    """
-    Fetch provided `input_urls` and stores it in the project's `input`
-    directory.
-    """
-    downloads, errors = fetch_urls(input_urls)
-
-    if downloads:
-        project.add_downloads(downloads)
-        msg = "File(s) downloaded to the project inputs directory:"
-        if command and command.verbosity > 0:
-            command.stdout.write(msg, command.style.SUCCESS)
-            msg = "\n".join(["- " + downloaded.filename for downloaded in downloads])
-            command.stdout.write(msg)
-
-    if errors and command:
-        msg = "Could not fetch URL(s):\n"
-        msg += "\n".join(["- " + url for url in errors])
-        command.stderr.write(msg)
+    """Add provided `input_urls` as input sources of the project."""
+    # fetch.check_urls_availability(urls)
+    for url in input_urls:
+        project.add_input_source(download_url=url)
 
 
 def handle_copy_codebase(project, copy_from, command=None):
