@@ -308,7 +308,7 @@ def queryset_to_xlsx_worksheet(
     queryset,
     workbook,
     exclude_fields=None,
-    extra_fields=None,
+    prepend_fields=None,
     worksheet_name=None,
 ):
     """
@@ -328,10 +328,10 @@ def queryset_to_xlsx_worksheet(
 
     fields = get_serializer_fields(model_class)
     exclude_fields = exclude_fields or []
-    extra_fields = extra_fields or []
+    prepend_fields = prepend_fields or []
     fields = [field for field in fields if field not in exclude_fields]
-    if extra_fields:
-        fields.extend(extra_fields)
+    if prepend_fields:
+        fields = prepend_fields + fields
 
     return _add_xlsx_worksheet(
         workbook=workbook,

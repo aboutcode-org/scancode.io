@@ -451,7 +451,7 @@ class ExportXLSXMixin:
     def get_export_xlsx_filename(self):
         return f"{self.project.name}_{self.model._meta.model_name}.xlsx"
 
-    def get_export_xlsx_extra_fields(self):
+    def get_export_xlsx_prepend_fields(self):
         return []
 
     def get_export_xlsx_worksheet_name(self):
@@ -460,13 +460,13 @@ class ExportXLSXMixin:
     def export_xlsx_file_response(self):
         output_file = io.BytesIO()
         queryset = self.get_export_xlsx_queryset()
-        extra_fields = self.get_export_xlsx_extra_fields()
+        prepend_fields = self.get_export_xlsx_prepend_fields()
         worksheet_name = self.get_export_xlsx_worksheet_name()
         with xlsxwriter.Workbook(output_file) as workbook:
             output.queryset_to_xlsx_worksheet(
                 queryset,
                 workbook,
-                extra_fields=extra_fields,
+                prepend_fields=prepend_fields,
                 worksheet_name=worksheet_name,
             )
 
@@ -1241,7 +1241,7 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
         projects = self.get_projects_queryset()
         return queryset.filter(project__in=projects)
 
-    def get_export_xlsx_extra_fields(self):
+    def get_export_xlsx_prepend_fields(self):
         return ["project"]
 
     def get_export_xlsx_worksheet_name(self):
