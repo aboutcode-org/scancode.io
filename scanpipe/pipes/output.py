@@ -93,32 +93,10 @@ def get_queryset(project, model_name):
             project.codebaserelations.select_related("from_resource", "to_resource")
         ),
         "projectmessage": project.projectmessages.all(),
+        # Not a Model per se, but a subset of CodebaseResource
+        "todos": (project.codebaseresources.files().status(flag.REQUIRES_REVIEW)),
     }
     return querysets.get(model_name)
-
-
-TODO_FIELDS = [
-    "path",
-    "status",
-    "size",
-    "name",
-    "extension",
-    "programming_language",
-    "mime_type",
-    "tag",
-    "detected_license_expression",
-    "compliance_alert",
-    "project__name",
-]
-
-
-def get_todos_data(project):
-    """Return the list of Resources that requires review."""
-    return (
-        project.codebaseresources.files()
-        .status(flag.REQUIRES_REVIEW)
-        .values(*TODO_FIELDS)
-    )
 
 
 def queryset_to_csv_file(queryset, fieldnames, output_file):
@@ -320,7 +298,11 @@ model_name_to_worksheet_name = {
 
 
 def queryset_to_xlsx_worksheet(
-    queryset, workbook, exclude_fields=None, extra_fields=None
+    queryset,
+    workbook,
+    exclude_fields=None,
+    extra_fields=None,
+    worksheet_name=None,
 ):
     """
     Add a new worksheet to the ``workbook`` ``xlsxwriter.Workbook`` using the
@@ -335,7 +317,7 @@ def queryset_to_xlsx_worksheet(
 
     model_class = queryset.model
     model_name = model_class._meta.model_name
-    worksheet_name = model_name_to_worksheet_name.get(model_name)
+    worksheet_name = worksheet_name or model_name_to_worksheet_name.get(model_name)
 
     fields = get_serializer_fields(model_class)
     exclude_fields = exclude_fields or []
@@ -510,8 +492,11 @@ def to_xlsx(project):
         if layers_data := docker.get_layers_data(project):
             _add_xlsx_worksheet(workbook, "LAYERS", layers_data, docker.layer_fields)
 
-        if todos_data := get_todos_data(project):
-            _add_xlsx_worksheet(workbook, "TODOS", todos_data, TODO_FIELDS)
+        todos_queryset = get_queryset(project, "todos")
+        if todos_queryset.exists():
+            queryset_to_xlsx_worksheet(
+                todos_queryset, workbook, exclude_fields, worksheet_name="TODOS"
+            )
 
     return output_file
 

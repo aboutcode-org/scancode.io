@@ -324,7 +324,6 @@ class ProjectReportForm(forms.Form):
             "projectmessage": ProjectMessage.objects.all(),
             "todos": (
                 CodebaseResource.objects.files().status(flag.REQUIRES_REVIEW)
-                # .only(*TODO_FIELDS)
             ),
         }
 
