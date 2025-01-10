@@ -116,7 +116,7 @@ def get_todos_data(project):
     """Return the list of Resources that requires review."""
     return (
         project.codebaseresources.files()
-        .filter(status=flag.REQUIRES_REVIEW)
+        .status(flag.REQUIRES_REVIEW)
         .values(*TODO_FIELDS)
     )
 

@@ -81,6 +81,7 @@ from scanpipe.forms import PipelineRunStepSelectionForm
 from scanpipe.forms import ProjectCloneForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectOutputDownloadForm
+from scanpipe.forms import ProjectReportForm
 from scanpipe.forms import ProjectSettingsForm
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
@@ -598,6 +599,7 @@ class ProjectListView(
         context = super().get_context_data(**kwargs)
         context["archive_form"] = ArchiveProjectForm()
         context["outputs_download_form"] = ProjectOutputDownloadForm()
+        context["report_form"] = ProjectReportForm()
         return context
 
     def get_queryset(self):
@@ -1220,10 +1222,13 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
         return Project.objects.filter(pk__in=self.selected_project_ids)
 
     def get_export_xlsx_queryset(self):
+        report_form = ProjectReportForm(self.request.POST)
+        if not report_form.is_valid():
+            return HttpResponseRedirect(self.success_url)
+
+        queryset = report_form.get_queryset()
         projects = self.get_projects_queryset()
-        packages = DiscoveredPackage.objects.filter(project__in=projects)
-        packages = packages.select_related("project")
-        return packages
+        return queryset.filter(project__in=projects)
 
     def get_export_xlsx_extra_fields(self):
         return ["project"]
