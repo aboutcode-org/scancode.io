@@ -79,7 +79,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/McMaster.Extensions.Hosting.CommandLine@4.0.1",
@@ -128,7 +129,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Configuration@6.0.0",
@@ -177,7 +179,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@6.0.0",
@@ -226,7 +229,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Configuration.Binder@6.0.0",
@@ -275,7 +279,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Configuration.CommandLine@6.0.0",
@@ -324,7 +329,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Configuration.EnvironmentVariables@6.0.1",
@@ -373,7 +379,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Configuration.FileExtensions@6.0.0",
@@ -422,7 +429,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Configuration.Json@6.0.0",
@@ -471,7 +479,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Configuration.UserSecrets@6.0.1",
@@ -520,7 +529,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.DependencyInjection@6.0.0",
@@ -569,7 +579,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@6.0.0",
@@ -618,7 +629,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.FileProviders.Abstractions@6.0.0",
@@ -667,7 +679,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.FileProviders.Physical@6.0.0",
@@ -716,7 +729,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.FileSystemGlobbing@6.0.0",
@@ -765,7 +779,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Hosting@6.0.1",
@@ -814,7 +829,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Hosting.Abstractions@6.0.0",
@@ -863,7 +879,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Logging@6.0.0",
@@ -912,7 +929,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Logging.Abstractions@6.0.0",
@@ -961,7 +979,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Logging.Configuration@6.0.0",
@@ -1010,7 +1029,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Logging.Console@6.0.0",
@@ -1059,7 +1079,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Logging.Debug@6.0.0",
@@ -1108,7 +1129,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Logging.EventLog@6.0.0",
@@ -1157,7 +1179,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Logging.EventSource@6.0.0",
@@ -1206,7 +1229,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Options@6.0.0",
@@ -1255,7 +1279,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Options.ConfigurationExtensions@6.0.0",
@@ -1304,7 +1329,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Options.DataAnnotations@6.0.0",
@@ -1353,7 +1379,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Primitives@6.0.0",
@@ -1402,7 +1429,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.ComponentModel.Annotations@5.0.0",
@@ -1451,7 +1479,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.Diagnostics.DiagnosticSource@6.0.0",
@@ -1500,7 +1529,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.Diagnostics.EventLog@6.0.0",
@@ -1549,7 +1579,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.Runtime.CompilerServices.Unsafe@6.0.0",
@@ -1598,7 +1629,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.Text.Encodings.Web@6.0.0",
@@ -1647,7 +1679,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.Text.Json@6.0.0",
@@ -1696,7 +1729,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     }
   ],
   "dependencies": [
@@ -1714,7 +1748,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.ComponentModel.Annotations@5.0.0",
@@ -1730,7 +1765,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Logging.Abstractions@6.0.0",
@@ -1746,7 +1782,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Primitives@6.0.0",
@@ -1762,7 +1799,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@6.0.0",
@@ -1778,7 +1816,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@6.0.0",
@@ -1794,7 +1833,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@6.0.0",
@@ -1810,7 +1850,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Primitives@6.0.0",
@@ -1826,7 +1867,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.Text.Json@6.0.0",
@@ -1842,7 +1884,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.FileProviders.Physical@6.0.0",
@@ -1858,7 +1901,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Primitives@6.0.0",
@@ -1874,7 +1918,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.Runtime.CompilerServices.Unsafe@6.0.0",
@@ -1890,7 +1935,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Primitives@6.0.0",
@@ -1906,7 +1952,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Primitives@6.0.0",
@@ -1922,7 +1969,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.FileProviders.Abstractions@6.0.0",
@@ -1938,7 +1986,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Options@6.0.0",
@@ -1954,7 +2003,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Options.ConfigurationExtensions@6.0.0",
@@ -1970,7 +2020,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.Text.Json@6.0.0",
@@ -1986,7 +2037,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Logging.Abstractions@6.0.0",
@@ -2002,7 +2054,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.Diagnostics.EventLog@6.0.0",
@@ -2018,7 +2071,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.Text.Json@6.0.0",
@@ -2034,7 +2088,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.Diagnostics.DiagnosticSource@6.0.0",
@@ -2050,7 +2105,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Primitives@6.0.0",
@@ -2066,7 +2122,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.ComponentModel.Annotations@5.0.0",
@@ -2082,7 +2139,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/Microsoft.Extensions.Primitives@6.0.0",
@@ -2098,7 +2156,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.Runtime.CompilerServices.Unsafe@6.0.0",
@@ -2114,7 +2173,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.Runtime.CompilerServices.Unsafe@6.0.0",
@@ -2130,7 +2190,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.Runtime.CompilerServices.Unsafe@6.0.0",
@@ -2146,7 +2207,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:nuget/System.Text.Encodings.Web@6.0.0",
@@ -2162,7 +2224,8 @@
       "datafile_path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "datasource_id": "nuget_packages_lock",
       "package_type": "nuget",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     }
   ],
   "files": [
@@ -2171,6 +2234,7 @@
       "type": "file",
       "name": "resolved_dependencies_nuget.zip",
       "status": "",
+      "for_packages": [],
       "tag": "",
       "extension": ".zip",
       "md5": "2692d09b654defd0aff3d2037bce35f3",
@@ -2196,16 +2260,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "resolved_dependencies_nuget.zip-extract",
       "type": "directory",
       "name": "resolved_dependencies_nuget.zip-extract",
       "status": "",
+      "for_packages": [],
       "tag": "",
       "extension": ".zip-extract",
       "md5": "",
@@ -2231,16 +2296,52 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "resolved_dependencies_nuget.zip-extract/packages.lock.json",
       "type": "file",
       "name": "packages.lock.json",
       "status": "application-package",
+      "for_packages": [
+        "pkg:nuget/McMaster.Extensions.CommandLineUtils@4.0.1?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/McMaster.Extensions.Hosting.CommandLine@4.0.1?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Configuration.Binder@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Configuration.CommandLine@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Configuration.EnvironmentVariables@6.0.1?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Configuration.FileExtensions@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Configuration.Json@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Configuration.UserSecrets@6.0.1?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Configuration@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.DependencyInjection@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.FileProviders.Abstractions@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.FileProviders.Physical@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.FileSystemGlobbing@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Hosting.Abstractions@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Hosting@6.0.1?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Logging.Abstractions@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Logging.Configuration@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Logging.Console@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Logging.Debug@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Logging.EventLog@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Logging.EventSource@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Logging@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Options.ConfigurationExtensions@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Options.DataAnnotations@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Options@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/Microsoft.Extensions.Primitives@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/System.ComponentModel.Annotations@5.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/System.Diagnostics.DiagnosticSource@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/System.Diagnostics.EventLog@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/System.Runtime.CompilerServices.Unsafe@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/System.Text.Encodings.Web@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:nuget/System.Text.Json@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": ".json",
       "md5": "d1ddb6ac6c795815292c16d8451b7cbf",
@@ -5263,45 +5364,10 @@
           "declared_license_expression_spdx": null
         }
       ],
-      "for_packages": [
-        "pkg:nuget/McMaster.Extensions.CommandLineUtils@4.0.1?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/McMaster.Extensions.Hosting.CommandLine@4.0.1?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Configuration.Binder@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Configuration.CommandLine@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Configuration.EnvironmentVariables@6.0.1?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Configuration.FileExtensions@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Configuration.Json@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Configuration.UserSecrets@6.0.1?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Configuration@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.DependencyInjection@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.FileProviders.Abstractions@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.FileProviders.Physical@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.FileSystemGlobbing@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Hosting.Abstractions@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Hosting@6.0.1?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Logging.Abstractions@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Logging.Configuration@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Logging.Console@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Logging.Debug@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Logging.EventLog@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Logging.EventSource@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Logging@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Options.ConfigurationExtensions@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Options.DataAnnotations@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Options@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/Microsoft.Extensions.Primitives@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/System.ComponentModel.Annotations@5.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/System.Diagnostics.DiagnosticSource@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/System.Diagnostics.EventLog@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/System.Runtime.CompilerServices.Unsafe@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/System.Text.Encodings.Web@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:nuget/System.Text.Json@6.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     }
   ],
   "relations": []

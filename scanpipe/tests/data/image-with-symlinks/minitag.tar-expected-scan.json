@@ -86,6 +86,7 @@
       "type": "directory",
       "name": "lib",
       "status": "scanned",
+      "for_packages": [],
       "tag": "img-592e8d-layer-01-887ac3",
       "extension": "",
       "md5": "",
@@ -111,16 +112,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "minitag.tar-extract/887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0/lib/libcrypto.so.1.0.0",
       "type": "file",
       "name": "libcrypto.so.1.0.0",
       "status": "no-licenses",
+      "for_packages": [],
       "tag": "img-592e8d-layer-01-887ac3",
       "extension": ".0",
       "md5": "cdb4378c032f68bee63f49766be8f158",
@@ -146,16 +148,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "minitag.tar-extract/887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0/lib/libssl.so.1.0.0",
       "type": "file",
       "name": "libssl.so.1.0.0",
       "status": "no-licenses",
+      "for_packages": [],
       "tag": "img-592e8d-layer-01-887ac3",
       "extension": ".0",
       "md5": "f200def083e45712250d7f7968dca029",
@@ -181,16 +184,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "minitag.tar-extract/887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0/usr",
       "type": "directory",
       "name": "usr",
       "status": "scanned",
+      "for_packages": [],
       "tag": "img-592e8d-layer-01-887ac3",
       "extension": "",
       "md5": "",
@@ -216,16 +220,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "minitag.tar-extract/887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0/usr/lib",
       "type": "directory",
       "name": "lib",
       "status": "scanned",
+      "for_packages": [],
       "tag": "img-592e8d-layer-01-887ac3",
       "extension": "",
       "md5": "",
@@ -251,16 +256,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "minitag.tar-extract/887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0/usr/lib/icu",
       "type": "directory",
       "name": "icu",
       "status": "scanned",
+      "for_packages": [],
       "tag": "img-592e8d-layer-01-887ac3",
       "extension": "",
       "md5": "",
@@ -286,16 +292,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "minitag.tar-extract/887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0/usr/lib/icu/60.2",
       "type": "directory",
       "name": "60.2",
       "status": "scanned",
+      "for_packages": [],
       "tag": "img-592e8d-layer-01-887ac3",
       "extension": ".2",
       "md5": "",
@@ -321,16 +328,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "minitag.tar-extract/887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0/usr/lib/icu/60.2/pkgdata.inc",
       "type": "file",
       "name": "pkgdata.inc",
       "status": "no-licenses",
+      "for_packages": [],
       "tag": "img-592e8d-layer-01-887ac3",
       "extension": ".inc",
       "md5": "bd00a457f8e3a5e8d1590795eb382000",
@@ -356,10 +364,10 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     }
   ],
   "relations": []

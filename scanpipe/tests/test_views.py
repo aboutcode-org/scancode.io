@@ -701,7 +701,7 @@ class ScanPipeViewsTest(TestCase):
         project2.labels.add("label3", "label4")
 
         url = reverse("project_list")
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(7):
             self.client.get(url)
 
         with self.assertNumQueries(13):
@@ -1126,7 +1126,7 @@ class ScanPipeViewsTest(TestCase):
             self.client.get(list_view_url)
 
         details_url = dep1.get_absolute_url()
-        with self.assertNumQueries(6):
+        with self.assertNumQueries(7):
             self.client.get(details_url)
 
     def test_scanpipe_views_codebase_relation_views(self):

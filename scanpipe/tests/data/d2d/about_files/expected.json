@@ -83,7 +83,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:maven/log4j/log4j@1.2.13",
@@ -136,7 +137,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     }
   ],
   "dependencies": [],
@@ -146,6 +148,7 @@
       "type": "directory",
       "name": "from",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -171,16 +174,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.8.0-sources.ABOUT",
       "type": "file",
       "name": "flume-ng-node-1.8.0-sources.ABOUT",
       "status": "not-deployed",
+      "for_packages": [],
       "tag": "from",
       "extension": ".ABOUT",
       "md5": "4f8ac19bc3661bbaac91fb8652b6c4cb",
@@ -206,16 +210,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "type": "file",
       "name": "flume-ng-node-1.9.0-sources.ABOUT",
       "status": "about-mapped",
+      "for_packages": [],
       "tag": "from",
       "extension": ".ABOUT",
       "md5": "c7fab493a90ebf247954e1e30582ba8f",
@@ -241,16 +246,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.LICENSE",
       "type": "file",
       "name": "flume-ng-node-1.9.0-sources.LICENSE",
       "status": "about-mapped",
+      "for_packages": [],
       "tag": "from",
       "extension": ".LICENSE",
       "md5": "94c82ae800466538d15278d6be4feedc",
@@ -276,16 +282,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.NOTICE",
       "type": "file",
       "name": "flume-ng-node-1.9.0-sources.NOTICE",
       "status": "about-mapped",
+      "for_packages": [],
       "tag": "from",
       "extension": ".NOTICE",
       "md5": "efd2af60c8501931cb9c736b5ad74f65",
@@ -311,16 +318,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar",
       "type": "file",
       "name": "flume-ng-node-1.9.0-sources.jar",
       "status": "not-deployed",
+      "for_packages": [],
       "tag": "from",
       "extension": ".jar",
       "md5": "890f2f18119ee83e5fc63fc438bd2367",
@@ -346,16 +354,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract",
       "type": "directory",
       "name": "flume-ng-node-1.9.0-sources.jar-extract",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": ".jar-extract",
       "md5": "",
@@ -381,16 +390,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract",
       "type": "directory",
       "name": "flume-ng-node-1.9.0-sources.jar-extract",
       "status": "mapped",
+      "for_packages": [],
       "tag": "from",
       "extension": ".jar-extract",
       "md5": "",
@@ -416,16 +426,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract/org",
       "type": "directory",
       "name": "org",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -451,16 +462,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract/org/apache",
       "type": "directory",
       "name": "apache",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -486,16 +498,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume",
       "type": "directory",
       "name": "flume",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -521,16 +534,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node",
       "type": "directory",
       "name": "node",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -556,16 +570,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/ConfigurationProvider.java",
       "type": "file",
       "name": "ConfigurationProvider.java",
       "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=90cb6382-431c-4187-be76-d4f1a2199a2f"
+      ],
       "tag": "from",
       "extension": ".java",
       "md5": "318484f1071022f375cd0fd99e9fe844",
@@ -614,9 +631,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=90cb6382-431c-4187-be76-d4f1a2199a2f"
-      ],
       "emails": [],
       "urls": [
         {
@@ -627,13 +641,15 @@
       ],
       "extra_data": {
         "java_package": "org.apache.flume.node"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to",
       "type": "directory",
       "name": "to",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -659,19 +675,22 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "00000015f6b057b61fd72b9c3429b9d20282eedf",
         "directory_structure": "00000015d76554188eea461e1a07cfb2adbb3c15"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar",
       "type": "file",
       "name": "flume-ng-node-1.9.0.jar",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".jar",
       "md5": "659a690c671a37c498b837df1572bf55",
@@ -697,18 +716,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract",
       "type": "directory",
       "name": "flume-ng-node-1.9.0.jar-extract",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".jar-extract",
       "md5": "",
@@ -734,21 +754,22 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "00000014769057b41b550b8c2429b9d20282eedb",
         "directory_structure": "000000148220522c471263822fe986a2864cd08b"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF",
       "type": "directory",
       "name": "META-INF",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -774,21 +795,22 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "000000050112d33b752de62e0265b8d6866ae293",
         "directory_structure": "000000057863b0a9ab89d9bc4811a2d6144cf9ab"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/DEPENDENCIES",
       "type": "file",
       "name": "DEPENDENCIES",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": "",
       "md5": "5eb50b01261a885fd0de993f46ecc9eb",
@@ -814,18 +836,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/LICENSE",
       "type": "file",
       "name": "LICENSE",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": "",
       "md5": "3b83ef96387f14655fc854ddc3c6bd57",
@@ -851,18 +874,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
       "type": "file",
       "name": "MANIFEST.MF",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".MF",
       "md5": "13d7452a4e969ebd58ac609d3efd4936",
@@ -888,18 +912,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven",
       "type": "directory",
       "name": "maven",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -925,21 +950,22 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "000000028100c33213b86008020528d44042801b",
         "directory_structure": "00000002084a08825003091489160ca815610801"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume",
       "type": "directory",
       "name": "org.apache.flume",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".flume",
       "md5": "",
@@ -965,21 +991,22 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "000000028100c33213b86008020528d44042801b",
         "directory_structure": "00000002121544006009e0c10381209a1212197c"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node",
       "type": "directory",
       "name": "flume-ng-node",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -1005,21 +1032,22 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "000000028100c33213b86008020528d44042801b",
         "directory_structure": "0000000202a00930141226001804441005044108"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.properties",
       "type": "file",
       "name": "pom.properties",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".properties",
       "md5": "9135eb35a776e56eada1b3720a4ef83a",
@@ -1045,18 +1073,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.xml",
       "type": "file",
       "name": "pom.xml",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".xml",
       "md5": "43bdb64cf3d14e0a43c8a5758e3a2620",
@@ -1082,18 +1111,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org",
       "type": "directory",
       "name": "org",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -1119,21 +1149,22 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "0000000ffeb15fb49bd31b9c3429add31282eedf",
         "directory_structure": "0000000f18268fe56bf99797b01199f7ce38e313"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache",
       "type": "directory",
       "name": "apache",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -1159,21 +1190,22 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "0000000ffeb15fb49bd31b9c3429add31282eedf",
         "directory_structure": "0000000ff089e2d03d8f3196d03a490028be4485"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume",
       "type": "directory",
       "name": "flume",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -1199,21 +1231,22 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "0000000ffeb15fb49bd31b9c3429add31282eedf",
         "directory_structure": "0000000f25b5ec0e0491dcbddf370d52b70b5907"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node",
       "type": "directory",
       "name": "node",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -1239,21 +1272,22 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "0000000ffeb15fb49bd31b9c3429add31282eedf",
         "directory_structure": "0000000f22941765f1862ea1a6b7eabafce8986a"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider$ChannelComponent.class",
       "type": "file",
       "name": "AbstractConfigurationProvider$ChannelComponent.class",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".class",
       "md5": "4c09a598f46332add2e53c4737fc6acf",
@@ -1279,18 +1313,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.class",
       "type": "file",
       "name": "AbstractConfigurationProvider.class",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".class",
       "md5": "58bb3c2bc489a5cba79e72ac6fdac008",
@@ -1316,18 +1351,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractZooKeeperConfigurationProvider.class",
       "type": "file",
       "name": "AbstractZooKeeperConfigurationProvider.class",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".class",
       "md5": "b5a1a31a17d70a66a30118b51862bde1",
@@ -1353,18 +1389,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application$1.class",
       "type": "file",
       "name": "Application$1.class",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".class",
       "md5": "712ce8e290d886ad23b5b5aa21cb3e61",
@@ -1390,18 +1427,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application.class",
       "type": "file",
       "name": "Application.class",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".class",
       "md5": "6a3fdabd9dca0f528d6b072eafa3c099",
@@ -1427,18 +1465,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/ConfigurationProvider.class",
       "type": "file",
       "name": "ConfigurationProvider.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "a0a489cd3c4ee667d33bcc5ee20d7f2f",
@@ -1464,16 +1501,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/EnvVarResolverProperties.class",
       "type": "file",
       "name": "EnvVarResolverProperties.class",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".class",
       "md5": "6acf3c2cece5623fa48f8de4d6f619ac",
@@ -1499,18 +1539,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/MaterializedConfiguration.class",
       "type": "file",
       "name": "MaterializedConfiguration.class",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".class",
       "md5": "e2d0468bf278193a1d8fe82cf88a19d6",
@@ -1536,18 +1577,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.class",
       "type": "file",
       "name": "PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.class",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".class",
       "md5": "8841a8f1510e091fa799458de77831d0",
@@ -1573,18 +1615,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.class",
       "type": "file",
       "name": "PollingPropertiesFileConfigurationProvider.class",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".class",
       "md5": "020ec7b6fc51e6932142595c36fa1efb",
@@ -1610,18 +1653,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider$1.class",
       "type": "file",
       "name": "PollingZooKeeperConfigurationProvider$1.class",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".class",
       "md5": "4bcf06144b0ed84e62bc4d4a40511f4c",
@@ -1647,18 +1691,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.class",
       "type": "file",
       "name": "PollingZooKeeperConfigurationProvider.class",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".class",
       "md5": "532b3474093ccd976d10cefff49bf0e4",
@@ -1684,18 +1729,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PropertiesFileConfigurationProvider.class",
       "type": "file",
       "name": "PropertiesFileConfigurationProvider.class",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".class",
       "md5": "022640c15e6a0e199a5e5476604ce920",
@@ -1721,18 +1767,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/SimpleMaterializedConfiguration.class",
       "type": "file",
       "name": "SimpleMaterializedConfiguration.class",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".class",
       "md5": "876dbb6f8e3723450193a1d777936f2f",
@@ -1758,18 +1805,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/StaticZooKeeperConfigurationProvider.class",
       "type": "file",
       "name": "StaticZooKeeperConfigurationProvider.class",
       "status": "about-mapped",
+      "for_packages": [
+        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "to",
       "extension": ".class",
       "md5": "45c5f180d0b4decc4e75b00830004699",
@@ -1795,12 +1843,10 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:maven/log4j/log4j@1.2.13?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     }
   ],
   "relations": [
@@ -1809,217 +1855,248 @@
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar",
       "status": "about-mapped",
       "map_type": "jar_to_source",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/DEPENDENCIES",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/LICENSE",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.properties",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.xml",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider$ChannelComponent.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractZooKeeperConfigurationProvider.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application$1.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/ConfigurationProvider.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/ConfigurationProvider.java"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/ConfigurationProvider.java",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/EnvVarResolverProperties.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/MaterializedConfiguration.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider$1.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PropertiesFileConfigurationProvider.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/SimpleMaterializedConfiguration.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/StaticZooKeeperConfigurationProvider.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
+      "project": "Analysis"
     }
   ]
 }

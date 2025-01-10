@@ -58,6 +58,9 @@
       "type": "file",
       "name": "readme.md",
       "status": "application-package",
+      "for_packages": [
+        "pkg:npm/is-npm@1.0.0?uuid=ba110d49-b6f2-4c86-8d89-a6fd34838ca8"
+      ],
       "tag": "",
       "extension": ".md",
       "size": 477,
@@ -122,9 +125,6 @@
       ],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:npm/is-npm@1.0.0?uuid=ba110d49-b6f2-4c86-8d89-a6fd34838ca8"
-      ],
       "emails": [],
       "urls": [
         {
@@ -149,6 +149,7 @@
         }
       ],
       "extra_data": {},
+      "project": "Analysis",
       "content": "# is-npm [![Build Status](https://travis-ci.org/sindresorhus/is-npm.svg?branch=master)](https://travis-ci.org/sindresorhus/is-npm)\n\n> Check if your code is running as an [npm script](https://www.npmjs.org/doc/misc/npm-scripts.html)\n\n\n## Install\n\n```sh\n$ npm install --save is-npm\n```\n\n\n## Usage\n\n```js\nvar isNpm = require('is-npm');\nconsole.log(isNpm);\n```\n\n```sh\n$ node foo.js\n#=> false\n$ npm run foo\n#=> true\n```\n\n\n## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)\n"
     }
   ],
@@ -248,7 +249,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     }
   ]
 }

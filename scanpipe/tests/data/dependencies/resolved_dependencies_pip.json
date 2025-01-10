@@ -102,7 +102,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/setuptools@70.1.0",
@@ -158,7 +159,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/univers@0.0.0",
@@ -235,7 +237,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/univers@0.0.0",
@@ -310,7 +313,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     }
   ],
   "dependencies": [
@@ -328,7 +332,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/attrs",
@@ -344,7 +349,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/attrs",
@@ -360,7 +366,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/packaging",
@@ -376,7 +383,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/packaging@21.0",
@@ -392,7 +400,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/packaging@21.0",
@@ -408,7 +417,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/packaging@21.0",
@@ -424,7 +434,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/pyparsing",
@@ -440,7 +451,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/semantic-version",
@@ -456,7 +468,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/semantic-version",
@@ -472,7 +485,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/semantic-version",
@@ -488,7 +502,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/semver",
@@ -504,7 +519,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/semver",
@@ -520,7 +536,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/semver",
@@ -536,7 +553,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/setuptools@70.1.0",
@@ -552,7 +570,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/setuptools@70.1.0",
@@ -568,7 +587,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     },
     {
       "purl": "pkg:pypi/setuptools@70.1.0",
@@ -584,7 +604,8 @@
       "datafile_path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "datasource_id": "pypi_inspect_deplock",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     }
   ],
   "files": [
@@ -593,6 +614,7 @@
       "type": "file",
       "name": "resolved_dependencies_pip.zip",
       "status": "",
+      "for_packages": [],
       "tag": "",
       "extension": ".zip",
       "md5": "60ee23e8f6a035c06ab69d46cbe5195f",
@@ -618,16 +640,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "resolved_dependencies_pip.zip-extract",
       "type": "directory",
       "name": "resolved_dependencies_pip.zip-extract",
       "status": "",
+      "for_packages": [],
       "tag": "",
       "extension": ".zip-extract",
       "md5": "",
@@ -653,16 +676,22 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "resolved_dependencies_pip.zip-extract/pip-inspect.deplock",
       "type": "file",
       "name": "pip-inspect.deplock",
       "status": "application-package",
+      "for_packages": [
+        "pkg:pypi/packaging@21.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:pypi/setuptools@70.1.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+        "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": ".deplock",
       "md5": "279bf84f3cdc4b7bf2367df68032dc3e",
@@ -951,15 +980,10 @@
           "declared_license_expression_spdx": "Apache-2.0 AND BSD-3-Clause AND MIT"
         }
       ],
-      "for_packages": [
-        "pkg:pypi/packaging@21.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:pypi/setuptools@70.1.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-        "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     }
   ],
   "relations": []

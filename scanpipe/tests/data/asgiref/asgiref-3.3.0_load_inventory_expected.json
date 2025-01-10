@@ -149,7 +149,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Tool: scancode-toolkit"
     },
     {
       "purl": "pkg:pypi/asgiref@3.3.0",
@@ -270,7 +271,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Tool: scancode-toolkit"
     }
   ],
   "dependencies": [
@@ -288,7 +290,8 @@
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Tool: scancode-toolkit"
     },
     {
       "purl": "pkg:pypi/pytest",
@@ -304,7 +307,8 @@
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Tool: scancode-toolkit"
     },
     {
       "purl": "pkg:pypi/pytest-asyncio",
@@ -320,7 +324,8 @@
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Tool: scancode-toolkit"
     },
     {
       "purl": "pkg:pypi/pytest-asyncio",
@@ -336,7 +341,8 @@
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
       "package_type": "pypi",
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Tool: scancode-toolkit"
     }
   ],
   "files": [
@@ -345,6 +351,9 @@
       "type": "file",
       "name": "asgiref-3.3.0-py3-none-any.whl",
       "status": "application-package",
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": ".whl",
       "md5": "5bce1df6dedc53a41a9a6b40d7b1699e",
@@ -619,18 +628,17 @@
           "declared_license_expression_spdx": "BSD-3-Clause"
         }
       ],
-      "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract",
       "type": "directory",
       "name": "asgiref-3.3.0-py3-none-any.whl-extract",
       "status": "",
+      "for_packages": [],
       "tag": "",
       "extension": "",
       "md5": "",
@@ -656,16 +664,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
       "type": "directory",
       "name": "asgiref",
       "status": "",
+      "for_packages": [],
       "tag": "",
       "extension": "",
       "md5": "",
@@ -691,16 +700,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info",
       "type": "directory",
       "name": "asgiref-3.3.0.dist-info",
       "status": "",
+      "for_packages": [],
       "tag": "",
       "extension": "",
       "md5": "",
@@ -726,16 +736,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
       "type": "file",
       "name": "LICENSE",
       "status": "application-package",
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": "",
       "md5": "f09eb47206614a4954c51db8a94840fa",
@@ -795,18 +808,19 @@
       ],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "type": "file",
       "name": "METADATA",
       "status": "application-package",
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": "",
       "md5": "4b50d67ff7994afcad22c6ef154cf052",
@@ -1130,18 +1144,19 @@
           "declared_license_expression_spdx": "BSD-3-Clause"
         }
       ],
-      "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/RECORD",
       "type": "file",
       "name": "RECORD",
       "status": "application-package",
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": "",
       "md5": "38e56802a5adcafeae35efc6e3d218ba",
@@ -1167,18 +1182,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
       "type": "file",
       "name": "WHEEL",
       "status": "application-package",
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": "",
       "md5": "5ccc7519eb42f1dfceee6e7d685f1ff5",
@@ -1204,18 +1220,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
       "type": "file",
       "name": "top_level.txt",
       "status": "application-package",
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": ".txt",
       "md5": "680e61db4d95c8d9501b7a49fa2bf0b2",
@@ -1241,18 +1258,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
       "type": "file",
       "name": "__init__.py",
       "status": "application-package",
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": ".py",
       "md5": "4910b756f4e611055140e80f757d9325",
@@ -1278,18 +1296,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
       "type": "file",
       "name": "compatibility.py",
       "status": "application-package",
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": ".py",
       "md5": "5231077fd0628314246fcba7817b561e",
@@ -1315,18 +1334,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
       "type": "file",
       "name": "current_thread_executor.py",
       "status": "application-package",
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": ".py",
       "md5": "b4c45f37055d88dd11b15eb4de51b074",
@@ -1352,18 +1372,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
       "type": "file",
       "name": "local.py",
       "status": "application-package",
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": ".py",
       "md5": "e4103a2fcd6a3f23a036307c978271d7",
@@ -1389,18 +1410,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
       "type": "file",
       "name": "server.py",
       "status": "application-package",
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": ".py",
       "md5": "5b7619584de19d8f1a00fb5a43349153",
@@ -1426,18 +1448,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
       "type": "file",
       "name": "sync.py",
       "status": "application-package",
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": ".py",
       "md5": "44ec43af7ee367c7d6a5808d37133144",
@@ -1463,18 +1486,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",
       "type": "file",
       "name": "testing.py",
       "status": "application-package",
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": ".py",
       "md5": "aff31de5fa753643adacf0311aa553f4",
@@ -1500,18 +1524,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
       "type": "file",
       "name": "timeout.py",
       "status": "application-package",
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": ".py",
       "md5": "8114ef1d7c1488ebf3a1766dbd39d427",
@@ -1559,18 +1584,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     },
     {
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
       "type": "file",
       "name": "wsgi.py",
       "status": "application-package",
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": ".py",
       "md5": "4eed1361d0e454149f95fca85c84f33f",
@@ -1596,12 +1622,10 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Tool: scancode-toolkit"
     }
   ],
   "relations": []

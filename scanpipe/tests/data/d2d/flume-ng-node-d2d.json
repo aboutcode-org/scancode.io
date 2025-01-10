@@ -83,7 +83,8 @@
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
-      "affected_by_vulnerabilities": []
+      "affected_by_vulnerabilities": [],
+      "project": "Analysis"
     }
   ],
   "dependencies": [],
@@ -93,6 +94,7 @@
       "type": "directory",
       "name": "from",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -118,16 +120,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar",
       "type": "file",
       "name": "flume-ng-node-1.9.0-sources.jar",
       "status": "not-deployed",
+      "for_packages": [],
       "tag": "from",
       "extension": ".jar",
       "md5": "6cd8849386d7a379cd0fd6699e0b063d",
@@ -153,16 +156,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract",
       "type": "directory",
       "name": "flume-ng-node-1.9.0-sources.jar-extract",
       "status": "mapped",
+      "for_packages": [],
       "tag": "from",
       "extension": ".jar-extract",
       "md5": "",
@@ -188,16 +192,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/META-INF",
       "type": "directory",
       "name": "META-INF",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -223,16 +228,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/META-INF/MANIFEST.MF",
       "type": "file",
       "name": "MANIFEST.MF",
       "status": "not-deployed",
+      "for_packages": [],
       "tag": "from",
       "extension": ".MF",
       "md5": "67d06f6cc4c1b9c448655e0f192f354d",
@@ -258,16 +264,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/META-INF/maven",
       "type": "directory",
       "name": "maven",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -293,16 +300,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/META-INF/maven/org.apache.flume",
       "type": "directory",
       "name": "org.apache.flume",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": ".flume",
       "md5": "",
@@ -328,16 +336,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node",
       "type": "directory",
       "name": "flume-ng-node",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -363,16 +372,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.properties",
       "type": "file",
       "name": "pom.properties",
       "status": "no-licenses",
+      "for_packages": [],
       "tag": "from",
       "extension": ".properties",
       "md5": "9135eb35a776e56eada1b3720a4ef83a",
@@ -398,16 +408,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.xml",
       "type": "file",
       "name": "pom.xml",
       "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
       "tag": "from",
       "extension": ".xml",
       "md5": "43bdb64cf3d14e0a43c8a5758e3a2620",
@@ -456,9 +469,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -472,13 +482,15 @@
           "start_line": 21
         }
       ],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org",
       "type": "directory",
       "name": "org",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -504,16 +516,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache",
       "type": "directory",
       "name": "apache",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -539,16 +552,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume",
       "type": "directory",
       "name": "flume",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -574,16 +588,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node",
       "type": "directory",
       "name": "node",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
       "md5": "",
@@ -609,16 +624,19 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.java",
       "type": "file",
       "name": "AbstractConfigurationProvider.java",
       "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
       "tag": "from",
       "extension": ".java",
       "md5": "25cc8e54e7e9bf9d6b1d896e3eabba73",
@@ -667,9 +685,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -680,13 +695,17 @@
       ],
       "extra_data": {
         "java_package": "org.apache.flume.node"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/AbstractZooKeeperConfigurationProvider.java",
       "type": "file",
       "name": "AbstractZooKeeperConfigurationProvider.java",
       "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
       "tag": "from",
       "extension": ".java",
       "md5": "68665f01917b3e889869dc4562a499a5",
@@ -735,9 +754,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -748,13 +764,17 @@
       ],
       "extra_data": {
         "java_package": "org.apache.flume.node"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/Application.java",
       "type": "file",
       "name": "Application.java",
       "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
       "tag": "from",
       "extension": ".java",
       "md5": "4ce1f3c26f90c7484226187c6c87e604",
@@ -803,9 +823,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -816,13 +833,17 @@
       ],
       "extra_data": {
         "java_package": "org.apache.flume.node"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/ConfigurationProvider.java",
       "type": "file",
       "name": "ConfigurationProvider.java",
       "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
       "tag": "from",
       "extension": ".java",
       "md5": "318484f1071022f375cd0fd99e9fe844",
@@ -871,9 +892,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -884,13 +902,17 @@
       ],
       "extra_data": {
         "java_package": "org.apache.flume.node"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/EnvVarResolverProperties.java",
       "type": "file",
       "name": "EnvVarResolverProperties.java",
       "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
       "tag": "from",
       "extension": ".java",
       "md5": "0b5d41bb2a83d6d7c34d0342934c34d9",
@@ -939,9 +961,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -952,13 +971,17 @@
       ],
       "extra_data": {
         "java_package": "org.apache.flume.node"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/MaterializedConfiguration.java",
       "type": "file",
       "name": "MaterializedConfiguration.java",
       "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
       "tag": "from",
       "extension": ".java",
       "md5": "ec5bbed5c90dd8f949070676cb586f14",
@@ -1007,9 +1030,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -1020,13 +1040,17 @@
       ],
       "extra_data": {
         "java_package": "org.apache.flume.node"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.java",
       "type": "file",
       "name": "PollingPropertiesFileConfigurationProvider.java",
       "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
       "tag": "from",
       "extension": ".java",
       "md5": "68f6d61433f918a7bcf22fe0213fe04b",
@@ -1075,9 +1099,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -1088,13 +1109,17 @@
       ],
       "extra_data": {
         "java_package": "org.apache.flume.node"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.java",
       "type": "file",
       "name": "PollingZooKeeperConfigurationProvider.java",
       "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
       "tag": "from",
       "extension": ".java",
       "md5": "58ec2918f431867d9c9ea8befeeced4b",
@@ -1143,9 +1168,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -1156,13 +1178,17 @@
       ],
       "extra_data": {
         "java_package": "org.apache.flume.node"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PropertiesFileConfigurationProvider.java",
       "type": "file",
       "name": "PropertiesFileConfigurationProvider.java",
       "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
       "tag": "from",
       "extension": ".java",
       "md5": "cef9275033012ec0f912ef1109f01fbb",
@@ -1211,9 +1237,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -1224,13 +1247,17 @@
       ],
       "extra_data": {
         "java_package": "org.apache.flume.node"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/SimpleMaterializedConfiguration.java",
       "type": "file",
       "name": "SimpleMaterializedConfiguration.java",
       "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
       "tag": "from",
       "extension": ".java",
       "md5": "a5b33250eebe26c6b0e30265becaa403",
@@ -1279,9 +1306,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -1292,13 +1316,17 @@
       ],
       "extra_data": {
         "java_package": "org.apache.flume.node"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/StaticZooKeeperConfigurationProvider.java",
       "type": "file",
       "name": "StaticZooKeeperConfigurationProvider.java",
       "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
       "tag": "from",
       "extension": ".java",
       "md5": "af68b58aa5e07cb74e06e1d46248bfb3",
@@ -1347,9 +1375,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -1360,13 +1385,15 @@
       ],
       "extra_data": {
         "java_package": "org.apache.flume.node"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to",
       "type": "directory",
       "name": "to",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -1392,19 +1419,20 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "00000016f6905f141bf50bae2421a9d20202a6df",
         "directory_structure": "000000168425541886e8c01e0a07ceb2afbb3c15"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar",
       "type": "file",
       "name": "flume-ng-node-1.9.0.jar",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".jar",
       "md5": "37bc40b5615567388bdbfa43ba2a5b24",
@@ -1430,16 +1458,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract",
       "type": "directory",
       "name": "flume-ng-node-1.9.0.jar-extract",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": ".jar-extract",
       "md5": "",
@@ -1465,19 +1494,20 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "00000015f6b05fb41bf70bae3429b9d20282eedf",
         "directory_structure": "00000015822152ae57126ba22fed87b28e4ed08b"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF",
       "type": "directory",
       "name": "META-INF",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -1503,19 +1533,20 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "000000060010c318512cc22e0005b8d20642a013",
         "directory_structure": "00000006784130a18a8159bc4811a2c2104c5929"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/DEPENDENCIES",
       "type": "file",
       "name": "DEPENDENCIES",
       "status": "requires-review",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
       "md5": "5eb50b01261a885fd0de993f46ecc9eb",
@@ -2524,7 +2555,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [
         {
@@ -2778,13 +2808,15 @@
           "start_line": 98
         }
       ],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/LICENSE",
       "type": "file",
       "name": "LICENSE",
       "status": "review-dangling-legal-file",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
       "md5": "3b83ef96387f14655fc854ddc3c6bd57",
@@ -2833,7 +2865,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [
         {
@@ -2847,13 +2878,15 @@
           "start_line": 196
         }
       ],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
       "type": "file",
       "name": "MANIFEST.MF",
       "status": "requires-review",
+      "for_packages": [],
       "tag": "to",
       "extension": ".MF",
       "md5": "13d7452a4e969ebd58ac609d3efd4936",
@@ -2879,7 +2912,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [
         {
@@ -2888,13 +2920,15 @@
           "start_line": 11
         }
       ],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/NOTICE",
       "type": "file",
       "name": "NOTICE",
       "status": "review-dangling-legal-file",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
       "md5": "5aaf03002f53327047c5f87bb9322d20",
@@ -2955,7 +2989,6 @@
       ],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [
         {
@@ -2964,13 +2997,15 @@
           "start_line": 6
         }
       ],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven",
       "type": "directory",
       "name": "maven",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -2996,19 +3031,20 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "000000028100c33213b86008020528d44042801b",
         "directory_structure": "00000002084a08825003091489160ca815610801"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume",
       "type": "directory",
       "name": "org.apache.flume",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": ".flume",
       "md5": "",
@@ -3034,19 +3070,20 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "000000028100c33213b86008020528d44042801b",
         "directory_structure": "00000002121544006009e0c10381209a1212197c"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node",
       "type": "directory",
       "name": "flume-ng-node",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -3072,19 +3109,20 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "000000028100c33213b86008020528d44042801b",
         "directory_structure": "0000000202a00930141226001804441005044108"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.properties",
       "type": "file",
       "name": "pom.properties",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".properties",
       "md5": "9135eb35a776e56eada1b3720a4ef83a",
@@ -3110,16 +3148,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.xml",
       "type": "file",
       "name": "pom.xml",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".xml",
       "md5": "43bdb64cf3d14e0a43c8a5758e3a2620",
@@ -3145,16 +3184,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org",
       "type": "directory",
       "name": "org",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -3180,19 +3220,20 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "0000000ffeb15fb49bd31b9c3429add31282eedf",
         "directory_structure": "0000000f18268fe56bf99797b01199f7ce38e313"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache",
       "type": "directory",
       "name": "apache",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -3218,19 +3259,20 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "0000000ffeb15fb49bd31b9c3429add31282eedf",
         "directory_structure": "0000000ff089e2d03d8f3196d03a490028be4485"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume",
       "type": "directory",
       "name": "flume",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -3256,19 +3298,20 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "0000000ffeb15fb49bd31b9c3429add31282eedf",
         "directory_structure": "0000000f25b5ec0e0491dcbddf370d52b70b5907"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node",
       "type": "directory",
       "name": "node",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
       "md5": "",
@@ -3294,19 +3337,20 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
       "extra_data": {
         "directory_content": "0000000ffeb15fb49bd31b9c3429add31282eedf",
         "directory_structure": "0000000f22941765f1862ea1a6b7eabafce8986a"
-      }
+      },
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider$ChannelComponent.class",
       "type": "file",
       "name": "AbstractConfigurationProvider$ChannelComponent.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "4c09a598f46332add2e53c4737fc6acf",
@@ -3332,16 +3376,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.class",
       "type": "file",
       "name": "AbstractConfigurationProvider.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "58bb3c2bc489a5cba79e72ac6fdac008",
@@ -3367,16 +3412,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractZooKeeperConfigurationProvider.class",
       "type": "file",
       "name": "AbstractZooKeeperConfigurationProvider.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "b5a1a31a17d70a66a30118b51862bde1",
@@ -3402,16 +3448,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application$1.class",
       "type": "file",
       "name": "Application$1.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "712ce8e290d886ad23b5b5aa21cb3e61",
@@ -3437,16 +3484,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application.class",
       "type": "file",
       "name": "Application.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "6a3fdabd9dca0f528d6b072eafa3c099",
@@ -3472,16 +3520,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/ConfigurationProvider.class",
       "type": "file",
       "name": "ConfigurationProvider.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "a0a489cd3c4ee667d33bcc5ee20d7f2f",
@@ -3507,16 +3556,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/EnvVarResolverProperties.class",
       "type": "file",
       "name": "EnvVarResolverProperties.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "6acf3c2cece5623fa48f8de4d6f619ac",
@@ -3542,16 +3592,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/MaterializedConfiguration.class",
       "type": "file",
       "name": "MaterializedConfiguration.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "e2d0468bf278193a1d8fe82cf88a19d6",
@@ -3577,16 +3628,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.class",
       "type": "file",
       "name": "PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "8841a8f1510e091fa799458de77831d0",
@@ -3612,16 +3664,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.class",
       "type": "file",
       "name": "PollingPropertiesFileConfigurationProvider.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "020ec7b6fc51e6932142595c36fa1efb",
@@ -3647,16 +3700,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider$1.class",
       "type": "file",
       "name": "PollingZooKeeperConfigurationProvider$1.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "4bcf06144b0ed84e62bc4d4a40511f4c",
@@ -3682,16 +3736,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.class",
       "type": "file",
       "name": "PollingZooKeeperConfigurationProvider.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "532b3474093ccd976d10cefff49bf0e4",
@@ -3717,16 +3772,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PropertiesFileConfigurationProvider.class",
       "type": "file",
       "name": "PropertiesFileConfigurationProvider.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "022640c15e6a0e199a5e5476604ce920",
@@ -3752,16 +3808,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/SimpleMaterializedConfiguration.class",
       "type": "file",
       "name": "SimpleMaterializedConfiguration.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "876dbb6f8e3723450193a1d777936f2f",
@@ -3787,16 +3844,17 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/StaticZooKeeperConfigurationProvider.class",
       "type": "file",
       "name": "StaticZooKeeperConfigurationProvider.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
       "md5": "45c5f180d0b4decc4e75b00830004699",
@@ -3822,10 +3880,10 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {},
+      "project": "Analysis"
     }
   ],
   "relations": [
@@ -3834,126 +3892,144 @@
       "status": "mapped",
       "map_type": "jar_to_source",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.properties",
       "status": "mapped",
       "map_type": "sha1",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.properties"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.properties",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.xml",
       "status": "mapped",
       "map_type": "sha1",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.xml"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.xml",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider$ChannelComponent.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.java"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.java",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.java"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.java",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractZooKeeperConfigurationProvider.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/AbstractZooKeeperConfigurationProvider.java"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/AbstractZooKeeperConfigurationProvider.java",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application$1.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/Application.java"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/Application.java",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/Application.java"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/Application.java",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/ConfigurationProvider.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/ConfigurationProvider.java"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/ConfigurationProvider.java",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/EnvVarResolverProperties.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/EnvVarResolverProperties.java"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/EnvVarResolverProperties.java",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/MaterializedConfiguration.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/MaterializedConfiguration.java"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/MaterializedConfiguration.java",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.java"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.java",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.java"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.java",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider$1.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.java"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.java",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.java"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.java",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PropertiesFileConfigurationProvider.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PropertiesFileConfigurationProvider.java"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PropertiesFileConfigurationProvider.java",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/SimpleMaterializedConfiguration.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/SimpleMaterializedConfiguration.java"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/SimpleMaterializedConfiguration.java",
+      "project": "Analysis"
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/StaticZooKeeperConfigurationProvider.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/StaticZooKeeperConfigurationProvider.java"
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/StaticZooKeeperConfigurationProvider.java",
+      "project": "Analysis"
     }
   ]
 }
