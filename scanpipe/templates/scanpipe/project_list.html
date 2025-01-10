@@ -24,10 +24,12 @@
           {% include 'scanpipe/includes/breadcrumb.html' %}
           {{ filter.form.is_archived }}
           {% if filter.is_active %}
-            <a class="is-grey-link" href="{% url 'project_list' %}">
+            {{ paginator.count|intcomma }} results
+            <a class="is-grey-link ml-2" href="{% url 'project_list' %}">
               <i class="fa-solid fa-times"></i> Clear search and filters
             </a>
           {% endif %}
+          {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
         </div>
         <div class="has-text-right">
           <a href="{% url 'project_add' %}" class="button is-smaller is-link">New Project</a>

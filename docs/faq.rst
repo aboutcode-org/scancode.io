@@ -122,7 +122,7 @@ For example, to create multiple projects from files in a directory named
 
     $ docker compose run --rm \
         --volume local-data/:/input-data:ro \
-        web scanpipe batch-create input-data/
+        web scanpipe batch-create /input-data
 
 **Options**:
 
