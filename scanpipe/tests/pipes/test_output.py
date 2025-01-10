@@ -33,6 +33,7 @@ from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase
 
+import openpyxl
 import xlsxwriter
 from licensedcode.cache import get_licensing
 from lxml import etree
@@ -42,10 +43,12 @@ from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
+from scanpipe.pipes import flag
 from scanpipe.pipes import output
 from scanpipe.tests import FIXTURES_REGEN
 from scanpipe.tests import make_dependency
 from scanpipe.tests import make_package
+from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
@@ -210,15 +213,29 @@ class ScanPipeOutputPipesTest(TestCase):
             model="Model",
             details={},
         )
+        make_resource_file(
+            project=project, path="path/file1.ext", status=flag.REQUIRES_REVIEW
+        )
 
         output_file = output.to_xlsx(project=project)
         self.assertIn(output_file.name, project.output_root)
 
         # Make sure the output can be generated even if the work_directory was wiped
         shutil.rmtree(project.work_directory)
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(10):
             output_file = output.to_xlsx(project=project)
         self.assertIn(output_file.name, project.output_root)
+
+        workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
+        expected_sheet_names = [
+            "PACKAGES",
+            "DEPENDENCIES",
+            "RESOURCES",
+            "RELATIONS",
+            "MESSAGES",
+            "TODOS",
+        ]
+        self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
 
     def test_scanpipe_pipes_outputs_vulnerability_as_cyclonedx(self):
         component_bom_ref = "pkg:pypi/django@4.0.10"

@@ -423,8 +423,10 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         if not data or data.get("is_archived", "") == "":
             self.queryset = self.queryset.filter(is_archived=False)
 
-        active_count = Project.objects.filter(is_archived=False).count()
-        archived_count = Project.objects.filter(is_archived=True).count()
+        counts = Project.objects.get_active_archived_counts()
+        active_count = counts["active_count"]
+        archived_count = counts["archived_count"]
+
         self.filters["is_archived"].extra["widget"] = BulmaLinkWidget(
             choices=[
                 ("", f'<i class="fa-solid fa-seedling"></i> {active_count} Active'),

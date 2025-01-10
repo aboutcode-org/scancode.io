@@ -232,7 +232,7 @@ class ProjectViewSet(
     @action(detail=True, filterset_class=None)
     def dependencies(self, request, *args, **kwargs):
         project = self.get_object()
-        queryset = project.discovereddependencies.all()
+        queryset = project.discovereddependencies.prefetch_for_serializer()
         return self.get_filtered_response(
             request, queryset, DependencyFilterSet, DiscoveredDependencySerializer
         )
@@ -240,7 +240,9 @@ class ProjectViewSet(
     @action(detail=True, filterset_class=None)
     def relations(self, request, *args, **kwargs):
         project = self.get_object()
-        queryset = project.codebaserelations.all()
+        queryset = project.codebaserelations.select_related(
+            "from_resource", "to_resource"
+        )
         return self.get_filtered_response(
             request, queryset, RelationFilterSet, CodebaseRelationSerializer
         )

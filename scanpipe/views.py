@@ -81,6 +81,7 @@ from scanpipe.forms import PipelineRunStepSelectionForm
 from scanpipe.forms import ProjectCloneForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectOutputDownloadForm
+from scanpipe.forms import ProjectReportForm
 from scanpipe.forms import ProjectSettingsForm
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
@@ -453,13 +454,20 @@ class ExportXLSXMixin:
     def get_export_xlsx_extra_fields(self):
         return []
 
+    def get_export_xlsx_worksheet_name(self):
+        return
+
     def export_xlsx_file_response(self):
         output_file = io.BytesIO()
         queryset = self.get_export_xlsx_queryset()
         extra_fields = self.get_export_xlsx_extra_fields()
+        worksheet_name = self.get_export_xlsx_worksheet_name()
         with xlsxwriter.Workbook(output_file) as workbook:
             output.queryset_to_xlsx_worksheet(
-                queryset, workbook, extra_fields=extra_fields
+                queryset,
+                workbook,
+                extra_fields=extra_fields,
+                worksheet_name=worksheet_name,
             )
 
         output_file.seek(0)
@@ -551,7 +559,13 @@ class ProjectListView(
         Prefetch(
             "runs",
             queryset=Run.objects.only(
-                "uuid", "pipeline_name", "project_id", "task_exitcode"
+                "uuid",
+                "pipeline_name",
+                "project_id",
+                "task_id",
+                "task_start_date",
+                "task_end_date",
+                "task_exitcode",
             ),
         ),
     ]
@@ -592,6 +606,7 @@ class ProjectListView(
         context = super().get_context_data(**kwargs)
         context["archive_form"] = ArchiveProjectForm()
         context["outputs_download_form"] = ProjectOutputDownloadForm()
+        context["report_form"] = ProjectReportForm()
         return context
 
     def get_queryset(self):
@@ -1210,17 +1225,28 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
     def get_success_message(self, action, count):
         return f"{count} projects have been {action}."
 
+    def export_xlsx_file_response(self):
+        self.report_form = ProjectReportForm(self.request.POST)
+        if not self.report_form.is_valid():
+            return HttpResponseRedirect(self.success_url)
+
+        return super().export_xlsx_file_response()
+
     def get_projects_queryset(self):
         return Project.objects.filter(pk__in=self.selected_project_ids)
 
     def get_export_xlsx_queryset(self):
+        model_name = self.report_form.cleaned_data["model_name"]
+        queryset = output.get_queryset(project=None, model_name=model_name)
         projects = self.get_projects_queryset()
-        packages = DiscoveredPackage.objects.filter(project__in=projects)
-        packages = packages.select_related("project")
-        return packages
+        return queryset.filter(project__in=projects)
 
     def get_export_xlsx_extra_fields(self):
         return ["project"]
+
+    def get_export_xlsx_worksheet_name(self):
+        if self.report_form.cleaned_data.get("model_name") == "todos":
+            return "TODOS"
 
     def get_export_xlsx_filename(self):
         return "report.xlsx"

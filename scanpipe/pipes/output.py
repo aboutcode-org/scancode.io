@@ -52,7 +52,13 @@ from scancode_config import __version__ as scancode_toolkit_version
 
 from scancodeio import SCAN_NOTICE
 from scancodeio import __version__ as scancodeio_version
+from scanpipe.models import CodebaseRelation
+from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
+from scanpipe.models import DiscoveredPackage
+from scanpipe.models import ProjectMessage
 from scanpipe.pipes import docker
+from scanpipe.pipes import flag
 from scanpipe.pipes import spdx
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -67,7 +73,7 @@ def get_queryset(project, model_name):
     """Return a consistent QuerySet for all supported outputs (json, xlsx, csv, ...)"""
     querysets = {
         "discoveredpackage": (
-            project.discoveredpackages.all().order_by(
+            DiscoveredPackage.objects.order_by(
                 "type",
                 "namespace",
                 "name",
@@ -75,9 +81,7 @@ def get_queryset(project, model_name):
             )
         ),
         "discovereddependency": (
-            project.discovereddependencies.all()
-            .prefetch_for_serializer()
-            .order_by(
+            DiscoveredDependency.objects.prefetch_for_serializer().order_by(
                 "type",
                 "namespace",
                 "name",
@@ -86,14 +90,20 @@ def get_queryset(project, model_name):
             )
         ),
         "codebaseresource": (
-            project.codebaseresources.without_symlinks().prefetch_for_serializer()
+            CodebaseResource.objects.without_symlinks().prefetch_for_serializer()
         ),
         "codebaserelation": (
-            project.codebaserelations.select_related("from_resource", "to_resource")
+            CodebaseRelation.objects.select_related("from_resource", "to_resource")
         ),
-        "projectmessage": project.projectmessages.all(),
+        "projectmessage": ProjectMessage.objects.all(),
+        "todos": CodebaseResource.objects.files().status(flag.REQUIRES_REVIEW),
     }
-    return querysets.get(model_name)
+
+    queryset = querysets.get(model_name)
+    if project:
+        queryset = queryset.filter(project=project)
+
+    return queryset
 
 
 def queryset_to_csv_file(queryset, fieldnames, output_file):
@@ -295,7 +305,11 @@ model_name_to_worksheet_name = {
 
 
 def queryset_to_xlsx_worksheet(
-    queryset, workbook, exclude_fields=None, extra_fields=None
+    queryset,
+    workbook,
+    exclude_fields=None,
+    extra_fields=None,
+    worksheet_name=None,
 ):
     """
     Add a new worksheet to the ``workbook`` ``xlsxwriter.Workbook`` using the
@@ -310,7 +324,7 @@ def queryset_to_xlsx_worksheet(
 
     model_class = queryset.model
     model_name = model_class._meta.model_name
-    worksheet_name = model_name_to_worksheet_name.get(model_name)
+    worksheet_name = worksheet_name or model_name_to_worksheet_name.get(model_name)
 
     fields = get_serializer_fields(model_class)
     exclude_fields = exclude_fields or []
@@ -346,8 +360,12 @@ def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
 
     for row_index, record in enumerate(rows, start=1):
         row_errors = []
+        record_is_dict = isinstance(record, dict)
         for col_index, field in enumerate(fields):
-            value = getattr(record, field)
+            if record_is_dict:
+                value = record.get(field)
+            else:
+                value = getattr(record, field)
 
             if not value:
                 continue
@@ -480,6 +498,12 @@ def to_xlsx(project):
 
         if layers_data := docker.get_layers_data(project):
             _add_xlsx_worksheet(workbook, "LAYERS", layers_data, docker.layer_fields)
+
+        todos_queryset = get_queryset(project, "todos")
+        if todos_queryset:
+            queryset_to_xlsx_worksheet(
+                todos_queryset, workbook, exclude_fields, worksheet_name="TODOS"
+            )
 
     return output_file
 

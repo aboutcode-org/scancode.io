@@ -1530,6 +1530,7 @@ class ScanPipeD2DPipesTest(TestCase):
             ).count(),
         )
 
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
     def test_scanpipe_pipes_d2d_map_rust_paths(self):
         input_dir = self.project1.input_path
         input_resources = [

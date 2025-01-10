@@ -35,6 +35,9 @@ v34.9.4 (unreleased)
   at once from a directory containing input files.
   https://github.com/aboutcode-org/scancode.io/issues/1437
 
+- Add a "TODOS" sheet containing on REQUIRES_REVIEW resources in XLSX.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
 v34.9.3 (2024-12-31)
 --------------------
 
