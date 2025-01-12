@@ -2609,6 +2609,16 @@ class CodebaseResource(
     )
 
     objects = CodebaseResourceQuerySet.as_manager()
+    labels = TaggableManager(through=UUIDTaggedItem, ordering=["name"])
+
+    @staticmethod
+    def is_white_out_file(file_path):
+        return file_path.endswith(".whiteout")
+
+    def tag_white_out_files(self):
+        if self.is_white_out_file(self.path):
+            self.labels.add("white-out")
+            self.save()
 
     class Meta:
         indexes = [
