@@ -287,6 +287,12 @@ class ProjectReportForm(forms.Form):
         initial="discoveredpackage",
         widget=forms.RadioSelect,
     )
+    select_across = forms.BooleanField(
+        label="",
+        required=False,
+        initial=0,
+        help_text="All project matching current search and filters will be included.",
+    )
 
 
 class ListTextarea(forms.CharField):

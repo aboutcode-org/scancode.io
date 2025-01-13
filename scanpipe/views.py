@@ -1232,13 +1232,15 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
 
         return super().export_xlsx_file_response()
 
-    def get_projects_queryset(self):
+    def get_projects_queryset(self, select_across=False):
+        # TODO: select_across
         return Project.objects.filter(pk__in=self.selected_project_ids)
 
     def get_export_xlsx_queryset(self):
         model_name = self.report_form.cleaned_data["model_name"]
+        select_across = self.report_form.cleaned_data["select_across"]
         queryset = output.get_queryset(project=None, model_name=model_name)
-        projects = self.get_projects_queryset()
+        projects = self.get_projects_queryset(select_across=select_across)
         return queryset.filter(project__in=projects)
 
     def get_export_xlsx_prepend_fields(self):
