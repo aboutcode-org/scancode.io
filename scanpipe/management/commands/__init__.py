@@ -150,6 +150,28 @@ class RunStatusCommandMixin:
             self.stdout.write(line)
 
 
+class PipelineCommandMixin:
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
+        parser.add_argument(
+            "--pipeline",
+            action="append",
+            dest="pipelines",
+            default=list(),
+            help=(
+                "Pipelines names to add to the project. "
+                "The pipelines are added and executed based on their given order. "
+                'Groups can be provided using the "pipeline_name:option1,option2" '
+                "syntax."
+            ),
+        )
+        parser.add_argument(
+            "--execute",
+            action="store_true",
+            help="Execute the pipelines right after the project creation.",
+        )
+
+
 class AddInputCommandMixin:
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -427,6 +449,7 @@ def create_project(
     input_urls=None,
     copy_from="",
     notes="",
+    labels=None,
     execute=False,
     run_async=False,
     command=None,
@@ -451,6 +474,10 @@ def create_project(
     )
 
     project.save()
+
+    if labels:
+        project.labels.add(*labels)
+
     if command:
         command.project = project
 
@@ -491,6 +518,20 @@ class ExecuteProjectCommandMixin:
 
 
 class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
+        parser.add_argument(
+            "--notes",
+            help="Optional notes about the project.",
+        )
+        parser.add_argument(
+            "--label",
+            action="append",
+            dest="labels",
+            default=list(),
+            help="Optional labels for the project.",
+        )
+
     def create_project(
         self,
         name,
@@ -499,9 +540,13 @@ class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
         input_urls=None,
         copy_from="",
         notes="",
+        labels=None,
         execute=False,
         run_async=False,
     ):
+        if execute and not pipelines:
+            raise CommandError("The --execute option requires one or more pipelines.")
+
         return create_project(
             name=name,
             pipelines=pipelines,
@@ -509,6 +554,7 @@ class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
             input_urls=input_urls,
             copy_from=copy_from,
             notes=notes,
+            labels=labels,
             execute=execute,
             run_async=run_async,
             command=self,

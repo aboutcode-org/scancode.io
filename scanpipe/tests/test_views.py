@@ -192,6 +192,16 @@ class ScanPipeViewsTest(TestCase):
         )
         self.assertContains(response, expected, html=True)
 
+    def test_scanpipe_views_project_action_report_view(self):
+        url = reverse("project_action")
+        data = {
+            "action": "report",
+            "selected_ids": f"{self.project1.uuid}",
+            "model_name": "todos",
+        }
+        response = self.client.post(url, data=data, follow=True)
+        self.assertEqual("report.xlsx", response.filename)
+
     def test_scanpipe_views_project_details_is_archived(self):
         url = self.project1.get_absolute_url()
         expected1 = "WARNING: This project is archived and read-only."
@@ -358,7 +368,7 @@ class ScanPipeViewsTest(TestCase):
         data["add-labels-submit"] = ""
         response = self.client.post(url, data, follow=True)
         self.assertContains(response, "Label(s) added.")
-        self.assertEqual(["label1", "label2"], sorted(self.project1.labels.names()))
+        self.assertEqual(["label1", "label2"], list(self.project1.labels.names()))
 
     def test_scanpipe_views_project_delete_label(self):
         self.project1.labels.add("label1")
@@ -701,7 +711,7 @@ class ScanPipeViewsTest(TestCase):
         project2.labels.add("label3", "label4")
 
         url = reverse("project_list")
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(7):
             self.client.get(url)
 
         with self.assertNumQueries(13):

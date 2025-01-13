@@ -272,6 +272,23 @@ class ProjectOutputDownloadForm(forms.Form):
     )
 
 
+class ProjectReportForm(forms.Form):
+    model_name = forms.ChoiceField(
+        label="Choose the object type to include in the XLSX file",
+        choices=[
+            ("discoveredpackage", "Packages"),
+            ("discovereddependency", "Dependencies"),
+            ("codebaseresource", "Resources"),
+            ("codebaserelation", "Relations"),
+            ("projectmessage", "Messages"),
+            ("todos", "TODOs"),
+        ],
+        required=True,
+        initial="discoveredpackage",
+        widget=forms.RadioSelect,
+    )
+
+
 class ListTextarea(forms.CharField):
     """
     A Django form field that displays as a textarea and converts each line of input

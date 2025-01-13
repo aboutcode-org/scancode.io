@@ -27,6 +27,22 @@ v34.9.4 (unreleased)
 - Add a download action on project list to enable bulk download of Project output files.
   https://github.com/aboutcode-org/scancode.io/issues/1518
 
+- Add labels to Project level search.
+  The labels are now always presented in alphabetical order for consistency.
+  https://github.com/aboutcode-org/scancode.io/issues/1520
+
+- Add a ``batch-create`` management command that allows to create multiple projects
+  at once from a directory containing input files.
+  https://github.com/aboutcode-org/scancode.io/issues/1437
+
+- Add a "TODOS" sheet containing on REQUIRES_REVIEW resources in XLSX.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Improve XLSX output for Vulnerabilities.
+  Replace the ``affected_by_vulnerabilities`` field in the PACKAGES and DEPENDENCIES
+  sheets with a dedicated VULNERABILITIES sheet.
+  https://github.com/aboutcode-org/scancode.io/issues/1519
+
 v34.9.3 (2024-12-31)
 --------------------
 
