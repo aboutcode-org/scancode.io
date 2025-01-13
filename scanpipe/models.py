@@ -3086,12 +3086,15 @@ class DiscoveredPackageQuerySet(
         )
         return self.annotate(resources_count=count_subquery)
 
-    def only_package_url_fields(self):
+    def only_package_url_fields(self, extra=None):
         """
         Only select and return the UUID and PURL fields.
         Minimum requirements to render a Package link in the UI.
         """
-        return self.only("uuid", *PACKAGE_URL_FIELDS)
+        if not extra:
+            extra = []
+
+        return self.only("uuid", *PACKAGE_URL_FIELDS, *extra)
 
     def filter(self, *args, **kwargs):
         """Add support for using ``package_url`` as a field lookup."""
@@ -3671,7 +3674,9 @@ class DiscoveredPackage(
 
 
 class DiscoveredDependencyQuerySet(
-    PackageURLQuerySetMixin, VulnerabilityQuerySetMixin, ProjectRelatedQuerySet
+    PackageURLQuerySetMixin,
+    VulnerabilityQuerySetMixin,
+    ProjectRelatedQuerySet,
 ):
     def prefetch_for_serializer(self):
         """
@@ -3691,6 +3696,16 @@ class DiscoveredDependencyQuerySet(
                 "datafile_resource", queryset=CodebaseResource.objects.only("path")
             ),
         )
+
+    def only_package_url_fields(self, extra=None):
+        """
+        Only select and return the UUID and PURL fields.
+        Minimum requirements to render a Package link in the UI.
+        """
+        if not extra:
+            extra = []
+
+        return self.only("dependency_uid", *PACKAGE_URL_FIELDS, *extra)
 
 
 class DiscoveredDependency(
