@@ -28,6 +28,7 @@ import zipfile
 from collections import Counter
 from contextlib import suppress
 from pathlib import Path
+from urllib.parse import urlparse
 
 from django.apps import apps
 from django.conf import settings
@@ -43,6 +44,7 @@ from django.http import Http404
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
+from django.http import QueryDict
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
@@ -1233,7 +1235,14 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
         return super().export_xlsx_file_response()
 
     def get_projects_queryset(self, select_across=False):
-        # TODO: select_across
+        if select_across:
+            # TODO: We could store the previous URL in the Action form instead
+            if referrer_url := self.request.META.get("HTTP_REFERER", ""):
+                url_query = urlparse(referrer_url).query
+                project_filterset = ProjectFilterSet(data=QueryDict(url_query))
+                if project_filterset.is_valid():
+                    return project_filterset.qs
+
         return Project.objects.filter(pk__in=self.selected_project_ids)
 
     def get_export_xlsx_queryset(self):
