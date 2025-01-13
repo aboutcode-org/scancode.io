@@ -101,7 +101,7 @@ def get_queryset(project, model_name):
 
     queryset = querysets.get(model_name)
     if project:
-        queryset = queryset.filter(project=project)
+        queryset = queryset.project(project)
 
     return queryset
 
@@ -303,6 +303,14 @@ model_name_to_worksheet_name = {
     "projectmessage": "MESSAGES",
 }
 
+model_name_to_object_type = {
+    "discoveredpackage": "package",
+    "discovereddependency": "dependency",
+    "codebaseresource": "resource",
+    "codebaserelation": "relation",
+    "projectmessage": "message",
+}
+
 
 def queryset_to_xlsx_worksheet(
     queryset,
@@ -333,7 +341,7 @@ def queryset_to_xlsx_worksheet(
     if prepend_fields:
         fields = prepend_fields + fields
 
-    return _add_xlsx_worksheet(
+    return add_xlsx_worksheet(
         workbook=workbook,
         worksheet_name=worksheet_name,
         rows=queryset,
@@ -341,7 +349,7 @@ def queryset_to_xlsx_worksheet(
     )
 
 
-def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
+def add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     """
     Add a new ``worksheet_name`` worksheet to the ``workbook``
     ``xlsxwriter.Workbook``. Write the iterable of ``rows`` objects using their
@@ -478,6 +486,7 @@ def to_xlsx(project):
         "license_detections",
         "other_license_detections",
         "license_clues",
+        "affected_by_vulnerabilities",
     ]
 
     if not project.policies_enabled:
@@ -497,15 +506,77 @@ def to_xlsx(project):
             queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields)
 
         if layers_data := docker.get_layers_data(project):
-            _add_xlsx_worksheet(workbook, "LAYERS", layers_data, docker.layer_fields)
+            add_xlsx_worksheet(workbook, "LAYERS", layers_data, docker.layer_fields)
 
-        todos_queryset = get_queryset(project, "todos")
-        if todos_queryset:
-            queryset_to_xlsx_worksheet(
-                todos_queryset, workbook, exclude_fields, worksheet_name="TODOS"
-            )
+        add_vulnerabilities_sheet(workbook, project)
+        add_todos_sheet(workbook, project, exclude_fields)
 
     return output_file
+
+
+def add_vulnerabilities_sheet(workbook, project):
+    vulnerable_packages_queryset = (
+        DiscoveredPackage.objects.project(project)
+        .vulnerable()
+        .only_package_url_fields(extra=["affected_by_vulnerabilities"])
+        .order_by_package_url()
+    )
+    vulnerable_dependencies_queryset = (
+        DiscoveredDependency.objects.project(project)
+        .vulnerable()
+        .only_package_url_fields(extra=["affected_by_vulnerabilities"])
+        .order_by_package_url()
+    )
+    vulnerable_querysets = [
+        vulnerable_packages_queryset,
+        vulnerable_dependencies_queryset,
+    ]
+
+    vulnerability_fields = [
+        "vulnerability_id",
+        "aliases",
+        "summary",
+        "risk_score",
+        "exploitability",
+        "weighted_severity",
+        "resource_url",
+    ]
+    sheet_fields = ["object_type", "package_url"] + vulnerability_fields
+
+    rows = []
+    for queryset in vulnerable_querysets:
+        model_name = queryset.model._meta.model_name
+        object_type = model_name_to_object_type.get(model_name)
+
+        for package in queryset:
+            package_url = package.package_url
+
+            for vulnerability_data in package.affected_by_vulnerabilities:
+                row = {
+                    "object_type": object_type,
+                    "package_url": package_url,
+                    **{
+                        field_name: vulnerability_data.get(field_name, "")
+                        for field_name in vulnerability_fields
+                    },
+                }
+                rows.append(row)
+
+    if rows:
+        add_xlsx_worksheet(
+            workbook=workbook,
+            worksheet_name="VULNERABILITIES",
+            rows=rows,
+            fields=sheet_fields,
+        )
+
+
+def add_todos_sheet(workbook, project, exclude_fields):
+    todos_queryset = get_queryset(project, "todos")
+    if todos_queryset:
+        queryset_to_xlsx_worksheet(
+            todos_queryset, workbook, exclude_fields, worksheet_name="TODOS"
+        )
 
 
 def _get_spdx_extracted_licenses(license_expressions):

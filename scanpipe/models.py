@@ -3071,9 +3071,22 @@ class VulnerabilityQuerySetMixin:
         return self.filter(~Q(affected_by_vulnerabilities__in=EMPTY_VALUES))
 
 
+class OnlyPackageURLFieldsQuerySetMixin:
+    def only_package_url_fields(self, extra=None):
+        """
+        Only select and return the UUID and PURL fields.
+        Minimum requirements to render a Package link in the UI.
+        """
+        if not extra:
+            extra = []
+
+        return self.only("pk", *PACKAGE_URL_FIELDS, *extra)
+
+
 class DiscoveredPackageQuerySet(
     VulnerabilityQuerySetMixin,
     PackageURLQuerySetMixin,
+    OnlyPackageURLFieldsQuerySetMixin,
     ComplianceAlertQuerySetMixin,
     ProjectRelatedQuerySet,
 ):
@@ -3085,13 +3098,6 @@ class DiscoveredPackageQuerySet(
             output_field=IntegerField(),
         )
         return self.annotate(resources_count=count_subquery)
-
-    def only_package_url_fields(self):
-        """
-        Only select and return the UUID and PURL fields.
-        Minimum requirements to render a Package link in the UI.
-        """
-        return self.only("uuid", *PACKAGE_URL_FIELDS)
 
     def filter(self, *args, **kwargs):
         """Add support for using ``package_url`` as a field lookup."""
@@ -3671,7 +3677,10 @@ class DiscoveredPackage(
 
 
 class DiscoveredDependencyQuerySet(
-    PackageURLQuerySetMixin, VulnerabilityQuerySetMixin, ProjectRelatedQuerySet
+    PackageURLQuerySetMixin,
+    OnlyPackageURLFieldsQuerySetMixin,
+    VulnerabilityQuerySetMixin,
+    ProjectRelatedQuerySet,
 ):
     def prefetch_for_serializer(self):
         """

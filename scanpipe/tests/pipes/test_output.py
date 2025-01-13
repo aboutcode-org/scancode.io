@@ -217,13 +217,13 @@ class ScanPipeOutputPipesTest(TestCase):
             project=project, path="path/file1.ext", status=flag.REQUIRES_REVIEW
         )
 
-        output_file = output.to_xlsx(project=project)
+        with self.assertNumQueries(12):
+            output_file = output.to_xlsx(project=project)
         self.assertIn(output_file.name, project.output_root)
 
         # Make sure the output can be generated even if the work_directory was wiped
         shutil.rmtree(project.work_directory)
-        with self.assertNumQueries(10):
-            output_file = output.to_xlsx(project=project)
+        output_file = output.to_xlsx(project=project)
         self.assertIn(output_file.name, project.output_root)
 
         workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
@@ -499,7 +499,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
 
 class ScanPipeXLSXOutputPipesTest(TestCase):
-    def test__add_xlsx_worksheet_does_truncates_long_strings_over_max_len(self):
+    def test_add_xlsx_worksheet_does_truncates_long_strings_over_max_len(self):
         # This test verifies that we do not truncate long text silently
 
         test_dir = Path(tempfile.mkdtemp(prefix="scancode-io-test"))
@@ -532,7 +532,7 @@ class ScanPipeXLSXOutputPipesTest(TestCase):
             if r != x:
                 self.assertEqual(r[-50:], x)
 
-    def test__add_xlsx_worksheet_does_not_munge_long_strings_of_over_1024_lines(self):
+    def test_add_xlsx_worksheet_does_not_munge_long_strings_of_over_1024_lines(self):
         # This test verifies that we do not truncate long text silently
 
         test_dir = Path(tempfile.mkdtemp(prefix="scancode-io-test"))
@@ -736,7 +736,7 @@ def get_cell_texts(original_text, test_dir, workbook_name):
 
     output_file = test_dir / workbook_name
     with xlsxwriter.Workbook(str(output_file)) as workbook:
-        output._add_xlsx_worksheet(
+        output.add_xlsx_worksheet(
             workbook=workbook,
             worksheet_name="packages",
             rows=rows,
