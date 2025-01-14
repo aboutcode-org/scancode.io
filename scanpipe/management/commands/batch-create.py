@@ -67,6 +67,7 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
 
     def handle(self, *args, **options):
         self.verbosity = options["verbosity"]
+        self.created_project_count = 0
 
         input_directory = options["input_directory"]
         input_list = options["input_list"]
@@ -81,6 +82,10 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
 
         if input_list:
             self.handle_input_list(**options)
+
+        if self.verbosity > 0 and self.created_project_count:
+            msg = f"{self.created_project_count} projects created."
+            self.stdout.write(msg, self.style.SUCCESS)
 
     def handle_input_directory(self, **options):
         timestamp = datetime.now().strftime("%y%m%d_%H%M%S")
@@ -102,6 +107,7 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
                     execute=options["execute"],
                     run_async=options["async"],
                 )
+                self.created_project_count += 1
 
     def handle_input_list(self, **options):
         input_file = Path(options["input_list"])
@@ -125,6 +131,7 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
                 execute=options["execute"],
                 run_async=options["async"],
             )
+            self.created_project_count += 1
 
 
 def process_csv(file_path):

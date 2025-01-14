@@ -219,6 +219,7 @@ class ScanPipeManagementCommandTest(TestCase):
         call_command("batch-create", *options, stdout=out)
         self.assertIn("Project a.txt suffix created", out.getvalue())
         self.assertIn("Project b.txt suffix created", out.getvalue())
+        self.assertIn("2 projects created.", out.getvalue())
 
         self.assertEqual(2, Project.objects.count())
         project = Project.objects.get(name="a.txt suffix")
@@ -227,30 +228,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual("scan_single_package", project.runs.get().pipeline_name)
         self.assertEqual(["a.txt"], project.input_files)
 
-    @mock.patch("requests.sessions.Session.get")
-    def test_scanpipe_management_command_batch_create_input_list_csv(self, mock_get):
-        mock_responses = [
-            mock.Mock(
-                content=b"\x00",
-                headers={},
-                status_code=200,
-                url="https://example.com/source.zip",
-            ),
-            mock.Mock(
-                content=b"\x00",
-                headers={},
-                status_code=200,
-                url="https://example.com/binary.bin",
-            ),
-            mock.Mock(
-                content=b"\x00",
-                headers={},
-                status_code=200,
-                url="https://example.com/filename.zip",
-            ),
-        ]
-        mock_get.side_effect = mock_responses
-
+    def test_scanpipe_management_command_batch_create_input_list_csv(self):
         input_list = self.data / "commands" / "batch-create-list" / "project_list.csv"
         options = [
             "--input-list",
@@ -263,19 +241,36 @@ class ScanPipeManagementCommandTest(TestCase):
         call_command("batch-create", *options, stdout=out)
         self.assertIn("Project project-v1", out.getvalue())
         self.assertIn("Project project-v2", out.getvalue())
+        self.assertIn("URL(s) added as project input sources", out.getvalue())
+        self.assertIn("https://example.com/source.zip#from", out.getvalue())
+        self.assertIn("https://example.com/binary.bin#to", out.getvalue())
+        self.assertIn("https://example.com/filename.zip", out.getvalue())
+        self.assertIn("2 projects created.", out.getvalue())
 
         self.assertEqual(2, Project.objects.count())
         project1 = Project.objects.filter(name__contains="project-v1")[0]
         self.assertEqual("map_deploy_to_develop", project1.runs.get().pipeline_name)
-        self.assertEqual(["binary.bin", "source.zip"], sorted(project1.input_files))
-        input_source = project1.inputsources.get(filename="source.zip")
-        self.assertEqual("from", input_source.tag)
-        input_source = project1.inputsources.get(filename="binary.bin")
-        self.assertEqual("to", input_source.tag)
+
+        input_source1 = project1.inputsources.get(
+            download_url="https://example.com/source.zip#from"
+        )
+        self.assertFalse(input_source1.is_uploaded)
+        self.assertEqual("from", input_source1.tag)
+        self.assertFalse(input_source1.exists())
+        input_source2 = project1.inputsources.get(
+            download_url="https://example.com/binary.bin#to"
+        )
+        self.assertFalse(input_source2.is_uploaded)
+        self.assertEqual("to", input_source2.tag)
+        self.assertFalse(input_source2.exists())
 
         project2 = Project.objects.filter(name__contains="project-v2")[0]
         self.assertEqual("map_deploy_to_develop", project1.runs.get().pipeline_name)
-        self.assertEqual(["filename.zip"], sorted(project2.input_files))
+        input_source3 = project2.inputsources.get()
+        self.assertEqual("https://example.com/filename.zip", input_source3.download_url)
+        self.assertFalse(input_source3.is_uploaded)
+        self.assertEqual("", input_source3.tag)
+        self.assertFalse(input_source3.exists())
 
     def test_scanpipe_management_command_add_input_file(self):
         out = StringIO()
@@ -306,16 +301,7 @@ class ScanPipeManagementCommandTest(TestCase):
         with self.assertRaisesMessage(CommandError, expected):
             call_command("add-input", *options, stdout=out)
 
-    @mock.patch("requests.sessions.Session.get")
-    def test_scanpipe_management_command_add_input_url(self, mock_get):
-        mock_get.side_effect = None
-        mock_get.return_value = mock.Mock(
-            content=b"\x00",
-            headers={},
-            status_code=200,
-            url="https://example.com/archive.zip",
-        )
-
+    def test_scanpipe_management_command_add_input_url(self):
         project = Project.objects.create(name="my_project")
         options = [
             "--input-url",
@@ -325,10 +311,15 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
         out = StringIO()
         call_command("add-input", *options, stdout=out)
-        expected = "File(s) downloaded to the project inputs directory"
-        self.assertIn(expected, out.getvalue())
-        self.assertIn("- archive.zip", out.getvalue())
-        self.assertEqual(["archive.zip"], project.input_root)
+        self.assertIn("URL(s) added as project input sources:", out.getvalue())
+        self.assertIn("- https://example.com/archive.zip", out.getvalue())
+
+        input_source = project.inputsources.get()
+        self.assertEqual("https://example.com/archive.zip", input_source.download_url)
+        self.assertEqual("", input_source.filename)
+        self.assertFalse(input_source.is_uploaded)
+        self.assertEqual("", input_source.tag)
+        self.assertFalse(input_source.exists())
 
     def test_scanpipe_management_command_add_input_copy_codebase(self):
         out = StringIO()
@@ -898,8 +889,6 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn(
             "Project httpsregistrynpmjsorgasdf-asdf-122tgz-97627c6e created", out_value
         )
-        self.assertIn("File(s) downloaded to the project inputs directory:", out_value)
-        self.assertIn("asdf-1.2.2.tgz", out_value)
         self.assertIn(
             "scan_single_package successfully executed on project "
             "httpsregistrynpmjsorgasdf-asdf-122tgz-97627c6e",
@@ -948,7 +937,7 @@ class ScanPipeManagementCommandTest(TestCase):
             call_command("purldb-scan-worker", *options, stdout=out, stderr=out)
 
         out_value = out.getvalue()
-        self.assertIn("Exception occured during scan project:", out_value)
+        self.assertIn("Exception occurred during scan project:", out_value)
         self.assertIn("Error during scan_single_package execution:", out_value)
         self.assertIn("Error log", out_value)
 
@@ -961,7 +950,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(purldb_update_status_url, mock_request_post_call_kwargs["url"])
         self.assertEqual("failed", mock_request_post_call_kwargs["data"]["scan_status"])
         self.assertIn(
-            "Exception occured during scan project:",
+            "Exception occurred during scan project:",
             mock_request_post_call_kwargs["data"]["scan_log"],
         )
 
@@ -1028,9 +1017,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn(
             "Project httpsregistrynpmjsorgasdf-asdf-121tgz-0bbdcf88 created", out_value
         )
-        self.assertIn("- asdf-1.2.2.tgz", out_value)
-        self.assertIn("- asdf-1.2.1.tgz", out_value)
-        self.assertIn("Exception occured during scan project:", out_value)
+        self.assertIn("Exception occurred during scan project:", out_value)
         self.assertIn("Error during scan_single_package execution:", out_value)
         self.assertIn("Error log", out_value)
 
@@ -1044,7 +1031,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(update_status_url1, mock_post_call1.kwargs["url"])
         self.assertEqual("failed", mock_post_call1.kwargs["data"]["scan_status"])
         self.assertIn(
-            "Exception occured during scan project:",
+            "Exception occurred during scan project:",
             mock_post_call1.kwargs["data"]["scan_log"],
         )
 
@@ -1055,7 +1042,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(update_status_url2, mock_post_call2.kwargs["url"])
         self.assertEqual("failed", mock_post_call1.kwargs["data"]["scan_status"])
         self.assertIn(
-            "Exception occured during scan project:",
+            "Exception occurred during scan project:",
             mock_post_call2.kwargs["data"]["scan_log"],
         )
 
