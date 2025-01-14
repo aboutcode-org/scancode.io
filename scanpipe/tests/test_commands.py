@@ -227,30 +227,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual("scan_single_package", project.runs.get().pipeline_name)
         self.assertEqual(["a.txt"], project.input_files)
 
-    @mock.patch("requests.sessions.Session.get")
-    def test_scanpipe_management_command_batch_create_input_list_csv(self, mock_get):
-        mock_responses = [
-            mock.Mock(
-                content=b"\x00",
-                headers={},
-                status_code=200,
-                url="https://example.com/source.zip",
-            ),
-            mock.Mock(
-                content=b"\x00",
-                headers={},
-                status_code=200,
-                url="https://example.com/binary.bin",
-            ),
-            mock.Mock(
-                content=b"\x00",
-                headers={},
-                status_code=200,
-                url="https://example.com/filename.zip",
-            ),
-        ]
-        mock_get.side_effect = mock_responses
-
+    def test_scanpipe_management_command_batch_create_input_list_csv(self):
         input_list = self.data / "commands" / "batch-create-list" / "project_list.csv"
         options = [
             "--input-list",
@@ -267,15 +244,27 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(2, Project.objects.count())
         project1 = Project.objects.filter(name__contains="project-v1")[0]
         self.assertEqual("map_deploy_to_develop", project1.runs.get().pipeline_name)
-        self.assertEqual(["binary.bin", "source.zip"], sorted(project1.input_files))
-        input_source = project1.inputsources.get(filename="source.zip")
-        self.assertEqual("from", input_source.tag)
-        input_source = project1.inputsources.get(filename="binary.bin")
-        self.assertEqual("to", input_source.tag)
+
+        input_source1 = project1.inputsources.get(
+            download_url="https://example.com/source.zip#from"
+        )
+        self.assertFalse(input_source1.is_uploaded)
+        self.assertEqual("from", input_source1.tag)
+        self.assertFalse(input_source1.exists())
+        input_source2 = project1.inputsources.get(
+            download_url="https://example.com/binary.bin#to"
+        )
+        self.assertFalse(input_source2.is_uploaded)
+        self.assertEqual("to", input_source2.tag)
+        self.assertFalse(input_source2.exists())
 
         project2 = Project.objects.filter(name__contains="project-v2")[0]
         self.assertEqual("map_deploy_to_develop", project1.runs.get().pipeline_name)
-        self.assertEqual(["filename.zip"], sorted(project2.input_files))
+        input_source3 = project2.inputsources.get()
+        self.assertEqual("https://example.com/filename.zip", input_source3.download_url)
+        self.assertFalse(input_source3.is_uploaded)
+        self.assertEqual("", input_source3.tag)
+        self.assertFalse(input_source3.exists())
 
     def test_scanpipe_management_command_add_input_file(self):
         out = StringIO()
@@ -306,16 +295,7 @@ class ScanPipeManagementCommandTest(TestCase):
         with self.assertRaisesMessage(CommandError, expected):
             call_command("add-input", *options, stdout=out)
 
-    @mock.patch("requests.sessions.Session.get")
-    def test_scanpipe_management_command_add_input_url(self, mock_get):
-        mock_get.side_effect = None
-        mock_get.return_value = mock.Mock(
-            content=b"\x00",
-            headers={},
-            status_code=200,
-            url="https://example.com/archive.zip",
-        )
-
+    def test_scanpipe_management_command_add_input_url(self):
         project = Project.objects.create(name="my_project")
         options = [
             "--input-url",
@@ -325,10 +305,15 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
         out = StringIO()
         call_command("add-input", *options, stdout=out)
-        expected = "File(s) downloaded to the project inputs directory"
-        self.assertIn(expected, out.getvalue())
-        self.assertIn("- archive.zip", out.getvalue())
-        self.assertEqual(["archive.zip"], project.input_root)
+        self.assertIn("URL(s) added as project input sources:", out.getvalue())
+        self.assertIn("- https://example.com/archive.zip", out.getvalue())
+
+        input_source = project.inputsources.get()
+        self.assertEqual("https://example.com/archive.zip", input_source.download_url)
+        self.assertEqual("", input_source.filename)
+        self.assertFalse(input_source.is_uploaded)
+        self.assertEqual("", input_source.tag)
+        self.assertFalse(input_source.exists())
 
     def test_scanpipe_management_command_add_input_copy_codebase(self):
         out = StringIO()

@@ -39,8 +39,6 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.pipes import count_group_by
 
-# from scanpipe.pipes.fetch import fetch_urls
-
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
@@ -356,9 +354,13 @@ def handle_input_files(project, input_files_data, command=None):
 
 def handle_input_urls(project, input_urls, command=None):
     """Add provided `input_urls` as input sources of the project."""
-    # fetch.check_urls_availability(urls)
     for url in input_urls:
         project.add_input_source(download_url=url)
+
+    if input_urls and command and command.verbosity > 0:
+        msg = "URL(s) added as project input sources:"
+        command.stdout.write(msg, command.style.SUCCESS)
+        command.stdout.write("\n".join([f"- {url}" for url in input_urls]))
 
 
 def handle_copy_codebase(project, copy_from, command=None):
