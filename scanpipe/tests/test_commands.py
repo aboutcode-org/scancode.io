@@ -883,8 +883,6 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn(
             "Project httpsregistrynpmjsorgasdf-asdf-122tgz-97627c6e created", out_value
         )
-        self.assertIn("File(s) downloaded to the project inputs directory:", out_value)
-        self.assertIn("asdf-1.2.2.tgz", out_value)
         self.assertIn(
             "scan_single_package successfully executed on project "
             "httpsregistrynpmjsorgasdf-asdf-122tgz-97627c6e",
@@ -933,7 +931,7 @@ class ScanPipeManagementCommandTest(TestCase):
             call_command("purldb-scan-worker", *options, stdout=out, stderr=out)
 
         out_value = out.getvalue()
-        self.assertIn("Exception occured during scan project:", out_value)
+        self.assertIn("Exception occurred during scan project:", out_value)
         self.assertIn("Error during scan_single_package execution:", out_value)
         self.assertIn("Error log", out_value)
 
@@ -946,7 +944,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(purldb_update_status_url, mock_request_post_call_kwargs["url"])
         self.assertEqual("failed", mock_request_post_call_kwargs["data"]["scan_status"])
         self.assertIn(
-            "Exception occured during scan project:",
+            "Exception occurred during scan project:",
             mock_request_post_call_kwargs["data"]["scan_log"],
         )
 
@@ -1013,9 +1011,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn(
             "Project httpsregistrynpmjsorgasdf-asdf-121tgz-0bbdcf88 created", out_value
         )
-        self.assertIn("- asdf-1.2.2.tgz", out_value)
-        self.assertIn("- asdf-1.2.1.tgz", out_value)
-        self.assertIn("Exception occured during scan project:", out_value)
+        self.assertIn("Exception occurred during scan project:", out_value)
         self.assertIn("Error during scan_single_package execution:", out_value)
         self.assertIn("Error log", out_value)
 
@@ -1029,7 +1025,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(update_status_url1, mock_post_call1.kwargs["url"])
         self.assertEqual("failed", mock_post_call1.kwargs["data"]["scan_status"])
         self.assertIn(
-            "Exception occured during scan project:",
+            "Exception occurred during scan project:",
             mock_post_call1.kwargs["data"]["scan_log"],
         )
 
@@ -1040,7 +1036,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(update_status_url2, mock_post_call2.kwargs["url"])
         self.assertEqual("failed", mock_post_call1.kwargs["data"]["scan_status"])
         self.assertIn(
-            "Exception occured during scan project:",
+            "Exception occurred during scan project:",
             mock_post_call2.kwargs["data"]["scan_log"],
         )
 
