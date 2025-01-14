@@ -35,6 +35,10 @@ v34.9.4 (unreleased)
   at once from a directory containing input files.
   https://github.com/aboutcode-org/scancode.io/issues/1437
 
+- Do not download input_urls in management commands. The fetch/download is delegated to
+  the pipeline execution.
+  https://github.com/aboutcode-org/scancode.io/issues/1437
+
 v34.9.3 (2024-12-31)
 --------------------
 

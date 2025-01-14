@@ -219,6 +219,7 @@ class ScanPipeManagementCommandTest(TestCase):
         call_command("batch-create", *options, stdout=out)
         self.assertIn("Project a.txt suffix created", out.getvalue())
         self.assertIn("Project b.txt suffix created", out.getvalue())
+        self.assertIn("2 projects created.", out.getvalue())
 
         self.assertEqual(2, Project.objects.count())
         project = Project.objects.get(name="a.txt suffix")
@@ -240,6 +241,11 @@ class ScanPipeManagementCommandTest(TestCase):
         call_command("batch-create", *options, stdout=out)
         self.assertIn("Project project-v1", out.getvalue())
         self.assertIn("Project project-v2", out.getvalue())
+        self.assertIn("URL(s) added as project input sources", out.getvalue())
+        self.assertIn("https://example.com/source.zip#from", out.getvalue())
+        self.assertIn("https://example.com/binary.bin#to", out.getvalue())
+        self.assertIn("https://example.com/filename.zip", out.getvalue())
+        self.assertIn("2 projects created.", out.getvalue())
 
         self.assertEqual(2, Project.objects.count())
         project1 = Project.objects.filter(name__contains="project-v1")[0]
