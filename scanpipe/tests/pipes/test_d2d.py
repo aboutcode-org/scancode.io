@@ -1566,3 +1566,33 @@ class ScanPipeD2DPipesTest(TestCase):
                 project=self.project1, status="requires-review"
             ).count(),
         )
+
+    @mock.patch("scanpipe.pipes.purldb.match_packages")
+    def test_scanpipe_pipes_d2d_match_purldb_resources_no_package_data(
+        self, mock_match_package
+    ):
+        to_1 = make_resource_file(self.project1, "to/package.jar", sha1="abcdef")
+        to_1.is_archive = True
+        to_1.save()
+        make_resource_file(
+            self.project1, "to/package.jar-extract/a.class", status=flag.MAPPED
+        )
+        make_resource_file(self.project1, "to/package.jar-extract/b.class")
+
+        mock_match_package.return_value = []
+
+        buffer = io.StringIO()
+        d2d.match_purldb_resources(
+            self.project1,
+            extensions=[".jar"],
+            matcher_func=d2d.match_purldb_package,
+            logger=buffer.write,
+        )
+        expected = (
+            "Matching 1 .jar resources in PurlDB, using SHA1"
+            "0 resources matched in PurlDB using 1 SHA1s"
+        )
+        self.assertEqual(expected, buffer.getvalue())
+
+        package_count = self.project1.discoveredpackages.count()
+        self.assertEqual(0, package_count)
