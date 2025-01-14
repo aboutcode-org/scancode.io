@@ -1566,3 +1566,31 @@ class ScanPipeD2DPipesTest(TestCase):
                 project=self.project1, status="requires-review"
             ).count(),
         )
+
+    @mock.patch("scanpipe.pipes.purldb.match_resources")
+    def test_scanpipe_pipes_d2d_match_purldb_resource_no_package_data(
+        self, mock_match_resource
+    ):
+        to_1 = make_resource_file(
+            self.project1,
+            "to/notice.NOTICE",
+            sha1="4bd631df28995c332bf69d9d4f0f74d7ee089598",
+        )
+        resources_by_sha1 = {to_1.sha1: [to_1]}
+
+        resource_data = resource_data1.copy()
+        resource_data["package"] = "example.com/package-instance"
+        mock_match_resource.return_value = [resource_data]
+
+        resources_by_sha1, matched_count, sha1_count = d2d.match_sha1s_to_purldb(
+            project=self.project1,
+            resources_by_sha1=resources_by_sha1,
+            matcher_func=d2d.match_purldb_resource,
+            package_data_by_purldb_urls={},
+        )
+        self.assertFalse(resources_by_sha1)
+        self.assertEqual(0, matched_count)
+        self.assertEqual(1, sha1_count)
+
+        package_count = self.project1.discoveredpackages.count()
+        self.assertEqual(0, package_count)

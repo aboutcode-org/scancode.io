@@ -560,7 +560,7 @@ def match_purldb_resource(
                 package_data = package_data_by_purldb_urls[package_instance_url]
             sha1 = result["sha1"]
             resources = resources_by_sha1.get(sha1) or []
-            if not resources:
+            if not (resources and package_data):
                 continue
             _, matched_resources_count = create_package_from_purldb_data(
                 project=project,
