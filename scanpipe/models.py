@@ -44,6 +44,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import EMPTY_VALUES
 from django.db import models
 from django.db import transaction
+from django.db.models import Case
 from django.db.models import Count
 from django.db.models import IntegerField
 from django.db.models import OuterRef
@@ -51,6 +52,7 @@ from django.db.models import Prefetch
 from django.db.models import Q
 from django.db.models import Subquery
 from django.db.models import TextField
+from django.db.models import When
 from django.db.models.functions import Cast
 from django.db.models.functions import Lower
 from django.dispatch import receiver
@@ -517,6 +519,16 @@ class ProjectQuerySet(models.QuerySet):
             )
 
         return self.annotate(**annotations)
+
+    def get_active_archived_counts(self):
+        return self.aggregate(
+            active_count=Count(
+                Case(When(is_archived=False, then=1), output_field=IntegerField())
+            ),
+            archived_count=Count(
+                Case(When(is_archived=True, then=1), output_field=IntegerField())
+            ),
+        )
 
 
 class UUIDTaggedItem(GenericUUIDTaggedItemBase, TaggedItemBase):
@@ -2913,7 +2925,9 @@ class CodebaseResource(
         cleaned_data = {
             field_name: value
             for field_name, value in resource_data.items()
-            if field_name in cls.model_fields() and value not in EMPTY_VALUES
+            if field_name in cls.model_fields()
+            and value not in EMPTY_VALUES
+            and field_name != "project"
         }
 
         return cls.objects.create(project=project, **cleaned_data)
@@ -3072,12 +3086,15 @@ class DiscoveredPackageQuerySet(
         )
         return self.annotate(resources_count=count_subquery)
 
-    def only_package_url_fields(self):
+    def only_package_url_fields(self, extra=None):
         """
         Only select and return the UUID and PURL fields.
         Minimum requirements to render a Package link in the UI.
         """
-        return self.only("uuid", *PACKAGE_URL_FIELDS)
+        if not extra:
+            extra = []
+
+        return self.only("uuid", *PACKAGE_URL_FIELDS, *extra)
 
     def filter(self, *args, **kwargs):
         """Add support for using ``package_url`` as a field lookup."""
@@ -3451,7 +3468,9 @@ class DiscoveredPackage(
         cleaned_data = {
             field_name: value
             for field_name, value in package_data.items()
-            if field_name in cls.model_fields() and value not in EMPTY_VALUES
+            if field_name in cls.model_fields()
+            and value not in EMPTY_VALUES
+            and field_name != "project"
         }
 
         discovered_package = cls(project=project, **cleaned_data)
@@ -3655,7 +3674,9 @@ class DiscoveredPackage(
 
 
 class DiscoveredDependencyQuerySet(
-    PackageURLQuerySetMixin, VulnerabilityQuerySetMixin, ProjectRelatedQuerySet
+    PackageURLQuerySetMixin,
+    VulnerabilityQuerySetMixin,
+    ProjectRelatedQuerySet,
 ):
     def prefetch_for_serializer(self):
         """
@@ -3675,6 +3696,16 @@ class DiscoveredDependencyQuerySet(
                 "datafile_resource", queryset=CodebaseResource.objects.only("path")
             ),
         )
+
+    def only_package_url_fields(self, extra=None):
+        """
+        Only select and return the UUID and PURL fields.
+        Minimum requirements to render a Package link in the UI.
+        """
+        if not extra:
+            extra = []
+
+        return self.only("dependency_uid", *PACKAGE_URL_FIELDS, *extra)
 
 
 class DiscoveredDependency(
@@ -3912,7 +3943,9 @@ class DiscoveredDependency(
         cleaned_data = {
             field_name: value
             for field_name, value in dependency_data.items()
-            if field_name in cls.model_fields() and value not in EMPTY_VALUES
+            if field_name in cls.model_fields()
+            and value not in EMPTY_VALUES
+            and field_name != "project"
         }
 
         return cls.objects.create(
