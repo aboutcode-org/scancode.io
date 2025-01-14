@@ -137,7 +137,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
 
             except Exception:
                 tb = traceback.format_exc()
-                error_log = f"Exception occured during scan project:\n\n{tb}"
+                error_log = f"Exception occurred during scan project:\n\n{tb}"
                 purldb.update_status(
                     scannable_uri_uuid,
                     status="failed",
