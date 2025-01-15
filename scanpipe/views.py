@@ -28,7 +28,6 @@ import zipfile
 from collections import Counter
 from contextlib import suppress
 from pathlib import Path
-from urllib.parse import urlparse
 
 from django.apps import apps
 from django.conf import settings
@@ -1234,22 +1233,23 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
 
         return super().export_xlsx_file_response()
 
-    def get_projects_queryset(self, select_across=False):
-        if select_across:
-            # TODO: We could store the previous URL in the Action form instead
-            if referrer_url := self.request.META.get("HTTP_REFERER", ""):
-                url_query = urlparse(referrer_url).query
-                project_filterset = ProjectFilterSet(data=QueryDict(url_query))
-                if project_filterset.is_valid():
-                    return project_filterset.qs
+    def get_projects_queryset(self, select_across=False, url_query=""):
+        if select_across and url_query:
+            project_filterset = ProjectFilterSet(data=QueryDict(url_query))
+            if project_filterset.is_valid():
+                return project_filterset.qs
 
         return Project.objects.filter(pk__in=self.selected_project_ids)
 
     def get_export_xlsx_queryset(self):
         model_name = self.report_form.cleaned_data["model_name"]
+        # TODO: Make th 2 following fields available in all actions
         select_across = self.report_form.cleaned_data["select_across"]
+        url_query = self.report_form.cleaned_data["url_query"]
         queryset = output.get_queryset(project=None, model_name=model_name)
-        projects = self.get_projects_queryset(select_across=select_across)
+        projects = self.get_projects_queryset(
+            select_across=select_across, url_query=url_query
+        )
         return queryset.filter(project__in=projects)
 
     def get_export_xlsx_prepend_fields(self):

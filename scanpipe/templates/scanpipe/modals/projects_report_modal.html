@@ -22,6 +22,7 @@
           <p class="help">{{ report_form.select_across.help_text }}</p>
         </div>
       </section>
+      <input type="hidden" name="{{ report_form.url_query.name }}" value="{{ request.GET.urlencode }}">
       <input type="hidden" name="action" value="report">
       <footer class="modal-card-foot is-flex is-justify-content-space-between">
         <button class="button has-text-weight-semibold" type="reset">Cancel</button>
