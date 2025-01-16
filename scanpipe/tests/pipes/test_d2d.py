@@ -28,6 +28,7 @@ from pathlib import Path
 from unittest import mock
 from unittest import skipIf
 
+from django.db.utils import DataError
 from django.test import TestCase
 
 from scanpipe import pipes
@@ -1594,3 +1595,36 @@ class ScanPipeD2DPipesTest(TestCase):
 
         package_count = self.project1.discoveredpackages.count()
         self.assertEqual(0, package_count)
+
+    def test_scanpipe_pipes_d2d_match_purldb_resources_post_process_with_special_char(
+        self,
+    ):
+        to_map = self.data / "d2d-javascript" / "to" / "main.js.map"
+
+        to_dir = self.project1.codebase_path / "to/lib/Matplot++/nodesoup.lib-extract"
+        to_dir.mkdir(parents=True)
+        copy_inputs([to_map], to_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        to_resources = self.project1.codebaseresources.filter(
+            path__startswith=("to/lib/Matplot++/nodesoup.lib-extract/main.js")
+        )
+
+        dummy_package_data1 = package_data1.copy()
+        dummy_package_data1["uuid"] = uuid.uuid4()
+        d2d.create_package_from_purldb_data(
+            self.project1,
+            to_resources,
+            dummy_package_data1,
+            flag.MATCHED_TO_PURLDB_RESOURCE,
+        )
+
+        buffer = io.StringIO()
+        try:
+            d2d.match_purldb_resources_post_process(
+                self.project1,
+                logger=buffer.write,
+            )
+        except DataError:
+            self.fail("DataError was raised, but it should not occur.")

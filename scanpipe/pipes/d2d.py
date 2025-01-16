@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import re
 from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
@@ -1620,21 +1621,20 @@ def match_purldb_resources_post_process(project, logger=None):
     map_count = 0
 
     for directory in progress.iter(resource_iterator):
-        map_count += _match_purldb_resources_post_process(
-            directory, to_extract_directories, to_resources
-        )
+        map_count += _match_purldb_resources_post_process(directory, to_resources)
 
     logger(f"{map_count:,d} resource processed")
 
 
-def _match_purldb_resources_post_process(
-    directory_path, to_extract_directories, to_resources
-):
+def _match_purldb_resources_post_process(directory, to_resources):
+    # Escape special character in directory path
+    escaped_directory_path = re.escape(directory.path)
+
     # Exclude the content of nested archive.
     interesting_codebase_resources = (
-        to_resources.filter(path__startswith=directory_path)
+        to_resources.filter(path__startswith=directory.path)
         .filter(status=flag.MATCHED_TO_PURLDB_RESOURCE)
-        .exclude(path__regex=rf"^{directory_path}.*-extract\/.*$")
+        .exclude(path__regex=rf"^{escaped_directory_path}.*-extract\/.*$")
     )
 
     if not interesting_codebase_resources:
