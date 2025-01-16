@@ -659,7 +659,10 @@ def _match_purldb_resources(
 
     for to_resource in progress.iter(resource_iterator):
         resources_by_sha1[to_resource.sha1].append(to_resource)
-        if to_resource.path.endswith(".map"):
+        if (
+            to_resource.path.endswith(".map")
+            and "json" in to_resource.file_type.lower()
+        ):
             for js_sha1 in js.source_content_sha1_list(to_resource):
                 resources_by_sha1[js_sha1].append(to_resource)
         processed_resources_count += 1
