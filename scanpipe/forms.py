@@ -252,7 +252,7 @@ class BaseProjectActionForm(forms.Form):
     )
 
 
-class ArchiveProjectForm(forms.Form):
+class ArchiveProjectForm(BaseProjectActionForm):
     remove_input = forms.BooleanField(
         label="Remove inputs",
         initial=True,
