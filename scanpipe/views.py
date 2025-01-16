@@ -606,6 +606,7 @@ class ProjectListView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["action_form"] = BaseProjectActionForm()
         context["archive_form"] = ArchiveProjectForm()
         context["outputs_download_form"] = ProjectOutputDownloadForm()
         context["report_form"] = ProjectReportForm()
@@ -1192,7 +1193,11 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
             raise Http404
 
         action_form = self.get_action_form(action)
-        selected_project_ids = request.POST.get("selected_ids", "").split(",")
+        selected_project_ids = [
+            project_uuid
+            for project_uuid in request.POST.get("selected_ids", "").split(",")
+            if project_uuid
+        ]
         project_qs = self.get_project_queryset(selected_project_ids, action_form)
 
         if action == "download":
@@ -1259,8 +1264,10 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
                 if project_filterset.is_valid():
                     return project_filterset.qs
 
-        selected_project_ids = selected_project_ids or []
-        return Project.objects.filter(uuid__in=selected_project_ids)
+        if selected_project_ids:
+            return Project.objects.filter(uuid__in=selected_project_ids)
+
+        raise Http404
 
     def get_export_xlsx_queryset(self):
         model_name = self.action_form.cleaned_data["model_name"]

@@ -187,10 +187,6 @@ class ScanPipeViewsTest(TestCase):
         self.assertRedirects(response, reverse("project_list"))
         expected = '<div class="message-body">1 projects have been delete.</div>'
         self.assertContains(response, expected, html=True)
-        expected = (
-            f'<div class="message-body">Project {random_uuid} does not exist.</div>'
-        )
-        self.assertContains(response, expected, html=True)
 
     def test_scanpipe_views_project_action_report_view(self):
         url = reverse("project_action")

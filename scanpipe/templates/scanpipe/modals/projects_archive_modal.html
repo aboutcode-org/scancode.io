@@ -1,3 +1,4 @@
+{% load humanize %}
 <div class="modal" id="modal-projects-archive">
   <div class="modal-background"></div>
   <div class="modal-card">
@@ -9,18 +10,39 @@
       <section class="modal-card-body">
         <div class="notification is-warning has-text-weight-semibold">
           The selected projects will be marked as archived and will become read-only.
-          Those will not appear in the project list by default anymore.
+          Those will not appear in the project list by default anymore.<br>
         </div>
         <p class="mb-2">
           The selected directories will be removed:
         </p>
-        <ul class="mb-5">
-          {{ archive_form.as_ul }}
-        </ul>
-        <p>
-          Are you sure you want to do this?
-        </p>
+        <div class="field">
+          <label class="label">
+            {{ archive_form.remove_input }}
+            {{ archive_form.remove_input.label }}
+          </label>
+        </div>
+        <div class="field">
+          <label class="label">
+            {{ archive_form.remove_codebase }}
+            {{ archive_form.remove_codebase.label }}
+          </label>
+        </div>
+        <div class="field">
+          <label class="label">
+            {{ archive_form.remove_output }}
+            {{ archive_form.remove_output.label }}
+          </label>
+        </div>
+        <hr>
+        <div class="field">
+          <label class="checkbox" for="{{ archive_form.select_across.id_for_label }}">
+            <input type="checkbox" name="{{ archive_form.select_across.name }}" id="{{ archive_form.select_across.id_for_label }}">
+            Include all {{ paginator.count|intcomma }} projects
+          </label>
+          <p class="help">{{ outputs_download_form.select_across.help_text }}</p>
+        </div>
       </section>
+      <input type="hidden" name="{{ archive_form.url_query.name }}" value="{{ request.GET.urlencode }}">
       <input type="hidden" name="action" value="archive">
       <footer class="modal-card-foot is-flex is-justify-content-space-between">
         <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
