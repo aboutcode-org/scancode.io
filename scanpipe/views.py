@@ -1226,6 +1226,23 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
     def get_success_message(self, action, count):
         return f"{count} projects have been {action}."
 
+    def get_projects_queryset(self, action_form=None):
+        """
+        Return the Project QuerySet from the user selection.
+
+        An instance of BaseProjectActionForm can be provided as the ``action_form``
+        argument for the support of ``select_across``.
+        """
+        if action_form:
+            select_across = self.report_form.cleaned_data.get("select_across")
+            url_query = self.report_form.cleaned_data.GET("url_query")
+            if select_across and url_query:
+                project_filterset = ProjectFilterSet(data=QueryDict(url_query))
+                if project_filterset.is_valid():
+                    return project_filterset.qs
+
+        return Project.objects.filter(pk__in=self.selected_project_ids)
+
     def export_xlsx_file_response(self):
         self.report_form = ProjectReportForm(self.request.POST)
         if not self.report_form.is_valid():
@@ -1233,23 +1250,12 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
 
         return super().export_xlsx_file_response()
 
-    def get_projects_queryset(self, select_across=False, url_query=""):
-        if select_across and url_query:
-            project_filterset = ProjectFilterSet(data=QueryDict(url_query))
-            if project_filterset.is_valid():
-                return project_filterset.qs
-
-        return Project.objects.filter(pk__in=self.selected_project_ids)
-
     def get_export_xlsx_queryset(self):
+        projects = self.get_projects_queryset(action_form=self.report_form)
+
         model_name = self.report_form.cleaned_data["model_name"]
-        # TODO: Make th 2 following fields available in all actions
-        select_across = self.report_form.cleaned_data["select_across"]
-        url_query = self.report_form.cleaned_data["url_query"]
         queryset = output.get_queryset(project=None, model_name=model_name)
-        projects = self.get_projects_queryset(
-            select_across=select_across, url_query=url_query
-        )
+
         return queryset.filter(project__in=projects)
 
     def get_export_xlsx_prepend_fields(self):
@@ -1269,7 +1275,8 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
 
         output_format = outputs_download_form.cleaned_data["output_format"]
         output_function = output.FORMAT_TO_FUNCTION_MAPPING.get(output_format)
-        projects = self.get_projects_queryset()
+
+        projects = self.get_projects_queryset(action_form=outputs_download_form)
 
         # In-memory file storage for the zip archive
         zip_buffer = io.BytesIO()
