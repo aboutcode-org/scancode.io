@@ -35,6 +35,10 @@ Build the Image
 ScanCode.io is distributed with ``Dockerfile`` and ``docker-compose.yml`` files
 required for the creation of the Docker image.
 
+.. note::
+    On **Windows**, ensure to use the **wsl** (Windows Subsystem for Linux) for
+    the installation process.
+
 .. warning:: On **Windows**, ensure that git ``autocrlf`` configuration is set to
    ``false`` before cloning the repository::
 
