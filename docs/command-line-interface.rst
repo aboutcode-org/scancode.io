@@ -174,6 +174,10 @@ Required arguments (one of):
   | project-2      | pkg:deb/debian/curl@7.50.3      |
   +----------------+---------------------------------+
 
+.. tip::
+    In place of a local path, a download URL to the CSV file is supported for the
+    ``--input-list`` argument.
+
 Optional arguments:
 
 - ``--project-name-suffix`` Optional custom suffix to append to project names.
@@ -194,14 +198,15 @@ Optional arguments:
 Example: Processing Multiple Docker Images
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Assume multiple Docker images are available in a directory named ``local-data/`` on
+Suppose you have multiple Docker images stored in a directory named ``local-data/`` on
 the host machine.
-To process these images with the ``analyze_docker_image`` pipeline using asynchronous
-execution::
+To process these images using the ``analyze_docker_image`` pipeline with asynchronous
+execution, you can use this command::
 
     $ docker compose run --rm \
-        --volume local-data/:/input-data:ro \
-        web scanpipe batch-create input-data/ \
+        --volume local-data/:/input-data/:ro \
+        web scanpipe batch-create
+            --input-directory /input-data/ \
             --pipeline analyze_docker_image \
             --label "Docker" \
             --execute --async
@@ -223,6 +228,19 @@ execution::
 Each Docker image in the ``local-data/`` directory will result in the creation of a
 project with the specified pipeline (``analyze_docker_image``) executed by worker
 services.
+
+Example: Processing Multiple Develop to Deploy Mapping
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To process an input list CSV file with the ``map_deploy_to_develop`` pipeline using
+asynchronous execution::
+
+    $ docker compose run --rm \
+        web scanpipe batch-create \
+            --input-list https://url/input_list.csv \
+            --pipeline map_deploy_to_develop \
+            --label "d2d_mapping" \
+            --execute --async
 
 `$ scanpipe list-pipeline [--verbosity {0,1,2,3}]`
 --------------------------------------------------
