@@ -193,7 +193,7 @@ class ScanPipeViewsTest(TestCase):
         data = {
             "action": "report",
             "selected_ids": f"{self.project1.uuid}",
-            "model_name": "todos",
+            "model_name": "todo",
         }
         response = self.client.post(url, data=data, follow=True)
         self.assertEqual("report.xlsx", response.filename)

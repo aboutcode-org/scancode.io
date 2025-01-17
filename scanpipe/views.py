@@ -468,6 +468,7 @@ class ExportXLSXMixin:
             output.queryset_to_xlsx_worksheet(
                 queryset,
                 workbook,
+                exclude_fields=output.XLSX_EXCLUDE_FIELDS,
                 prepend_fields=prepend_fields,
                 worksheet_name=worksheet_name,
             )
@@ -1278,7 +1279,7 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
         return ["project"]
 
     def get_export_xlsx_worksheet_name(self):
-        if self.action_form.cleaned_data.get("model_name") == "todos":
+        if self.report_form.cleaned_data.get("model_name") == "todo":
             return "TODOS"
 
     def get_export_xlsx_filename(self):
