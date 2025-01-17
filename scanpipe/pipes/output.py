@@ -309,6 +309,11 @@ model_name_to_object_type = {
     "codebaseresource": "resource",
     "codebaserelation": "relation",
     "projectmessage": "message",
+    "todos": "todo",
+}
+
+object_type_to_model_name = {
+    value: key for key, value in model_name_to_object_type.items()
 }
 
 

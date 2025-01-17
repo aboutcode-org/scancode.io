@@ -68,6 +68,7 @@ ScanPipe's own commands are listed under the ``[scanpipe]`` section::
       list-project
       output
       purldb-scan-worker
+      report
       reset-project
       run
       show-pipeline
@@ -393,6 +394,46 @@ your outputs on the host machine when running with Docker.
 .. tip:: To specify a CycloneDX spec version (default to latest), use the syntax
   ``cyclonedx:VERSION`` as format value. For example: ``--format cyclonedx:1.5``.
 
+.. _cli_report:
+
+`$ scanpipe report --sheet SHEET`
+---------------------------------
+
+Generates an XLSX report of selected projects based on the provided criteria.
+
+Required arguments:
+
+- ``--sheet {package,dependency,resource,relation,message,todo}``
+  Specifies the sheet to include in the XLSX report. Available choices are based on
+  predefined object types.
+
+Optional arguments:
+
+- ``--output-directory OUTPUT_DIRECTORY``
+  The path to the directory where the report file will be created. If not provided,
+  the report file will be created in the current working directory.
+
+- ``--search SEARCH``
+  Filter projects by searching for the provided string in their name.
+
+- ``--label LABELS``
+  Filter projects by the provided label(s). Multiple labels can be provided by using
+  this argument multiple times.
+
+.. note::
+    Either ``--label`` or ``--search`` must be provided to select projects.
+
+Example usage:
+
+1. Generate a report for all projects tagged with "d2d" and include the **TODOS**
+worksheet::
+
+   $ scanpipe report --sheet todo --label d2d
+
+2. Generate a report for projects whose names contain the word "audit" and include the
+**PACKAGES** worksheet::
+
+   $ scanpipe report --sheet package --search audit
 
 .. _cli_check_compliance:
 
