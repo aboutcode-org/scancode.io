@@ -69,7 +69,7 @@ def extract_images_from_inputs(project):
     return images, errors
 
 
-def extract_image_from_tarball(input_tarball, extract_target, verify=True):
+def extract_image_from_tarball(input_tarball, extract_target, verify=False):
     """
     Extract images from an ``input_tarball`` to an ``extract_target`` directory
     Path object and collects the extracted images.
