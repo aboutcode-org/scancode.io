@@ -474,6 +474,16 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
     return value, error
 
 
+XLSX_EXCLUDE_FIELDS = [
+    "extra_data",
+    "package_data",
+    "license_detections",
+    "other_license_detections",
+    "license_clues",
+    "affected_by_vulnerabilities",
+]
+
+
 def to_xlsx(project):
     """
     Generate output for the provided ``project`` in XLSX format.
@@ -484,15 +494,8 @@ def to_xlsx(project):
     with possible error messages for a row when converting the data to XLSX
     exceed the limits of what can be stored in a cell.
     """
+    exclude_fields = XLSX_EXCLUDE_FIELDS.copy()
     output_file = project.get_output_file_path("results", "xlsx")
-    exclude_fields = [
-        "extra_data",
-        "package_data",
-        "license_detections",
-        "other_license_detections",
-        "license_clues",
-        "affected_by_vulnerabilities",
-    ]
 
     if not project.policies_enabled:
         exclude_fields.append("compliance_alert")

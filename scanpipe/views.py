@@ -466,6 +466,7 @@ class ExportXLSXMixin:
             output.queryset_to_xlsx_worksheet(
                 queryset,
                 workbook,
+                exclude_fields=output.XLSX_EXCLUDE_FIELDS,
                 prepend_fields=prepend_fields,
                 worksheet_name=worksheet_name,
             )

@@ -1133,6 +1133,9 @@ class ScanPipeManagementCommandTest(TestCase):
         workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
         self.assertEqual(["TODOS"], workbook.get_sheet_names())
         todos_sheet = workbook.get_sheet_by_name("TODOS")
+        header = list(todos_sheet.values)[0]
+
+        self.assertNotIn("extra_data", header)
         row1 = list(todos_sheet.values)[1]
         expected = ("project1", "file.ext", "file", "file.ext", "requires-review")
         self.assertEqual(expected, row1[0:5])

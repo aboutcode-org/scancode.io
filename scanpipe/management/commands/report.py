@@ -110,6 +110,7 @@ class Command(BaseCommand):
             output.queryset_to_xlsx_worksheet(
                 worksheet_queryset,
                 workbook,
+                exclude_fields=output.XLSX_EXCLUDE_FIELDS,
                 prepend_fields=["project"],
                 worksheet_name="TODOS",
             )
