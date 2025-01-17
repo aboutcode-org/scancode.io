@@ -281,7 +281,7 @@ class ProjectReportForm(forms.Form):
             ("codebaseresource", "Resources"),
             ("codebaserelation", "Relations"),
             ("projectmessage", "Messages"),
-            ("todos", "TODOs"),
+            ("todo", "TODOs"),
         ],
         required=True,
         initial="discoveredpackage",
