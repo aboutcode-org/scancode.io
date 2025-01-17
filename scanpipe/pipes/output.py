@@ -96,7 +96,7 @@ def get_queryset(project, model_name):
             CodebaseRelation.objects.select_related("from_resource", "to_resource")
         ),
         "projectmessage": ProjectMessage.objects.all(),
-        "todos": CodebaseResource.objects.files().status(flag.REQUIRES_REVIEW),
+        "todo": CodebaseResource.objects.files().status(flag.REQUIRES_REVIEW),
     }
 
     queryset = querysets.get(model_name)
@@ -309,7 +309,7 @@ model_name_to_object_type = {
     "codebaseresource": "resource",
     "codebaserelation": "relation",
     "projectmessage": "message",
-    "todos": "todo",
+    "todo": "todo",
 }
 
 object_type_to_model_name = {
@@ -577,7 +577,7 @@ def add_vulnerabilities_sheet(workbook, project):
 
 
 def add_todos_sheet(workbook, project, exclude_fields):
-    todos_queryset = get_queryset(project, "todos")
+    todos_queryset = get_queryset(project, "todo")
     if todos_queryset:
         queryset_to_xlsx_worksheet(
             todos_queryset, workbook, exclude_fields, worksheet_name="TODOS"

@@ -1245,7 +1245,7 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
         return ["project"]
 
     def get_export_xlsx_worksheet_name(self):
-        if self.report_form.cleaned_data.get("model_name") == "todos":
+        if self.report_form.cleaned_data.get("model_name") == "todo":
             return "TODOS"
 
     def get_export_xlsx_filename(self):
