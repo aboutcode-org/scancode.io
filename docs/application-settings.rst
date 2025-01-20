@@ -165,6 +165,18 @@ The value unit is second and is defined as an integer::
 
 Default: ``120`` (2 minutes)
 
+SCANCODEIO_SCAN_MAX_FILE_SIZE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Maximum file size allowed for a file to be scanned when scanning a codebase.
+
+The value unit is bytes and is defined as an integer, see the following
+example of setting this at 5 MB::
+
+    SCANCODEIO_SCAN_MAX_FILE_SIZE=5242880
+
+Default: ``None`` (all files will be scanned)
+
 .. _scancodeio_settings_pipelines_dirs:
 
 SCANCODEIO_PIPELINES_DIRS
