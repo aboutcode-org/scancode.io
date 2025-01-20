@@ -238,7 +238,21 @@ class EditInputSourceTagForm(forms.Form):
         return input_source
 
 
-class ArchiveProjectForm(forms.Form):
+class BaseProjectActionForm(forms.Form):
+    select_across = forms.BooleanField(
+        label="",
+        required=False,
+        initial=0,
+        help_text="All project matching current search and filters will be included.",
+    )
+    url_query = forms.CharField(
+        widget=forms.HiddenInput,
+        required=False,
+        help_text="Stores the current URL filters.",
+    )
+
+
+class ArchiveProjectForm(BaseProjectActionForm):
     remove_input = forms.BooleanField(
         label="Remove inputs",
         initial=True,
@@ -256,7 +270,7 @@ class ArchiveProjectForm(forms.Form):
     )
 
 
-class ProjectOutputDownloadForm(forms.Form):
+class ProjectOutputDownloadForm(BaseProjectActionForm):
     output_format = forms.ChoiceField(
         label="Choose the output format to include in the ZIP file",
         choices=[
@@ -272,7 +286,7 @@ class ProjectOutputDownloadForm(forms.Form):
     )
 
 
-class ProjectReportForm(forms.Form):
+class ProjectReportForm(BaseProjectActionForm):
     model_name = forms.ChoiceField(
         label="Choose the object type to include in the XLSX file",
         choices=[
