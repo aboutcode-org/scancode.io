@@ -54,6 +54,7 @@ from scanpipe.models import Run
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.output import JSONResultsGenerator
 from scanpipe.tests import dependency_data1
+from scanpipe.tests import make_message
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
@@ -795,13 +796,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
     def test_scanpipe_api_project_action_messages(self):
         url = reverse("project-messages", args=[self.project1.uuid])
-        ProjectMessage.objects.create(
-            project=self.project1,
-            severity=ProjectMessage.Severity.ERROR,
-            description="Error",
-            model="ModelName",
-            details={},
-        )
+        make_message(self.project1, description="Error")
 
         response = self.csrf_client.get(url)
         self.assertEqual(1, response.data["count"])
@@ -812,7 +807,6 @@ class ScanPipeAPITest(TransactionTestCase):
         message = response.data["results"][0]
         self.assertEqual("error", message["severity"])
         self.assertEqual("Error", message["description"])
-        self.assertEqual("ModelName", message["model"])
         self.assertEqual({}, message["details"])
 
     def test_scanpipe_api_project_action_file_content(self):

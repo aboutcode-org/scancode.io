@@ -640,14 +640,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         self.is_archived = True
         self.save(update_fields=["is_archived"])
 
-    def delete_related_objects(self):
+    def delete_related_objects(self, keep_input=False):
         """
         Delete all related object instances using the private `_raw_delete` model API.
         This bypass the objects collection, cascade deletions, and signals.
         It results in a much faster objects deletion, but it needs to be applied in the
         correct models order as the cascading event will not be triggered.
         Note that this approach is used in Django's `fast_deletes` but the scanpipe
-        models are cannot be fast-deleted as they have cascades and relations.
+        models cannot be fast-deleted as they have cascades and relations.
         """
         # Use default `delete()` on the DiscoveredPackage model, as the
         # `codebase_resources (ManyToManyField)` records need to collected and
@@ -667,8 +667,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.discovereddependencies,
             self.codebaseresources,
             self.runs,
-            self.inputsources,
         ]
+
+        if not keep_input:
+            relationships.append(self.inputsources)
 
         for qs in relationships:
             count = qs.all()._raw_delete(qs.db)
@@ -695,7 +697,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         self._raise_if_run_in_progress()
 
-        self.delete_related_objects()
+        self.delete_related_objects(keep_input=keep_input)
 
         work_directories = [
             self.codebase_path,

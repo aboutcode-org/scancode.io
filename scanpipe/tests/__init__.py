@@ -31,6 +31,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.models import ProjectMessage
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.download_inputs import DownloadInput
 from scanpipe.tests.pipelines.profile_step import ProfileStep
@@ -47,12 +48,12 @@ FIXTURES_REGEN = os.environ.get("SCANCODEIO_TEST_FIXTURES_REGEN", False)
 mocked_now = mock.Mock(now=lambda: datetime(2010, 10, 10, 10, 10, 10))
 
 
-def make_project(name=None, **extra):
+def make_project(name=None, **data):
     name = name or str(uuid.uuid4())[:8]
-    return Project.objects.create(name=name, **extra)
+    return Project.objects.create(name=name, **data)
 
 
-def make_resource_file(project, path, **extra):
+def make_resource_file(project, path, **data):
     return CodebaseResource.objects.create(
         project=project,
         path=path,
@@ -61,30 +62,43 @@ def make_resource_file(project, path, **extra):
         type=CodebaseResource.Type.FILE,
         is_text=True,
         tag=path.split("/")[0],
-        **extra,
+        **data,
     )
 
 
-def make_resource_directory(project, path, **extra):
+def make_resource_directory(project, path, **data):
     return CodebaseResource.objects.create(
         project=project,
         path=path,
         name=path.split("/")[-1],
         type=CodebaseResource.Type.DIRECTORY,
         tag=path.split("/")[0],
-        **extra,
+        **data,
     )
 
 
-def make_package(project, package_url, **extra):
-    package = DiscoveredPackage(project=project, **extra)
+def make_package(project, package_url, **data):
+    package = DiscoveredPackage(project=project, **data)
     package.set_package_url(package_url)
     package.save()
     return package
 
 
-def make_dependency(project, **extra):
-    return DiscoveredDependency.objects.create(project=project, **extra)
+def make_dependency(project, **data):
+    return DiscoveredDependency.objects.create(project=project, **data)
+
+
+def make_message(project, **data):
+    if "model" not in data:
+        data["model"] = str(uuid.uuid4())[:8]
+
+    if "severity" not in data:
+        data["severity"] = ProjectMessage.Severity.ERROR
+
+    return ProjectMessage.objects.create(
+        project=project,
+        **data,
+    )
 
 
 resource_data1 = {
