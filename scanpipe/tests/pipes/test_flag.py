@@ -70,7 +70,9 @@ class ScanPipeFlagPipesTest(TestCase):
 
     def test_scanpipe_pipes_flag_flag_ignored_patterns(self):
         patterns = ["*.ext", "dir/*"]
-        updated = flag.flag_ignored_patterns(self.project1, patterns)
+        updated = flag.flag_ignored_patterns(
+            self.project1.codebaseresources.no_status(), patterns
+        )
 
         self.assertEqual(3, updated)
         self.resource1.refresh_from_db()
@@ -85,7 +87,8 @@ class ScanPipeFlagPipesTest(TestCase):
         make_resource_file(self.project1, "path/deeper/policies.yml")
         make_resource_file(self.project1, "path/other-policies.yml")
         updated = flag.flag_ignored_patterns(
-            self.project1, flag.DEFAULT_IGNORED_PATTERNS
+            self.project1.codebaseresources.no_status(),
+            flag.DEFAULT_IGNORED_PATTERNS,
         )
         self.assertEqual(3, updated)
 

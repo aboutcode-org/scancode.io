@@ -22,6 +22,7 @@
 
 from aboutcode.pipeline import optional_step
 from scanpipe import pipes
+from scanpipe.config import DefaultEcosystemConfig
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
@@ -31,7 +32,7 @@ from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
 
 
-class DeployToDevelop(Pipeline):
+class DeployToDevelop(Pipeline, DefaultEcosystemConfig):
     """
     Establish relationships between two code trees: deployment and development.
 
@@ -64,6 +65,8 @@ class DeployToDevelop(Pipeline):
             cls.flag_empty_files,
             cls.flag_whitespace_files,
             cls.flag_ignored_resources,
+            cls.load_ecosystem_config,
+            cls.load_ecosystem_config_ruby,
             cls.map_about_files,
             cls.map_checksum,
             cls.match_archives_to_purldb,
@@ -90,33 +93,6 @@ class DeployToDevelop(Pipeline):
             cls.flag_deployed_from_resources_with_missing_license,
             cls.create_local_files_packages,
         )
-
-    purldb_package_extensions = [".jar", ".war", ".zip"]
-    purldb_resource_extensions = [
-        ".map",
-        ".js",
-        ".mjs",
-        ".ts",
-        ".d.ts",
-        ".jsx",
-        ".tsx",
-        ".css",
-        ".scss",
-        ".less",
-        ".sass",
-        ".soy",
-        ".class",
-    ]
-    doc_extensions = [
-        ".pdf",
-        ".doc",
-        ".docx",
-        ".ppt",
-        ".pptx",
-        ".tex",
-        ".odt",
-        ".odp",
-    ]
 
     def get_inputs(self):
         """Locate the ``from`` and ``to`` input files."""
@@ -151,6 +127,15 @@ class DeployToDevelop(Pipeline):
     def flag_whitespace_files(self):
         """Flag whitespace files with size less than or equal to 100 byte as ignored."""
         d2d.flag_whitespace_files(project=self.project)
+
+    def load_ecosystem_config(self):
+        """Load ecosystem specific configurations for d2d steps for selected options."""
+        d2d.load_ecosystem_config(pipeline=self, options=self.selected_groups)
+
+    @optional_step("Ruby")
+    def load_ecosystem_config_ruby(self):
+        """Load Ruby specific configurations for d2d steps."""
+        pass
 
     def map_about_files(self):
         """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
@@ -268,6 +253,7 @@ class DeployToDevelop(Pipeline):
     def perform_house_keeping_tasks(self):
         """
         On deployed side
+            - Ignore specific files based on ecosystem based configurations.
             - PurlDB match files with ``no-java-source`` and empty status,
                 if no match is found update status to ``requires-review``.
             - Update status for uninteresting files.
@@ -278,6 +264,11 @@ class DeployToDevelop(Pipeline):
         """
         d2d.match_resources_with_no_java_source(project=self.project, logger=self.log)
         d2d.handle_dangling_deployed_legal_files(project=self.project, logger=self.log)
+        d2d.ignore_unmapped_resources_from_config(
+            project=self.project,
+            patterns_to_ignore=self.deployed_resource_path_exclusions,
+            logger=self.log,
+        )
         d2d.match_unmapped_resources(
             project=self.project,
             matched_extensions=self.purldb_resource_extensions,
