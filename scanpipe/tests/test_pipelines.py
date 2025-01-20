@@ -1271,7 +1271,10 @@ class PipelinesIntegrationTest(TestCase):
         expected = "No packages could be resolved"
         self.assertIn(expected, message.description)
 
-    def test_scanpipe_resolve_dependencies_pipeline_integration_misc(self):
+    @mock.patch("scanpipe.pipes.resolve.resolve_dependencies")
+    def test_scanpipe_resolve_dependencies_pipeline_integration_misc(
+        self, mock_resolve_dependencies
+    ):
         pipeline_name = "resolve_dependencies"
         project1 = Project.objects.create(name="Analysis")
         selected_groups = ["DynamicResolver"]
@@ -1284,13 +1287,14 @@ class PipelinesIntegrationTest(TestCase):
         )
         pipeline = run.make_pipeline_instance()
 
+        mock_resolve_dependencies.return_value = mock.Mock(packages=[package_data1])
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
         self.assertEqual(1, project1.discoveredpackages.count())
 
     @mock.patch("scanpipe.pipes.resolve.resolve_dependencies")
     def test_scanpipe_resolve_dependencies_pipeline_pypi_integration(
-        self, resolve_dependencies
+        self, mock_resolve_dependencies
     ):
         pipeline_name = "resolve_dependencies"
         project1 = Project.objects.create(name="Analysis")
@@ -1302,7 +1306,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline = run.make_pipeline_instance()
 
         project1.move_input_from(tempfile.mkstemp(suffix="requirements.txt")[1])
-        resolve_dependencies.return_value = mock.Mock(packages=[package_data1])
+        mock_resolve_dependencies.return_value = mock.Mock(packages=[package_data1])
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 

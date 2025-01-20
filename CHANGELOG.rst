@@ -47,6 +47,9 @@ v34.9.4 (unreleased)
   sheets with a dedicated VULNERABILITIES sheet.
   https://github.com/aboutcode-org/scancode.io/issues/1519
 
+- Keep the InputSource objects when using ``reset`` on Projects.
+  https://github.com/aboutcode-org/scancode.io/issues/1536
+
 - Add a ``report`` management command that allows to generate XLSX reports for
   multiple projects at once using labels and searching by project name.
   https://github.com/aboutcode-org/scancode.io/issues/1524
