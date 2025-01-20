@@ -556,6 +556,7 @@ class ProjectListView(
 ):
     model = Project
     filterset_class = ProjectFilterSet
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("project", 20)
     template_name = "scanpipe/project_list.html"
     prefetch_related = [
         "labels",
@@ -572,7 +573,6 @@ class ProjectListView(
             ),
         ),
     ]
-    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("project", 20)
     table_columns = [
         "name",
         {

@@ -14,14 +14,16 @@
             {{ outputs_download_form.output_format }}
           </div>
         </div>
-        <hr>
-        <div class="field">
-          <label class="checkbox" for="{{ outputs_download_form.select_across.id_for_label }}">
-            <input type="checkbox" name="{{ outputs_download_form.select_across.name }}" id="{{ outputs_download_form.select_across.id_for_label }}">
-            Include all {{ paginator.count|intcomma }} projects
-          </label>
-          <p class="help">{{ outputs_download_form.select_across.help_text }}</p>
-        </div>
+        {% if page_obj.paginator.num_pages > 1 %}
+          <hr>
+          <div class="field">
+            <label class="checkbox" for="{{ outputs_download_form.select_across.id_for_label }}">
+              <input type="checkbox" name="{{ outputs_download_form.select_across.name }}" id="{{ outputs_download_form.select_across.id_for_label }}">
+              Include all {{ paginator.count|intcomma }} projects
+            </label>
+            <p class="help">{{ outputs_download_form.select_across.help_text }}</p>
+          </div>
+        {% endif %}
       </section>
       <input type="hidden" name="{{ outputs_download_form.url_query.name }}" value="{{ request.GET.urlencode }}">
       <input type="hidden" name="action" value="download">
