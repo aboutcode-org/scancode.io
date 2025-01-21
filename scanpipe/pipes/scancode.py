@@ -293,6 +293,7 @@ def scan_resources(
     save_func,
     scan_func_kwargs=None,
     progress_logger=None,
+    file_size_limit=None,
 ):
     """
     Run the `scan_func` on the codebase resources of the provided `resource_qs`.
@@ -313,10 +314,13 @@ def scan_resources(
         scan_func_kwargs = {}
 
     # Skip scannning files larger than the specified max size
-    if not scan_func == scan_for_package_data:
-        flag.flag_and_ignore_files_over_max_size(
-            resource_qs=resource_qs,
-            file_size_limit=settings.SCANCODEIO_SCAN_MAX_FILE_SIZE,
+    skipped_files_max_size = flag.flag_and_ignore_files_over_max_size(
+        resource_qs=resource_qs,
+        file_size_limit=file_size_limit,
+    )
+    if file_size_limit and skipped_files_max_size:
+        logger.info(
+            f"Skipped {skipped_files_max_size} files over the size of {file_size_limit}"
         )
 
     scan_resource_qs = resource_qs.filter(~Q(status=flag.IGNORED_BY_MAX_FILE_SIZE))
@@ -378,11 +382,18 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
     if resource_qs is None:
         resource_qs = project.codebaseresources.no_status()
 
+    # Get max file size limit set in project settings, or alternatively
+    # get it from scancodeio settings
+    file_size_limit = project.get_scan_max_file_size
+    if not file_size_limit:
+        file_size_limit = settings.SCANCODEIO_SCAN_MAX_FILE_SIZE
+
     scan_resources(
         resource_qs=resource_qs,
         scan_func=scan_file,
         save_func=save_scan_file_results,
         progress_logger=progress_logger,
+        file_size_limit=file_size_limit,
     )
 
 
