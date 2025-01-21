@@ -232,7 +232,8 @@ function setupSelectCheckbox() {
       updateButtonAndDropdownState();
 
       // Check if all row checkboxes are checked and update the "Select All" checkbox accordingly
-      selectAllCheckbox.checked = Array.from(rowCheckboxes).every((cb) => cb.checked);
+      const allRowCheckboxesChecked = Array.from(rowCheckboxes).every((cb) => cb.checked);
+      selectAllCheckbox.checked = allRowCheckboxesChecked;
     });
   });
 

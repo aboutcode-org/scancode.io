@@ -98,6 +98,24 @@
           }
         });
       });
+
+      document.addEventListener("openModal", function(event) {
+        // Get all elements that should be shown or hidden based on the state of the checkboxes
+        const elementsForAllRowsChecked = getAll(".show-on-all-checked");
+        const selectAllCheckbox = document.getElementById("select-all");
+        const displayValue = selectAllCheckbox.checked ? "block" : "none";
+
+        // Iterate through all elements that need to be shown or hidden and apply the display style
+        elementsForAllRowsChecked.forEach((field) => {
+          field.style.display = displayValue;
+        });
+      });
+
     });
   </script>
+
+
+<script>
+
+</script>
 {% endblock %}
