@@ -54,6 +54,10 @@ v34.9.4 (unreleased)
   multiple projects at once using labels and searching by project name.
   https://github.com/aboutcode-org/scancode.io/issues/1524
 
+- Add the ability to "select across" in Projects list when using the "select all"
+  checkbox on paginated list.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
 v34.9.3 (2024-12-31)
 --------------------
 

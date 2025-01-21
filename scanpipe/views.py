@@ -1249,7 +1249,7 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
 
         return action_form
 
-    def perform_action(self, action, project, action_kwargs=None):
+    def perform_action(self, project, action, action_kwargs=None):
         if not action_kwargs:
             action_kwargs = {}
 
