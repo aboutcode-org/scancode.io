@@ -1,7 +1,10 @@
 Changelog
 =========
 
-v34.9.4 (unreleased)
+v34.9.5 (unreleased)
+--------------------
+
+v34.9.4 (2025-01-21)
 --------------------
 
 - Improve Project list page navigation.
