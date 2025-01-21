@@ -269,6 +269,13 @@ class ArchiveProjectForm(BaseProjectActionForm):
         required=False,
     )
 
+    def get_action_kwargs(self):
+        return {
+            "remove_input": self.cleaned_data["remove_input"],
+            "remove_codebase": self.cleaned_data["remove_codebase"],
+            "remove_output": self.cleaned_data["remove_output"],
+        }
+
 
 class ProjectOutputDownloadForm(BaseProjectActionForm):
     output_format = forms.ChoiceField(

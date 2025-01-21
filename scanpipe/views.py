@@ -1147,13 +1147,30 @@ class ProjectArchiveView(ConditionalLoginRequired, SingleObjectMixin, FormView):
 
         project = self.get_object()
         try:
-            project.archive(**form.cleaned_data)
+            project.archive(**form.get_action_kwargs())
         except RunInProgressError as error:
             messages.error(self.request, error)
             return redirect(project)
 
         messages.success(self.request, self.success_message.format(project))
         return response
+
+
+class ProjectResetView(ConditionalLoginRequired, generic.DeleteView):
+    model = Project
+    success_message = 'All data, except inputs, for the "{}" project have been removed.'
+
+    def form_valid(self, form):
+        """Call the reset() method on the project."""
+        project = self.get_object()
+        try:
+            project.reset(keep_input=True)
+        except RunInProgressError as error:
+            messages.error(self.request, error)
+        else:
+            messages.success(self.request, self.success_message.format(project.name))
+
+        return redirect(project)
 
 
 class ProjectDeleteView(ConditionalLoginRequired, generic.DeleteView):
@@ -1210,11 +1227,11 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
             return self.export_xlsx_file_response()
 
         if action == "archive":
-            action_kwargs = action_form.cleaned_data
+            action_kwargs = action_form.get_action_kwargs()
 
         count = 0
         for project in project_qs:
-            if self.perform_action(action, project, action_kwargs):
+            if self.perform_action(project, action, action_kwargs):
                 count += 1
 
         if count:
@@ -1279,7 +1296,7 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
         return ["project"]
 
     def get_export_xlsx_worksheet_name(self):
-        if self.report_form.cleaned_data.get("model_name") == "todo":
+        if self.action_form.cleaned_data.get("model_name") == "todo":
             return "TODOS"
 
     def get_export_xlsx_filename(self):
@@ -1305,23 +1322,6 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
             as_attachment=True,
             filename="scancodeio_output_files.zip",
         )
-
-
-class ProjectResetView(ConditionalLoginRequired, generic.DeleteView):
-    model = Project
-    success_message = 'All data, except inputs, for the "{}" project have been removed.'
-
-    def form_valid(self, form):
-        """Call the reset() method on the project."""
-        project = self.get_object()
-        try:
-            project.reset(keep_input=True)
-        except RunInProgressError as error:
-            messages.error(self.request, error)
-        else:
-            messages.success(self.request, self.success_message.format(project.name))
-
-        return redirect(project)
 
 
 class HTTPResponseHXRedirect(HttpResponseRedirect):
