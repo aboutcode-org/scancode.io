@@ -15,13 +15,15 @@
           </div>
         </div>
         {% if page_obj.paginator.num_pages > 1 %}
-          <hr>
-          <div class="field">
-            <label class="checkbox" for="{{ report_form.select_across.id_for_label }}">
-              <input type="checkbox" name="{{ report_form.select_across.name }}" id="{{ report_form.select_across.id_for_label }}">
-              Include all {{ paginator.count|intcomma }} projects
-            </label>
-            <p class="help">{{ report_form.select_across.help_text }}</p>
+          <div class="show-on-all-checked">
+            <hr>
+            <div class="field include-all-field">
+              <label class="checkbox" for="{{ report_form.select_across.id_for_label }}">
+                <input type="checkbox" name="{{ report_form.select_across.name }}" id="{{ report_form.select_across.id_for_label }}">
+                Include all {{ paginator.count|intcomma }} projects
+              </label>
+              <p class="help">{{ report_form.select_across.help_text }}</p>
+            </div>
           </div>
         {% endif %}
       </section>
