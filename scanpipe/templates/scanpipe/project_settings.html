@@ -115,6 +115,18 @@
                 </div>
 
                 <div class="field">
+                  <label class="label" for="{{ form.scan_max_file_size.id_for_label }}">
+                    {{ form.scan_max_file_size.label }}
+                  </label>
+                  <div class="control">
+                    {{ form.scan_max_file_size }}
+                  </div>
+                  <div class="help">
+                    {{ form.scan_max_file_size.help_text|safe|linebreaksbr }}
+                  </div>
+                </div>
+
+                <div class="field">
                   <label class="label" for="{{ form.ignored_dependency_scopes.id_for_label }}">
                     {{ form.ignored_dependency_scopes.label }}
                   </label>

@@ -58,6 +58,16 @@ v34.9.4 (unreleased)
   checkbox on paginated list.
   https://github.com/aboutcode-org/scancode.io/issues/1524
 
+- Update scancode-toolkit to v32.3.2. See CHANGELOG for updates:
+  https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.3.2
+  https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.3.1
+
+- Adds  a project settings ``scan_max_file_size`` and a scancode.io settings field
+  ``SCANCODEIO_SCAN_MAX_FILE_SIZE`` to skip scanning files above a certain
+  file size (in bytes) as a temporary fix for large memory spikes while
+  scanning for licenses in certain large files.
+  https://github.com/aboutcode-org/scancode-toolkit/issues/3711
+
 v34.9.3 (2024-12-31)
 --------------------
 

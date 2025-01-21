@@ -437,6 +437,7 @@ class ProjectSettingsForm(forms.ModelForm):
         "ignored_vulnerabilities",
         "policies",
         "attribution_template",
+        "scan_max_file_size",
         "product_name",
         "product_version",
     ]
@@ -510,6 +511,15 @@ class ProjectSettingsForm(forms.ModelForm):
             "the entire HTML code into this field."
         ),
         widget=forms.Textarea(attrs={"class": "textarea is-dynamic", "rows": 3}),
+    )
+    scan_max_file_size = forms.IntegerField(
+        label="Max file size to scan",
+        required=False,
+        help_text=(
+            "Maximum file size in bytes which should be skipped from scanning."
+            "File size is in bytes. Example: 5 MB is 5242880 bytes."
+        ),
+        widget=forms.NumberInput(attrs={"class": "input"}),
     )
     product_name = forms.CharField(
         label="Product name",

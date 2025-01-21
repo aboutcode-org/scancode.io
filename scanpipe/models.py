@@ -921,6 +921,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         return dict(ignored_scope_index)
 
     @cached_property
+    def get_scan_max_file_size(self):
+        """
+        Return a the ``scan_max_file_size`` settings value defined in this
+        Project env.
+        """
+        scan_max_file_size = self.get_env(field_name="scan_max_file_size")
+        if scan_max_file_size:
+            return scan_max_file_size
+
+    @cached_property
     def ignored_dependency_scopes_index(self):
         """
         Return the computed value of get_ignored_dependency_scopes_index.
