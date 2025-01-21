@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import re
 from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
@@ -560,7 +561,7 @@ def match_purldb_resource(
                 package_data = package_data_by_purldb_urls[package_instance_url]
             sha1 = result["sha1"]
             resources = resources_by_sha1.get(sha1) or []
-            if not resources:
+            if not (resources and package_data):
                 continue
             _, matched_resources_count = create_package_from_purldb_data(
                 project=project,
@@ -659,7 +660,10 @@ def _match_purldb_resources(
 
     for to_resource in progress.iter(resource_iterator):
         resources_by_sha1[to_resource.sha1].append(to_resource)
-        if to_resource.path.endswith(".map"):
+        if (
+            to_resource.path.endswith(".map")
+            and "json" in to_resource.file_type.lower()
+        ):
             for js_sha1 in js.source_content_sha1_list(to_resource):
                 resources_by_sha1[js_sha1].append(to_resource)
         processed_resources_count += 1
@@ -1620,21 +1624,20 @@ def match_purldb_resources_post_process(project, logger=None):
     map_count = 0
 
     for directory in progress.iter(resource_iterator):
-        map_count += _match_purldb_resources_post_process(
-            directory, to_extract_directories, to_resources
-        )
+        map_count += _match_purldb_resources_post_process(directory, to_resources)
 
     logger(f"{map_count:,d} resource processed")
 
 
-def _match_purldb_resources_post_process(
-    directory_path, to_extract_directories, to_resources
-):
+def _match_purldb_resources_post_process(directory, to_resources):
+    # Escape special character in directory path
+    escaped_directory_path = re.escape(directory.path)
+
     # Exclude the content of nested archive.
     interesting_codebase_resources = (
-        to_resources.filter(path__startswith=directory_path)
+        to_resources.filter(path__startswith=directory.path)
         .filter(status=flag.MATCHED_TO_PURLDB_RESOURCE)
-        .exclude(path__regex=rf"^{directory_path}.*-extract\/.*$")
+        .exclude(path__regex=rf"^{escaped_directory_path}.*-extract\/.*$")
     )
 
     if not interesting_codebase_resources:

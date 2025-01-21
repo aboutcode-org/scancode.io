@@ -1,3 +1,4 @@
+{% load humanize %}
 <div class="modal" id="modal-projects-download">
   <div class="modal-background"></div>
   <div class="modal-card">
@@ -7,10 +8,26 @@
     </header>
     <form action="{% url 'project_action' %}" method="post" id="download-projects-form">{% csrf_token %}
       <section class="modal-card-body">
-        <ul class="mb-3">
-          {{ outputs_download_form.as_ul }}
-        </ul>
+        <div class="field">
+          <label class="label">{{ outputs_download_form.output_format.label }}</label>
+          <div class="control">
+            {{ outputs_download_form.output_format }}
+          </div>
+        </div>
+        {% if page_obj.paginator.num_pages > 1 %}
+          <div class="show-on-all-checked">
+            <hr>
+            <div class="field">
+              <label class="checkbox" for="{{ outputs_download_form.select_across.id_for_label }}">
+                <input type="checkbox" name="{{ outputs_download_form.select_across.name }}" id="{{ outputs_download_form.select_across.id_for_label }}">
+                Include all {{ paginator.count|intcomma }} projects
+              </label>
+              <p class="help">{{ outputs_download_form.select_across.help_text }}</p>
+            </div>
+          </div>
+        {% endif %}
       </section>
+      <input type="hidden" name="{{ outputs_download_form.url_query.name }}" value="{{ request.GET.urlencode }}">
       <input type="hidden" name="action" value="download">
       <footer class="modal-card-foot is-flex is-justify-content-space-between">
         <button class="button has-text-weight-semibold" type="reset">Cancel</button>

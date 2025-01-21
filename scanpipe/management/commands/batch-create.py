@@ -27,8 +27,11 @@ from pathlib import Path
 from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 
+import requests
+
 from scanpipe.management.commands import CreateProjectCommandMixin
 from scanpipe.management.commands import PipelineCommandMixin
+from scanpipe.pipes import fetch
 
 
 class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
@@ -54,7 +57,8 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
                 "Path to a CSV file with project names and input URLs. "
                 "The first column must contain project names, and the second column "
                 "should list comma-separated input URLs (e.g., Download URL, PURL, or "
-                "Docker reference)."
+                "Docker reference). "
+                "In place of a local path, a download URL to the CSV file is supported."
             ),
         )
         parser.add_argument(
@@ -67,6 +71,7 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
 
     def handle(self, *args, **options):
         self.verbosity = options["verbosity"]
+        self.created_project_count = 0
 
         input_directory = options["input_directory"]
         input_list = options["input_list"]
@@ -81,6 +86,10 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
 
         if input_list:
             self.handle_input_list(**options)
+
+        if self.verbosity > 0 and self.created_project_count:
+            msg = f"{self.created_project_count} projects created."
+            self.stdout.write(msg, self.style.SUCCESS)
 
     def handle_input_directory(self, **options):
         timestamp = datetime.now().strftime("%y%m%d_%H%M%S")
@@ -102,9 +111,19 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
                     execute=options["execute"],
                     run_async=options["async"],
                 )
+                self.created_project_count += 1
 
     def handle_input_list(self, **options):
-        input_file = Path(options["input_list"])
+        input_file = options["input_list"]
+
+        if input_file.startswith("http"):
+            try:
+                download = fetch.fetch_http(input_file)
+            except requests.exceptions.RequestException as e:
+                raise CommandError(e)
+            input_file = download.path
+
+        input_file = Path(input_file)
         if not input_file.exists():
             raise CommandError(f"The {input_file} file does not exist.")
 
@@ -125,6 +144,7 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
                 execute=options["execute"],
                 run_async=options["async"],
             )
+            self.created_project_count += 1
 
 
 def process_csv(file_path):

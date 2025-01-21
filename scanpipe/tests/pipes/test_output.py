@@ -42,11 +42,11 @@ from scancode_config import __version__ as scancode_toolkit_version
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
-from scanpipe.models import ProjectMessage
 from scanpipe.pipes import flag
 from scanpipe.pipes import output
 from scanpipe.tests import FIXTURES_REGEN
 from scanpipe.tests import make_dependency
+from scanpipe.tests import make_message
 from scanpipe.tests import make_package
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
@@ -206,13 +206,7 @@ class ScanPipeOutputPipesTest(TestCase):
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
         project = Project.objects.get(name="asgiref")
-        ProjectMessage.objects.create(
-            project=project,
-            severity=ProjectMessage.Severity.ERROR,
-            description="Error",
-            model="Model",
-            details={},
-        )
+        make_message(project, description="Error")
         make_resource_file(
             project=project, path="path/file1.ext", status=flag.REQUIRES_REVIEW
         )

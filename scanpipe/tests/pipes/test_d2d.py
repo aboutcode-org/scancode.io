@@ -28,6 +28,7 @@ from pathlib import Path
 from unittest import mock
 from unittest import skipIf
 
+from django.db.utils import DataError
 from django.test import TestCase
 
 from scanpipe import pipes
@@ -1566,3 +1567,64 @@ class ScanPipeD2DPipesTest(TestCase):
                 project=self.project1, status="requires-review"
             ).count(),
         )
+
+    @mock.patch("scanpipe.pipes.purldb.match_resources")
+    def test_scanpipe_pipes_d2d_match_purldb_resource_no_package_data(
+        self, mock_match_resource
+    ):
+        to_1 = make_resource_file(
+            self.project1,
+            "to/notice.NOTICE",
+            sha1="4bd631df28995c332bf69d9d4f0f74d7ee089598",
+        )
+        resources_by_sha1 = {to_1.sha1: [to_1]}
+
+        resource_data = resource_data1.copy()
+        resource_data["package"] = "example.com/package-instance"
+        mock_match_resource.return_value = [resource_data]
+
+        resources_by_sha1, matched_count, sha1_count = d2d.match_sha1s_to_purldb(
+            project=self.project1,
+            resources_by_sha1=resources_by_sha1,
+            matcher_func=d2d.match_purldb_resource,
+            package_data_by_purldb_urls={},
+        )
+        self.assertFalse(resources_by_sha1)
+        self.assertEqual(0, matched_count)
+        self.assertEqual(1, sha1_count)
+
+        package_count = self.project1.discoveredpackages.count()
+        self.assertEqual(0, package_count)
+
+    def test_scanpipe_pipes_d2d_match_purldb_resources_post_process_with_special_char(
+        self,
+    ):
+        to_map = self.data / "d2d-javascript" / "to" / "main.js.map"
+
+        to_dir = self.project1.codebase_path / "to/lib/Matplot++/nodesoup.lib-extract"
+        to_dir.mkdir(parents=True)
+        copy_inputs([to_map], to_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        to_resources = self.project1.codebaseresources.filter(
+            path__startswith=("to/lib/Matplot++/nodesoup.lib-extract/main.js")
+        )
+
+        dummy_package_data1 = package_data1.copy()
+        dummy_package_data1["uuid"] = uuid.uuid4()
+        d2d.create_package_from_purldb_data(
+            self.project1,
+            to_resources,
+            dummy_package_data1,
+            flag.MATCHED_TO_PURLDB_RESOURCE,
+        )
+
+        buffer = io.StringIO()
+        try:
+            d2d.match_purldb_resources_post_process(
+                self.project1,
+                logger=buffer.write,
+            )
+        except DataError:
+            self.fail("DataError was raised, but it should not occur.")

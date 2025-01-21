@@ -35,6 +35,10 @@ v34.9.4 (unreleased)
   at once from a directory containing input files.
   https://github.com/aboutcode-org/scancode.io/issues/1437
 
+- Do not download input_urls in management commands. The fetch/download is delegated to
+  the pipeline execution.
+  https://github.com/aboutcode-org/scancode.io/issues/1437
+
 - Add a "TODOS" sheet containing on REQUIRES_REVIEW resources in XLSX.
   https://github.com/aboutcode-org/scancode.io/issues/1524
 
@@ -43,12 +47,23 @@ v34.9.4 (unreleased)
   sheets with a dedicated VULNERABILITIES sheet.
   https://github.com/aboutcode-org/scancode.io/issues/1519
 
+- Keep the InputSource objects when using ``reset`` on Projects.
+  https://github.com/aboutcode-org/scancode.io/issues/1536
+
+- Add a ``report`` management command that allows to generate XLSX reports for
+  multiple projects at once using labels and searching by project name.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Add the ability to "select across" in Projects list when using the "select all"
+  checkbox on paginated list.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
 - Update scancode-toolkit to v32.3.2. See CHANGELOG for updates:
   https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.3.2
   https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.3.1
 
-- Adds  a project settings `scan_max_file_size` and a scancode.io settings field
-  `SCANCODEIO_SCAN_MAX_FILE_SIZE` to skip scanning files above a certain
+- Adds  a project settings ``scan_max_file_size`` and a scancode.io settings field
+  ``SCANCODEIO_SCAN_MAX_FILE_SIZE`` to skip scanning files above a certain
   file size (in bytes) as a temporary fix for large memory spikes while
   scanning for licenses in certain large files.
   https://github.com/aboutcode-org/scancode-toolkit/issues/3711

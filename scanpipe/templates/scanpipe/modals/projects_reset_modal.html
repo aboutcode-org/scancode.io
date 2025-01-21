@@ -1,3 +1,4 @@
+{% load humanize %}
 <div class="modal" id="modal-projects-reset">
   <div class="modal-background"></div>
   <div class="modal-card">
@@ -15,8 +16,21 @@
       <p class="mb-5">
         Are you sure you want to do this?
       </p>
+      {% if page_obj.paginator.num_pages > 1 %}
+        <div class="show-on-all-checked">
+          <hr>
+          <div class="field include-all-field">
+            <label class="checkbox" for="{{ archive_form.select_across.id_for_label }}">
+              <input type="checkbox" name="{{ archive_form.select_across.name }}" id="{{ archive_form.select_across.id_for_label }}">
+              Include all {{ paginator.count|intcomma }} projects
+            </label>
+            <p class="help">{{ outputs_download_form.select_across.help_text }}</p>
+          </div>
+        </div>
+      {% endif %}
     </section>
     <form action="{% url 'project_action' %}" method="post" id="reset-projects-form">{% csrf_token %}
+      <input type="hidden" name="{{ action_form.url_query.name }}" value="{{ request.GET.urlencode }}">
       <input type="hidden" name="action" value="reset">
       <footer class="modal-card-foot is-flex is-justify-content-space-between">
         <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
