@@ -1104,16 +1104,16 @@ class ScanPipeManagementCommandTest(TestCase):
         make_resource_file(project1, path="file.ext", status=flag.REQUIRES_REVIEW)
         make_project("project2")
 
-        expected = "Error: the following arguments are required: --sheet"
+        expected = "Error: the following arguments are required: --model"
         with self.assertRaisesMessage(CommandError, expected):
             call_command("report")
 
-        options = ["--sheet", "UNKNOWN"]
-        expected = "Error: argument --sheet: invalid choice: 'UNKNOWN'"
+        options = ["--model", "UNKNOWN"]
+        expected = "Error: argument --model: invalid choice: 'UNKNOWN'"
         with self.assertRaisesMessage(CommandError, expected):
             call_command("report", *options)
 
-        options = ["--sheet", "todo"]
+        options = ["--model", "todo"]
         expected = "You must provide either --label or --search to select projects."
         with self.assertRaisesMessage(CommandError, expected):
             call_command("report", *options)

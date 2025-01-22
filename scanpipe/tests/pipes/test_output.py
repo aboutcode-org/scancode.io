@@ -260,6 +260,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
         model_short_name = "todo"
         output_file = output.get_xlsx_report(project_qs, model_short_name)
+        workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
         expected_sheet_names = [
             "TODOS",
         ]

@@ -396,15 +396,15 @@ your outputs on the host machine when running with Docker.
 
 .. _cli_report:
 
-`$ scanpipe report --sheet SHEET`
+`$ scanpipe report --model MODEL`
 ---------------------------------
 
 Generates an XLSX report of selected projects based on the provided criteria.
 
 Required arguments:
 
-- ``--sheet {package,dependency,resource,relation,message,todo}``
-  Specifies the sheet to include in the XLSX report. Available choices are based on
+- ``--model {package,dependency,resource,relation,message,todo}``
+  Specifies the model to include in the XLSX report. Available choices are based on
   predefined object types.
 
 Optional arguments:
@@ -428,12 +428,12 @@ Example usage:
 1. Generate a report for all projects tagged with "d2d" and include the **TODOS**
 worksheet::
 
-   $ scanpipe report --sheet todo --label d2d
+   $ scanpipe report --model todo --label d2d
 
 2. Generate a report for projects whose names contain the word "audit" and include the
 **PACKAGES** worksheet::
 
-   $ scanpipe report --sheet package --search audit
+   $ scanpipe report --model package --search audit
 
 .. _cli_check_compliance:
 

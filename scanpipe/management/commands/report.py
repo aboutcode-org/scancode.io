@@ -46,10 +46,10 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument(
-            "--sheet",
+            "--model",
             required=True,
             choices=list(output.object_type_to_model_name.keys()),
-            help="Specifies the sheet to include in the XLSX report.",
+            help="Specifies the model to include in the XLSX report.",
         )
         parser.add_argument(
             "--search",
@@ -73,7 +73,7 @@ class Command(BaseCommand):
         output_directory = options["output_directory"]
         labels = options["labels"]
         search = options["search"]
-        sheet = options["sheet"]
+        model = options["model"]
 
         if not (labels or search):
             raise CommandError(
@@ -100,7 +100,7 @@ class Command(BaseCommand):
         else:
             output_file = Path(filename)
 
-        output_file = output.get_xlsx_report(project_qs, sheet, output_file)
+        output_file = output.get_xlsx_report(project_qs, model, output_file)
 
         run_time = timer() - start_time
         if self.verbosity > 0:
