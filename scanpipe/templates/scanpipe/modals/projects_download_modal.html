@@ -6,7 +6,7 @@
       <p class="modal-card-title">Download outputs for selected projects as ZIP file</p>
       <button class="delete" aria-label="close"></button>
     </header>
-    <form action="{% url 'project_action' %}" method="post" id="download-projects-form">{% csrf_token %}
+    <form action="{% url 'project_action' %}" method="post" id="download-projects-form" target="_blank">{% csrf_token %}
       <section class="modal-card-body">
         <div class="field">
           <label class="label">{{ outputs_download_form.output_format.label }}</label>
