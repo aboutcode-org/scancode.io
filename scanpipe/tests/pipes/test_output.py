@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import collections
+import io
 import json
 import shutil
 import tempfile
@@ -48,6 +49,7 @@ from scanpipe.tests import FIXTURES_REGEN
 from scanpipe.tests import make_dependency
 from scanpipe.tests import make_message
 from scanpipe.tests import make_package
+from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
@@ -72,7 +74,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual(expected_data, results)
 
     def test_scanpipe_pipes_outputs_queryset_to_csv_file(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project(name="Analysis")
         codebase_resource = CodebaseResource.objects.create(
             project=project1,
             path="filename.ext",
@@ -108,7 +110,7 @@ class ScanPipeOutputPipesTest(TestCase):
             self.assertEqual(expected, f.readlines())
 
     def test_scanpipe_pipes_outputs_queryset_to_csv_stream(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project(name="Analysis")
         codebase_resource = CodebaseResource.objects.create(
             project=project1,
             path="filename.ext",
@@ -231,6 +233,38 @@ class ScanPipeOutputPipesTest(TestCase):
         ]
         self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
 
+    def test_scanpipe_pipes_outputs_get_xlsx_report(self):
+        project_qs = None
+        model_short_name = None
+
+        expected_message = "None is not valid."
+        with self.assertRaisesMessage(ValueError, expected_message):
+            output.get_xlsx_report(project_qs, model_short_name)
+
+        model_short_name = "package"
+        expected_message = "'NoneType' object is not iterable"
+        with self.assertRaisesMessage(TypeError, expected_message):
+            output.get_xlsx_report(project_qs, model_short_name)
+
+        make_project()
+        make_project()
+        project_qs = Project.objects.all()
+        output_file = output.get_xlsx_report(project_qs, model_short_name)
+
+        self.assertIsInstance(output_file, io.BytesIO)
+        workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
+        expected_sheet_names = [
+            "PACKAGES",
+        ]
+        self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
+
+        model_short_name = "todo"
+        output_file = output.get_xlsx_report(project_qs, model_short_name)
+        expected_sheet_names = [
+            "TODOS",
+        ]
+        self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
+
     def test_scanpipe_pipes_outputs_vulnerability_as_cyclonedx(self):
         component_bom_ref = "pkg:pypi/django@4.0.10"
         data = self.data / "cyclonedx/django-4.0.10-vulnerability.json"
@@ -291,7 +325,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual("1.5", results_json["specVersion"])
 
     def test_scanpipe_pipes_outputs_get_cyclonedx_bom_dependency_tree(self):
-        project = Project.objects.create(name="project")
+        project = make_project(name="project")
 
         a = make_package(project, "pkg:type/a")
         b = make_package(project, "pkg:type/b")
@@ -320,7 +354,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual(expected, results_json["dependencies"])
 
     def test_scanpipe_pipes_outputs_get_cyclonedx_bom_package_uid_instances(self):
-        project = Project.objects.create(name="project")
+        project = make_project(name="project")
         make_package(project, "pkg:type/a", package_uid="pkg:type/a?uuid=1")
         make_package(project, "pkg:type/a", package_uid="pkg:type/a?uuid=2")
 
@@ -354,7 +388,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertIn(output_file.name, project.output_root)
 
     def test_scanpipe_pipes_outputs_to_spdx_extracted_licenses(self):
-        project = Project.objects.create(name="Analysis")
+        project = make_project(name="Analysis")
         package_data = dict(package_data1)
         # ac3filter resolves as LicenseRef-scancode-ac3filter
         expression = "mit AND ac3filter"
@@ -434,7 +468,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual("value", rendered)
 
     def test_scanpipe_pipes_outputs_get_attribution_template(self):
-        project = Project.objects.create(name="Analysis")
+        project = make_project(name="Analysis")
         template_location = str(output.get_attribution_template(project))
         expected_location = "templates/scanpipe/attribution.html"
         self.assertTrue(template_location.endswith(expected_location))
@@ -450,7 +484,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertTrue(template_location.endswith(expected_location))
 
     def test_scanpipe_pipes_outputs_get_package_data_for_attribution(self):
-        project = Project.objects.create(name="Analysis")
+        project = make_project(name="Analysis")
         package_data = dict(package_data1)
         expression = "mit AND gpl-2.0 AND mit"
         package_data["declared_license_expression"] = expression
@@ -468,7 +502,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual(sorted(expected), sorted(licenses))
 
     def test_scanpipe_pipes_outputs_to_attribution(self):
-        project = Project.objects.create(name="Analysis")
+        project = make_project(name="Analysis")
         package_data = dict(package_data1)
         expression = "mit AND gpl-2.0 with classpath-exception-2.0 AND missing-unknown"
         package_data["declared_license_expression"] = expression

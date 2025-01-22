@@ -401,11 +401,10 @@ def add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     return errors_count
 
 
-# TODO: Add unit test
 def get_xlsx_report(project_qs, model_short_name, output_file=None):
     model_name = object_type_to_model_name.get(model_short_name)
     if not model_name:
-        raise ValueError
+        raise ValueError(f"{model_short_name} is not valid.")
 
     worksheet_name = model_name_to_worksheet_name.get(model_short_name)
 
