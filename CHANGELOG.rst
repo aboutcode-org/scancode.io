@@ -4,6 +4,9 @@ Changelog
 v34.9.5 (unreleased)
 --------------------
 
+- Add support for the XLSX report in REST API.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
 v34.9.4 (2025-01-21)
 --------------------
 
