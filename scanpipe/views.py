@@ -96,6 +96,7 @@ from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.pipes import compliance
 from scanpipe.pipes import count_group_by
+from scanpipe.pipes import filename_now
 from scanpipe.pipes import output
 from scanpipe.pipes import purldb
 
@@ -453,24 +454,14 @@ class ExportXLSXMixin:
     def get_export_xlsx_filename(self):
         return f"{self.project.name}_{self.model._meta.model_name}.xlsx"
 
-    def get_export_xlsx_prepend_fields(self):
-        return []
-
-    def get_export_xlsx_worksheet_name(self):
-        return
-
     def export_xlsx_file_response(self):
         output_file = io.BytesIO()
         queryset = self.get_export_xlsx_queryset()
-        prepend_fields = self.get_export_xlsx_prepend_fields()
-        worksheet_name = self.get_export_xlsx_worksheet_name()
         with xlsxwriter.Workbook(output_file) as workbook:
             output.queryset_to_xlsx_worksheet(
                 queryset,
                 workbook,
                 exclude_fields=output.XLSX_EXCLUDE_FIELDS,
-                prepend_fields=prepend_fields,
-                worksheet_name=worksheet_name,
             )
 
         output_file.seek(0)
@@ -1191,7 +1182,7 @@ class ProjectDeleteView(ConditionalLoginRequired, generic.DeleteView):
 
 
 @method_decorator(require_POST, name="dispatch")
-class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListView):
+class ProjectActionView(ConditionalLoginRequired, generic.ListView):
     """Call a method for each instance of the selection."""
 
     model = Project
@@ -1222,9 +1213,7 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
             return self.download_outputs_zip_response(project_qs, action_form)
 
         if action == "report":
-            self.action_form = action_form
-            self.project_qs = project_qs
-            return self.export_xlsx_file_response()
+            return self.xlsx_report_response(project_qs, action_form)
 
         if action == "archive":
             action_kwargs = action_form.get_action_kwargs()
@@ -1287,21 +1276,6 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
 
         raise Http404
 
-    def get_export_xlsx_queryset(self):
-        model_name = self.action_form.cleaned_data["model_name"]
-        queryset = output.get_queryset(project=None, model_name=model_name)
-        return queryset.filter(project__in=self.project_qs)
-
-    def get_export_xlsx_prepend_fields(self):
-        return ["project"]
-
-    def get_export_xlsx_worksheet_name(self):
-        if self.action_form.cleaned_data.get("model_name") == "todo":
-            return "TODOS"
-
-    def get_export_xlsx_filename(self):
-        return "report.xlsx"
-
     @staticmethod
     def download_outputs_zip_response(project_qs, action_form):
         output_format = action_form.cleaned_data["output_format"]
@@ -1321,6 +1295,18 @@ class ProjectActionView(ConditionalLoginRequired, ExportXLSXMixin, generic.ListV
             zip_buffer,
             as_attachment=True,
             filename="scancodeio_output_files.zip",
+        )
+
+    @staticmethod
+    def xlsx_report_response(project_qs, action_form):
+        model_short_name = action_form.cleaned_data["model_name"]
+        filename = f"scancodeio-report-{filename_now()}.xlsx"
+        output_file = output.get_xlsx_report(project_qs, model_short_name)
+        output_file.seek(0)
+        return FileResponse(
+            output_file,
+            as_attachment=True,
+            filename=filename,
         )
 
 

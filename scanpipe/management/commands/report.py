@@ -26,8 +26,6 @@ from timeit import default_timer as timer
 from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 
-import xlsxwriter
-
 from aboutcode.pipeline import humanize_time
 from scanpipe.models import Project
 from scanpipe.pipes import filename_now
@@ -76,7 +74,6 @@ class Command(BaseCommand):
         labels = options["labels"]
         search = options["search"]
         sheet = options["sheet"]
-        model_name = output.object_type_to_model_name.get(sheet)
 
         if not (labels or search):
             raise CommandError(
@@ -97,23 +94,13 @@ class Command(BaseCommand):
             msg = f"{project_count} project(s) will be included in the report."
             self.stdout.write(msg, self.style.SUCCESS)
 
-        worksheet_queryset = output.get_queryset(project=None, model_name=model_name)
-        worksheet_queryset = worksheet_queryset.filter(project__in=project_qs)
-
         filename = f"scancodeio-report-{filename_now()}.xlsx"
         if output_directory:
             output_file = Path(f"{output_directory}/{filename}")
         else:
             output_file = Path(filename)
 
-        with xlsxwriter.Workbook(output_file) as workbook:
-            output.queryset_to_xlsx_worksheet(
-                worksheet_queryset,
-                workbook,
-                exclude_fields=output.XLSX_EXCLUDE_FIELDS,
-                prepend_fields=["project"],
-                worksheet_name="TODOS",
-            )
+        output_file = output.get_xlsx_report(project_qs, sheet, output_file)
 
         run_time = timer() - start_time
         if self.verbosity > 0:

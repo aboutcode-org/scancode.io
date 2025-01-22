@@ -297,15 +297,15 @@ class ProjectReportForm(BaseProjectActionForm):
     model_name = forms.ChoiceField(
         label="Choose the object type to include in the XLSX file",
         choices=[
-            ("discoveredpackage", "Packages"),
-            ("discovereddependency", "Dependencies"),
-            ("codebaseresource", "Resources"),
-            ("codebaserelation", "Relations"),
-            ("projectmessage", "Messages"),
+            ("package", "Packages"),
+            ("dependency", "Dependencies"),
+            ("resource", "Resources"),
+            ("relation", "Relations"),
+            ("message", "Messages"),
             ("todo", "TODOs"),
         ],
         required=True,
-        initial="discoveredpackage",
+        initial="package",
         widget=forms.RadioSelect,
     )
 
