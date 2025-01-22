@@ -1817,8 +1817,7 @@ class ScanPipeModelsTest(TestCase):
         expected = [
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/"
-            "current_thread_executor.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",

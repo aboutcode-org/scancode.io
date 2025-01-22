@@ -222,7 +222,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
         expected = (
-            "Matching 1 directory from to/ in PurlDB" "1 directory matched in PurlDB"
+            "Matching 1 directory from to/ in PurlDB1 directory matched in PurlDB"
         )
         self.assertEqual(expected, buffer.getvalue())
 
@@ -1454,7 +1454,7 @@ class ScanPipeD2DPipesTest(TestCase):
             logger=buffer.write,
         )
         expected = (
-            "Refining matching for 1 " f"{flag.MATCHED_TO_PURLDB_RESOURCE} archives."
+            f"Refining matching for 1 {flag.MATCHED_TO_PURLDB_RESOURCE} archives."
         )
         self.assertIn(expected, buffer.getvalue())
 
