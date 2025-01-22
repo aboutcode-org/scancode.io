@@ -591,35 +591,6 @@ This action deletes a "not started" or "queued" pipeline run.
 XLSX Report
 -----------
 
-Generates an XLSX report of selected projects based on the provided criteria.
-The model needs to be provided using the ``model`` query parameter.
-
-``GET /api/projects/?model=MODEL``
-
-Data:
-  - ``model``: ``package``, ``dependency``, ``resource``, ``relation``, ``message``,
-    ``todo``.
-
-**Any available filters can be applied** to **select the set of projects** you want to
-include in the report, such as a string contained in the name, or filter by labels:
-
-Example usage:
-
-1. Generate a report for all projects tagged with "d2d" and include the **TODOS**
-worksheet::
-
-    GET /api/projects/?model=todo&label=d2d
-
-
-2. Generate a report for projects whose names contain the word "audit" and include the
-**PACKAGES** worksheet::
-
-   GET /api/projects/?model=package&name__contains=audit
-
-
-XLSX Report
------------
-
 Generates an XLSX report for selected projects based on specified criteria. The
 ``model`` query parameter is required to determine the type of data to include in the
 report.
