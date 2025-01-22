@@ -72,6 +72,7 @@ DEFAULT_IGNORED_PATTERNS = [
     "*/scancode-config.yml",
     "policies.yml",  # when located in the root dir
     "*/policies.yml",
+    "*/__MACOSX*",  # macOS metadata folder
 ]
 
 
