@@ -6,7 +6,7 @@
       <p class="modal-card-title">Report of selected projects</p>
       <button class="delete" aria-label="close"></button>
     </header>
-    <form action="{% url 'project_action' %}" method="post" id="report-projects-form">{% csrf_token %}
+    <form action="{% url 'project_action' %}" method="post" id="report-projects-form" target="_blank">{% csrf_token %}
       <section class="modal-card-body">
         <div class="field">
           <label class="label">{{ report_form.model_name.label }}</label>

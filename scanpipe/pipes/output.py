@@ -22,6 +22,7 @@
 
 import csv
 import decimal
+import io
 import json
 import re
 from operator import attrgetter
@@ -301,6 +302,7 @@ model_name_to_worksheet_name = {
     "codebaseresource": "RESOURCES",
     "codebaserelation": "RELATIONS",
     "projectmessage": "MESSAGES",
+    "todo": "TODOS",
 }
 
 model_name_to_object_type = {
@@ -397,6 +399,31 @@ def add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
             worksheet.write_string(row_index, errors_col_index, row_errors)
 
     return errors_count
+
+
+def get_xlsx_report(project_qs, model_short_name, output_file=None):
+    model_name = object_type_to_model_name.get(model_short_name)
+    if not model_name:
+        raise ValueError(f"{model_short_name} is not valid.")
+
+    worksheet_name = model_name_to_worksheet_name.get(model_short_name)
+
+    worksheet_queryset = get_queryset(project=None, model_name=model_name)
+    worksheet_queryset = worksheet_queryset.filter(project__in=project_qs)
+
+    if not output_file:
+        output_file = io.BytesIO()
+
+    with xlsxwriter.Workbook(output_file) as workbook:
+        queryset_to_xlsx_worksheet(
+            worksheet_queryset,
+            workbook,
+            exclude_fields=XLSX_EXCLUDE_FIELDS,
+            prepend_fields=["project"],
+            worksheet_name=worksheet_name,
+        )
+
+    return output_file
 
 
 # Some scan attributes such as "copyrights" are list of dicts.
