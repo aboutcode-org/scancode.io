@@ -427,7 +427,7 @@ def execute_project(project, run_async=False, command=None):  # noqa: C901
         msg = f"Error during {run.pipeline_name} execution:\n{run.task_output}"
         raise CommandError(msg)
     elif verbosity > 0:
-        msg = f"{run.pipeline_name} successfully executed on " f"project {project}"
+        msg = f"{run.pipeline_name} successfully executed on project {project}"
         command.stdout.write(msg, command.style.SUCCESS)
 
 

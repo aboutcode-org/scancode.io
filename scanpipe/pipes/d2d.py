@@ -1721,9 +1721,7 @@ def map_paths_resource(
             f"{', '.join(map_types)} for: {to_resource.path!r}"
         )
     else:
-        logger(
-            f"No mappings using {', '.join(map_types)} for: " f"{to_resource.path!r}"
-        )
+        logger(f"No mappings using {', '.join(map_types)} for: {to_resource.path!r}")
 
 
 def process_paths_in_binary(

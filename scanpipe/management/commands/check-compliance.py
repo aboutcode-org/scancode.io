@@ -61,8 +61,7 @@ class Command(ProjectCommand):
 
         if self.verbosity > 0:
             msg = [
-                f"{compliance_alerts_count} compliance issues detected on "
-                f"this project."
+                f"{compliance_alerts_count} compliance issues detected on this project."
             ]
             for label, issues in compliance_alerts.items():
                 msg.append(f"[{label}]")
