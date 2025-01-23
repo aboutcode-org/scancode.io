@@ -1286,3 +1286,13 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertTrue(response.context["recursion_error"])
         self.assertContains(response, "The dependency tree cannot be rendered")
+
+    def test_scanpipe_policies_broken_policies_project_details(self):
+        broken_policies = self.data / "policies" / "broken_policies.yml"
+        project1 = make_project()
+        shutil.copyfile(broken_policies, project1.input_path / "policies.yml")
+
+        url = project1.get_absolute_url()
+        response = self.client.get(url)
+        self.assertEqual(200, response.status_code)
+        self.assertContains(response, "Policies file format error")
