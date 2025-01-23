@@ -747,6 +747,12 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         pipeline_runs = project.runs.all()
         self.check_run_scancode_version(pipeline_runs)
 
+        policies_enabled = False
+        try:
+            policies_enabled = project.policies_enabled
+        except ValidationError as e:
+            messages.error(self.request, str(e))
+
         context.update(
             {
                 "input_sources": project.get_inputs_with_source(),
@@ -763,6 +769,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "pipeline_runs": pipeline_runs,
                 "codebase_root": codebase_root,
                 "file_filter": self.request.GET.get("file-filter", "all"),
+                "policies_enabled": policies_enabled,
             }
         )
 
