@@ -62,6 +62,8 @@ import saneyaml
 import xlsxwriter
 from django_filters.views import FilterView
 from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
+from licensedcode.spans import Span
+from matchcode_toolkit.fingerprinting import get_line_by_pos
 
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
@@ -1944,6 +1946,28 @@ class CodebaseResourceDetailsView(
             annotations = self.get_annotations(getattr(resource, field_name), value_key)
             context["detected_values"][field_name] = annotations
 
+        # convert qspan from list of ints to Spans
+        matched_snippet_annotations = []
+        matched_snippets = resource.extra_data.get("matched_snippets")
+        if matched_snippets:
+            # tokenize file content and map tokens to line numbers
+            line_by_pos = get_line_by_pos(resource.file_content)
+            last_pos = max(line_by_pos, key=line_by_pos.get)
+            for matched_snippet in matched_snippets:
+                qspan = Span(matched_snippet["qspan"])
+                matched_snippet_annotations.append
+                matched_snippet["qspan"] = qspan
+                for span in qspan.subspans():
+                # Convert qstart and qends to start_line and end_lines
+                    end = min(span.end, last_pos)
+                    matched_snippet_annotations.append(
+                        {
+                            "start_line": line_by_pos[span.start],
+                            "end_line": line_by_pos[end],
+                        }
+                    )
+
+        context["detected_values"]["matched_snippets"] = matched_snippet_annotations
         return context
 
 
