@@ -171,7 +171,7 @@ class ScanPipeModelsTest(TestCase):
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
 
-        delete_log = self.project1.delete_related_objects()
+        delete_log = self.project1.delete_related_objects(keep_labels=True)
         expected = {
             "scanpipe.CodebaseRelation": 0,
             "scanpipe.CodebaseResource": 1,
@@ -185,7 +185,10 @@ class ScanPipeModelsTest(TestCase):
             "scanpipe.WebhookSubscription": 0,
         }
         self.assertEqual(expected, delete_log)
+
         # Make sure the labels were deleted too.
+        self.assertEqual(2, UUIDTaggedItem.objects.count())
+        self.project1.delete_related_objects()
         self.assertEqual(0, UUIDTaggedItem.objects.count())
 
     def test_scanpipe_project_model_delete(self):
@@ -224,8 +227,13 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(1, self.project1.codebaseresources.count())
         self.assertEqual(1, self.project1.inputsources.count())
 
-        self.project1.reset()
+        self.project1.reset(restore_pipelines=True, execute_now=False)
+        self.assertEqual(0, self.project1.projectmessages.count())
+        self.assertEqual(1, self.project1.runs.count())
+        self.assertEqual(0, self.project1.discoveredpackages.count())
+        self.assertEqual(0, self.project1.codebaseresources.count())
 
+        self.project1.reset()
         self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
         self.assertEqual(0, self.project1.projectmessages.count())
         self.assertEqual(0, self.project1.runs.count())

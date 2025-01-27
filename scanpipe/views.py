@@ -80,11 +80,11 @@ from scanpipe.forms import BaseProjectActionForm
 from scanpipe.forms import EditInputSourceTagForm
 from scanpipe.forms import PipelineRunStepSelectionForm
 from scanpipe.forms import ProjectArchiveForm
-from scanpipe.forms import ProjectResetForm
 from scanpipe.forms import ProjectCloneForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectOutputDownloadForm
 from scanpipe.forms import ProjectReportForm
+from scanpipe.forms import ProjectResetForm
 from scanpipe.forms import ProjectSettingsForm
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource

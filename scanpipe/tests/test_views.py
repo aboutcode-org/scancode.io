@@ -227,7 +227,7 @@ class ScanPipeViewsTest(TestCase):
         data = {
             "action": "report",
             "selected_ids": f"{self.project1.uuid}",
-            "model_name": "todo",
+            "report-model_name": "todo",
         }
         response = self.client.post(url, data=data, follow=True)
         self.assertTrue(response.filename.startswith("scancodeio-report-"))
@@ -236,6 +236,21 @@ class ScanPipeViewsTest(TestCase):
         output_file = io.BytesIO(b"".join(response.streaming_content))
         workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
         self.assertEqual(["TODOS"], workbook.get_sheet_names())
+
+    def test_scanpipe_views_project_action_reset_view(self):
+        url = reverse("project_action")
+        data = {
+            "action": "reset",
+            "selected_ids": f"{self.project1.uuid}",
+            "reset-restore_pipelines": "on",
+        }
+        self.project1.add_pipeline(pipeline_name="scan_codebase")
+        response = self.client.post(url, data=data, follow=True)
+        expected = "1 projects have been reset."
+        self.assertContains(response, expected)
+
+        self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
+        self.assertEqual(1, self.project1.runs.count())
 
     def test_scanpipe_views_project_action_view_get_project_queryset(self):
         queryset = ProjectActionView.get_project_queryset(
@@ -733,10 +748,12 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, expected)
 
         run.set_task_ended(exitcode=0)
-        response = self.client.post(url, follow=True)
-        expected = "have been removed."
+        data = {"reset-restore_pipelines": "on"}
+        response = self.client.post(url, data=data, follow=True)
+        expected = "has been reset."
         self.assertContains(response, expected)
         self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
+        self.assertEqual(1, self.project1.runs.count())
 
     def test_scanpipe_views_project_settings_view(self):
         url = reverse("project_settings", args=[self.project1.slug])

@@ -253,6 +253,7 @@ class BaseProjectActionForm(forms.Form):
 
 
 class ProjectArchiveForm(BaseProjectActionForm):
+    prefix = "archive"
     remove_input = forms.BooleanField(
         label="Remove inputs",
         initial=True,
@@ -278,6 +279,7 @@ class ProjectArchiveForm(BaseProjectActionForm):
 
 
 class ProjectResetForm(BaseProjectActionForm):
+    prefix = "reset"
     keep_input = forms.BooleanField(
         label="Keep inputs",
         initial=True,
@@ -303,6 +305,7 @@ class ProjectResetForm(BaseProjectActionForm):
 
 
 class ProjectOutputDownloadForm(BaseProjectActionForm):
+    prefix = "download"
     output_format = forms.ChoiceField(
         label="Choose the output format to include in the ZIP file",
         choices=[
@@ -319,6 +322,7 @@ class ProjectOutputDownloadForm(BaseProjectActionForm):
 
 
 class ProjectReportForm(BaseProjectActionForm):
+    prefix = "report"
     model_name = forms.ChoiceField(
         label="Choose the object type to include in the XLSX file",
         choices=[
