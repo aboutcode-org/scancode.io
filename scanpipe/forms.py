@@ -252,7 +252,7 @@ class BaseProjectActionForm(forms.Form):
     )
 
 
-class ArchiveProjectForm(BaseProjectActionForm):
+class ProjectArchiveForm(BaseProjectActionForm):
     remove_input = forms.BooleanField(
         label="Remove inputs",
         initial=True,
@@ -274,6 +274,31 @@ class ArchiveProjectForm(BaseProjectActionForm):
             "remove_input": self.cleaned_data["remove_input"],
             "remove_codebase": self.cleaned_data["remove_codebase"],
             "remove_output": self.cleaned_data["remove_output"],
+        }
+
+
+class ProjectResetForm(BaseProjectActionForm):
+    keep_input = forms.BooleanField(
+        label="Keep inputs",
+        initial=True,
+        required=False,
+    )
+    restore_pipelines = forms.BooleanField(
+        label="Restore existing pipelines",
+        initial=False,
+        required=False,
+    )
+    execute_now = forms.BooleanField(
+        label="Execute restored pipeline(s) now",
+        initial=False,
+        required=False,
+    )
+
+    def get_action_kwargs(self):
+        return {
+            "keep_input": self.cleaned_data["keep_input"],
+            "restore_pipelines": self.cleaned_data["restore_pipelines"],
+            "execute_now": self.cleaned_data["execute_now"],
         }
 
 
