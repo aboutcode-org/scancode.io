@@ -76,14 +76,15 @@ from scanpipe.filters import ResourceFilterSet
 from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddLabelsForm
 from scanpipe.forms import AddPipelineForm
-from scanpipe.forms import ArchiveProjectForm
 from scanpipe.forms import BaseProjectActionForm
 from scanpipe.forms import EditInputSourceTagForm
 from scanpipe.forms import PipelineRunStepSelectionForm
+from scanpipe.forms import ProjectArchiveForm
 from scanpipe.forms import ProjectCloneForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectOutputDownloadForm
 from scanpipe.forms import ProjectReportForm
+from scanpipe.forms import ProjectResetForm
 from scanpipe.forms import ProjectSettingsForm
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
@@ -599,7 +600,8 @@ class ProjectListView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["action_form"] = BaseProjectActionForm()
-        context["archive_form"] = ArchiveProjectForm()
+        context["archive_form"] = ProjectArchiveForm()
+        context["reset_form"] = ProjectResetForm()
         context["outputs_download_form"] = ProjectOutputDownloadForm()
         context["report_form"] = ProjectReportForm()
         return context
@@ -856,7 +858,8 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project = self.get_object()
-        context["archive_form"] = ArchiveProjectForm()
+        context["archive_form"] = ProjectArchiveForm()
+        context["reset_form"] = ProjectResetForm()
         context["webhook_subscriptions"] = project.webhooksubscriptions.all()
         return context
 
@@ -1136,7 +1139,7 @@ class ProjectCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
 class ProjectArchiveView(ConditionalLoginRequired, SingleObjectMixin, FormView):
     model = Project
     http_method_names = ["post"]
-    form_class = ArchiveProjectForm
+    form_class = ProjectArchiveForm
     success_url = reverse_lazy("project_list")
     success_message = 'The project "{}" has been archived.'
 
@@ -1154,20 +1157,22 @@ class ProjectArchiveView(ConditionalLoginRequired, SingleObjectMixin, FormView):
         return response
 
 
-class ProjectResetView(ConditionalLoginRequired, generic.DeleteView):
+class ProjectResetView(ConditionalLoginRequired, SingleObjectMixin, FormView):
     model = Project
-    success_message = 'All data, except inputs, for the "{}" project have been removed.'
+    http_method_names = ["post"]
+    form_class = ProjectResetForm
+    success_url = reverse_lazy("project_list")
+    success_message = 'The project "{}" has been reset.'
 
     def form_valid(self, form):
         """Call the reset() method on the project."""
         project = self.get_object()
         try:
-            project.reset(keep_input=True)
+            project.reset(**form.get_action_kwargs())
         except RunInProgressError as error:
             messages.error(self.request, error)
-        else:
-            messages.success(self.request, self.success_message.format(project.name))
 
+        messages.success(self.request, self.success_message.format(project.name))
         return redirect(project)
 
 
@@ -1195,7 +1200,8 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
     model = Project
     allowed_actions = ["archive", "delete", "reset", "report", "download"]
     action_to_form_class = {
-        "archive": ArchiveProjectForm,
+        "archive": ProjectArchiveForm,
+        "reset": ProjectResetForm,
         "report": ProjectReportForm,
         "download": ProjectOutputDownloadForm,
     }
@@ -1222,7 +1228,7 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
         if action == "report":
             return self.xlsx_report_response(project_qs, action_form)
 
-        if action == "archive":
+        if action in ["archive", "reset"]:
             action_kwargs = action_form.get_action_kwargs()
 
         count = 0
