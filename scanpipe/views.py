@@ -61,9 +61,8 @@ from django.views.generic.edit import UpdateView
 import saneyaml
 import xlsxwriter
 from django_filters.views import FilterView
-from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
 from licensedcode.spans import Span
-from matchcode_toolkit.fingerprinting import get_line_by_pos
+from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
 
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
@@ -1950,24 +1949,21 @@ class CodebaseResourceDetailsView(
         matched_snippet_annotations = []
         matched_snippets = resource.extra_data.get("matched_snippets")
         if matched_snippets:
-            # tokenize file content and map tokens to line numbers
-            line_by_pos = get_line_by_pos(resource.file_content)
-            last_pos = max(line_by_pos, key=line_by_pos.get)
+            line_by_pos = resource.extra_data.get("line_by_pos")
             for matched_snippet in matched_snippets:
                 qspan = Span(matched_snippet["qspan"])
-                matched_snippet_annotations.append
                 matched_snippet["qspan"] = qspan
                 for span in qspan.subspans():
-                # Convert qstart and qends to start_line and end_lines
-                    end = min(span.end, last_pos)
+                    # line_by_pos is stored as JSON and keys in JSON are always
+                    # strings
                     matched_snippet_annotations.append(
                         {
-                            "start_line": line_by_pos[span.start],
-                            "end_line": line_by_pos[end],
+                            "start_line": line_by_pos[str(span.start)],
+                            "end_line": line_by_pos[str(span.end)],
                         }
                     )
-
         context["detected_values"]["matched_snippets"] = matched_snippet_annotations
+
         return context
 
 
