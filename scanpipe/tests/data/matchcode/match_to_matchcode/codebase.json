@@ -1,7 +1,7 @@
 {
   "headers": [
     {
-      "tool_name": "scanpipe",
+      "tool_name": "ScanCode.io",
       "tool_version": "v3.0.0-241-g45d653b",
       "other_tools": [
         "pkg:pypi/scancode-toolkit@32.0.8"
