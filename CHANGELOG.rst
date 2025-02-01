@@ -13,6 +13,9 @@ v34.10.2 (unreleased)
   if available, when the codebase has been sent for matching to MatchCode.
   https://github.com/aboutcode-org/scancode.io/pull/1656
 
+- Add the ability to export filtered QuerySet of a FilterView into the JSON format.
+  https://github.com/aboutcode-org/scancode.io/pull/1572
+
 v34.10.1 (2025-03-26)
 ---------------------
 
