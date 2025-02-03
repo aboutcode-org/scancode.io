@@ -47,7 +47,7 @@ from rust_inspector.binary import collect_and_parse_rust_symbols
 from summarycode.classify import LEGAL_STARTS_ENDS
 
 from aboutcode.pipeline import LoopProgress
-from scanpipe import config
+from scanpipe.pipes import d2d_config
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
@@ -68,12 +68,12 @@ TO = "to/"
 
 
 ECOSYSTEM_CONFIGS = [
-    config.DefaultEcosystemConfig,
-    config.JavaEcosystemConfig,
-    config.JavaScriptEcosystemConfig,
-    config.RubyEcosystemConfig,
-    config.RustEcosystemConfig,
-    config.GoEcosystemConfig,
+    d2d_config.DefaultEcosystemConfig,
+    d2d_config.JavaEcosystemConfig,
+    d2d_config.JavaScriptEcosystemConfig,
+    d2d_config.RubyEcosystemConfig,
+    d2d_config.RustEcosystemConfig,
+    d2d_config.GoEcosystemConfig,
 ]
 
 

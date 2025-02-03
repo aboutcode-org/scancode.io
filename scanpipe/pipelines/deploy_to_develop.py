@@ -22,7 +22,7 @@
 
 from aboutcode.pipeline import optional_step
 from scanpipe import pipes
-from scanpipe.config import DefaultEcosystemConfig
+from scanpipe.pipes.d2d_config import DefaultEcosystemConfig
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
