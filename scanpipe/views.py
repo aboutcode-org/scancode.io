@@ -1918,6 +1918,26 @@ class CodebaseResourceDetailsView(
 
         return annotations
 
+    def get_matched_snippet_annotations(self, resource):
+        # convert qspan from list of ints to Spans
+        matched_snippet_annotations = []
+        matched_snippets = resource.extra_data.get("matched_snippets")
+        if matched_snippets:
+            line_by_pos = resource.extra_data.get("line_by_pos")
+            for matched_snippet in matched_snippets:
+                match_detections = matched_snippet["match_detections"]
+                qspan = Span(match_detections)
+                for span in qspan.subspans():
+                    # line_by_pos is stored as JSON and keys in JSON are always
+                    # strings
+                    matched_snippet_annotations.append(
+                        {
+                            "start_line": line_by_pos[str(span.start)],
+                            "end_line": line_by_pos[str(span.end)],
+                        }
+                    )
+        return matched_snippet_annotations
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         resource = self.object
@@ -1934,6 +1954,9 @@ class CodebaseResourceDetailsView(
             "licenses": license_annotations,
         }
 
+        matched_snippet_annotations = self.get_matched_snippet_annotations(resource)
+        context["detected_values"]["matched_snippets"] = matched_snippet_annotations
+
         fields = [
             ("copyrights", "copyright"),
             ("holders", "holder"),
@@ -1944,25 +1967,6 @@ class CodebaseResourceDetailsView(
         for field_name, value_key in fields:
             annotations = self.get_annotations(getattr(resource, field_name), value_key)
             context["detected_values"][field_name] = annotations
-
-        # convert qspan from list of ints to Spans
-        matched_snippet_annotations = []
-        matched_snippets = resource.extra_data.get("matched_snippets")
-        if matched_snippets:
-            line_by_pos = resource.extra_data.get("line_by_pos")
-            for matched_snippet in matched_snippets:
-                qspan = Span(matched_snippet["qspan"])
-                matched_snippet["qspan"] = qspan
-                for span in qspan.subspans():
-                    # line_by_pos is stored as JSON and keys in JSON are always
-                    # strings
-                    matched_snippet_annotations.append(
-                        {
-                            "start_line": line_by_pos[str(span.start)],
-                            "end_line": line_by_pos[str(span.end)],
-                        }
-                    )
-        context["detected_values"]["matched_snippets"] = matched_snippet_annotations
 
         return context
 
