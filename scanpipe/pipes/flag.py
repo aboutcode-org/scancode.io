@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+
 NO_STATUS = ""
 
 SCANNED = "scanned"
@@ -44,6 +45,7 @@ IGNORED_DEFAULT_IGNORES = "ignored-default-ignores"
 IGNORED_DATA_FILE_NO_CLUES = "ignored-data-file-no-clues"
 IGNORED_DOC_FILE = "ignored-doc-file"
 IGNORED_FROM_CONFIG = "ignored-from-config"
+IGNORED_BY_MAX_FILE_SIZE = "ignored-by-max-file-size"
 
 COMPLIANCE_LICENSES = "compliance-licenses"
 COMPLIANCE_SOURCEMIRROR = "compliance-sourcemirror"
@@ -71,6 +73,7 @@ DEFAULT_IGNORED_PATTERNS = [
     "*/scancode-config.yml",
     "policies.yml",  # when located in the root dir
     "*/policies.yml",
+    "*/__MACOSX*",  # macOS metadata folder
 ]
 
 
@@ -101,6 +104,19 @@ def flag_ignored_patterns(codebaseresources, patterns, status=IGNORED_PATTERN):
         update_count += qs.update(status=status)
 
     return update_count
+
+
+def flag_and_ignore_files_over_max_size(resource_qs, file_size_limit):
+    """
+    Flag codebase resources which are over the max file size for scanning
+    and return all other files within the file size limit.
+    """
+    if not file_size_limit:
+        return resource_qs
+
+    return resource_qs.filter(size__gte=file_size_limit).update(
+        status=IGNORED_BY_MAX_FILE_SIZE
+    )
 
 
 def analyze_scanned_files(project):

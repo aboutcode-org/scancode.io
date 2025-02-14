@@ -22,6 +22,7 @@
 
 import csv
 import decimal
+import io
 import json
 import re
 from operator import attrgetter
@@ -96,7 +97,7 @@ def get_queryset(project, model_name):
             CodebaseRelation.objects.select_related("from_resource", "to_resource")
         ),
         "projectmessage": ProjectMessage.objects.all(),
-        "todos": CodebaseResource.objects.files().status(flag.REQUIRES_REVIEW),
+        "todo": CodebaseResource.objects.files().status(flag.REQUIRES_REVIEW),
     }
 
     queryset = querysets.get(model_name)
@@ -301,6 +302,7 @@ model_name_to_worksheet_name = {
     "codebaseresource": "RESOURCES",
     "codebaserelation": "RELATIONS",
     "projectmessage": "MESSAGES",
+    "todo": "TODOS",
 }
 
 model_name_to_object_type = {
@@ -309,6 +311,11 @@ model_name_to_object_type = {
     "codebaseresource": "resource",
     "codebaserelation": "relation",
     "projectmessage": "message",
+    "todo": "todo",
+}
+
+object_type_to_model_name = {
+    value: key for key, value in model_name_to_object_type.items()
 }
 
 
@@ -394,6 +401,31 @@ def add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     return errors_count
 
 
+def get_xlsx_report(project_qs, model_short_name, output_file=None):
+    model_name = object_type_to_model_name.get(model_short_name)
+    if not model_name:
+        raise ValueError(f"{model_short_name} is not valid.")
+
+    worksheet_name = model_name_to_worksheet_name.get(model_short_name)
+
+    worksheet_queryset = get_queryset(project=None, model_name=model_name)
+    worksheet_queryset = worksheet_queryset.filter(project__in=project_qs)
+
+    if not output_file:
+        output_file = io.BytesIO()
+
+    with xlsxwriter.Workbook(output_file) as workbook:
+        queryset_to_xlsx_worksheet(
+            worksheet_queryset,
+            workbook,
+            exclude_fields=XLSX_EXCLUDE_FIELDS,
+            prepend_fields=["project"],
+            worksheet_name=worksheet_name,
+        )
+
+    return output_file
+
+
 # Some scan attributes such as "copyrights" are list of dicts.
 #
 #  'authors': [{'end_line': 7, 'start_line': 7, 'author': 'John Doe'}],
@@ -469,6 +501,16 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
     return value, error
 
 
+XLSX_EXCLUDE_FIELDS = [
+    "extra_data",
+    "package_data",
+    "license_detections",
+    "other_license_detections",
+    "license_clues",
+    "affected_by_vulnerabilities",
+]
+
+
 def to_xlsx(project):
     """
     Generate output for the provided ``project`` in XLSX format.
@@ -479,15 +521,8 @@ def to_xlsx(project):
     with possible error messages for a row when converting the data to XLSX
     exceed the limits of what can be stored in a cell.
     """
+    exclude_fields = XLSX_EXCLUDE_FIELDS.copy()
     output_file = project.get_output_file_path("results", "xlsx")
-    exclude_fields = [
-        "extra_data",
-        "package_data",
-        "license_detections",
-        "other_license_detections",
-        "license_clues",
-        "affected_by_vulnerabilities",
-    ]
 
     if not project.policies_enabled:
         exclude_fields.append("compliance_alert")
@@ -572,7 +607,7 @@ def add_vulnerabilities_sheet(workbook, project):
 
 
 def add_todos_sheet(workbook, project, exclude_fields):
-    todos_queryset = get_queryset(project, "todos")
+    todos_queryset = get_queryset(project, "todo")
     if todos_queryset:
         queryset_to_xlsx_worksheet(
             todos_queryset, workbook, exclude_fields, worksheet_name="TODOS"

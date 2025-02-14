@@ -100,6 +100,9 @@ SCANCODEIO_TASK_TIMEOUT = env.str("SCANCODEIO_TASK_TIMEOUT", default="24h")
 # Default to 2 minutes.
 SCANCODEIO_SCAN_FILE_TIMEOUT = env.int("SCANCODEIO_SCAN_FILE_TIMEOUT", default=120)
 
+# Default to None which scans all files
+SCANCODEIO_SCAN_MAX_FILE_SIZE = env.int("SCANCODEIO_SCAN_MAX_FILE_SIZE", default=None)
+
 # List views pagination, controls the number of items displayed per page.
 # Syntax in .env: SCANCODEIO_PAGINATE_BY=project=10,project_error=10
 SCANCODEIO_PAGINATE_BY = env.dict(

@@ -22,7 +22,6 @@
 
 from aboutcode.pipeline import optional_step
 from scanpipe import pipes
-from scanpipe.pipes.d2d_config import DefaultEcosystemConfig
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
@@ -30,6 +29,7 @@ from scanpipe.pipes import input
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
+from scanpipe.pipes.d2d_config import DefaultEcosystemConfig
 
 
 class DeployToDevelop(Pipeline, DefaultEcosystemConfig):

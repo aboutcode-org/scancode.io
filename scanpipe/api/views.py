@@ -52,6 +52,7 @@ from scanpipe.filters import ResourceFilterSet
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.pipes import filename_now
 from scanpipe.pipes import output
 from scanpipe.pipes.compliance import get_project_compliance_alerts
 from scanpipe.views import project_results_json_response
@@ -79,6 +80,11 @@ class ProjectFilterSet(django_filters.rest_framework.FilterSet):
         method="filter_names",
     )
     uuid = django_filters.CharFilter()
+    label = django_filters.CharFilter(
+        label="Label",
+        field_name="labels__slug",
+        distinct=True,
+    )
 
     class Meta:
         model = Project
@@ -90,6 +96,7 @@ class ProjectFilterSet(django_filters.rest_framework.FilterSet):
             "names",
             "uuid",
             "is_archived",
+            "label",
         ]
 
     def filter_names(self, qs, name, value):
@@ -194,6 +201,40 @@ class ProjectViewSet(
             for name, pipeline_class in scanpipe_app.pipelines.items()
         ]
         return Response(pipeline_data)
+
+    @action(detail=False)
+    def report(self, request, *args, **kwargs):
+        project_qs = self.filter_queryset(self.get_queryset())
+
+        model_choices = list(output.object_type_to_model_name.keys())
+        model = request.GET.get("model")
+        if not model:
+            message = {
+                "error": (
+                    "Specifies the model to include in the XLSX report. "
+                    "Using: ?model=MODEL"
+                ),
+                "choices": ", ".join(model_choices),
+            }
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        if model not in model_choices:
+            message = {
+                "error": f"{model} is not on of the valid choices",
+                "choices": ", ".join(model_choices),
+            }
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        output_file = output.get_xlsx_report(
+            project_qs=project_qs,
+            model_short_name=model,
+        )
+        output_file.seek(0)
+        return FileResponse(
+            output_file,
+            filename=f"scancodeio-report-{filename_now()}.xlsx",
+            as_attachment=True,
+        )
 
     def get_filtered_response(
         self, request, queryset, filterset_class, serializer_class

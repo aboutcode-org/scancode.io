@@ -1,7 +1,17 @@
 Changelog
 =========
 
-v34.9.4 (unreleased)
+v34.9.5 (unreleased)
+--------------------
+
+- Add support for the XLSX report in REST API.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Add options to the Project reset action.
+  Also, the Project labels are kept during reset.
+  https://github.com/aboutcode-org/scancode.io/issues/1568
+
+v34.9.4 (2025-01-21)
 --------------------
 
 - Improve Project list page navigation.
@@ -46,6 +56,27 @@ v34.9.4 (unreleased)
   Replace the ``affected_by_vulnerabilities`` field in the PACKAGES and DEPENDENCIES
   sheets with a dedicated VULNERABILITIES sheet.
   https://github.com/aboutcode-org/scancode.io/issues/1519
+
+- Keep the InputSource objects when using ``reset`` on Projects.
+  https://github.com/aboutcode-org/scancode.io/issues/1536
+
+- Add a ``report`` management command that allows to generate XLSX reports for
+  multiple projects at once using labels and searching by project name.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Add the ability to "select across" in Projects list when using the "select all"
+  checkbox on paginated list.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Update scancode-toolkit to v32.3.2. See CHANGELOG for updates:
+  https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.3.2
+  https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.3.1
+
+- Adds  a project settings ``scan_max_file_size`` and a scancode.io settings field
+  ``SCANCODEIO_SCAN_MAX_FILE_SIZE`` to skip scanning files above a certain
+  file size (in bytes) as a temporary fix for large memory spikes while
+  scanning for licenses in certain large files.
+  https://github.com/aboutcode-org/scancode-toolkit/issues/3711
 
 v34.9.3 (2024-12-31)
 --------------------

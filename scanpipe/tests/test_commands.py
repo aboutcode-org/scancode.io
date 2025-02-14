@@ -22,6 +22,7 @@
 
 import datetime
 import json
+import tempfile
 import uuid
 from contextlib import redirect_stdout
 from io import StringIO
@@ -37,14 +38,18 @@ from django.test import TestCase
 from django.test import override_settings
 from django.utils import timezone
 
+import openpyxl
+
 from scanpipe.management import commands
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.models import WebhookSubscription
+from scanpipe.pipes import flag
 from scanpipe.pipes import purldb
 from scanpipe.tests import make_package
+from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -1091,6 +1096,49 @@ class ScanPipeManagementCommandTest(TestCase):
             "\n[resources]\n > WARNING: 1"
         )
         self.assertEqual(expected, out_value)
+
+    def test_scanpipe_management_command_report(self):
+        project1 = make_project("project1")
+        label1 = "label1"
+        project1.labels.add(label1)
+        make_resource_file(project1, path="file.ext", status=flag.REQUIRES_REVIEW)
+        make_project("project2")
+
+        expected = "Error: the following arguments are required: --model"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("report")
+
+        options = ["--model", "UNKNOWN"]
+        expected = "Error: argument --model: invalid choice: 'UNKNOWN'"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("report", *options)
+
+        options = ["--model", "todo"]
+        expected = "You must provide either --label or --search to select projects."
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("report", *options)
+
+        expected = "No projects found for the provided criteria."
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("report", *options, *["--label", "UNKNOWN"])
+
+        output_directory = Path(tempfile.mkdtemp())
+        options.extend(["--output-directory", str(output_directory), "--label", label1])
+        out = StringIO()
+        call_command("report", *options, stdout=out)
+        self.assertIn("1 project(s) will be included in the report.", out.getvalue())
+        output_file = list(output_directory.glob("*.xlsx"))[0]
+        self.assertIn(f"Report generated at {output_file}", out.getvalue())
+
+        workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
+        self.assertEqual(["TODOS"], workbook.get_sheet_names())
+        todos_sheet = workbook.get_sheet_by_name("TODOS")
+        header = list(todos_sheet.values)[0]
+
+        self.assertNotIn("extra_data", header)
+        row1 = list(todos_sheet.values)[1]
+        expected = ("project1", "file.ext", "file", "file.ext", "requires-review")
+        self.assertEqual(expected, row1[0:5])
 
 
 class ScanPipeManagementCommandMixinTest(TestCase):

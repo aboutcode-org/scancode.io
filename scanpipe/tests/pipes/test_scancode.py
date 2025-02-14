@@ -42,6 +42,7 @@ from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import collect_and_create_codebase_resources
+from scanpipe.pipes import flag
 from scanpipe.pipes import input
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
@@ -444,6 +445,22 @@ class ScanPipeScancodePipesTest(TestCase):
             scancode.run_scan(location=None, output_file=output_file, run_scan_args={})
             run_scan_kwargs = mock_run_scan.call_args.kwargs
             self.assertEqual(expected_processes, run_scan_kwargs.get("processes"))
+
+    def test_scanpipe_max_file_size_works(self):
+        with override_settings(SCANCODEIO_SCAN_MAX_FILE_SIZE=10000):
+            project1 = Project.objects.create(name="Analysis")
+            input_location = self.data / "d2d-rust" / "to-trustier-binary-linux.tar.gz"
+            project1.copy_input_from(input_location)
+
+            run = project1.add_pipeline("scan_codebase")
+            pipeline = run.make_pipeline_instance()
+
+            exitcode, out = pipeline.execute()
+            self.assertEqual(0, exitcode, msg=out)
+            resource1 = project1.codebaseresources.get(
+                path="to-trustier-binary-linux.tar.gz-extract/trustier"
+            )
+            self.assertEqual(resource1.status, flag.IGNORED_BY_MAX_FILE_SIZE)
 
     def test_scanpipe_pipes_scancode_make_results_summary(self, regen=FIXTURES_REGEN):
         # Ensure the policies index is empty to avoid any side effect on results

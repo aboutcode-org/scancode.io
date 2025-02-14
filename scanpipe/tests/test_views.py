@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import io
 import json
 import shutil
 import uuid
@@ -28,13 +29,16 @@ from unittest import mock
 
 from django.apps import apps
 from django.core.exceptions import SuspiciousFileOperation
+from django.http.response import Http404
 from django.test import TestCase
 from django.test import override_settings
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
 
+import openpyxl
 import requests
 
+from scanpipe.forms import BaseProjectActionForm
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -48,9 +52,11 @@ from scanpipe.tests import dependency_data1
 from scanpipe.tests import dependency_data2
 from scanpipe.tests import make_dependency
 from scanpipe.tests import make_package
+from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 from scanpipe.tests import package_data2
+from scanpipe.views import ProjectActionView
 from scanpipe.views import ProjectCodebaseView
 from scanpipe.views import ProjectDetailView
 
@@ -147,7 +153,7 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_list_filters_exclude_page(self, mock_paginate_by):
         url = reverse("project_list")
         # Create another project to enable pagination
-        Project.objects.create(name="project2")
+        make_project()
         mock_paginate_by.return_value = 1
 
         data = {"page": "2"}
@@ -161,6 +167,34 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, expected)
         expected = '<a href="?sort=" class="dropdown-item is-active">Newest</a>'
         self.assertContains(response, expected)
+
+    def test_scanpipe_views_project_list_modal_forms_include_url_query(self):
+        url = reverse("project_list")
+        response = self.client.get(url)
+
+        expected = '<input type="hidden" name="url_query" value="">'
+        self.assertContains(response, expected, html=True)
+
+        url_query = "name=search_value"
+        response = self.client.get(url + "?" + url_query)
+        expected = f'<input type="hidden" name="url_query" value="{url_query}">'
+        self.assertContains(response, expected, html=True)
+
+    @mock.patch("scanpipe.views.ProjectListView.get_paginate_by")
+    def test_scanpipe_views_project_list_modal_forms_include_show_on_all_checked(
+        self, mock_paginate_by
+    ):
+        url = reverse("project_list")
+        # Create another project to enable pagination
+        make_project()
+        mock_paginate_by.return_value = 1
+        response = self.client.get(url)
+        expected = '<div class="show-on-all-checked">'
+        self.assertContains(response, expected)
+
+        mock_paginate_by.return_value = 2
+        response = self.client.get(url)
+        self.assertNotContains(response, expected)
 
     def test_scanpipe_views_project_actions_view(self):
         url = reverse("project_action")
@@ -187,20 +221,67 @@ class ScanPipeViewsTest(TestCase):
         self.assertRedirects(response, reverse("project_list"))
         expected = '<div class="message-body">1 projects have been delete.</div>'
         self.assertContains(response, expected, html=True)
-        expected = (
-            f'<div class="message-body">Project {random_uuid} does not exist.</div>'
-        )
-        self.assertContains(response, expected, html=True)
 
     def test_scanpipe_views_project_action_report_view(self):
         url = reverse("project_action")
         data = {
             "action": "report",
             "selected_ids": f"{self.project1.uuid}",
-            "model_name": "todos",
+            "report-model_name": "todo",
         }
         response = self.client.post(url, data=data, follow=True)
-        self.assertEqual("report.xlsx", response.filename)
+        self.assertTrue(response.filename.startswith("scancodeio-report-"))
+        self.assertTrue(response.filename.endswith(".xlsx"))
+
+        output_file = io.BytesIO(b"".join(response.streaming_content))
+        workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
+        self.assertEqual(["TODOS"], workbook.get_sheet_names())
+
+    def test_scanpipe_views_project_action_reset_view(self):
+        url = reverse("project_action")
+        data = {
+            "action": "reset",
+            "selected_ids": f"{self.project1.uuid}",
+            "reset-restore_pipelines": "on",
+        }
+        self.project1.add_pipeline(pipeline_name="scan_codebase")
+        response = self.client.post(url, data=data, follow=True)
+        expected = "1 projects have been reset."
+        self.assertContains(response, expected)
+
+        self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
+        self.assertEqual(1, self.project1.runs.count())
+
+    def test_scanpipe_views_project_action_view_get_project_queryset(self):
+        queryset = ProjectActionView.get_project_queryset(
+            selected_project_ids=[self.project1.uuid],
+            action_form=None,
+        )
+        self.assertQuerySetEqual(queryset, [self.project1])
+
+        # No project selection, no select_across
+        form_data = {"select_across": 0}
+        action_form = BaseProjectActionForm(data=form_data)
+        action_form.full_clean()
+        with self.assertRaises(Http404):
+            ProjectActionView.get_project_queryset(
+                selected_project_ids=None,
+                action_form=action_form,
+            )
+
+        # select_across, no active filters
+        form_data = {"select_across": 1}
+        action_form = BaseProjectActionForm(data=form_data)
+        action_form.full_clean()
+        self.assertQuerySetEqual(queryset, [self.project1])
+
+        # select_across, active filters
+        make_project()
+        self.assertEqual(2, Project.objects.count())
+        form_data = {"select_across": 1, "url_query": f"name={self.project1.name}"}
+        action_form = BaseProjectActionForm(data=form_data)
+        action_form.full_clean()
+        self.assertQuerySetEqual(queryset, [self.project1])
 
     def test_scanpipe_views_project_details_is_archived(self):
         url = self.project1.get_absolute_url()
@@ -667,10 +748,12 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, expected)
 
         run.set_task_ended(exitcode=0)
-        response = self.client.post(url, follow=True)
-        expected = "have been removed."
+        data = {"reset-restore_pipelines": "on"}
+        response = self.client.post(url, data=data, follow=True)
+        expected = "has been reset."
         self.assertContains(response, expected)
         self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
+        self.assertEqual(1, self.project1.runs.count())
 
     def test_scanpipe_views_project_settings_view(self):
         url = reverse("project_settings", args=[self.project1.slug])
@@ -1220,3 +1303,13 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertTrue(response.context["recursion_error"])
         self.assertContains(response, "The dependency tree cannot be rendered")
+
+    def test_scanpipe_policies_broken_policies_project_details(self):
+        broken_policies = self.data / "policies" / "broken_policies.yml"
+        project1 = make_project()
+        shutil.copyfile(broken_policies, project1.input_path / "policies.yml")
+
+        url = project1.get_absolute_url()
+        response = self.client.get(url)
+        self.assertEqual(200, response.status_code)
+        self.assertContains(response, "Policies file format error")

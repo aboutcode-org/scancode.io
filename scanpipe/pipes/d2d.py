@@ -47,11 +47,11 @@ from rust_inspector.binary import collect_and_parse_rust_symbols
 from summarycode.classify import LEGAL_STARTS_ENDS
 
 from aboutcode.pipeline import LoopProgress
-from scanpipe.pipes import d2d_config
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import convert_glob_to_django_regex
+from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
 from scanpipe.pipes import js
@@ -252,14 +252,24 @@ def map_java_to_class(project, logger=None):
     to_resources = project_files.to_codebase().has_no_relation()
 
     to_resources_dot_class = to_resources.filter(extension=".class")
-    resource_count = to_resources_dot_class.count()
-    if logger:
-        logger(f"Mapping {resource_count:,d} .class resources to .java")
+    from_resources_dot_java = (
+        from_resources.filter(extension=".java")
+        # The "java_package" extra_data value is set during the `find_java_packages`,
+        # it is required to build the index.
+        .filter(extra_data__java_package__isnull=False)
+    )
+    to_resource_count = to_resources_dot_class.count()
+    from_resource_count = from_resources_dot_java.count()
 
-    from_resources_dot_java = from_resources.filter(extension=".java")
-    if not from_resources_dot_java.exists():
+    if not from_resource_count:
         logger("No .java resources to map.")
         return
+
+    if logger:
+        logger(
+            f"Mapping {to_resource_count:,d} .class resources to "
+            f"{from_resource_count:,d} .java"
+        )
 
     # build an index using from-side Java fully qualified class file names
     # built from the "java_package" and file name
@@ -269,7 +279,7 @@ def map_java_to_class(project, logger=None):
     from_classes_index = pathmap.build_index(indexables, with_subpaths=False)
 
     resource_iterator = to_resources_dot_class.iterator(chunk_size=2000)
-    progress = LoopProgress(resource_count, logger)
+    progress = LoopProgress(to_resource_count, logger)
 
     for to_resource in progress.iter(resource_iterator):
         _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
@@ -288,11 +298,8 @@ def get_indexable_qualified_java_paths_from_values(resource_values):
         (123, "org/apache/commons/LoggerImpl.java")
     """
     for resource_id, resource_name, resource_extra_data in resource_values:
-        java_package = resource_extra_data and resource_extra_data.get("java_package")
-        if not java_package:
-            continue
         fully_qualified = jvm.get_fully_qualified_java_path(
-            java_package,
+            java_package=resource_extra_data.get("java_package"),
             filename=resource_name,
         )
         yield resource_id, fully_qualified
@@ -1788,9 +1795,7 @@ def map_paths_resource(
             f"{', '.join(map_types)} for: {to_resource.path!r}"
         )
     else:
-        logger(
-            f"No mappings using {', '.join(map_types)} for: " f"{to_resource.path!r}"
-        )
+        logger(f"No mappings using {', '.join(map_types)} for: {to_resource.path!r}")
 
 
 def process_paths_in_binary(

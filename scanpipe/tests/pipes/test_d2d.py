@@ -222,7 +222,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
         expected = (
-            "Matching 1 directory from to/ in PurlDB" "1 directory matched in PurlDB"
+            "Matching 1 directory from to/ in PurlDB1 directory matched in PurlDB"
         )
         self.assertEqual(expected, buffer.getvalue())
 
@@ -365,7 +365,7 @@ class ScanPipeD2DPipesTest(TestCase):
         buffer = io.StringIO()
         d2d.map_java_to_class(self.project1, logger=buffer.write)
 
-        expected = "Mapping 3 .class resources to .java"
+        expected = "Mapping 3 .class resources to 2 .java"
         self.assertIn(expected, buffer.getvalue())
 
         self.assertEqual(2, self.project1.codebaserelations.count())
@@ -390,7 +390,7 @@ class ScanPipeD2DPipesTest(TestCase):
         make_resource_file(self.project1, path="to/Abstract.class")
         buffer = io.StringIO()
         d2d.map_java_to_class(self.project1, logger=buffer.write)
-        expected = "Mapping 1 .class resources to .java" "No .java resources to map."
+        expected = "No .java resources to map."
         self.assertIn(expected, buffer.getvalue())
 
     def test_scanpipe_pipes_d2d_map_jar_to_source(self):
@@ -1454,7 +1454,7 @@ class ScanPipeD2DPipesTest(TestCase):
             logger=buffer.write,
         )
         expected = (
-            "Refining matching for 1 " f"{flag.MATCHED_TO_PURLDB_RESOURCE} archives."
+            f"Refining matching for 1 {flag.MATCHED_TO_PURLDB_RESOURCE} archives."
         )
         self.assertIn(expected, buffer.getvalue())
 

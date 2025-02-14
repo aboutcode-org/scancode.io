@@ -637,17 +637,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         shutil.rmtree(self.tmp_path, ignore_errors=True)
         self.setup_work_directory()
 
-        self.is_archived = True
-        self.save(update_fields=["is_archived"])
+        self.update(is_archived=True)
 
-    def delete_related_objects(self):
+    def delete_related_objects(self, keep_input=False, keep_labels=False):
         """
         Delete all related object instances using the private `_raw_delete` model API.
         This bypass the objects collection, cascade deletions, and signals.
         It results in a much faster objects deletion, but it needs to be applied in the
         correct models order as the cascading event will not be triggered.
         Note that this approach is used in Django's `fast_deletes` but the scanpipe
-        models are cannot be fast-deleted as they have cascades and relations.
+        models cannot be fast-deleted as they have cascades and relations.
         """
         # Use default `delete()` on the DiscoveredPackage model, as the
         # `codebase_resources (ManyToManyField)` records need to collected and
@@ -657,7 +656,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         _, deleted_counter = self.discoveredpackages.all().delete()
 
         # Removes all tags from this project by deleting the UUIDTaggedItem instances.
-        self.labels.clear()
+        if not keep_labels:
+            self.labels.clear()
 
         relationships = [
             self.webhookdeliveries,
@@ -667,8 +667,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.discovereddependencies,
             self.codebaseresources,
             self.runs,
-            self.inputsources,
         ]
+
+        if not keep_input:
+            relationships.append(self.inputsources)
 
         for qs in relationships:
             count = qs.all()._raw_delete(qs.db)
@@ -688,14 +690,25 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         return super().delete(*args, **kwargs)
 
-    def reset(self, keep_input=True):
+    def reset(self, keep_input=True, restore_pipelines=False, execute_now=False):
         """
         Reset the project by deleting all related database objects and all work
         directories except the input directory—when the `keep_input` option is True.
         """
         self._raise_if_run_in_progress()
 
-        self.delete_related_objects()
+        restore_pipeline_kwargs = []
+        if restore_pipelines:
+            restore_pipeline_kwargs = [
+                {
+                    "pipeline_name": run.pipeline_name,
+                    "execute_now": execute_now,
+                    "selected_groups": run.selected_groups,
+                }
+                for run in self.runs.all()
+            ]
+
+        self.delete_related_objects(keep_input=keep_input, keep_labels=True)
 
         work_directories = [
             self.codebase_path,
@@ -714,6 +727,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             shutil.rmtree(path, ignore_errors=True)
 
         self.setup_work_directory()
+
+        for pipeline_kwargs in restore_pipeline_kwargs:
+            self.add_pipeline(**pipeline_kwargs)
 
     def clone(
         self,
@@ -917,6 +933,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             ignored_scope_index[entry.get("package_type")].append(entry.get("scope"))
 
         return dict(ignored_scope_index)
+
+    @cached_property
+    def get_scan_max_file_size(self):
+        """
+        Return a the ``scan_max_file_size`` settings value defined in this
+        Project env.
+        """
+        scan_max_file_size = self.get_env(field_name="scan_max_file_size")
+        if scan_max_file_size:
+            return scan_max_file_size
 
     @cached_property
     def ignored_dependency_scopes_index(self):

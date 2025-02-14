@@ -26,6 +26,7 @@ from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import flag
+from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
 
 
@@ -91,6 +92,20 @@ class ScanPipeFlagPipesTest(TestCase):
             flag.DEFAULT_IGNORED_PATTERNS,
         )
         self.assertEqual(3, updated)
+
+        project2 = make_project()
+        make_resource_file(project2, "a.cdx.json.zip-extract")
+        r1 = make_resource_file(project2, "a.cdx.json.zip-extract/__MACOSX")
+        r2 = make_resource_file(
+            project2, "a.cdx.json.zip-extract/__MACOSX/._a.cdx.json"
+        )
+        make_resource_file(project2, "a.cdx.json.zip-extract/a.cdx.json")
+        updated = flag.flag_ignored_patterns(project2, flag.DEFAULT_IGNORED_PATTERNS)
+        self.assertEqual(2, updated)
+        ignored_qs = project2.codebaseresources.status(flag.IGNORED_PATTERN)
+        self.assertEqual(2, ignored_qs.count())
+        self.assertIn(r1, ignored_qs)
+        self.assertIn(r2, ignored_qs)
 
     def test_scanpipe_pipes_flag_flag_not_analyzed_codebase_resources(self):
         resource1 = CodebaseResource.objects.create(

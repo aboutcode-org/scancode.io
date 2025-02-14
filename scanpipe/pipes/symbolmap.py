@@ -90,7 +90,7 @@ def map_resources_with_symbols(
             )
 
     elif logger:
-        logger(f"No mappings using {map_type} for: " f"{to_resource.path!r}")
+        logger(f"No mappings using {map_type} for: {to_resource.path!r}")
 
 
 def match_source_symbols_to_binary(source_symbols, binary_symbols):

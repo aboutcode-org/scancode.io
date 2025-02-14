@@ -238,7 +238,22 @@ class EditInputSourceTagForm(forms.Form):
         return input_source
 
 
-class ArchiveProjectForm(forms.Form):
+class BaseProjectActionForm(forms.Form):
+    select_across = forms.BooleanField(
+        label="",
+        required=False,
+        initial=0,
+        help_text="All project matching current search and filters will be included.",
+    )
+    url_query = forms.CharField(
+        widget=forms.HiddenInput,
+        required=False,
+        help_text="Stores the current URL filters.",
+    )
+
+
+class ProjectArchiveForm(BaseProjectActionForm):
+    prefix = "archive"
     remove_input = forms.BooleanField(
         label="Remove inputs",
         initial=True,
@@ -255,8 +270,42 @@ class ArchiveProjectForm(forms.Form):
         required=False,
     )
 
+    def get_action_kwargs(self):
+        return {
+            "remove_input": self.cleaned_data["remove_input"],
+            "remove_codebase": self.cleaned_data["remove_codebase"],
+            "remove_output": self.cleaned_data["remove_output"],
+        }
 
-class ProjectOutputDownloadForm(forms.Form):
+
+class ProjectResetForm(BaseProjectActionForm):
+    prefix = "reset"
+    keep_input = forms.BooleanField(
+        label="Keep inputs",
+        initial=True,
+        required=False,
+    )
+    restore_pipelines = forms.BooleanField(
+        label="Restore existing pipelines",
+        initial=False,
+        required=False,
+    )
+    execute_now = forms.BooleanField(
+        label="Execute restored pipeline(s) now",
+        initial=False,
+        required=False,
+    )
+
+    def get_action_kwargs(self):
+        return {
+            "keep_input": self.cleaned_data["keep_input"],
+            "restore_pipelines": self.cleaned_data["restore_pipelines"],
+            "execute_now": self.cleaned_data["execute_now"],
+        }
+
+
+class ProjectOutputDownloadForm(BaseProjectActionForm):
+    prefix = "download"
     output_format = forms.ChoiceField(
         label="Choose the output format to include in the ZIP file",
         choices=[
@@ -272,19 +321,20 @@ class ProjectOutputDownloadForm(forms.Form):
     )
 
 
-class ProjectReportForm(forms.Form):
+class ProjectReportForm(BaseProjectActionForm):
+    prefix = "report"
     model_name = forms.ChoiceField(
         label="Choose the object type to include in the XLSX file",
         choices=[
-            ("discoveredpackage", "Packages"),
-            ("discovereddependency", "Dependencies"),
-            ("codebaseresource", "Resources"),
-            ("codebaserelation", "Relations"),
-            ("projectmessage", "Messages"),
-            ("todos", "TODOs"),
+            ("package", "Packages"),
+            ("dependency", "Dependencies"),
+            ("resource", "Resources"),
+            ("relation", "Relations"),
+            ("message", "Messages"),
+            ("todo", "TODOs"),
         ],
         required=True,
-        initial="discoveredpackage",
+        initial="package",
         widget=forms.RadioSelect,
     )
 
@@ -416,6 +466,7 @@ class ProjectSettingsForm(forms.ModelForm):
         "ignored_vulnerabilities",
         "policies",
         "attribution_template",
+        "scan_max_file_size",
         "product_name",
         "product_version",
     ]
@@ -489,6 +540,15 @@ class ProjectSettingsForm(forms.ModelForm):
             "the entire HTML code into this field."
         ),
         widget=forms.Textarea(attrs={"class": "textarea is-dynamic", "rows": 3}),
+    )
+    scan_max_file_size = forms.IntegerField(
+        label="Max file size to scan",
+        required=False,
+        help_text=(
+            "Maximum file size in bytes which should be skipped from scanning."
+            "File size is in bytes. Example: 5 MB is 5242880 bytes."
+        ),
+        widget=forms.NumberInput(attrs={"class": "input"}),
     )
     product_name = forms.CharField(
         label="Product name",
