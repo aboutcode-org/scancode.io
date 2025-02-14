@@ -78,7 +78,10 @@ class CommonStepsMixin:
             ignored_patterns = ignored_patterns.splitlines()
         ignored_patterns.extend(flag.DEFAULT_IGNORED_PATTERNS)
 
-        flag.flag_ignored_patterns(self.project, patterns=ignored_patterns)
+        flag.flag_ignored_patterns(
+            codebaseresources=self.project.codebaseresources.no_status(),
+            patterns=ignored_patterns,
+        )
 
     def extract_archive(self, location, target):
         """Extract archive at `location` to `target`. Save errors as messages."""
