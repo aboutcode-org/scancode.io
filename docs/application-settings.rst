@@ -165,6 +165,18 @@ The value unit is second and is defined as an integer::
 
 Default: ``120`` (2 minutes)
 
+SCANCODEIO_SCAN_MAX_FILE_SIZE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Maximum file size allowed for a file to be scanned when scanning a codebase.
+
+The value unit is bytes and is defined as an integer, see the following
+example of setting this at 5 MB::
+
+    SCANCODEIO_SCAN_MAX_FILE_SIZE=5242880
+
+Default: ``None`` (all files will be scanned)
+
 .. _scancodeio_settings_pipelines_dirs:
 
 SCANCODEIO_PIPELINES_DIRS
@@ -444,3 +456,29 @@ SCANCODEIO_SKOPEO_AUTHFILE_LOCATION
 Specify the path of the Skopeo authentication file using the following setting::
 
     SCANCODEIO_SKOPEO_AUTHFILE_LOCATION="/path/to/auth.json"
+
+.. _scancodeio_settings_job_queue_and_workers:
+
+Job Queue and Workers
+---------------------
+
+ScanCode.io leverages the RQ (Redis Queue) Python library for job queuing and background
+processing with workers.
+
+By default, it is configured to use the "redis" service in the Docker Compose stack.
+
+For deployments where Redis is hosted on a separate system
+(e.g., a cloud-based deployment or a remote Redis server),
+the Redis instance used by RQ can be customized using the following settings::
+
+    SCANCODEIO_RQ_REDIS_HOST=localhost
+    SCANCODEIO_RQ_REDIS_PORT=6379
+    SCANCODEIO_RQ_REDIS_DB=0
+    SCANCODEIO_RQ_REDIS_USERNAME=<username>
+    SCANCODEIO_RQ_REDIS_PASSWORD=<password>
+    SCANCODEIO_RQ_REDIS_DEFAULT_TIMEOUT=360
+
+To enhance security, it is recommended to enable SSL for Redis connections.
+SSL is disabled by default but can be enabled with the following configuration::
+
+    SCANCODEIO_RQ_REDIS_SSL=True

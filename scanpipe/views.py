@@ -24,6 +24,7 @@ import difflib
 import io
 import json
 import operator
+import zipfile
 from collections import Counter
 from contextlib import suppress
 from pathlib import Path
@@ -42,6 +43,7 @@ from django.http import Http404
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
+from django.http import QueryDict
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
@@ -74,11 +76,15 @@ from scanpipe.filters import ResourceFilterSet
 from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddLabelsForm
 from scanpipe.forms import AddPipelineForm
-from scanpipe.forms import ArchiveProjectForm
+from scanpipe.forms import BaseProjectActionForm
 from scanpipe.forms import EditInputSourceTagForm
 from scanpipe.forms import PipelineRunStepSelectionForm
+from scanpipe.forms import ProjectArchiveForm
 from scanpipe.forms import ProjectCloneForm
 from scanpipe.forms import ProjectForm
+from scanpipe.forms import ProjectOutputDownloadForm
+from scanpipe.forms import ProjectReportForm
+from scanpipe.forms import ProjectResetForm
 from scanpipe.forms import ProjectSettingsForm
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
@@ -91,6 +97,7 @@ from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.pipes import compliance
 from scanpipe.pipes import count_group_by
+from scanpipe.pipes import filename_now
 from scanpipe.pipes import output
 from scanpipe.pipes import purldb
 
@@ -442,15 +449,28 @@ class ExportXLSXMixin:
 
     export_xlsx_query_param = "export_xlsx"
 
-    def export_xlsx_file_response(self):
-        filtered_qs = self.filterset.qs
-        output_file = io.BytesIO()
-        with xlsxwriter.Workbook(output_file) as workbook:
-            output.queryset_to_xlsx_worksheet(filtered_qs, workbook)
+    def get_export_xlsx_queryset(self):
+        return self.filterset.qs
 
-        filename = f"{self.project.name}_{self.model._meta.model_name}.xlsx"
+    def get_export_xlsx_filename(self):
+        return f"{self.project.name}_{self.model._meta.model_name}.xlsx"
+
+    def export_xlsx_file_response(self):
+        output_file = io.BytesIO()
+        queryset = self.get_export_xlsx_queryset()
+        with xlsxwriter.Workbook(output_file) as workbook:
+            output.queryset_to_xlsx_worksheet(
+                queryset,
+                workbook,
+                exclude_fields=output.XLSX_EXCLUDE_FIELDS,
+            )
+
         output_file.seek(0)
-        return FileResponse(output_file, as_attachment=True, filename=filename)
+        return FileResponse(
+            output_file,
+            as_attachment=True,
+            filename=self.get_export_xlsx_filename(),
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -528,17 +548,23 @@ class ProjectListView(
 ):
     model = Project
     filterset_class = ProjectFilterSet
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("project", 20)
     template_name = "scanpipe/project_list.html"
     prefetch_related = [
         "labels",
         Prefetch(
             "runs",
             queryset=Run.objects.only(
-                "uuid", "pipeline_name", "project_id", "task_exitcode"
+                "uuid",
+                "pipeline_name",
+                "project_id",
+                "task_id",
+                "task_start_date",
+                "task_end_date",
+                "task_exitcode",
             ),
         ),
     ]
-    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("project", 20)
     table_columns = [
         "name",
         {
@@ -573,7 +599,11 @@ class ProjectListView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["archive_form"] = ArchiveProjectForm()
+        context["action_form"] = BaseProjectActionForm()
+        context["archive_form"] = ProjectArchiveForm()
+        context["reset_form"] = ProjectResetForm()
+        context["outputs_download_form"] = ProjectOutputDownloadForm()
+        context["report_form"] = ProjectReportForm()
         return context
 
     def get_queryset(self):
@@ -719,6 +749,12 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         pipeline_runs = project.runs.all()
         self.check_run_scancode_version(pipeline_runs)
 
+        policies_enabled = False
+        try:
+            policies_enabled = project.policies_enabled
+        except ValidationError as e:
+            messages.error(self.request, str(e))
+
         context.update(
             {
                 "input_sources": project.get_inputs_with_source(),
@@ -735,6 +771,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "pipeline_runs": pipeline_runs,
                 "codebase_root": codebase_root,
                 "file_filter": self.request.GET.get("file-filter", "all"),
+                "policies_enabled": policies_enabled,
             }
         )
 
@@ -821,7 +858,8 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project = self.get_object()
-        context["archive_form"] = ArchiveProjectForm()
+        context["archive_form"] = ProjectArchiveForm()
+        context["reset_form"] = ProjectResetForm()
         context["webhook_subscriptions"] = project.webhooksubscriptions.all()
         return context
 
@@ -1101,7 +1139,7 @@ class ProjectCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
 class ProjectArchiveView(ConditionalLoginRequired, SingleObjectMixin, FormView):
     model = Project
     http_method_names = ["post"]
-    form_class = ArchiveProjectForm
+    form_class = ProjectArchiveForm
     success_url = reverse_lazy("project_list")
     success_message = 'The project "{}" has been archived.'
 
@@ -1110,13 +1148,32 @@ class ProjectArchiveView(ConditionalLoginRequired, SingleObjectMixin, FormView):
 
         project = self.get_object()
         try:
-            project.archive(**form.cleaned_data)
+            project.archive(**form.get_action_kwargs())
         except RunInProgressError as error:
             messages.error(self.request, error)
             return redirect(project)
 
         messages.success(self.request, self.success_message.format(project))
         return response
+
+
+class ProjectResetView(ConditionalLoginRequired, SingleObjectMixin, FormView):
+    model = Project
+    http_method_names = ["post"]
+    form_class = ProjectResetForm
+    success_url = reverse_lazy("project_list")
+    success_message = 'The project "{}" has been reset.'
+
+    def form_valid(self, form):
+        """Call the reset() method on the project."""
+        project = self.get_object()
+        try:
+            project.reset(**form.get_action_kwargs())
+        except RunInProgressError as error:
+            messages.error(self.request, error)
+
+        messages.success(self.request, self.success_message.format(project.name))
+        return redirect(project)
 
 
 class ProjectDeleteView(ConditionalLoginRequired, generic.DeleteView):
@@ -1141,26 +1198,42 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
     """Call a method for each instance of the selection."""
 
     model = Project
-    allowed_actions = ["archive", "delete", "reset"]
+    allowed_actions = ["archive", "delete", "reset", "report", "download"]
+    action_to_form_class = {
+        "archive": ProjectArchiveForm,
+        "reset": ProjectResetForm,
+        "report": ProjectReportForm,
+        "download": ProjectOutputDownloadForm,
+    }
     success_url = reverse_lazy("project_list")
 
     def post(self, request, *args, **kwargs):
+        action_kwargs = {}
+
         action = request.POST.get("action")
         if action not in self.allowed_actions:
             raise Http404
 
-        selected_ids = request.POST.get("selected_ids", "").split(",")
+        action_form = self.get_action_form(action)
+        selected_project_ids = [
+            project_uuid
+            for project_uuid in request.POST.get("selected_ids", "").split(",")
+            if project_uuid
+        ]
+        project_qs = self.get_project_queryset(selected_project_ids, action_form)
+
+        if action == "download":
+            return self.download_outputs_zip_response(project_qs, action_form)
+
+        if action == "report":
+            return self.xlsx_report_response(project_qs, action_form)
+
+        if action in ["archive", "reset"]:
+            action_kwargs = action_form.get_action_kwargs()
+
         count = 0
-
-        action_kwargs = {}
-        if action == "archive":
-            archive_form = ArchiveProjectForm(request.POST)
-            if not archive_form.is_valid():
-                raise Http404
-            action_kwargs = archive_form.cleaned_data
-
-        for project_uuid in selected_ids:
-            if self.perform_action(action, project_uuid, action_kwargs):
+        for project in project_qs:
+            if self.perform_action(project, action, action_kwargs):
                 count += 1
 
         if count:
@@ -1168,40 +1241,86 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
 
         return HttpResponseRedirect(self.success_url)
 
-    def perform_action(self, action, project_uuid, action_kwargs=None):
+    def get_action_form(self, action):
+        """Return the validated ``action_form`` instance."""
+        action_form_class = self.action_to_form_class.get(action, BaseProjectActionForm)
+        action_form = action_form_class(self.request.POST)
+
+        if not action_form.is_valid():
+            raise Http404
+
+        return action_form
+
+    def perform_action(self, project, action, action_kwargs=None):
         if not action_kwargs:
             action_kwargs = {}
 
         try:
-            project = Project.objects.get(pk=project_uuid)
             getattr(project, action)(**action_kwargs)
-            return True
-        except Project.DoesNotExist:
-            messages.error(self.request, f"Project {project_uuid} does not exist.")
         except RunInProgressError as error:
             messages.error(self.request, str(error))
         except (AttributeError, ValidationError):
             raise Http404
 
+        return True
+
     def get_success_message(self, action, count):
         return f"{count} projects have been {action}."
 
+    @staticmethod
+    def get_project_queryset(selected_project_ids=None, action_form=None):
+        """
+        Return the Project QuerySet from the user selection.
 
-class ProjectResetView(ConditionalLoginRequired, generic.DeleteView):
-    model = Project
-    success_message = 'All data, except inputs, for the "{}" project have been removed.'
+        An instance of BaseProjectActionForm can be provided as the ``action_form``
+        argument for the support of ``select_across``.
+        """
+        if action_form:
+            select_across = action_form.cleaned_data.get("select_across")
+            # url_query may be empty for a "select everything"
+            url_query = action_form.cleaned_data.get("url_query", "")
+            if select_across:
+                project_filterset = ProjectFilterSet(data=QueryDict(url_query))
+                if project_filterset.is_valid():
+                    return project_filterset.qs
 
-    def form_valid(self, form):
-        """Call the reset() method on the project."""
-        project = self.get_object()
-        try:
-            project.reset(keep_input=True)
-        except RunInProgressError as error:
-            messages.error(self.request, error)
-        else:
-            messages.success(self.request, self.success_message.format(project.name))
+        if selected_project_ids:
+            return Project.objects.filter(uuid__in=selected_project_ids)
 
-        return redirect(project)
+        raise Http404
+
+    @staticmethod
+    def download_outputs_zip_response(project_qs, action_form):
+        output_format = action_form.cleaned_data["output_format"]
+        output_function = output.FORMAT_TO_FUNCTION_MAPPING.get(output_format)
+
+        # In-memory file storage for the zip archive
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            for project in project_qs:
+                output_file = output_function(project)
+                filename = output.safe_filename(f"{project.name}_{output_file.name}")
+                with open(output_file, "rb") as f:
+                    zip_file.writestr(filename, f.read())
+
+        zip_buffer.seek(0)
+        return FileResponse(
+            zip_buffer,
+            as_attachment=True,
+            filename="scancodeio_output_files.zip",
+        )
+
+    @staticmethod
+    def xlsx_report_response(project_qs, action_form):
+        model_short_name = action_form.cleaned_data["model_name"]
+        filename = f"scancodeio-report-{filename_now()}.xlsx"
+        output_file = output.get_xlsx_report(project_qs, model_short_name)
+        output_file.seek(0)
+        return FileResponse(
+            output_file,
+            as_attachment=True,
+            filename=filename,
+        )
 
 
 class HTTPResponseHXRedirect(HttpResponseRedirect):

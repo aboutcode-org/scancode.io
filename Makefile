@@ -121,6 +121,10 @@ sqlitedb:
 run:
 	${MANAGE} runserver 8001 --insecure
 
+run-docker-dev:
+	@echo "-> Run the Docker compose services in dev mode (hot reload on code changes)"
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build --watch
+
 test:
 	@echo "-> Run the test suite"
 	${MANAGE} test --noinput
@@ -156,4 +160,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run test fasttest docs bump docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run run-docker-dev test fasttest docs bump docker-images offline-package

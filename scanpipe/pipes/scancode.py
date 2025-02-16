@@ -34,6 +34,7 @@ from pathlib import Path
 from django.apps import apps
 from django.conf import settings
 from django.db.models import ObjectDoesNotExist
+from django.db.models import Q
 
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
@@ -57,6 +58,7 @@ logger = logging.getLogger("scanpipe.pipes")
 """
 Utilities to deal with ScanCode toolkit features and objects.
 """
+
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -286,7 +288,12 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
 
 
 def scan_resources(
-    resource_qs, scan_func, save_func, scan_func_kwargs=None, progress_logger=None
+    resource_qs,
+    scan_func,
+    save_func,
+    scan_func_kwargs=None,
+    progress_logger=None,
+    file_size_limit=None,
 ):
     """
     Run the `scan_func` on the codebase resources of the provided `resource_qs`.
@@ -306,9 +313,21 @@ def scan_resources(
     if not scan_func_kwargs:
         scan_func_kwargs = {}
 
-    resource_count = resource_qs.count()
+    # Skip scannning files larger than the specified max size
+    skipped_files_max_size = flag.flag_and_ignore_files_over_max_size(
+        resource_qs=resource_qs,
+        file_size_limit=file_size_limit,
+    )
+    if file_size_limit and skipped_files_max_size:
+        logger.info(
+            f"Skipped {skipped_files_max_size} files over the size of {file_size_limit}"
+        )
+
+    scan_resource_qs = resource_qs.filter(~Q(status=flag.IGNORED_BY_MAX_FILE_SIZE))
+
+    resource_count = scan_resource_qs.count()
     logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")
-    resource_iterator = resource_qs.iterator(chunk_size=2000)
+    resource_iterator = scan_resource_qs.iterator(chunk_size=2000)
     progress = LoopProgress(resource_count, logger=progress_logger)
     max_workers = get_max_workers(keep_available=1)
 
@@ -347,6 +366,7 @@ def scan_resources(
                     "CPU core for successful execution."
                 )
                 raise broken_pool_error from InsufficientResourcesError(message)
+
             save_func(resource, scan_results, scan_errors)
 
 
@@ -362,11 +382,18 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
     if resource_qs is None:
         resource_qs = project.codebaseresources.no_status()
 
+    # Get max file size limit set in project settings, or alternatively
+    # get it from scancodeio settings
+    file_size_limit = project.get_scan_max_file_size
+    if not file_size_limit:
+        file_size_limit = settings.SCANCODEIO_SCAN_MAX_FILE_SIZE
+
     scan_resources(
         resource_qs=resource_qs,
         scan_func=scan_file,
         save_func=save_scan_file_results,
         progress_logger=progress_logger,
+        file_size_limit=file_size_limit,
     )
 
 

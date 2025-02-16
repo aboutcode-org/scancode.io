@@ -1,7 +1,106 @@
 Changelog
 =========
 
-v34.9.1 (unreleased)
+v34.9.5 (unreleased)
+--------------------
+
+- Add support for the XLSX report in REST API.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Add options to the Project reset action.
+  Also, the Project labels are kept during reset.
+  https://github.com/aboutcode-org/scancode.io/issues/1568
+
+v34.9.4 (2025-01-21)
+--------------------
+
+- Improve Project list page navigation.
+  A top previous/next page navigation was added in the header for consistency with other
+  list views.
+  Any paginated view can now be navigated using the left/right keyboard keys.
+  https://github.com/aboutcode-org/scancode.io/issues/1200
+
+- Add support for importing the ``extra_data`` value from the JSON input with the
+  ``load_inventory`` pipeline.
+  When multiple JSON files are provided as inputs, the ``extra`` is prefixed with
+  the input filename.
+  https://github.com/aboutcode-org/scancode.io/issues/926
+
+- Disable CycloneDX document strict validation, which halts the entire loading process,
+  and let the data loading process handle the data issues.
+  https://github.com/aboutcode-org/scancode.io/issues/1515
+
+- Add a report action on project list to export XLSX containing packages from selected
+  projects.
+  https://github.com/aboutcode-org/scancode.io/issues/1437
+
+- Add a download action on project list to enable bulk download of Project output files.
+  https://github.com/aboutcode-org/scancode.io/issues/1518
+
+- Add labels to Project level search.
+  The labels are now always presented in alphabetical order for consistency.
+  https://github.com/aboutcode-org/scancode.io/issues/1520
+
+- Add a ``batch-create`` management command that allows to create multiple projects
+  at once from a directory containing input files.
+  https://github.com/aboutcode-org/scancode.io/issues/1437
+
+- Do not download input_urls in management commands. The fetch/download is delegated to
+  the pipeline execution.
+  https://github.com/aboutcode-org/scancode.io/issues/1437
+
+- Add a "TODOS" sheet containing on REQUIRES_REVIEW resources in XLSX.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Improve XLSX output for Vulnerabilities.
+  Replace the ``affected_by_vulnerabilities`` field in the PACKAGES and DEPENDENCIES
+  sheets with a dedicated VULNERABILITIES sheet.
+  https://github.com/aboutcode-org/scancode.io/issues/1519
+
+- Keep the InputSource objects when using ``reset`` on Projects.
+  https://github.com/aboutcode-org/scancode.io/issues/1536
+
+- Add a ``report`` management command that allows to generate XLSX reports for
+  multiple projects at once using labels and searching by project name.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Add the ability to "select across" in Projects list when using the "select all"
+  checkbox on paginated list.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Update scancode-toolkit to v32.3.2. See CHANGELOG for updates:
+  https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.3.2
+  https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.3.1
+
+- Adds  a project settings ``scan_max_file_size`` and a scancode.io settings field
+  ``SCANCODEIO_SCAN_MAX_FILE_SIZE`` to skip scanning files above a certain
+  file size (in bytes) as a temporary fix for large memory spikes while
+  scanning for licenses in certain large files.
+  https://github.com/aboutcode-org/scancode-toolkit/issues/3711
+
+v34.9.3 (2024-12-31)
+--------------------
+
+- Refine the available settings for RQ_QUEUES:
+  * Rename the RQ_QUEUES sub-settings to SCANCODEIO_RQ_REDIS_*
+  * Add SCANCODEIO_RQ_REDIS_SSL setting to enable SSL.
+  https://github.com/aboutcode-org/scancode.io/issues/1465
+
+- Add support to map binaries to source files using symbols
+  for rust binaries and source files. This adds also using
+  ``rust-inspector`` to extract symbols from rust binaries.
+  This is a new optional ``Rust`` step in the
+  ``map_deploy_to_develop`` pipeline.
+  https://github.com/aboutcode-org/scancode.io/issues/1435
+
+v34.9.2 (2024-12-10)
+--------------------
+
+- Fix an issue with the ``scan_rootfs_for_system_packages`` pipe when a namespace is
+  missing for the discovered packages.
+  https://github.com/aboutcode-org/scancode.io/issues/1462
+
+v34.9.1 (2024-12-09)
 --------------------
 
 - Add the ability to filter on Project endpoint API actions.

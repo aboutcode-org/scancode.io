@@ -38,7 +38,6 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.pipes import count_group_by
-from scanpipe.pipes.fetch import fetch_urls
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -148,6 +147,28 @@ class RunStatusCommandMixin:
 
         for line in message:
             self.stdout.write(line)
+
+
+class PipelineCommandMixin:
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
+        parser.add_argument(
+            "--pipeline",
+            action="append",
+            dest="pipelines",
+            default=list(),
+            help=(
+                "Pipelines names to add to the project. "
+                "The pipelines are added and executed based on their given order. "
+                'Groups can be provided using the "pipeline_name:option1,option2" '
+                "syntax."
+            ),
+        )
+        parser.add_argument(
+            "--execute",
+            action="store_true",
+            help="Execute the pipelines right after the project creation.",
+        )
 
 
 class AddInputCommandMixin:
@@ -332,24 +353,14 @@ def handle_input_files(project, input_files_data, command=None):
 
 
 def handle_input_urls(project, input_urls, command=None):
-    """
-    Fetch provided `input_urls` and stores it in the project's `input`
-    directory.
-    """
-    downloads, errors = fetch_urls(input_urls)
+    """Add provided `input_urls` as input sources of the project."""
+    for url in input_urls:
+        project.add_input_source(download_url=url)
 
-    if downloads:
-        project.add_downloads(downloads)
-        msg = "File(s) downloaded to the project inputs directory:"
-        if command and command.verbosity > 0:
-            command.stdout.write(msg, command.style.SUCCESS)
-            msg = "\n".join(["- " + downloaded.filename for downloaded in downloads])
-            command.stdout.write(msg)
-
-    if errors and command:
-        msg = "Could not fetch URL(s):\n"
-        msg += "\n".join(["- " + url for url in errors])
-        command.stderr.write(msg)
+    if input_urls and command and command.verbosity > 0:
+        msg = "URL(s) added as project input sources:"
+        command.stdout.write(msg, command.style.SUCCESS)
+        command.stdout.write("\n".join([f"- {url}" for url in input_urls]))
 
 
 def handle_copy_codebase(project, copy_from, command=None):
@@ -416,7 +427,7 @@ def execute_project(project, run_async=False, command=None):  # noqa: C901
         msg = f"Error during {run.pipeline_name} execution:\n{run.task_output}"
         raise CommandError(msg)
     elif verbosity > 0:
-        msg = f"{run.pipeline_name} successfully executed on " f"project {project}"
+        msg = f"{run.pipeline_name} successfully executed on project {project}"
         command.stdout.write(msg, command.style.SUCCESS)
 
 
@@ -427,6 +438,7 @@ def create_project(
     input_urls=None,
     copy_from="",
     notes="",
+    labels=None,
     execute=False,
     run_async=False,
     command=None,
@@ -451,6 +463,10 @@ def create_project(
     )
 
     project.save()
+
+    if labels:
+        project.labels.add(*labels)
+
     if command:
         command.project = project
 
@@ -491,6 +507,20 @@ class ExecuteProjectCommandMixin:
 
 
 class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
+        parser.add_argument(
+            "--notes",
+            help="Optional notes about the project.",
+        )
+        parser.add_argument(
+            "--label",
+            action="append",
+            dest="labels",
+            default=list(),
+            help="Optional labels for the project.",
+        )
+
     def create_project(
         self,
         name,
@@ -499,9 +529,13 @@ class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
         input_urls=None,
         copy_from="",
         notes="",
+        labels=None,
         execute=False,
         run_async=False,
     ):
+        if execute and not pipelines:
+            raise CommandError("The --execute option requires one or more pipelines.")
+
         return create_project(
             name=name,
             pipelines=pipelines,
@@ -509,6 +543,7 @@ class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
             input_urls=input_urls,
             copy_from=copy_from,
             notes=notes,
+            labels=labels,
             execute=execute,
             run_async=run_async,
             command=self,

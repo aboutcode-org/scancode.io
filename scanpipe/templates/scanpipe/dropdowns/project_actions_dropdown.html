@@ -1,6 +1,9 @@
 <div id="list-actions-dropdown" class="dropdown is-right is-hoverable is-disabled">
   <div class="dropdown-trigger">
-    <button class="button" aria-haspopup="true" disabled>
+    <button class="button is-smaller" aria-haspopup="true" disabled>
+      <span class="icon has-text-grey">
+        <i class="fa-solid fa-wrench"></i>
+      </span>
       <span>Actions</span>
       <span class="icon is-small">
         <i class="fa-solid fa-angle-down" aria-hidden="true"></i>
@@ -10,6 +13,19 @@
   <div class="dropdown-menu" role="menu">
     <div class="dropdown-content">
       <ul>
+        <li>
+          <a href="#" class="dropdown-item modal-button" data-target="modal-projects-download" aria-haspopup="true">
+            <i class="fa-solid fa-download mr-2"></i>Download
+          </a>
+        </li>
+        <li>
+          <a href="#" class="dropdown-item modal-button" data-target="modal-projects-report" aria-haspopup="true">
+            <i class="fa-solid fa-table-cells mr-2"></i>Report
+          </a>
+        </li>
+        <li>
+          <hr class="dropdown-divider">
+        </li>
         <li>
           <a href="#" class="dropdown-item modal-button" data-target="modal-projects-archive" aria-haspopup="true">
             <i class="fa-solid fa-dice-d6 mr-2"></i>Archive

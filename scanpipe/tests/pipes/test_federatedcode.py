@@ -49,8 +49,10 @@ class ScanPipeFederatedCodeTest(TestCase):
             version="v.1.2.3",
         )
         project_purl = "pkg:npm/foobar@v1.2.3"
-        expected_git_repo = "https://github.com/test/aboutcode-packages-03f1.git"
-        expected_scan_path = "aboutcode-packages-03f1/npm/foobar/v1.2.3/scancodeio.json"
+        expected_git_repo = "https://github.com/test/aboutcode-packages-npm-3f1.git"
+        expected_scan_path = (
+            "aboutcode-packages-npm-3f1/npm/foobar/v1.2.3/scancodeio.json"
+        )
         git_repo, scan_path = federatedcode.get_package_repository(
             project_purl=project_purl
         )

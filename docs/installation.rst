@@ -35,6 +35,10 @@ Build the Image
 ScanCode.io is distributed with ``Dockerfile`` and ``docker-compose.yml`` files
 required for the creation of the Docker image.
 
+.. note::
+    On **Windows**, ensure to use the **wsl** (Windows Subsystem for Linux) for
+    the installation process.
+
 .. warning:: On **Windows**, ensure that git ``autocrlf`` configuration is set to
    ``false`` before cloning the repository::
 
@@ -229,7 +233,12 @@ Supported Platforms
     #. **macOS** 10.14 and up
 
 .. warning::
-     On **Windows** ScanCode.io can **only** be :ref:`run_with_docker`.
+    On **Windows** ScanCode.io can **only** be :ref:`run_with_docker`.
+    Alternatively, you can run a local checkout with the Docker compose stack using the
+    dedicated command::
+
+        make run-docker-dev
+
 
 Pre-installation Checklist
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -343,7 +352,10 @@ production servers.
         make sqlitedb
 
 .. warning::
-    Choosing SQLite over PostgreSQL has some caveats. Check this `link
+    SQLite is not recommended as a database backend. Certain built-in pipelines
+    depend on PostgreSQL-specific features and will fail when using SQLite.
+    For full functionality and reliability, PostgreSQL should be used.
+    Check this `link
     <https://docs.djangoproject.com/en/dev/ref/databases/#sqlite-notes>`_
     for more details.
 

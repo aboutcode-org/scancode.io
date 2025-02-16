@@ -45,6 +45,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import EMPTY_VALUES
 from django.db import models
 from django.db import transaction
+from django.db.models import Case
 from django.db.models import Count
 from django.db.models import IntegerField
 from django.db.models import OuterRef
@@ -52,6 +53,7 @@ from django.db.models import Prefetch
 from django.db.models import Q
 from django.db.models import Subquery
 from django.db.models import TextField
+from django.db.models import When
 from django.db.models.functions import Cast
 from django.db.models.functions import Lower
 from django.dispatch import receiver
@@ -521,6 +523,16 @@ class ProjectQuerySet(models.QuerySet):
 
         return self.annotate(**annotations)
 
+    def get_active_archived_counts(self):
+        return self.aggregate(
+            active_count=Count(
+                Case(When(is_archived=False, then=1), output_field=IntegerField())
+            ),
+            archived_count=Count(
+                Case(When(is_archived=True, then=1), output_field=IntegerField())
+            ),
+        )
+
 
 class UUIDTaggedItem(GenericUUIDTaggedItemBase, TaggedItemBase):
     class Meta:
@@ -564,7 +576,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     )
     notes = models.TextField(blank=True)
     settings = models.JSONField(default=dict, blank=True)
-    labels = TaggableManager(through=UUIDTaggedItem)
+    labels = TaggableManager(through=UUIDTaggedItem, ordering=["name"])
     purl = models.CharField(
         max_length=2048,
         blank=True,
@@ -628,17 +640,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         shutil.rmtree(self.tmp_path, ignore_errors=True)
         self.setup_work_directory()
 
-        self.is_archived = True
-        self.save(update_fields=["is_archived"])
+        self.update(is_archived=True)
 
-    def delete_related_objects(self):
+    def delete_related_objects(self, keep_input=False, keep_labels=False):
         """
         Delete all related object instances using the private `_raw_delete` model API.
         This bypass the objects collection, cascade deletions, and signals.
         It results in a much faster objects deletion, but it needs to be applied in the
         correct models order as the cascading event will not be triggered.
         Note that this approach is used in Django's `fast_deletes` but the scanpipe
-        models are cannot be fast-deleted as they have cascades and relations.
+        models cannot be fast-deleted as they have cascades and relations.
         """
         # Use default `delete()` on the DiscoveredPackage model, as the
         # `codebase_resources (ManyToManyField)` records need to collected and
@@ -648,7 +659,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         _, deleted_counter = self.discoveredpackages.all().delete()
 
         # Removes all tags from this project by deleting the UUIDTaggedItem instances.
-        self.labels.clear()
+        if not keep_labels:
+            self.labels.clear()
 
         relationships = [
             self.webhookdeliveries,
@@ -658,8 +670,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.discovereddependencies,
             self.codebaseresources,
             self.runs,
-            self.inputsources,
         ]
+
+        if not keep_input:
+            relationships.append(self.inputsources)
 
         for qs in relationships:
             count = qs.all()._raw_delete(qs.db)
@@ -679,14 +693,25 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         return super().delete(*args, **kwargs)
 
-    def reset(self, keep_input=True):
+    def reset(self, keep_input=True, restore_pipelines=False, execute_now=False):
         """
         Reset the project by deleting all related database objects and all work
         directories except the input directory—when the `keep_input` option is True.
         """
         self._raise_if_run_in_progress()
 
-        self.delete_related_objects()
+        restore_pipeline_kwargs = []
+        if restore_pipelines:
+            restore_pipeline_kwargs = [
+                {
+                    "pipeline_name": run.pipeline_name,
+                    "execute_now": execute_now,
+                    "selected_groups": run.selected_groups,
+                }
+                for run in self.runs.all()
+            ]
+
+        self.delete_related_objects(keep_input=keep_input, keep_labels=True)
 
         work_directories = [
             self.codebase_path,
@@ -705,6 +730,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             shutil.rmtree(path, ignore_errors=True)
 
         self.setup_work_directory()
+
+        for pipeline_kwargs in restore_pipeline_kwargs:
+            self.add_pipeline(**pipeline_kwargs)
 
     def clone(
         self,
@@ -908,6 +936,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             ignored_scope_index[entry.get("package_type")].append(entry.get("scope"))
 
         return dict(ignored_scope_index)
+
+    @cached_property
+    def get_scan_max_file_size(self):
+        """
+        Return a the ``scan_max_file_size`` settings value defined in this
+        Project env.
+        """
+        scan_max_file_size = self.get_env(field_name="scan_max_file_size")
+        if scan_max_file_size:
+            return scan_max_file_size
 
     @cached_property
     def ignored_dependency_scopes_index(self):
@@ -2916,7 +2954,9 @@ class CodebaseResource(
         cleaned_data = {
             field_name: value
             for field_name, value in resource_data.items()
-            if field_name in cls.model_fields() and value not in EMPTY_VALUES
+            if field_name in cls.model_fields()
+            and value not in EMPTY_VALUES
+            and field_name != "project"
         }
 
         return cls.objects.create(project=project, **cleaned_data)
@@ -3075,12 +3115,15 @@ class DiscoveredPackageQuerySet(
         )
         return self.annotate(resources_count=count_subquery)
 
-    def only_package_url_fields(self):
+    def only_package_url_fields(self, extra=None):
         """
         Only select and return the UUID and PURL fields.
         Minimum requirements to render a Package link in the UI.
         """
-        return self.only("uuid", *PACKAGE_URL_FIELDS)
+        if not extra:
+            extra = []
+
+        return self.only("uuid", *PACKAGE_URL_FIELDS, *extra)
 
     def filter(self, *args, **kwargs):
         """Add support for using ``package_url`` as a field lookup."""
@@ -3454,7 +3497,9 @@ class DiscoveredPackage(
         cleaned_data = {
             field_name: value
             for field_name, value in package_data.items()
-            if field_name in cls.model_fields() and value not in EMPTY_VALUES
+            if field_name in cls.model_fields()
+            and value not in EMPTY_VALUES
+            and field_name != "project"
         }
 
         discovered_package = cls(project=project, **cleaned_data)
@@ -3658,7 +3703,9 @@ class DiscoveredPackage(
 
 
 class DiscoveredDependencyQuerySet(
-    PackageURLQuerySetMixin, VulnerabilityQuerySetMixin, ProjectRelatedQuerySet
+    PackageURLQuerySetMixin,
+    VulnerabilityQuerySetMixin,
+    ProjectRelatedQuerySet,
 ):
     def prefetch_for_serializer(self):
         """
@@ -3678,6 +3725,16 @@ class DiscoveredDependencyQuerySet(
                 "datafile_resource", queryset=CodebaseResource.objects.only("path")
             ),
         )
+
+    def only_package_url_fields(self, extra=None):
+        """
+        Only select and return the UUID and PURL fields.
+        Minimum requirements to render a Package link in the UI.
+        """
+        if not extra:
+            extra = []
+
+        return self.only("dependency_uid", *PACKAGE_URL_FIELDS, *extra)
 
 
 class DiscoveredDependency(
@@ -3915,7 +3972,9 @@ class DiscoveredDependency(
         cleaned_data = {
             field_name: value
             for field_name, value in dependency_data.items()
-            if field_name in cls.model_fields() and value not in EMPTY_VALUES
+            if field_name in cls.model_fields()
+            and value not in EMPTY_VALUES
+            and field_name != "project"
         }
 
         return cls.objects.create(
