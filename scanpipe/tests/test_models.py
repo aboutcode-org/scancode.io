@@ -54,12 +54,14 @@ from packagedcode.models import PackageData
 from packageurl import PackageURL
 from requests.exceptions import RequestException
 from rq.job import JobStatus
+from scorecode.models import PackageScore
 
 from scancodeio import __version__ as scancodeio_version
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import DiscoveredPackageScore
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
@@ -84,6 +86,7 @@ from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 from scanpipe.tests import package_data2
+from scanpipe.tests import scorecard_data
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -2401,6 +2404,7 @@ class ScanPipeModelsTest(TestCase):
             "resolved_from_dependencies",
             "parent_packages",
             "children_packages",
+            "discovered_packages_score",
             "notes",
         ]
 
@@ -2494,6 +2498,29 @@ class ScanPipeModelsTest(TestCase):
         paths = [str(resource.path) for resource in project.codebaseresources.elfs()]
         self.assertTrue("e" in paths)
         self.assertTrue("a" in paths)
+
+    def test_scorecard_models(self):
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        scorecard_obj = PackageScore.from_data(scorecard_data)
+        package_score = DiscoveredPackageScore.create_from_package_and_scorecard(
+            package=package, scorecard_data=scorecard_obj
+        )
+
+        self.assertIsNotNone(package_score)
+        self.assertEqual(
+            package_score.scoring_tool, DiscoveredPackageScore.ScoringTool.OSSF
+        )
+        self.assertGreaterEqual(float(package_score.score), -1)
+
+        checks = package_score.discovered_packages_score_checks.all()
+        self.assertGreaterEqual(checks.count(), 1)
+
+        for check in checks:
+            self.assertIsInstance(check.check_name, str)
+            if check.check_score == "-1":
+                self.assertEqual(check.check_score, "-1")
+            else:
+                self.assertRegex(check.check_score, r"^\d+(\.\d+)?$")
 
     def test_scanpipe_model_codebase_resource_compliance_alert_queryset_mixin(self):
         severities = CodebaseResource.Compliance
