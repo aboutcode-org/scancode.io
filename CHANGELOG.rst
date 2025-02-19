@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.9.5 (unreleased)
+v34.9.5 (2025-02-19)
 --------------------
 
 - Add support for the XLSX report in REST API.
@@ -10,6 +10,10 @@ v34.9.5 (unreleased)
 - Add options to the Project reset action.
   Also, the Project labels are kept during reset.
   https://github.com/aboutcode-org/scancode.io/issues/1568
+
+- Add aboutcode.pipeline as an install_requires external dependency to prevent conflicts
+  with other aboutcode submodules.
+  https://github.com/aboutcode-org/scancode.io/issues/1423
 
 v34.9.4 (2025-01-21)
 --------------------
