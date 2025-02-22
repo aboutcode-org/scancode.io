@@ -1470,6 +1470,19 @@ class ScanPipeModelsTest(TestCase):
 
         self.assertEqual(expected, result)
 
+    def test_scanpipe_codebase_resource_model_commoncode_methods_extracted_to_from(
+        self,
+    ):
+        archive_resource = CodebaseResource.objects.create(
+            project=self.project1, path="sample-archive.jar"
+        )
+        extracted_dir_resource = CodebaseResource.objects.create(
+            project=self.project1, path="sample-archive.jar-extract"
+        )
+
+        self.assertEqual(extracted_dir_resource, archive_resource.extracted_to())
+        self.assertEqual(archive_resource, extracted_dir_resource.extracted_from())
+
     def test_scanpipe_codebase_resource_model_compliance_alert(self):
         scanpipe_app.license_policies_index = license_policies_index
         resource = CodebaseResource.objects.create(project=self.project1, path="file")

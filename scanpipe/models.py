@@ -2892,6 +2892,18 @@ class CodebaseResource(
             if not topdown:
                 yield child
 
+    def extracted_to(self, codebase=None):
+        """Return the path this Resource archive was extracted to or None."""
+        extract_path = f"{self.path}-extract"
+        return self.project.get_resource(extract_path)
+
+    def extracted_from(self, codebase=None):
+        """Return the path to an archive this Resource was extracted from or None."""
+        path = self.path
+        if "-extract" in path:
+            archive_path, _, _ = self.path.rpartition("-extract")
+            return self.project.get_resource(archive_path)
+
     def get_absolute_url(self):
         return reverse("resource_detail", args=[self.project.slug, self.path])
 
