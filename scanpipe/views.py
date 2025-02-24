@@ -86,6 +86,7 @@ from scanpipe.forms import ProjectOutputDownloadForm
 from scanpipe.forms import ProjectReportForm
 from scanpipe.forms import ProjectResetForm
 from scanpipe.forms import ProjectSettingsForm
+from scanpipe.forms import WebhookSubscriptionForm
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -95,6 +96,7 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.models import WebhookSubscription
 from scanpipe.pipes import compliance
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import filename_now
@@ -860,6 +862,7 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
         project = self.get_object()
         context["archive_form"] = ProjectArchiveForm()
         context["reset_form"] = ProjectResetForm()
+        context["webhook_form"] = WebhookSubscriptionForm()
         context["webhook_subscriptions"] = project.webhooksubscriptions.all()
         return context
 
@@ -876,6 +879,22 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
         filename = output.safe_filename(settings.SCANCODEIO_CONFIG_FILE)
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
+
+
+class ProjectSettingsAddWebhookView(
+    ConditionalLoginRequired, SingleObjectMixin, FormView
+):
+    model = WebhookSubscription
+    http_method_names = ["post"]
+    form_class = WebhookSubscriptionForm
+    # success_url = reverse_lazy("project_list")  # -> Settings#webhooks
+
+    def form_valid(self, form):
+        """Add the webhook subscription to the project."""
+        project = self.get_object()
+        project.add_webhook_subscription(self, **form.cleaned_data)
+        # messages.success(self.request, self.success_message.format(project.name))
+        return redirect(project)
 
 
 class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):

@@ -1,0 +1,19 @@
+{% load humanize %}
+<div class="modal" id="modal-add-webhook">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Add webhook</p>
+      <button class="delete" aria-label="close"></button>
+    </header>
+    <form action="{% url 'project_settings_add_webhook' project.slug %}" method="post" id="add-webhook-form">{% csrf_token %}
+      <section class="modal-card-body">
+        {{ webhook_form }}
+      </section>
+      <footer class="modal-card-foot is-flex is-justify-content-space-between">
+        <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
+        <button class="button is-link" type="submit">Add webhook</button>
+      </footer>
+    </form>
+  </div>
+</div>

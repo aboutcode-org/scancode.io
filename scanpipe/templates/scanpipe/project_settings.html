@@ -62,7 +62,7 @@
             <div class="panel">
               <p id="webhooks" class="panel-heading py-2 is-size-6">Webhooks</p>
               <div class="panel-block is-block px-4">
-                <table class="table">
+                <table class="table mb-1">
                   <thead>
                     <tr>
                       <th>URL</th>
@@ -96,6 +96,9 @@
                   {% endfor %}
                   </tbody>
                 </table>
+                <a href="#" class="button is-smaller is-link modal-button mb-1" data-target="modal-add-webhook" aria-haspopup="true">
+                  Add Webhook
+                </a>
               </div>
             </div>
 
@@ -233,6 +236,7 @@
     </section>
   </div>
 
+  {% include "scanpipe/modals/project_add_webhook_modal.html" %}
   {% if not project.is_archived %}
     {% include "scanpipe/modals/project_archive_modal.html" %}
   {% endif %}

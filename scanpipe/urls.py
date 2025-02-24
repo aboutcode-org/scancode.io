@@ -112,6 +112,11 @@ urlpatterns = [
         name="project_settings",
     ),
     path(
+        "project/<slug:slug>/settings/webhooks/add",
+        views.ProjectSettingsAddWebhookView.as_view(),
+        name="project_settings_add_webhook",
+    ),
+    path(
         "project/<slug:slug>/codebase/",
         views.ProjectCodebaseView.as_view(),
         name="project_codebase",
