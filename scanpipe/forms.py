@@ -716,3 +716,11 @@ class WebhookSubscriptionForm(forms.ModelForm):
             "include_results",
             "is_active",
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        target_url_field = self.fields["target_url"]
+        target_url_field.widget.attrs["class"] = "input"
+
+    def save(self, project):
+        return project.add_webhook_subscription(**self.cleaned_data)
