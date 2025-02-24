@@ -389,6 +389,58 @@ class ScanPipeManagementCommandTest(TestCase):
         with self.assertRaisesMessage(CommandError, expected):
             call_command("add-pipeline", *options, stdout=out)
 
+    def test_scanpipe_management_command_add_webhook(self):
+        out = StringIO()
+
+        project = Project.objects.create(name="my_project")
+
+        options = ["https://example.com/webhook"]
+        expected = "the following arguments are required: --project"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("add-webhook", *options, stdout=out)
+
+        options = ["invalid-url", "--project", project.name]
+        expected = "Invalid URL: invalid-url"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("add-webhook", *options, stdout=out)
+
+        options = ["https://example.com/webhook", "--project", project.name]
+        call_command("add-webhook", *options, stdout=out)
+
+        self.assertIn(
+            f"Webhook successfully added to project '{project.name}' (active).",
+            out.getvalue(),
+        )
+        webhook = WebhookSubscription.objects.get(project=project)
+        self.assertEqual(webhook.target_url, "https://example.com/webhook")
+        self.assertTrue(webhook.is_active)
+        self.assertFalse(webhook.trigger_on_each_run)
+        self.assertFalse(webhook.include_summary)
+        self.assertFalse(webhook.include_results)
+
+        # Test adding a webhook with all options enabled and inactive
+        out = StringIO()
+        options.extend(
+            [
+                "--trigger-on-each-run",
+                "--include-summary",
+                "--include-results",
+                "--inactive",
+            ]
+        )
+        call_command("add-webhook", *options, stdout=out)
+
+        self.assertIn(
+            f"Webhook successfully added to project '{project.name}' (inactive).",
+            out.getvalue(),
+        )
+        webhook = WebhookSubscription.objects.filter(project=project).first()
+        self.assertEqual(webhook.target_url, "https://example.com/webhook")
+        self.assertFalse(webhook.is_active)
+        self.assertTrue(webhook.trigger_on_each_run)
+        self.assertTrue(webhook.include_summary)
+        self.assertTrue(webhook.include_results)
+
     def test_scanpipe_management_command_show_pipeline(self):
         pipeline_names = [
             self.pipeline_name,
