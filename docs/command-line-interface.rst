@@ -344,6 +344,47 @@ add the docker pipeline to your project::
     ``--pipeline map_deploy_to_develop:Java,JavaScript``
 
 
+.. _cli_add_webhook:
+
+`$ scanpipe add-webhook --project PROJECT TARGET_URL`
+-----------------------------------------------------
+
+Adds a webhook subscription to a project.
+
+Required arguments:
+
+- ``target-url``
+  The target URL to which the webhook should send POST requests.
+
+Optional arguments:
+
+- ``--trigger-on-each-run``
+  Trigger the webhook after each individual pipeline run.
+
+- ``--include-summary``
+  Include summary data in the payload.
+
+- ``--include-results``
+  Include results data in the payload.
+
+- ``--inactive``
+  Create the webhook but set it as inactive.
+
+Example usage:
+
+1. Add an active webhook that triggers after each pipeline run::
+
+   $ scanpipe add-webhook my_project https://example.com/webhook --trigger-on-each-run
+
+2. Add a webhook that includes summary and results data::
+
+   $ scanpipe add-webhook my_project https://example.com/webhook --include-summary --include-results
+
+3. Add an inactive webhook::
+
+   $ scanpipe add-webhook my_project https://example.com/webhook --inactive
+
+
 `$ scanpipe execute --project PROJECT`
 --------------------------------------
 
