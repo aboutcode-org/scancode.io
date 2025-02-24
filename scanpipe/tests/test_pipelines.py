@@ -1252,7 +1252,6 @@ class PipelinesIntegrationTest(TestCase):
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
-        # mock_is_configured.return_value = True
         mock_is_available.return_value = True
 
         exitcode, out = pipeline.execute()

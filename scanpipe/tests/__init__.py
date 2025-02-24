@@ -20,11 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import json
 import os
 import uuid
 from datetime import datetime
-from pathlib import Path
 from unittest import mock
 
 from django.apps import apps
@@ -300,10 +298,3 @@ license_policies_index = {
         "license_key": "mpl-2.0",
     },
 }
-
-scorecard_data = None
-
-data = Path(__file__).parent / "data"
-
-with open(f"{data}/scorecode/scorecard_response.json") as file:
-    scorecard_data = json.load(file)

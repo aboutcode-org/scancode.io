@@ -4038,103 +4038,6 @@ class DiscoveredDependency(
         )
 
 
-class DiscoveredPackageScore(UUIDPKModel, PackageScoreMixin):
-    def __str__(self):
-        return self.score or str(self.uuid)
-
-    discovered_package = models.ForeignKey(
-        DiscoveredPackage,
-        related_name="discovered_packages_score",
-        help_text=_("The package for which the score is given"),
-        on_delete=models.CASCADE,
-        editable=False,
-        blank=True,
-        null=True,
-    )
-
-    def parse_score_date(date_str, formats=None):
-        """
-        Parse a date string into a timezone-aware datetime object,
-        or return None if parsing fails.
-        """
-        if not formats:
-            formats = ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%SZ"]
-
-        if date_str:
-            for fmt in formats:
-                try:
-                    naive_datetime = datetime.strptime(date_str, fmt)
-                    return timezone.make_aware(
-                        naive_datetime, timezone.get_current_timezone()
-                    )
-                except ValueError:
-                    continue
-
-        # Return None if date_str is None or parsing fails
-        return None
-
-    @classmethod
-    @transaction.atomic()
-    def create_from_scorecard_data(
-        cls, discovered_package, scorecard_data, scoring_tool=None
-    ):
-        """Create ScoreCard object from scorecard data and discovered package"""
-        final_data = {
-            "score": scorecard_data.score,
-            "scoring_tool_version": scorecard_data.scoring_tool_version,
-            "scoring_tool_documentation_url": (
-                scorecard_data.scoring_tool_documentation_url
-            ),
-            "score_date": cls.parse_score_date(scorecard_data.score_date),
-        }
-
-        scorecard_object = cls.objects.create(
-            **final_data,
-            discovered_package=discovered_package,
-            scoring_tool=scoring_tool,
-        )
-
-        for check in scorecard_data.checks:
-            ScorecardCheck.create_from_data(package_score=scorecard_object, check=check)
-
-        return scorecard_object
-
-    @classmethod
-    def create_from_package_and_scorecard(cls, scorecard_data, package):
-        score_object = cls.create_from_scorecard_data(
-            discovered_package=package,
-            scorecard_data=scorecard_data,
-            scoring_tool="ossf-scorecard",
-        )
-        return score_object
-
-
-class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
-    def __str__(self):
-        return self.check_score or str(self.uuid)
-
-    for_package_score = models.ForeignKey(
-        DiscoveredPackageScore,
-        related_name="discovered_packages_score_checks",
-        help_text=_("The checks for which the score is given"),
-        on_delete=models.CASCADE,
-        editable=False,
-        blank=True,
-        null=True,
-    )
-
-    @classmethod
-    def create_from_data(cls, package_score, check):
-        """Create a ScorecardCheck instance from provided data."""
-        return cls.objects.create(
-            check_name=check.check_name,
-            check_score=check.check_score,
-            reason=check.reason or "",
-            details=check.details or [],
-            for_package_score=package_score,
-        )
-
-
 def normalize_package_url_data(purl_mapping, ignore_nulls=False):
     """
     Normalize a mapping of purl data so database queries with
@@ -4376,3 +4279,122 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
     """Create an API key token on user creation, using the signal system."""
     if created:
         Token.objects.create(user_id=instance.pk)
+
+
+class DiscoveredPackageScore(UUIDPKModel, PackageScoreMixin):
+    """Represents a security or quality score for a DiscoveredPackage."""
+
+    discovered_package = models.ForeignKey(
+        DiscoveredPackage,
+        related_name="discovered_packages_score",
+        help_text=_("The package for which the score is given"),
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+
+    class Meta:
+        verbose_name = "discovered package score"
+        verbose_name_plural = "discovered package scores"
+        ordering = ["-score"]
+        indexes = [
+            models.Index(fields=["score"]),
+            models.Index(fields=["scoring_tool_version"]),
+        ]
+
+    def __str__(self):
+        return self.score or str(self.uuid)
+
+    @classmethod
+    def parse_score_date(cls, date_str, formats=None):
+        """
+        Parse a date string into a timezone-aware datetime object,
+        or return None if parsing fails.
+        """
+        if not formats:
+            formats = ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%SZ"]
+
+        if date_str:
+            for fmt in formats:
+                try:
+                    naive_datetime = datetime.strptime(date_str, fmt)
+                    return timezone.make_aware(
+                        naive_datetime, timezone.get_current_timezone()
+                    )
+                except ValueError:
+                    continue
+
+        # Return None if date_str is None or parsing fails
+        return None
+
+    @classmethod
+    @transaction.atomic()
+    def create_from_scorecard_data(
+        cls, discovered_package, scorecard_data, scoring_tool=None
+    ):
+        """Create ScoreCard object from scorecard data and discovered package"""
+        final_data = {
+            "score": scorecard_data.score,
+            "scoring_tool_version": scorecard_data.scoring_tool_version,
+            "scoring_tool_documentation_url": (
+                scorecard_data.scoring_tool_documentation_url
+            ),
+            "score_date": cls.parse_score_date(scorecard_data.score_date),
+        }
+
+        scorecard_object = cls.objects.create(
+            **final_data,
+            discovered_package=discovered_package,
+            scoring_tool=scoring_tool,
+        )
+
+        for check in scorecard_data.checks:
+            ScorecardCheck.create_from_data(package_score=scorecard_object, check=check)
+
+        return scorecard_object
+
+    @classmethod
+    def create_from_package_and_scorecard(cls, scorecard_data, package):
+        score_object = cls.create_from_scorecard_data(
+            discovered_package=package,
+            scorecard_data=scorecard_data,
+            scoring_tool="ossf-scorecard",
+        )
+        return score_object
+
+
+class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
+    """
+    Represents an individual check within a Scorecard evaluation for a
+    DiscoveredPackageScore.
+    """
+
+    for_package_score = models.ForeignKey(
+        DiscoveredPackageScore,
+        related_name="discovered_packages_score_checks",
+        help_text=_("The checks for which the score is given"),
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+
+    class Meta:
+        verbose_name = "scorecard check"
+        verbose_name_plural = "scorecard checks"
+        ordering = ["-check_score"]
+        indexes = [
+            models.Index(fields=["check_score"]),
+            models.Index(fields=["check_name"]),
+        ]
+
+    def __str__(self):
+        return self.check_score or str(self.uuid)
+
+    @classmethod
+    def create_from_data(cls, package_score, check):
+        """Create a ScorecardCheck instance from provided data."""
+        return cls.objects.create(
+            check_name=check.check_name,
+            check_score=check.check_score,
+            reason=check.reason or "",
+            details=check.details or [],
+            for_package_score=package_score,
+        )

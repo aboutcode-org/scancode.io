@@ -67,6 +67,7 @@ from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.models import RunNotAllowedToStart
+from scanpipe.models import ScorecardCheck
 from scanpipe.models import UUIDTaggedItem
 from scanpipe.models import WebhookSubscription
 from scanpipe.models import convert_glob_to_django_regex
@@ -86,7 +87,6 @@ from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 from scanpipe.tests import package_data2
-from scanpipe.tests import scorecard_data
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -2512,7 +2512,10 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue("e" in paths)
         self.assertTrue("a" in paths)
 
-    def test_scorecard_models(self):
+    def test_scanpipe_scorecard_models(self):
+        with open(self.data / "scorecode/scorecard_response.json") as file:
+            scorecard_data = json.load(file)
+
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
         scorecard_obj = PackageScore.from_data(scorecard_data)
         package_score = DiscoveredPackageScore.create_from_package_and_scorecard(
@@ -2534,6 +2537,113 @@ class ScanPipeModelsTest(TestCase):
                 self.assertEqual(check.check_score, "-1")
             else:
                 self.assertRegex(check.check_score, r"^\d+(\.\d+)?$")
+
+    def test_scanpipe_create_from_scorecard_data(self):
+        """Test that create_from_scorecard_data successfully creates a package score."""
+        with open(self.data / "scorecode/scorecard_response.json") as file:
+            scorecard_data = json.load(file)
+
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+
+        scorecard_obj = PackageScore.from_data(scorecard_data)
+        package_score = DiscoveredPackageScore.create_from_scorecard_data(
+            discovered_package=package,
+            scorecard_data=scorecard_obj,
+            scoring_tool="ossf-scorecard",
+        )
+
+        self.assertIsNotNone(package_score)
+        self.assertEqual(package_score.discovered_package, package)
+        self.assertEqual(package_score.score, scorecard_obj.score)
+        self.assertEqual(
+            package_score.scoring_tool_version, scorecard_obj.scoring_tool_version
+        )
+        self.assertIsNotNone(package_score.score_date)
+
+        actual_checks = package_score.discovered_packages_score_checks.all()
+        expected_checks = {check["name"]: check for check in scorecard_data["checks"]}
+
+        self.assertEqual(
+            set(check.check_name for check in actual_checks),
+            set(expected_checks.keys()),
+        )
+
+        for check in actual_checks:
+            expected = expected_checks[check.check_name]
+            self.assertEqual(check.check_score, str(expected["score"]))
+            self.assertEqual(check.reason, expected["reason"])
+            self.assertEqual(check.details, expected["details"] or [])
+
+    def test_scanpipe_parse_score_date(self):
+        """Test parse_score_date with valid, invalid, and custom date formats."""
+        # Valid date formats
+        valid_dates = {
+            "2024-02-22T12:34:56Z": timezone.datetime(
+                2024, 2, 22, 12, 34, 56, tzinfo=tz.utc
+            ),
+            "2024-02-22": timezone.datetime(
+                2024, 2, 22, tzinfo=timezone.get_current_timezone()
+            ),
+        }
+        for date_str, expected in valid_dates.items():
+            with self.subTest(date_str=date_str):
+                parsed_date = DiscoveredPackageScore.parse_score_date(date_str)
+                self.assertIsNotNone(parsed_date)
+                self.assertEqual(parsed_date, expected)
+
+        # Invalid date formats
+        invalid_dates = [
+            "2024/02/22",
+            "Feb 22, 2024",
+            "22-02-2024",
+            "not-a-date",
+            None,
+            "",
+        ]
+        for date_str in invalid_dates:
+            with self.subTest(date_str=date_str):
+                self.assertIsNone(DiscoveredPackageScore.parse_score_date(date_str))
+
+        # Custom date format
+        custom_date_str = "22-02-2024 14:30"
+        custom_format = ["%d-%m-%Y %H:%M"]
+        parsed_custom = DiscoveredPackageScore.parse_score_date(
+            custom_date_str, custom_format
+        )
+
+        self.assertIsNotNone(parsed_custom)
+        self.assertEqual(parsed_custom.date(), timezone.datetime(2024, 2, 22).date())
+
+    def test_scanpipe_create_scorecard_check_from_data(self):
+        """Test create_from_data successfully creates a ScorecardCheck instance."""
+        with open(self.data_path / "scorecode/scorecard_response.json") as file:
+            scorecard_data = json.load(file)
+
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        scorecard_obj = PackageScore.from_data(scorecard_data)
+        package_score = DiscoveredPackageScore.create_from_package_and_scorecard(
+            package=package, scorecard_data=scorecard_obj
+        )
+
+        # Step 4: Retrieve the first check that was automatically created
+        check_data = scorecard_data["checks"][0]  # Extract first check
+        scorecard_check = ScorecardCheck.objects.get(
+            for_package_score=package_score, check_name=check_data["name"]
+        )
+
+        # Step 5: Assertions to validate correct object creation
+        self.assertIsNotNone(scorecard_check)
+        self.assertEqual(scorecard_check.for_package_score, package_score)
+        self.assertEqual(scorecard_check.check_name, check_data["name"])
+        self.assertEqual(scorecard_check.check_score, str(check_data["score"]))
+        self.assertEqual(scorecard_check.reason, check_data["reason"])
+        self.assertEqual(scorecard_check.details, check_data["details"] or [])
+
+        # Step 6: Ensure the number of checks matches the scorecard data
+        self.assertEqual(
+            package_score.discovered_packages_score_checks.count(),
+            len(scorecard_data["checks"]),
+        )
 
     def test_scanpipe_model_codebase_resource_compliance_alert_queryset_mixin(self):
         severities = CodebaseResource.Compliance

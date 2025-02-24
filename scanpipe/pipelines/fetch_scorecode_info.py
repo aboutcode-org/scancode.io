@@ -41,17 +41,17 @@ class FetchScoreCodeInfo(Pipeline):
     @classmethod
     def steps(cls):
         return (
-            cls.check_scorecode_service_availability,
-            cls.fetch_packages_scorecode_info,
+            cls.check_ScoreCode_service_availability,
+            cls.fetch_packages_ScoreCode_info,
         )
 
-    def check_scorecode_service_availability(self):
-        """Check if the scorecode service is configured and available."""
+    def check_ScoreCode_service_availability(self):
+        """Check if the ScoreCode service is configured and available."""
         if not ossf_scorecard.is_available():
-            raise Exception("scorecode service is not available.")
+            raise Exception("ScoreCode service is not available.")
 
-    def fetch_packages_scorecode_info(self):
-        """Fetch scorecode information for each of the project's discovered packages."""
+    def fetch_packages_ScoreCode_info(self):
+        """Fetch ScoreCode information for each of the project's discovered packages."""
         for package in self.project.discoveredpackages.all():
             scorecard_data = ossf_scorecard.fetch_scorecard_info(
                 package=package, logger=None
