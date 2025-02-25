@@ -495,6 +495,30 @@ class ScanPipeScancodePipesTest(TestCase):
 
         self.assertJSONEqual(expected_location.read_text(), summary)
 
+    def test_scanpipe_pipes_scancode_assemble_package_function(self):
+        project = Project.objects.create(name="Analysis")
+        filename = "package_assembly_codebase.json"
+        project_scan_location = self.data / "scancode" / filename
+        input.load_inventory_from_toolkit_scan(project, project_scan_location)
+        project.discoveredpackages.all().delete()
+
+        processed_paths = set()
+        resource = project.codebaseresources.get(name="package.json")
+
+        # This assembly should not trigger that many queries.
+        with self.assertNumQueries(18):
+            scancode.assemble_package(resource, project, processed_paths)
+
+        self.assertEqual(1, project.discoveredpackages.count())
+        package = project.discoveredpackages.get()
+        self.assertEqual("pkg:npm/test@0.1.0", package.package_url)
+        associated_resources = [r.path for r in package.codebase_resources.all()]
+        expected_resources = [
+            "test/get_package_resources/package.json",
+            "test/get_package_resources/this-should-be-returned",
+        ]
+        self.assertEqual(sorted(expected_resources), sorted(associated_resources))
+
     def test_scanpipe_pipes_scancode_assemble_packages(self):
         project = Project.objects.create(name="Analysis")
         filename = "package_assembly_codebase.json"
@@ -507,7 +531,7 @@ class ScanPipeScancodePipesTest(TestCase):
         scancode.assemble_packages(project, progress_logger=lambda: None)
         self.assertEqual(1, project.discoveredpackages.count())
 
-        package = project.discoveredpackages.all()[0]
+        package = project.discoveredpackages.get()
         self.assertEqual("pkg:npm/test@0.1.0", package.package_url)
 
         associated_resources = [r.path for r in package.codebase_resources.all()]
