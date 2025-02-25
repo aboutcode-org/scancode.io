@@ -476,44 +476,51 @@ def assemble_packages(project, progress_logger):
     using the respective package handlers for each package manifest type.
     """
     logger.info(f"Project {project} assemble_packages:")
-    seen_resource_paths = set()
+    processed_paths = set()
 
-    resources_with_package_data = project.codebaseresources.has_package_data()
-    progress = LoopProgress(resources_with_package_data.count(), logger=progress_logger)
+    resources_with_package = project.codebaseresources.has_package_data()
+    progress = LoopProgress(resources_with_package.count(), logger=progress_logger)
 
-    for resource in progress.iter(resources_with_package_data):
+    for resource in progress.iter(resources_with_package):
         progress.log_progress()
 
-        if resource.path in seen_resource_paths:
+        if resource.path in processed_paths:
             continue
 
-        logger.info(f"  Processing: {resource.path}")
-        for package_mapping in resource.package_data:
-            pd = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
-            logger.info(f"  Package data: {pd.purl}")
+        assemble_package(resource, project, processed_paths)
 
-            handler = get_package_handler(pd)
-            logger.info(f"  Selected package handler: {handler.__name__}")
 
-            items = handler.assemble(
-                package_data=pd,
-                resource=resource,
-                codebase=project,
-                package_adder=add_resource_to_package,
-            )
+def assemble_package(resource, project, processed_paths):
+    """
+    Process a single resource to assemble packages, dependencies, and related codebase
+    resources.
+    """
+    logger.info(f"  Processing: {resource.path}")
 
-            for item in items:
-                logger.info(f"    Processing item: {item}")
-                if isinstance(item, packagedcode_models.Package):
-                    package_data = item.to_dict()
-                    pipes.update_or_create_package(project, package_data)
-                elif isinstance(item, packagedcode_models.Dependency):
-                    dependency_data = item.to_dict()
-                    pipes.update_or_create_dependency(project, dependency_data)
-                elif isinstance(item, CodebaseResource):
-                    seen_resource_paths.add(item.path)
-                else:
-                    logger.info(f"Unknown Package assembly item type: {item!r}")
+    for package_mapping in resource.package_data:
+        package_data = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
+        logger.info(f"  Package data: {package_data.purl}")
+
+        handler = get_package_handler(package_data)
+        logger.info(f"  Selected package handler: {handler.__name__}")
+
+        extracted_items = handler.assemble(
+            package_data=package_data,
+            resource=resource,
+            codebase=project,
+            package_adder=add_resource_to_package,
+        )
+
+        for item in extracted_items:
+            logger.info(f"    Processing item: {item}")
+            if isinstance(item, packagedcode_models.Package):
+                pipes.update_or_create_package(project, item.to_dict())
+            elif isinstance(item, packagedcode_models.Dependency):
+                pipes.update_or_create_dependency(project, item.to_dict())
+            elif isinstance(item, CodebaseResource):
+                processed_paths.add(item.path)
+            else:
+                logger.info(f"Unknown Package assembly item type: {item!r}")
 
 
 def process_package_data(project, static_resolve=False):
