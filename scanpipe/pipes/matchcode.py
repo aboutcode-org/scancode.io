@@ -268,7 +268,7 @@ def fingerprint_stem_codebase_resource(location, with_threading=True, **kwargs):
     return _scan_resource(location, scanners, with_threading=with_threading)
 
 
-def fingerprint_setm_codebase_resources(
+def fingerprint_stem_codebase_resources(
     project, resource_qs=None, progress_logger=None, to_codebase_only=False
 ):
     """
