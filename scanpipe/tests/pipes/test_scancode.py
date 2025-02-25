@@ -504,7 +504,7 @@ class ScanPipeScancodePipesTest(TestCase):
         project.discoveredpackages.all().delete()
         self.assertEqual(0, project.discoveredpackages.count())
 
-        scancode.assemble_packages(project)
+        scancode.assemble_packages(project, progress_logger=lambda: None)
         self.assertEqual(1, project.discoveredpackages.count())
 
         package = project.discoveredpackages.all()[0]
