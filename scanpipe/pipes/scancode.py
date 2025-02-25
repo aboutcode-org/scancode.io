@@ -313,7 +313,7 @@ def scan_resources(
     if not scan_func_kwargs:
         scan_func_kwargs = {}
 
-    # Skip scannning files larger than the specified max size
+    # Skip scanning files larger than the specified max size
     skipped_files_max_size = flag.flag_and_ignore_files_over_max_size(
         resource_qs=resource_qs,
         file_size_limit=file_size_limit,
@@ -398,7 +398,11 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
 
 
 def scan_for_application_packages(
-    project, assemble=True, package_only=False, resource_qs=None, progress_logger=None
+    project,
+    assemble=True,
+    package_only=False,
+    resource_qs=None,
+    progress_logger=logger.info,
 ):
     """
     Run a package scan on resources without a status for a `project`,
@@ -422,6 +426,7 @@ def scan_for_application_packages(
 
     # Collect detected Package data and save it to the CodebaseResource it was
     # detected from.
+    progress_logger("Collecting package data from resources:")
     scan_resources(
         resource_qs=resource_qs,
         scan_func=scan_for_package_data,
@@ -433,7 +438,9 @@ def scan_for_application_packages(
     # Iterate through CodebaseResources with Package data and handle them using
     # the proper Package handler from packagedcode.
     if assemble:
-        assemble_packages(project=project)
+        progress_logger("Assembling collected package data:")
+        progress_logger("Progress: 0%")
+        assemble_packages(project=project, progress_logger=progress_logger)
 
 
 def add_resource_to_package(package_uid, resource, project):
@@ -462,7 +469,7 @@ def add_resource_to_package(package_uid, resource, project):
     resource.discovered_packages.add(package)
 
 
-def assemble_packages(project):
+def assemble_packages(project, progress_logger):
     """
     Create instances of DiscoveredPackage and DiscoveredDependency for `project`
     from the parsed package data present in the CodebaseResources of `project`,
@@ -471,7 +478,12 @@ def assemble_packages(project):
     logger.info(f"Project {project} assemble_packages:")
     seen_resource_paths = set()
 
-    for resource in project.codebaseresources.has_package_data():
+    resources_with_package_data = project.codebaseresources.has_package_data()
+    progress = LoopProgress(resources_with_package_data.count(), logger=progress_logger)
+
+    for resource in progress.iter(resources_with_package_data):
+        progress.log_progress()
+
         if resource.path in seen_resource_paths:
             continue
 
