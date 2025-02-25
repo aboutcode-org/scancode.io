@@ -497,8 +497,8 @@ def assemble_package(resource, project, processed_paths):
     """
     logger.info(f"  Processing: {resource.path}")
 
-    for package_mapping in resource.package_data:
-        package_data = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
+    for mapping in resource.package_data:
+        package_data = packagedcode_models.PackageData.from_dict(mapping=mapping)
         logger.info(f"  Package data: {package_data.purl}")
 
         handler = get_package_handler(package_data)
