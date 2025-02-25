@@ -19,6 +19,10 @@ v34.9.5 (2025-02-19)
   a project.
   https://github.com/aboutcode-org/scancode.io/issues/1587
 
+- Add proper progress logging for the ``assemble`` section of the
+  ``scan_for_application_packages``.
+  https://github.com/aboutcode-org/scancode.io/issues/1601
+
 v34.9.4 (2025-01-21)
 --------------------
 
