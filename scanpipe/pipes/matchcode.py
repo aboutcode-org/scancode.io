@@ -28,7 +28,7 @@ from django.conf import settings
 import requests
 from matchcode_toolkit.fingerprinting import compute_codebase_directory_fingerprints
 from matchcode_toolkit.fingerprinting import get_file_fingerprint_hashes
-from matchcode_toolkit.fingerprinting import get_stem_file_fingerprint_hashes
+from matchcode_toolkit.fingerprinting import get_stemmed_file_fingerprint_hashes
 from scancode import Scanner
 
 from scanpipe.pipes import codebase
@@ -255,24 +255,24 @@ def fingerprint_codebase_resources(
     )
 
 
-def fingerprint_stem_codebase_resource(location, with_threading=True, **kwargs):
+def fingerprint_stemmed_codebase_resource(location, with_threading=True, **kwargs):
     """
-    Compute stem code fingerprints for the resource at `location` using the
+    Compute stemmed code fingerprints for the resource at `location` using the
     scancode-toolkit direct API.
 
     Return a dictionary of scan `results` and a list of `errors`.
     """
     scanners = [
-        Scanner("stem_fingerprints", get_stem_file_fingerprint_hashes),
+        Scanner("stemmed_fingerprints", get_stemmed_file_fingerprint_hashes),
     ]
     return _scan_resource(location, scanners, with_threading=with_threading)
 
 
-def fingerprint_stem_codebase_resources(
+def fingerprint_stemmed_codebase_resources(
     project, resource_qs=None, progress_logger=None, to_codebase_only=False
 ):
     """
-    Compute stem code fingerprints for the resources from `project`.
+    Compute stemmed code fingerprints for the resources from `project`.
 
     These resource fingerprints are used for matching purposes on matchcode.
 
@@ -291,7 +291,7 @@ def fingerprint_stem_codebase_resources(
 
     scan_resources(
         resource_qs=resource_qs,
-        scan_func=fingerprint_stem_codebase_resource,
+        scan_func=fingerprint_stemmed_codebase_resource,
         save_func=save_resource_fingerprints,
         progress_logger=progress_logger,
     )
