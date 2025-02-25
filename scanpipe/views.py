@@ -86,6 +86,7 @@ from scanpipe.forms import ProjectOutputDownloadForm
 from scanpipe.forms import ProjectReportForm
 from scanpipe.forms import ProjectResetForm
 from scanpipe.forms import ProjectSettingsForm
+from scanpipe.forms import WebhookSubscriptionForm
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -197,6 +198,22 @@ class PrefetchRelatedViewMixin:
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(*self.prefetch_related)
+
+
+class HTTPResponseHXRedirect(HttpResponseRedirect):
+    status_code = 200
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self["HX-Redirect"] = self["Location"]
+
+
+class HTTPResponseHXLocation(HttpResponseRedirect):
+    status_code = 200
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self["HX-Location"] = self["Location"]
 
 
 def render_as_yaml(value):
@@ -860,6 +877,7 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
         project = self.get_object()
         context["archive_form"] = ProjectArchiveForm()
         context["reset_form"] = ProjectResetForm()
+        context["webhook_form"] = WebhookSubscriptionForm()
         context["webhook_subscriptions"] = project.webhooksubscriptions.all()
         return context
 
@@ -876,6 +894,24 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
         filename = output.safe_filename(settings.SCANCODEIO_CONFIG_FILE)
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
+
+
+class ProjectSettingsAddWebhookView(
+    ConditionalLoginRequired, FormAjaxMixin, UpdateView
+):
+    model = Project
+    form_class = WebhookSubscriptionForm
+    template_name = "scanpipe/forms/project_webhook_form.html"
+
+    def get_success_url(self):
+        url = reverse("project_settings", args=[self.object.slug])
+        return url + "#webhooks"
+
+    def form_valid(self, form):
+        form.save(project=self.object)
+        messages.success(self.request, "Webhook added to the project.")
+        # Using HXLocation header to force a full refresh of the page.
+        return HTTPResponseHXLocation(self.get_success_url())
 
 
 class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
@@ -1323,18 +1359,10 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
         )
 
 
-class HTTPResponseHXRedirect(HttpResponseRedirect):
-    status_code = 200
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self["HX-Redirect"] = self["Location"]
-
-
 class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, UpdateView):
     model = Project
     form_class = ProjectCloneForm
-    template_name = "scanpipe/includes/project_clone_form.html"
+    template_name = "scanpipe/forms/project_clone_form.html"
 
     def form_valid(self, form):
         super().form_valid(form)

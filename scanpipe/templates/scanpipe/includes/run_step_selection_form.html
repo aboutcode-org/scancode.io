@@ -3,7 +3,7 @@
     Warning: Step Selection is an advanced feature.<br>
     Removing steps may compromise data integrity. Use with caution.
   </div>
-  {% include 'scanpipe/includes/form_errors.html' %}
+  {% include 'scanpipe/forms/form_errors.html' %}
   <form hx-post="{% url 'project_run_step_selection' run.uuid %}"
         hx-target="#run-step-selection-box"
         hx-swap="outerHTML"

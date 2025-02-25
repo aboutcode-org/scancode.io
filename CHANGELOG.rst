@@ -15,6 +15,10 @@ v34.9.5 (2025-02-19)
   with other aboutcode submodules.
   https://github.com/aboutcode-org/scancode.io/issues/1423
 
+- Add a ``add-webhook`` management command that allows to add webhook subscription on
+  a project.
+  https://github.com/aboutcode-org/scancode.io/issues/1587
+
 v34.9.4 (2025-01-21)
 --------------------
 
