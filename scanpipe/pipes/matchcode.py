@@ -28,6 +28,7 @@ from django.conf import settings
 import requests
 from matchcode_toolkit.fingerprinting import compute_codebase_directory_fingerprints
 from matchcode_toolkit.fingerprinting import get_file_fingerprint_hashes
+from matchcode_toolkit.fingerprinting import get_stem_file_fingerprint_hashes
 from scancode import Scanner
 
 from scanpipe.pipes import codebase
@@ -249,6 +250,48 @@ def fingerprint_codebase_resources(
     scan_resources(
         resource_qs=resource_qs,
         scan_func=fingerprint_codebase_resource,
+        save_func=save_resource_fingerprints,
+        progress_logger=progress_logger,
+    )
+
+
+def fingerprint_stem_codebase_resource(location, with_threading=True, **kwargs):
+    """
+    Compute stem code fingerprints for the resource at `location` using the
+    scancode-toolkit direct API.
+
+    Return a dictionary of scan `results` and a list of `errors`.
+    """
+    scanners = [
+        Scanner("stem_fingerprints", get_stem_file_fingerprint_hashes),
+    ]
+    return _scan_resource(location, scanners, with_threading=with_threading)
+
+
+def fingerprint_setm_codebase_resources(
+    project, resource_qs=None, progress_logger=None, to_codebase_only=False
+):
+    """
+    Compute stem code fingerprints for the resources from `project`.
+
+    These resource fingerprints are used for matching purposes on matchcode.
+
+    Multiprocessing is enabled by default on this pipe, the number of processes can be
+    controlled through the SCANCODEIO_PROCESSES setting.
+
+    If `to_codebase_only` is True, the only resources from the `to/` codebase
+    are computed.
+    """
+    # Checking for None to make the distinction with an empty resource_qs queryset
+    if resource_qs is None:
+        resource_qs = project.codebaseresources.filter(is_text=True)
+
+    if to_codebase_only:
+        resource_qs = resource_qs.to_codebase()
+
+    scan_resources(
+        resource_qs=resource_qs,
+        scan_func=fingerprint_stem_codebase_resource,
         save_func=save_resource_fingerprints,
         progress_logger=progress_logger,
     )
