@@ -158,6 +158,10 @@ SCANCODEIO_SKOPEO_AUTHFILE_LOCATION = env.str(
     "SCANCODEIO_SKOPEO_AUTHFILE_LOCATION", default=""
 )
 
+# This webhook will be added as WebhookSubscription for each new project.
+# SCANCODEIO_GLOBAL_WEBHOOK=target_url=https://webhook.url,trigger_on_each_run=False,include_summary=True,include_results=False
+SCANCODEIO_GLOBAL_WEBHOOK = env.dict("SCANCODEIO_GLOBAL_WEBHOOK", default={})
+
 # Application definition
 
 INSTALLED_APPS = [
