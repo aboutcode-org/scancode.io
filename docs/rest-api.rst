@@ -198,6 +198,8 @@ about the project, including the status of any pipeline run:
         "created_date": "2021-07-21T16:06:29.132795+02:00"
     }
 
+.. _rest_api_webhooks:
+
 Adding webhooks
 ^^^^^^^^^^^^^^^
 
