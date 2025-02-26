@@ -208,14 +208,6 @@ class HTTPResponseHXRedirect(HttpResponseRedirect):
         self["HX-Redirect"] = self["Location"]
 
 
-class HTTPResponseHXLocation(HttpResponseRedirect):
-    status_code = 200
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self["HX-Location"] = self["Location"]
-
-
 def render_as_yaml(value):
     if value:
         return saneyaml.dump(value, indent=2)
@@ -910,8 +902,7 @@ class ProjectSettingsAddWebhookView(
     def form_valid(self, form):
         form.save(project=self.object)
         messages.success(self.request, "Webhook added to the project.")
-        # Using HXLocation header to force a full refresh of the page.
-        return HTTPResponseHXLocation(self.get_success_url())
+        return HTTPResponseHXRedirect(self.get_success_url())
 
 
 class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
