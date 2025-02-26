@@ -268,6 +268,37 @@ The web server can be started in DEBUG mode with:
 
     $ SCANCODEIO_LOG_LEVEL=DEBUG make run
 
+.. _scancodeio_settings_global_webhook:
+
+SCANCODEIO_GLOBAL_WEBHOOK
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This setting defines a **global webhook** that will be automatically added as a
+``WebhookSubscription`` for each new project.
+
+The webhook is configured as a dictionary and must include a ``target_url``.
+Additional options control when the webhook is triggered and what data is included
+in the payload.
+
+Example configuration in the ``.env`` file::
+
+    SCANCODEIO_GLOBAL_WEBHOOK=target_url=https://webhook.url,trigger_on_each_run=False,include_summary=True,include_results=False
+
+The available options are:
+
+- ``target_url`` (**required**): The URL where the webhook payload will be sent.
+- ``trigger_on_each_run`` (**default**: ``False``): If ``True``, the webhook is triggered
+  on every pipeline run.
+- ``include_summary`` (**default**: ``False``): If ``True``, a summary of the pipeline
+  run results is included in the payload.
+- ``include_results`` (**default**: ``False``): If ``True``, detailed scan results
+  are included in the payload.
+
+If this setting is provided, ScanCode.io will create a webhook subscription
+**only for newly created projects that are not clones**.
+
+Default: ``{}`` (no global webhook is set)
+
 TIME_ZONE
 ^^^^^^^^^
 

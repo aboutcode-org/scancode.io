@@ -117,6 +117,34 @@ your specific requirements.
     Project Settings UI and click on the **Config file** link in the left section under
     **Download**.
 
+.. _user_interface_manage_webhook:
+
+Manage Webhook
+^^^^^^^^^^^^^^
+
+The **Manage Webhook** section in the Project Settings view allows you to configure
+Webhook subscriptions for project pipeline execution events.
+
+From the Settings page, you can:
+
+- **Add a new webhook** by specifying a target URL that will receive event notifications.
+- **Edit an existing webhook** to update its target URL, event triggers, or payload settings.
+- **Delete a webhook** to stop receiving notifications for that project.
+
+Each webhook is associated with a **WebhookSubscription** and includes the following
+configurable options:
+
+- **Target URL**: The destination where the webhook payload will be sent when triggered.
+- **Trigger on Each Run**: Choose whether to send notifications after each pipeline run
+  or only after all runs are completed.
+- **Include Summary**: Decide whether to include summary data in the webhook payload.
+- **Include Results**: Optionally include detailed scan results in the webhook payload.
+- **Active Status**: Enable or disable the webhook without deleting it.
+
+.. note::
+    Ensure the target URL is correctly configured to receive webhook requests and
+    process them accordingly.
+
 Archive a Project
 ^^^^^^^^^^^^^^^^^
 

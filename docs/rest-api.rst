@@ -198,6 +198,81 @@ about the project, including the status of any pipeline run:
         "created_date": "2021-07-21T16:06:29.132795+02:00"
     }
 
+.. _rest_api_webhooks:
+
+Adding webhooks
+^^^^^^^^^^^^^^^
+
+When creating a project, you can also **register webhook subscriptions** that will
+notify external services about pipeline execution events.
+
+You can either provide:
+ - A **single webhook URL** using the ``webhook_url`` field.
+ - A **list of detailed webhook configurations** using the ``webhooks`` field.
+
+Webhook fields:
+    - ``webhook_url`` (string, optional): A single webhook URL to be notified.
+    - ``webhooks`` (list, optional): A list of webhook configurations.
+        - ``target_url`` (string, required): The URL to which the webhook will send a
+          ``POST`` request.
+        - ``trigger_on_each_run`` (boolean, optional): If ``true``, the webhook will be
+          triggered after each individual pipeline run. Default is ``false``.
+        - ``include_summary`` (boolean, optional): If ``true``, the webhook payload
+          will include the summary data of the pipeline execution. Default is ``false``.
+        - ``include_results`` (boolean, optional): If ``true``, the webhook payload
+          will include the full results data of the pipeline execution.
+          Default is ``false``.
+        - ``is_active`` (boolean, optional): If ``true``, the webhook is active and
+          will be triggered when the specified conditions are met. Default is ``true``.
+
+Using cURL to register a webhook:
+
+.. code-block:: console
+
+    api_url="http://localhost/api/projects/"
+    content_type="Content-Type: application/json"
+    data='{
+        "name": "project_name",
+        "webhook_url": "https://example.com/webhook"
+    }'
+
+    curl -X POST "$api_url" -H "$content_type" -d "$data"
+
+.. code-block:: json
+
+    {
+        "name": "project_name",
+        "webhook_url": "https://example.com/webhook"
+    }
+
+Using cURL to register multiple webhooks:
+
+.. code-block:: console
+
+    api_url="http://localhost/api/projects/"
+    content_type="Content-Type: application/json"
+    data='{
+        "name": "project_name",
+        "webhooks": [
+            {
+                "target_url": "https://example.com/webhook1",
+                "trigger_on_each_run": true,
+                "include_summary": false,
+                "include_results": true,
+                "is_active": true
+            },
+            {
+                "target_url": "https://example.com/webhook2",
+                "trigger_on_each_run": false,
+                "include_summary": true,
+                "include_results": false,
+                "is_active": true
+            }
+        ]
+    }'
+
+    curl -X POST "$api_url" -H "$content_type" -d "$data"
+
 Project details
 ---------------
 
@@ -278,6 +353,8 @@ Using cURL to upload a local file:
         "status": "Input(s) added."
     }
 
+.. _rest_api_add_pipeline:
+
 Add pipeline
 ^^^^^^^^^^^^
 
@@ -314,6 +391,58 @@ Using cURL:
     {
         "status": "Pipeline added."
     }
+
+.. _rest_api_add_webhook:
+
+Add webhook
+^^^^^^^^^^^
+
+This action adds a webhook subscription to the ``project``.
+A webhook allows external services to receive real-time notifications about project
+pipeline execution events.
+
+``POST /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/add_webhook/``
+
+Data:
+    - ``target_url`` (string, required): The URL to which the webhook will send
+      a ``POST`` request when triggered.
+    - ``trigger_on_each_run`` (boolean, optional): If ``true``, the webhook will be
+      triggered after each individual pipeline run. Default is ``false``.
+    - ``include_summary`` (boolean, optional): If ``true``, the webhook payload will
+      include the summary data of the pipeline execution. Default is ``false``.
+    - ``include_results`` (boolean, optional): If ``true``, the webhook payload will
+      include the full results data of the pipeline execution. Default is ``false``.
+    - ``is_active`` (boolean, optional): If ``true``, the webhook is active and will
+      be triggered when the specified conditions are met. Default is ``true``.
+
+Using cURL:
+
+.. code-block:: console
+
+    api_url="http://localhost/api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/add_webhook/"
+    content_type="Content-Type: application/json"
+    data='{
+        "target_url": "https://example.com/webhook",
+        "trigger_on_each_run": true,
+        "include_summary": true,
+        "include_results": false,
+        "is_active": true
+    }'
+
+    curl -X POST "$api_url" -H "$content_type" -d "$data"
+
+.. code-block:: json
+
+    {
+        "status": "Webhook added."
+    }
+
+.. note::
+    - Webhooks will only be triggered for active subscriptions.
+    - If ``trigger_on_each_run`` is set to ``false``, the webhook will only trigger
+      after all pipeline runs are completed.
+    - The ``include_summary`` and ``include_results`` fields allow customization of
+      the webhook payload.
 
 Archive
 ^^^^^^^

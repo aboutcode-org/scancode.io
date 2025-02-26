@@ -205,6 +205,19 @@ Also, A new GitHub action is available at
 `scancode-action repository <https://github.com/nexB/scancode-action>`_
 to run ScanCode.io pipelines from your GitHub Workflows.
 
+How can I get notified about my project progression?
+-----------------------------------------------------
+
+You can monitor your project's progress in multiple ways:
+
+- **User Interface:** The project details page provides real-time updates on pipeline
+  execution.
+- **REST API:** Use the API to programmatically check the status of your projects.
+- **CLI Monitoring:** The ``scanpipe list-projects`` command provides an overview of
+  project states.
+- **Webhook Integration:** You can set up webhooks to receive updates in your preferred
+  notification system. For more details, refer to the :ref:`webhooks` section.
+
 .. _faq_tag_input_files:
 
 How to tag input files?

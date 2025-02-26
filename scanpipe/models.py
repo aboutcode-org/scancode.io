@@ -603,6 +603,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Save this project instance.
         The workspace directories are set up during project creation.
         """
+        # True if the model has not been saved to the database yet.
+        is_new = self._state.adding
+        # True if the new instance is a clone of an existing one.
+        is_clone = kwargs.pop("is_clone", False)
+
         if not self.slug:
             self.slug = get_project_slug(project=self)
 
@@ -611,6 +616,18 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.setup_work_directory()
 
         super().save(*args, **kwargs)
+
+        if settings.SCANCODEIO_GLOBAL_WEBHOOK and is_new and not is_clone:
+            self.setup_global_webhook()
+
+    def setup_global_webhook(self):
+        """
+        Create a global webhook subscription instance from values defined in the
+        settings.
+        """
+        webhook_data = settings.SCANCODEIO_GLOBAL_WEBHOOK
+        if webhook_data.get("target_url"):
+            self.add_webhook_subscription(**webhook_data)
 
     def archive(self, remove_input=False, remove_codebase=False, remove_output=False):
         """
@@ -741,11 +758,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         execute_now=False,
     ):
         """Clone this project using the provided ``clone_name`` as new project name."""
-        new_project = Project.objects.create(
+        new_project = Project(
             name=clone_name,
             purl=self.purl,
             settings=self.settings if copy_settings else {},
         )
+        new_project.save(is_clone=True)
 
         if labels := self.labels.names():
             new_project.labels.add(*labels)
