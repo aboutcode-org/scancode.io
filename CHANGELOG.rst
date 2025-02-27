@@ -4,14 +4,14 @@ Changelog
 v34.9.6 (unreleased)
 --------------------
 
-- Refine and document the Webhook system:
+- Refine and document the Webhook system
+  https://github.com/aboutcode-org/scancode.io/issues/1587
   * Add UI to add/delete Webhooks from the project settings
   * Add a new `add-webhook` management command
   * Add a `add_webhook` REST API action
   * Add a new `SCANCODEIO_GLOBAL_WEBHOOK` setting
   * Add a new chapter dedicated to Webhooks management in the documentation
   * Add support for custom payload dedicated to Slack webhooks
- https://github.com/aboutcode-org/scancode.io/issues/1587
 
 v34.9.5 (2025-02-19)
 --------------------
