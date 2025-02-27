@@ -29,18 +29,25 @@ import environ
 PROJECT_DIR = environ.Path(__file__) - 1
 ROOT_DIR = PROJECT_DIR - 1
 
+# True if running tests through `./manage test`
+IS_TESTS = "test" in sys.argv
+
 # Environment
 
 ENV_FILE = "/etc/scancodeio/.env"
 if not Path(ENV_FILE).exists():
     ENV_FILE = ROOT_DIR(".env")
 
+# Do not use local .env environment when running the tests.
+if IS_TESTS:
+    ENV_FILE = None
+
 env = environ.Env()
 environ.Env.read_env(ENV_FILE)
 
 # Security
 
-SECRET_KEY = env.str("SECRET_KEY")
+SECRET_KEY = env.str("SECRET_KEY", default="")
 
 ALLOWED_HOSTS = env.list(
     "ALLOWED_HOSTS",
@@ -277,19 +284,17 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Testing
 
-# True if running tests through `./manage test`
-IS_TESTS = "test" in sys.argv
-
 if IS_TESTS:
+    from django.core.management.utils import get_random_secret_key
+
+    SECRET_KEY = get_random_secret_key()
     # Do not pollute the workspace while running the tests.
     SCANCODEIO_WORKSPACE_LOCATION = tempfile.mkdtemp()
     SCANCODEIO_REQUIRE_AUTHENTICATION = True
     SCANCODEIO_SCAN_FILE_TIMEOUT = 120
     # The default password hasher is rather slow by design.
     # Using a faster hashing algorithm in the testing context to speed up the run.
-    PASSWORD_HASHERS = [
-        "django.contrib.auth.hashers.MD5PasswordHasher",
-    ]
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 # Debug toolbar
 
