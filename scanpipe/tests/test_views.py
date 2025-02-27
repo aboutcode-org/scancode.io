@@ -851,6 +851,18 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
 
+    def test_scanpipe_views_delete_webhook_view(self):
+        webhook = self.project1.add_webhook_subscription(target_url="https://localhost")
+        url = reverse("project_delete_webhook", args=[self.project1.slug, webhook.uuid])
+
+        response = self.client.post(url, follow=True)
+        expected = f"Webhook deleted."
+        self.assertContains(response, expected)
+        self.assertEqual(0, self.project1.webhooksubscriptions.count())
+
+        response = self.client.get(url)
+        self.assertEqual(405, response.status_code)
+
     def test_scanpipe_views_run_status_view(self):
         run = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run_status", args=[run.uuid])
