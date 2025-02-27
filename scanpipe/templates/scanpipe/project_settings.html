@@ -22,7 +22,8 @@
     </section>
   </div>
 
-  {% include "scanpipe/modals/project_add_webhook_modal.html" %}
+  {% include "scanpipe/modals/project_webhook_add_modal.html" %}
+  {% include "scanpipe/modals/project_webhook_delete_modal.html" %}
   {% if not project.is_archived %}
     {% include "scanpipe/modals/project_archive_modal.html" %}
   {% endif %}
@@ -53,6 +54,6 @@
     onSubmitOverlay("#modal-archive form");
     onSubmitOverlay("#modal-reset form");
     onSubmitOverlay("#modal-delete form");
-    onSubmitOverlay("#modal-add-webhook form");
+    onSubmitOverlay("#modal-webhook-add form");
   </script>
 {% endblock %}

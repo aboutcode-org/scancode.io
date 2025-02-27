@@ -54,6 +54,7 @@
             <th>Include summary</th>
             <th>Include results</th>
             <th>Trigger on each run</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -74,6 +75,11 @@
             <td>
               <i class="fa-solid {% if webhook.trigger_on_each_run %}fa-check{% else %}fa-xmark{% endif %}"></i>
             </td>
+            <td>
+              <button type="button" class="button is-small is-text modal-button is-grey-link" data-target="modal-webhook-delete" aria-haspopup="true" data-url="{% url 'project_delete_webhook' project.slug webhook.uuid %}">
+                <i class="fa-regular fa-trash-can"></i>
+              </button>
+            </td>
           </tr>
         {% empty %}
           <tr>
@@ -84,7 +90,7 @@
         {% endfor %}
         </tbody>
       </table>
-      <a href="#" class="button is-smaller is-link modal-button mb-1" data-target="modal-add-webhook" aria-haspopup="true">
+      <a href="#" class="button is-smaller is-link modal-button mb-1" data-target="modal-webhook-add" aria-haspopup="true">
         Add Webhook
       </a>
     </div>

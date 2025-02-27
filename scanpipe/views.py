@@ -91,7 +91,6 @@ from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
-from scanpipe.models import InputSource
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
@@ -888,7 +887,7 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
         return response
 
 
-class ProjectSettingsAddWebhookView(
+class ProjectSettingsWebhookCreateView(
     ConditionalLoginRequired, FormAjaxMixin, UpdateView
 ):
     model = Project
@@ -1377,7 +1376,7 @@ def execute_pipelines_view(request, slug):
 @conditional_login_required
 def stop_pipeline_view(request, slug, run_uuid):
     project = get_object_or_404(Project, slug=slug)
-    run = get_object_or_404(Run, uuid=run_uuid, project=project)
+    run = get_object_or_404(project.runs, uuid=run_uuid)
 
     if run.status != run.Status.RUNNING:
         raise Http404("Pipeline is not running.")
@@ -1390,7 +1389,7 @@ def stop_pipeline_view(request, slug, run_uuid):
 @conditional_login_required
 def delete_pipeline_view(request, slug, run_uuid):
     project = get_object_or_404(Project, slug=slug)
-    run = get_object_or_404(Run, uuid=run_uuid, project=project)
+    run = get_object_or_404(project.runs, uuid=run_uuid)
 
     if run.status not in [run.Status.NOT_STARTED, run.Status.QUEUED]:
         raise Http404("Only non started or queued pipelines can be deleted.")
@@ -1408,11 +1407,24 @@ def delete_input_view(request, slug, input_uuid):
     if not project.can_change_inputs:
         raise Http404("Inputs cannot be deleted on this project.")
 
-    input_source = get_object_or_404(InputSource, uuid=input_uuid, project=project)
+    input_source = get_object_or_404(project.inputsources, uuid=input_uuid)
     input_source.delete()
     messages.success(request, f"Input {input_source.filename} deleted.")
 
     return redirect(project)
+
+
+@require_POST
+@conditional_login_required
+def delete_webhook_view(request, slug, webhook_uuid):
+    project = get_object_or_404(Project, slug=slug)
+    webhook = get_object_or_404(project.webhooksubscriptions, uuid=webhook_uuid)
+
+    webhook.delete()
+    messages.success(request, "Webhook deleted.")
+
+    success_url = reverse("project_settings", args=[project.slug]) + "#webhooks"
+    return redirect(success_url)
 
 
 def download_project_file(request, slug, filename, path_type):

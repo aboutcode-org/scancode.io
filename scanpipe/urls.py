@@ -113,7 +113,7 @@ urlpatterns = [
     ),
     path(
         "project/<slug:slug>/settings/webhooks/add",
-        views.ProjectSettingsAddWebhookView.as_view(),
+        views.ProjectSettingsWebhookCreateView.as_view(),
         name="project_settings_add_webhook",
     ),
     path(
@@ -170,6 +170,11 @@ urlpatterns = [
         "project/<slug:slug>/delete_input/<uuid:input_uuid>/",
         views.delete_input_view,
         name="project_delete_input",
+    ),
+    path(
+        "project/<slug:slug>/delete_webhook/<uuid:webhook_uuid>/",
+        views.delete_webhook_view,
+        name="project_delete_webhook",
     ),
     path(
         "project/<slug:slug>/download_input/<str:filename>/",
