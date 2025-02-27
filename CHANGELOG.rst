@@ -1,6 +1,18 @@
 Changelog
 =========
 
+v34.9.6 (unreleased)
+--------------------
+
+- Refine and document the Webhook system
+  https://github.com/aboutcode-org/scancode.io/issues/1587
+  * Add UI to add/delete Webhooks from the project settings
+  * Add a new `add-webhook` management command
+  * Add a `add_webhook` REST API action
+  * Add a new `SCANCODEIO_GLOBAL_WEBHOOK` setting
+  * Add a new chapter dedicated to Webhooks management in the documentation
+  * Add support for custom payload dedicated to Slack webhooks
+
 v34.9.5 (2025-02-19)
 --------------------
 
@@ -14,6 +26,10 @@ v34.9.5 (2025-02-19)
 - Add aboutcode.pipeline as an install_requires external dependency to prevent conflicts
   with other aboutcode submodules.
   https://github.com/aboutcode-org/scancode.io/issues/1423
+
+- Add a ``add-webhook`` management command that allows to add webhook subscription on
+  a project.
+  https://github.com/aboutcode-org/scancode.io/issues/1587
 
 - Add proper progress logging for the ``assemble`` section of the
   ``scan_for_application_packages``.

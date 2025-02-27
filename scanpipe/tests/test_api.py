@@ -52,6 +52,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
+from scanpipe.models import WebhookSubscription
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.output import JSONResultsGenerator
 from scanpipe.tests import dependency_data1
@@ -1042,6 +1043,42 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = "Cannot add inputs once a pipeline has started to execute."
         self.assertEqual(expected, response.data.get("status"))
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+    def test_scanpipe_api_project_action_add_webhook(self):
+        url = reverse("project-add-webhook", args=[self.project1.uuid])
+
+        # Test missing target_url
+        response = self.csrf_client.post(url, data={})
+        self.assertEqual(
+            {"target_url": ["This field is required."]},
+            response.data,
+        )
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+        # Test invalid URL
+        data = {"target_url": "invalid-url"}
+        response = self.csrf_client.post(url, data=data)
+        self.assertIn("target_url", response.data)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+        # Test valid webhook creation
+        data = {
+            "target_url": "https://example.com/webhook",
+            "trigger_on_each_run": True,
+            "include_summary": True,
+            "include_results": False,
+            "is_active": True,
+        }
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual({"status": "Webhook added."}, response.data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+
+        webhook = WebhookSubscription.objects.get(project=self.project1)
+        self.assertEqual(webhook.target_url, data["target_url"])
+        self.assertTrue(webhook.trigger_on_each_run)
+        self.assertTrue(webhook.include_summary)
+        self.assertFalse(webhook.include_results)
+        self.assertTrue(webhook.is_active)
 
     def test_scanpipe_api_run_detail(self):
         run1 = self.project1.add_pipeline("analyze_docker_image")

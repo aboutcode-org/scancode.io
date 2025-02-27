@@ -120,6 +120,11 @@ SCANCODEIO_PAGINATE_BY = env.dict(
 # Default limit for "most common" entries in QuerySets.
 SCANCODEIO_MOST_COMMON_LIMIT = env.int("SCANCODEIO_MOST_COMMON_LIMIT", default=7)
 
+# The base URL (e.g., https://hostname/) of this application instance.
+# Required for generating URLs to reference objects within the app,
+# such as in webhook notifications.
+SCANCODEIO_SITE_URL = env.str("SCANCODEIO_SITE_URL", default="")
+
 # Fetch authentication credentials
 
 # SCANCODEIO_FETCH_BASIC_AUTH="host=user,password;"
@@ -157,6 +162,10 @@ SCANCODEIO_SKOPEO_CREDENTIALS = env.dict("SCANCODEIO_SKOPEO_CREDENTIALS", defaul
 SCANCODEIO_SKOPEO_AUTHFILE_LOCATION = env.str(
     "SCANCODEIO_SKOPEO_AUTHFILE_LOCATION", default=""
 )
+
+# This webhook will be added as WebhookSubscription for each new project.
+# SCANCODEIO_GLOBAL_WEBHOOK=target_url=https://webhook.url,trigger_on_each_run=False,include_summary=True,include_results=False
+SCANCODEIO_GLOBAL_WEBHOOK = env.dict("SCANCODEIO_GLOBAL_WEBHOOK", default={})
 
 # Application definition
 
