@@ -28,13 +28,14 @@ import textwrap
 from pathlib import Path
 from urllib.parse import urljoin
 
+from django.conf import settings
+
 import requests
 from git import Repo
 from packageurl import PackageURL
 
 from aboutcode import hashid
 from scancodeio import VERSION
-from scancodeio import settings
 from scanpipe.pipes.output import JSONResultsGenerator
 
 logger = logging.getLogger(__name__)
