@@ -4161,6 +4161,47 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
 
         return payload
 
+    @staticmethod
+    def get_slack_payload(pipeline_run):
+        """
+        Get a custom payload dedicated to Slack webhooks.
+        See https://api.slack.com/messaging/webhooks
+        """
+        project = pipeline_run.project
+        status = pipeline_run.status
+
+        status_to_color = {
+            Run.Status.SUCCESS: "#48c78e",
+            Run.Status.FAILURE: "#f14668",
+            # The following status do not trigger the webhook delivery:
+            # Run.Status.STOPPED: "#f14668",
+            # Run.Status.STALE: "#363636",
+        }
+        color = status_to_color.get(status, "")
+
+        pipeline_name = pipeline_run.pipeline_name
+        pretext = f"Project [{project.name}] update"
+        text = f"Pipeline `{pipeline_name}` completed with {status}."
+
+        return {
+            "username": "ScanCode.io",
+            "text": pretext,
+            "attachments": [
+                {
+                    "color": color,
+                    "blocks": [
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": text,
+                            },
+                        }
+                    ],
+                }
+            ],
+        }
+
     def deliver(self, pipeline_run, timeout=10):
         """Deliver this Webhook by sending a POST request to the `target_url`."""
         logger.info(f"Delivering Webhook {self.uuid}")
@@ -4169,7 +4210,11 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             logger.info(f"Webhook {self.uuid} is not active.")
             return False
 
-        payload = self.get_payload(pipeline_run)
+        if "hooks.slack.com" in self.target_url:
+            payload = self.get_slack_payload(pipeline_run)
+        else:
+            payload = self.get_payload(pipeline_run)
+
         delivery = WebhookDelivery(
             project=self.project,
             webhook_subscription=self,
