@@ -42,9 +42,9 @@ from scanpipe.models import Project
 from scanpipe.pipelines import CommonStepsMixin
 from scanpipe.pipelines import InputFilesError
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipelines import analyze_root_filesystem
 from scanpipe.pipelines import deploy_to_develop
 from scanpipe.pipelines import is_pipeline
-from scanpipe.pipelines import root_filesystem
 from scanpipe.pipelines import scan_single_package
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
@@ -468,7 +468,7 @@ class RootFSPipelineTest(TestCase):
     def test_scanpipe_rootfs_pipeline_extract_input_files_errors(self):
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("analyze_root_filesystem_or_vm_image")
-        pipeline_instance = root_filesystem.RootFS(run)
+        pipeline_instance = analyze_root_filesystem.RootFS(run)
 
         # Create 2 files in the input/ directory to generate error twice
         project1.move_input_from(tempfile.mkstemp()[1])
