@@ -118,3 +118,34 @@ Available options:
 - ``include_results`` (**default**: ``False``): Include detailed scan results.
 
 For more information, see the :ref:`scancodeio_settings_global_webhook` section.
+
+.. _webhooks_slack_notifications:
+
+Slack Notifications
+-------------------
+
+The Webhook system in ScanCode.io provides built-in support for sending Slack
+notifications using Slack's "Incoming Webhooks" feature.
+
+If you want to receive notifications in Slack when your project's pipeline completes,
+follow these steps:
+
+1. **Create a Slack Incoming Webhook:**
+   Visit the Slack API documentation at https://api.slack.com/messaging/webhooks
+   to generate a webhook URL. The URL will be in the format:
+   ``https://hooks.slack.com/...``.
+
+2. **Configure a Webhook in ScanCode.io:**
+
+   - Add a webhook to your project using the Slack webhook URL as the target.
+   - Alternatively, define a :ref:`Global Webhook <webhooks_global_setting>` to
+     apply the webhook globally across all projects.
+
+3. **Ensure the Site URL is set:**
+   Make sure the :ref:`scancodeio_settings_site_url` setting is correctly defined in
+   your ``.env`` file::
+
+       SCANCODEIO_SITE_URL=https://scancode.example.com/
+
+With these settings in place, ScanCode.io will send pipeline completion updates directly
+to your Slack channel.

@@ -217,6 +217,8 @@ You can monitor your project's progress in multiple ways:
   project states.
 - **Webhook Integration:** You can set up webhooks to receive updates in your preferred
   notification system. For more details, refer to the :ref:`webhooks` section.
+- **Slack notifications:** Get project updates directly in Slack by configuring an
+  incoming webhook. See :ref:`webhooks_slack_notifications` for setup instructions.
 
 .. _faq_tag_input_files:
 
