@@ -28,6 +28,7 @@ from django.conf import settings
 import requests
 from matchcode_toolkit.fingerprinting import compute_codebase_directory_fingerprints
 from matchcode_toolkit.fingerprinting import get_file_fingerprint_hashes
+from matchcode_toolkit.fingerprinting import get_line_by_pos
 from matchcode_toolkit.fingerprinting import get_stemmed_file_fingerprint_hashes
 from scancode import Scanner
 
@@ -405,3 +406,14 @@ def create_packages_from_match_results(project, match_results):
             package_data=matched_package,
             status=flag.MATCHED_TO_PURLDB_PACKAGE,
         )
+    match_resources = match_results.get("files", [])
+    for match_resource in match_resources:
+        match_resource_extra_data = match_resource["extra_data"]
+        if match_resource_extra_data:
+            resource = project.codebaseresources.get(path=match_resource["path"])
+            # compute line_by_pos for displaying matches in CodebaseResource detail view
+            with open(resource.location) as f:
+                content = f.read()
+                line_by_pos = get_line_by_pos(content)
+            match_resource_extra_data["line_by_pos"] = line_by_pos
+            resource.update_extra_data(match_resource_extra_data)
