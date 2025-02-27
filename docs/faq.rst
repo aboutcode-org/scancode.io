@@ -322,6 +322,39 @@ data older than 7 days::
   command.
 
 How can I provide my license policies?
----------------------------------------
+--------------------------------------
 
 For detailed information about the policies system, refer to :ref:`policies`.
+
+Can you analyze Dockerfiles?
+----------------------------
+
+We have code in https://github.com/aboutcode-org/container-inspector/blob/main/src/container_inspector/dockerfile.py
+for this ... but this may not be wired in other tools at the moment.
+It can for instance map dockerfile instructions to actual docker image history,
+https://github.com/aboutcode-org/container-inspector/blob/main/src/container_inspector/dockerfile.py#L204
+
+Can you analyze a built image? (Build Docker Image Analysis)
+------------------------------------------------------------
+
+Yes, we do this in ScanCode.io. We have one fairly unique feature to actually account
+for all files used in all layers.
+
+Can you analyze all layers of a running container?
+--------------------------------------------------
+
+ScanCode.io scans all layers of images. We can scan all layers of a running container
+if you save the running container as an image first.
+We can also fetch images from registries, local files and technically also from a
+running container, say in a local docker ... but this has not yet been tested so far.
+We do not introspect k8s clusters to analyze the deployed and running images
+there (yet) and that would be a nice future addition.
+For now we can instead work on the many images there, save and analyze them.
+
+Can you analyze Docker in Docker?
+---------------------------------
+
+The input to ScanCode is a local saved image: Docker or OCI.
+Docker in Docker support will demand to have access to the saved images
+(either extracted from the Docker images in Docker, or mounted in a volume or saved
+from the Docker in the Docker image). Once saved we can analyze these alright.
