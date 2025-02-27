@@ -2191,6 +2191,42 @@ class ScanPipeModelsTest(TestCase):
         self.assertIn("summary", payload)
         self.assertIn("results", payload)
 
+    @override_settings(SCANCODEIO_SITE_URL="https://example.com")
+    def test_scanpipe_webhook_subscription_model_get_slack_payload(self):
+        project = self.project1
+        run1 = self.create_run()
+        run1.set_task_ended(exitcode=0)
+        self.assertEqual(Run.Status.SUCCESS, run1.status)
+
+        expected_color = "#48c78e"
+        project_url = scanpipe_app.site_url + project.get_absolute_url()
+        project_display = f"<{project_url}|{project.name}>"
+
+        expected_payload = {
+            "username": "ScanCode.io",
+            "text": f"Project *{project_display}* update:",
+            "attachments": [
+                {
+                    "color": expected_color,
+                    "blocks": [
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": (
+                                    f"Pipeline `{run1.pipeline_name}` completed "
+                                    f"with {run1.status}."
+                                ),
+                            },
+                        }
+                    ],
+                }
+            ],
+        }
+
+        payload = WebhookSubscription.get_slack_payload(run1)
+        self.assertDictEqual(expected_payload, payload)
+
     def test_scanpipe_discovered_package_model_extract_purl_data(self):
         package_data = {}
         expected = {

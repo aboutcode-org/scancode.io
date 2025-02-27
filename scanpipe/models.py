@@ -4167,8 +4167,14 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         Get a custom payload dedicated to Slack webhooks.
         See https://api.slack.com/messaging/webhooks
         """
-        project = pipeline_run.project
         status = pipeline_run.status
+        project = pipeline_run.project
+
+        if site_url := scanpipe_app.site_url:
+            project_url = site_url + project.get_absolute_url()
+            project_display = f"<{project_url}|{project.name}>"
+        else:
+            project_display = project.name
 
         status_to_color = {
             Run.Status.SUCCESS: "#48c78e",
@@ -4180,7 +4186,7 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         color = status_to_color.get(status, "")
 
         pipeline_name = pipeline_run.pipeline_name
-        pretext = f"Project [{project.name}] update"
+        pretext = f"Project *{project_display}* update:"
         text = f"Pipeline `{pipeline_name}` completed with {status}."
 
         return {

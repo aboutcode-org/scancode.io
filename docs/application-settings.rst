@@ -268,6 +268,23 @@ The web server can be started in DEBUG mode with:
 
     $ SCANCODEIO_LOG_LEVEL=DEBUG make run
 
+.. _scancodeio_settings_site_url:
+
+SCANCODEIO_SITE_URL
+^^^^^^^^^^^^^^^^^^^
+
+The base URL of the ScanCode.io application instance.
+This setting is **required** to generate absolute URLs referencing objects within the
+application, such as in webhook notifications.
+
+The value should be a fully qualified URL, including the scheme (e.g., ``https://``).
+
+Example configuration in the ``.env`` file::
+
+    SCANCODEIO_SITE_URL=https://scancode.example.com/
+
+Default: ``""`` (empty)
+
 .. _scancodeio_settings_global_webhook:
 
 SCANCODEIO_GLOBAL_WEBHOOK
