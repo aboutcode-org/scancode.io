@@ -856,7 +856,7 @@ class ScanPipeViewsTest(TestCase):
         url = reverse("project_delete_webhook", args=[self.project1.slug, webhook.uuid])
 
         response = self.client.post(url, follow=True)
-        expected = f"Webhook deleted."
+        expected = "Webhook deleted."
         self.assertContains(response, expected)
         self.assertEqual(0, self.project1.webhooksubscriptions.count())
 
