@@ -24,6 +24,7 @@ import hashlib
 import json
 from contextlib import suppress
 from pathlib import Path
+import logging
 
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
@@ -62,6 +63,7 @@ PROSPECTIVE_JAVASCRIPT_MAP = {
     },
 }
 
+logger = logging.getLogger(__name__)
 
 def is_source_mapping_in_minified(resource, map_file_name):
     """Return True if a string contains a source mapping in its last 5 lines."""
@@ -87,13 +89,19 @@ def source_content_sha1_list(map_file):
     return [sha1(content) for content in contents if content]
 
 
-def load_json_from_file(location):
-    """Return the deserialized json content from ``location``."""
-    with open(location) as f:
-        try:
+def load_json_from_file(file):
+    try:
+        with open(file, 'r') as f:
             return json.load(f)
-        except json.JSONDecodeError:
-            return
+    except UnicodeDecodeError as e:
+        logger.error(f"Failed to decode {file} as JSON: {str(e)}")
+        return
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON format in {file}: {str(e)}")
+        return
+    except Exception as e:
+        logger.error(f"Unexpected error while reading {file}: {str(e)}")
+        return
 
 
 def get_map_sources(map_file):
