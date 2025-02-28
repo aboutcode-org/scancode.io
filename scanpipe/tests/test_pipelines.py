@@ -20,10 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import io
 import json
 import os
 import sys
 import tempfile
+from contextlib import redirect_stderr
 from pathlib import Path
 from unittest import mock
 from unittest import skipIf
@@ -1039,7 +1041,8 @@ class PipelinesIntegrationTest(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        exitcode, out = pipeline.execute()
+        with redirect_stderr(io.StringIO()):
+            exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
         project_messages = project1.projectmessages.all()
