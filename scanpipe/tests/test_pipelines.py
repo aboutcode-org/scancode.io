@@ -20,10 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import io
 import json
 import os
 import sys
 import tempfile
+from contextlib import redirect_stderr
 from pathlib import Path
 from unittest import mock
 from unittest import skipIf
@@ -42,9 +44,9 @@ from scanpipe.models import Project
 from scanpipe.pipelines import CommonStepsMixin
 from scanpipe.pipelines import InputFilesError
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipelines import analyze_root_filesystem
 from scanpipe.pipelines import deploy_to_develop
 from scanpipe.pipelines import is_pipeline
-from scanpipe.pipelines import root_filesystem
 from scanpipe.pipelines import scan_single_package
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
@@ -468,7 +470,7 @@ class RootFSPipelineTest(TestCase):
     def test_scanpipe_rootfs_pipeline_extract_input_files_errors(self):
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("analyze_root_filesystem_or_vm_image")
-        pipeline_instance = root_filesystem.RootFS(run)
+        pipeline_instance = analyze_root_filesystem.RootFS(run)
 
         # Create 2 files in the input/ directory to generate error twice
         project1.move_input_from(tempfile.mkstemp()[1])
@@ -1039,7 +1041,8 @@ class PipelinesIntegrationTest(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        exitcode, out = pipeline.execute()
+        with redirect_stderr(io.StringIO()):
+            exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
         project_messages = project1.projectmessages.all()

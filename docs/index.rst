@@ -50,6 +50,7 @@ you’ll find information on:
     command-line-interface
     rest-api
     automation
+    webhooks
     application-settings
     distros-os-images
 

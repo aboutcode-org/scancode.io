@@ -31,6 +31,7 @@ from taggit.forms import TagWidget
 
 from scanpipe.models import Project
 from scanpipe.models import Run
+from scanpipe.models import WebhookSubscription
 from scanpipe.pipelines import convert_markdown_to_html
 from scanpipe.pipes import fetch
 from scanpipe.policies import load_policies_yaml
@@ -703,3 +704,23 @@ class PipelineRunStepSelectionForm(forms.ModelForm):
     def get_step_choices(pipeline_class):
         """Return a `choices` list of tuple suitable for a Django ChoiceField."""
         return [(step.__name__, step.__name__) for step in pipeline_class.get_steps()]
+
+
+class WebhookSubscriptionForm(forms.ModelForm):
+    class Meta:
+        model = WebhookSubscription
+        fields = [
+            "target_url",
+            "trigger_on_each_run",
+            "include_summary",
+            "include_results",
+            "is_active",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        target_url_field = self.fields["target_url"]
+        target_url_field.widget.attrs["class"] = "input"
+
+    def save(self, project):
+        return project.add_webhook_subscription(**self.cleaned_data)

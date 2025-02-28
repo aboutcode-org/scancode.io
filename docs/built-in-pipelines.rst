@@ -26,7 +26,7 @@ Pipeline Base Class
 
 Analyse Docker Image
 --------------------
-.. autoclass:: scanpipe.pipelines.docker.Docker()
+.. autoclass:: scanpipe.pipelines.analyze_docker.Docker()
     :members:
     :member-order: bysource
 
@@ -34,7 +34,7 @@ Analyse Docker Image
 
 Analyze Root Filesystem or VM Image
 -----------------------------------
-.. autoclass:: scanpipe.pipelines.root_filesystem.RootFS()
+.. autoclass:: scanpipe.pipelines.analyze_root_filesystem.RootFS()
     :members:
     :member-order: bysource
 
@@ -42,7 +42,7 @@ Analyze Root Filesystem or VM Image
 
 Analyse Docker Windows Image
 ----------------------------
-.. autoclass:: scanpipe.pipelines.docker_windows.DockerWindows()
+.. autoclass:: scanpipe.pipelines.analyze_docker_windows.DockerWindows()
     :members:
     :member-order: bysource
 
