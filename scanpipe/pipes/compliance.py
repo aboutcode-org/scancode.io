@@ -61,6 +61,7 @@ def analyze_compliance_licenses(project):
         scan_results, scan_errors = scancode.scan_file(codebase_resource.location)
         codebase_resource.set_scan_results(scan_results)
 
+SEVERITY_ORDER = ["error", "warning", "missing", ""]
 
 def group_compliance_alerts_by_severity(queryset):
     """
@@ -108,4 +109,13 @@ def get_project_compliance_alerts(project, fail_level="error"):
         if (compliance_alerts := group_compliance_alerts_by_severity(queryset))
     }
 
-    return project_compliance_alerts
+    sorted_alerts = {}
+    for model_name, alerts in project_compliance_alerts.items():
+        sorted_dict = {}
+        for severity in SEVERITY_ORDER:
+            if severity in alerts:
+                sorted_dict[severity] = alerts[severity]
+        sorted_alerts[model_name] = sorted_dict
+
+
+    return sorted_alerts
