@@ -1251,7 +1251,7 @@ class PipelinesIntegrationTest(TestCase):
         mock_is_available.return_value = False
         exitcode, out = pipeline.execute()
         self.assertEqual(1, exitcode, msg=out)
-        self.assertIn("scorecode service is not available.", out)
+        self.assertIn("ScoreCode service is not available.", out)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()

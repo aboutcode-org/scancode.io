@@ -2705,7 +2705,7 @@ class ScanPipeModelsTest(TestCase):
 
     def test_scanpipe_create_scorecard_check_from_data(self):
         """Test create_from_data successfully creates a ScorecardCheck instance."""
-        with open(self.data_path / "scorecode/scorecard_response.json") as file:
+        with open(self.data / "scorecode/scorecard_response.json") as file:
             scorecard_data = json.load(file)
 
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
