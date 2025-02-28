@@ -229,3 +229,9 @@ Scan Single Package
 .. autoclass:: scanpipe.pipelines.scan_single_package.ScanSinglePackage()
     :members:
     :member-order: bysource
+
+Fetch ScoreCode Info for Package
+---------------------------------
+.. autoclass:: scanpipe.pipelines.fetch_scorecode_info.FetchScoreCodeInfo()
+    :members:
+    :member-order: bysource
