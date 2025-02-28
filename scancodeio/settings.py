@@ -29,18 +29,25 @@ import environ
 PROJECT_DIR = environ.Path(__file__) - 1
 ROOT_DIR = PROJECT_DIR - 1
 
+# True if running tests through `./manage test`
+IS_TESTS = "test" in sys.argv
+
 # Environment
 
 ENV_FILE = "/etc/scancodeio/.env"
 if not Path(ENV_FILE).exists():
     ENV_FILE = ROOT_DIR(".env")
 
+# Do not use local .env environment when running the tests.
+if IS_TESTS:
+    ENV_FILE = None
+
 env = environ.Env()
 environ.Env.read_env(ENV_FILE)
 
 # Security
 
-SECRET_KEY = env.str("SECRET_KEY")
+SECRET_KEY = env.str("SECRET_KEY", default="")
 
 ALLOWED_HOSTS = env.list(
     "ALLOWED_HOSTS",
@@ -120,6 +127,11 @@ SCANCODEIO_PAGINATE_BY = env.dict(
 # Default limit for "most common" entries in QuerySets.
 SCANCODEIO_MOST_COMMON_LIMIT = env.int("SCANCODEIO_MOST_COMMON_LIMIT", default=7)
 
+# The base URL (e.g., https://hostname/) of this application instance.
+# Required for generating URLs to reference objects within the app,
+# such as in webhook notifications.
+SCANCODEIO_SITE_URL = env.str("SCANCODEIO_SITE_URL", default="")
+
 # Fetch authentication credentials
 
 # SCANCODEIO_FETCH_BASIC_AUTH="host=user,password;"
@@ -158,6 +170,10 @@ SCANCODEIO_SKOPEO_AUTHFILE_LOCATION = env.str(
     "SCANCODEIO_SKOPEO_AUTHFILE_LOCATION", default=""
 )
 
+# This webhook will be added as WebhookSubscription for each new project.
+# SCANCODEIO_GLOBAL_WEBHOOK=target_url=https://webhook.url,trigger_on_each_run=False,include_summary=True,include_results=False
+SCANCODEIO_GLOBAL_WEBHOOK = env.dict("SCANCODEIO_GLOBAL_WEBHOOK", default={})
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -180,7 +196,6 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "django_rq",
     "django_probes",
-    "fontawesomefree",
     "taggit",
 ]
 
@@ -268,19 +283,17 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Testing
 
-# True if running tests through `./manage test`
-IS_TESTS = "test" in sys.argv
-
 if IS_TESTS:
+    from django.core.management.utils import get_random_secret_key
+
+    SECRET_KEY = get_random_secret_key()
     # Do not pollute the workspace while running the tests.
     SCANCODEIO_WORKSPACE_LOCATION = tempfile.mkdtemp()
     SCANCODEIO_REQUIRE_AUTHENTICATION = True
     SCANCODEIO_SCAN_FILE_TIMEOUT = 120
     # The default password hasher is rather slow by design.
     # Using a faster hashing algorithm in the testing context to speed up the run.
-    PASSWORD_HASHERS = [
-        "django.contrib.auth.hashers.MD5PasswordHasher",
-    ]
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 # Debug toolbar
 

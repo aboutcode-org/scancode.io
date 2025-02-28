@@ -32,6 +32,7 @@ from datetime import timezone as tz
 from pathlib import Path
 from unittest import mock
 from unittest import skipIf
+from unittest.mock import patch
 
 from django.apps import apps
 from django.conf import settings
@@ -848,6 +849,58 @@ class ScanPipeModelsTest(TestCase):
 
         self.project1.labels.clear()
         self.assertEqual(0, UUIDTaggedItem.objects.count())
+
+    @patch.object(Project, "setup_global_webhook")
+    def test_scanpipe_project_model_call_setup_global_webhook(self, mock_setup_webhook):
+        webhook_data = {
+            "target_url": "https://webhook.url",
+            "trigger_on_each_run": "False",
+            "include_summary": "True",
+            "include_results": "False",
+        }
+
+        with override_settings(SCANCODEIO_GLOBAL_WEBHOOK=webhook_data):
+            # Case 1: New project, not a clone (Webhook should be called)
+            project = Project(name="Test Project")
+            project.save()
+            mock_setup_webhook.assert_called_once()
+            mock_setup_webhook.reset_mock()
+
+            # Case 2: Project is a clone (Webhook should NOT be called)
+            project = Project(name="Cloned Project")
+            project.save(is_clone=True)
+            mock_setup_webhook.assert_not_called()
+
+        # Case 3: Global webhook is disabled (Webhook should NOT be called)
+        with override_settings(SCANCODEIO_GLOBAL_WEBHOOK=None):
+            project = Project(name="No Webhook Project")
+            project.save()
+            mock_setup_webhook.assert_not_called()
+
+    def test_scanpipe_project_model_setup_global_webhook(self):
+        self.project1.setup_global_webhook()
+        self.assertEqual(0, self.project1.webhooksubscriptions.count())
+
+        webhook_data = {"target_url": ""}
+        with override_settings(SCANCODEIO_GLOBAL_WEBHOOK=webhook_data):
+            self.project1.setup_global_webhook()
+        self.assertEqual(0, self.project1.webhooksubscriptions.count())
+
+        webhook_data = {
+            "target_url": "https://webhook.url",
+            "trigger_on_each_run": "False",
+            "include_summary": "True",
+            "include_results": "False",
+        }
+        with override_settings(SCANCODEIO_GLOBAL_WEBHOOK=webhook_data):
+            self.project1.setup_global_webhook()
+        self.assertEqual(1, self.project1.webhooksubscriptions.count())
+        webhook = self.project1.webhooksubscriptions.get()
+        self.assertEqual("https://webhook.url", webhook.target_url)
+        self.assertTrue(webhook.is_active)
+        self.assertFalse(webhook.trigger_on_each_run)
+        self.assertTrue(webhook.include_summary)
+        self.assertFalse(webhook.include_results)
 
     def test_scanpipe_model_update_mixin(self):
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
@@ -2140,6 +2193,42 @@ class ScanPipeModelsTest(TestCase):
         payload = webhook.get_payload(run1)
         self.assertIn("summary", payload)
         self.assertIn("results", payload)
+
+    @override_settings(SCANCODEIO_SITE_URL="https://example.com")
+    def test_scanpipe_webhook_subscription_model_get_slack_payload(self):
+        project = self.project1
+        run1 = self.create_run()
+        run1.set_task_ended(exitcode=0)
+        self.assertEqual(Run.Status.SUCCESS, run1.status)
+
+        expected_color = "#48c78e"
+        project_url = scanpipe_app.site_url + project.get_absolute_url()
+        project_display = f"<{project_url}|{project.name}>"
+
+        expected_payload = {
+            "username": "ScanCode.io",
+            "text": f"Project *{project_display}* update:",
+            "attachments": [
+                {
+                    "color": expected_color,
+                    "blocks": [
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": (
+                                    f"Pipeline `{run1.pipeline_name}` completed "
+                                    f"with {run1.status}."
+                                ),
+                            },
+                        }
+                    ],
+                }
+            ],
+        }
+
+        payload = WebhookSubscription.get_slack_payload(run1)
+        self.assertDictEqual(expected_payload, payload)
 
     def test_scanpipe_discovered_package_model_extract_purl_data(self):
         package_data = {}
