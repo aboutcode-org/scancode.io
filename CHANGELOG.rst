@@ -4,12 +4,16 @@ Changelog
 v34.9.6 (unreleased)
 --------------------
 
+- Rename the ``docker``, ``docker_windows``, and ``root_filesystem`` modules to
+  ``analyze_docker``, ``analyze_docker_windows``, and ``analyze_root_filesystem``
+  for consistency.
+
 - Refine and document the Webhook system
   https://github.com/aboutcode-org/scancode.io/issues/1587
   * Add UI to add/delete Webhooks from the project settings
-  * Add a new `add-webhook` management command
-  * Add a `add_webhook` REST API action
-  * Add a new `SCANCODEIO_GLOBAL_WEBHOOK` setting
+  * Add a new ``add-webhook`` management command
+  * Add a ``add_webhook`` REST API action
+  * Add a new ``SCANCODEIO_GLOBAL_WEBHOOK`` setting
   * Add a new chapter dedicated to Webhooks management in the documentation
   * Add support for custom payload dedicated to Slack webhooks
 
