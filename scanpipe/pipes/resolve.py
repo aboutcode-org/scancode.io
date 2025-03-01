@@ -21,6 +21,7 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
+import logging
 import sys
 import uuid
 from pathlib import Path
@@ -28,11 +29,11 @@ from pathlib import Path
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
 
+import python_inspector.api as python_inspector
 from attributecode.model import About
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
 from packageurl import PackageURL
-from python_inspector.api import resolve_dependencies
 
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -45,6 +46,8 @@ from scanpipe.pipes import update_or_create_package
 """
 Resolve packages from manifest, lockfile, and SBOM.
 """
+
+logger = logging.getLogger("scanpipe.pipes")
 
 
 def resolve_manifest_resources(resource, package_registry):
@@ -164,17 +167,22 @@ def get_packages_from_manifest(input_location, package_registry=None):
     Resolve packages or get packages data from a package manifest file/
     lockfile/SBOM at `input_location`.
     """
+    logger.info(f"> Get packages from manifest: {input_location}")
     default_package_type = get_default_package_type(input_location)
     # we only try to resolve packages if file at input_location is
     # a package manifest, and ignore for other files
     if not default_package_type:
+        logger.info("  Package type not found.")
         return
 
     # Get resolvers for available packages/SBOMs in the registry
     resolver = package_registry.get(default_package_type)
     if resolver:
+        logger.info(f"  Using resolver={resolver.__name__}")
         resolved_packages = resolver(input_location=input_location)
         return resolved_packages
+    else:
+        logger.info(f"  No resolvers available for type={default_package_type}")
 
 
 def get_manifest_resources(project):
@@ -188,18 +196,23 @@ def get_manifest_resources(project):
 
 
 def resolve_pypi_packages(input_location):
-    """Resolve the PyPI packages from the `input_location` requirements file."""
+    """Resolve the PyPI packages from the ``input_location`` requirements file."""
     python_version = f"{sys.version_info.major}{sys.version_info.minor}"
     operating_system = "linux"
 
-    inspector_output = resolve_dependencies(
+    resolution_output = python_inspector.resolve_dependencies(
         requirement_files=[input_location],
         python_version=python_version,
         operating_system=operating_system,
+        # Prefer source distributions over binary distributions,
+        # if no source distribution is available then binary distributions are used.
         prefer_source=True,
+        # Activate the verbosity and send it to the logger.
+        verbose=True,
+        printer=logger.info,
     )
 
-    return inspector_output.packages
+    return resolution_output.packages
 
 
 def resolve_about_package(input_location):
