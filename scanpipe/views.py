@@ -639,6 +639,14 @@ class ProjectCreateView(ConditionalLoginRequired, FormAjaxMixin, generic.CreateV
     form_class = ProjectForm
     template_name = "scanpipe/project_form.html"
 
+    def get_initial(self):
+        """Get initial data for the form from the URL query parameters."""
+        initial = super().get_initial()
+        for field in self.form_class().fields:
+            if value := self.request.GET.get(field):
+                initial[field] = value
+        return initial
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         pipelines = {
