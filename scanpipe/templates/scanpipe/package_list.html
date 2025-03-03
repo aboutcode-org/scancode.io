@@ -35,12 +35,18 @@
                     </a>
                   {% endif %}
                   {% if package.download_url %}
-                    <a class="is-grey-link ml-1" href="{{ package.download_url }}" title="Download" target="_blank" title="{{ package.download_url }}">
+                    <a class="is-grey-link ml-1" href="{{ package.download_url }}" title="Download {{ package.download_url }}" target="_blank">
                       <i class="fa-solid fa-download fa-sm"></i>
                     </a>
-                    <a class="is-grey-link ml-1" title="Scan" href="{% url 'project_add' %}?name=package-{{ package.uuid }}&input_urls={{ package.download_url }}&pipeline=scan_single_package">
-                      <i class="fa-solid fa-barcode fa-sm"></i>
-                    </a>
+                    {% if package.analysis_subproject %}
+                      <a class="is-grey-link ml-1" title="View scan page" href="{% url 'project_detail' package.analysis_subproject.slug %}" target="_blank">
+                        <i class="fa-solid fa-eye fa-sm"></i>
+                      </a>
+                    {% else %}
+                      <a class="is-grey-link ml-1" title="Scan package" href="{% url 'project_add' %}?name=package-{{ package.uuid }}&input_urls={{ package.download_url }}&pipeline=scan_single_package" target="_blank">
+                        <i class="fa-solid fa-barcode fa-sm"></i>
+                      </a>
+                    {% endif %}
                   {% endif %}
                 </div>
               </div>
