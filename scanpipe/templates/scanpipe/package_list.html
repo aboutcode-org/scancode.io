@@ -22,14 +22,28 @@
       <tbody>
         {% for package in object_list %}
           <tr class="break-word">
-            <td style="min-width: 500px;" title="{{ package.package_uid }}">
-              {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
-              <a href="{% url 'package_detail' project.slug package.uuid %}">{{ package.package_url }}</a>
-              {% if package.is_vulnerable %}
-                <a href="{% url 'package_detail' project.slug package.uuid %}#vulnerabilities">
-                  <i class="fa-solid fa-bug fa-sm has-text-danger" title="Vulnerabilities"></i>
-                </a>
-              {% endif %}
+            <td style="min-width: 500px;">
+              <div class="is-flex is-justify-content-space-between">
+                <div title="{{ package.package_uid }}">
+                  {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+                  <a href="{% url 'package_detail' project.slug package.uuid %}">{{ package.package_url }}</a>
+                </div>
+                <div>
+                  {% if package.is_vulnerable %}
+                    <a href="{% url 'package_detail' project.slug package.uuid %}#vulnerabilities">
+                      <i class="fa-solid fa-bug fa-sm has-text-danger" title="Vulnerabilities"></i>
+                    </a>
+                  {% endif %}
+                  {% if package.download_url %}
+                    <a class="is-grey-link ml-1" href="{{ package.download_url }}" title="Download" target="_blank" title="{{ package.download_url }}">
+                      <i class="fa-solid fa-download fa-sm"></i>
+                    </a>
+                    <a class="is-grey-link ml-1" title="Scan" href="{% url 'project_add' %}?name=package-{{ package.uuid }}&input_urls={{ package.download_url }}&pipeline=scan_single_package">
+                      <i class="fa-solid fa-barcode fa-sm"></i>
+                    </a>
+                  {% endif %}
+                </div>
+              </div>
             </td>
             <td style="min-width: 300px; max-width: 400px;">
               <a href="?declared_license_expression={{ package.declared_license_expression }}" class="is-black-link">
