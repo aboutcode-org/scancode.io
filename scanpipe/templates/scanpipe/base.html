@@ -15,19 +15,21 @@
         --bulma-link-l: 53%;
       }
       .theme-dark, [data-theme=dark] {
-        [class*=has-background-light], [class*=is-background-light] {--bulma-background-l: var(--bulma-light-invert-l);}
+        .has-background-light {background-color: var(--bulma-scheme-main-ter) !important;}
+        .is-light {background-color: var(--bulma-scheme-main-ter) !important;}
+        .hljs {background: transparent !important;}
       }
       .modal {
         --bulma-modal-card-head-padding: 1.25rem;
         --bulma-modal-card-body-padding: 1.25rem;
         --bulma-modal-card-head-radius: var(--bulma-radius-medium);
       }
-      .modal-card-head {
-        background-color: var(--bulma-scheme-main-bis);
+      .panel {
+        --bulma-panel-radius: var(--bulma-radius-medium);
       }
-      .title {
-        --bulma-title-weight: var(--bulma-weight-semibold);
-      }
+      .button[disabled] {background-color: transparent !important;}
+      .modal-card-head {background-color: var(--bulma-scheme-main-bis);}
+      .title {--bulma-title-weight: var(--bulma-weight-semibold);}
       .heading {display: block; font-size: 11px; letter-spacing: 1px; margin-bottom: 5px; text-transform: uppercase;}
       .is-black-link {color: var(--bulma-text-strong)}
       .width-100, .select, .select select {width: 100%;}
@@ -60,7 +62,7 @@
       .is-black-link:hover, .is-grey-link:hover {color: #3273dc; text-decoration: underline;}
       .navbar button.navbar-item {font-size: 1em;}
       .navbar-item {gap: 0;}
-      thead.is-sticky {position: sticky; top: -1px; z-index: 19; background-color: #fff;}
+      thead.is-sticky {position: sticky; top: -1px; z-index: 19; background-color: var(--bulma-scheme-main);}
       #inputs-panel .panel-block.dropdown:hover {background-color: #f5f5f5;}
       #inputs-panel .dropdown-menu {width: 85%;}
       a.panel-block {word-break: break-all;}
@@ -92,6 +94,7 @@
       .is-sticky {position: sticky;}
       .top-0 {top: 0;}
       .is-line-height-normal {line-height: normal;}
+      .has-background-ter {background-color: var(--bulma-scheme-main-ter);}
       textarea.is-dynamic {min-height: 70px;}
       #project-extra-data figure.highlight {overflow-y: scroll;}
       #project-extra-data .is-more-clipped figure.highlight {max-height: 250px;}
