@@ -31,6 +31,7 @@ from django.db.models import Q
 from django.db.models.fields import BLANK_CHOICE_DASH
 from django.utils.http import urlencode
 from django.utils.translation import gettext as _
+from django.utils.functional import cached_property
 
 import django_filters
 from django_filters.widgets import LinkWidget
@@ -218,6 +219,10 @@ class FilterSetUtilsMixin:
             for field_name in self.form.changed_data
             for value in self.data.getlist(field_name)
         ]
+
+    @cached_property
+    def filters_breadcrumb(self):
+        return self.get_filters_breadcrumb()
 
     @classmethod
     def verbose_name_plural(cls):
