@@ -262,7 +262,7 @@ function displayOverlay() {
   const background = document.createElement("div");
   background.setAttribute("id", "background-overlay");
   background.className = "modal-background";
-  background.style.cssText = "z-index:100;color:white;text-align:center;padding-top:150px;position:fixed;";
+  background.style.cssText = "z-index:100;color:white;text-align:center;padding-top:150px;position:fixed;background-color:rgba(9, 10, 12, 0.86)";
   background.innerHTML = '<div class="fa-5x"><i class="fas fa-circle-notch fa-spin"></i></div>';
   document.body.appendChild(background);
   return background;

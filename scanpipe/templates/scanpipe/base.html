@@ -13,11 +13,16 @@
         --bulma-link-h: 229deg;
         --bulma-link-s: 53%;
         --bulma-link-l: 53%;
+        --nexb-orange: #f7bf3c;
       }
       .theme-dark, [data-theme=dark] {
         .has-background-light {background-color: var(--bulma-scheme-main-ter) !important;}
         .is-light {background-color: var(--bulma-scheme-main-ter) !important;}
         .hljs {background: transparent !important;}
+        .ace-tm, .ace-tm .ace_gutter {background-color: var(--bulma-pre-background); color: var(--bulma-pre);}
+        .has-text-dark {
+            color: hsl(var(--bulma-light-h), var(--bulma-light-s), var(--bulma-light-l)) !important;
+        }
       }
       .modal {
         --bulma-modal-card-head-padding: 1.25rem;
@@ -30,28 +35,28 @@
       .button[disabled] {background-color: transparent !important;}
       .modal-card-head {background-color: var(--bulma-scheme-main-bis);}
       .title {--bulma-title-weight: var(--bulma-weight-semibold);}
-      .heading {display: block; font-size: 11px; letter-spacing: 1px; margin-bottom: 5px; text-transform: uppercase;}
+      .heading {display: block; font-size: 0.75rem; letter-spacing: 1px; margin-bottom: 5px; text-transform: uppercase;}
       .is-black-link {color: var(--bulma-text-strong)}
       .width-100, .select, .select select {width: 100%;}
       .width-1 {width: 1rem !important;}
       .height-1 {height: 1rem !important;}
       .has-border-radius {border-radius: 6px;}
-      .is-help-text {cursor: help; color: #333333; border-bottom: dotted 1px #cccccc;}
+      .is-help-text {cursor: help; border-bottom: dotted 1px;}
       .modal.is-desktop-size .modal-card {width: 960px;}
       .breadcrumb {user-select: text!important;}
-      .breadcrumb .is-active {font-weight: 600!important;}
-      .tag-header {border-radius: 4px 4px 0 0!important;}
+      .breadcrumb .is-active {font-weight: 600 !important;}
+      .tag-header {border-radius: 4px 4px 0 0 !important;}
       .border-bottom-radius {border-bottom-left-radius: 6px; border-bottom-right-radius: 6px;}
       .tabs .border-left-radius {border-bottom-left-radius: 4px; border-top-left-radius: 4px;}
       .tab-content pre {border-radius: 4px;}
       .tabs a.is-disabled {pointer-events: none; cursor: not-allowed; color: var(--bulma-text-weak);}
       .border-no-top-left-radius {border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; border-top-right-radius: 6px;}
-      .border-dashed {border-width: 2px; border-style: dashed; border-color: rgb(229, 231, 235);}
+      .border-dashed {border-width: 2px; border-style: dashed; border-color: var(--bulma-grey-lighter);}
       .is-height-auto {height: auto;}
       pre.log {color: #f1f1f1; background-color: #222; font-family: monospace;}
       pre.wrap {white-space: pre-wrap;}
       pre.is-small {padding: 0.75rem 1rem;}
-      .nexb-orange {color:#f7bf3c;}
+      .nexb-orange {color: var(--nexb-orange);}
       .bb-legend-item-hidden {text-decoration: line-through; opacity: 0.7!important;}
       .bb-chart .bb-chart-arcs .bb-chart-arcs-title {font-size: 15px !important; fill: #4a4a4a !important; text-transform: uppercase;}
       svg {overflow: visible !important;}
@@ -62,7 +67,8 @@
       .is-black-link:hover, .is-grey-link:hover {color: #3273dc; text-decoration: underline;}
       .navbar button.navbar-item {font-size: 1em;}
       .navbar-item {gap: 0;}
-      thead.is-sticky {position: sticky; top: -1px; z-index: 19; background-color: var(--bulma-scheme-main);}
+      .is-sticky {position: sticky;}
+      thead.is-sticky {top: -1px; z-index: 19; background-color: var(--bulma-scheme-main);}
       #inputs-panel .panel-block.dropdown:hover {background-color: #f5f5f5;}
       #inputs-panel .dropdown-menu {width: 85%;}
       a.panel-block {word-break: break-all;}
@@ -91,7 +97,6 @@
       #message-list th#column-severity {min-width: 110px;}
       .menu.is-info .is-active {background-color: #3e8ed0;}
       .menu-list a {border-radius: 4px;}
-      .is-sticky {position: sticky;}
       .top-0 {top: 0;}
       .is-line-height-normal {line-height: normal;}
       .has-background-ter {background-color: var(--bulma-scheme-main-ter);}
