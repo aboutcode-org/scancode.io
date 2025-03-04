@@ -29,9 +29,9 @@ from django.core.validators import EMPTY_VALUES
 from django.db import models
 from django.db.models import Q
 from django.db.models.fields import BLANK_CHOICE_DASH
+from django.utils.functional import cached_property
 from django.utils.http import urlencode
 from django.utils.translation import gettext as _
-from django.utils.functional import cached_property
 
 import django_filters
 from django_filters.widgets import LinkWidget
