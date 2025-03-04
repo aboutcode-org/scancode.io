@@ -2503,6 +2503,7 @@ class ScanPipeModelsTest(TestCase):
             "resolved_from_dependencies",
             "parent_packages",
             "children_packages",
+            "analysis_subproject",
             "notes",
         ]
 

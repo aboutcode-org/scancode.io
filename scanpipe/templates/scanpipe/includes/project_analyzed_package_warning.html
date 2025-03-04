@@ -1,0 +1,26 @@
+<section class="pt-0 mx-5 mb-3">
+  <article class="message is-warning">
+    <div class="message-body">
+      <p class="block">
+        <span class="icon width-1 height-1 mr-1">
+          <i class="fa-solid fa-info-circle"></i>
+        </span>
+        <span>
+          This package analysis was initiated for the
+          <strong>
+            <a href="{% url 'package_detail' project.analyzed_package.project.slug project.analyzed_package.uuid %}">
+              {{ project.analyzed_package.package_url }}
+            </a>
+          </strong>
+          package of the
+          <strong>
+            <a href="{% url 'project_detail' project.analyzed_package.project.slug %}">
+              {{ project.analyzed_package.project.slug }}
+            </a>
+          </strong>
+          project.
+        </span>
+      </p>
+    </div>
+  </article>
+</section>

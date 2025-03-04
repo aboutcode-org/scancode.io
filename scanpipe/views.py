@@ -1662,11 +1662,13 @@ class DiscoveredPackageListView(
                 "package_uid",
                 *PACKAGE_URL_FIELDS,
                 "project",
+                "download_url",
                 "primary_language",
                 "declared_license_expression",
                 "compliance_alert",
                 "copyright",
                 "affected_by_vulnerabilities",
+                "analysis_subproject",
             )
             .with_resources_count()
             .order_by_package_url()

@@ -54,6 +54,10 @@
     </section>
 
     <hr class="mx-5 mt-0">
+
+    {% if project.analyzed_package %}
+      {% include "scanpipe/includes/project_analyzed_package_warning.html" %}
+    {% endif %}
     {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" %}
 
     <section class="pt-0 mx-5">
