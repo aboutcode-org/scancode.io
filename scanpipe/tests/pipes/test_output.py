@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import collections
+import io
 import json
 import shutil
 import tempfile
@@ -33,39 +34,39 @@ from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase
 
+import openpyxl
 import xlsxwriter
 from licensedcode.cache import get_licensing
-from lxml import etree  # nosec
+from lxml import etree
 from scancode_config import __version__ as scancode_toolkit_version
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
-from scanpipe.models import ProjectMessage
+from scanpipe.pipes import flag
 from scanpipe.pipes import output
 from scanpipe.tests import FIXTURES_REGEN
 from scanpipe.tests import make_dependency
+from scanpipe.tests import make_message
 from scanpipe.tests import make_package
+from scanpipe.tests import make_project
+from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
 
 def make_config_directory(project):
-    """
-    Make and return the `project` config directory.
-    """
+    """Make and return the `project` config directory."""
     config_directory = project.codebase_path / settings.SCANCODEIO_CONFIG_DIR
     config_directory.mkdir(exist_ok=True)
     return config_directory
 
 
 class ScanPipeOutputPipesTest(TestCase):
-    data_path = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def assertResultsEqual(self, expected_file, results, regen=FIXTURES_REGEN):
-        """
-        Set `regen` to True to regenerate the expected results.
-        """
+        """Set `regen` to True to regenerate the expected results."""
         if regen:
             expected_file.write_text(results)
 
@@ -73,7 +74,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual(expected_data, results)
 
     def test_scanpipe_pipes_outputs_queryset_to_csv_file(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project(name="Analysis")
         codebase_resource = CodebaseResource.objects.create(
             project=project1,
             path="filename.ext",
@@ -109,7 +110,7 @@ class ScanPipeOutputPipesTest(TestCase):
             self.assertEqual(expected, f.readlines())
 
     def test_scanpipe_pipes_outputs_queryset_to_csv_stream(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project(name="Analysis")
         codebase_resource = CodebaseResource.objects.create(
             project=project1,
             path="filename.ext",
@@ -153,7 +154,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_outputs_to_csv(self):
-        fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
@@ -172,7 +173,7 @@ class ScanPipeOutputPipesTest(TestCase):
             self.assertIn(csv_file, [f.name for f in output_files])
 
     def test_scanpipe_pipes_outputs_to_json(self):
-        fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
@@ -203,37 +204,78 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertIn(output_file.name, project.output_root)
 
     def test_scanpipe_pipes_outputs_to_xlsx(self):
-        fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
         project = Project.objects.get(name="asgiref")
-        ProjectMessage.objects.create(
-            project=project,
-            severity=ProjectMessage.Severity.ERROR,
-            description="Error",
-            model="Model",
-            details={},
+        make_message(project, description="Error")
+        make_resource_file(
+            project=project, path="path/file1.ext", status=flag.REQUIRES_REVIEW
         )
 
-        output_file = output.to_xlsx(project=project)
+        with self.assertNumQueries(12):
+            output_file = output.to_xlsx(project=project)
         self.assertIn(output_file.name, project.output_root)
 
         # Make sure the output can be generated even if the work_directory was wiped
         shutil.rmtree(project.work_directory)
-        with self.assertNumQueries(8):
-            output_file = output.to_xlsx(project=project)
+        output_file = output.to_xlsx(project=project)
         self.assertIn(output_file.name, project.output_root)
+
+        workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
+        expected_sheet_names = [
+            "PACKAGES",
+            "DEPENDENCIES",
+            "RESOURCES",
+            "RELATIONS",
+            "MESSAGES",
+            "TODOS",
+        ]
+        self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
+
+    def test_scanpipe_pipes_outputs_get_xlsx_report(self):
+        project_qs = None
+        model_short_name = None
+
+        expected_message = "None is not valid."
+        with self.assertRaisesMessage(ValueError, expected_message):
+            output.get_xlsx_report(project_qs, model_short_name)
+
+        model_short_name = "package"
+        expected_message = "'NoneType' object is not iterable"
+        with self.assertRaisesMessage(TypeError, expected_message):
+            output.get_xlsx_report(project_qs, model_short_name)
+
+        make_project()
+        make_project()
+        project_qs = Project.objects.all()
+        output_file = output.get_xlsx_report(project_qs, model_short_name)
+
+        self.assertIsInstance(output_file, io.BytesIO)
+        workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
+        expected_sheet_names = [
+            "PACKAGES",
+        ]
+        self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
+
+        model_short_name = "todo"
+        output_file = output.get_xlsx_report(project_qs, model_short_name)
+        workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
+        expected_sheet_names = [
+            "TODOS",
+        ]
+        self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
 
     def test_scanpipe_pipes_outputs_vulnerability_as_cyclonedx(self):
         component_bom_ref = "pkg:pypi/django@4.0.10"
-        data_location = self.data_path / "cyclonedx/django-4.0.10-vulnerability.json"
+        data = self.data / "cyclonedx/django-4.0.10-vulnerability.json"
 
-        vulnerability_data = json.loads(data_location.read_text())
+        vulnerability_data = json.loads(data.read_text())
         results = output.vulnerability_as_cyclonedx(
             vulnerability_data, component_bom_ref
         )
 
-        expected_location = self.data_path / "cyclonedx/django-4.0.10_as_cdx.json"
+        expected_location = self.data / "cyclonedx/django-4.0.10_as_cdx.json"
         results_as_json = results.as_json()
 
         # if True:
@@ -242,17 +284,17 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertJSONEqual(results_as_json, expected_location.read_text())
 
     def test_scanpipe_pipes_outputs_to_cyclonedx(self, regen=FIXTURES_REGEN):
-        fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
         project = Project.objects.get(name="asgiref")
         package = project.discoveredpackages.get(
-            uuid="b2d24c22-0dff-4e3f-8332-413b4f4852a7"
+            uuid="b5035991-5b4b-40be-b68b-1c9c528078cd"
         )
 
         package.other_license_expression_spdx = "Apache-2.0 AND LicenseRef-test"
-        data_location = self.data_path / "cyclonedx/django-4.0.10-vulnerability.json"
-        vulnerability_data = json.loads(data_location.read_text())
+        data = self.data / "cyclonedx/django-4.0.10-vulnerability.json"
+        vulnerability_data = json.loads(data.read_text())
         package.affected_by_vulnerabilities = [vulnerability_data]
         package.save()
 
@@ -270,7 +312,7 @@ class ScanPipeOutputPipesTest(TestCase):
         results_json["vulnerabilities"][0]["bom-ref"] = "BomRef"
         results = json.dumps(results_json, indent=2)
 
-        expected_location = self.data_path / "cyclonedx/asgiref-3.3.0.cdx.json"
+        expected_location = self.data / "cyclonedx" / "asgiref-3.3.0.cdx.json"
         if regen:
             expected_location.write_text(results)
 
@@ -284,13 +326,15 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual("1.5", results_json["specVersion"])
 
     def test_scanpipe_pipes_outputs_get_cyclonedx_bom_dependency_tree(self):
-        project = Project.objects.create(name="project")
+        project = make_project(name="project")
 
         a = make_package(project, "pkg:type/a")
         b = make_package(project, "pkg:type/b")
         c = make_package(project, "pkg:type/c")
+        make_package(project, "pkg:type/z")
 
-        # A -> B -> C
+        # Project -> A -> B -> C
+        # Project -> Z
         make_dependency(project, for_package=a, resolved_to_package=b)
         make_dependency(project, for_package=b, resolved_to_package=c)
 
@@ -300,17 +344,27 @@ class ScanPipeOutputPipesTest(TestCase):
 
         expected = [
             {
-                "dependsOn": ["pkg:type/a", "pkg:type/b", "pkg:type/c"],
+                "dependsOn": ["pkg:type/a", "pkg:type/b", "pkg:type/c", "pkg:type/z"],
                 "ref": str(project.uuid),
             },
             {"dependsOn": ["pkg:type/b"], "ref": "pkg:type/a"},
             {"dependsOn": ["pkg:type/c"], "ref": "pkg:type/b"},
             {"ref": "pkg:type/c"},
+            {"ref": "pkg:type/z"},
         ]
         self.assertEqual(expected, results_json["dependencies"])
 
+    def test_scanpipe_pipes_outputs_get_cyclonedx_bom_package_uid_instances(self):
+        project = make_project(name="project")
+        make_package(project, "pkg:type/a", package_uid="pkg:type/a?uuid=1")
+        make_package(project, "pkg:type/a", package_uid="pkg:type/a?uuid=2")
+
+        output_file = output.to_cyclonedx(project=project)
+        results_json = json.loads(output_file.read_text())
+        self.assertEqual(2, len(results_json["components"]))
+
     def test_scanpipe_pipes_outputs_to_spdx(self):
-        fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
@@ -326,7 +380,7 @@ class ScanPipeOutputPipesTest(TestCase):
         results_json["files"] = []
         results = json.dumps(results_json, indent=2)
 
-        expected_file = self.data_path / "asgiref-3.3.0.spdx.json"
+        expected_file = self.data / "asgiref" / "asgiref-3.3.0.spdx.json"
         self.assertResultsEqual(expected_file, results)
 
         # Make sure the output can be generated even if the work_directory was wiped
@@ -335,7 +389,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertIn(output_file.name, project.output_root)
 
     def test_scanpipe_pipes_outputs_to_spdx_extracted_licenses(self):
-        project = Project.objects.create(name="Analysis")
+        project = make_project(name="Analysis")
         package_data = dict(package_data1)
         # ac3filter resolves as LicenseRef-scancode-ac3filter
         expression = "mit AND ac3filter"
@@ -402,20 +456,20 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual(expected, rendered)
 
     def test_scanpipe_pipes_outputs_render_template(self):
-        template_location = str(self.data_path / "outputs" / "render_me.html")
+        template_location = str(self.data / "outputs" / "render_me.html")
         template_string = Path(template_location).read_text()
         context = {"var": "value"}
         rendered = output.render_template(template_string, context)
         self.assertEqual("value", rendered)
 
     def test_scanpipe_pipes_outputs_render_template_file(self):
-        template_location = str(self.data_path / "outputs" / "render_me.html")
+        template_location = str(self.data / "outputs" / "render_me.html")
         context = {"var": "value"}
         rendered = output.render_template_file(template_location, context)
         self.assertEqual("value", rendered)
 
     def test_scanpipe_pipes_outputs_get_attribution_template(self):
-        project = Project.objects.create(name="Analysis")
+        project = make_project(name="Analysis")
         template_location = str(output.get_attribution_template(project))
         expected_location = "templates/scanpipe/attribution.html"
         self.assertTrue(template_location.endswith(expected_location))
@@ -431,7 +485,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertTrue(template_location.endswith(expected_location))
 
     def test_scanpipe_pipes_outputs_get_package_data_for_attribution(self):
-        project = Project.objects.create(name="Analysis")
+        project = make_project(name="Analysis")
         package_data = dict(package_data1)
         expression = "mit AND gpl-2.0 AND mit"
         package_data["declared_license_expression"] = expression
@@ -449,7 +503,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual(sorted(expected), sorted(licenses))
 
     def test_scanpipe_pipes_outputs_to_attribution(self):
-        project = Project.objects.create(name="Analysis")
+        project = make_project(name="Analysis")
         package_data = dict(package_data1)
         expression = "mit AND gpl-2.0 with classpath-exception-2.0 AND missing-unknown"
         package_data["declared_license_expression"] = expression
@@ -459,7 +513,7 @@ class ScanPipeOutputPipesTest(TestCase):
         with self.assertNumQueries(2):
             output_file = output.to_attribution(project=project)
 
-        expected_file = self.data_path / "outputs" / "expected_attribution.html"
+        expected_file = self.data / "outputs" / "expected_attribution.html"
         self.assertResultsEqual(expected_file, output_file.read_text())
 
         config_directory = make_config_directory(project)
@@ -474,7 +528,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
 
 class ScanPipeXLSXOutputPipesTest(TestCase):
-    def test__add_xlsx_worksheet_does_truncates_long_strings_over_max_len(self):
+    def test_add_xlsx_worksheet_does_truncates_long_strings_over_max_len(self):
         # This test verifies that we do not truncate long text silently
 
         test_dir = Path(tempfile.mkdtemp(prefix="scancode-io-test"))
@@ -507,7 +561,7 @@ class ScanPipeXLSXOutputPipesTest(TestCase):
             if r != x:
                 self.assertEqual(r[-50:], x)
 
-    def test__add_xlsx_worksheet_does_not_munge_long_strings_of_over_1024_lines(self):
+    def test_add_xlsx_worksheet_does_not_munge_long_strings_of_over_1024_lines(self):
         # This test verifies that we do not truncate long text silently
 
         test_dir = Path(tempfile.mkdtemp(prefix="scancode-io-test"))
@@ -702,9 +756,7 @@ def get_cell_texts(original_text, test_dir, workbook_name):
     """
 
     class Row:
-        """
-        A mock Row with a single attribute storing a long string
-        """
+        """A mock Row with a single attribute storing a long string"""
 
         def __init__(self, foo):
             self.foo = foo
@@ -713,7 +765,7 @@ def get_cell_texts(original_text, test_dir, workbook_name):
 
     output_file = test_dir / workbook_name
     with xlsxwriter.Workbook(str(output_file)) as workbook:
-        output._add_xlsx_worksheet(
+        output.add_xlsx_worksheet(
             workbook=workbook,
             worksheet_name="packages",
             rows=rows,
@@ -739,7 +791,7 @@ def get_cell_texts(original_text, test_dir, workbook_name):
     # Using lxml.etree.parse to parse untrusted XML data is known to be vulnerable
     # to XML attacks. This is not an issue here as we are parsing a properly crafted
     # test file, not a maliciously crafted one.
-    sstet = etree.parse(str(shared_strings))  # nosec
+    sstet = etree.parse(str(shared_strings))  # noqa: S320
     # in our special case the text we care is the last element of the XML
 
     return [t.text for t in sstet.getroot().iter()]

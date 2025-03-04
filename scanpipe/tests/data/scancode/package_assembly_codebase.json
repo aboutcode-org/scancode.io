@@ -2,16 +2,16 @@
   "headers": [
     {
       "tool_name": "scancode-toolkit",
-      "tool_version": "32.0.8",
+      "tool_version": "v34.8.2-2-gdde1fc5b",
       "options": {
         "--info": true,
         "--package": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "start_timestamp": "2024-03-01T113357.465177",
-      "end_timestamp": "2024-03-01T113357.680774",
-      "output_format_version": "3.1.0",
-      "duration": 0.2156081199645996,
+      "start_timestamp": "2024-10-30T103759.040160",
+      "end_timestamp": "2024-10-30T103759.204940",
+      "output_format_version": "4.0.0",
+      "duration": 0.1647934913635254,
       "message": null,
       "errors": [],
       "warnings": [],
@@ -19,11 +19,11 @@
         "system_environment": {
           "operating_system": "linux",
           "cpu_architecture": "64",
-          "platform": "Linux-5.15.0-94-generic-x86_64-with-glibc2.35",
-          "platform_version": "#104-Ubuntu SMP Tue Jan 9 15:25:40 UTC 2024",
-          "python_version": "3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0]"
+          "platform": "Linux-5.15.0-124-generic-x86_64-with-glibc2.35",
+          "platform_version": "#134-Ubuntu SMP Fri Sep 27 20:20:17 UTC 2024",
+          "python_version": "3.10.12 (main, Sep 11 2024, 15:47:36) [GCC 11.4.0]"
         },
-        "spdx_license_list_version": "3.23",
+        "spdx_license_list_version": "3.25",
         "files_count": 3
       }
     }
@@ -62,7 +62,7 @@
           "matches": [
             {
               "license_expression": "mit",
-              "spdx_license_expression": "MIT",
+              "license_expression_spdx": "MIT",
               "from_file": "package_assembly_codebase.tar.gz-extract/test/get_package_resources/package.json",
               "start_line": 1,
               "end_line": 1,
@@ -85,11 +85,13 @@
       "extracted_license_statement": "- MIT\n",
       "notice_text": null,
       "source_packages": [],
+      "is_private": false,
+      "is_virtual": false,
       "extra_data": {},
       "repository_homepage_url": "https://www.npmjs.com/package/test",
       "repository_download_url": "https://registry.npmjs.org/test/-/test-0.1.0.tgz",
       "api_data_url": "https://registry.npmjs.org/test/0.1.0",
-      "package_uid": "pkg:npm/test@0.1.0?uuid=393cff2b-c004-445c-b055-6e8b0af8a904",
+      "package_uid": "pkg:npm/test@0.1.0?uuid=ac80a119-4b74-40cd-93e4-679195145723",
       "datafile_paths": [
         "package_assembly_codebase.tar.gz-extract/test/get_package_resources/package.json"
       ],
@@ -236,7 +238,7 @@
               "matches": [
                 {
                   "license_expression": "mit",
-                  "spdx_license_expression": "MIT",
+                  "license_expression_spdx": "MIT",
                   "from_file": "package_assembly_codebase.tar.gz-extract/test/get_package_resources/package.json",
                   "start_line": 1,
                   "end_line": 1,
@@ -260,6 +262,8 @@
           "notice_text": null,
           "source_packages": [],
           "file_references": [],
+          "is_private": false,
+          "is_virtual": false,
           "extra_data": {},
           "dependencies": [],
           "repository_homepage_url": "https://www.npmjs.com/package/test",
@@ -270,7 +274,7 @@
         }
       ],
       "for_packages": [
-        "pkg:npm/test@0.1.0?uuid=393cff2b-c004-445c-b055-6e8b0af8a904"
+        "pkg:npm/test@0.1.0?uuid=ac80a119-4b74-40cd-93e4-679195145723"
       ],
       "files_count": 0,
       "dirs_count": 0,
@@ -299,7 +303,7 @@
       "is_script": false,
       "package_data": [],
       "for_packages": [
-        "pkg:npm/test@0.1.0?uuid=393cff2b-c004-445c-b055-6e8b0af8a904"
+        "pkg:npm/test@0.1.0?uuid=ac80a119-4b74-40cd-93e4-679195145723"
       ],
       "files_count": 0,
       "dirs_count": 0,

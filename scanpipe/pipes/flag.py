@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,8 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
+
 
 NO_STATUS = ""
 
@@ -43,12 +44,14 @@ IGNORED_NOT_INTERESTING = "ignored-not-interesting"
 IGNORED_DEFAULT_IGNORES = "ignored-default-ignores"
 IGNORED_DATA_FILE_NO_CLUES = "ignored-data-file-no-clues"
 IGNORED_DOC_FILE = "ignored-doc-file"
+IGNORED_BY_MAX_FILE_SIZE = "ignored-by-max-file-size"
 
 COMPLIANCE_LICENSES = "compliance-licenses"
 COMPLIANCE_SOURCEMIRROR = "compliance-sourcemirror"
 
 ABOUT_MAPPED = "about-mapped"
 MAPPED = "mapped"
+MAPPED_BY_SYMBOL = "mapped-by-symbol"
 ARCHIVE_PROCESSED = "archive-processed"
 MATCHED_TO_PURLDB_PACKAGE = "matched-to-purldb-package"
 MATCHED_TO_PURLDB_RESOURCE = "matched-to-purldb-resource"
@@ -60,6 +63,17 @@ NPM_PACKAGE_LOOKUP = "npm-package-lookup"
 REQUIRES_REVIEW = "requires-review"
 REVIEW_DANGLING_LEGAL_FILE = "review-dangling-legal-file"
 NOT_DEPLOYED = "not-deployed"
+
+
+# Target files that should be ignored during processing as those are related to the app
+# configuration.
+DEFAULT_IGNORED_PATTERNS = [
+    "scancode-config.yml",  # when located in the root dir
+    "*/scancode-config.yml",
+    "policies.yml",  # when located in the root dir
+    "*/policies.yml",
+    "*/__MACOSX*",  # macOS metadata folder
+]
 
 
 def flag_empty_files(project):
@@ -89,6 +103,19 @@ def flag_ignored_patterns(project, patterns):
         update_count += qs.update(status=IGNORED_PATTERN)
 
     return update_count
+
+
+def flag_and_ignore_files_over_max_size(resource_qs, file_size_limit):
+    """
+    Flag codebase resources which are over the max file size for scanning
+    and return all other files within the file size limit.
+    """
+    if not file_size_limit:
+        return resource_qs
+
+    return resource_qs.filter(size__gte=file_size_limit).update(
+        status=IGNORED_BY_MAX_FILE_SIZE
+    )
 
 
 def analyze_scanned_files(project):

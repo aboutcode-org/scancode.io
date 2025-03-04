@@ -14,16 +14,16 @@ you simply start by creating a :ref:`new project <user_interface_create_new_proj
 and run the appropriate pipeline.
 
 ScanCode.io offers several :ref:`built_in_pipelines` depending on your input, see
-the :ref:`faq_which_pipeline` bellow.
+the :ref:`faq_which_pipeline` below.
 
-As an alternative, I you simply which to run a pipeline without installing ScanCode.io
+As an alternative, If you simply which to run a pipeline without installing ScanCode.io
 you may use the Docker image to run pipelines as a single command:
 
 .. code-block:: bash
 
   docker run --rm \
     -v "$(pwd)":/codedrop \
-    ghcr.io/nexb/scancode.io:latest \
+    ghcr.io/aboutcode-org/scancode.io:latest \
     sh -c "run scan_codebase /codedrop" \
     > results.json
 
@@ -41,7 +41,7 @@ Here are some general guidelines based on different input scenarios:
 - If you have a **Docker image** as input, use the
   :ref:`analyze_docker_image <pipeline_analyze_docker_image>` pipeline.
 - For a full **codebase compressed as an archive**, optionally also with
-  it's **pre-resolved dependenices**, and want to detect all the packages
+  it's **pre-resolved dependencies**, and want to detect all the packages
   present linked with their respective files, use the
   :ref:`scan_codebase <pipeline_scan_codebase>` pipeline.
 - If you have a **single package archive**, and you want to get information
@@ -58,7 +58,7 @@ Here are some general guidelines based on different input scenarios:
   resolve packages from their package requirements, use the
   :ref:`resolve_dependencies <pipeline_resolve_dependencies>` pipeline.
 - When you have application **package archives/codebases** and optionally also
-  their **pre-resolved dependenices** and you want to **inspect packages**
+  their **pre-resolved dependencies** and you want to **inspect packages**
   present in the package manifests and dependency, use the
   :ref:`inspect_packages <pipeline_inspect_packages>` pipeline.
 - For scenarios involving both a **development and deployment codebase**, consider using
@@ -102,11 +102,38 @@ data:
 .. image:: images/license-clarity-scan-summary.png
 
 In contrast, the :ref:`scan_codebase <pipeline_scan_codebase>` pipeline is more of a
-general purpose pipeline and make no such single package assumption.
-It does not not compute such summary.
+general purpose pipeline and makes no such single package assumption.
+It does not compute such summary.
 
 You can also have a look at the different steps for each pipeline from the
 :ref:`built_in_pipelines` documentation.
+
+How to create multiple projects at once?
+-----------------------------------------
+
+You can use the :ref:`cli_batch_create` command to create multiple projects
+simultaneously.
+This command processes all files in a specified input directory, creating one project
+per file.
+Each project is uniquely named using the file name and a timestamp by default.
+
+For example, to create multiple projects from files in a directory named
+``local-data/``::
+
+    $ docker compose run --rm \
+        --volume local-data/:/input-data:ro \
+        web scanpipe batch-create /input-data
+
+**Options**:
+
+- **Custom Pipelines**: Use the ``--pipeline`` option to add specific pipelines to the
+  projects.
+- **Asynchronous Execution**: Add ``--execute`` and ``--async`` to queue pipeline
+  execution for worker processing.
+- **Project Notes and Labels**: Use ``--notes`` and ``--label`` to include metadata.
+
+Each file in the input directory will result in the creation of a corresponding project,
+ready for pipeline execution.
 
 Can I run multiple pipelines in parallel?
 -----------------------------------------
@@ -137,23 +164,23 @@ What tool does ScanCode.io use to analyze docker images?
 
 The following tools and libraries are used during the docker images analysis pipeline:
 
- - `container-inspector <https://github.com/nexB/container-inspector>`_ and
-   `debian-inspector <https://github.com/nexB/debian-inspector>`_ for handling containers
+ - `container-inspector <https://github.com/aboutcode-org/container-inspector>`_ and
+   `debian-inspector <https://github.com/aboutcode-org/debian-inspector>`_ for handling containers
    and distros.
  - `fetchcode-container <https://pypi.org/project/fetchcode-container/>`_ to download
    containers and images.
- - `scancode-toolkit <https://github.com/nexB/scancode-toolkit>`_ for application
+ - `scancode-toolkit <https://github.com/aboutcode-org/scancode-toolkit>`_ for application
    package scans and system package scans.
- - `extractcode <https://github.com/nexB/extractcode>`_ for universal and reliable
+ - `extractcode <https://github.com/aboutcode-org/extractcode>`_ for universal and reliable
    archive extraction.
  - Specific handling of windows containers is done in
-   `scancode-toolkit <https://github.com/nexB/scancode-toolkit>`_ to process the windows registry.
+   `scancode-toolkit <https://github.com/aboutcode-org/scancode-toolkit>`_ to process the windows registry.
  - Secondary libraries and plugins from
-   `scancode-plugins <https://github.com/nexB/scancode-plugins>`_.
+   `scancode-plugins <https://github.com/aboutcode-org/scancode-plugins>`_.
 
 The pipeline documentation is available at :ref:`pipeline_analyze_docker_image` and
 its source code at
-`docker.py <https://github.com/nexB/scancode.io/blob/main/scanpipe/pipelines/docker.py>`_.
+`docker.py <https://github.com/aboutcode-org/scancode.io/blob/main/scanpipe/pipelines/docker.py>`_.
 It is hopefully designed to be simple and readable code.
 
 Am I able to run ScanCode.io on Windows?
@@ -177,6 +204,21 @@ You can refer to the :ref:`automation` to automate your projects management.
 Also, A new GitHub action is available at
 `scancode-action repository <https://github.com/nexB/scancode-action>`_
 to run ScanCode.io pipelines from your GitHub Workflows.
+
+How can I get notified about my project progression?
+-----------------------------------------------------
+
+You can monitor your project's progress in multiple ways:
+
+- **User Interface:** The project details page provides real-time updates on pipeline
+  execution.
+- **REST API:** Use the API to programmatically check the status of your projects.
+- **CLI Monitoring:** The ``scanpipe list-projects`` command provides an overview of
+  project states.
+- **Webhook Integration:** You can set up webhooks to receive updates in your preferred
+  notification system. For more details, refer to the :ref:`webhooks` section.
+- **Slack notifications:** Get project updates directly in Slack by configuring an
+  incoming webhook. See :ref:`webhooks_slack_notifications` for setup instructions.
 
 .. _faq_tag_input_files:
 
@@ -249,3 +291,70 @@ Note that only the HTTPS type of URL is supported::
 A GitHub repository URL example::
 
     https://github.com/username/repository.git
+
+How can I cleanup my ScanCode.io installation, removing all projects and related data?
+--------------------------------------------------------------------------------------
+
+You can use the :ref:`cli_flush_projects` command to perform bulk deletion of projects
+and their associated data stored on disk::
+
+    $ scanpipe flush-projects
+
+**Confirmation will be required before deletion.**
+
+To automate this process, such as running it from a cron job, you can use the
+``--no-input`` option to skip confirmation prompts.
+
+Additionally, you can retain specific projects and their data based on their
+creation date using the ``--retain-days`` option.
+
+Here's an example of a crontab entry that runs daily and flushes all projects and
+data older than 7 days::
+
+    @daily scanpipe flush-projects --retain-days 7 --no-input
+
+.. note:: If you are using Docker for running ScanCode.io, you can run the scanpipe
+  ``flush-projects`` command using::
+
+    docker compose run --rm web scanpipe flush-projects
+
+  See :ref:`command_line_interface` chapter for more information about the scanpipe
+  command.
+
+How can I provide my license policies?
+--------------------------------------
+
+For detailed information about the policies system, refer to :ref:`policies`.
+
+Can you analyze Dockerfiles?
+----------------------------
+
+We have code in https://github.com/aboutcode-org/container-inspector/blob/main/src/container_inspector/dockerfile.py
+for this ... but this may not be wired in other tools at the moment.
+It can for instance map dockerfile instructions to actual docker image history,
+https://github.com/aboutcode-org/container-inspector/blob/main/src/container_inspector/dockerfile.py#L204
+
+Can you analyze a built image? (Build Docker Image Analysis)
+------------------------------------------------------------
+
+Yes, we do this in ScanCode.io. We have one fairly unique feature to actually account
+for all files used in all layers.
+
+Can you analyze all layers of a running container?
+--------------------------------------------------
+
+ScanCode.io scans all layers of images. We can scan all layers of a running container
+if you save the running container as an image first.
+We can also fetch images from registries, local files and technically also from a
+running container, say in a local docker ... but this has not yet been tested so far.
+We do not introspect k8s clusters to analyze the deployed and running images
+there (yet) and that would be a nice future addition.
+For now we can instead work on the many images there, save and analyze them.
+
+Can you analyze Docker in Docker?
+---------------------------------
+
+The input to ScanCode is a local saved image: Docker or OCI.
+Docker in Docker support will demand to have access to the saved images
+(either extracted from the Docker images in Docker, or mounted in a volume or saved
+from the Docker in the Docker image). Once saved we can analyze these alright.

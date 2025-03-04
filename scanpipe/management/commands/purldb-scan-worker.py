@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import time
 import traceback
@@ -27,7 +27,8 @@ from django.core.management.base import BaseCommand
 
 from scanpipe.management.commands import AddInputCommandMixin
 from scanpipe.management.commands import CreateProjectCommandMixin
-from scanpipe.pipes import output
+from scanpipe.management.commands import execute_project
+from scanpipe.models import Run
 from scanpipe.pipes import purldb
 
 
@@ -47,10 +48,20 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
         parser.add_argument(
             "--max-loops",
             dest="max_loops",
+            type=int,
             default=0,
             action="store",
             help="Limit the number of loops to a maximum number. "
             "0 means no limit. Used only for testing.",
+        )
+
+        parser.add_argument(
+            "--max-concurrent-projects",
+            dest="max_concurrent_projects",
+            type=int,
+            default=1,
+            action="store",
+            help="Limit the number of Projects that can be run at once.",
         )
 
     def handle(self, *args, **options):
@@ -58,15 +69,28 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
         sleep = options["sleep"]
         run_async = options["async"]
         max_loops = options["max_loops"]
+        max_concurrent_projects = options["max_concurrent_projects"]
 
         loop_count = 0
         while True:
-            if max_loops and int(loop_count) >= int(max_loops):
+            if max_loops and loop_count >= max_loops:
                 self.stdout.write("loop max reached")
                 break
 
             time.sleep(sleep)
             loop_count += 1
+
+            # Usually, a worker can only run one Run at a time
+            queued_or_running = Run.objects.queued_or_running()
+            queued_or_running_count = queued_or_running.count()
+            if queued_or_running_count >= max_concurrent_projects:
+                self.stdout.write(
+                    "Continuing: number of queued or running Runs"
+                    f"({queued_or_running_count}) is greater "
+                    "than the number of max concurrent projects "
+                    f"({max_concurrent_projects})"
+                )
+                continue
 
             # 1. Get download url from purldb
             response = purldb.get_next_download_url()
@@ -74,6 +98,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
                 scannable_uri_uuid = response["scannable_uri_uuid"]
                 download_url = response["download_url"]
                 pipelines = response["pipelines"]
+                webhook_url = response["webhook_url"]
             else:
                 self.stderr.write("Bad response from PurlDB: unable to get next job.")
                 continue
@@ -81,6 +106,18 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
             if not (download_url and scannable_uri_uuid):
                 self.stdout.write("No new job from PurlDB.")
                 continue
+            else:
+                formatted_pipeline_names = [f"\t\t{pipeline}" for pipeline in pipelines]
+                formatted_pipeline_names = "\n".join(formatted_pipeline_names)
+                msg = (
+                    "New job from PurlDB:\n"
+                    "\tscannable_uri_uuid:\n"
+                    f"\t\t{scannable_uri_uuid}\n"
+                    "\tdownload_url:\n"
+                    f"\t\t{download_url}\n"
+                    "\tpipelines:\n"
+                ) + formatted_pipeline_names
+                self.stdout.write(msg)
 
             try:
                 # 2. Create and run project
@@ -89,27 +126,18 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
                     scannable_uri_uuid=scannable_uri_uuid,
                     download_url=download_url,
                     pipelines=pipelines,
+                    webhook_url=webhook_url,
                     run_async=run_async,
                 )
 
-                # 3. Poll project results
-                purldb.poll_run_status(
-                    project=project,
-                    sleep=sleep,
-                )
-
-                # 4. Get project results and send to PurlDB
-                send_scan_project_results(
-                    project=project, scannable_uri_uuid=scannable_uri_uuid
-                )
                 self.stdout.write(
-                    "Scan results and other data have been sent to PurlDB",
+                    f"Project {project.name} has been created",
                     self.style.SUCCESS,
                 )
 
             except Exception:
                 tb = traceback.format_exc()
-                error_log = f"Exception occured during scan project:\n\n{tb}"
+                error_log = f"Exception occurred during scan project:\n\n{tb}"
                 purldb.update_status(
                     scannable_uri_uuid,
                     status="failed",
@@ -119,7 +147,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
 
 
 def create_scan_project(
-    command, scannable_uri_uuid, download_url, pipelines, run_async=False
+    command, scannable_uri_uuid, download_url, pipelines, webhook_url, run_async=False
 ):
     """
     Create and return a Project for the scan project request with ID of
@@ -135,30 +163,17 @@ def create_scan_project(
         name=name,
         pipelines=pipelines,
         input_urls=input_urls,
-        execute=True,
-        run_async=run_async,
     )
-    project.update_extra_data({"scannable_uri_uuid": scannable_uri_uuid})
+    project.update_extra_data(
+        {
+            "scannable_uri_uuid": scannable_uri_uuid,
+        }
+    )
+    project.add_webhook_subscription(
+        target_url=webhook_url,
+        trigger_on_each_run=False,
+        include_summary=True,
+        include_results=True,
+    )
+    execute_project(project=project, run_async=run_async, command=command)
     return project
-
-
-def send_scan_project_results(project, scannable_uri_uuid):
-    """
-    Send the JSON summary and results of `project` to PurlDB for the scan
-    request `scannable_uri_uuid`.
-
-    Raise a PurlDBException if there is an issue sending results to PurlDB.
-    """
-    project.refresh_from_db()
-    scan_results_location = output.to_json(project)
-    scan_summary_location = project.get_latest_output(filename="summary")
-    response = purldb.send_results_to_purldb(
-        scannable_uri_uuid,
-        scan_results_location,
-        scan_summary_location,
-        project.extra_data,
-    )
-    if not response:
-        raise purldb.PurlDBException(
-            "Bad response returned when sending results to PurlDB"
-        )

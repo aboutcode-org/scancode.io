@@ -124,7 +124,7 @@ The following are some of the ``CodebaseResource`` attributes:
   **copyright holders**, and **related packages**.
 
 .. note::
-    Please note that `ScanCode-toolkit <https://github.com/nexB/scancode-toolkit>`_
+    Please note that `ScanCode-toolkit <https://github.com/aboutcode-org/scancode-toolkit>`_
     use the same attributes and attribute names for files.
 
 .. _discovered_packages:
@@ -147,5 +147,5 @@ The following are some of the ``DiscoveredPackage`` attributes:
 - Copyright, license_expression, and declared_license
 
 .. note::
-    Please note that `ScanCode-toolkit <https://github.com/nexB/scancode-toolkit>`_
+    Please note that `ScanCode-toolkit <https://github.com/aboutcode-org/scancode-toolkit>`_
     use the same attributes and attribute names for packages.

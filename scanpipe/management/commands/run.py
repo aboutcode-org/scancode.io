@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from pathlib import Path
 
@@ -35,7 +35,17 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
-        parser.add_argument("pipelines", help="Pipelines to run, comma-separated.")
+        parser.add_argument(
+            "pipelines",
+            metavar="PIPELINE_NAME",
+            nargs="+",
+            help=(
+                "One or more pipeline to run. "
+                "The pipelines executed based on their given order. "
+                'Groups can be provided using the "pipeline_name:option1,option2"'
+                " syntax."
+            ),
+        )
         parser.add_argument(
             "input_location", help="Input location: file, directory, and URL supported."
         )
@@ -49,7 +59,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         pipelines = options["pipelines"]
-        pipelines = [pipeline_name.strip() for pipeline_name in pipelines.split(",")]
         input_location = options["input_location"]
         output_format = options["format"]
         # Generate a random name for the project if not provided

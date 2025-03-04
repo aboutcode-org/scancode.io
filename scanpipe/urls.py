@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from django.urls import include
 from django.urls import path
@@ -72,6 +72,11 @@ urlpatterns = [
         name="project_dependencies",
     ),
     path(
+        "project/<slug:slug>/dependency_tree/",
+        views.ProjectDependencyTreeView.as_view(),
+        name="project_dependency_tree",
+    ),
+    path(
         "project/<slug:slug>/relations/",
         views.CodebaseRelationListView.as_view(),
         name="project_relations",
@@ -107,6 +112,11 @@ urlpatterns = [
         name="project_settings",
     ),
     path(
+        "project/<slug:slug>/settings/webhooks/add",
+        views.ProjectSettingsWebhookCreateView.as_view(),
+        name="project_settings_add_webhook",
+    ),
+    path(
         "project/<slug:slug>/codebase/",
         views.ProjectCodebaseView.as_view(),
         name="project_codebase",
@@ -120,6 +130,11 @@ urlpatterns = [
         "run/<uuid:uuid>/status/",
         views.run_status_view,
         name="run_status",
+    ),
+    path(
+        "run/<uuid:uuid>/step_selection/",
+        views.RunStepSelectionFormView.as_view(),
+        name="project_run_step_selection",
     ),
     path(
         "pipeline/<str:pipeline_name>/help/",
@@ -155,6 +170,11 @@ urlpatterns = [
         "project/<slug:slug>/delete_input/<uuid:input_uuid>/",
         views.delete_input_view,
         name="project_delete_input",
+    ),
+    path(
+        "project/<slug:slug>/delete_webhook/<uuid:webhook_uuid>/",
+        views.delete_webhook_view,
+        name="project_delete_webhook",
     ),
     path(
         "project/<slug:slug>/download_input/<str:filename>/",
@@ -195,6 +215,11 @@ urlpatterns = [
         "project/<slug:slug>/resource_license_summary/",
         views.ProjectResourceLicenseSummaryView.as_view(),
         name="project_resource_license_summary",
+    ),
+    path(
+        "project/<slug:slug>/compliance_panel/",
+        views.ProjectCompliancePanelView.as_view(),
+        name="project_compliance_panel",
     ),
     path(
         "project/<slug:slug>/",

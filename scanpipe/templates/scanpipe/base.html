@@ -59,6 +59,7 @@
       .is-grey-link {color: #7a7a7a;}
       .is-black-link:hover, .is-grey-link:hover {color: #3273dc; text-decoration: underline;}
       .navbar button.navbar-item {font-size: 1em;}
+      thead.is-sticky {position: sticky; top: -1px; z-index: 19; background-color: #fff;}
       #inputs-panel .panel-block.dropdown:hover {background-color: #f5f5f5;}
       #inputs-panel .dropdown-menu {width: 85%;}
       a.panel-block {word-break: break-all;}
@@ -75,7 +76,7 @@
       .nowrap {white-space: nowrap;}
       #content-header input[name="search"] {width: 225px;}
       button.as-link {height: auto; line-height: initial; font-size: inherit;}
-      .button.is-smaller {font-size: .90rem;}
+      .button.is-smaller, .input.is-smaller {font-size: .90rem;}
       .file.is-boxed.has-name .file-cta {border-width: medium; border-style: dashed;}
       progress.file-upload::before {content: 'Files upload: 'attr(value)'%'; position: absolute; top: -14%; left: 43%; color: black; font-weight: 400;}
       .is-clipped-list ul {--snippet-spacing: 0.95rem; max-height: calc(8 * var(--snippet-spacing)); overflow: hidden;}
@@ -106,10 +107,10 @@
     {% block content %}{% endblock %}
     {% include 'scanpipe/modals/search_syntax_modal.html' %}
     <script src="{% static 'main.js' %}" crossorigin="anonymous"></script>
-    <script src="{% static 'fontawesomefree/js/all.min.js' %}" crossorigin="anonymous" defer></script>
+    <script src="{% static 'fontawesome-6.7.2/all.min.js' %}" crossorigin="anonymous" defer></script>
     <script src="{% static 'highlight-10.6.0.min.js' %}" crossorigin="anonymous"></script>
     <script src="{% static 'bulma-toast-2.4.1.min.js' %}" crossorigin="anonymous" defer></script>
-    <script src="{% static 'htmx-1.9.5.min.js' %}" crossorigin="anonymous" defer></script>
+    <script src="{% static 'htmx-2.0.4.min.js' %}" crossorigin="anonymous" defer></script>
     {% block scripts %}{% endblock %}
   </body>
 </html>

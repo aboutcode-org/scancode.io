@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,11 +18,12 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from django.apps import apps
 
 from rest_framework import serializers
+from rest_framework.reverse import reverse
 from taggit.serializers import TaggitSerializer
 from taggit.serializers import TagListSerializerField
 
@@ -35,6 +36,7 @@ from scanpipe.models import InputSource
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
+from scanpipe.models import WebhookSubscription
 from scanpipe.pipes import count_group_by
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -67,8 +69,12 @@ class PipelineChoicesMixin:
         self.fields["pipeline"].choices = scanpipe_app.get_pipeline_choices()
 
 
-class OrderedMultipleChoiceField(serializers.MultipleChoiceField):
-    """Forcing outputs as list() in place of set() to keep the ordering integrity."""
+class OrderedMultiplePipelineChoiceField(serializers.MultipleChoiceField):
+    """
+    Forcing outputs as list() in place of set() to keep the ordering integrity.
+    The field validation is bypassed and delegated to the ``project.add_pipeline``
+    method called in the ``ProjectSerializer.create`` method.
+    """
 
     def to_internal_value(self, data):
         if isinstance(data, str):
@@ -78,15 +84,14 @@ class OrderedMultipleChoiceField(serializers.MultipleChoiceField):
         if not self.allow_empty and len(data) == 0:
             self.fail("empty")
 
-        # Backward compatibility with old pipeline names.
-        # This will need to be refactored in case this OrderedMultipleChoiceField
-        # class is used for another field that is not ``pipeline`` related.
-        data = [scanpipe_app.get_new_pipeline_name(pipeline) for pipeline in data]
+        # Pipeline validation
+        for pipeline in data:
+            pipeline_name, _ = scanpipe_app.extract_group_from_pipeline(pipeline)
+            pipeline_name = scanpipe_app.get_new_pipeline_name(pipeline_name)
+            if pipeline_name not in scanpipe_app.pipelines:
+                self.fail("invalid_choice", input=pipeline_name)
 
-        return [
-            super(serializers.MultipleChoiceField, self).to_internal_value(item)
-            for item in data
-        ]
+        return data
 
     def to_representation(self, value):
         return [self.choice_strings_to_values.get(str(item), item) for item in value]
@@ -113,6 +118,8 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
             "pipeline_name",
             "status",
             "description",
+            "selected_groups",
+            "selected_steps",
             "project",
             "uuid",
             "created_date",
@@ -140,13 +147,26 @@ class InputSourceSerializer(serializers.ModelSerializer):
         ]
 
 
+class WebhookSubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WebhookSubscription
+        fields = [
+            "target_url",
+            "trigger_on_each_run",
+            "include_summary",
+            "include_results",
+            "is_active",
+        ]
+
+
 class ProjectSerializer(
     ExcludeFromListViewMixin,
+    SerializerExcludeFieldsMixin,
     PipelineChoicesMixin,
     TaggitSerializer,
     serializers.ModelSerializer,
 ):
-    pipeline = OrderedMultipleChoiceField(
+    pipeline = OrderedMultiplePipelineChoiceField(
         choices=(),
         required=False,
         write_only=True,
@@ -154,6 +174,7 @@ class ProjectSerializer(
     execute_now = serializers.BooleanField(
         write_only=True,
         help_text="Execute pipeline now",
+        required=False,
     )
     upload_file = serializers.FileField(write_only=True, required=False)
     upload_file_tag = serializers.CharField(write_only=True, required=False)
@@ -163,6 +184,7 @@ class ProjectSerializer(
         style={"base_template": "textarea.html"},
     )
     webhook_url = serializers.CharField(write_only=True, required=False)
+    webhooks = WebhookSubscriptionSerializer(many=True, write_only=True, required=False)
     next_run = serializers.CharField(source="get_next_run", read_only=True)
     runs = RunSerializer(many=True, read_only=True)
     input_sources = InputSourceSerializer(
@@ -175,6 +197,8 @@ class ProjectSerializer(
     discovered_dependencies_summary = serializers.SerializerMethodField()
     codebase_relations_summary = serializers.SerializerMethodField()
     labels = TagListSerializerField(required=False)
+    results_url = serializers.SerializerMethodField()
+    summary_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -182,10 +206,12 @@ class ProjectSerializer(
             "name",
             "url",
             "uuid",
+            "purl",
             "upload_file",
             "upload_file_tag",
             "input_urls",
             "webhook_url",
+            "webhooks",
             "created_date",
             "is_archived",
             "notes",
@@ -208,8 +234,9 @@ class ProjectSerializer(
             "discovered_packages_summary",
             "discovered_dependencies_summary",
             "codebase_relations_summary",
+            "results_url",
+            "summary_url",
         )
-
         exclude_from_list_view = [
             "settings",
             "input_root",
@@ -245,7 +272,7 @@ class ProjectSerializer(
             "total": base_qs.count(),
             "is_runtime": base_qs.filter(is_runtime=True).count(),
             "is_optional": base_qs.filter(is_optional=True).count(),
-            "is_resolved": base_qs.filter(is_resolved=True).count(),
+            "is_pinned": base_qs.filter(is_pinned=True).count(),
         }
 
     def get_codebase_relations_summary(self, project):
@@ -255,6 +282,16 @@ class ProjectSerializer(
     def validate_input_urls(self, value):
         """Add support for providing multiple URLs in a single string."""
         return [url for entry in value for url in entry.split()]
+
+    def get_action_url(self, obj, action_name):
+        request = self.context.get("request")
+        return reverse(f"project-{action_name}", kwargs={"pk": obj.pk}, request=request)
+
+    def get_results_url(self, obj):
+        return self.get_action_url(obj, "results")
+
+    def get_summary_url(self, obj):
+        return self.get_action_url(obj, "summary")
 
     def create(self, validated_data):
         """
@@ -269,9 +306,10 @@ class ProjectSerializer(
         upload_file = validated_data.pop("upload_file", None)
         upload_file_tag = validated_data.pop("upload_file_tag", "")
         input_urls = validated_data.pop("input_urls", [])
-        pipeline = validated_data.pop("pipeline", [])
+        pipelines = validated_data.pop("pipeline", [])
         execute_now = validated_data.pop("execute_now", False)
         webhook_url = validated_data.pop("webhook_url", None)
+        webhooks = validated_data.pop("webhooks", [])
 
         project = super().create(validated_data)
 
@@ -281,11 +319,16 @@ class ProjectSerializer(
         for url in input_urls:
             project.add_input_source(download_url=url)
 
-        if webhook_url:
-            project.add_webhook_subscription(webhook_url)
+        for pipeline in pipelines:
+            pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline)
+            pipeline_name = scanpipe_app.get_new_pipeline_name(pipeline_name)
+            project.add_pipeline(pipeline_name, execute_now, selected_groups=groups)
 
-        for pipeline_name in pipeline:
-            project.add_pipeline(pipeline_name, execute_now)
+        if webhook_url:
+            project.add_webhook_subscription(target_url=webhook_url)
+
+        for webhook_data in webhooks:
+            project.add_webhook_subscription(**webhook_data)
 
         return project
 
@@ -296,11 +339,14 @@ class CodebaseResourceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CodebaseResource
+        # This fields ordering is sued as-is by the ``output`a modules that depend on
+        # the serializers.
         fields = [
             "path",
             "type",
             "name",
             "status",
+            "for_packages",
             "tag",
             "extension",
             "size",
@@ -315,6 +361,10 @@ class CodebaseResourceSerializer(serializers.ModelSerializer):
             "is_text",
             "is_archive",
             "is_media",
+            "is_legal",
+            "is_manifest",
+            "is_readme",
+            "is_top_level",
             "is_key_file",
             "detected_license_expression",
             "detected_license_expression_spdx",
@@ -326,7 +376,6 @@ class CodebaseResourceSerializer(serializers.ModelSerializer):
             "holders",
             "authors",
             "package_data",
-            "for_packages",
             "emails",
             "urls",
             "extra_data",
@@ -350,6 +399,7 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
             "tag",
             "primary_language",
             "description",
+            "notes",
             "release_date",
             "parties",
             "keywords",
@@ -380,6 +430,8 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
             "source_packages",
             "extra_data",
             "package_uid",
+            "is_private",
+            "is_virtual",
             "datasource_ids",
             "datafile_paths",
             "file_references",
@@ -404,7 +456,8 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
             "scope",
             "is_runtime",
             "is_optional",
-            "is_resolved",
+            "is_pinned",
+            "is_direct",
             "dependency_uid",
             "for_package_uid",
             "resolved_to_package_uid",

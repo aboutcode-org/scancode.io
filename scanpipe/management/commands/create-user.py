@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import getpass
 
@@ -50,9 +50,21 @@ class Command(BaseCommand):
             dest="interactive",
             help="Do not prompt the user for input of any kind.",
         )
+        parser.add_argument(
+            "--admin",
+            action="store_true",
+            help="Specifies that the user should be created as an admin user.",
+        )
+        parser.add_argument(
+            "--super",
+            action="store_true",
+            help="Specifies that the user should be created as a superuser.",
+        )
 
     def handle(self, *args, **options):
         username = options["username"]
+        is_admin = options["admin"]
+        is_superuser = options["super"]
 
         error_msg = self._validate_username(username)
         if error_msg:
@@ -62,7 +74,14 @@ class Command(BaseCommand):
         if options["interactive"]:
             password = self.get_password_from_stdin(username)
 
-        user = self.UserModel._default_manager.create_user(username, password=password)
+        user_kwargs = {
+            "username": username,
+            "password": password,
+            "is_staff": is_admin or is_superuser,
+            "is_superuser": is_superuser,
+        }
+
+        user = self.UserModel._default_manager.create_user(**user_kwargs)
         token, _ = Token._default_manager.get_or_create(user=user)
 
         if options["verbosity"] > 0:

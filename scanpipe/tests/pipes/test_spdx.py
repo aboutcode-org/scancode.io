@@ -27,7 +27,7 @@ from scanpipe.pipes import spdx
 
 
 class ScanPipeSPDXPipesTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def setUp(self):
         self.schema = spdx.SPDX_SCHEMA_PATH.read_text()
@@ -377,7 +377,7 @@ class ScanPipeSPDXPipesTest(TestCase):
         spdx.validate_document(document, self.schema)
 
         # Testing support for "PACKAGE_MANAGER" in place of "PACKAGE-MANAGER"
-        document_location = self.data_location / "spdx" / "example-2.3.1.json"
+        document_location = self.data / "spdx" / "example-2.3.1.json"
         spdx.validate_document(document_location.read_text(), self.schema)
 
         with self.assertRaises(Exception):

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,42 +18,24 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 
 from scanpipe.management.commands import AddInputCommandMixin
 from scanpipe.management.commands import CreateProjectCommandMixin
+from scanpipe.management.commands import PipelineCommandMixin
 
 
-class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
+class Command(
+    CreateProjectCommandMixin, AddInputCommandMixin, PipelineCommandMixin, BaseCommand
+):
     help = "Create a ScanPipe project."
     verbosity = 1
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument("name", help="Project name.")
-        parser.add_argument(
-            "--pipeline",
-            action="append",
-            dest="pipelines",
-            default=list(),
-            help=(
-                "Pipelines names to add to the project. "
-                "The pipelines are added and executed based on their given order. "
-                'Groups can be provided using the "pipeline_name:group1,group2" syntax.'
-            ),
-        )
-        parser.add_argument(
-            "--execute",
-            action="store_true",
-            help="Execute the pipelines right after the project creation.",
-        )
-        parser.add_argument(
-            "--notes",
-            help="Optional notes about the project.",
-        )
 
     def handle(self, *args, **options):
         self.verbosity = options["verbosity"]
@@ -63,11 +45,9 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
         input_urls = options["input_urls"]
         copy_from = options["copy_codebase"]
         notes = options["notes"]
+        labels = options["labels"]
         execute = options["execute"]
         run_async = options["async"]
-
-        if execute and not pipelines:
-            raise CommandError("The --execute option requires one or more pipelines.")
 
         self.create_project(
             name=name,
@@ -76,6 +56,7 @@ class Command(CreateProjectCommandMixin, AddInputCommandMixin, BaseCommand):
             input_urls=input_urls,
             copy_from=copy_from,
             notes=notes,
+            labels=labels,
             execute=execute,
             run_async=run_async,
         )

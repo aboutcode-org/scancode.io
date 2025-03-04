@@ -165,6 +165,18 @@ The value unit is second and is defined as an integer::
 
 Default: ``120`` (2 minutes)
 
+SCANCODEIO_SCAN_MAX_FILE_SIZE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Maximum file size allowed for a file to be scanned when scanning a codebase.
+
+The value unit is bytes and is defined as an integer, see the following
+example of setting this at 5 MB::
+
+    SCANCODEIO_SCAN_MAX_FILE_SIZE=5242880
+
+Default: ``None`` (all files will be scanned)
+
 .. _scancodeio_settings_pipelines_dirs:
 
 SCANCODEIO_PIPELINES_DIRS
@@ -256,6 +268,54 @@ The web server can be started in DEBUG mode with:
 
     $ SCANCODEIO_LOG_LEVEL=DEBUG make run
 
+.. _scancodeio_settings_site_url:
+
+SCANCODEIO_SITE_URL
+^^^^^^^^^^^^^^^^^^^
+
+The base URL of the ScanCode.io application instance.
+This setting is **required** to generate absolute URLs referencing objects within the
+application, such as in webhook notifications.
+
+The value should be a fully qualified URL, including the scheme (e.g., ``https://``).
+
+Example configuration in the ``.env`` file::
+
+    SCANCODEIO_SITE_URL=https://scancode.example.com/
+
+Default: ``""`` (empty)
+
+.. _scancodeio_settings_global_webhook:
+
+SCANCODEIO_GLOBAL_WEBHOOK
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This setting defines a **global webhook** that will be automatically added as a
+``WebhookSubscription`` for each new project.
+
+The webhook is configured as a dictionary and must include a ``target_url``.
+Additional options control when the webhook is triggered and what data is included
+in the payload.
+
+Example configuration in the ``.env`` file::
+
+    SCANCODEIO_GLOBAL_WEBHOOK=target_url=https://webhook.url,trigger_on_each_run=False,include_summary=True,include_results=False
+
+The available options are:
+
+- ``target_url`` (**required**): The URL where the webhook payload will be sent.
+- ``trigger_on_each_run`` (**default**: ``False``): If ``True``, the webhook is triggered
+  on every pipeline run.
+- ``include_summary`` (**default**: ``False``): If ``True``, a summary of the pipeline
+  run results is included in the payload.
+- ``include_results`` (**default**: ``False``): If ``True``, detailed scan results
+  are included in the payload.
+
+If this setting is provided, ScanCode.io will create a webhook subscription
+**only for newly created projects that are not clones**.
+
+Default: ``{}`` (no global webhook is set)
+
 TIME_ZONE
 ^^^^^^^^^
 
@@ -304,7 +364,7 @@ VULNERABLECODE
 ^^^^^^^^^^^^^^
 
 You have the option to either deploy your instance of
-`VulnerableCode <https://github.com/nexB/vulnerablecode/>`_
+`VulnerableCode <https://github.com/aboutcode-org/vulnerablecode/>`_
 or connect to the `public instance <https://public.vulnerablecode.io/>`_.
 
 To configure your local environment, set the ``VULNERABLECODE_URL`` in your ``.env``
@@ -337,6 +397,28 @@ If authentication is enabled on your MatchCode.io instance, you can provide the
 API key using ``MATCHCODEIO_API_KEY``::
 
     MATCHCODEIO_API_KEY=insert_your_api_key_here
+
+.. _scancodeio_settings_federatedcode:
+
+FEDERATEDCODE
+^^^^^^^^^^^^^
+
+FederatedCode is decentralized and federated metadata for software applications
+stored in Git repositories.
+
+
+To configure your local environment, set the following in your ``.env`` file::
+
+    FEDERATEDCODE_GIT_ACCOUNT_URL=https://<Address to your git account>/
+
+    FEDERATEDCODE_GIT_SERVICE_TOKEN=insert_your_git_api_key_here
+
+Also provide the name and email that will be used to sign off on commits to Git repositories::
+
+    FEDERATEDCODE_GIT_SERVICE_NAME=insert_name_here
+
+    FEDERATEDCODE_GIT_SERVICE_EMAIL=insert_email_here
+
 
 .. _scancodeio_settings_fetch_authentication:
 
@@ -398,6 +480,12 @@ location on disk using::
 
     SCANCODEIO_NETRC_LOCATION="~/.netrc"
 
+If you are deploying ScanCode.io using Docker and you wish to use a netrc file,
+you can provide it to the Docker container by moving the netrc file to
+``/etc/scancodeio/.netrc`` and then updating the ``.env`` file with the line::
+
+    SCANCODEIO_NETRC_LOCATION="/etc/scancodeio/.netrc"
+
 .. _scancodeio_settings_skopeo_credentials:
 
 SCANCODEIO_SKOPEO_CREDENTIALS
@@ -416,3 +504,29 @@ SCANCODEIO_SKOPEO_AUTHFILE_LOCATION
 Specify the path of the Skopeo authentication file using the following setting::
 
     SCANCODEIO_SKOPEO_AUTHFILE_LOCATION="/path/to/auth.json"
+
+.. _scancodeio_settings_job_queue_and_workers:
+
+Job Queue and Workers
+---------------------
+
+ScanCode.io leverages the RQ (Redis Queue) Python library for job queuing and background
+processing with workers.
+
+By default, it is configured to use the "redis" service in the Docker Compose stack.
+
+For deployments where Redis is hosted on a separate system
+(e.g., a cloud-based deployment or a remote Redis server),
+the Redis instance used by RQ can be customized using the following settings::
+
+    SCANCODEIO_RQ_REDIS_HOST=localhost
+    SCANCODEIO_RQ_REDIS_PORT=6379
+    SCANCODEIO_RQ_REDIS_DB=0
+    SCANCODEIO_RQ_REDIS_USERNAME=<username>
+    SCANCODEIO_RQ_REDIS_PASSWORD=<password>
+    SCANCODEIO_RQ_REDIS_DEFAULT_TIMEOUT=360
+
+To enhance security, it is recommended to enable SSL for Redis connections.
+SSL is disabled by default but can be enabled with the following configuration::
+
+    SCANCODEIO_RQ_REDIS_SSL=True

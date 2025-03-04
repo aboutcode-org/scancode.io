@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
 
@@ -93,13 +93,7 @@ class ScanSinglePackage(Pipeline):
             copy_input(self.input_path, self.project.codebase_path)
             return
 
-        extract_errors = scancode.extract_archive(
-            location=self.input_path,
-            target=self.project.codebase_path,
-        )
-
-        if extract_errors:
-            self.add_error("\n".join(extract_errors))
+        self.extract_archive(self.input_path, self.project.codebase_path)
 
         # Reload the project env post-extraction as the scancode-config.yml file
         # may be located in one of the extracted archives.
@@ -120,7 +114,7 @@ class ScanSinglePackage(Pipeline):
             self.project.add_error(
                 description="\n".join(errors),
                 model=self.pipeline_name,
-                details={"path": resource_path},
+                details={"resource_path": resource_path.removeprefix("codebase/")},
             )
 
         if not scan_output_path.exists():

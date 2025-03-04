@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,19 +18,24 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from django import forms
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
 
+from packageurl import PackageURL
 from taggit.forms import TagField
 from taggit.forms import TagWidget
 
 from scanpipe.models import Project
+from scanpipe.models import Run
+from scanpipe.models import WebhookSubscription
 from scanpipe.pipelines import convert_markdown_to_html
 from scanpipe.pipes import fetch
+from scanpipe.policies import load_policies_yaml
+from scanpipe.policies import validate_policies
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -46,7 +51,7 @@ class MultipleFileField(forms.FileField):
 
     def clean(self, data, initial=None):
         single_file_clean = super().clean
-        if isinstance(data, (list, tuple)):
+        if isinstance(data, list | tuple):
             result = [single_file_clean(entry, initial) for entry in data]
         else:
             result = single_file_clean(data, initial)
@@ -119,9 +124,11 @@ class InputsBaseForm(forms.Form):
             project.add_input_source(download_url=url)
 
 
-class GroupChoiceField(forms.MultipleChoiceField):
+class CheckboxChoiceField(forms.MultipleChoiceField):
     widget = forms.CheckboxSelectMultiple
 
+
+class SelectedGroupsCheckboxChoiceField(CheckboxChoiceField):
     def valid_value(self, value):
         """Accept all values."""
         return True
@@ -137,7 +144,7 @@ class PipelineBaseForm(forms.Form):
         initial=True,
         required=False,
     )
-    selected_groups = GroupChoiceField(required=False)
+    selected_groups = SelectedGroupsCheckboxChoiceField(required=False)
 
     def handle_pipeline(self, project):
         pipeline = self.cleaned_data["pipeline"]
@@ -232,7 +239,22 @@ class EditInputSourceTagForm(forms.Form):
         return input_source
 
 
-class ArchiveProjectForm(forms.Form):
+class BaseProjectActionForm(forms.Form):
+    select_across = forms.BooleanField(
+        label="",
+        required=False,
+        initial=0,
+        help_text="All project matching current search and filters will be included.",
+    )
+    url_query = forms.CharField(
+        widget=forms.HiddenInput,
+        required=False,
+        help_text="Stores the current URL filters.",
+    )
+
+
+class ProjectArchiveForm(BaseProjectActionForm):
+    prefix = "archive"
     remove_input = forms.BooleanField(
         label="Remove inputs",
         initial=True,
@@ -247,6 +269,74 @@ class ArchiveProjectForm(forms.Form):
         label="Remove outputs",
         initial=False,
         required=False,
+    )
+
+    def get_action_kwargs(self):
+        return {
+            "remove_input": self.cleaned_data["remove_input"],
+            "remove_codebase": self.cleaned_data["remove_codebase"],
+            "remove_output": self.cleaned_data["remove_output"],
+        }
+
+
+class ProjectResetForm(BaseProjectActionForm):
+    prefix = "reset"
+    keep_input = forms.BooleanField(
+        label="Keep inputs",
+        initial=True,
+        required=False,
+    )
+    restore_pipelines = forms.BooleanField(
+        label="Restore existing pipelines",
+        initial=False,
+        required=False,
+    )
+    execute_now = forms.BooleanField(
+        label="Execute restored pipeline(s) now",
+        initial=False,
+        required=False,
+    )
+
+    def get_action_kwargs(self):
+        return {
+            "keep_input": self.cleaned_data["keep_input"],
+            "restore_pipelines": self.cleaned_data["restore_pipelines"],
+            "execute_now": self.cleaned_data["execute_now"],
+        }
+
+
+class ProjectOutputDownloadForm(BaseProjectActionForm):
+    prefix = "download"
+    output_format = forms.ChoiceField(
+        label="Choose the output format to include in the ZIP file",
+        choices=[
+            ("json", "JSON"),
+            ("xlsx", "XLSX"),
+            ("spdx", "SPDX"),
+            ("cyclonedx", "CycloneDX"),
+            ("attribution", "Attribution"),
+        ],
+        required=True,
+        initial="json",
+        widget=forms.RadioSelect,
+    )
+
+
+class ProjectReportForm(BaseProjectActionForm):
+    prefix = "report"
+    model_name = forms.ChoiceField(
+        label="Choose the object type to include in the XLSX file",
+        choices=[
+            ("package", "Packages"),
+            ("dependency", "Dependencies"),
+            ("resource", "Resources"),
+            ("relation", "Relations"),
+            ("message", "Messages"),
+            ("todo", "TODOs"),
+        ],
+        required=True,
+        initial="package",
+        widget=forms.RadioSelect,
     )
 
 
@@ -365,11 +455,19 @@ For example: `npm:devDependencies`
 """
 
 
+ignored_vulnerabilities_help = """
+Specify certain vulnerabilities to be ignored using VCID, CVE, or any aliases.
+"""
+
+
 class ProjectSettingsForm(forms.ModelForm):
     settings_fields = [
         "ignored_patterns",
         "ignored_dependency_scopes",
+        "ignored_vulnerabilities",
+        "policies",
         "attribution_template",
+        "scan_max_file_size",
         "product_name",
         "product_version",
     ]
@@ -399,6 +497,37 @@ class ProjectSettingsForm(forms.ModelForm):
         key_name="package_type",
         value_name="scope",
     )
+    ignored_vulnerabilities = ListTextarea(
+        label="Ignored vulnerabilities",
+        required=False,
+        help_text=convert_markdown_to_html(ignored_vulnerabilities_help.strip()),
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea is-dynamic",
+                "rows": 2,
+                "placeholder": "VCID-q4q6-yfng-aaag\nCVE-2024-27351",
+            },
+        ),
+    )
+    policies = forms.CharField(
+        label="License policies",
+        required=False,
+        help_text=(
+            "Refer to the documentation for syntax details: "
+            "https://scancodeio.readthedocs.io/en/latest/tutorial_license_policies.html"
+        ),
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea is-dynamic",
+                "rows": 3,
+                "placeholder": (
+                    "license_policies:\n"
+                    "-   license_key: gpl-2.0\n"
+                    "    compliance_alert: error"
+                ),
+            }
+        ),
+    )
     attribution_template = forms.CharField(
         label="Attribution template",
         required=False,
@@ -412,6 +541,15 @@ class ProjectSettingsForm(forms.ModelForm):
             "the entire HTML code into this field."
         ),
         widget=forms.Textarea(attrs={"class": "textarea is-dynamic", "rows": 3}),
+    )
+    scan_max_file_size = forms.IntegerField(
+        label="Max file size to scan",
+        required=False,
+        help_text=(
+            "Maximum file size in bytes which should be skipped from scanning."
+            "File size is in bytes. Example: 5 MB is 5242880 bytes."
+        ),
+        widget=forms.NumberInput(attrs={"class": "input"}),
     )
     product_name = forms.CharField(
         label="Product name",
@@ -437,11 +575,30 @@ class ProjectSettingsForm(forms.ModelForm):
         fields = [
             "name",
             "notes",
+            "purl",
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "input"}),
             "notes": forms.Textarea(attrs={"rows": 3, "class": "textarea is-dynamic"}),
+            "purl": forms.TextInput(
+                attrs={
+                    "class": "input",
+                    "placeholder": "pkg:npm/lodash@4.7.21",
+                }
+            ),
         }
+
+    def clean_purl(self):
+        """Validate the Project PURL."""
+        purl = self.cleaned_data.get("purl")
+
+        if purl:
+            try:
+                PackageURL.from_string(purl)
+            except ValueError:
+                raise forms.ValidationError("PURL must be a valid PackageURL")
+
+        return purl
 
     def __init__(self, *args, **kwargs):
         """Load initial values from Project ``settings`` field."""
@@ -465,6 +622,12 @@ class ProjectSettingsForm(forms.ModelForm):
         }
         project.settings.update(config)
         project.save(update_fields=["settings"])
+
+    def clean_policies(self):
+        if policies := self.cleaned_data.get("policies"):
+            policies_dict = load_policies_yaml(policies)
+            validate_policies(policies_dict)
+        return policies
 
 
 class ProjectCloneForm(forms.Form):
@@ -513,3 +676,51 @@ class ProjectCloneForm(forms.Form):
 
     def save(self, *args, **kwargs):
         return self.project.clone(**self.cleaned_data)
+
+
+class PipelineRunStepSelectionForm(forms.ModelForm):
+    selected_steps = CheckboxChoiceField(required=False)
+
+    class Meta:
+        model = Run
+        fields = [
+            "selected_steps",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        if not kwargs.get("instance"):
+            raise ValueError("An Run object is required to instantiate this form.")
+
+        super().__init__(*args, **kwargs)
+        pipeline_class = self.instance.pipeline_class
+        choices = self.get_step_choices(pipeline_class)
+        self.fields["selected_steps"].choices = choices
+
+        # All step checkboxes are selected by default unless already defined on the run
+        if not self.instance.selected_steps:
+            self.initial["selected_steps"] = [choice[0] for choice in choices]
+
+    @staticmethod
+    def get_step_choices(pipeline_class):
+        """Return a `choices` list of tuple suitable for a Django ChoiceField."""
+        return [(step.__name__, step.__name__) for step in pipeline_class.get_steps()]
+
+
+class WebhookSubscriptionForm(forms.ModelForm):
+    class Meta:
+        model = WebhookSubscription
+        fields = [
+            "target_url",
+            "trigger_on_each_run",
+            "include_summary",
+            "include_results",
+            "is_active",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        target_url_field = self.fields["target_url"]
+        target_url_field.widget.attrs["class"] = "input"
+
+    def save(self, project):
+        return project.add_webhook_subscription(**self.cleaned_data)

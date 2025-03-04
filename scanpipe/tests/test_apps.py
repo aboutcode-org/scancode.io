@@ -30,10 +30,8 @@ from django.test import TestCase
 from django.test import override_settings
 from django.utils import timezone
 
-from scanpipe.apps import ScanPipeConfig
 from scanpipe.models import Project
 from scanpipe.models import Run
-from scanpipe.tests import license_policies
 from scanpipe.tests import license_policies_index
 from scanpipe.tests.pipelines.register_from_file import RegisterFromFile
 
@@ -41,16 +39,8 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class ScanPipeAppsTest(TestCase):
-    data_location = Path(__file__).parent / "data"
+    data = Path(__file__).parent / "data"
     pipelines_location = Path(__file__).parent / "pipelines"
-
-    def test_scanpipe_apps_get_policies_index(self):
-        self.assertEqual({}, ScanPipeConfig.get_policies_index([], "license_key"))
-        policies_index = ScanPipeConfig.get_policies_index(
-            policies_list=license_policies,
-            key="license_key",
-        )
-        self.assertEqual(license_policies_index, policies_index)
 
     def test_scanpipe_apps_set_policies(self):
         scanpipe_app.license_policies_index = {}
@@ -66,18 +56,12 @@ class ScanPipeAppsTest(TestCase):
             self.assertEqual({}, scanpipe_app.license_policies_index)
 
         scanpipe_app.license_policies_index = {}
-        policies_files = self.data_location / "policies.yml"
-        with override_settings(SCANCODEIO_POLICIES_FILE=policies_files):
+        policies_files = self.data / "policies" / "policies.yml"
+        with override_settings(SCANCODEIO_POLICIES_FILE=str(policies_files)):
             scanpipe_app.set_policies()
             self.assertEqual(
                 license_policies_index, scanpipe_app.license_policies_index
             )
-
-    def test_scanpipe_apps_policies_enabled(self):
-        scanpipe_app.license_policies_index = {}
-        self.assertFalse(scanpipe_app.policies_enabled)
-        scanpipe_app.license_policies_index = {"key": "value"}
-        self.assertTrue(scanpipe_app.policies_enabled)
 
     def test_scanpipe_apps_register_pipeline_from_file(self):
         path = self.pipelines_location / "do_nothing.py"

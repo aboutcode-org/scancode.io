@@ -43,11 +43,11 @@ share
 selenium
 local
 /dist/
-/.cache/
+/.*cache/
+/.venv/
 /.python-version
 /.pytest_cache/
 /scancodeio.egg-info/
-policies.yml
 *.rdb
 *.aof
 .vscode

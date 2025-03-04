@@ -21,7 +21,7 @@ def migrate_dependencies_data_to_discovereddependencies_model(apps, schema_edito
             dependency_data.pop("resolved_package", None)
 
             # `extracted_requirement` was previously stored as `requirement` prior to
-            # https://github.com/nexB/scancode-toolkit/pull/2825/
+            # https://github.com/aboutcode-org/scancode-toolkit/pull/2825/
             requirement = dependency_data.pop("requirement", None)
             if requirement:
                 dependency_data["extracted_requirement"] = requirement

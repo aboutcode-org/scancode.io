@@ -29,9 +29,17 @@
         </div>
       {% endif %}
       {% if run.status == run.Status.NOT_STARTED or run.status == run.Status.QUEUED %}
-        <a href="{% url 'project_delete_pipeline' project.slug run.uuid %}" class="execute-pipeline-link has-text-danger ml-3">
+        <a href="{% url 'project_delete_pipeline' project.slug run.uuid %}" class="execute-pipeline-link has-text-danger ml-2">
           <i class="fa-solid fa-trash-alt"></i>
           Delete pipeline
+        </a>
+        <a href="#" class="ml-4"
+           hx-get="{% url 'project_run_step_selection' run.uuid %}"
+           hx-target="#run-step-selection-box"
+           hx-swap="outerHTML"
+        >
+          <i class="fa-regular fa-square-check"></i>
+          Select steps
         </a>
       {% endif %}
       {% if run.task_exitcode %}
@@ -58,7 +66,13 @@
           Stop pipeline
         </a>
       {% endif %}
+      {% if run.status == run.Status.SUCCESS and run.results_url %}
+        <a href="{{ run.results_url }}" class="ml-1">
+          <i class="fa-regular fa-rectangle-list"></i> View pipeline results
+        </a>
+      {% endif %}
     </div>
+    <div id="run-step-selection-box"></div>
     <div class="field is-grouped is-grouped-multiline">
       {% if run.execution_time %}
         <div class="control">
@@ -123,48 +137,48 @@
         <pre class="language-python wrap p-1"><code>{{ run.task_output }}</code></pre>
       </figure>
     {% endif %}
-    {% if webhook_subscriptions %}
+    {% if webhook_deliveries %}
       <hr>
-      {% for webhook in webhook_subscriptions %}
+      {% for webhook_delivery in webhook_deliveries %}
         <div class="field is-grouped is-grouped-multiline">
           <div class="control">
             <div class="tags has-addons">
-              <span class="tag is-dark">Webhook</span>
-              <span class="tag is-info">{{ webhook.uuid }}</span>
+              <span class="tag is-dark">Webhook delivery</span>
+              <span class="tag is-info">{{ webhook_delivery.uuid }}</span>
             </div>
           </div>
           <div class="control">
             <div class="tags has-addons">
               <span class="tag is-dark">Target URL</span>
-              <span class="tag is-info">{{ webhook.target_url|truncatechars:30 }}</span>
+              <span class="tag is-info">{{ webhook_delivery.target_url|truncatechars:30 }}</span>
             </div>
           </div>
           <div class="control">
             <div class="tags has-addons">
               <span class="tag is-dark">Delivered</span>
-              <span class="tag is-info">{{ webhook.delivered|yesno }}</span>
+              <span class="tag is-info">{{ webhook_delivery.delivered|yesno }}</span>
             </div>
           </div>
         </div>
-        {% if webhook.delivery_error %}
+        {% if webhook_delivery.delivery_error %}
           <span class="tag is-dark tag-header">Delivery error</span>
           <figure class="highlight log border-no-top-left-radius">
-            <pre class="language-toml wrap p-1"><code>{{ webhook.delivery_error }}</code></pre>
+            <pre class="language-toml wrap p-1"><code>{{ webhook_delivery.delivery_error }}</code></pre>
           </figure>
         {% endif %}
-        {% if webhook.delivered %}
+        {% if webhook_delivery.delivered %}
           <div class="control">
             <div class="tags has-addons">
               <span class="tag is-dark">HTTP code</span>
-              <span class="tag {% if webhook.success %}is-success{% else %}is-danger{% endif %}">
-                {{ webhook.response_status_code }}
+              <span class="tag {% if webhook_delivery.success %}is-success{% else %}is-danger{% endif %}">
+                {{ webhook_delivery.response_status_code }}
               </span>
             </div>
           </div>
-          {% if webhook.response_text %}
+          {% if webhook_delivery.response_text %}
             <span class="tag is-dark tag-header">Response</span>
             <figure class="highlight log border-no-top-left-radius">
-              <pre class="language-toml wrap p-1"><code>{{ webhook.response_text }}</code></pre>
+              <pre class="language-toml wrap p-1"><code>{{ webhook_delivery.response_text }}</code></pre>
             </figure>
           {% endif %}
         {% endif %}

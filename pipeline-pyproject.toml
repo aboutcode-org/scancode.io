@@ -1,0 +1,45 @@
+[build-system]
+requires = ["flot"]
+build-backend = "flot.buildapi"
+
+[project]
+name = "aboutcode.pipeline"
+version = "0.2.1"
+description = "AboutCode Pipeline library. Execute code in steps."
+license = { text = "Apache-2.0" }
+readme = "aboutcode/pipeline/README.md"
+requires-python = ">=3.9"
+authors = [ { name = "nexB. Inc. and others", email = "info@aboutcode.org" } ]
+keywords = [
+    "open source",
+    "pipeline",
+    "scancode",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development",
+    "Topic :: Utilities",
+]
+
+[project.urls]
+Homepage = "https://github.com/aboutcode-org/scancode.io"
+Documentation = "https://scancodeio.readthedocs.io/"
+Changelog = "https://github.com/aboutcode-org/scancode.io/tree/main/aboutcode/pipeline/CHANGELOG.md"
+Repository = "https://github.com/aboutcode-org/scancode.io/tree/main/aboutcode/pipeline"
+Issues = "https://github.com/aboutcode-org/scancode.io/issues"
+
+[tool.flot]
+includes = [
+    "aboutcode/pipeline/*",
+]
+metadata_files = [
+    "LICENSE",
+    "NOTICE",
+]

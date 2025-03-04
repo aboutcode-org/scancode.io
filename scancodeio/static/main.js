@@ -232,7 +232,8 @@ function setupSelectCheckbox() {
       updateButtonAndDropdownState();
 
       // Check if all row checkboxes are checked and update the "Select All" checkbox accordingly
-      selectAllCheckbox.checked = Array.from(rowCheckboxes).every((cb) => cb.checked);
+      const allRowCheckboxesChecked = Array.from(rowCheckboxes).every((cb) => cb.checked);
+      selectAllCheckbox.checked = allRowCheckboxesChecked;
     });
   });
 
@@ -317,6 +318,44 @@ function displayFormUploadProgress($form, $progress, $form_errors, update_title=
   xhr.send(new FormData($form));
 }
 
+// Navigation
+
+class PaginationNavigator {
+  constructor(containerSelector) {
+    this.container = document.querySelector(containerSelector);
+
+    // Ensure the container exists before attaching listeners
+    if (!this.container) {
+      console.warn(`PaginationNavigator: No container found for selector "${containerSelector}"`);
+      return;
+    }
+
+    this.previousPageLink = this.container.querySelector("a.previous-page");
+    this.nextPageLink = this.container.querySelector("a.next-page");
+
+    this.attachKeyListener();
+  }
+
+  anyInputHasFocus() {
+    // Do not enable the navigation if an <input> or <textarea> currently has the focus
+    return document.querySelector("input:focus, textarea:focus") !== null;
+  }
+
+  attachKeyListener() {
+    document.addEventListener("keydown", (e) => {
+      if (e.keyCode === 37 && !this.anyInputHasFocus() && this.previousPageLink) {
+        // Left Arrow key for previous page
+        e.preventDefault();
+        window.location.href = this.previousPageLink.href;
+      } else if (e.keyCode === 39 && !this.anyInputHasFocus() && this.nextPageLink) {
+        // Right Arrow key for next page
+        e.preventDefault();
+        window.location.href = this.nextPageLink.href;
+      }
+    });
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 
   setupOpenModalButtons();
@@ -326,6 +365,11 @@ document.addEventListener('DOMContentLoaded', function () {
   setupTextarea();
   setupHighlightControls();
   setupSelectCheckbox();
+
+  const paginationContainer = document.querySelector("#pagination-header");
+  if (paginationContainer) {
+    new PaginationNavigator("#pagination-header");
+  }
 
   // Close modals and dropdowns on pressing "escape" key
   document.addEventListener('keydown', function (event) {

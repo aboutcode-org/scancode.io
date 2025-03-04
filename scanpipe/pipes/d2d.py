@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,8 +18,9 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import re
 from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
@@ -42,13 +43,14 @@ from elf_inspector.dwarf import get_dwarf_paths
 from extractcode import EXTRACT_SUFFIX
 from go_inspector.plugin import collect_and_parse_symbols
 from packagedcode.npm import NpmPackageJsonHandler
+from rust_inspector.binary import collect_and_parse_rust_symbols
 from summarycode.classify import LEGAL_STARTS_ENDS
 
+from aboutcode.pipeline import LoopProgress
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import convert_glob_to_django_regex
-from scanpipe.pipes import LoopProgress
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
 from scanpipe.pipes import js
@@ -57,6 +59,8 @@ from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
 from scanpipe.pipes import resolve
 from scanpipe.pipes import scancode
+from scanpipe.pipes import symbolmap
+from scanpipe.pipes import symbols
 
 FROM = "from/"
 TO = "to/"
@@ -188,14 +192,24 @@ def map_java_to_class(project, logger=None):
     to_resources = project_files.to_codebase().has_no_relation()
 
     to_resources_dot_class = to_resources.filter(extension=".class")
-    resource_count = to_resources_dot_class.count()
-    if logger:
-        logger(f"Mapping {resource_count:,d} .class resources to .java")
+    from_resources_dot_java = (
+        from_resources.filter(extension=".java")
+        # The "java_package" extra_data value is set during the `find_java_packages`,
+        # it is required to build the index.
+        .filter(extra_data__java_package__isnull=False)
+    )
+    to_resource_count = to_resources_dot_class.count()
+    from_resource_count = from_resources_dot_java.count()
 
-    from_resources_dot_java = from_resources.filter(extension=".java")
-    if not from_resources_dot_java.exists():
+    if not from_resource_count:
         logger("No .java resources to map.")
         return
+
+    if logger:
+        logger(
+            f"Mapping {to_resource_count:,d} .class resources to "
+            f"{from_resource_count:,d} .java"
+        )
 
     # build an index using from-side Java fully qualified class file names
     # built from the "java_package" and file name
@@ -205,7 +219,7 @@ def map_java_to_class(project, logger=None):
     from_classes_index = pathmap.build_index(indexables, with_subpaths=False)
 
     resource_iterator = to_resources_dot_class.iterator(chunk_size=2000)
-    progress = LoopProgress(resource_count, logger)
+    progress = LoopProgress(to_resource_count, logger)
 
     for to_resource in progress.iter(resource_iterator):
         _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
@@ -224,11 +238,8 @@ def get_indexable_qualified_java_paths_from_values(resource_values):
         (123, "org/apache/commons/LoggerImpl.java")
     """
     for resource_id, resource_name, resource_extra_data in resource_values:
-        java_package = resource_extra_data and resource_extra_data.get("java_package")
-        if not java_package:
-            continue
         fully_qualified = jvm.get_fully_qualified_java_path(
-            java_package,
+            java_package=resource_extra_data.get("java_package"),
             filename=resource_name,
         )
         yield resource_id, fully_qualified
@@ -557,7 +568,7 @@ def match_purldb_resource(
                 package_data = package_data_by_purldb_urls[package_instance_url]
             sha1 = result["sha1"]
             resources = resources_by_sha1.get(sha1) or []
-            if not resources:
+            if not (resources and package_data):
                 continue
             _, matched_resources_count = create_package_from_purldb_data(
                 project=project,
@@ -656,7 +667,10 @@ def _match_purldb_resources(
 
     for to_resource in progress.iter(resource_iterator):
         resources_by_sha1[to_resource.sha1].append(to_resource)
-        if to_resource.path.endswith(".map"):
+        if (
+            to_resource.path.endswith(".map")
+            and "json" in to_resource.file_type.lower()
+        ):
             for js_sha1 in js.source_content_sha1_list(to_resource):
                 resources_by_sha1[js_sha1].append(to_resource)
         processed_resources_count += 1
@@ -834,7 +848,7 @@ class AboutFileIndexes:
                     description="Cannot create package from ABOUT file",
                     model="map_about_files",
                     details=error_message_details,
-                    resource=about_file_resource,
+                    object_instance=about_file_resource,
                 )
                 continue
 
@@ -846,7 +860,7 @@ class AboutFileIndexes:
                     description="ABOUT file does not have about_resource",
                     model="map_about_files",
                     details=error_message_details,
-                    resource=about_file_resource,
+                    object_instance=about_file_resource,
                 )
                 continue
             else:
@@ -965,7 +979,7 @@ class AboutFileIndexes:
 
             if not mapped_resources:
                 error_message_details = {
-                    "path": about_path,
+                    "resource_path": about_path,
                     "package_data": package_data,
                 }
                 project.add_warning(
@@ -1617,21 +1631,20 @@ def match_purldb_resources_post_process(project, logger=None):
     map_count = 0
 
     for directory in progress.iter(resource_iterator):
-        map_count += _match_purldb_resources_post_process(
-            directory, to_extract_directories, to_resources
-        )
+        map_count += _match_purldb_resources_post_process(directory, to_resources)
 
     logger(f"{map_count:,d} resource processed")
 
 
-def _match_purldb_resources_post_process(
-    directory_path, to_extract_directories, to_resources
-):
+def _match_purldb_resources_post_process(directory, to_resources):
+    # Escape special character in directory path
+    escaped_directory_path = re.escape(directory.path)
+
     # Exclude the content of nested archive.
     interesting_codebase_resources = (
-        to_resources.filter(path__startswith=directory_path)
+        to_resources.filter(path__startswith=directory.path)
         .filter(status=flag.MATCHED_TO_PURLDB_RESOURCE)
-        .exclude(path__regex=rf"^{directory_path}.*-extract\/.*$")
+        .exclude(path__regex=rf"^{escaped_directory_path}.*-extract\/.*$")
     )
 
     if not interesting_codebase_resources:
@@ -1708,9 +1721,7 @@ def map_paths_resource(
             f"{', '.join(map_types)} for: {to_resource.path!r}"
         )
     else:
-        logger(
-            f"No mappings using {', '.join(map_types)} for: " f"{to_resource.path!r}"
-        )
+        logger(f"No mappings using {', '.join(map_types)} for: {to_resource.path!r}")
 
 
 def process_paths_in_binary(
@@ -1794,8 +1805,14 @@ def map_elfs(project, logger=None):
         try:
             paths = get_elf_file_dwarf_paths(resource.location_path)
             resource.update_extra_data(paths)
-        except Exception as e:
-            logger(f"Can not parse {resource.location_path!r} {e!r}")
+        except Exception as exception:
+            project.add_warning(
+                exception=exception,
+                object_instance=resource,
+                description=f"Cannot parse binary at {resource.path}",
+                model="map_elfs",
+                details={"path": resource.path},
+            )
 
     if logger:
         logger(
@@ -1860,8 +1877,14 @@ def map_go_paths(project, logger=None):
         try:
             paths = get_go_file_paths(resource.location_path)
             resource.update_extra_data(paths)
-        except Exception as e:
-            logger(f"Can not parse {resource.location_path!r} {e!r}")
+        except Exception as exception:
+            project.add_warning(
+                exception=exception,
+                object_instance=resource,
+                description=f"Cannot parse binary at {resource.path}",
+                model="map_go_paths",
+                details={"path": resource.path},
+            )
 
     if logger:
         logger(
@@ -1884,5 +1907,56 @@ def map_go_paths(project, logger=None):
             from_resources,
             from_resources_index,
             map_types=["go_file_paths"],
+            logger=logger,
+        )
+
+
+def map_rust_paths(project, logger=None):
+    """Map Rust binaries to their source in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    to_resources = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .has_no_relation()
+        .executable_binaries()
+    )
+
+    # Collect source symbols from rust source files
+    rust_from_resources = from_resources.filter(extension=".rs")
+    symbols.collect_and_store_tree_sitter_symbols_and_strings(
+        project=project,
+        logger=logger,
+        project_files=rust_from_resources,
+    )
+
+    # Collect binary symbols from rust binaries
+    for resource in to_resources:
+        try:
+            binary_symbols = collect_and_parse_rust_symbols(resource.location_path)
+            resource.update_extra_data(binary_symbols)
+        except Exception as e:
+            logger(f"Can not parse {resource.location_path!r} {e!r}")
+
+    if logger:
+        logger(
+            f"Mapping {to_resources.count():,d} to/ resources using symbols "
+            f"with {rust_from_resources.count():,d} from/ resources."
+        )
+
+    resource_iterator = to_resources.iterator(chunk_size=2000)
+    progress = LoopProgress(to_resources.count(), logger)
+    for to_resource in progress.iter(resource_iterator):
+        binary_symbols = to_resource.extra_data.get("rust_symbols")
+        if not binary_symbols:
+            continue
+
+        if logger:
+            logger(f"Mapping source files to binary at {to_resource.path}")
+
+        symbolmap.map_resources_with_symbols(
+            to_resource=to_resource,
+            from_resources=rust_from_resources,
+            binary_symbols=binary_symbols,
+            map_type="rust_symbols",
             logger=logger,
         )

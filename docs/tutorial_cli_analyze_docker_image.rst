@@ -32,11 +32,11 @@ Instructions
 
 - Download the following **test Docker image** and save it to the :guilabel:`~/codedrop/`
   directory: `30-alpine-nickolashkraus-staticbox-latest.tar
-  <https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar>`_
+  <https://github.com/aboutcode-org/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar>`_
 
 .. code-block:: console
 
-    $ curl https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar --output ~/codedrop/30-alpine-nickolashkraus-staticbox-latest.tar
+    $ curl https://github.com/aboutcode-org/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar --output ~/codedrop/30-alpine-nickolashkraus-staticbox-latest.tar
 
 - Create an alias to the ``scanpipe`` command executed through the
   ``docker compose`` command line interface with:
@@ -161,6 +161,6 @@ Instructions
     .. code-block:: bash
 
         $ scanpipe create-project staticbox2 \
-            --input-url https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar \
+            --input-url https://github.com/aboutcode-org/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar \
             --pipeline analyze_docker_image \
             --execute

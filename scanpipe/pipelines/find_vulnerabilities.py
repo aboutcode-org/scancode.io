@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import vulnerablecode
@@ -33,6 +33,7 @@ class FindVulnerabilities(Pipeline):
 
     download_inputs = False
     is_addon = True
+    results_url = "/project/{slug}/packages/?is_vulnerable=yes"
 
     @classmethod
     def steps(cls):
@@ -53,9 +54,17 @@ class FindVulnerabilities(Pipeline):
     def lookup_packages_vulnerabilities(self):
         """Check for vulnerabilities for each of the project's discovered package."""
         packages = self.project.discoveredpackages.all()
-        vulnerablecode.fetch_vulnerabilities(packages, logger=self.log)
+        vulnerablecode.fetch_vulnerabilities(
+            packages=packages,
+            ignore_set=self.project.ignored_vulnerabilities_set,
+            logger=self.log,
+        )
 
     def lookup_dependencies_vulnerabilities(self):
         """Check for vulnerabilities for each of the project's discovered dependency."""
-        dependencies = self.project.discovereddependencies.filter(is_resolved=True)
-        vulnerablecode.fetch_vulnerabilities(dependencies, logger=self.log)
+        dependencies = self.project.discovereddependencies.filter(is_pinned=True)
+        vulnerablecode.fetch_vulnerabilities(
+            packages=dependencies,
+            ignore_set=self.project.ignored_vulnerabilities_set,
+            logger=self.log,
+        )

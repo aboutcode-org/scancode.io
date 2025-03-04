@@ -1,0 +1,1233 @@
+{
+  "headers": [
+    {
+      "tool_name": "scanpipe",
+      "notice": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n",
+      "input_sources": [
+        {
+          "filename": "daglib-0.6.0-py3-none-any.whl",
+          "download_url": "https://download.url",
+          "is_uploaded": false,
+          "tag": "",
+          "is_file": true,
+          "exists": true
+        }
+      ],
+      "runs": [
+        {
+          "pipeline_name": "scan_codebase",
+          "status": "not_started",
+          "selected_groups": null,
+          "selected_steps": null,
+          "scancodeio_version": "",
+          "task_id": null,
+          "task_start_date": null,
+          "task_end_date": null,
+          "task_exitcode": null,
+          "task_output": "",
+          "execution_time": null
+        }
+      ],
+      "extra_data": {}
+    }
+  ],
+  "packages": [
+    {
+      "purl": "pkg:pypi/daglib@0.6.0",
+      "type": "pypi",
+      "namespace": "",
+      "name": "daglib",
+      "version": "0.6.0",
+      "qualifiers": "",
+      "subpath": "",
+      "tag": "",
+      "primary_language": "Python",
+      "release_date": null,
+      "parties": [
+        {
+          "url": null,
+          "name": "Michael Harris",
+          "role": "author",
+          "type": "person",
+          "email": "mharris@luabase.com"
+        }
+      ],
+      "keywords": [
+        "Intended Audience :: Developers",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.10"
+      ],
+      "homepage_url": "https://github.com/mharrisb1/daglib",
+      "download_url": "",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "https://github.com/mharrisb1/daglib",
+      "repository_homepage_url": "https://pypi.org/project/daglib",
+      "repository_download_url": "https://pypi.org/packages/source/d/daglib/daglib-0.6.0.tar.gz",
+      "api_data_url": "https://pypi.org/pypi/daglib/0.6.0/json",
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "copyright": "",
+      "holder": "",
+      "declared_license_expression": "mit",
+      "declared_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "1-spdx-id",
+              "end_line": 1,
+              "rule_url": null,
+              "from_file": "daglib-0.6.0-py3-none-any.whl",
+              "start_line": 1,
+              "matched_text": "MIT",
+              "match_coverage": 100.0,
+              "matched_length": 1,
+              "rule_relevance": 100,
+              "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
+            }
+          ],
+          "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
+        },
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "1-hash",
+              "end_line": 1,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_mit_license.RULE",
+              "from_file": "daglib-0.6.0-py3-none-any.whl",
+              "start_line": 1,
+              "matched_text": "- 'License :: OSI Approved :: MIT License'",
+              "match_coverage": 100.0,
+              "matched_length": 5,
+              "rule_relevance": 100,
+              "rule_identifier": "pypi_mit_license.RULE",
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
+            }
+          ],
+          "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
+        }
+      ],
+      "other_license_expression": "",
+      "other_license_expression_spdx": "",
+      "other_license_detections": [],
+      "extracted_license_statement": "license: MIT\nclassifiers:\n  - 'License :: OSI Approved :: MIT License'\n",
+      "notice_text": "",
+      "source_packages": [],
+      "extra_data": {
+        "Documentation": "https://mharrisb1.github.io/daglib/"
+      },
+      "package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
+      "datasource_ids": [
+        "pypi_wheel"
+      ],
+      "datafile_paths": [
+        "daglib-0.6.0-py3-none-any.whl"
+      ],
+      "file_references": [],
+      "missing_resources": [],
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
+    },
+    {
+      "purl": "pkg:pypi/daglib@0.6.0",
+      "type": "pypi",
+      "namespace": "",
+      "name": "daglib",
+      "version": "0.6.0",
+      "qualifiers": "",
+      "subpath": "",
+      "tag": "",
+      "primary_language": "Python",
+      "release_date": null,
+      "parties": [
+        {
+          "url": null,
+          "name": "Michael Harris",
+          "role": "author",
+          "type": "person",
+          "email": "mharris@luabase.com"
+        }
+      ],
+      "keywords": [
+        "Intended Audience :: Developers",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.10"
+      ],
+      "homepage_url": "https://github.com/mharrisb1/daglib",
+      "download_url": "",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "https://github.com/mharrisb1/daglib",
+      "repository_homepage_url": "https://pypi.org/project/daglib",
+      "repository_download_url": "https://pypi.org/packages/source/d/daglib/daglib-0.6.0.tar.gz",
+      "api_data_url": "https://pypi.org/pypi/daglib/0.6.0/json",
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "copyright": "",
+      "holder": "",
+      "declared_license_expression": "mit",
+      "declared_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "1-spdx-id",
+              "end_line": 1,
+              "rule_url": null,
+              "from_file": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
+              "start_line": 1,
+              "matched_text": "MIT",
+              "match_coverage": 100.0,
+              "matched_length": 1,
+              "rule_relevance": 100,
+              "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
+            }
+          ],
+          "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
+        },
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "1-hash",
+              "end_line": 1,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_mit_license.RULE",
+              "from_file": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
+              "start_line": 1,
+              "matched_text": "- 'License :: OSI Approved :: MIT License'",
+              "match_coverage": 100.0,
+              "matched_length": 5,
+              "rule_relevance": 100,
+              "rule_identifier": "pypi_mit_license.RULE",
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
+            }
+          ],
+          "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
+        }
+      ],
+      "other_license_expression": "",
+      "other_license_expression_spdx": "",
+      "other_license_detections": [],
+      "extracted_license_statement": "license: MIT\nclassifiers:\n  - 'License :: OSI Approved :: MIT License'\n",
+      "notice_text": "",
+      "source_packages": [],
+      "extra_data": {
+        "Documentation": "https://mharrisb1.github.io/daglib/"
+      },
+      "package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
+      "datasource_ids": [
+        "pypi_wheel_metadata"
+      ],
+      "datafile_paths": [
+        "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA"
+      ],
+      "file_references": [],
+      "missing_resources": [],
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
+    }
+  ],
+  "dependencies": [
+    {
+      "purl": "pkg:pypi/dask",
+      "extracted_requirement": "<2023.0.0,>=2022.7.1",
+      "scope": "install",
+      "is_runtime": true,
+      "is_optional": false,
+      "is_pinned": false,
+      "is_direct": true,
+      "dependency_uid": "pkg:pypi/dask?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "resolved_to_package_uid": null,
+      "datafile_path": "daglib-0.6.0-py3-none-any.whl",
+      "datasource_id": "pypi_wheel",
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
+    },
+    {
+      "purl": "pkg:pypi/dask",
+      "extracted_requirement": "<2023.0.0,>=2022.7.1",
+      "scope": "install",
+      "is_runtime": true,
+      "is_optional": false,
+      "is_pinned": false,
+      "is_direct": true,
+      "dependency_uid": "pkg:pypi/dask?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "resolved_to_package_uid": null,
+      "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
+      "datasource_id": "pypi_wheel_metadata",
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
+    },
+    {
+      "purl": "pkg:pypi/graphviz",
+      "extracted_requirement": "<0.21,>=0.20",
+      "scope": "graphviz",
+      "is_runtime": true,
+      "is_optional": true,
+      "is_pinned": false,
+      "is_direct": true,
+      "dependency_uid": "pkg:pypi/graphviz?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "resolved_to_package_uid": null,
+      "datafile_path": "daglib-0.6.0-py3-none-any.whl",
+      "datasource_id": "pypi_wheel",
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
+    },
+    {
+      "purl": "pkg:pypi/graphviz",
+      "extracted_requirement": "<0.21,>=0.20",
+      "scope": "graphviz",
+      "is_runtime": true,
+      "is_optional": true,
+      "is_pinned": false,
+      "is_direct": true,
+      "dependency_uid": "pkg:pypi/graphviz?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "resolved_to_package_uid": null,
+      "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
+      "datasource_id": "pypi_wheel_metadata",
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
+    },
+    {
+      "purl": "pkg:pypi/ipycytoscape",
+      "extracted_requirement": "<2.0.0,>=1.3.3",
+      "scope": "ipycytoscape",
+      "is_runtime": true,
+      "is_optional": true,
+      "is_pinned": false,
+      "is_direct": true,
+      "dependency_uid": "pkg:pypi/ipycytoscape?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "resolved_to_package_uid": null,
+      "datafile_path": "daglib-0.6.0-py3-none-any.whl",
+      "datasource_id": "pypi_wheel",
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
+    },
+    {
+      "purl": "pkg:pypi/ipycytoscape",
+      "extracted_requirement": "<2.0.0,>=1.3.3",
+      "scope": "ipycytoscape",
+      "is_runtime": true,
+      "is_optional": true,
+      "is_pinned": false,
+      "is_direct": true,
+      "dependency_uid": "pkg:pypi/ipycytoscape?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "resolved_to_package_uid": null,
+      "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
+      "datasource_id": "pypi_wheel_metadata",
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
+    },
+    {
+      "purl": "pkg:pypi/networkx",
+      "extracted_requirement": "<3.0.0,>=2.8.5",
+      "scope": "install",
+      "is_runtime": true,
+      "is_optional": true,
+      "is_pinned": false,
+      "is_direct": true,
+      "dependency_uid": "pkg:pypi/networkx?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "resolved_to_package_uid": null,
+      "datafile_path": "daglib-0.6.0-py3-none-any.whl",
+      "datasource_id": "pypi_wheel",
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
+    },
+    {
+      "purl": "pkg:pypi/networkx",
+      "extracted_requirement": "<3.0.0,>=2.8.5",
+      "scope": "install",
+      "is_runtime": true,
+      "is_optional": true,
+      "is_pinned": false,
+      "is_direct": true,
+      "dependency_uid": "pkg:pypi/networkx?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "resolved_to_package_uid": null,
+      "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
+      "datasource_id": "pypi_wheel_metadata",
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
+    }
+  ],
+  "files": [
+    {
+      "path": "daglib-0.6.0-py3-none-any.whl",
+      "type": "file",
+      "name": "daglib-0.6.0-py3-none-any.whl",
+      "status": "application-package",
+      "tag": "",
+      "extension": ".whl",
+      "md5": "446d173b9232562ef937613c4f01c7c2",
+      "sha1": "a0beade4f742e19325737079c6cd1260ee095f92",
+      "sha256": "c80c670746e8c8cf2d3c738b20e85c01f0be77fc79c025d6af7dc9aea47f5265",
+      "sha512": "",
+      "programming_language": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": true,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [
+        {
+          "md5": null,
+          "name": "daglib",
+          "purl": "pkg:pypi/daglib@0.6.0",
+          "sha1": null,
+          "type": "pypi",
+          "holder": null,
+          "sha256": null,
+          "sha512": null,
+          "parties": [
+            {
+              "url": null,
+              "name": "Michael Harris",
+              "role": "author",
+              "type": "person",
+              "email": "mharris@luabase.com"
+            }
+          ],
+          "subpath": null,
+          "vcs_url": "https://github.com/mharrisb1/daglib",
+          "version": "0.6.0",
+          "keywords": [
+            "Intended Audience :: Developers",
+            "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3.10"
+          ],
+          "copyright": null,
+          "namespace": null,
+          "extra_data": {
+            "Documentation": "https://mharrisb1.github.io/daglib/"
+          },
+          "is_private": false,
+          "is_virtual": false,
+          "qualifiers": {},
+          "notice_text": null,
+          "api_data_url": "https://pypi.org/pypi/daglib/0.6.0/json",
+          "dependencies": [
+            {
+              "purl": "pkg:pypi/dask",
+              "scope": "install",
+              "is_direct": true,
+              "is_pinned": false,
+              "extra_data": {},
+              "is_runtime": true,
+              "is_optional": false,
+              "resolved_package": {},
+              "extracted_requirement": "<2023.0.0,>=2022.7.1"
+            },
+            {
+              "purl": "pkg:pypi/graphviz",
+              "scope": "graphviz",
+              "is_direct": true,
+              "is_pinned": false,
+              "extra_data": {},
+              "is_runtime": true,
+              "is_optional": true,
+              "resolved_package": {},
+              "extracted_requirement": "<0.21,>=0.20"
+            },
+            {
+              "purl": "pkg:pypi/ipycytoscape",
+              "scope": "ipycytoscape",
+              "is_direct": true,
+              "is_pinned": false,
+              "extra_data": {},
+              "is_runtime": true,
+              "is_optional": true,
+              "resolved_package": {},
+              "extracted_requirement": "<2.0.0,>=1.3.3"
+            },
+            {
+              "purl": "pkg:pypi/networkx",
+              "scope": "install",
+              "is_direct": true,
+              "is_pinned": false,
+              "extra_data": {},
+              "is_runtime": true,
+              "is_optional": true,
+              "resolved_package": {},
+              "extracted_requirement": "<3.0.0,>=2.8.5"
+            }
+          ],
+          "download_url": null,
+          "homepage_url": "https://github.com/mharrisb1/daglib",
+          "release_date": null,
+          "code_view_url": null,
+          "datasource_id": "pypi_wheel",
+          "file_references": [
+            {
+              "md5": null,
+              "path": "daglib/__init__.py",
+              "sha1": null,
+              "sha256": "cd90a1522c161cf60c8981d6a5a9348c732dd3532b2da2a3b508dd1e3a8a6773",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "daglib/dag.py",
+              "sha1": null,
+              "sha256": "dbd566e03890a1c57ab5256ef696495193e6a9cf90ec4ba31d4ef10f8a8f25a6",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "daglib/task.py",
+              "sha1": null,
+              "sha256": "a2e59ff7bf4853a38a8298fa8f8df4d41db0a38eb09132a392416bd89a7ec63d",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "daglib-0.6.0.dist-info/LICENSE",
+              "sha1": null,
+              "sha256": "f9352835d15f73e2d01bae747b6ce3386a23be2fb73c06df799fba97a5bc98a2",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "daglib-0.6.0.dist-info/WHEEL",
+              "sha1": null,
+              "sha256": "0c0f3afe1e10c30cc6791a33eb6a35b2f62de641845e9a144ee4edc33a136f7d",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "daglib-0.6.0.dist-info/METADATA",
+              "sha1": null,
+              "sha256": "f01ba45128006ed4748cef8bd1e7f66bd4b5f86f1a657e3f3e4fee3a4d328cf2",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "daglib-0.6.0.dist-info/RECORD",
+              "sha1": null,
+              "sha256": null,
+              "sha512": null,
+              "extra_data": {}
+            }
+          ],
+          "source_packages": [],
+          "bug_tracking_url": null,
+          "primary_language": "Python",
+          "license_detections": [
+            {
+              "matches": [
+                {
+                  "score": 100.0,
+                  "matcher": "1-spdx-id",
+                  "end_line": 1,
+                  "rule_url": null,
+                  "from_file": null,
+                  "start_line": 1,
+                  "matched_text": "MIT",
+                  "match_coverage": 100.0,
+                  "matched_length": 1,
+                  "rule_relevance": 100,
+                  "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
+                  "license_expression": "mit",
+                  "license_expression_spdx": "MIT"
+                }
+              ],
+              "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
+            },
+            {
+              "matches": [
+                {
+                  "score": 100.0,
+                  "matcher": "1-hash",
+                  "end_line": 1,
+                  "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_mit_license.RULE",
+                  "from_file": null,
+                  "start_line": 1,
+                  "matched_text": "- 'License :: OSI Approved :: MIT License'",
+                  "match_coverage": 100.0,
+                  "matched_length": 5,
+                  "rule_relevance": 100,
+                  "rule_identifier": "pypi_mit_license.RULE",
+                  "license_expression": "mit",
+                  "license_expression_spdx": "MIT"
+                }
+              ],
+              "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
+            }
+          ],
+          "repository_download_url": "https://pypi.org/packages/source/d/daglib/daglib-0.6.0.tar.gz",
+          "repository_homepage_url": "https://pypi.org/project/daglib",
+          "other_license_detections": [],
+          "other_license_expression": null,
+          "declared_license_expression": "mit",
+          "extracted_license_statement": "license: MIT\nclassifiers:\n  - 'License :: OSI Approved :: MIT License'\n",
+          "other_license_expression_spdx": null,
+          "declared_license_expression_spdx": "MIT"
+        }
+      ],
+      "for_packages": [
+        "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
+      "emails": [],
+      "urls": [],
+      "extra_data": {}
+    },
+    {
+      "path": "daglib-0.6.0-py3-none-any.whl-extract",
+      "type": "directory",
+      "name": "daglib-0.6.0-py3-none-any.whl-extract",
+      "status": "scanned",
+      "tag": "",
+      "extension": ".whl-extract",
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "programming_language": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "for_packages": [],
+      "emails": [],
+      "urls": [],
+      "extra_data": {}
+    },
+    {
+      "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib",
+      "type": "directory",
+      "name": "daglib",
+      "status": "scanned",
+      "tag": "",
+      "extension": "",
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "programming_language": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "for_packages": [],
+      "emails": [],
+      "urls": [],
+      "extra_data": {}
+    },
+    {
+      "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info",
+      "type": "directory",
+      "name": "daglib-0.6.0.dist-info",
+      "status": "scanned",
+      "tag": "",
+      "extension": ".dist-info",
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "programming_language": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "for_packages": [],
+      "emails": [],
+      "urls": [],
+      "extra_data": {}
+    },
+    {
+      "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/LICENSE",
+      "type": "file",
+      "name": "LICENSE",
+      "status": "scanned",
+      "tag": "",
+      "extension": "",
+      "md5": "d167c3ff439cea92af70859d34aed897",
+      "sha1": "033f29a9740f1e33dcb95c0d57c3701074986b58",
+      "sha256": "f9352835d15f73e2d01bae747b6ce3386a23be2fb73c06df799fba97a5bc98a2",
+      "sha512": "",
+      "programming_language": "",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "detected_license_expression": "mit",
+      "detected_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 19,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/mit.LICENSE",
+              "from_file": null,
+              "start_line": 3,
+              "matched_text": "Permission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+              "match_coverage": 100.0,
+              "matched_length": 161,
+              "rule_relevance": 100,
+              "rule_identifier": "mit.LICENSE",
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
+            }
+          ],
+          "identifier": "mit-cacd5c0c-204a-85c2-affc-e4c125b2492a",
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
+        }
+      ],
+      "license_clues": [],
+      "percentage_of_license_text": 96.99,
+      "copyrights": [
+        {
+          "end_line": 1,
+          "copyright": "Copyright (c) 2022 Michael Harris",
+          "start_line": 1
+        }
+      ],
+      "holders": [
+        {
+          "holder": "Michael Harris",
+          "end_line": 1,
+          "start_line": 1
+        }
+      ],
+      "authors": [],
+      "package_data": [],
+      "for_packages": [
+        "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
+      "emails": [],
+      "urls": [],
+      "extra_data": {}
+    },
+    {
+      "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
+      "type": "file",
+      "name": "METADATA",
+      "status": "application-package",
+      "tag": "",
+      "extension": "",
+      "md5": "b6d025c596a6b970c121819e0719b6be",
+      "sha1": "e683bb3db97ada2163e5115f636a8615f6db71d0",
+      "sha256": "f01ba45128006ed4748cef8bd1e7f66bd4b5f86f1a657e3f3e4fee3a4d328cf2",
+      "sha512": "",
+      "programming_language": "Objective-C",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [
+        {
+          "md5": null,
+          "name": "daglib",
+          "purl": "pkg:pypi/daglib@0.6.0",
+          "sha1": null,
+          "type": "pypi",
+          "holder": null,
+          "sha256": null,
+          "sha512": null,
+          "parties": [
+            {
+              "url": null,
+              "name": "Michael Harris",
+              "role": "author",
+              "type": "person",
+              "email": "mharris@luabase.com"
+            }
+          ],
+          "subpath": null,
+          "vcs_url": "https://github.com/mharrisb1/daglib",
+          "version": "0.6.0",
+          "keywords": [
+            "Intended Audience :: Developers",
+            "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3.10"
+          ],
+          "copyright": null,
+          "namespace": null,
+          "extra_data": {
+            "Documentation": "https://mharrisb1.github.io/daglib/"
+          },
+          "is_private": false,
+          "is_virtual": false,
+          "qualifiers": {},
+          "notice_text": null,
+          "api_data_url": "https://pypi.org/pypi/daglib/0.6.0/json",
+          "dependencies": [
+            {
+              "purl": "pkg:pypi/dask",
+              "scope": "install",
+              "is_direct": true,
+              "is_pinned": false,
+              "extra_data": {},
+              "is_runtime": true,
+              "is_optional": false,
+              "resolved_package": {},
+              "extracted_requirement": "<2023.0.0,>=2022.7.1"
+            },
+            {
+              "purl": "pkg:pypi/graphviz",
+              "scope": "graphviz",
+              "is_direct": true,
+              "is_pinned": false,
+              "extra_data": {},
+              "is_runtime": true,
+              "is_optional": true,
+              "resolved_package": {},
+              "extracted_requirement": "<0.21,>=0.20"
+            },
+            {
+              "purl": "pkg:pypi/ipycytoscape",
+              "scope": "ipycytoscape",
+              "is_direct": true,
+              "is_pinned": false,
+              "extra_data": {},
+              "is_runtime": true,
+              "is_optional": true,
+              "resolved_package": {},
+              "extracted_requirement": "<2.0.0,>=1.3.3"
+            },
+            {
+              "purl": "pkg:pypi/networkx",
+              "scope": "install",
+              "is_direct": true,
+              "is_pinned": false,
+              "extra_data": {},
+              "is_runtime": true,
+              "is_optional": true,
+              "resolved_package": {},
+              "extracted_requirement": "<3.0.0,>=2.8.5"
+            }
+          ],
+          "download_url": null,
+          "homepage_url": "https://github.com/mharrisb1/daglib",
+          "release_date": null,
+          "code_view_url": null,
+          "datasource_id": "pypi_wheel_metadata",
+          "file_references": [
+            {
+              "md5": null,
+              "path": "daglib/__init__.py",
+              "sha1": null,
+              "sha256": "cd90a1522c161cf60c8981d6a5a9348c732dd3532b2da2a3b508dd1e3a8a6773",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "daglib/dag.py",
+              "sha1": null,
+              "sha256": "dbd566e03890a1c57ab5256ef696495193e6a9cf90ec4ba31d4ef10f8a8f25a6",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "daglib/task.py",
+              "sha1": null,
+              "sha256": "a2e59ff7bf4853a38a8298fa8f8df4d41db0a38eb09132a392416bd89a7ec63d",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "daglib-0.6.0.dist-info/LICENSE",
+              "sha1": null,
+              "sha256": "f9352835d15f73e2d01bae747b6ce3386a23be2fb73c06df799fba97a5bc98a2",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "daglib-0.6.0.dist-info/WHEEL",
+              "sha1": null,
+              "sha256": "0c0f3afe1e10c30cc6791a33eb6a35b2f62de641845e9a144ee4edc33a136f7d",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "daglib-0.6.0.dist-info/METADATA",
+              "sha1": null,
+              "sha256": "f01ba45128006ed4748cef8bd1e7f66bd4b5f86f1a657e3f3e4fee3a4d328cf2",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "daglib-0.6.0.dist-info/RECORD",
+              "sha1": null,
+              "sha256": null,
+              "sha512": null,
+              "extra_data": {}
+            }
+          ],
+          "source_packages": [],
+          "bug_tracking_url": null,
+          "primary_language": "Python",
+          "license_detections": [
+            {
+              "matches": [
+                {
+                  "score": 100.0,
+                  "matcher": "1-spdx-id",
+                  "end_line": 1,
+                  "rule_url": null,
+                  "from_file": null,
+                  "start_line": 1,
+                  "matched_text": "MIT",
+                  "match_coverage": 100.0,
+                  "matched_length": 1,
+                  "rule_relevance": 100,
+                  "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
+                  "license_expression": "mit",
+                  "license_expression_spdx": "MIT"
+                }
+              ],
+              "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
+            },
+            {
+              "matches": [
+                {
+                  "score": 100.0,
+                  "matcher": "1-hash",
+                  "end_line": 1,
+                  "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_mit_license.RULE",
+                  "from_file": null,
+                  "start_line": 1,
+                  "matched_text": "- 'License :: OSI Approved :: MIT License'",
+                  "match_coverage": 100.0,
+                  "matched_length": 5,
+                  "rule_relevance": 100,
+                  "rule_identifier": "pypi_mit_license.RULE",
+                  "license_expression": "mit",
+                  "license_expression_spdx": "MIT"
+                }
+              ],
+              "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
+            }
+          ],
+          "repository_download_url": "https://pypi.org/packages/source/d/daglib/daglib-0.6.0.tar.gz",
+          "repository_homepage_url": "https://pypi.org/project/daglib",
+          "other_license_detections": [],
+          "other_license_expression": null,
+          "declared_license_expression": "mit",
+          "extracted_license_statement": "license: MIT\nclassifiers:\n  - 'License :: OSI Approved :: MIT License'\n",
+          "other_license_expression_spdx": null,
+          "declared_license_expression_spdx": "MIT"
+        }
+      ],
+      "for_packages": [
+        "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
+      "emails": [],
+      "urls": [],
+      "extra_data": {}
+    },
+    {
+      "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/RECORD",
+      "type": "file",
+      "name": "RECORD",
+      "status": "scanned",
+      "tag": "",
+      "extension": "",
+      "md5": "6e7c8276d7fe53c903a77ac4c00e61d7",
+      "sha1": "4cee5b608fade83855ba958588a668260072430a",
+      "sha256": "7ab90325b761f578f47410c7e954afdbaf9ce3ca7c1c5a7ab3a7e6b4401a6aee",
+      "sha512": "",
+      "programming_language": "",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "for_packages": [
+        "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
+      "emails": [],
+      "urls": [],
+      "extra_data": {}
+    },
+    {
+      "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/WHEEL",
+      "type": "file",
+      "name": "WHEEL",
+      "status": "scanned",
+      "tag": "",
+      "extension": "",
+      "md5": "64322d7290e1ba514f9de548e3f03673",
+      "sha1": "0739047eea2adc0c72fa36135e17d2bda3fb9e19",
+      "sha256": "0c0f3afe1e10c30cc6791a33eb6a35b2f62de641845e9a144ee4edc33a136f7d",
+      "sha512": "",
+      "programming_language": "",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "for_packages": [
+        "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
+      "emails": [],
+      "urls": [],
+      "extra_data": {}
+    },
+    {
+      "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "status": "scanned",
+      "tag": "",
+      "extension": ".py",
+      "md5": "d5fc9dbac53ceb30cd852b51fa2500af",
+      "sha1": "156b1f143544a16b1325e3c0ac364b8eba1cf4cc",
+      "sha256": "cd90a1522c161cf60c8981d6a5a9348c732dd3532b2da2a3b508dd1e3a8a6773",
+      "sha512": "",
+      "programming_language": "Python",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "for_packages": [
+        "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
+      "emails": [],
+      "urls": [],
+      "extra_data": {}
+    },
+    {
+      "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib/dag.py",
+      "type": "file",
+      "name": "dag.py",
+      "status": "scanned",
+      "tag": "",
+      "extension": ".py",
+      "md5": "fe986e593ce13cee742c9f79074626a3",
+      "sha1": "6f4b1cd310f92aca0e98707b3a910bd46abd275e",
+      "sha256": "dbd566e03890a1c57ab5256ef696495193e6a9cf90ec4ba31d4ef10f8a8f25a6",
+      "sha512": "",
+      "programming_language": "Python",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "for_packages": [
+        "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
+      "emails": [],
+      "urls": [],
+      "extra_data": {}
+    },
+    {
+      "path": "daglib-0.6.0-py3-none-any.whl-extract/daglib/task.py",
+      "type": "file",
+      "name": "task.py",
+      "status": "scanned",
+      "tag": "",
+      "extension": ".py",
+      "md5": "b096ad2f14b4a7aff65a7f9398e9cb7d",
+      "sha1": "e33b2651f91dccd8b750ccccd9c19e2c14aff343",
+      "sha256": "a2e59ff7bf4853a38a8298fa8f8df4d41db0a38eb09132a392416bd89a7ec63d",
+      "sha512": "",
+      "programming_language": "Python",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "for_packages": [
+        "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
+      "emails": [],
+      "urls": [],
+      "extra_data": {}
+    }
+  ],
+  "relations": []
+}

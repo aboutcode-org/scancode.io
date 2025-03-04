@@ -3,139 +3,27 @@
 {% block content %}
   <div class="container is-max-widescreen">
     {% include 'scanpipe/includes/navbar_header.html' %}
+    <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
     {% include 'scanpipe/includes/breadcrumb_detail_view.html' with object_title="Settings" %}
     <hr class="mx-5 mt-0">
 
     <section class="mx-5 mt-3 pb-1">
-      {% include 'scanpipe/includes/form_errors.html' %}
+      {% include 'scanpipe/forms/form_errors.html' %}
 
       <div class="columns">
         <div class="column is-one-quarter">
           {% include 'scanpipe/includes/project_settings_menu.html' %}
         </div>
         <div class="column">
-          <form method="post" action="{% url 'project_settings' project.slug %}">{% csrf_token %}
-            <div class="panel is-dark">
-              <p id="general" class="panel-heading py-2 is-size-6">General</p>
-              <div class="panel-block is-block px-4">
-                <div class="field">
-                  <label class="label" for="{{ form.name.id_for_label }}">
-                    Project name
-                  </label>
-                  <div class="control">
-                    {{ form.name }}
-                  </div>
-                </div>
-                <div class="field">
-                  <label class="label" for="{{ form.notes.id_for_label }}">
-                    {{ form.notes.label }}
-                  </label>
-                  <div class="control">
-                    {{ form.notes }}
-                  </div>
-                  <p class="help">{{ form.notes.help_text }}</p>
-                </div>
-                <div class="field">
-                  <label class="label" for="id_uuid">UUID</label>
-                  <div class="control">
-                    <input type="text" id="id_uuid" class="input" value="{{ project.uuid }}" disabled="disabled">
-                  </div>
-                </div>
-                <div class="field">
-                  <label class="label" for="id_work_directory">Work directory</label>
-                  <div class="control">
-                    <input type="text" id="id_work_directory" class="input" value="{{ project.work_directory }}" disabled="disabled">
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel is-dark">
-              <p id="ignored" class="panel-heading py-2 is-size-6">Ignored</p>
-              <div class="panel-block is-block px-4">
-                <div class="field">
-                  <label class="label" for="{{ form.ignored_patterns.id_for_label }}">
-                    {{ form.ignored_patterns.label }}
-                  </label>
-                  <div class="control">
-                    {{ form.ignored_patterns }}
-                  </div>
-                  <div class="help">
-                    {{ form.ignored_patterns.help_text|safe|linebreaksbr }}
-                  </div>
-                </div>
-
-                <div class="field">
-                  <label class="label" for="{{ form.ignored_dependency_scopes.id_for_label }}">
-                    {{ form.ignored_dependency_scopes.label }}
-                  </label>
-                  <div class="control">
-                    {{ form.ignored_dependency_scopes }}
-                  </div>
-                  <div class="help">
-                    {{ form.ignored_dependency_scopes.help_text|safe|linebreaksbr }}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel is-dark">
-              <p id="dejacode" class="panel-heading py-2 is-size-6">DejaCode</p>
-              <div class="panel-block is-block px-4">
-                <div class="field">
-                  <label class="label" for="{{ form.product_name.id_for_label }}">
-                    Product name
-                  </label>
-                  <div class="control">
-                    {{ form.product_name }}
-                  </div>
-                  <p class="help">{{ form.product_name.help_text }}</p>
-                </div>
-                <div class="field">
-                  <label class="label" for="{{ form.product_version.id_for_label }}">
-                    Product version
-                  </label>
-                  <div class="control">
-                    {{ form.product_version }}
-                  </div>
-                  <p class="help">{{ form.product_version.help_text }}</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel is-dark">
-              <p id="attribution" class="panel-heading py-2 is-size-6">Attribution</p>
-              <div class="panel-block is-block px-4">
-                <div class="field">
-                  <label class="label" for="{{ form.attribution_template.id_for_label }}">
-                    {{ form.attribution_template.label }}
-                  </label>
-                  <div class="control">
-                    {{ form.attribution_template }}
-                  </div>
-                  <p class="help">
-                    {{ form.attribution_template.help_text|urlize|linebreaksbr }}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div class="columns mt-4 mb-5 is-variable is-1">
-              <div class="column is-one-third">
-                <a href="{% url 'project_detail' project.slug %}" class="button is-fullwidth">Cancel</a>
-              </div>
-              <div class="column">
-                <input type="submit" class="button is-fullwidth is-link" value="Update">
-              </div>
-            </div>
-            {{ form.media }}
-          </form>
+          {% include 'scanpipe/forms/project_settings_form.html' %}
         </div>
       </div>
 
     </section>
   </div>
 
+  {% include "scanpipe/modals/project_webhook_add_modal.html" %}
+  {% include "scanpipe/modals/project_webhook_delete_modal.html" %}
   {% if not project.is_archived %}
     {% include "scanpipe/modals/project_archive_modal.html" %}
   {% endif %}
@@ -145,6 +33,15 @@
 
 {% block scripts %}
   <script>
+    document.addEventListener("htmx:beforeOnLoad", function(evt) {
+      if (evt.detail.xhr.getResponseHeader("HX-Redirect")) {
+        evt.preventDefault();
+        let targetUrl = evt.detail.xhr.getResponseHeader("HX-Redirect");
+        window.location.href = targetUrl;
+        window.location.reload();
+      }
+    });
+
     onSubmitOverlay = function (selector) {
       let element = document.querySelector(selector);
       if (element) {
@@ -157,5 +54,6 @@
     onSubmitOverlay("#modal-archive form");
     onSubmitOverlay("#modal-reset form");
     onSubmitOverlay("#modal-delete form");
+    onSubmitOverlay("#modal-webhook-add form");
   </script>
 {% endblock %}

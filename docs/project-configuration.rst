@@ -52,16 +52,21 @@ Content of a ``scancode-config.yml`` file:
     product_name: My Product Name
     product_version: '1.0'
     ignored_patterns:
-      - '*.tmp'
-      - 'tests/*'
+     - '*.tmp'
+     - 'tests/*'
+    scan_max_file_size: 5242880
     ignored_dependency_scopes:
      - package_type: npm
        scope: devDependencies
      - package_type: pypi
        scope: tests
+    ignored_vulnerabilities:
+     - VCID-q4q6-yfng-aaag
+     - CVE-2024-27351
+     - GHSA-vm8q-m57g-pff3
 
-See the :ref:`project_configuration_settings` section for the details about each
-setting.
+See the following :ref:`project_configuration_settings` section for the details about
+each setting.
 
 .. tip::
     You can generate the project configuration file from the
@@ -81,6 +86,23 @@ product_version
 ^^^^^^^^^^^^^^^
 
 The product version of this project, as specified within the DejaCode application.
+
+scan_max_file_size
+^^^^^^^^^^^^^^^^^^
+
+Maximum file size allowed for a file to be scanned when scanning a codebase.
+
+The value unit is bytes and is defined as an integer, see the following
+example of setting this at 5 MB::
+
+    scan_max_file_size=5242880
+
+Default is ``None``, in which case all files will be scanned.
+
+.. note::
+    This is the same as the scancodeio setting ``SCANCODEIO_SCAN_MAX_FILE_SIZE``
+    set using the .env file, and the project setting ``scan_max_file_size`` takes
+    precedence over the scancodeio setting ``SCANCODEIO_SCAN_MAX_FILE_SIZE``.
 
 ignored_patterns
 ^^^^^^^^^^^^^^^^
@@ -125,10 +147,10 @@ packages, define the following in your ``scancode-config.yml`` configuration fil
 .. code-block:: yaml
 
     ignored_dependency_scopes:
-      - package_type: npm
-        scope: devDependencies
-      - package_type: pypi
-        scope: tests
+     - package_type: npm
+       scope: devDependencies
+     - package_type: pypi
+       scope: tests
 
 If you prefer to use the :ref:`user_interface_project_settings` form, list each
 ignored scope using the `package_type:scope` syntax, **one per line**, such as:
@@ -141,3 +163,33 @@ ignored scope using the `package_type:scope` syntax, **one per line**, such as:
 .. warning::
     Be precise when listing scope names to avoid unintended exclusions.
     Ensure the scope names are correct and reflect your project requirements.
+
+ignored_vulnerabilities
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Provide one or more vulnerability id to be ignored, **one per line**.
+
+You can provide ``VCID`` from VulnerableCode or any aliases such as ``CVE`` or
+``GHSA``.
+
+.. code-block:: yaml
+
+    ignored_vulnerabilities:
+     - VCID-q4q6-yfng-aaag
+     - CVE-2024-27351
+     - GHSA-vm8q-m57g-pff3
+     - OSV-2020-871
+     - BIT-django-2024-24680
+     - PYSEC-2024-28
+
+.. _project_configuration_settings_policies:
+
+policies
+^^^^^^^^
+
+For detailed information about the policies system, refer to :ref:`policies`.
+
+Instead of providing a separate ``policies.yml`` file, policies can be directly
+defined within the project configuration.
+This can be done through the web UI, see :ref:`user_interface_project_settings`,
+or by using a ``scancode-config.yml`` file.

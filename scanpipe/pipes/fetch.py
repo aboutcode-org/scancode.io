@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,14 +18,14 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import cgi
 import json
 import logging
 import os
 import re
-import subprocess  # nosec
+import subprocess
 import tempfile
 from collections import namedtuple
 from pathlib import Path
@@ -45,6 +45,17 @@ from requests import auth as request_auth
 logger = logging.getLogger("scanpipe.pipes")
 
 Download = namedtuple("Download", "uri directory filename path size sha1 md5")
+
+# Time (in seconds) to wait for the server to send data before giving up.
+# The ``REQUEST_CONNECTION_TIMEOUT`` defines:
+# - Connect timeout: The maximum time to wait for the client to establish a connection
+#   to the server.
+# - Read timeout: The maximum time to wait for a server response once the connection
+#   is established.
+# Notes: Use caution when lowering this value, as some servers
+# (e.g., https://cdn.kernel.org/) may take longer to respond to HTTP requests under
+# certain conditions.
+HTTP_REQUEST_TIMEOUT = 30
 
 
 def run_command_safely(command_args):
@@ -68,7 +79,7 @@ def run_command_safely(command_args):
 
     Raise a SubprocessError if the exit code was non-zero.
     """
-    completed_process = subprocess.run(  # nosec
+    completed_process = subprocess.run(  # noqa: S603
         command_args,
         capture_output=True,
         text=True,
@@ -107,7 +118,7 @@ def fetch_http(uri, to=None):
     path.
     """
     request_session = get_request_session(uri)
-    response = request_session.get(uri, timeout=5)
+    response = request_session.get(uri, timeout=HTTP_REQUEST_TIMEOUT)
 
     if response.status_code != 200:
         raise requests.RequestException
@@ -416,7 +427,7 @@ def check_urls_availability(urls):
 
         request_session = get_request_session(url)
         try:
-            response = request_session.head(url, timeout=5)
+            response = request_session.head(url, timeout=HTTP_REQUEST_TIMEOUT)
             response.raise_for_status()
         except requests.exceptions.RequestException:
             errors.append(url)

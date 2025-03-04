@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import io
 import json
 import shutil
 import uuid
@@ -28,13 +29,16 @@ from unittest import mock
 
 from django.apps import apps
 from django.core.exceptions import SuspiciousFileOperation
+from django.http.response import Http404
 from django.test import TestCase
 from django.test import override_settings
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
 
+import openpyxl
 import requests
 
+from scanpipe.forms import BaseProjectActionForm
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -46,9 +50,13 @@ from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import dependency_data2
+from scanpipe.tests import make_dependency
+from scanpipe.tests import make_package
+from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 from scanpipe.tests import package_data2
+from scanpipe.views import ProjectActionView
 from scanpipe.views import ProjectCodebaseView
 from scanpipe.views import ProjectDetailView
 
@@ -57,7 +65,7 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 @override_settings(SCANCODEIO_REQUIRE_AUTHENTICATION=False)
 class ScanPipeViewsTest(TestCase):
-    data_location = Path(__file__).parent / "data"
+    data = Path(__file__).parent / "data"
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
@@ -133,8 +141,8 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url, data=data)
 
         expected = (
-            '<input class="input " type="search" placeholder="Search projects" '
-            'name="search" value="query">'
+            '<input class="input is-smaller" type="search" '
+            'placeholder="Search projects" name="search" value="query">'
         )
         self.assertContains(response, expected, html=True)
 
@@ -145,7 +153,7 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_list_filters_exclude_page(self, mock_paginate_by):
         url = reverse("project_list")
         # Create another project to enable pagination
-        Project.objects.create(name="project2")
+        make_project()
         mock_paginate_by.return_value = 1
 
         data = {"page": "2"}
@@ -159,6 +167,34 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, expected)
         expected = '<a href="?sort=" class="dropdown-item is-active">Newest</a>'
         self.assertContains(response, expected)
+
+    def test_scanpipe_views_project_list_modal_forms_include_url_query(self):
+        url = reverse("project_list")
+        response = self.client.get(url)
+
+        expected = '<input type="hidden" name="url_query" value="">'
+        self.assertContains(response, expected, html=True)
+
+        url_query = "name=search_value"
+        response = self.client.get(url + "?" + url_query)
+        expected = f'<input type="hidden" name="url_query" value="{url_query}">'
+        self.assertContains(response, expected, html=True)
+
+    @mock.patch("scanpipe.views.ProjectListView.get_paginate_by")
+    def test_scanpipe_views_project_list_modal_forms_include_show_on_all_checked(
+        self, mock_paginate_by
+    ):
+        url = reverse("project_list")
+        # Create another project to enable pagination
+        make_project()
+        mock_paginate_by.return_value = 1
+        response = self.client.get(url)
+        expected = '<div class="show-on-all-checked">'
+        self.assertContains(response, expected)
+
+        mock_paginate_by.return_value = 2
+        response = self.client.get(url)
+        self.assertNotContains(response, expected)
 
     def test_scanpipe_views_project_actions_view(self):
         url = reverse("project_action")
@@ -185,10 +221,67 @@ class ScanPipeViewsTest(TestCase):
         self.assertRedirects(response, reverse("project_list"))
         expected = '<div class="message-body">1 projects have been delete.</div>'
         self.assertContains(response, expected, html=True)
-        expected = (
-            f'<div class="message-body">Project {random_uuid} does not exist.</div>'
+
+    def test_scanpipe_views_project_action_report_view(self):
+        url = reverse("project_action")
+        data = {
+            "action": "report",
+            "selected_ids": f"{self.project1.uuid}",
+            "report-model_name": "todo",
+        }
+        response = self.client.post(url, data=data, follow=True)
+        self.assertTrue(response.filename.startswith("scancodeio-report-"))
+        self.assertTrue(response.filename.endswith(".xlsx"))
+
+        output_file = io.BytesIO(b"".join(response.streaming_content))
+        workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
+        self.assertEqual(["TODOS"], workbook.get_sheet_names())
+
+    def test_scanpipe_views_project_action_reset_view(self):
+        url = reverse("project_action")
+        data = {
+            "action": "reset",
+            "selected_ids": f"{self.project1.uuid}",
+            "reset-restore_pipelines": "on",
+        }
+        self.project1.add_pipeline(pipeline_name="scan_codebase")
+        response = self.client.post(url, data=data, follow=True)
+        expected = "1 projects have been reset."
+        self.assertContains(response, expected)
+
+        self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
+        self.assertEqual(1, self.project1.runs.count())
+
+    def test_scanpipe_views_project_action_view_get_project_queryset(self):
+        queryset = ProjectActionView.get_project_queryset(
+            selected_project_ids=[self.project1.uuid],
+            action_form=None,
         )
-        self.assertContains(response, expected, html=True)
+        self.assertQuerySetEqual(queryset, [self.project1])
+
+        # No project selection, no select_across
+        form_data = {"select_across": 0}
+        action_form = BaseProjectActionForm(data=form_data)
+        action_form.full_clean()
+        with self.assertRaises(Http404):
+            ProjectActionView.get_project_queryset(
+                selected_project_ids=None,
+                action_form=action_form,
+            )
+
+        # select_across, no active filters
+        form_data = {"select_across": 1}
+        action_form = BaseProjectActionForm(data=form_data)
+        action_form.full_clean()
+        self.assertQuerySetEqual(queryset, [self.project1])
+
+        # select_across, active filters
+        make_project()
+        self.assertEqual(2, Project.objects.count())
+        form_data = {"select_across": 1, "url_query": f"name={self.project1.name}"}
+        action_form = BaseProjectActionForm(data=form_data)
+        action_form.full_clean()
+        self.assertQuerySetEqual(queryset, [self.project1])
 
     def test_scanpipe_views_project_details_is_archived(self):
         url = self.project1.get_absolute_url()
@@ -239,7 +332,7 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
 
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         copy_input(file_location, self.project1.input_path)
         filename = file_location.name
         url = reverse("project_download_input", args=[self.project1.slug, filename])
@@ -256,7 +349,7 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
 
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         copy_input(file_location, self.project1.output_path)
         filename = file_location.name
         url = reverse("project_download_output", args=[self.project1.slug, filename])
@@ -276,7 +369,7 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.post(url, follow=True)
         self.assertEqual(404, response.status_code)
 
-        file_location = self.data_location / "notice.NOTICE"
+        file_location = self.data / "aboutcode" / "notice.NOTICE"
         copy_input(file_location, self.project1.input_path)
         filename = file_location.name
         input1 = self.project1.add_input_source(filename=filename, is_uploaded=True)
@@ -356,7 +449,7 @@ class ScanPipeViewsTest(TestCase):
         data["add-labels-submit"] = ""
         response = self.client.post(url, data, follow=True)
         self.assertContains(response, "Label(s) added.")
-        self.assertEqual(["label1", "label2"], sorted(self.project1.labels.names()))
+        self.assertEqual(["label1", "label2"], list(self.project1.labels.names()))
 
     def test_scanpipe_views_project_delete_label(self):
         self.project1.labels.add("label1")
@@ -446,7 +539,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertNotContains(response, expected1)
         self.assertNotContains(response, expected2)
 
-        scan_summary = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
+        scan_summary = self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
         with summary_file.open("w") as opened_file:
             opened_file.write(scan_summary.read_text())
 
@@ -457,7 +550,7 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_details_get_license_clarity_data(self):
         get_license_clarity_data = ProjectDetailView.get_license_clarity_data
 
-        scan_summary = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
+        scan_summary = self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
         scan_summary_json = json.loads(scan_summary.read_text())
         license_clarity_data = get_license_clarity_data(scan_summary_json)
 
@@ -473,7 +566,7 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_details_get_scan_summary_data(self):
         get_scan_summary_data = ProjectDetailView.get_scan_summary_data
 
-        scan_summary = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
+        scan_summary = self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
         scan_summary_json = json.loads(scan_summary.read_text())
         scan_summary_data = get_scan_summary_data(scan_summary_json)
 
@@ -501,6 +594,26 @@ class ScanPipeViewsTest(TestCase):
         codebase_root = response.context_data["codebase_root"]
         expected = ["Dir", "Zdir", "a", "z", "a.txt", "z.txt"]
         self.assertEqual(expected, [path.name for path in codebase_root])
+
+    @mock.patch.object(Project, "policies_enabled", new_callable=mock.PropertyMock)
+    def test_scanpipe_views_project_details_compliance_panel_availability(
+        self, mock_policies_enabled
+    ):
+        url = self.project1.get_absolute_url()
+        make_package(
+            self.project1,
+            package_url="pkg:generic/name@1.0",
+            compliance_alert=CodebaseResource.Compliance.ERROR,
+        )
+
+        expected_url = reverse("project_compliance_panel", args=[self.project1.slug])
+        mock_policies_enabled.return_value = False
+        response = self.client.get(url)
+        self.assertNotContains(response, expected_url)
+
+        mock_policies_enabled.return_value = True
+        response = self.client.get(url)
+        self.assertContains(response, expected_url)
 
     def test_scanpipe_views_project_create_view(self):
         url = reverse("project_add")
@@ -635,10 +748,12 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, expected)
 
         run.set_task_ended(exitcode=0)
-        response = self.client.post(url, follow=True)
-        expected = "have been removed."
+        data = {"reset-restore_pipelines": "on"}
+        response = self.client.post(url, data=data, follow=True)
+        expected = "has been reset."
         self.assertContains(response, expected)
         self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
+        self.assertEqual(1, self.project1.runs.count())
 
     def test_scanpipe_views_project_settings_view(self):
         url = reverse("project_settings", args=[self.project1.slug])
@@ -679,7 +794,7 @@ class ScanPipeViewsTest(TestCase):
         project2.labels.add("label3", "label4")
 
         url = reverse("project_list")
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(7):
             self.client.get(url)
 
         with self.assertNumQueries(13):
@@ -736,6 +851,18 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
 
+    def test_scanpipe_views_delete_webhook_view(self):
+        webhook = self.project1.add_webhook_subscription(target_url="https://localhost")
+        url = reverse("project_delete_webhook", args=[self.project1.slug, webhook.uuid])
+
+        response = self.client.post(url, follow=True)
+        expected = "Webhook deleted."
+        self.assertContains(response, expected)
+        self.assertEqual(0, self.project1.webhooksubscriptions.count())
+
+        response = self.client.get(url)
+        self.assertEqual(405, response.status_code)
+
     def test_scanpipe_views_run_status_view(self):
         run = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run_status", args=[run.uuid])
@@ -788,6 +915,74 @@ class ScanPipeViewsTest(TestCase):
         run.set_task_stopped()
         response = self.client.get(url)
         expected = '<span class="tag is-danger">Stopped</span>'
+        self.assertContains(response, expected)
+
+    def test_scanpipe_views_run_detail_view_results_url(self):
+        run = self.project1.add_pipeline("find_vulnerabilities")
+        self.assertTrue(run.results_url)
+
+        url = reverse("run_detail", args=[run.uuid])
+        run.set_task_ended(exitcode=0)
+        response = self.client.get(url)
+        self.assertContains(response, "View pipeline results")
+        self.assertContains(response, run.results_url)
+
+    def test_scanpipe_views_project_run_step_selection_view(self):
+        run = self.project1.add_pipeline("do_nothing")
+        url = reverse("project_run_step_selection", args=[run.uuid])
+
+        response = self.client.get(url)
+        expected_input1 = (
+            '<input type="checkbox" name="selected_steps" value="step1" '
+            'id="id_selected_steps_0" checked>'
+        )
+        self.assertContains(response, expected_input1)
+        expected_input2 = (
+            '<input type="checkbox" name="selected_steps" value="step2" '
+            'id="id_selected_steps_1" checked>'
+        )
+        self.assertContains(response, expected_input2)
+
+        response = self.client.post(url, data={"selected_steps": ["invalid"]})
+        expected = "Select a valid choice. invalid is not one of the available choices."
+        self.assertContains(response, expected, html=True)
+
+        response = self.client.post(url, data={"selected_steps": ["step1"]})
+        expected = (
+            '<div id="run-step-selection-box" class="box has-background-success-light">'
+            "Steps updated successfully."
+            "</div>"
+        )
+        self.assertContains(response, expected, html=True)
+        run.refresh_from_db()
+        self.assertEqual(["step1"], run.selected_steps)
+        response = self.client.get(url)
+        self.assertContains(response, expected_input1)
+        # Not checked anymore in the initial data
+        expected_input2 = (
+            '<input type="checkbox" name="selected_steps" value="step2" '
+            'id="id_selected_steps_1">'
+        )
+        self.assertContains(response, expected_input2)
+
+    @mock.patch.object(Project, "policies_enabled", new_callable=mock.PropertyMock)
+    def test_scanpipe_views_project_compliance_panel_view(self, mock_policies_enabled):
+        url = reverse("project_compliance_panel", args=[self.project1.slug])
+        make_package(
+            self.project1,
+            package_url="pkg:generic/name@1.0",
+            compliance_alert=CodebaseResource.Compliance.ERROR,
+        )
+
+        mock_policies_enabled.return_value = False
+        response = self.client.get(url)
+        self.assertEqual(404, response.status_code)
+
+        mock_policies_enabled.return_value = True
+        response = self.client.get(url)
+        self.assertContains(response, "Compliance alerts")
+        self.assertContains(response, "1 Error")
+        expected = f"/project/{self.project1.slug}/packages/?compliance_alert=error"
         self.assertContains(response, expected)
 
     def test_scanpipe_views_pipeline_help_view(self):
@@ -888,8 +1083,8 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, expected, status_code=404)
 
         resource_files = [
-            self.data_location / "codebase" / "a.txt",
-            self.data_location / "codebase" / "b.txt",
+            self.data / "codebase" / "a.txt",
+            self.data / "codebase" / "b.txt",
         ]
         copy_inputs(resource_files, self.project1.codebase_path)
         resource1 = CodebaseResource.objects.create(
@@ -1000,21 +1195,23 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, "tab-purldb")
         self.assertContains(response, '<section id="tab-purldb"')
 
-        with mock.patch("scanpipe.pipes.purldb.get_package_by_purl") as get_package:
-            get_package.return_value = None
+        with mock.patch("scanpipe.pipes.purldb.get_packages_for_purl") as get_packages:
+            get_packages.return_value = None
             purldb_tab_url = f"{package_url}purldb_tab/"
             response = self.client.get(purldb_tab_url)
             msg = "No entries found in the PurlDB for this package"
             self.assertContains(response, msg)
 
-            get_package.return_value = {
-                "uuid": "9261605f-e2fb-4db9-94ab-0d82d3273cdf",
-                "filename": "abab-2.0.3.tgz",
-                "type": "npm",
-                "name": "abab",
-                "version": "2.0.3",
-                "primary_language": "JavaScript",
-            }
+            get_packages.return_value = [
+                {
+                    "uuid": "9261605f-e2fb-4db9-94ab-0d82d3273cdf",
+                    "filename": "abab-2.0.3.tgz",
+                    "type": "npm",
+                    "name": "abab",
+                    "version": "2.0.3",
+                    "primary_language": "JavaScript",
+                }
+            ]
             response = self.client.get(purldb_tab_url)
             self.assertContains(response, "abab-2.0.3.tgz")
             self.assertContains(response, "2.0.3")
@@ -1080,3 +1277,51 @@ class ScanPipeViewsTest(TestCase):
         xss_url = reverse("license_detail", args=[xss])
         response = self.client.get(xss_url)
         self.assertEqual(response.status_code, 404)
+
+    def test_scanpipe_views_project_dependency_tree(self):
+        url = reverse("project_dependency_tree", args=[self.project1.slug])
+        response = self.client.get(url)
+        expected_tree = {"name": "Analysis", "children": []}
+        self.assertEqual(expected_tree, response.context["dependency_tree"])
+
+        project = Project.objects.create(name="project")
+        a = make_package(project, "pkg:type/a")
+        b = make_package(project, "pkg:type/b")
+        c = make_package(project, "pkg:type/c")
+        make_package(project, "pkg:type/z")
+        # Project -> A -> B -> C
+        # Project -> Z
+        make_dependency(project, for_package=a, resolved_to_package=b)
+        make_dependency(project, for_package=b, resolved_to_package=c)
+        url = reverse("project_dependency_tree", args=[project.slug])
+        response = self.client.get(url)
+        expected_tree = {
+            "name": "project",
+            "children": [
+                {
+                    "name": "pkg:type/a",
+                    "children": [
+                        {"name": "pkg:type/b", "children": [{"name": "pkg:type/c"}]}
+                    ],
+                },
+                {"name": "pkg:type/z"},
+            ],
+        }
+        self.assertEqual(expected_tree, response.context["dependency_tree"])
+        self.assertContains(response, '<script id="dependency_tree"')
+
+        # Adding a circular reference such as: Project -> A -> B -> C -> B -> C -> ...
+        make_dependency(project, for_package=c, resolved_to_package=b)
+        response = self.client.get(url)
+        self.assertTrue(response.context["recursion_error"])
+        self.assertContains(response, "The dependency tree cannot be rendered")
+
+    def test_scanpipe_policies_broken_policies_project_details(self):
+        broken_policies = self.data / "policies" / "broken_policies.yml"
+        project1 = make_project()
+        shutil.copyfile(broken_policies, project1.input_path / "policies.yml")
+
+        url = project1.get_absolute_url()
+        response = self.client.get(url)
+        self.assertEqual(200, response.status_code)
+        self.assertContains(response, "Policies file format error")

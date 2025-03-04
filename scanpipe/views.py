@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,12 +18,13 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import difflib
 import io
 import json
 import operator
+import zipfile
 from collections import Counter
 from contextlib import suppress
 from pathlib import Path
@@ -42,6 +43,7 @@ from django.http import Http404
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
+from django.http import QueryDict
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
@@ -59,6 +61,7 @@ from django.views.generic.edit import UpdateView
 import saneyaml
 import xlsxwriter
 from django_filters.views import FilterView
+from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
 
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
@@ -73,22 +76,28 @@ from scanpipe.filters import ResourceFilterSet
 from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddLabelsForm
 from scanpipe.forms import AddPipelineForm
-from scanpipe.forms import ArchiveProjectForm
+from scanpipe.forms import BaseProjectActionForm
 from scanpipe.forms import EditInputSourceTagForm
+from scanpipe.forms import PipelineRunStepSelectionForm
+from scanpipe.forms import ProjectArchiveForm
 from scanpipe.forms import ProjectCloneForm
 from scanpipe.forms import ProjectForm
+from scanpipe.forms import ProjectOutputDownloadForm
+from scanpipe.forms import ProjectReportForm
+from scanpipe.forms import ProjectResetForm
 from scanpipe.forms import ProjectSettingsForm
-from scanpipe.models import PURL_FIELDS
+from scanpipe.forms import WebhookSubscriptionForm
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
-from scanpipe.models import InputSource
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.pipes import compliance
 from scanpipe.pipes import count_group_by
+from scanpipe.pipes import filename_now
 from scanpipe.pipes import output
 from scanpipe.pipes import purldb
 
@@ -190,9 +199,22 @@ class PrefetchRelatedViewMixin:
         return super().get_queryset().prefetch_related(*self.prefetch_related)
 
 
+class HTTPResponseHXRedirect(HttpResponseRedirect):
+    status_code = 200
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self["HX-Redirect"] = self["Location"]
+
+
 def render_as_yaml(value):
     if value:
         return saneyaml.dump(value, indent=2)
+
+
+def render_size(size_in_bytes):
+    if size_in_bytes:
+        return f"{size_in_bytes} ({filesizeformat(size_in_bytes)})"
 
 
 def fields_have_no_values(fields_data):
@@ -321,7 +343,7 @@ class TabSetMixin:
         if isinstance(field_value, Manager):
             return list(field_value.all())
 
-        if isinstance(field_value, (list, dict)):
+        if isinstance(field_value, list | dict):
             with suppress(Exception):
                 field_value = render_as_yaml(field_value)
 
@@ -435,15 +457,28 @@ class ExportXLSXMixin:
 
     export_xlsx_query_param = "export_xlsx"
 
-    def export_xlsx_file_response(self):
-        filtered_qs = self.filterset.qs
-        output_file = io.BytesIO()
-        with xlsxwriter.Workbook(output_file) as workbook:
-            output.queryset_to_xlsx_worksheet(filtered_qs, workbook)
+    def get_export_xlsx_queryset(self):
+        return self.filterset.qs
 
-        filename = f"{self.project.name}_{self.model._meta.model_name}.xlsx"
+    def get_export_xlsx_filename(self):
+        return f"{self.project.name}_{self.model._meta.model_name}.xlsx"
+
+    def export_xlsx_file_response(self):
+        output_file = io.BytesIO()
+        queryset = self.get_export_xlsx_queryset()
+        with xlsxwriter.Workbook(output_file) as workbook:
+            output.queryset_to_xlsx_worksheet(
+                queryset,
+                workbook,
+                exclude_fields=output.XLSX_EXCLUDE_FIELDS,
+            )
+
         output_file.seek(0)
-        return FileResponse(output_file, as_attachment=True, filename=filename)
+        return FileResponse(
+            output_file,
+            as_attachment=True,
+            filename=self.get_export_xlsx_filename(),
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -521,17 +556,23 @@ class ProjectListView(
 ):
     model = Project
     filterset_class = ProjectFilterSet
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("project", 20)
     template_name = "scanpipe/project_list.html"
     prefetch_related = [
         "labels",
         Prefetch(
             "runs",
             queryset=Run.objects.only(
-                "uuid", "pipeline_name", "project_id", "task_exitcode"
+                "uuid",
+                "pipeline_name",
+                "project_id",
+                "task_id",
+                "task_start_date",
+                "task_end_date",
+                "task_exitcode",
             ),
         ),
     ]
-    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("project", 20)
     table_columns = [
         "name",
         {
@@ -566,7 +607,11 @@ class ProjectListView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["archive_form"] = ArchiveProjectForm()
+        context["action_form"] = BaseProjectActionForm()
+        context["archive_form"] = ProjectArchiveForm()
+        context["reset_form"] = ProjectResetForm()
+        context["outputs_download_form"] = ProjectOutputDownloadForm()
+        context["report_form"] = ProjectReportForm()
         return context
 
     def get_queryset(self):
@@ -712,6 +757,12 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         pipeline_runs = project.runs.all()
         self.check_run_scancode_version(pipeline_runs)
 
+        policies_enabled = False
+        try:
+            policies_enabled = project.policies_enabled
+        except ValidationError as e:
+            messages.error(self.request, str(e))
+
         context.update(
             {
                 "input_sources": project.get_inputs_with_source(),
@@ -728,6 +779,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "pipeline_runs": pipeline_runs,
                 "codebase_root": codebase_root,
                 "file_filter": self.request.GET.get("file-filter", "all"),
+                "policies_enabled": policies_enabled,
             }
         )
 
@@ -784,7 +836,8 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             # no pipelines are assigned to the project
             if (not pipeline_runs and not pipeline_class.is_addon)
             # at least one pipeline already exists on the project
-            or pipeline_runs and (name in project_run_names or pipeline_class.is_addon)
+            or pipeline_runs
+            and (name in project_run_names or pipeline_class.is_addon)
         ]
         return pipeline_choices
 
@@ -795,6 +848,9 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
 
     form_class = ProjectSettingsForm
     success_message = 'The project "{}" settings have been updated.'
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related("webhooksubscriptions")
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -809,7 +865,11 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["archive_form"] = ArchiveProjectForm()
+        project = self.get_object()
+        context["archive_form"] = ProjectArchiveForm()
+        context["reset_form"] = ProjectResetForm()
+        context["webhook_form"] = WebhookSubscriptionForm()
+        context["webhook_subscriptions"] = project.webhooksubscriptions.all()
         return context
 
     @staticmethod
@@ -825,6 +885,23 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
         filename = output.safe_filename(settings.SCANCODEIO_CONFIG_FILE)
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
+
+
+class ProjectSettingsWebhookCreateView(
+    ConditionalLoginRequired, FormAjaxMixin, UpdateView
+):
+    model = Project
+    form_class = WebhookSubscriptionForm
+    template_name = "scanpipe/forms/project_webhook_form.html"
+
+    def get_success_url(self):
+        url = reverse("project_settings", args=[self.object.slug])
+        return url + "#webhooks"
+
+    def form_valid(self, form):
+        form.save(project=self.object)
+        messages.success(self.request, "Webhook added to the project.")
+        return HTTPResponseHXRedirect(self.get_success_url())
 
 
 class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
@@ -889,7 +966,7 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
             },
             "dependency": {
                 "queryset": project.discovereddependencies,
-                "fields": ["type", "is_runtime", "is_optional", "is_resolved"],
+                "fields": ["type", "is_runtime", "is_optional", "is_pinned"],
             },
         }
 
@@ -1066,10 +1143,29 @@ class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
         return context
 
 
+class ProjectCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
+    model = Project
+    template_name = "scanpipe/panels/project_compliance.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        project = self.object
+
+        if not project.policies_enabled:
+            raise Http404
+
+        compliance_alerts = compliance.get_project_compliance_alerts(
+            project=project,
+            fail_level="missing",
+        )
+        context["compliance_alerts"] = compliance_alerts
+        return context
+
+
 class ProjectArchiveView(ConditionalLoginRequired, SingleObjectMixin, FormView):
     model = Project
     http_method_names = ["post"]
-    form_class = ArchiveProjectForm
+    form_class = ProjectArchiveForm
     success_url = reverse_lazy("project_list")
     success_message = 'The project "{}" has been archived.'
 
@@ -1078,13 +1174,32 @@ class ProjectArchiveView(ConditionalLoginRequired, SingleObjectMixin, FormView):
 
         project = self.get_object()
         try:
-            project.archive(**form.cleaned_data)
+            project.archive(**form.get_action_kwargs())
         except RunInProgressError as error:
             messages.error(self.request, error)
             return redirect(project)
 
         messages.success(self.request, self.success_message.format(project))
         return response
+
+
+class ProjectResetView(ConditionalLoginRequired, SingleObjectMixin, FormView):
+    model = Project
+    http_method_names = ["post"]
+    form_class = ProjectResetForm
+    success_url = reverse_lazy("project_list")
+    success_message = 'The project "{}" has been reset.'
+
+    def form_valid(self, form):
+        """Call the reset() method on the project."""
+        project = self.get_object()
+        try:
+            project.reset(**form.get_action_kwargs())
+        except RunInProgressError as error:
+            messages.error(self.request, error)
+
+        messages.success(self.request, self.success_message.format(project.name))
+        return redirect(project)
 
 
 class ProjectDeleteView(ConditionalLoginRequired, generic.DeleteView):
@@ -1109,26 +1224,42 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
     """Call a method for each instance of the selection."""
 
     model = Project
-    allowed_actions = ["archive", "delete", "reset"]
+    allowed_actions = ["archive", "delete", "reset", "report", "download"]
+    action_to_form_class = {
+        "archive": ProjectArchiveForm,
+        "reset": ProjectResetForm,
+        "report": ProjectReportForm,
+        "download": ProjectOutputDownloadForm,
+    }
     success_url = reverse_lazy("project_list")
 
     def post(self, request, *args, **kwargs):
+        action_kwargs = {}
+
         action = request.POST.get("action")
         if action not in self.allowed_actions:
             raise Http404
 
-        selected_ids = request.POST.get("selected_ids", "").split(",")
+        action_form = self.get_action_form(action)
+        selected_project_ids = [
+            project_uuid
+            for project_uuid in request.POST.get("selected_ids", "").split(",")
+            if project_uuid
+        ]
+        project_qs = self.get_project_queryset(selected_project_ids, action_form)
+
+        if action == "download":
+            return self.download_outputs_zip_response(project_qs, action_form)
+
+        if action == "report":
+            return self.xlsx_report_response(project_qs, action_form)
+
+        if action in ["archive", "reset"]:
+            action_kwargs = action_form.get_action_kwargs()
+
         count = 0
-
-        action_kwargs = {}
-        if action == "archive":
-            archive_form = ArchiveProjectForm(request.POST)
-            if not archive_form.is_valid():
-                raise Http404
-            action_kwargs = archive_form.cleaned_data
-
-        for project_uuid in selected_ids:
-            if self.perform_action(action, project_uuid, action_kwargs):
+        for project in project_qs:
+            if self.perform_action(project, action, action_kwargs):
                 count += 1
 
         if count:
@@ -1136,54 +1267,92 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
 
         return HttpResponseRedirect(self.success_url)
 
-    def perform_action(self, action, project_uuid, action_kwargs=None):
+    def get_action_form(self, action):
+        """Return the validated ``action_form`` instance."""
+        action_form_class = self.action_to_form_class.get(action, BaseProjectActionForm)
+        action_form = action_form_class(self.request.POST)
+
+        if not action_form.is_valid():
+            raise Http404
+
+        return action_form
+
+    def perform_action(self, project, action, action_kwargs=None):
         if not action_kwargs:
             action_kwargs = {}
 
         try:
-            project = Project.objects.get(pk=project_uuid)
             getattr(project, action)(**action_kwargs)
-            return True
-        except Project.DoesNotExist:
-            messages.error(self.request, f"Project {project_uuid} does not exist.")
         except RunInProgressError as error:
             messages.error(self.request, str(error))
         except (AttributeError, ValidationError):
             raise Http404
 
+        return True
+
     def get_success_message(self, action, count):
         return f"{count} projects have been {action}."
 
+    @staticmethod
+    def get_project_queryset(selected_project_ids=None, action_form=None):
+        """
+        Return the Project QuerySet from the user selection.
 
-class ProjectResetView(ConditionalLoginRequired, generic.DeleteView):
-    model = Project
-    success_message = 'All data, except inputs, for the "{}" project have been removed.'
+        An instance of BaseProjectActionForm can be provided as the ``action_form``
+        argument for the support of ``select_across``.
+        """
+        if action_form:
+            select_across = action_form.cleaned_data.get("select_across")
+            # url_query may be empty for a "select everything"
+            url_query = action_form.cleaned_data.get("url_query", "")
+            if select_across:
+                project_filterset = ProjectFilterSet(data=QueryDict(url_query))
+                if project_filterset.is_valid():
+                    return project_filterset.qs
 
-    def form_valid(self, form):
-        """Call the reset() method on the project."""
-        project = self.get_object()
-        try:
-            project.reset(keep_input=True)
-        except RunInProgressError as error:
-            messages.error(self.request, error)
-        else:
-            messages.success(self.request, self.success_message.format(project.name))
+        if selected_project_ids:
+            return Project.objects.filter(uuid__in=selected_project_ids)
 
-        return redirect(project)
+        raise Http404
+
+    @staticmethod
+    def download_outputs_zip_response(project_qs, action_form):
+        output_format = action_form.cleaned_data["output_format"]
+        output_function = output.FORMAT_TO_FUNCTION_MAPPING.get(output_format)
+
+        # In-memory file storage for the zip archive
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            for project in project_qs:
+                output_file = output_function(project)
+                filename = output.safe_filename(f"{project.name}_{output_file.name}")
+                with open(output_file, "rb") as f:
+                    zip_file.writestr(filename, f.read())
+
+        zip_buffer.seek(0)
+        return FileResponse(
+            zip_buffer,
+            as_attachment=True,
+            filename="scancodeio_output_files.zip",
+        )
+
+    @staticmethod
+    def xlsx_report_response(project_qs, action_form):
+        model_short_name = action_form.cleaned_data["model_name"]
+        filename = f"scancodeio-report-{filename_now()}.xlsx"
+        output_file = output.get_xlsx_report(project_qs, model_short_name)
+        output_file.seek(0)
+        return FileResponse(
+            output_file,
+            as_attachment=True,
+            filename=filename,
+        )
 
 
-class HTTPResponseHXRedirect(HttpResponseRedirect):
-    status_code = 200
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self["HX-Redirect"] = self["Location"]
-
-
-class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, generic.UpdateView):
+class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, UpdateView):
     model = Project
     form_class = ProjectCloneForm
-    template_name = "scanpipe/includes/project_clone_form.html"
+    template_name = "scanpipe/forms/project_clone_form.html"
 
     def form_valid(self, form):
         super().form_valid(form)
@@ -1207,7 +1376,7 @@ def execute_pipelines_view(request, slug):
 @conditional_login_required
 def stop_pipeline_view(request, slug, run_uuid):
     project = get_object_or_404(Project, slug=slug)
-    run = get_object_or_404(Run, uuid=run_uuid, project=project)
+    run = get_object_or_404(project.runs, uuid=run_uuid)
 
     if run.status != run.Status.RUNNING:
         raise Http404("Pipeline is not running.")
@@ -1220,7 +1389,7 @@ def stop_pipeline_view(request, slug, run_uuid):
 @conditional_login_required
 def delete_pipeline_view(request, slug, run_uuid):
     project = get_object_or_404(Project, slug=slug)
-    run = get_object_or_404(Run, uuid=run_uuid, project=project)
+    run = get_object_or_404(project.runs, uuid=run_uuid)
 
     if run.status not in [run.Status.NOT_STARTED, run.Status.QUEUED]:
         raise Http404("Only non started or queued pipelines can be deleted.")
@@ -1238,11 +1407,24 @@ def delete_input_view(request, slug, input_uuid):
     if not project.can_change_inputs:
         raise Http404("Inputs cannot be deleted on this project.")
 
-    input_source = get_object_or_404(InputSource, uuid=input_uuid, project=project)
+    input_source = get_object_or_404(project.inputsources, uuid=input_uuid)
     input_source.delete()
     messages.success(request, f"Input {input_source.filename} deleted.")
 
     return redirect(project)
+
+
+@require_POST
+@conditional_login_required
+def delete_webhook_view(request, slug, webhook_uuid):
+    project = get_object_or_404(Project, slug=slug)
+    webhook = get_object_or_404(project.webhooksubscriptions, uuid=webhook_uuid)
+
+    webhook.delete()
+    messages.success(request, "Webhook deleted.")
+
+    success_url = reverse("project_settings", args=[project.slug]) + "#webhooks"
+    return redirect(success_url)
 
 
 def download_project_file(request, slug, filename, path_type):
@@ -1369,7 +1551,7 @@ class CodebaseResourceListView(
     prefetch_related = [
         Prefetch(
             "discovered_packages",
-            queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS),
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
         )
     ]
     table_columns = [
@@ -1397,7 +1579,6 @@ class CodebaseResourceListView(
         },
         {
             "field_name": "compliance_alert",
-            "condition": scanpipe_app.policies_enabled,
             "filter_fieldname": "compliance_alert",
             "filter_is_right": True,
         },
@@ -1428,11 +1609,6 @@ class CodebaseResourceListView(
             .order_by("path")
         )
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["display_compliance_alert"] = scanpipe_app.policies_enabled
-        return context
-
 
 class DiscoveredPackageListView(
     ConditionalLoginRequired,
@@ -1456,7 +1632,6 @@ class DiscoveredPackageListView(
         },
         {
             "field_name": "compliance_alert",
-            "condition": scanpipe_app.policies_enabled,
             "filter_fieldname": "compliance_alert",
         },
         {
@@ -1477,7 +1652,7 @@ class DiscoveredPackageListView(
             .only(
                 "uuid",
                 "package_uid",
-                *PURL_FIELDS,
+                *PACKAGE_URL_FIELDS,
                 "project",
                 "primary_language",
                 "declared_license_expression",
@@ -1486,13 +1661,8 @@ class DiscoveredPackageListView(
                 "affected_by_vulnerabilities",
             )
             .with_resources_count()
-            .order_by_purl()
+            .order_by_package_url()
         )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["display_compliance_alert"] = scanpipe_app.policies_enabled
-        return context
 
 
 class DiscoveredDependencyListView(
@@ -1509,11 +1679,12 @@ class DiscoveredDependencyListView(
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("dependency", 100)
     prefetch_related = [
         Prefetch(
-            "for_package", queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS)
+            "for_package",
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
         ),
         Prefetch(
             "resolved_to_package",
-            queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS),
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
         ),
         Prefetch(
             "datafile_resource", queryset=CodebaseResource.objects.only("path", "name")
@@ -1543,8 +1714,12 @@ class DiscoveredDependencyListView(
             "filter_fieldname": "is_optional",
         },
         {
-            "field_name": "is_resolved",
-            "filter_fieldname": "is_resolved",
+            "field_name": "is_pinned",
+            "filter_fieldname": "is_pinned",
+        },
+        {
+            "field_name": "is_direct",
+            "filter_fieldname": "is_direct",
         },
         "for_package",
         "resolved_to_package",
@@ -1650,7 +1825,7 @@ class CodebaseResourceDetailsView(
             "discovered_packages",
             queryset=DiscoveredPackage.objects.only(
                 "uuid",
-                *PURL_FIELDS,
+                *PACKAGE_URL_FIELDS,
                 "package_uid",
                 "affected_by_vulnerabilities",
                 "primary_language",
@@ -1678,7 +1853,7 @@ class CodebaseResourceDetailsView(
         },
         "others": {
             "fields": [
-                {"field_name": "size", "render_func": filesizeformat},
+                {"field_name": "size", "render_func": render_size},
                 {"field_name": "md5", "label": "MD5"},
                 {"field_name": "sha1", "label": "SHA1"},
                 {"field_name": "sha256", "label": "SHA256"},
@@ -1686,8 +1861,12 @@ class CodebaseResourceDetailsView(
                 "is_binary",
                 "is_text",
                 "is_archive",
-                "is_key_file",
                 "is_media",
+                "is_legal",
+                "is_manifest",
+                "is_readme",
+                "is_top_level",
+                "is_key_file",
             ],
             "icon_class": "fa-solid fa-info-circle",
         },
@@ -1731,7 +1910,7 @@ class CodebaseResourceDetailsView(
             "template": "scanpipe/tabset/tab_relations.html",
         },
         "extra_data": {
-            "fields": ["extra_data"],
+            "fields": ["extra_data", "package_data"],
             "verbose_name": "Extra",
             "icon_class": "fa-solid fa-plus-square",
         },
@@ -1844,7 +2023,10 @@ class DiscoveredPackageDetailsView(
                 "project_id",
             ),
         ),
-        "declared_dependencies__project",
+        Prefetch(
+            "declared_dependencies__resolved_to_package",
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
+        ),
     ]
     tabset = {
         "essentials": {
@@ -1867,13 +2049,14 @@ class DiscoveredPackageDetailsView(
                 "source_packages",
                 "keywords",
                 "description",
+                "notes",
                 "tag",
             ],
             "icon_class": "fa-solid fa-circle-check",
         },
         "others": {
             "fields": [
-                {"field_name": "size", "render_func": filesizeformat},
+                {"field_name": "size", "render_func": render_size},
                 "release_date",
                 {"field_name": "md5", "label": "MD5"},
                 {"field_name": "sha1", "label": "SHA1"},
@@ -1884,6 +2067,8 @@ class DiscoveredPackageDetailsView(
                 "missing_resources",
                 "modified_resources",
                 "package_uid",
+                "is_private",
+                "is_virtual",
                 "datasource_ids",
                 "datafile_paths",
             ],
@@ -1978,9 +2163,13 @@ class DiscoveredPackagePurlDBTabView(ConditionalLoginRequired, generic.DetailVie
         if not purldb.is_configured():
             raise Http404("PurlDB access is not configured.")
 
-        if purldb_entry := purldb.get_package_by_purl(self.object.package_url):
-            fields = self.get_fields_data(purldb_entry)
+        if purldb_entries := purldb.get_packages_for_purl(self.object.package_url):
+            # Always display the most recent version entry.
+            fields = self.get_fields_data(purldb_entries[0])
             context["tab_data"] = {"fields": fields}
+            # Display a warning if multiple packages found in PurlDB for this purl.
+            if len(purldb_entries) > 1:
+                context["has_multiple_purldb_entries"] = True
 
         return context
 
@@ -2001,13 +2190,13 @@ class DiscoveredDependencyDetailsView(
         Prefetch(
             "for_package",
             queryset=DiscoveredPackage.objects.only(
-                "uuid", *PURL_FIELDS, "package_uid", "project_id"
+                "uuid", *PACKAGE_URL_FIELDS, "package_uid", "project_id"
             ),
         ),
         Prefetch(
             "resolved_to_package",
             queryset=DiscoveredPackage.objects.only(
-                "uuid", *PURL_FIELDS, "package_uid", "project_id"
+                "uuid", *PACKAGE_URL_FIELDS, "package_uid", "project_id"
             ),
         ),
         Prefetch(
@@ -2045,7 +2234,8 @@ class DiscoveredDependencyDetailsView(
                 "resolved_to_package_uid",
                 "is_runtime",
                 "is_optional",
-                "is_resolved",
+                "is_pinned",
+                "is_direct",
             ],
             "icon_class": "fa-solid fa-info-circle",
         },
@@ -2068,15 +2258,14 @@ class DiscoveredDependencyDetailsView(
 def run_detail_view(request, uuid):
     template = "scanpipe/modals/run_modal_content.html"
     run_qs = Run.objects.select_related("project").prefetch_related(
-        "project__webhooksubscriptions",
+        "webhook_deliveries"
     )
     run = get_object_or_404(run_qs, uuid=uuid)
-    project = run.project
 
     context = {
         "run": run,
-        "project": project,
-        "webhook_subscriptions": project.webhooksubscriptions.all(),
+        "project": run.project,
+        "webhook_deliveries": run.webhook_deliveries.all(),
     }
 
     return render(request, template, context)
@@ -2113,11 +2302,28 @@ def pipeline_help_view(request, pipeline_name):
     return render(request, template, context)
 
 
+class RunStepSelectionFormView(ConditionalLoginRequired, UpdateView):
+    model = Run
+    slug_field = "uuid"
+    slug_url_kwarg = "uuid"
+    form_class = PipelineRunStepSelectionForm
+    template_name = "scanpipe/includes/run_step_selection_form.html"
+
+    def form_valid(self, form):
+        form.save()
+        success_html_content = """
+        <div id="run-step-selection-box" class="box has-background-success-light">
+          Steps updated successfully.
+        </div>
+        """
+        return HttpResponse(success_html_content)
+
+
 class CodebaseResourceRawView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
-    generic.detail.SingleObjectMixin,
-    generic.base.View,
+    SingleObjectMixin,
+    generic.View,
 ):
     model = CodebaseResource
     slug_field = "path"
@@ -2234,3 +2440,41 @@ class LicenseDetailsView(
             return licenses[key]
         except KeyError:
             raise Http404(f"License {key} not found.")
+
+
+class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
+    model = Project
+    template_name = "scanpipe/project_dependency_tree.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        try:
+            dependency_tree = self.get_dependency_tree(project=self.object)
+        except RecursionError:
+            context["recursion_error"] = True
+            return context
+
+        context["dependency_tree"] = dependency_tree
+        return context
+
+    def get_dependency_tree(self, project):
+        root_packages = project.discoveredpackages.root_packages().order_by("name")
+        project_children = [self.get_node(package) for package in root_packages]
+
+        project_tree = {
+            "name": project.name,
+            "children": project_children,
+        }
+
+        return project_tree
+
+    def get_node(self, package):
+        node = {"name": str(package)}
+        children = [
+            self.get_node(child_package)
+            for child_package in package.children_packages.all()
+        ]
+        if children:
+            node["children"] = children
+        return node

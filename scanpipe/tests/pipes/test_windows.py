@@ -30,7 +30,7 @@ from scanpipe.pipes import windows
 
 
 class ScanPipeWindowsPipesTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def test_scanpipe_pipes_windows_flag_uninteresting_windows_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")

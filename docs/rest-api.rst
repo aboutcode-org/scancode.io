@@ -126,6 +126,19 @@ Using cURL:
     To tag the ``upload_file``, you can provide the tag value using the
     ``upload_file_tag`` field.
 
+.. tip::
+
+    You can declare multiple pipelines to be executed at the project creation using a
+    list of pipeline names:
+
+    ``"pipeline": ["scan_single_package", "scan_for_virus"]``
+
+.. tip::
+
+    Use the "pipeline_name:option1,option2" syntax to select optional steps:
+
+    ``"pipeline": "map_deploy_to_develop:Java,JavaScript"``
+
 Using Python and the **"requests"** library:
 
 .. code-block:: python
@@ -185,6 +198,81 @@ about the project, including the status of any pipeline run:
         "created_date": "2021-07-21T16:06:29.132795+02:00"
     }
 
+.. _rest_api_webhooks:
+
+Adding webhooks
+^^^^^^^^^^^^^^^
+
+When creating a project, you can also **register webhook subscriptions** that will
+notify external services about pipeline execution events.
+
+You can either provide:
+ - A **single webhook URL** using the ``webhook_url`` field.
+ - A **list of detailed webhook configurations** using the ``webhooks`` field.
+
+Webhook fields:
+    - ``webhook_url`` (string, optional): A single webhook URL to be notified.
+    - ``webhooks`` (list, optional): A list of webhook configurations.
+        - ``target_url`` (string, required): The URL to which the webhook will send a
+          ``POST`` request.
+        - ``trigger_on_each_run`` (boolean, optional): If ``true``, the webhook will be
+          triggered after each individual pipeline run. Default is ``false``.
+        - ``include_summary`` (boolean, optional): If ``true``, the webhook payload
+          will include the summary data of the pipeline execution. Default is ``false``.
+        - ``include_results`` (boolean, optional): If ``true``, the webhook payload
+          will include the full results data of the pipeline execution.
+          Default is ``false``.
+        - ``is_active`` (boolean, optional): If ``true``, the webhook is active and
+          will be triggered when the specified conditions are met. Default is ``true``.
+
+Using cURL to register a webhook:
+
+.. code-block:: console
+
+    api_url="http://localhost/api/projects/"
+    content_type="Content-Type: application/json"
+    data='{
+        "name": "project_name",
+        "webhook_url": "https://example.com/webhook"
+    }'
+
+    curl -X POST "$api_url" -H "$content_type" -d "$data"
+
+.. code-block:: json
+
+    {
+        "name": "project_name",
+        "webhook_url": "https://example.com/webhook"
+    }
+
+Using cURL to register multiple webhooks:
+
+.. code-block:: console
+
+    api_url="http://localhost/api/projects/"
+    content_type="Content-Type: application/json"
+    data='{
+        "name": "project_name",
+        "webhooks": [
+            {
+                "target_url": "https://example.com/webhook1",
+                "trigger_on_each_run": true,
+                "include_summary": false,
+                "include_results": true,
+                "is_active": true
+            },
+            {
+                "target_url": "https://example.com/webhook2",
+                "trigger_on_each_run": false,
+                "include_summary": true,
+                "include_results": false,
+                "is_active": true
+            }
+        ]
+    }'
+
+    curl -X POST "$api_url" -H "$content_type" -d "$data"
+
 Project details
 ---------------
 
@@ -237,7 +325,7 @@ Using cURL to provide download URLs:
     content_type="Content-Type: application/json"
     data='{
         "input_urls": [
-            "https://github.com/nexB/debian-inspector/archive/refs/tags/v21.5.25.zip",
+            "https://github.com/aboutcode-org/debian-inspector/archive/refs/tags/v21.5.25.zip",
             "https://github.com/package-url/packageurl-python/archive/refs/tags/0.9.4.tar.gz"
        ]
     }'
@@ -265,6 +353,8 @@ Using cURL to upload a local file:
         "status": "Input(s) added."
     }
 
+.. _rest_api_add_pipeline:
+
 Add pipeline
 ^^^^^^^^^^^^
 
@@ -279,7 +369,7 @@ Data:
     - ``execute_now``: ``true`` or ``false``
 
 .. tip::
-    Use the "pipeline_name:group1,group2" syntax to select steps groups:
+    Use the "pipeline_name:option1,option2" syntax to select optional steps:
 
     ``"pipeline": "map_deploy_to_develop:Java,JavaScript"``
 
@@ -302,6 +392,58 @@ Using cURL:
         "status": "Pipeline added."
     }
 
+.. _rest_api_add_webhook:
+
+Add webhook
+^^^^^^^^^^^
+
+This action adds a webhook subscription to the ``project``.
+A webhook allows external services to receive real-time notifications about project
+pipeline execution events.
+
+``POST /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/add_webhook/``
+
+Data:
+    - ``target_url`` (string, required): The URL to which the webhook will send
+      a ``POST`` request when triggered.
+    - ``trigger_on_each_run`` (boolean, optional): If ``true``, the webhook will be
+      triggered after each individual pipeline run. Default is ``false``.
+    - ``include_summary`` (boolean, optional): If ``true``, the webhook payload will
+      include the summary data of the pipeline execution. Default is ``false``.
+    - ``include_results`` (boolean, optional): If ``true``, the webhook payload will
+      include the full results data of the pipeline execution. Default is ``false``.
+    - ``is_active`` (boolean, optional): If ``true``, the webhook is active and will
+      be triggered when the specified conditions are met. Default is ``true``.
+
+Using cURL:
+
+.. code-block:: console
+
+    api_url="http://localhost/api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/add_webhook/"
+    content_type="Content-Type: application/json"
+    data='{
+        "target_url": "https://example.com/webhook",
+        "trigger_on_each_run": true,
+        "include_summary": true,
+        "include_results": false,
+        "is_active": true
+    }'
+
+    curl -X POST "$api_url" -H "$content_type" -d "$data"
+
+.. code-block:: json
+
+    {
+        "status": "Webhook added."
+    }
+
+.. note::
+    - Webhooks will only be triggered for active subscriptions.
+    - If ``trigger_on_each_run`` is set to ``false``, the webhook will only trigger
+      after all pipeline runs are completed.
+    - The ``include_summary`` and ``include_results`` fields allow customization of
+      the webhook payload.
+
 Archive
 ^^^^^^^
 
@@ -320,10 +462,41 @@ Data:
         "status": "The project project_name has been archived."
     }
 
+.. _rest_api_compliance:
+
+Compliance
+^^^^^^^^^^
+
+This action returns a list of compliance alerts for a project,
+filtered by severity level.
+The severity level can be customized using the ``fail_level`` query parameter.
+Defaults to ``ERROR`` if not provided.
+
+``GET /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/compliance/?fail_level=WARNING``
+
+Data:
+    - ``fail_level``: ``ERROR``, ``WARNING``, ``MISSING``.
+
+.. code-block:: json
+
+    {
+        "compliance_alerts": {
+            "packages": {
+                "warning": [
+                    "pkg:generic/package@1.0",
+                    "pkg:generic/package@2.0"
+                ],
+                "error": [
+                    "pkg:generic/package@3.0"
+                ]
+            }
+        }
+    }
+
 Reset
 ^^^^^
 
-This action will delete all related database entrie and all data on disks except for
+This action will delete all related database entries and all data on disks except for
 the :guilabel:`input/` directory.
 
 ``POST /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/reset/``
@@ -388,6 +561,9 @@ Lists all ``packages`` of a given ``project``.
         }
     ]
 
+The list supports filtering by most fields using the ``?field_name=value`` query
+parameter syntax.
+
 Resources
 ^^^^^^^^^
 
@@ -407,6 +583,40 @@ This action lists all ``resources`` of a given ``project``.
             "[...]": "[...]"
         }
     ]
+
+The list supports filtering by most fields using the ``?field_name=value`` query
+parameter syntax.
+
+Dependencies
+^^^^^^^^^^^^
+
+Lists all ``dependencies`` of a given ``project``.
+
+``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/dependencies/``
+
+.. code-block:: json
+
+    [
+        {
+            "purl": "pkg:pypi/appdirs@1.4.4",
+            "extracted_requirement": "==1.4.4",
+            "scope": "test",
+            "is_runtime": true,
+            "is_optional": true,
+            "is_pinned": true,
+            "is_direct": true,
+            "dependency_uid": "pkg:pypi/appdirs@1.4.4?uuid=0033a678-2003-420d-8c83-c4071e646f4e",
+            "for_package_uid": "pkg:pypi/platformdirs@4.2.1?uuid=6d90ce5b-a3f8-4110-a4bd-2da5a8930d29",
+            "resolved_to_package_uid": null,
+            "datafile_path": "platformdirs-4.2.1.dist-info/METADATA",
+            "datasource_id": "pypi_wheel_metadata",
+            "package_type": "pypi",
+            "[...]": "[...]"
+        },
+    ]
+
+The list supports filtering by most fields using the ``?field_name=value`` query
+parameter syntax.
 
 Results
 ^^^^^^^
@@ -506,3 +716,40 @@ This action deletes a "not started" or "queued" pipeline run.
     {
         "status": "Pipeline pipeline_name deleted."
     }
+
+XLSX Report
+-----------
+
+Generates an XLSX report for selected projects based on specified criteria. The
+``model`` query parameter is required to determine the type of data to include in the
+report.
+
+Endpoint:
+``GET /api/projects/report/?model=MODEL``
+
+Parameters:
+
+- ``model``: Defines the type of data to include in the report.
+  Accepted values: ``package``, ``dependency``, ``resource``, ``relation``, ``message``,
+  ``todo``.
+
+.. note::
+
+   You can apply any available filters to select the projects to include in the
+   report. Filters can be based on project attributes, such as a substring in the
+   name or specific labels.
+
+Example Usage:
+
+1. Generate a report for projects tagged with "d2d" and include the ``TODOS`` worksheet:
+
+   .. code-block::
+
+      GET /api/projects/report/?model=todo&label=d2d
+
+2. Generate a report for projects whose names contain "audit" and include the
+   ``PACKAGES`` worksheet:
+
+   .. code-block::
+
+      GET /api/projects/report/?model=package&name__contains=audit

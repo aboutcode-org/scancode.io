@@ -221,7 +221,7 @@ the entry point to the pipeline under the ``[options.entry_points]`` section.
     # description must be on ONE line https://github.com/pypa/setuptools/issues/1390
     description =  Generates a licenses report file from a template in ScanCode.io
     long_description = file:README.rst
-    url = https://github.com/nexB/scancode.io
+    url = https://github.com/aboutcode-org/scancode.io
     classifiers =
         Development Status :: 4 - Beta
         Intended Audience :: Developers
@@ -249,7 +249,7 @@ the entry point to the pipeline under the ``[options.entry_points]`` section.
 
 .. tip::
     Take a look at `Google License Classifier pipeline for ScanCode.io
-    <https://github.com/nexB/scancode.io-pipeline-glc_scan>`_
+    <https://github.com/aboutcode-org/scancode.io-pipeline-glc_scan>`_
     for a complete example on packaging a custom tool as a pipeline.
 
 Pipeline Publishing to PyPI

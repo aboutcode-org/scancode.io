@@ -26,12 +26,18 @@ from unittest import mock
 from django.test import TestCase
 
 import requests
+import saneyaml
 
 from scanpipe.forms import EditInputSourceTagForm
 from scanpipe.forms import InputsBaseForm
+from scanpipe.forms import PipelineRunStepSelectionForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectSettingsForm
 from scanpipe.models import Project
+from scanpipe.models import Run
+from scanpipe.tests import global_policies
+from scanpipe.tests import license_policies_index
+from scanpipe.tests.pipelines.do_nothing import DoNothing
 
 
 class ScanPipeFormsTest(TestCase):
@@ -133,7 +139,10 @@ class ScanPipeFormsTest(TestCase):
 
         expected = {
             "ignored_patterns": ["*.ext", "dir/*"],
+            "ignored_vulnerabilities": None,
+            "policies": "",
             "ignored_dependency_scopes": None,
+            "scan_max_file_size": None,
             "product_name": "",
             "product_version": "",
             "attribution_template": "",
@@ -181,11 +190,14 @@ class ScanPipeFormsTest(TestCase):
         project = form.save()
         expected = {
             "ignored_patterns": None,
+            "ignored_vulnerabilities": None,
             "ignored_dependency_scopes": [
                 {"package_type": "npm", "scope": "devDependencies"},
                 {"package_type": "pypi", "scope": "tests"},
             ],
+            "scan_max_file_size": None,
             "attribution_template": "",
+            "policies": "",
             "product_name": "",
             "product_version": "",
         }
@@ -197,6 +209,46 @@ class ScanPipeFormsTest(TestCase):
             ]
         }
         self.assertEqual(expected, project.get_env())
+
+    def test_scanpipe_forms_project_settings_form_policies(self):
+        data = {
+            "name": self.project1.name,
+            "policies": "{not valid}",
+        }
+        form = ProjectSettingsForm(data=data, instance=self.project1)
+        self.assertFalse(form.is_valid())
+        expected = {
+            "policies": [
+                "The `license_policies` key is missing from provided policies data."
+            ]
+        }
+        self.assertEqual(expected, form.errors)
+
+        policies_as_yaml = saneyaml.dump(global_policies)
+        data["policies"] = policies_as_yaml
+        form = ProjectSettingsForm(data=data, instance=self.project1)
+        self.assertTrue(form.is_valid())
+        project = form.save()
+        self.assertEqual(policies_as_yaml.strip(), project.settings["policies"])
+        self.assertEqual(license_policies_index, project.get_policy_index())
+
+    def test_scanpipe_forms_project_settings_form_purl(self):
+        data_invalid_purl = {
+            "name": "proj name",
+            "purl": "pkg/npm/lodash@4.17.21",
+        }
+        data_valid_purl = {
+            "name": "proj name",
+            "purl": "pkg:npm/lodash@4.17.21",
+        }
+
+        form1 = ProjectSettingsForm(data=data_invalid_purl)
+        self.assertFalse(form1.is_valid())
+
+        form2 = ProjectSettingsForm(data=data_valid_purl)
+        self.assertTrue(form2.is_valid())
+        obj = form2.save()
+        self.assertEqual("pkg:npm/lodash@4.17.21", obj.purl)
 
     def test_scanpipe_forms_edit_input_source_tag_form(self):
         data = {}
@@ -226,3 +278,30 @@ class ScanPipeFormsTest(TestCase):
         obj = form.save(project=self.project1)
         self.assertEqual(obj, input_source)
         self.assertEqual(data["tag"], obj.tag)
+
+    def test_scanpipe_forms_pipeline_run_step_selection_form_choices(self):
+        with self.assertRaises(ValueError):
+            PipelineRunStepSelectionForm()
+
+        run = Run.objects.create(project=self.project1, pipeline_name="do_nothing")
+        form = PipelineRunStepSelectionForm(instance=run)
+        choices = form.fields["selected_steps"].choices
+
+        expected = [("step1", "step1"), ("step2", "step2")]
+        self.assertEqual(expected, choices)
+        choices = PipelineRunStepSelectionForm.get_step_choices(DoNothing)
+        self.assertEqual(expected, choices)
+        self.assertEqual({"selected_steps": ["step1", "step2"]}, form.initial)
+
+    def test_scanpipe_forms_pipeline_run_step_selection_form_save(self):
+        run = Run.objects.create(project=self.project1, pipeline_name="do_nothing")
+        data = {"selected_steps": "invalid"}
+        form = PipelineRunStepSelectionForm(data=data, instance=run)
+        self.assertFalse(form.is_valid())
+
+        data = {"selected_steps": ["step1"]}
+        form = PipelineRunStepSelectionForm(data=data, instance=run)
+        self.assertTrue(form.is_valid())
+        form.save()
+        run.refresh_from_db()
+        self.assertEqual(["step1"], run.selected_steps)

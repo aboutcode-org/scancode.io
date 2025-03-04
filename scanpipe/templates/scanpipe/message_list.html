@@ -30,7 +30,7 @@
             <td style="max-width: 250px;">
               <div style="max-height: 200px; overflow-y: scroll;">
                 {% if message.description|length < 100 %}
-                  <a href="?message={{ message.description }}" class="is-black-link">{{ message.description }}</a>
+                  <a href="?description={{ message.description }}" class="is-black-link">{{ message.description }}</a>
                 {% else %}
                   {{ message.description }}
                 {% endif %}
@@ -43,6 +43,14 @@
                     <strong>Resource</strong>:
                     <a href="{% url 'resource_detail' project.slug message.details.resource_path %}" target="_blank">
                       {{ message.details.resource_path }}
+                    </a>
+                  </div>
+                {% endif %}
+                {% if message.details.package_uuid %}
+                  <div>
+                    <strong>Package</strong>:
+                    <a href="{% url 'package_detail' project.slug message.details.package_uuid %}" target="_blank">
+                      {{ message.details.package_url|default_if_none:message.details.package_uuid }}
                     </a>
                   </div>
                 {% endif %}

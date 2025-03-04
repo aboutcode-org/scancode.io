@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import os
+import uuid
 from datetime import datetime
 from unittest import mock
 
@@ -29,13 +30,17 @@ from django.apps import apps
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import Project
+from scanpipe.models import ProjectMessage
 from scanpipe.tests.pipelines.do_nothing import DoNothing
+from scanpipe.tests.pipelines.download_inputs import DownloadInput
 from scanpipe.tests.pipelines.profile_step import ProfileStep
 from scanpipe.tests.pipelines.raise_exception import RaiseException
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
 scanpipe_app.register_pipeline("do_nothing", DoNothing)
+scanpipe_app.register_pipeline("download_inputs", DownloadInput)
 scanpipe_app.register_pipeline("profile_step", ProfileStep)
 scanpipe_app.register_pipeline("raise_exception", RaiseException)
 
@@ -43,7 +48,12 @@ FIXTURES_REGEN = os.environ.get("SCANCODEIO_TEST_FIXTURES_REGEN", False)
 mocked_now = mock.Mock(now=lambda: datetime(2010, 10, 10, 10, 10, 10))
 
 
-def make_resource_file(project, path, **extra):
+def make_project(name=None, **data):
+    name = name or str(uuid.uuid4())[:8]
+    return Project.objects.create(name=name, **data)
+
+
+def make_resource_file(project, path, **data):
     return CodebaseResource.objects.create(
         project=project,
         path=path,
@@ -52,30 +62,43 @@ def make_resource_file(project, path, **extra):
         type=CodebaseResource.Type.FILE,
         is_text=True,
         tag=path.split("/")[0],
-        **extra
+        **data,
     )
 
 
-def make_resource_directory(project, path, **extra):
+def make_resource_directory(project, path, **data):
     return CodebaseResource.objects.create(
         project=project,
         path=path,
         name=path.split("/")[-1],
         type=CodebaseResource.Type.DIRECTORY,
         tag=path.split("/")[0],
-        **extra
+        **data,
     )
 
 
-def make_package(project, package_url, **extra):
-    package = DiscoveredPackage(project=project, **extra)
+def make_package(project, package_url, **data):
+    package = DiscoveredPackage(project=project, **data)
     package.set_package_url(package_url)
     package.save()
     return package
 
 
-def make_dependency(project, **extra):
-    return DiscoveredDependency.objects.create(project=project, **extra)
+def make_dependency(project, **data):
+    return DiscoveredDependency.objects.create(project=project, **data)
+
+
+def make_message(project, **data):
+    if "model" not in data:
+        data["model"] = str(uuid.uuid4())[:8]
+
+    if "severity" not in data:
+        data["severity"] = ProjectMessage.Severity.ERROR
+
+    return ProjectMessage.objects.create(
+        project=project,
+        **data,
+    )
 
 
 resource_data1 = {
@@ -97,6 +120,10 @@ resource_data1 = {
     "is_text": True,
     "is_archive": False,
     "is_media": False,
+    "is_legal": False,
+    "is_manifest": False,
+    "is_readme": False,
+    "is_top_level": False,
     "is_key_file": False,
     "license_detections": [],
     "detected_license_expression": "",
@@ -180,7 +207,7 @@ dependency_data1 = {
     "scope": "install",
     "is_runtime": True,
     "is_optional": False,
-    "is_resolved": False,
+    "is_pinned": False,
     "dependency_uid": "pkg:pypi/dask?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692",
     "for_package_uid": for_package_uid,
     "datafile_path": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
@@ -194,7 +221,7 @@ dependency_data2 = {
     "scope": "dependencies",
     "is_runtime": True,
     "is_optional": False,
-    "is_resolved": True,
+    "is_pinned": True,
     "dependency_uid": (
         "pkg:gem/appraisal@2.2.0?uuid=1907f061-911b-4980-a2d4-ae1a9ed871a9"
     ),
@@ -210,49 +237,62 @@ dependency_data3 = {
     "scope": "install",
     "is_runtime": True,
     "is_optional": False,
-    "is_resolved": False,
+    "is_pinned": False,
     "dependency_uid": "pkg:pypi/dask?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692",
     "for_package_uid": for_package_uid,
     "datafile_path": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
     "datasource_id": "pypi_sdist_pkginfo",
 }
 
+dependency_data4 = {
+    "purl": "pkg:npm/wrap-ansi-cjs",
+    "package_type": "npm",
+    "extracted_requirement": "npm:wrap-ansi@^7.0.0",
+    "scope": "devDependencies",
+    "is_runtime": False,
+    "is_optional": True,
+    "is_pinned": False,
+    "is_direct": True,
+    "dependency_uid": "pkg:npm/wrap-ansi-cjs?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692",
+    "for_package_uid": "",
+    "datafile_path": "",
+    "datasource_id": "npm_package_lock_json",
+}
+
 license_policies = [
     {
         "license_key": "apache-2.0",
         "label": "Approved License",
-        "color_code": "#008000",
         "compliance_alert": "",
     },
     {
         "license_key": "mpl-2.0",
         "label": "Restricted License",
-        "color_code": "#ffcc33",
         "compliance_alert": "warning",
     },
     {
         "license_key": "gpl-3.0",
         "label": "Prohibited License",
-        "color_code": "#c83025",
         "compliance_alert": "error",
     },
 ]
 
+global_policies = {
+    "license_policies": license_policies,
+}
+
 license_policies_index = {
     "gpl-3.0": {
-        "color_code": "#c83025",
         "compliance_alert": "error",
         "label": "Prohibited License",
         "license_key": "gpl-3.0",
     },
     "apache-2.0": {
-        "color_code": "#008000",
         "compliance_alert": "",
         "label": "Approved License",
         "license_key": "apache-2.0",
     },
     "mpl-2.0": {
-        "color_code": "#ffcc33",
         "compliance_alert": "warning",
         "label": "Restricted License",
         "license_key": "mpl-2.0",

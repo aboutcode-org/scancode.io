@@ -59,11 +59,11 @@
             <td>
                <a href="?detected_license_expression={{ resource.detected_license_expression }}" class="is-black-link">{{ resource.detected_license_expression }}</a>
             </td>
-            {% if display_compliance_alert %}
-              <td>
+            <td>
+              {% if resource.compliance_alert %}
                 <a href="?compliance_alert={{ resource.compliance_alert }}" class="is-black-link">{{ resource.compliance_alert }}</a>
-              </td>
-            {% endif %}
+              {% endif %}
+            </td>
             <td>
               <ul>
                 {% for package in resource.discovered_packages.all|slice:":5" %}

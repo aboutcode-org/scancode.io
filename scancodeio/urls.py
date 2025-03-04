@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from django.conf import settings
 from django.contrib.auth import views as auth_views
@@ -28,6 +28,7 @@ from django.views.generic import RedirectView
 
 from rest_framework.routers import DefaultRouter
 
+from scanpipe.admin import admin_site
 from scanpipe.api.views import ProjectViewSet
 from scanpipe.api.views import RunViewSet
 from scanpipe.views import AccountProfileView
@@ -52,6 +53,11 @@ urlpatterns = auth_urlpatterns + [
     path("", include("scanpipe.urls")),
     path("", RedirectView.as_view(url="project/")),
 ]
+
+
+if settings.SCANCODEIO_ENABLE_ADMIN_SITE:
+    urlpatterns.append(path("admin/", admin_site.urls))
+
 
 if settings.DEBUG and settings.DEBUG_TOOLBAR:
     urlpatterns.append(path("__debug__/", include("debug_toolbar.urls")))

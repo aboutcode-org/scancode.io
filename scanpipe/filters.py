@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import shlex
 
@@ -245,20 +245,32 @@ class FilterSetUtilsMixin:
         `empty_value` to any filters.
         """
         for name, value in self.form.cleaned_data.items():
-            field_name = self.filters[name].field_name
-            if value == self.empty_value:
+            filter_field = self.filters[name]
+            field_name = filter_field.field_name
+
+            if isinstance(filter_field, QuerySearchFilter):
+                queryset = filter_field.filter(queryset, value)
+            elif value == self.empty_value:
                 queryset = queryset.filter(**{f"{field_name}__in": EMPTY_VALUES})
             elif value == self.any_value:
                 queryset = queryset.filter(~Q(**{f"{field_name}__in": EMPTY_VALUES}))
             elif value == self.other_value and hasattr(queryset, "less_common"):
                 return queryset.less_common(name)
             else:
-                queryset = self.filters[name].filter(queryset, value)
+                queryset = filter_field.filter(queryset, value)
 
         return queryset
 
+    @classmethod
+    def filter_for_lookup(cls, field, lookup_type):
+        """Add support for JSONField storing "list" using the JSONListFilter."""
+        if isinstance(field, models.JSONField) and field.default is list:
+            return JSONContainsFilter, {}
 
-def parse_query_string_to_lookups(query_string, default_lookup_expr, default_field):
+        return super().filter_for_lookup(field, lookup_type)
+
+
+def parse_query_string_to_lookups(query_string, default_lookup_expr, search_fields):
     """Parse a query string and convert it into queryset lookups using Q objects."""
     lookups = Q()
     terms = shlex.split(query_string)
@@ -287,11 +299,14 @@ def parse_query_string_to_lookups(query_string, default_lookup_expr, default_fie
                 field_name = field_name[1:]
                 negated = True
 
+            lookups &= Q(
+                **{f"{field_name}__{lookup_expr}": search_value}, _negated=negated
+            )
+
         else:
             search_value = term
-            field_name = default_field
-
-        lookups &= Q(**{f"{field_name}__{lookup_expr}": search_value}, _negated=negated)
+            for field_name in search_fields:
+                lookups |= Q(**{f"{field_name}__{lookup_expr}": search_value})
 
     return lookups
 
@@ -315,6 +330,10 @@ class QuerySearchFilter(django_filters.CharFilter):
 
     field_class = QuerySearchField
 
+    def __init__(self, search_fields=None, lookup_expr="icontains", *args, **kwargs):
+        super().__init__(lookup_expr=lookup_expr, *args, **kwargs)
+        self.search_fields = search_fields or []
+
     def filter(self, qs, value):
         if not value:
             return qs
@@ -322,11 +341,11 @@ class QuerySearchFilter(django_filters.CharFilter):
         lookups = parse_query_string_to_lookups(
             query_string=value,
             default_lookup_expr=self.lookup_expr,
-            default_field=self.field_name,
+            search_fields=self.search_fields,
         )
 
         try:
-            return qs.filter(lookups)
+            return qs.filter(lookups).distinct()
         except FieldError:
             return qs.none()
 
@@ -339,7 +358,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     ]
 
     search = QuerySearchFilter(
-        label="Search", field_name="name", lookup_expr="icontains"
+        label="Search", search_fields=["name", "labels__name"], lookup_expr="icontains"
     )
     sort = django_filters.OrderingFilter(
         label="Sort",
@@ -389,6 +408,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         field_name="labels__slug",
         distinct=True,
     )
+    extra_data = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
         model = Project
@@ -403,8 +423,10 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         if not data or data.get("is_archived", "") == "":
             self.queryset = self.queryset.filter(is_archived=False)
 
-        active_count = Project.objects.filter(is_archived=False).count()
-        archived_count = Project.objects.filter(is_archived=True).count()
+        counts = Project.objects.get_active_archived_counts()
+        active_count = counts["active_count"]
+        archived_count = counts["archived_count"]
+
         self.filters["is_archived"].extra["widget"] = BulmaLinkWidget(
             choices=[
                 ("", f'<i class="fa-solid fa-seedling"></i> {active_count} Active'),
@@ -499,7 +521,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
     search = QuerySearchFilter(
         label="Search",
-        field_name="path",
+        search_fields=["path"],
         lookup_expr="icontains",
     )
     sort = django_filters.OrderingFilter(
@@ -530,6 +552,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         label="Relation map type",
         field_name="related_from__map_type",
     )
+    extra_data = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
         model = CodebaseResource
@@ -566,22 +589,19 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_binary",
             "is_text",
             "is_archive",
-            "is_key_file",
             "is_media",
+            "is_legal",
+            "is_manifest",
+            "is_readme",
+            "is_top_level",
+            "is_key_file",
+            "extra_data",
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         license_expression_filer = self.filters["detected_license_expression"]
         license_expression_filer.extra["widget"] = HasValueDropdownWidget()
-
-    @classmethod
-    def filter_for_lookup(cls, field, lookup_type):
-        """Add support for JSONField storing "list" using the JSONListFilter."""
-        if isinstance(field, models.JSONField) and field.default == list:
-            return JSONContainsFilter, {}
-
-        return super().filter_for_lookup(field, lookup_type)
 
 
 class IsVulnerable(django_filters.ChoiceFilter):
@@ -608,15 +628,7 @@ class DiscoveredPackageSearchFilter(QuerySearchFilter):
         if value.startswith("pkg:"):
             return qs.for_package_url(value)
 
-        if ":" in value:
-            return super().filter(qs, value)
-
-        search_fields = ["type", "namespace", "name", "version"]
-        lookups = Q()
-        for field_names in search_fields:
-            lookups |= Q(**{f"{field_names}__{self.lookup_expr}": value})
-
-        return qs.filter(lookups)
+        return super().filter(qs, value)
 
 
 class GroupOrderingFilter(django_filters.OrderingFilter):
@@ -655,7 +667,9 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     ]
 
     search = DiscoveredPackageSearchFilter(
-        label="Search", field_name="name", lookup_expr="icontains"
+        label="Search",
+        search_fields=["type", "namespace", "name", "version"],
+        lookup_expr="icontains",
     )
     sort = GroupOrderingFilter(
         label="Sort",
@@ -684,6 +698,9 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     declared_license_expression = django_filters.filters.CharFilter(
         widget=HasValueDropdownWidget
     )
+    is_private = StrictBooleanFilter()
+    is_virtual = StrictBooleanFilter()
+    extra_data = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
         model = DiscoveredPackage
@@ -717,6 +734,9 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_vulnerable",
             "compliance_alert",
             "tag",
+            "is_private",
+            "is_virtual",
+            "extra_data",
         ]
 
 
@@ -726,13 +746,14 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "scope",
         "is_runtime",
         "is_optional",
-        "is_resolved",
+        "is_pinned",
+        "is_direct",
         "datasource_id",
         "is_vulnerable",
     ]
 
     search = QuerySearchFilter(
-        label="Search", field_name="name", lookup_expr="icontains"
+        label="Search", search_fields=["name"], lookup_expr="icontains"
     )
     sort = GroupOrderingFilter(
         label="Sort",
@@ -746,7 +767,8 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "scope",
             "is_runtime",
             "is_optional",
-            "is_resolved",
+            "is_pinned",
+            "is_direct",
             "for_package",
             "resolved_to_package",
             "datafile_resource",
@@ -760,7 +782,8 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     datasource_id = ModelFieldValuesFilter()
     is_runtime = StrictBooleanFilter()
     is_optional = StrictBooleanFilter()
-    is_resolved = StrictBooleanFilter()
+    is_pinned = StrictBooleanFilter()
+    is_direct = StrictBooleanFilter()
     is_vulnerable = IsVulnerable(field_name="affected_by_vulnerabilities")
 
     class Meta:
@@ -778,7 +801,8 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "scope",
             "is_runtime",
             "is_optional",
-            "is_resolved",
+            "is_pinned",
+            "is_direct",
             "datasource_id",
             "is_vulnerable",
         ]
@@ -786,7 +810,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
 class ProjectMessageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = QuerySearchFilter(
-        label="Search", field_name="description", lookup_expr="icontains"
+        label="Search", search_fields=["description"], lookup_expr="icontains"
     )
     sort = django_filters.OrderingFilter(
         label="Sort",
@@ -838,7 +862,7 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
     search = QuerySearchFilter(
         label="Search",
-        field_name="to_resource__path",
+        search_fields=["to_resource__path"],
         lookup_expr="icontains",
     )
     sort = django_filters.OrderingFilter(
@@ -851,6 +875,7 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     )
     map_type = django_filters.ChoiceFilter(choices=MAP_TYPE_CHOICES)
     status = StatusFilter(field_name="to_resource__status")
+    extra_data = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
         model = CodebaseRelation
@@ -858,10 +883,11 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "search",
             "map_type",
             "status",
+            "extra_data",
         ]
 
     def __init__(self, *args, **kwargs):
-        project = kwargs.pop("project")
+        project = kwargs.pop("project", None)
         super().__init__(*args, **kwargs)
         if project:
             qs = CodebaseResource.objects.filter(project=project)

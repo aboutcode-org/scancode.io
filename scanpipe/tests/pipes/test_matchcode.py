@@ -37,13 +37,13 @@ from scanpipe.tests import make_resource_file
 
 
 class MatchCodePipesTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
 
     def test_scanpipe_pipes_matchcode_fingerprint_codebase_directories(self):
-        fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
@@ -66,20 +66,24 @@ class MatchCodePipesTest(TestCase):
 
         def mock_request_post_return(url, files, timeout):
             request_post_response_loc = (
-                self.data_location
+                self.data
                 / "matchcode"
                 / "match_to_matchcode"
                 / "request_post_response.json"
             )
-            with open(request_post_response_loc, "r") as f:
+            with open(request_post_response_loc) as f:
                 return json.load(f)
 
         mock_request_post.side_effect = mock_request_post_return
 
-        run_url = matchcode.send_project_json_to_matchcode(self.project1)
+        match_url, run_url = matchcode.send_project_json_to_matchcode(self.project1)
+        expected_match_url = (
+            "http://192.168.1.12/api/matching/65bf1e6d-6bff-4841-9c9b-db5cf25edfa7/"
+        )
         expected_run_url = (
             "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
         )
+        self.assertEqual(expected_match_url, match_url)
         self.assertEqual(expected_run_url, run_url)
 
     @mock.patch("scanpipe.pipes.matchcode.request_get")
@@ -90,12 +94,12 @@ class MatchCodePipesTest(TestCase):
         mock_is_available.return_value = True
 
         request_get_check_response_loc = (
-            self.data_location
+            self.data
             / "matchcode"
             / "match_to_matchcode"
             / "request_get_check_response.json"
         )
-        with open(request_get_check_response_loc, "r") as f:
+        with open(request_get_check_response_loc) as f:
             mock_request_get_check_return = json.load(f)
 
         mock_request_get.side_effect = [
@@ -136,7 +140,7 @@ class MatchCodePipesTest(TestCase):
                 "status": run_status.SUCCESS,
             },
         ]
-        return_value = matchcode.poll_run_url_status(run_url)
+        return_value = matchcode.poll_run_url_status(run_url, sleep=0)
         self.assertEqual(True, return_value)
 
         # Failure
@@ -165,7 +169,7 @@ class MatchCodePipesTest(TestCase):
             },
         ]
         with self.assertRaises(Exception) as context:
-            matchcode.poll_run_url_status(run_url)
+            matchcode.poll_run_url_status(run_url, sleep=0)
         self.assertTrue("failure message" in str(context.exception))
 
         # Stopped
@@ -194,7 +198,7 @@ class MatchCodePipesTest(TestCase):
             },
         ]
         with self.assertRaises(Exception) as context:
-            matchcode.poll_run_url_status(run_url)
+            matchcode.poll_run_url_status(run_url, sleep=0)
         self.assertTrue("stop message" in str(context.exception))
 
         # Stale
@@ -223,17 +227,17 @@ class MatchCodePipesTest(TestCase):
             },
         ]
         with self.assertRaises(Exception) as context:
-            matchcode.poll_run_url_status(run_url)
+            matchcode.poll_run_url_status(run_url, sleep=0)
         self.assertTrue("stale message" in str(context.exception))
 
     def test_scanpipe_pipes_matchcode_map_match_results(self):
         request_post_response_loc = (
-            self.data_location
+            self.data
             / "matchcode"
             / "match_to_matchcode"
             / "request_get_results_response.json"
         )
-        with open(request_post_response_loc, "r") as f:
+        with open(request_post_response_loc) as f:
             match_results = json.load(f)
 
         resource_paths_by_package_uids = matchcode.map_match_results(match_results)
@@ -260,12 +264,12 @@ class MatchCodePipesTest(TestCase):
         )
 
         request_get_results_response_loc = (
-            self.data_location
+            self.data
             / "matchcode"
             / "match_to_matchcode"
             / "request_get_results_response.json"
         )
-        with open(request_get_results_response_loc, "r") as f:
+        with open(request_get_results_response_loc) as f:
             match_results = json.load(f)
 
         self.assertEqual(0, self.project1.discoveredpackages.all().count())
@@ -280,48 +284,51 @@ class MatchCodePipesTest(TestCase):
         # This resource should not have a Package match
         self.assertFalse(0, len(r2.for_packages))
 
+    def test_scanpipe_pipes_matchcode_create_match_results_url(self):
+        match_url = (
+            "http://192.168.1.12/api/matching/65bf1e6d-6bff-4841-9c9b-db5cf25edfa7/"
+        )
+        expected_match_url = "http://192.168.1.12/api/matching/65bf1e6d-6bff-4841-9c9b-db5cf25edfa7/results/"
+        self.assertEqual(
+            expected_match_url, matchcode.create_match_results_url(match_url)
+        )
+
     @mock.patch("scanpipe.pipes.matchcode.request_get")
     @mock.patch("scanpipe.pipes.matchcode.is_available")
     def test_scanpipe_pipes_matchcode_get_match_results(
         self, mock_is_available, mock_request_get
     ):
         mock_is_available.return_value = True
-
-        request_get_check_response_loc = (
-            self.data_location
-            / "matchcode"
-            / "match_to_matchcode"
-            / "request_get_check_response.json"
-        )
-        with open(request_get_check_response_loc, "r") as f:
-            mock_request_get_check_return = json.load(f)
-
         request_get_results_response_loc = (
-            self.data_location
+            self.data
             / "matchcode"
             / "match_to_matchcode"
             / "request_get_results_response.json"
         )
-        with open(request_get_results_response_loc, "r") as f:
+        with open(request_get_results_response_loc) as f:
             mock_request_get_results_return = json.load(f)
         mock_request_get.side_effect = [
-            mock_request_get_check_return,
             mock_request_get_results_return,
         ]
 
-        run_url = "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
-        match_results = matchcode.get_match_results(run_url)
-
+        match_url = (
+            "http://192.168.1.12/api/matching/65bf1e6d-6bff-4841-9c9b-db5cf25edfa7/"
+        )
+        match_results = matchcode.get_match_results(match_url)
         self.assertEqual(mock_request_get_results_return, match_results)
 
     def test_scanpipe_pipes_matchcode_fingerprint_codebase_resources(self):
-        copy_input(self.data_location / "notice.NOTICE", self.project1.codebase_path)
+        copy_input(
+            self.data / "aboutcode" / "notice.NOTICE", self.project1.codebase_path
+        )
         codebase_resource1 = CodebaseResource.objects.create(
             project=self.project1, path="notice.NOTICE", is_text=True
         )
 
         # This resource should not have a fingerprint
-        copy_input(self.data_location / "is-npm-1.0.0.tgz", self.project1.codebase_path)
+        copy_input(
+            self.data / "scancode" / "is-npm-1.0.0.tgz", self.project1.codebase_path
+        )
         codebase_resource2 = CodebaseResource.objects.create(
             project=self.project1, path="is-npm-1.0.0.tgz"
         )
@@ -330,6 +337,32 @@ class MatchCodePipesTest(TestCase):
         codebase_resource1.refresh_from_db()
         codebase_resource2.refresh_from_db()
 
-        expected_extra_data = {"halo1": "000000b8ef420f7e84c8c74c691315f0a06ac4f0"}
+        expected_extra_data = {
+            "halo1": "000000bb07ba9a3efeafb3b1f182d1ce676466dc",
+            "snippets": [
+                {"position": 0, "snippet": "a222da2349af431e00eda7db2e3927c9"},
+                {"position": 9, "snippet": "41afe78186e3ab44d03fc23f610fbf01"},
+                {"position": 12, "snippet": "8b76e8aaec35ef10ca5028ed6fbc2f3e"},
+                {"position": 27, "snippet": "de2c6a569b9b2bb8465bfee051198610"},
+                {"position": 28, "snippet": "9d406cbede0f5656e9e206c48b2b9706"},
+                {"position": 29, "snippet": "d45754ec18c24a4d598d8ad82606cbff"},
+                {"position": 44, "snippet": "6b3f26c03647ea3b278b545d86bf05ea"},
+                {"position": 49, "snippet": "c0bb0e522f0148fd64ddf024d3bd7011"},
+                {"position": 63, "snippet": "3600ad4853cbcb1df467d53db5c16bd7"},
+                {"position": 78, "snippet": "21a4946fda5c3fa0a8eaf926860f11ae"},
+                {"position": 86, "snippet": "f810ec1f64235fcd2b25ad96415fc4ee"},
+                {"position": 101, "snippet": "b534e5e3867ba340df1f6e525205e0aa"},
+                {"position": 102, "snippet": "0ecde2653b775c17ab3ac657fc99cb1b"},
+                {"position": 117, "snippet": "75a3cec7239416c7dde11c1142a0fe87"},
+                {"position": 123, "snippet": "edaa60b3d6bceed9cfb1f0e9684d690e"},
+                {"position": 138, "snippet": "f2de939f879b7ab7490a25e83e0ca0df"},
+                {"position": 153, "snippet": "6a37eed93df6eab45335471ffdf45e4e"},
+                {"position": 154, "snippet": "03eee824319f4a9d37e1f77791767978"},
+                {"position": 159, "snippet": "8907fe2bac6b5ab7bd777d5f4dd38c89"},
+                {"position": 163, "snippet": "b4191cd30ca5a2f8affdf89fa83eca55"},
+                {"position": 174, "snippet": "4559ff1b65f8eb1117edc0572829698d"},
+                {"position": 175, "snippet": "cca770f84ad46cbdcac4d27456ce6c00"},
+            ],
+        }
         self.assertEqual(expected_extra_data, codebase_resource1.extra_data)
         self.assertFalse(codebase_resource2.extra_data)

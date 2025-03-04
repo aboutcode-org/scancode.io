@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import logging
 import posixpath
@@ -69,7 +69,7 @@ def extract_images_from_inputs(project):
     return images, errors
 
 
-def extract_image_from_tarball(input_tarball, extract_target, verify=True):
+def extract_image_from_tarball(input_tarball, extract_target, verify=False):
     """
     Extract images from an ``input_tarball`` to an ``extract_target`` directory
     Path object and collects the extracted images.

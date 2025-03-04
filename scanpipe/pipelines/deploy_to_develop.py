@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,13 +18,14 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+from aboutcode.pipeline import optional_step
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipelines import group
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
+from scanpipe.pipes import input
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
@@ -72,6 +73,7 @@ class DeployToDevelop(Pipeline):
             cls.map_javascript,
             cls.map_elf,
             cls.map_go,
+            cls.map_rust,
             cls.match_directories_to_purldb,
             cls.match_resources_to_purldb,
             cls.map_javascript_post_purldb_match,
@@ -127,13 +129,12 @@ class DeployToDevelop(Pipeline):
             (self.to_files, self.project.codebase_path / d2d.TO),
         ]
 
-        errors = []
         for input_files, codebase_path in inputs_with_codebase_path_destination:
             for input_file_path in input_files:
-                errors += scancode.extract_archive(input_file_path, codebase_path)
-
-        if errors:
-            self.add_error("\n".join(errors))
+                if input.is_archive(input_file_path):
+                    self.extract_archive(input_file_path, codebase_path)
+                else:
+                    input.copy_input(input_file_path, codebase_path)
 
         # Reload the project env post-extraction as the scancode-config.yml file
         # may be located in one of the extracted archives.
@@ -172,22 +173,22 @@ class DeployToDevelop(Pipeline):
             logger=self.log,
         )
 
-    @group("Java")
+    @optional_step("Java")
     def find_java_packages(self):
         """Find the java package of the .java source files."""
         d2d.find_java_packages(self.project, logger=self.log)
 
-    @group("Java")
+    @optional_step("Java")
     def map_java_to_class(self):
         """Map a .class compiled file to its .java source."""
         d2d.map_java_to_class(project=self.project, logger=self.log)
 
-    @group("Java")
+    @optional_step("Java")
     def map_jar_to_source(self):
         """Map .jar files to their related source directory."""
         d2d.map_jar_to_source(project=self.project, logger=self.log)
 
-    @group("JavaScript")
+    @optional_step("JavaScript")
     def map_javascript(self):
         """
         Map a packed or minified JavaScript, TypeScript, CSS and SCSS
@@ -195,15 +196,20 @@ class DeployToDevelop(Pipeline):
         """
         d2d.map_javascript(project=self.project, logger=self.log)
 
-    @group("Elf")
+    @optional_step("Elf")
     def map_elf(self):
         """Map ELF binaries to their sources."""
         d2d.map_elfs(project=self.project, logger=self.log)
 
-    @group("Go")
+    @optional_step("Go")
     def map_go(self):
-        """Map Go binaries to their sources."""
+        """Map Go binaries to their sources using paths."""
         d2d.map_go_paths(project=self.project, logger=self.log)
+
+    @optional_step("Rust")
+    def map_rust(self):
+        """Map Rust binaries to their sources using symbols."""
+        d2d.map_rust_paths(project=self.project, logger=self.log)
 
     def match_directories_to_purldb(self):
         """Match selected directories in PurlDB."""
@@ -229,22 +235,22 @@ class DeployToDevelop(Pipeline):
             logger=self.log,
         )
 
-    @group("JavaScript")
+    @optional_step("JavaScript")
     def map_javascript_post_purldb_match(self):
         """Map minified javascript file based on existing PurlDB match."""
         d2d.map_javascript_post_purldb_match(project=self.project, logger=self.log)
 
-    @group("JavaScript")
+    @optional_step("JavaScript")
     def map_javascript_path(self):
         """Map javascript file based on path."""
         d2d.map_javascript_path(project=self.project, logger=self.log)
 
-    @group("JavaScript")
+    @optional_step("JavaScript")
     def map_javascript_colocation(self):
         """Map JavaScript files based on neighborhood file mapping."""
         d2d.map_javascript_colocation(project=self.project, logger=self.log)
 
-    @group("JavaScript")
+    @optional_step("JavaScript")
     def map_thirdparty_npm_packages(self):
         """Map thirdparty package using package.json metadata."""
         d2d.map_thirdparty_npm_packages(project=self.project, logger=self.log)

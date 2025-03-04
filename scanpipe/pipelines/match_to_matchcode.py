@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import matchcode
@@ -70,13 +70,15 @@ class MatchToMatchCode(Pipeline):
 
     def send_project_json_to_matchcode(self):
         """Create a JSON scan of the project Codebase and send it to MatchCode.io."""
-        self.run_url = matchcode.send_project_json_to_matchcode(self.project)
+        self.match_url, self.run_url = matchcode.send_project_json_to_matchcode(
+            self.project
+        )
 
     def poll_matching_results(self):
         """Wait until the match results are ready by polling the match run status."""
-        matchcode.poll_until_success(self.run_url)
+        matchcode.poll_run_url_status(self.run_url)
 
     def create_packages_from_match_results(self):
         """Create DiscoveredPackages from match results."""
-        match_results = matchcode.get_match_results(self.run_url)
+        match_results = matchcode.get_match_results(self.match_url)
         matchcode.create_packages_from_match_results(self.project, match_results)

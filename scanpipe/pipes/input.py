@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,8 +18,9 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import os
 import shutil
 from pathlib import Path
 
@@ -42,11 +43,14 @@ from scanpipe.pipes.output import mappings_key_by_fieldname
 def copy_input(input_location, dest_path):
     """Copy the ``input_location`` (file or directory) to the ``dest_path``."""
     input_path = Path(input_location)
-    destination = Path(dest_path) / input_path.name
+    destination_dir = Path(dest_path)
+    destination = destination_dir / input_path.name
 
     if input_path.is_dir():
         shutil.copytree(input_location, destination)
     else:
+        if not os.path.exists(destination_dir):
+            os.makedirs(destination_dir)
         shutil.copyfile(input_location, destination)
 
     return destination
@@ -78,6 +82,14 @@ def get_tool_name_from_scan_headers(scan_data):
         return tool_name
 
 
+def get_extra_data_from_scan_headers(scan_data):
+    """Return the ``extra_data`` of the first header in the provided ``scan_data``."""
+    if headers := scan_data.get("headers", []):
+        first_header = headers[0]
+        if extra_data := first_header.get("extra_data"):
+            return extra_data
+
+
 def is_archive(location):
     """Return True if the file at ``location`` is an archive."""
     return get_type(location).is_archive
@@ -96,10 +108,13 @@ def load_inventory_from_toolkit_scan(project, input_location):
     )
 
 
-def load_inventory_from_scanpipe(project, scan_data):
+def load_inventory_from_scanpipe(project, scan_data, extra_data_prefix=None):
     """
     Create packages, dependencies, resources, and relations loaded from a ScanCode.io
     JSON output provided as ``scan_data``.
+
+    An ``extra_data_prefix`` can be provided in case multiple input files are loaded
+    into the same project. The prefix is usually the filename of the input.
     """
     for package_data in scan_data.get("packages", []):
         pipes.update_or_create_package(project, package_data)
@@ -112,6 +127,11 @@ def load_inventory_from_scanpipe(project, scan_data):
 
     for relation_data in scan_data.get("relations", []):
         pipes.get_or_create_relation(project, relation_data)
+
+    if extra_data := get_extra_data_from_scan_headers(scan_data):
+        if extra_data_prefix:
+            extra_data = {extra_data_prefix: extra_data}
+        project.update_extra_data(extra_data)
 
 
 model_to_object_maker_func = {
@@ -163,9 +183,9 @@ def clean_xlsx_field_value(model_class, field_name, value):
         return [{dict_key: entry} for entry in value.splitlines()]
 
     elif isinstance(field, models.JSONField):
-        if field.default == list:
+        if field.default is list:
             return value.splitlines()
-        elif field.default == dict:
+        elif field.default is dict:
             return  # dict stored as JSON are not supported
 
     return value
@@ -182,10 +202,13 @@ def clean_xlsx_data_to_model_data(model_class, xlsx_data):
     return cleaned_data
 
 
-def load_inventory_from_xlsx(project, input_location):
+def load_inventory_from_xlsx(project, input_location, extra_data_prefix=None):
     """
     Create packages, dependencies, resources, and relations loaded from XLSX file
     located at ``input_location``.
+
+    An ``extra_data_prefix`` can be provided in case multiple input files are loaded
+    into the same project. The prefix is usually the filename of the input.
     """
     workbook = openpyxl.load_workbook(input_location, read_only=True, data_only=True)
 
@@ -199,3 +222,10 @@ def load_inventory_from_xlsx(project, input_location):
             cleaned_data = clean_xlsx_data_to_model_data(model_class, row_data)
             if cleaned_data:
                 object_maker_func(project, cleaned_data)
+
+    if "LAYERS" in workbook:
+        layers_data = get_worksheet_data(worksheet=workbook["LAYERS"])
+        extra_data = {"layers": layers_data}
+        if extra_data_prefix:
+            extra_data = {extra_data_prefix: extra_data}
+        project.update_extra_data(extra_data)
