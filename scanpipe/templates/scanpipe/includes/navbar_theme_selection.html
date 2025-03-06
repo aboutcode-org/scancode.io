@@ -1,16 +1,25 @@
 <div class="navbar-item has-dropdown is-hoverable">
-  <button class="navbar-link">
-    Theme
-  </button>
+  <a class="navbar-link">
+    <i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i>
+  </a>
   <div class="navbar-dropdown js-themes">
-    <button class="navbar-item" data-scheme="light" aria-label="Light mode">
-      Light
-    </button>
-    <button class="navbar-item" data-scheme="dark" aria-label="Dark mode">
-      Dark
-    </button>
-    <button class="navbar-item" data-scheme="system" aria-label="System mode">
-      System
-    </button>
+    <a class="navbar-item is-sun" data-scheme="light" aria-label="Light mode">
+      <span class="icon mr-1">
+        <i class="fa-solid fa-sun" aria-hidden="true"></i>
+      </span>
+      <span>Light</span>
+    </a>
+    <a class="navbar-item is-moon" data-scheme="dark" aria-label="Dark mode">
+      <span class="icon mr-1">
+        <i class="fa-solid fa-moon" aria-hidden="true"></i>
+      </span>
+      <span>Dark</span>
+    </a>
+    <a class="navbar-item is-system" data-scheme="system" aria-label="System mode">
+      <span class="icon mr-1">
+        <i class="fa-solid fa-desktop" aria-hidden="true"></i>
+      </span>
+      <span>System</span>
+    </a>
   </div>
 </div>

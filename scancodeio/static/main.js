@@ -454,16 +454,9 @@ const state = {
   OSTheme: null, // light|dark|null
 };
 
-//const $themeCycle = document.getElementById("js-cycle");
-const $themeSwitchers = document.querySelectorAll(".js-themes button");
+const $themeSwitchers = document.querySelectorAll(".js-themes a");
 
 const updateThemeUI = () => {
-//  if (state.appliedTheme === "light") {
-//    $themeCycle.className = "bd-cycle js-burger is-sun";
-//  } else {
-//    $themeCycle.className = "bd-cycle js-burger is-moon";
-//  }
-
   $themeSwitchers.forEach((el) => {
     const swatchTheme = el.dataset.scheme;
 
