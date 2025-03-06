@@ -29,13 +29,12 @@
   --bulma-sun-rgb: 255, 183, 15;
   --bulma-moon-rgb: 129, 86, 245;
   --bulma-system-rgb: 72, 199, 142;
-  --nexb-orange: #f7bf3c;
+  --nexb-orange: 247, 191, 60;
+  --alt-orange-rgb: 255, 153, 112;
+  --hl-gray-09: #24292e;
 }
 .theme-dark,
 [data-theme="dark"] {
-  .has-background-light {
-    background-color: var(--bulma-scheme-main-ter) !important;
-  }
   .is-light {
     background-color: var(--bulma-scheme-main-ter) !important;
   }
@@ -153,7 +152,7 @@ pre.is-small {
   padding: 0.75rem 1rem;
 }
 .nexb-orange {
-  color: var(--nexb-orange);
+  color: rgb(var(--nexb-orange));
 }
 .bb-legend-item-hidden {
   text-decoration: line-through;
@@ -329,15 +328,17 @@ textarea.is-dynamic {
 }
 #project-extra-data .is-more-show {
   bottom: -1.25em;
+  gap: .25em;
   height: 2.5em;
   left: calc(50% - 4.5em);
   padding: 0;
   position: absolute;
   width: 9em;
   z-index: 1;
-  background-color: #ff9970;
+  background-color: rgb(var(--alt-orange-rgb));
   border: none;
-  border-radius: 0.5em !important;
+  border-radius: .5em !important;
+  color: var(--hl-gray-09);
 }
 #project-extra-data pre {
   background-color: initial;

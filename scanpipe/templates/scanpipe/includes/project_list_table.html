@@ -50,7 +50,7 @@
           <span>0</span>
         {% endif %}
       </td>
-      <td>
+      <td class="break-word">
         {% for run in project.runs.all %}
           <div class="is-flex is-justify-content-space-between {% if not forloop.first %}mt-1{% endif %}">
             <a class="modal-button is-black-link mr-2" data-target="pipeline-help-modal" data-pipeline-name="{{ run.pipeline_name }}" aria-haspopup="true">
