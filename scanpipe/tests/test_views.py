@@ -868,7 +868,7 @@ class ScanPipeViewsTest(TestCase):
         url = reverse("run_status", args=[run.uuid])
 
         response = self.client.get(url)
-        expected = '<span class="tag is-light">Not started</span>'
+        expected = '<span class="tag is-light is-hoverable">Not started</span>'
         self.assertContains(response, expected)
 
         run.set_task_queued()
@@ -899,22 +899,22 @@ class ScanPipeViewsTest(TestCase):
 
         run.set_task_ended(exitcode=1)
         response = self.client.get(url)
-        expected = '<span class="tag is-danger">Failure</span>'
+        expected = '<span class="tag is-danger is-hoverable">Failure</span>'
         self.assertContains(response, expected)
 
         run.set_task_ended(exitcode=0)
         response = self.client.get(url)
-        expected = '<span class="tag is-success">Success</span>'
+        expected = '<span class="tag is-success is-hoverable">Success</span>'
         self.assertContains(response, expected)
 
         run.set_task_staled()
         response = self.client.get(url)
-        expected = '<span class="tag is-dark">Stale</span>'
+        expected = '<span class="tag is-dark is-hoverable">Stale</span>'
         self.assertContains(response, expected)
 
         run.set_task_stopped()
         response = self.client.get(url)
-        expected = '<span class="tag is-danger">Stopped</span>'
+        expected = '<span class="tag is-danger is-hoverable">Stopped</span>'
         self.assertContains(response, expected)
 
     def test_scanpipe_views_run_detail_view_results_url(self):

@@ -17,6 +17,9 @@ v34.9.6 (unreleased)
   * Add a new chapter dedicated to Webhooks management in the documentation
   * Add support for custom payload dedicated to Slack webhooks
 
+- Upgrade Bulma CSS library to version 1.0.2
+  https://github.com/aboutcode-org/scancode.io/pull/1268
+
 v34.9.5 (2025-02-19)
 --------------------
 
