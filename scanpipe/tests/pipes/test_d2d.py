@@ -1486,7 +1486,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
-        d2d.map_elfs(project=self.project1, logger=buffer.write)
+        d2d.map_elfs_with_dwarf_paths(project=self.project1, logger=buffer.write)
         self.assertEqual(
             1,
             CodebaseRelation.objects.filter(
@@ -1554,7 +1554,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
-        d2d.map_rust_paths(project=self.project1, logger=buffer.write)
+        d2d.map_rust_binaries_with_symbols(project=self.project1, logger=buffer.write)
         self.assertEqual(
             2,
             CodebaseRelation.objects.filter(
