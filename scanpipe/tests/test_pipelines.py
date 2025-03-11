@@ -422,11 +422,11 @@ class ScanPipePipelinesTest(TestCase):
         with mock.patch("scanpipe.pipes.flag.flag_ignored_patterns") as mock_flag:
             mock_flag.return_value = None
             pipeline.flag_ignored_resources()
+
+        mock_flag.assert_called_once()
         patterns_args = ["*.ext", *flag.DEFAULT_IGNORED_PATTERNS]
-        mock_flag.assert_called_with(
-            codebaseresources=project1.codebaseresources.no_status(),
-            patterns=patterns_args,
-        )
+        self.assertEqual(mock_flag.mock_calls[0].kwargs["patterns"], patterns_args)
+        self.assertEqual(mock_flag.mock_calls[0].kwargs["codebaseresources"].count(), 0)
 
     def test_scanpipe_pipeline_class_extract_archive(self):
         project1 = Project.objects.create(name="Analysis")

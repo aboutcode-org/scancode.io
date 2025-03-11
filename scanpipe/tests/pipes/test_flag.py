@@ -100,7 +100,9 @@ class ScanPipeFlagPipesTest(TestCase):
             project2, "a.cdx.json.zip-extract/__MACOSX/._a.cdx.json"
         )
         make_resource_file(project2, "a.cdx.json.zip-extract/a.cdx.json")
-        updated = flag.flag_ignored_patterns(project2, flag.DEFAULT_IGNORED_PATTERNS)
+        updated = flag.flag_ignored_patterns(
+            project2.codebaseresources.no_status(), flag.DEFAULT_IGNORED_PATTERNS
+        )
         self.assertEqual(2, updated)
         ignored_qs = project2.codebaseresources.status(flag.IGNORED_PATTERN)
         self.assertEqual(2, ignored_qs.count())
