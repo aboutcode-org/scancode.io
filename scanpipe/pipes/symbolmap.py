@@ -22,6 +22,8 @@
 
 from collections import Counter
 
+from scipy.spatial.distance import jensenshannon
+
 from aboutcode.pipeline import LoopProgress
 from scanpipe.models import CodebaseRelation
 from scanpipe.pipes import flag
@@ -36,6 +38,10 @@ each of them and match them to the symbols obtained from the source
 MATCHING_RATIO_RUST = 0.5
 SMALL_FILE_SYMBOLS_THRESHOLD = 20
 MATCHING_RATIO_RUST_SMALL_FILE = 0.4
+
+JSD_MATCHING_THRESHOLD_JAVASCRIPT = 0.5
+SMALL_FILE_SYMBOLS_THRESHOLD_JAVASCRIPT = 30
+JSD_MATCHING_THRESHOLD_JAVASCRIPT_SMALL_FILE = 0.4
 
 
 def map_resources_with_symbols(
@@ -162,3 +168,47 @@ def match_source_paths_to_binary(
             extra_data=match_stats,
         )
         yield rel_key, relation
+
+
+def get_symbols_probability_distribution(symbols, unique_symbols):
+    counter = Counter(symbols)
+    total_count = len(symbols)
+
+    probability_dist = [
+        (counter.get(symbol) / total_count) if symbol in counter else 0
+        for symbol in unique_symbols
+    ]
+
+    return probability_dist
+
+
+def get_jsd_from_source_and_deployed_symbols(source_symbols, deployed_symbols):
+    unique_symbols = set(source_symbols).union(set(deployed_symbols))
+
+    source_probability_dist = get_symbols_probability_distribution(
+        source_symbols, unique_symbols
+    )
+    deployed_probability_dist = get_symbols_probability_distribution(
+        deployed_symbols, unique_symbols
+    )
+
+    divergence = jensenshannon(source_probability_dist, deployed_probability_dist)
+
+    return divergence
+
+
+def match_javascript_source_symbols_to_deployed(source_symbols, deployed_symbols):
+    divergence = get_jsd_from_source_and_deployed_symbols(
+        source_symbols, deployed_symbols
+    )
+
+    # Since 0<=JSD<=1, 1-JSD gives the similarity, which also ranges between 0 and 1
+    similarity = 1 - divergence
+
+    matching_threshold = JSD_MATCHING_THRESHOLD_JAVASCRIPT
+    if len(source_symbols) <= SMALL_FILE_SYMBOLS_THRESHOLD_JAVASCRIPT:
+        matching_threshold = JSD_MATCHING_THRESHOLD_JAVASCRIPT_SMALL_FILE
+
+    is_match = similarity >= matching_threshold
+
+    return is_match, similarity
