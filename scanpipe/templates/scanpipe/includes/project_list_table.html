@@ -1,4 +1,5 @@
 {% load humanize %}
+{% now "Y-m-d" as today %}
 <table class="table is-bordered is-striped is-hoverable is-fullwidth">
   {% include 'scanpipe/includes/list_view_thead.html' with select_all=True %}
   <tbody>
@@ -12,7 +13,17 @@
         <div>
           {% include 'scanpipe/includes/project_labels.html' with labels=project.labels.all only %}
         </div>
-        <span class="has-text-grey is-size-7 is-block" title="{{ project.created_date|date:'N j, Y, P T' }}">Created {{ project.created_date|naturaltime }}</span>
+        <span class="has-text-grey is-size-7 is-block">
+          {% if project.created_date|date:"Y-m-d" == today %}
+            <span title="{{ project.created_date }}">
+              Created {{ project.created_date|naturaltime }}
+            </span>
+          {% else %}
+            <span title="{{ project.created_date|naturaltime }}">
+              Created {{ project.created_date }}
+            </span>
+          {% endif %}
+        </span>
       </th>
       <td>
         {% if project.discoveredpackages_count %}

@@ -404,6 +404,14 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // Timezone
+  // Detects the user's current timezone using the browser's API
+  // and stores it in a cookie to be used by the backend for localization.
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (timezone) {
+    document.cookie = `client_timezone=${timezone}; path=/; SameSite=Lax`;
+  }
+
 });
 
 // Toasts (requires bulma-toast.js)

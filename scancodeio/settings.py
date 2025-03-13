@@ -207,6 +207,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "scancodeio.middleware.TimezoneMiddleware",
 ]
 
 ROOT_URLCONF = "scancodeio.urls"
@@ -347,6 +348,8 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 # Internationalization
 
 LANGUAGE_CODE = "en-us"
+
+FORMAT_MODULE_PATH = ["scancodeio.formats"]
 
 TIME_ZONE = env.str("TIME_ZONE", default="UTC")
 
