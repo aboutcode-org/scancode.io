@@ -105,14 +105,14 @@
       <div class="control">
         <div class="tags has-addons">
           <span class="tag is-dark">Created date</span>
-          <span class="tag is-info">{{ run.created_date|date:'N j, Y, P T' }}</span>
+          <span class="tag is-info">{{ run.created_date }}</span>
         </div>
       </div>
       {% if run.task_start_date %}
         <div class="control">
           <div class="tags has-addons">
             <span class="tag is-dark">Start date</span>
-            <span class="tag is-info">{{ run.task_start_date|date:'N j, Y, P T' }}</span>
+            <span class="tag is-info">{{ run.task_start_date }}</span>
           </div>
         </div>
       {% endif %}
@@ -120,7 +120,7 @@
         <div class="control">
           <div class="tags has-addons">
             <span class="tag is-dark">End date</span>
-            <span class="tag is-info">{{ run.task_end_date|date:'N j, Y, P T' }}</span>
+            <span class="tag is-info">{{ run.task_end_date }}</span>
           </div>
         </div>
       {% endif %}
