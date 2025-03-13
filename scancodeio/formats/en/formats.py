@@ -21,4 +21,4 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 DATE_FORMAT = "M d, Y"
-DATETIME_FORMAT = "M d, Y, g:i A T"
+DATETIME_FORMAT = "Y-m-d H:i"
