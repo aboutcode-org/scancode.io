@@ -266,6 +266,51 @@ class ScanPipeOutputPipesTest(TestCase):
         ]
         self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
 
+    def test_scanpipe_pipes_outputs_get_xlsx_fields_order(self):
+        output_file = output.to_xlsx(project=make_project())
+        workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
+
+        self.assertIn("RESOURCES", workbook.sheetnames)
+        resources_sheet = workbook["RESOURCES"]
+        headers = [cell.value for cell in next(resources_sheet.iter_rows())]
+
+        expected_order = [
+            "path",
+            "type",
+            "name",
+            "status",
+            "for_packages",
+            "tag",
+            "extension",
+            "size",
+            "mime_type",
+            "file_type",
+            "programming_language",
+            "detected_license_expression",
+            "detected_license_expression_spdx",
+            "percentage_of_license_text",
+            "copyrights",
+            "holders",
+            "authors",
+            "emails",
+            "urls",
+            "md5",
+            "sha1",
+            "sha256",
+            "sha512",
+            "is_binary",
+            "is_text",
+            "is_archive",
+            "is_media",
+            "is_legal",
+            "is_manifest",
+            "is_readme",
+            "is_top_level",
+            "is_key_file",
+            "xlsx_errors",
+        ]
+        self.assertEqual(expected_order, headers)
+
     def test_scanpipe_pipes_outputs_vulnerability_as_cyclonedx(self):
         component_bom_ref = "pkg:pypi/django@4.0.10"
         data = self.data / "cyclonedx/django-4.0.10-vulnerability.json"

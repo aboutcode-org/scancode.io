@@ -95,66 +95,6 @@ class ScanPipeAPITest(TransactionTestCase):
         self.csrf_client = APIClient(enforce_csrf_checks=True)
         self.csrf_client.credentials(HTTP_AUTHORIZATION=self.auth)
 
-    def test_xlsx_field_order(self):
-        url = reverse("project-results-download", args=[self.project1.uuid])
-        response = self.csrf_client.get(url, {"output_format": "xlsx"})
-
-        self.assertEqual(200, response.status_code)
-        self.assertIn(
-            response["Content-Type"],
-            [
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "application/octet-stream",
-            ],
-        )
-
-        output_file = io.BytesIO(b"".join(response.streaming_content))
-        workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
-        self.assertIn("RESOURCES", workbook.sheetnames)
-
-        resources_sheet = workbook["RESOURCES"]
-        headers = [
-            cell.value for cell in next(resources_sheet.iter_rows(min_row=1, max_row=1))
-        ]
-
-        expected_order = [
-            "path",
-            "type",
-            "name",
-            "status",
-            "for_packages",
-            "tag",
-            "extension",
-            "size",
-            "mime_type",
-            "file_type",
-            "programming_language",
-            "detected_license_expression",
-            "detected_license_expression_spdx",
-            "percentage_of_license_text",
-            "copyrights",
-            "holders",
-            "authors",
-            "emails",
-            "urls",
-            "md5",
-            "sha1",
-            "sha256",
-            "sha512",
-            "is_binary",
-            "is_text",
-            "is_archive",
-            "is_media",
-            "is_legal",
-            "is_manifest",
-            "is_readme",
-            "is_top_level",
-            "is_key_file",
-            "xlsx_errors",
-        ]
-
-        self.assertEqual(headers, expected_order)
-
     def test_scanpipe_api_browsable_formats_available(self):
         response = self.csrf_client.get(self.project_list_url + "?format=api")
         self.assertContains(response, self.project1_detail_url)
