@@ -195,7 +195,7 @@ svg {
 thead.is-sticky {
   top: -1px;
   z-index: 19;
-  background-color: var(--bulma-scheme-main);
+  background-color: var(--bulma-table-striped-row-even-background-color);
   box-shadow: 0 2px 0 var(--bulma-border);
 }
 #column-runs {
