@@ -22,8 +22,6 @@
 
 from collections import Counter
 
-from scipy.spatial.distance import jensenshannon
-
 from aboutcode.pipeline import LoopProgress
 from scanpipe.models import CodebaseRelation
 from scanpipe.pipes import flag
@@ -39,9 +37,9 @@ MATCHING_RATIO_RUST = 0.5
 SMALL_FILE_SYMBOLS_THRESHOLD = 20
 MATCHING_RATIO_RUST_SMALL_FILE = 0.4
 
-JSD_MATCHING_THRESHOLD_JAVASCRIPT = 0.5
+MATCHING_RATIO_JAVASCRIPT = 0.5
 SMALL_FILE_SYMBOLS_THRESHOLD_JAVASCRIPT = 30
-JSD_MATCHING_THRESHOLD_JAVASCRIPT_SMALL_FILE = 0.4
+MATCHING_RATIO_JAVASCRIPT_SMALL_FILE = 0.4
 
 
 def map_resources_with_symbols(
@@ -99,15 +97,21 @@ def map_resources_with_symbols(
         logger(f"No mappings using {map_type} for: {to_resource.path!r}")
 
 
-def match_source_symbols_to_binary(source_symbols, binary_symbols):
-    binary_symbols_set = set(binary_symbols)
+def match_source_symbols_to_deployed(
+    source_symbols,
+    deployed_symbols,
+    matching_ratio,
+    matching_ratio_small_file,
+    small_file_threshold=SMALL_FILE_SYMBOLS_THRESHOLD,
+):
+    deployed_symbols_set = set(deployed_symbols)
     source_symbols_set = set(source_symbols)
     source_symbols_count = len(source_symbols)
     source_symbols_unique_count = len(source_symbols_set)
 
     source_symbols_counter = Counter(source_symbols)
 
-    common_symbols = source_symbols_set.intersection(binary_symbols_set)
+    common_symbols = source_symbols_set.intersection(deployed_symbols_set)
     common_symbols_count = sum(
         [source_symbols_counter.get(symbol) for symbol in common_symbols]
     )
@@ -122,13 +126,13 @@ def match_source_symbols_to_binary(source_symbols, binary_symbols):
     }
 
     if (
-        common_symbols_ratio > MATCHING_RATIO_RUST
-        or common_symbols_unique_ratio > MATCHING_RATIO_RUST
+        common_symbols_ratio > matching_ratio
+        or common_symbols_unique_ratio > matching_ratio
     ):
         return True, stats
-    elif source_symbols_count > SMALL_FILE_SYMBOLS_THRESHOLD and (
-        common_symbols_ratio > MATCHING_RATIO_RUST_SMALL_FILE
-        or common_symbols_unique_ratio > MATCHING_RATIO_RUST_SMALL_FILE
+    elif source_symbols_count > small_file_threshold and (
+        common_symbols_ratio > matching_ratio_small_file
+        or common_symbols_unique_ratio > matching_ratio_small_file
     ):
         return True, stats
     else:
@@ -151,9 +155,12 @@ def match_source_paths_to_binary(
             yield resource.path
             continue
 
-        is_source_matched, match_stats = match_source_symbols_to_binary(
+        is_source_matched, match_stats = match_source_symbols_to_deployed(
             source_symbols=source_symbols,
-            binary_symbols=binary_symbols,
+            deployed_symbols=binary_symbols,
+            matching_ratio=MATCHING_RATIO_RUST,
+            matching_ratio_small_file=MATCHING_RATIO_RUST_SMALL_FILE,
+            small_file_threshold=SMALL_FILE_SYMBOLS_THRESHOLD,
         )
         if not is_source_matched:
             yield resource.path
@@ -182,33 +189,13 @@ def get_symbols_probability_distribution(symbols, unique_symbols):
     return probability_dist
 
 
-def get_jsd_from_source_and_deployed_symbols(source_symbols, deployed_symbols):
-    unique_symbols = set(source_symbols).union(set(deployed_symbols))
-
-    source_probability_dist = get_symbols_probability_distribution(
-        source_symbols, unique_symbols
-    )
-    deployed_probability_dist = get_symbols_probability_distribution(
-        deployed_symbols, unique_symbols
-    )
-
-    divergence = jensenshannon(source_probability_dist, deployed_probability_dist)
-
-    return divergence
-
-
 def match_javascript_source_symbols_to_deployed(source_symbols, deployed_symbols):
-    divergence = get_jsd_from_source_and_deployed_symbols(
-        source_symbols, deployed_symbols
+    is_match, stats = match_source_symbols_to_deployed(
+        source_symbols=source_symbols,
+        deployed_symbols=deployed_symbols,
+        matching_ratio=MATCHING_RATIO_RUST,
+        matching_ratio_small_file=MATCHING_RATIO_RUST_SMALL_FILE,
+        small_file_threshold=SMALL_FILE_SYMBOLS_THRESHOLD,
     )
 
-    # Since 0<=JSD<=1, 1-JSD gives the similarity, which also ranges between 0 and 1
-    similarity = 1 - divergence
-
-    matching_threshold = JSD_MATCHING_THRESHOLD_JAVASCRIPT
-    if len(source_symbols) <= SMALL_FILE_SYMBOLS_THRESHOLD_JAVASCRIPT:
-        matching_threshold = JSD_MATCHING_THRESHOLD_JAVASCRIPT_SMALL_FILE
-
-    is_match = similarity >= matching_threshold
-
-    return is_match, similarity
+    return is_match, stats

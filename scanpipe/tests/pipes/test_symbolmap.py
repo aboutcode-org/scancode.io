@@ -64,8 +64,12 @@ class ScanPipeSymbolmapPipesTest(TestCase):
             "contains",
             "Ok",
         ]
-        is_source_matched, _stats = symbolmap.match_source_symbols_to_binary(
-            rust_test_file_symbols, self.get_binary_symbols()
+        is_source_matched, _stats = symbolmap.match_source_symbols_to_deployed(
+            source_symbols=rust_test_file_symbols,
+            deployed_symbols=self.get_binary_symbols(),
+            matching_ratio=symbolmap.MATCHING_RATIO_RUST,
+            matching_ratio_small_file=symbolmap.MATCHING_RATIO_RUST_SMALL_FILE,
+            small_file_threshold=symbolmap.SMALL_FILE_SYMBOLS_THRESHOLD,
         )
         self.assertFalse(is_source_matched)
 
@@ -127,8 +131,12 @@ class ScanPipeSymbolmapPipesTest(TestCase):
             "version",
             "write",
         ]
-        is_source_matched, _stats = symbolmap.match_source_symbols_to_binary(
-            rust_main_file_symbols, self.get_binary_symbols()
+        is_source_matched, _stats = symbolmap.match_source_symbols_to_deployed(
+            source_symbols=rust_main_file_symbols,
+            deployed_symbols=self.get_binary_symbols(),
+            matching_ratio=symbolmap.MATCHING_RATIO_RUST,
+            matching_ratio_small_file=symbolmap.MATCHING_RATIO_RUST_SMALL_FILE,
+            small_file_threshold=symbolmap.SMALL_FILE_SYMBOLS_THRESHOLD,
         )
         self.assertTrue(is_source_matched)
 

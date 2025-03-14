@@ -139,7 +139,7 @@ def collect_and_store_tree_sitter_symbols_and_strings(
     if logger:
         logger(
             f"Getting source symbols and strings from {resources_count:,d}"
-            " from/ resources using tree-sitter."
+            " resources using tree-sitter."
         )
 
     resource_iterator = resources.iterator(chunk_size=2000)
