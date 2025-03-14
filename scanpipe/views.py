@@ -498,6 +498,69 @@ class ExportXLSXMixin:
         return response
 
 
+class ExportJSONMixin:
+    """
+    Add the ability to export the current filtered QuerySet of a `FilterView`
+     into JSON format.
+    """
+
+    export_json_query_param = "export_json"
+
+    def get_export_json_queryset(self):
+        return self.filterset.qs
+
+    def get_export_json_filename(self):
+        return f"{self.project.name}_{self.model._meta.model_name}.json"
+
+    def get_filtered_files(self, queryset):
+        from scanpipe.api.serializers import CodebaseResourceSerializer
+        yield from self.encode_queryset(queryset, CodebaseResourceSerializer)
+
+    def export_json_file_response(self):
+        queryset = self.get_export_json_queryset()
+
+        output_file = io.BytesIO()
+
+        for chunk in self.get_filtered_files(queryset):
+            output_file.write(chunk.encode("utf-8"))
+        output_file.seek(0)
+
+        return FileResponse(
+            output_file,
+            as_attachment=True,
+            filename=self.get_export_json_filename(),
+            content_type="application/json",
+        )
+
+    def encode_queryset(self, queryset, serializer_class):
+        for obj in queryset.iterator(chunk_size=2000):
+
+            serialized_obj = serializer_class(obj)
+            data = serialized_obj.data
+
+            for field in output.JSON_EXCLUDE_FIELDS:
+                data.pop(field, None)
+
+            yield json.dumps(data, indent=2)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        query_dict = self.request.GET.copy()
+        query_dict[self.export_json_query_param] = True
+        context["export_json_url_query"] = query_dict.urlencode()
+
+        return context
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+
+        if request.GET.get(self.export_json_query_param):
+            return self.export_json_file_response()
+
+        return response
+
+
 class FormAjaxMixin:
     def is_xhr(self):
         return self.request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
@@ -1542,6 +1605,7 @@ class CodebaseResourceListView(
     ProjectRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
+    ExportJSONMixin,
     PaginatedFilterView,
 ):
     model = CodebaseResource
@@ -1615,6 +1679,7 @@ class DiscoveredPackageListView(
     ProjectRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
+    ExportJSONMixin,
     PaginatedFilterView,
 ):
     model = DiscoveredPackage
@@ -1671,6 +1736,7 @@ class DiscoveredDependencyListView(
     ProjectRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
+    ExportJSONMixin,
     PaginatedFilterView,
 ):
     model = DiscoveredDependency
@@ -1740,6 +1806,7 @@ class ProjectMessageListView(
     ProjectRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
+    ExportJSONMixin,
     FilterView,
 ):
     model = ProjectMessage
@@ -1764,6 +1831,7 @@ class CodebaseRelationListView(
     PrefetchRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
+    ExportJSONMixin,
     PaginatedFilterView,
 ):
     model = CodebaseRelation
