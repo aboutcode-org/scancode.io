@@ -198,8 +198,9 @@ class DeployToDevelop(Pipeline):
 
     @optional_step("Elf")
     def map_elf(self):
-        """Map ELF binaries to their sources."""
-        d2d.map_elfs(project=self.project, logger=self.log)
+        """Map ELF binaries to their sources using dwarf paths and symbols."""
+        d2d.map_elfs_with_dwarf_paths(project=self.project, logger=self.log)
+        d2d.map_elfs_binaries_with_symbols(project=self.project, logger=self.log)
 
     @optional_step("Go")
     def map_go(self):
@@ -209,7 +210,7 @@ class DeployToDevelop(Pipeline):
     @optional_step("Rust")
     def map_rust(self):
         """Map Rust binaries to their sources using symbols."""
-        d2d.map_rust_paths(project=self.project, logger=self.log)
+        d2d.map_rust_binaries_with_symbols(project=self.project, logger=self.log)
 
     def match_directories_to_purldb(self):
         """Match selected directories in PurlDB."""
