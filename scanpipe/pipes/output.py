@@ -366,9 +366,11 @@ def add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     """
     worksheet = workbook.add_worksheet(worksheet_name)
     worksheet.set_default_row(height=14)
+    worksheet.freeze_panes(1, 0)  # Freeze the header row
+    cell_format = workbook.add_format({"font_size": 10})
 
     header = list(fields) + ["xlsx_errors"]
-    worksheet.write_row(row=0, col=0, data=header)
+    worksheet.write_row(row=0, col=0, data=header, cell_format=cell_format)
 
     errors_count = 0
     errors_col_index = len(fields) - 1  # rows and cols are zero-indexed
@@ -391,12 +393,22 @@ def add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
                 row_errors.append(error)
 
             if value:
-                worksheet.write_string(row_index, col_index, str(value))
+                worksheet.write_string(
+                    row=row_index,
+                    col=col_index,
+                    string=str(value),
+                    cell_format=cell_format,
+                )
 
         if row_errors:
             errors_count += len(row_errors)
             row_errors = "\n".join(row_errors)
-            worksheet.write_string(row_index, errors_col_index, row_errors)
+            worksheet.write_string(
+                row=row_index,
+                col=errors_col_index,
+                string=row_errors,
+                cell_format=cell_format,
+            )
 
     return errors_count
 
