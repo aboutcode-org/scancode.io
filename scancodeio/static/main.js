@@ -356,7 +356,6 @@ class PaginationNavigator {
   }
 }
 
-
 // Copy to Clipboard (using `navigator.clipboard`)
 
 function enableCopyToClipboard(selector) {
@@ -375,12 +374,28 @@ function enableCopyToClipboard(selector) {
         textToCopy = element.innerText.trim(); // From the element's text
       }
 
+      // Default tooltip text or custom text from data-copy-feedback attribute
+      const tooltipText = element.getAttribute('data-copy-feedback') || 'Copied!';
+
       if (textToCopy) {
         try {
-          await navigator.clipboard.writeText(textToCopy);
-          console.log("Copied:", textToCopy);
-          element.classList.add("copied"); // Optional visual feedback
-          setTimeout(() => element.classList.remove("copied"), 1000);
+          await navigator.clipboard.writeText(textToCopy).then(() => {
+            // Create a tooltip
+            const tooltip = document.createElement('span');
+            tooltip.classList.add('copy-tooltip');
+            tooltip.textContent = tooltipText;
+            element.appendChild(tooltip);
+
+            // Show the tooltip
+            setTimeout(() => {
+              tooltip.classList.add('visible');
+            }, 0); // Add class immediately to trigger CSS transition
+
+            // Remove the tooltip after 2 seconds
+            setTimeout(() => {
+              element.removeChild(tooltip);
+            }, 2000);
+          });
         } catch (err) {
           console.error("Clipboard copy failed:", err);
         }
