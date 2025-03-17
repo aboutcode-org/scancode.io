@@ -607,6 +607,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         is_new = self._state.adding
         # True if the new instance is a clone of an existing one.
         is_clone = kwargs.pop("is_clone", False)
+        # True if the global webhook creation should be skipped.
+        skip_global_webhook = kwargs.pop("skip_global_webhook", False)
 
         if not self.slug:
             self.slug = get_project_slug(project=self)
@@ -617,7 +619,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         super().save(*args, **kwargs)
 
-        if settings.SCANCODEIO_GLOBAL_WEBHOOK and is_new and not is_clone:
+        global_webhook = settings.SCANCODEIO_GLOBAL_WEBHOOK
+        if global_webhook and is_new and not is_clone and not skip_global_webhook:
             self.setup_global_webhook()
 
     def setup_global_webhook(self):
