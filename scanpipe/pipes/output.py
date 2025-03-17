@@ -368,7 +368,7 @@ def add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     worksheet.set_default_row(height=14)
     workbook.formats[0].set_font_size(10)
     worksheet.freeze_panes(1, 0)
-    
+
     header = list(fields) + ["xlsx_errors"]
     worksheet.write_row(row=0, col=0, data=header)
 
