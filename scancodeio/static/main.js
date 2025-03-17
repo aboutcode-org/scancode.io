@@ -356,6 +356,39 @@ class PaginationNavigator {
   }
 }
 
+
+// Copy to Clipboard (using `navigator.clipboard`)
+
+function enableCopyToClipboard(selector) {
+  const elements = document.querySelectorAll(selector);
+
+  elements.forEach(element => {
+    element.addEventListener("click", async () => {
+      let textToCopy = "";
+
+      // Determine the text to copy
+      if (element.hasAttribute("data-copy")) {
+        textToCopy = element.getAttribute("data-copy"); // From a custom attribute
+      } else if (element.value) {
+        textToCopy = element.value; // From an input field
+      } else {
+        textToCopy = element.innerText.trim(); // From the element's text
+      }
+
+      if (textToCopy) {
+        try {
+          await navigator.clipboard.writeText(textToCopy);
+          console.log("Copied:", textToCopy);
+          element.classList.add("copied"); // Optional visual feedback
+          setTimeout(() => element.classList.remove("copied"), 1000);
+        } catch (err) {
+          console.error("Clipboard copy failed:", err);
+        }
+      }
+    });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 
   setupOpenModalButtons();
@@ -365,6 +398,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setupTextarea();
   setupHighlightControls();
   setupSelectCheckbox();
+  enableCopyToClipboard(".copy-to-clipboard");
 
   const paginationContainer = document.querySelector("#pagination-header");
   if (paginationContainer) {

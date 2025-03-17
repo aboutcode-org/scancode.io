@@ -36,6 +36,13 @@
         {% if input_source.is_file and input_source.size %}
           <span class="mr-1">{{ input_source.size|filesizeformat }}</span>
         {% endif %}
+        {% if input_source.download_url %}
+          <a class="copy-to-clipboard is-grey-link is-clickable mr-1" title="Copy URL" aria-label="Copy URL" data-copy="{{ input_source.download_url }}">
+            <span class="icon width-1 height-1">
+              <i class="fa-regular fa-copy"></i>
+            </span>
+          </a>
+        {% endif %}
         {% if input_source.is_file and input_source.exists and input_source.filename %}
           <a class="is-grey-link is-clickable" href="{% url 'project_download_input' project.slug input_source.filename %}"><span class="icon width-1 height-1"><i class="fa-solid fa-download"></i></span></a>
         {% endif %}
