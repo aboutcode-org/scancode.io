@@ -39,6 +39,7 @@ from django.db.models.functions import Concat
 from django.template.defaultfilters import pluralize
 
 from commoncode.paths import common_prefix
+from elf_inspector.binary import collect_and_parse_elf_symbols
 from elf_inspector.dwarf import get_dwarf_paths
 from extractcode import EXTRACT_SUFFIX
 from go_inspector.plugin import collect_and_parse_symbols
@@ -1708,11 +1709,11 @@ def map_paths_resource(
                     relations_to_create[rel_key] = relation
         if paths_not_mapped:
             to_resource.status = flag.REQUIRES_REVIEW
-            to_resource.save()
             logger(
                 f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT mapped for: "
                 f"{to_resource.path!r}"
             )
+        to_resource.save()
 
     if relations_to_create:
         rels = CodebaseRelation.objects.bulk_create(relations_to_create.values())
@@ -1795,7 +1796,7 @@ def is_invalid_match(match, matched_path_length):
     return matched_path_length == 1 and len(match.resource_ids) != 1
 
 
-def map_elfs(project, logger=None):
+def map_elfs_with_dwarf_paths(project, logger=None):
     """Map ELF binaries to their sources in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
     to_resources = (
@@ -1911,10 +1912,10 @@ def map_go_paths(project, logger=None):
         )
 
 
-def map_rust_paths(project, logger=None):
-    """Map Rust binaries to their source in ``project``."""
+def map_rust_binaries_with_symbols(project, logger=None):
+    """Map Rust binaries to their source using symbols in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
-    to_resources = (
+    to_binaries = (
         project.codebaseresources.files()
         .to_codebase()
         .has_no_relation()
@@ -1923,30 +1924,70 @@ def map_rust_paths(project, logger=None):
 
     # Collect source symbols from rust source files
     rust_from_resources = from_resources.filter(extension=".rs")
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=rust_from_resources,
+        to_resources=to_binaries,
+        binary_symbols_func=collect_and_parse_rust_symbols,
+        map_type="rust_symbols",
+        logger=logger,
+    )
+
+
+def map_elfs_binaries_with_symbols(project, logger=None):
+    """Map Elf binaries to their source using symbols in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    elf_binaries = (
+        project.codebaseresources.files().to_codebase().has_no_relation().elfs()
+    )
+
+    # Collect source symbols from rust source files
+    elf_from_resources = from_resources.filter(extension__in=[".c", ".cpp", ".h"])
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=elf_from_resources,
+        to_resources=elf_binaries,
+        binary_symbols_func=collect_and_parse_elf_symbols,
+        map_type="elf_symbols",
+        logger=logger,
+    )
+
+
+def map_binaries_with_symbols(
+    project,
+    from_resources,
+    to_resources,
+    binary_symbols_func,
+    map_type,
+    logger=None,
+):
+    """Map Binaries to their source using symbols in ``project``."""
     symbols.collect_and_store_tree_sitter_symbols_and_strings(
         project=project,
         logger=logger,
-        project_files=rust_from_resources,
+        project_files=from_resources,
     )
 
     # Collect binary symbols from rust binaries
     for resource in to_resources:
         try:
-            binary_symbols = collect_and_parse_rust_symbols(resource.location_path)
+            binary_symbols = binary_symbols_func(resource.location)
             resource.update_extra_data(binary_symbols)
         except Exception as e:
-            logger(f"Can not parse {resource.location_path!r} {e!r}")
+            logger(f"Error parsing binary symbols at: {resource.location_path!r} {e!r}")
 
     if logger:
         logger(
             f"Mapping {to_resources.count():,d} to/ resources using symbols "
-            f"with {rust_from_resources.count():,d} from/ resources."
+            f"with {from_resources.count():,d} from/ resources."
         )
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
     progress = LoopProgress(to_resources.count(), logger)
     for to_resource in progress.iter(resource_iterator):
-        binary_symbols = to_resource.extra_data.get("rust_symbols")
+        binary_symbols = to_resource.extra_data.get(map_type)
         if not binary_symbols:
             continue
 
@@ -1954,9 +1995,10 @@ def map_rust_paths(project, logger=None):
             logger(f"Mapping source files to binary at {to_resource.path}")
 
         symbolmap.map_resources_with_symbols(
+            project=project,
             to_resource=to_resource,
-            from_resources=rust_from_resources,
+            from_resources=from_resources,
             binary_symbols=binary_symbols,
-            map_type="rust_symbols",
+            map_type=map_type,
             logger=logger,
         )
