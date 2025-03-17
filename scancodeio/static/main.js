@@ -391,10 +391,10 @@ function enableCopyToClipboard(selector) {
               tooltip.classList.add('visible');
             }, 0); // Add class immediately to trigger CSS transition
 
-            // Remove the tooltip after 2 seconds
+            // Remove the tooltip after 1.5 seconds
             setTimeout(() => {
               element.removeChild(tooltip);
-            }, 2000);
+            }, 1500);
           });
         } catch (err) {
           console.error("Clipboard copy failed:", err);
