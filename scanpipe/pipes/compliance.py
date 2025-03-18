@@ -39,6 +39,8 @@ def analyze_licenses_and_sources(self):
     util.analyze_compliance_licenses(self.project)
 """
 
+COMPLIANCE_ORDER = ["warning", "error", "missing"]
+
 
 def flag_compliance_files(project):
     """Flag compliance files status for the provided `project`."""
@@ -74,7 +76,9 @@ def group_compliance_alerts_by_severity(queryset):
     compliance_alerts = defaultdict(list)
     for instance in queryset:
         compliance_alerts[instance.compliance_alert].append(str(instance))
-    return dict(compliance_alerts)
+    
+    sorted_compliance_alerts = sorted(compliance_alerts.items(), key=lambda x: COMPLIANCE_ORDER.index(x[0]))
+    return dict(sorted_compliance_alerts)
 
 
 def get_project_compliance_alerts(project, fail_level="error"):
