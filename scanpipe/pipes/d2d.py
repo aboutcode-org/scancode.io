@@ -1981,14 +1981,12 @@ def map_javascript_symbols(project, logger=None):
     if not (javascript_from_resources.exists() and javascript_to_resources.exists()):
         return
 
-    # Collect source symbols and strings from javascript source files
     symbols.collect_and_store_tree_sitter_symbols_and_strings(
         project=project,
         logger=logger,
         project_files=javascript_from_resources,
     )
 
-    # Collect symbols and strings from deployed javascript source files
     symbols.collect_and_store_tree_sitter_symbols_and_strings(
         project=project,
         logger=logger,
