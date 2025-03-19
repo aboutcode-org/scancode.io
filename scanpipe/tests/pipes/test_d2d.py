@@ -1632,13 +1632,13 @@ class ScanPipeD2DPipesTest(TestCase):
     def test_scanpipe_pipes_d2d_map_javascript_symbols(self):
         to_dir = self.project1.codebase_path / "to/project.tar.zst-extract/"
         to_resource_file = (
-            self.data / "d2d-javascript/symbols/cesium/to_transcodeKTX2.js"
+            self.data / "d2d-javascript/symbols/cesium/to_chunk-CNPP6TQ2.js"
         )
         to_dir.mkdir(parents=True)
         copy_input(to_resource_file, to_dir)
 
         from_input_location = (
-            self.data / "d2d-javascript/symbols/cesium/from_basis_transcoder.js"
+            self.data / "d2d-javascript/symbols/cesium/from_EllipseGeometryLibrary.js"
         )
         from_dir = self.project1.codebase_path / "from/project.zip/"
         from_dir.mkdir(parents=True)
