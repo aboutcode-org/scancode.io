@@ -199,7 +199,7 @@ class DeployToDevelop(Pipeline):
 
     @optional_step("JavaScript")
     def map_javascript_symbols(self):
-        """Map minified JavaScript, TypeScript to its sources using symbols."""
+        """Map deployed JavaScript, TypeScript to its sources using symbols."""
         d2d.map_javascript_symbols(project=self.project, logger=self.log)
 
     @optional_step("Elf")

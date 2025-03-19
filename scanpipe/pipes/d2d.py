@@ -1963,11 +1963,13 @@ def map_rust_paths(project, logger=None):
 
 
 def map_javascript_symbols(project, logger=None):
-    """Map minified JavaScript, TypeScript to its sources using symbols."""
+    """Map deployed JavaScript, TypeScript to its sources using symbols."""
     project_files = project.codebaseresources.files()
 
     javascript_to_resources = (
-        project_files.to_codebase().no_status().filter(extension__in=[".ts", ".js"])
+        project_files.to_codebase()
+        .has_no_relation()
+        .filter(extension__in=[".ts", ".js"])
     )
 
     javascript_from_resources = (
@@ -1975,6 +1977,9 @@ def map_javascript_symbols(project, logger=None):
         .exclude(path__contains="/test/")
         .filter(extension__in=[".ts", ".js"])
     )
+
+    if not (javascript_from_resources.exists() and javascript_to_resources.exists()):
+        return
 
     # Collect source symbols and strings from javascript source files
     symbols.collect_and_store_tree_sitter_symbols_and_strings(
@@ -2019,27 +2024,32 @@ def map_javascript_symbols(project, logger=None):
 def _map_javascript_symbols(to_resource, javascript_from_resources, logger):
     """Map minified JavaScript, TypeScript to its sources using symbols."""
     to_symbols = to_resource.extra_data.get("source_symbols")
+
+    if (not to_symbols) or symbolmap.is_decomposed_javascript(to_symbols):
+        return 0
+
     best_matching_score = 0
-    best_match_stats = None
     best_match = None
     for source_js in javascript_from_resources:
         from_symbols = source_js.extra_data.get("source_symbols")
-        is_match, stats = symbolmap.match_javascript_source_symbols_to_deployed(
+        if not from_symbols:
+            continue
+
+        is_match, similarity = symbolmap.match_javascript_source_symbols_to_deployed(
             source_symbols=from_symbols,
             deployed_symbols=to_symbols,
         )
 
-        if is_match and stats["common_symbols_ratio"] > best_matching_score:
-            best_matching_score = stats["common_symbols_ratio"]
+        if is_match and similarity > best_matching_score:
+            best_matching_score = similarity
             best_match = source_js
-            best_match_stats = stats
 
     if best_match:
         pipes.make_relation(
             from_resource=best_match,
             to_resource=to_resource,
             map_type="javascript_symbols",
-            extra_data={"symbol_map_stats": best_match_stats},
+            extra_data={"jsd_similarity_score": similarity},
         )
         to_resource.update(status=flag.MAPPED)
         return 1
