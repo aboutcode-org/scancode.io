@@ -2021,8 +2021,8 @@ def map_javascript_symbols(project, logger=None):
 
 def _map_javascript_symbols(to_resource, javascript_from_resources, logger):
     """
-    Map a deployed JavaScript resource to its sources using symbols and
-    return 1 if successful, 0 if not found.
+    Map a deployed JavaScript resource to its source using symbols and
+    return 1 if match is found otherwise return 0.
     """
     to_symbols = to_resource.extra_data.get("source_symbols")
 
