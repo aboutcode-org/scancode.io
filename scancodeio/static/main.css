@@ -37,9 +37,6 @@
 }
 .theme-dark,
 [data-theme="dark"] {
-  .is-light {
-    background-color: var(--bulma-scheme-main-ter) !important;
-  }
   .hljs {
     background: transparent !important;
   }
