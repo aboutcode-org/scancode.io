@@ -60,23 +60,26 @@
       </div>
     </section>
 
-    <hr class="mx-5 mt-0">
-    {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" %}
+    <hr class="mx-5 mt-0 mb-2">
+    {% include "scanpipe/includes/project_summary_level.html" with project=project %}
 
     <section class="pt-0 mx-5">
       {% if project.resource_count or project.package_count %}
         {% include "scanpipe/includes/project_downloads.html" with project=project only %}
       {% elif not pipeline_runs %}
-        <article class="message is-warning">
+        <article class="message is-link">
           <div class="message-body">
             <p class="block">
               <span class="icon width-1 height-1 mr-1">
                 <i class="fa-solid fa-info-circle"></i>
               </span>
               <span>
-                Add
-                {% if not inputs_with_source %}<strong>Inputs</strong>{% endif %}
-                and execute a <strong>pipeline</strong> to generate some results.
+                {% if not input_sources %}
+                  <a href="#" class="modal-button has-text-weight-bold" data-target="add-inputs-modal" aria-haspopup="true">Add Inputs</a>
+                  and
+                {% endif %}
+                <a href="#" class="modal-button has-text-weight-bold" data-target="add-pipeline-modal" aria-haspopup="true">Execute a pipeline</a>
+                to generate some results.
               </span>
             </p>
           </div>
@@ -122,7 +125,7 @@
 
       {% if project.extra_data %}
         <article id="project-extra-data" class="panel is-dark">
-          <p class="panel-heading py-2 is-size-6">
+          <p class="panel-heading">
             Project data
           </p>
           <div class="panel-block p-0 is-more is-more-clipped">

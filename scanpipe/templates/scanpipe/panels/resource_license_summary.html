@@ -2,7 +2,7 @@
 {% if resource_license_summary %}
   <div class="column is-half">
     <nav class="panel is-dark">
-      <p class="panel-heading py-2 is-size-6">
+      <p class="panel-heading">
         Top 10 detected licenses in files
       </p>
       {% for license_expression, count in resource_license_summary.items %}
