@@ -4191,6 +4191,26 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         pipeline_name = pipeline_run.pipeline_name
         pretext = f"Project *{project_display}* update:"
         text = f"Pipeline `{pipeline_name}` completed with {status}."
+        blocks = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": text,
+                },
+            }
+        ]
+
+        # Adds the task output in case of run failure
+        if pipeline_run.status == Run.Status.FAILURE and pipeline_run.task_output:
+            task_output_block = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"```{pipeline_run.task_output}```",
+                },
+            }
+            blocks.append(task_output_block)
 
         return {
             "username": "ScanCode.io",
@@ -4198,15 +4218,7 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             "attachments": [
                 {
                     "color": color,
-                    "blocks": [
-                        {
-                            "type": "section",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": text,
-                            },
-                        }
-                    ],
+                    "blocks": blocks,
                 }
             ],
         }
