@@ -59,7 +59,7 @@
   {% endfor %}
   <div class="panel-block">
     {% if project.can_change_inputs %}
-      <button class="button is-link is-outlined is-fullwidth modal-button" data-target="add-inputs-modal" aria-haspopup="true">Add inputs</button>
+      <button class="button is-link {% if input_sources %}is-outlined{% endif %} is-fullwidth modal-button" data-target="add-inputs-modal" aria-haspopup="true">Add inputs</button>
       {% include "scanpipe/modals/add_inputs_modal.html" %}
     {% else %}
       <button class="button is-link is-outlined is-fullwidth" disabled>Add inputs</button>
