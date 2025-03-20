@@ -2232,6 +2232,17 @@ class ScanPipeModelsTest(TestCase):
         payload = WebhookSubscription.get_slack_payload(run1)
         self.assertDictEqual(expected_payload, payload)
 
+        run1.set_task_ended(exitcode=1, output="Exception")
+        self.assertEqual(Run.Status.FAILURE, run1.status)
+        payload = WebhookSubscription.get_slack_payload(run1)
+        payload_blocks = payload["attachments"][0]["blocks"]
+        self.assertEqual(2, len(payload_blocks))
+        expected_task_output_block = {
+            "text": {"text": "```Exception```", "type": "mrkdwn"},
+            "type": "section",
+        }
+        self.assertEqual(expected_task_output_block, payload_blocks[1])
+
     def test_scanpipe_discovered_package_model_extract_purl_data(self):
         package_data = {}
         expected = {
