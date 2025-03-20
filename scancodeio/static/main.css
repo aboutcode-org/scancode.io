@@ -64,21 +64,35 @@
   --bulma-panel-heading-line-height: 1em;
   --bulma-panel-heading-padding: 0.75em 1em;
 }
+.title {
+  --bulma-title-weight: var(--bulma-weight-semibold);
+  --bulma-title-size: 1.5rem;
+  color: var(--bulma-title-color);
+}
+.heading {
+  font-size: var(--bulma-size-medium);
+  font-weight: var(--bulma-weight-semibold);
+}
+.heading a {
+  color: var(--bulma-body-color);
+}
+.heading a:hover {
+  color: var(--bulma-body-color);
+  text-decoration: underline;
+}
+.level-item {
+  padding-bottom: .5rem !important;
+  padding-top: .5rem !important;
+}
+.level-item:hover {
+  background: rgba(50, 115, 220, 0.1);
+  border-radius: 8px;
+}
 .button[disabled] {
   background-color: transparent !important;
 }
 .modal-card-head {
   background-color: var(--bulma-scheme-main-bis);
-}
-.title {
-  --bulma-title-weight: var(--bulma-weight-semibold);
-}
-.heading {
-  display: block;
-  font-size: 0.75rem;
-  letter-spacing: 1px;
-  margin-bottom: 5px;
-  text-transform: uppercase;
 }
 .is-black-link {
   color: var(--bulma-text-strong);
