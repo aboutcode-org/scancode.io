@@ -2020,10 +2020,13 @@ def map_javascript_symbols(project, logger=None):
 
 
 def _map_javascript_symbols(to_resource, javascript_from_resources, logger):
-    """Map minified JavaScript, TypeScript to its sources using symbols."""
+    """
+    Map a deployed JavaScript resource to its sources using symbols and
+    return 1 if successful, 0 if not found.
+    """
     to_symbols = to_resource.extra_data.get("source_symbols")
 
-    if (not to_symbols) or symbolmap.is_decomposed_javascript(to_symbols):
+    if not to_symbols or symbolmap.is_decomposed_javascript(to_symbols):
         return 0
 
     best_matching_score = 0

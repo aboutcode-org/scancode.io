@@ -100,48 +100,36 @@ def map_resources_with_symbols(
         logger(f"No mappings using {map_type} for: {to_resource.path!r}")
 
 
-def match_source_symbols_to_deployed(
-    source_symbols,
-    deployed_symbols,
-    matching_ratio,
-    matching_ratio_small_file,
-    small_file_threshold=SMALL_FILE_SYMBOLS_THRESHOLD,
-):
-    deployed_symbols_set = set(deployed_symbols)
+def match_source_symbols_to_binary(source_symbols, binary_symbols):
+    binary_symbols_set = set(binary_symbols)
     source_symbols_set = set(source_symbols)
     source_symbols_count = len(source_symbols)
     source_symbols_unique_count = len(source_symbols_set)
 
     source_symbols_counter = Counter(source_symbols)
 
-    common_symbols = source_symbols_set.intersection(deployed_symbols_set)
+    common_symbols = source_symbols_set.intersection(binary_symbols_set)
     common_symbols_count = sum(
         [source_symbols_counter.get(symbol) for symbol in common_symbols]
     )
-    common_symbols_ratio = 0
-    if common_symbols_count > 0:
-        common_symbols_ratio = common_symbols_count / source_symbols_count
-
+    common_symbols_ratio = common_symbols_count / source_symbols_count
     common_symbols_unique_count = len(common_symbols)
-    common_symbols_unique_ratio = 0
-    if common_symbols_unique_count > 0:
-        common_symbols_unique_ratio = (
-            common_symbols_unique_count / source_symbols_unique_count
-        )
-
+    common_symbols_unique_ratio = (
+        common_symbols_unique_count / source_symbols_unique_count
+    )
     stats = {
         "common_symbols_unique_ratio": common_symbols_unique_ratio,
         "common_symbols_ratio": common_symbols_ratio,
     }
 
     if (
-        common_symbols_ratio > matching_ratio
-        or common_symbols_unique_ratio > matching_ratio
+        common_symbols_ratio > MATCHING_RATIO_RUST
+        or common_symbols_unique_ratio > MATCHING_RATIO_RUST
     ):
         return True, stats
-    elif source_symbols_count > small_file_threshold and (
-        common_symbols_ratio > matching_ratio_small_file
-        or common_symbols_unique_ratio > matching_ratio_small_file
+    elif source_symbols_count > SMALL_FILE_SYMBOLS_THRESHOLD and (
+        common_symbols_ratio > MATCHING_RATIO_RUST_SMALL_FILE
+        or common_symbols_unique_ratio > MATCHING_RATIO_RUST_SMALL_FILE
     ):
         return True, stats
     else:
@@ -164,12 +152,9 @@ def match_source_paths_to_binary(
             yield resource.path
             continue
 
-        is_source_matched, match_stats = match_source_symbols_to_deployed(
+        is_source_matched, match_stats = match_source_symbols_to_binary(
             source_symbols=source_symbols,
-            deployed_symbols=binary_symbols,
-            matching_ratio=MATCHING_RATIO_RUST,
-            matching_ratio_small_file=MATCHING_RATIO_RUST_SMALL_FILE,
-            small_file_threshold=SMALL_FILE_SYMBOLS_THRESHOLD,
+            binary_symbols=binary_symbols,
         )
         if not is_source_matched:
             yield resource.path
