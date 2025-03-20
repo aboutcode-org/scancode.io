@@ -63,6 +63,9 @@
 }
 .panel {
   --bulma-panel-radius: var(--bulma-radius-medium);
+  --bulma-panel-heading-size: 1em;
+  --bulma-panel-heading-line-height: 1em;
+  --bulma-panel-heading-padding: 0.75em 1em;
 }
 .button[disabled] {
   background-color: transparent !important;
@@ -162,7 +165,7 @@ pre.is-small {
 }
 .bb-chart .bb-chart-arcs .bb-chart-arcs-title {
   font-size: 15px !important;
-  fill: #4a4a4a !important;
+  fill: var(--bulma-text) !important;
   text-transform: uppercase;
 }
 svg {
@@ -170,6 +173,9 @@ svg {
 }
 .highlight {
   width: 100%;
+}
+.panel .highlight pre code {
+  border-radius: 0;
 }
 .log pre {
   background-color: #1c1d21;

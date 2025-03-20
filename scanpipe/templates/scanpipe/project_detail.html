@@ -67,7 +67,7 @@
       {% if project.resource_count or project.package_count %}
         {% include "scanpipe/includes/project_downloads.html" with project=project only %}
       {% elif not pipeline_runs %}
-        <article class="message is-warning">
+        <article class="message is-link">
           <div class="message-body">
             <p class="block">
               <span class="icon width-1 height-1 mr-1">
@@ -122,7 +122,7 @@
 
       {% if project.extra_data %}
         <article id="project-extra-data" class="panel is-dark">
-          <p class="panel-heading py-2 is-size-6">
+          <p class="panel-heading">
             Project data
           </p>
           <div class="panel-block p-0 is-more is-more-clipped">
