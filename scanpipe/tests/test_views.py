@@ -868,7 +868,7 @@ class ScanPipeViewsTest(TestCase):
         url = reverse("run_status", args=[run.uuid])
 
         response = self.client.get(url)
-        expected = '<span class="tag is-light is-hoverable">Not started</span>'
+        expected = '<span class="tag is-hoverable">Not started</span>'
         self.assertContains(response, expected)
 
         run.set_task_queued()

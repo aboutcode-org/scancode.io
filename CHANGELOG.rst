@@ -20,6 +20,15 @@ v34.9.6 (unreleased)
 - Upgrade Bulma CSS library to version 1.0.2
   https://github.com/aboutcode-org/scancode.io/pull/1268
 
+- Disable the creation of the global webhook in the ``batch-create`` command by default.
+  The global webhook can be created by providing the ``--create-global-webhook`` option.
+  A ``--no-global-webhook`` option was also added to the ``create-project`` command to
+  provide the ability to skip the global webhook creation.
+  https://github.com/aboutcode-org/scancode.io/pull/1629
+
+- Add support for "Permission denied" file access in make_codebase_resource.
+  https://github.com/aboutcode-org/scancode.io/issues/1630
+
 v34.9.5 (2025-02-19)
 --------------------
 

@@ -868,7 +868,12 @@ class ScanPipeModelsTest(TestCase):
             project.save(is_clone=True)
             mock_setup_webhook.assert_not_called()
 
-        # Case 3: Global webhook is disabled (Webhook should NOT be called)
+            # Case 3: Skip global webhook (Webhook should NOT be called)
+            project = Project(name="Project with skip")
+            project.save(skip_global_webhook=True)
+            mock_setup_webhook.assert_not_called()
+
+        # Case 4: Global webhook is disabled (Webhook should NOT be called)
         with override_settings(SCANCODEIO_GLOBAL_WEBHOOK=None):
             project = Project(name="No Webhook Project")
             project.save()
@@ -2226,6 +2231,17 @@ class ScanPipeModelsTest(TestCase):
 
         payload = WebhookSubscription.get_slack_payload(run1)
         self.assertDictEqual(expected_payload, payload)
+
+        run1.set_task_ended(exitcode=1, output="Exception")
+        self.assertEqual(Run.Status.FAILURE, run1.status)
+        payload = WebhookSubscription.get_slack_payload(run1)
+        payload_blocks = payload["attachments"][0]["blocks"]
+        self.assertEqual(2, len(payload_blocks))
+        expected_task_output_block = {
+            "text": {"text": "```Exception```", "type": "mrkdwn"},
+            "type": "section",
+        }
+        self.assertEqual(expected_task_output_block, payload_blocks[1])
 
     def test_scanpipe_discovered_package_model_extract_purl_data(self):
         package_data = {}
