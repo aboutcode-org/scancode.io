@@ -4203,11 +4203,19 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
 
         # Adds the task output in case of run failure
         if pipeline_run.status == Run.Status.FAILURE and pipeline_run.task_output:
+            slack_text_max_length = 3000  # Slack's block message limit
+            output_text = pipeline_run.task_output
+            # Truncate the task output and add an indicator if it was cut off
+            if len(output_text) > slack_text_max_length:
+                output_text = (
+                    output_text[: slack_text_max_length - 30] + "\n... (truncated)"
+                )
+
             task_output_block = {
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"```{pipeline_run.task_output}```",
+                    "text": f"```{output_text}```",
                 },
             }
             blocks.append(task_output_block)
