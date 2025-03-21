@@ -29,6 +29,9 @@ v34.9.6 (unreleased)
 - Add support for "Permission denied" file access in make_codebase_resource.
   https://github.com/aboutcode-org/scancode.io/issues/1630
 
+- Refine the ``scan_single_package`` pipeline to work on git fetched inputs.
+  https://github.com/aboutcode-org/scancode.io/issues/1376
+
 v34.9.5 (2025-02-19)
 --------------------
 
