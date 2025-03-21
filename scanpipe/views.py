@@ -1620,7 +1620,7 @@ class DiscoveredPackageListView(
     model = DiscoveredPackage
     filterset_class = PackageFilterSet
     template_name = "scanpipe/package_list.html"
-    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 10)
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 100)
     table_columns = [
         {
             "field_name": "package_url",
