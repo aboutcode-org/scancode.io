@@ -1,8 +1,8 @@
 Changelog
 =========
 
-v34.9.6 (unreleased)
---------------------
+v34.10.0 (2025-03-21)
+---------------------
 
 - Rename the ``docker``, ``docker_windows``, and ``root_filesystem`` modules to
   ``analyze_docker``, ``analyze_docker_windows``, and ``analyze_root_filesystem``
