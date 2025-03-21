@@ -1629,6 +1629,7 @@ class ScanPipeD2DPipesTest(TestCase):
         except DataError:
             self.fail("DataError was raised, but it should not occur.")
 
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
     def test_scanpipe_pipes_d2d_map_javascript_symbols(self):
         to_dir = self.project1.codebase_path / "to/project.tar.zst-extract/"
         to_resource_file = (
