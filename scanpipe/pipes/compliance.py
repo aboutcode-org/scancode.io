@@ -72,14 +72,16 @@ def group_compliance_alerts_by_severity(queryset):
     string representations of the instances associated with that severity.
     """
     compliance_alerts = defaultdict(list)
+    severity_levels = ['error', 'warning', 'missing']
 
-    # Values are sorted in lexicographical order.
-    queryset_labels_sorted =  sorted([label for label in queryset.keys()])
     for instance in queryset:
         compliance_alerts[instance.compliance_alert].append(str(instance))
-    
+
+    # Sort keys for consistent ordering (["error", "warning", "missing"])
+    sorted_keys = sorted(compliance_alerts.keys(), key=severity_levels.index)
+
     sorted_compliance_alerts = {
-        label: compliance_alerts[label] for label in queryset_labels_sorted
+        label: compliance_alerts[label] for label in sorted_keys
     }
     return sorted_compliance_alerts
 
@@ -89,7 +91,7 @@ def get_project_compliance_alerts(project, fail_level="error"):
     Retrieve compliance alerts for a given project at a specified severity level.
 
     This function checks for compliance alerts in the provided project, filtering them
-    by the specified severitylexograhpical level (e.g., "error", "warning"). It gathers compliance
+    by the specified severity level (e.g., "error", "warning"). It gathers compliance
     alerts for both discovered packages and codebase resources, and returns them in
     a structured dictionary.
     """
