@@ -78,7 +78,10 @@ def group_compliance_alerts_by_severity(queryset):
         compliance_alerts[instance.compliance_alert].append(str(instance))
 
     # Sort keys for consistent ordering (["error", "warning", "missing"])
-    sorted_keys = sorted(compliance_alerts.keys(), key=severity_levels.index)
+    sorted_keys = sorted(
+        compliance_alerts.keys(),
+        key=lambda label: severity_levels.index(label) if label in severity_levels else len(severity_levels)
+    )
 
     sorted_compliance_alerts = {
         label: compliance_alerts[label] for label in sorted_keys
