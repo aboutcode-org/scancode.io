@@ -39,8 +39,6 @@ def analyze_licenses_and_sources(self):
     util.analyze_compliance_licenses(self.project)
 """
 
-COMPLIANCE_ORDER = ["warning", "error", "missing"]
-
 
 def flag_compliance_files(project):
     """Flag compliance files status for the provided `project`."""
@@ -74,11 +72,16 @@ def group_compliance_alerts_by_severity(queryset):
     string representations of the instances associated with that severity.
     """
     compliance_alerts = defaultdict(list)
+
+    # Values are sorted in lexicographical order.
+    queryset_labels_sorted =  sorted([label for label in queryset.keys()])
     for instance in queryset:
         compliance_alerts[instance.compliance_alert].append(str(instance))
     
-    sorted_compliance_alerts = sorted(compliance_alerts.items(), key=lambda x: COMPLIANCE_ORDER.index(x[0]))
-    return dict(sorted_compliance_alerts)
+    sorted_compliance_alerts = {
+        label: compliance_alerts[label] for label in queryset_labels_sorted
+    }
+    return sorted_compliance_alerts
 
 
 def get_project_compliance_alerts(project, fail_level="error"):
@@ -86,7 +89,7 @@ def get_project_compliance_alerts(project, fail_level="error"):
     Retrieve compliance alerts for a given project at a specified severity level.
 
     This function checks for compliance alerts in the provided project, filtering them
-    by the specified severity level (e.g., "error", "warning"). It gathers compliance
+    by the specified severitylexograhpical level (e.g., "error", "warning"). It gathers compliance
     alerts for both discovered packages and codebase resources, and returns them in
     a structured dictionary.
     """
