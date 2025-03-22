@@ -2497,6 +2497,10 @@ class FileClassifierFieldsModelMixin(models.Model):
             "manifest file."
         ),
     )
+    is_whiteout = models.BooleanField(
+        default=False,
+        help_text="Indicates if this resource is a white-out file in a container scan."
+    )
 
     class Meta:
         abstract = True

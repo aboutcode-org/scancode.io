@@ -36,6 +36,7 @@ class Docker(RootFS):
             cls.find_images_os_and_distro,
             cls.collect_images_information,
             cls.collect_and_create_codebase_resources,
+            cls.tag_whiteout_files,
             cls.collect_and_create_system_packages,
             cls.flag_uninteresting_codebase_resources,
             cls.flag_empty_files,
@@ -85,3 +86,10 @@ class Docker(RootFS):
         """Flag files that don't belong to any system package."""
         docker.flag_whiteout_codebase_resources(self.project)
         rootfs.flag_uninteresting_codebase_resources(self.project)
+
+    def tag_whiteout_files(project):
+        """Tag resources that are white-out files in the container scan."""
+        for resource in project.codebaseresources.all():
+            if resource.name.startswith(".wh."):
+               resource.is_whiteout = True
+               resource.save(update_fields=["is_whiteout"])
