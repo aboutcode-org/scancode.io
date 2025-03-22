@@ -46,13 +46,14 @@ from scanpipe.pipes import update_or_create_package
 Resolve packages from manifest, lockfile, and SBOM.
 """
 
-
-def resolve_manifest_resources(resource, package_registry):
+def resolve_manifest_resources(resource,package_registry):
     """Get package data from resource."""
     packages = get_packages_from_manifest(resource.location, package_registry) or []
 
     for package_data in packages:
         package_data["codebase_resources"] = [resource]
+
+        resource.tag_white_out_files()
 
     return packages
 
