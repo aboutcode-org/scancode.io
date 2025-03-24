@@ -95,6 +95,11 @@ class ScanPipeFilterTest(TestCase):
         filterset = ProjectFilterSet(data={"label": "label2"})
         self.assertEqual(0, len(filterset.qs))
 
+        filterset = ProjectFilterSet(data={"search": "label1"})
+        self.assertEqual([self.project1], list(filterset.qs))
+        filterset = ProjectFilterSet(data={"search": "lab"})
+        self.assertEqual([self.project1], list(filterset.qs))
+
     def test_scanpipe_filters_filter_queryset_empty_values(self):
         resource1 = CodebaseResource.objects.create(
             project=self.project1,
@@ -276,7 +281,7 @@ class ScanPipeFilterTest(TestCase):
         inputs = {
             "LICENSE": "(AND: ('name__icontains', 'LICENSE'))",
             "two words": (
-                "(AND: ('name__icontains', 'two'), ('name__icontains', 'words'))"
+                "(OR: ('name__icontains', 'two'), ('name__icontains', 'words'))"
             ),
             "'two words'": "(AND: ('name__icontains', 'two words'))",
             "na me:LICENSE": (
@@ -306,7 +311,7 @@ class ScanPipeFilterTest(TestCase):
         }
 
         for query_string, expected in inputs.items():
-            lookups = parse_query_string_to_lookups(query_string, "icontains", "name")
+            lookups = parse_query_string_to_lookups(query_string, "icontains", ["name"])
             self.assertEqual(expected, str(lookups))
 
     def test_scanpipe_filters_filter_advanced_search_query_string(self):

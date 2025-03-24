@@ -57,6 +57,7 @@ ScanPipe's own commands are listed under the ``[scanpipe]`` section::
       add-input
       add-pipeline
       archive-project
+      batch-create
       check-compliance
       create-project
       create-user
@@ -67,6 +68,7 @@ ScanPipe's own commands are listed under the ``[scanpipe]`` section::
       list-project
       output
       purldb-scan-worker
+      report
       reset-project
       run
       show-pipeline
@@ -83,7 +85,8 @@ For example::
     $ scanpipe create-project --help
     usage: scanpipe create-project [--input-file INPUTS_FILES]
         [--input-url INPUT_URLS] [--copy-codebase SOURCE_DIRECTORY]
-        [--pipeline PIPELINES] [--execute] [--async]
+        [--pipeline PIPELINES] [--label LABELS] [--notes NOTES]
+        [--execute] [--async]
         name
 
     Create a ScanPipe project.
@@ -101,6 +104,9 @@ must be unique.
 Optional arguments:
 
 - ``--pipeline PIPELINES`` Pipelines names to add on the project.
+
+.. warning::
+    Pipelines are added and are executed in order.
 
 .. tip::
     Use the "pipeline_name:option1,option2" syntax to select optional steps:
@@ -124,15 +130,124 @@ Optional arguments:
 - ``--copy-codebase SOURCE_DIRECTORY`` Copy the content of the provided source directory
   into the :guilabel:`codebase/` work directory.
 
+- ``--notes NOTES`` Optional notes about the project.
+
+- ``--label LABELS`` Optional labels for the project.
+
 - ``--execute`` Execute the pipelines right after project creation.
 
 - ``--async`` Add the pipeline run to the tasks queue for execution by a worker instead
   of running in the current thread.
   Applies only when ``--execute`` is provided.
 
-.. warning::
-    Pipelines are added and are executed in order.
+- ``--no-global-webhook`` Skip the creation of the global webhook. This option is
+  only useful if a global webhook is defined in the settings.
 
+.. _cli_batch_create:
+
+`$ scanpipe batch-create [--input-directory INPUT_DIRECTORY] [--input-list FILENAME.csv]`
+-----------------------------------------------------------------------------------------
+
+Processes files from the specified ``INPUT_DIRECTORY`` or rows from ``FILENAME.csv``,
+creating a project for each file or row.
+
+- Use ``--input-directory`` to specify a local directory. Each file in the directory
+  will result in a project, uniquely named using the filename and a timestamp.
+
+- Use ``--input-list`` to specify a ``FILENAME.csv``. Each row in the CSV will be used
+  to create a project based on the data provided.
+
+Supports specifying pipelines and asynchronous execution.
+
+Required arguments (one of):
+
+- ``input-directory`` The path to the directory containing the input files to process.
+  Ensure the directory exists and contains the files you want to use.
+
+- ``input-list`` Path to a CSV file with project names and input URLs.
+  The first column must contain project names, and the second column should list
+  comma-separated input URLs (e.g., Download URL, PURL, or Docker reference).
+
+  **CSV content example**:
+
+  +----------------+---------------------------------+
+  | project_name   | input_urls                      |
+  +================+=================================+
+  | project-1      | https://url.com/file.ext        |
+  +----------------+---------------------------------+
+  | project-2      | pkg:deb/debian/curl@7.50.3      |
+  +----------------+---------------------------------+
+
+.. tip::
+    In place of a local path, a download URL to the CSV file is supported for the
+    ``--input-list`` argument.
+
+Optional arguments:
+
+- ``--project-name-suffix`` Optional custom suffix to append to project names.
+  If not provided, a timestamp (in the format [YYMMDD_HHMMSS]) will be used.
+
+- ``--pipeline PIPELINES`` Pipelines names to add on the project.
+
+- ``--notes NOTES`` Optional notes about the project.
+
+- ``--label LABELS`` Optional labels for the project.
+
+- ``--execute`` Execute the pipelines right after project creation.
+
+- ``--async`` Add the pipeline run to the tasks queue for execution by a worker instead
+  of running in the current thread.
+  Applies only when ``--execute`` is provided.
+
+- ``--create-global-webhook`` Create the global webhook for each project, if enabled in
+  the settings. If not provided, the global webhook subscriptions are not created.
+
+Example: Processing Multiple Docker Images
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Suppose you have multiple Docker images stored in a directory named ``local-data/`` on
+the host machine.
+To process these images using the ``analyze_docker_image`` pipeline with asynchronous
+execution, you can use this command::
+
+    $ docker compose run --rm \
+        --volume local-data/:/input-data/:ro \
+        web scanpipe batch-create
+            --input-directory /input-data/ \
+            --pipeline analyze_docker_image \
+            --label "Docker" \
+            --execute --async
+
+**Explanation**:
+
+- ``local-data/``: A directory on the host machine containing the Docker images to
+  process.
+- ``/input-data/``: The directory inside the container where ``local-data/`` is
+  mounted (read-only).
+- ``--pipeline analyze_docker_image``: Specifies the ``analyze_docker_image``
+  pipeline for processing each Docker image.
+- ``--label "Docker"``: Tagging all the projects with the "Docker" label to enable
+  easy search and filtering.
+- ``--execute``: Runs the pipeline immediately after creating a project for each
+  image.
+- ``--async``: Adds the pipeline run to the worker queue for asynchronous execution.
+
+Each Docker image in the ``local-data/`` directory will result in the creation of a
+project with the specified pipeline (``analyze_docker_image``) executed by worker
+services.
+
+Example: Processing Multiple Develop to Deploy Mapping
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To process an input list CSV file with the ``map_deploy_to_develop`` pipeline using
+asynchronous execution::
+
+    $ docker compose run --rm \
+        web scanpipe batch-create \
+            --input-list https://url/input_list.csv \
+            --pipeline map_deploy_to_develop \
+            --label "d2d_mapping" \
+            --execute --async
 
 `$ scanpipe list-pipeline [--verbosity {0,1,2,3}]`
 --------------------------------------------------
@@ -235,6 +350,47 @@ add the docker pipeline to your project::
     ``--pipeline map_deploy_to_develop:Java,JavaScript``
 
 
+.. _cli_add_webhook:
+
+`$ scanpipe add-webhook --project PROJECT TARGET_URL`
+-----------------------------------------------------
+
+Adds a webhook subscription to a project.
+
+Required arguments:
+
+- ``target-url``
+  The target URL to which the webhook should send POST requests.
+
+Optional arguments:
+
+- ``--trigger-on-each-run``
+  Trigger the webhook after each individual pipeline run.
+
+- ``--include-summary``
+  Include summary data in the payload.
+
+- ``--include-results``
+  Include results data in the payload.
+
+- ``--inactive``
+  Create the webhook but set it as inactive.
+
+Example usage:
+
+1. Add an active webhook that triggers after each pipeline run::
+
+   $ scanpipe add-webhook my_project https://example.com/webhook --trigger-on-each-run
+
+2. Add a webhook that includes summary and results data::
+
+   $ scanpipe add-webhook my_project https://example.com/webhook --include-summary --include-results
+
+3. Add an inactive webhook::
+
+   $ scanpipe add-webhook my_project https://example.com/webhook --inactive
+
+
 `$ scanpipe execute --project PROJECT`
 --------------------------------------
 
@@ -285,6 +441,46 @@ your outputs on the host machine when running with Docker.
 .. tip:: To specify a CycloneDX spec version (default to latest), use the syntax
   ``cyclonedx:VERSION`` as format value. For example: ``--format cyclonedx:1.5``.
 
+.. _cli_report:
+
+`$ scanpipe report --model MODEL`
+---------------------------------
+
+Generates an XLSX report of selected projects based on the provided criteria.
+
+Required arguments:
+
+- ``--model {package,dependency,resource,relation,message,todo}``
+  Specifies the model to include in the XLSX report. Available choices are based on
+  predefined object types.
+
+Optional arguments:
+
+- ``--output-directory OUTPUT_DIRECTORY``
+  The path to the directory where the report file will be created. If not provided,
+  the report file will be created in the current working directory.
+
+- ``--search SEARCH``
+  Filter projects by searching for the provided string in their name.
+
+- ``--label LABELS``
+  Filter projects by the provided label(s). Multiple labels can be provided by using
+  this argument multiple times.
+
+.. note::
+    Either ``--label`` or ``--search`` must be provided to select projects.
+
+Example usage:
+
+1. Generate a report for all projects tagged with "d2d" and include the **TODOS**
+worksheet::
+
+   $ scanpipe report --model todo --label d2d
+
+2. Generate a report for projects whose names contain the word "audit" and include the
+**PACKAGES** worksheet::
+
+   $ scanpipe report --model package --search audit
 
 .. _cli_check_compliance:
 

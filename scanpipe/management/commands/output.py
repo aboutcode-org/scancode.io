@@ -73,8 +73,7 @@ class Command(ProjectCommand):
             output_format, version = output_format.split(":", maxsplit=1)
             if output_format != "cyclonedx":
                 raise CommandError(
-                    'The ":" version syntax is only supported for the cyclonedx '
-                    "format."
+                    'The ":" version syntax is only supported for the cyclonedx format.'
                 )
             output_kwargs["version"] = version
 

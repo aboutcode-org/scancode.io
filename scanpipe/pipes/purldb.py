@@ -50,7 +50,7 @@ session = requests.Session()
 PURLDB_API_URL = None
 PURLDB_URL = settings.PURLDB_URL
 if PURLDB_URL:
-    PURLDB_API_URL = f'{PURLDB_URL.rstrip("/")}/api/'
+    PURLDB_API_URL = f"{PURLDB_URL.rstrip('/')}/api/"
 
 # Basic Authentication
 PURLDB_USER = settings.PURLDB_USER
@@ -368,9 +368,7 @@ def populate_purldb_with_discovered_dependencies(project, logger=logger.info):
     """Add DiscoveredDependency to PurlDB."""
     packages = [{"purl": purl} for purl in get_unique_resolved_purls(project)]
 
-    logger(
-        f"Populating PurlDB with {len(packages):,d} " "PURLs from DiscoveredDependency"
-    )
+    logger(f"Populating PurlDB with {len(packages):,d} PURLs from DiscoveredDependency")
     feed_purldb(
         packages=packages,
         chunk_size=100,

@@ -20,10 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import io
 import json
 import os
 import sys
 import tempfile
+from contextlib import redirect_stderr
 from pathlib import Path
 from unittest import mock
 from unittest import skipIf
@@ -38,20 +40,21 @@ from scancode.cli_test_utils import purl_with_fake_uuid
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
-from scanpipe.models import Project
 from scanpipe.pipelines import CommonStepsMixin
 from scanpipe.pipelines import InputFilesError
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipelines import analyze_root_filesystem
 from scanpipe.pipelines import deploy_to_develop
 from scanpipe.pipelines import is_pipeline
-from scanpipe.pipelines import root_filesystem
 from scanpipe.pipelines import scan_single_package
+from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import FIXTURES_REGEN
 from scanpipe.tests import make_package
+from scanpipe.tests import make_project
 from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.download_inputs import DownloadInput
@@ -66,7 +69,7 @@ class ScanPipePipelinesTest(TestCase):
     data = Path(__file__).parent / "data"
 
     def test_scanpipe_pipeline_class_pipeline_name_attribute(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("do_nothing")
         pipeline_instance = DoNothing(run)
         self.assertEqual("do_nothing", pipeline_instance.pipeline_name)
@@ -101,7 +104,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual(expected, ProfileStep.get_summary())
 
     def test_scanpipe_pipeline_class_log(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
         pipeline.log("Event1")
@@ -112,7 +115,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertIn("Event2", run.log)
 
     def test_scanpipe_pipeline_class_execute(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
 
@@ -129,7 +132,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertIn("Pipeline completed", run.log)
 
     def test_scanpipe_pipeline_class_execute_with_exception(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("raise_exception")
         pipeline = run.make_pipeline_instance()
 
@@ -155,7 +158,7 @@ class ScanPipePipelinesTest(TestCase):
         step2.__name__ = "step2"
         step2.groups = []
 
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("do_nothing")
         run.update(selected_steps=["step2", "not_existing_step"])
         pipeline = run.make_pipeline_instance()
@@ -175,7 +178,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertIn("Pipeline completed", run.log)
 
     def test_scanpipe_pipeline_class_download_inputs_attribute(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("download_inputs")
         pipeline = run.make_pipeline_instance()
         self.assertTrue(pipeline.download_inputs)
@@ -194,7 +197,7 @@ class ScanPipePipelinesTest(TestCase):
 
     @mock.patch("requests.sessions.Session.get")
     def test_scanpipe_pipeline_class_download_missing_inputs(self, mock_get):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
 
@@ -236,7 +239,7 @@ class ScanPipePipelinesTest(TestCase):
 
     @mock.patch("scanpipe.models.InputSource.fetch")
     def test_scanpipe_pipeline_class_download_fetch_exception(self, mock_fetch):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
 
@@ -259,30 +262,31 @@ class ScanPipePipelinesTest(TestCase):
 
     @mock.patch("git.repo.base.Repo.clone_from")
     def test_scanpipe_pipeline_class_download_missing_inputs_git_repo(self, mock_clone):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
 
-        download_url = "https://github.com/nexB/scancode.io.git"
+        download_url = "https://github.com/aboutcode-org/scancode.io.git"
         input_source = project1.add_input_source(download_url=download_url)
 
         def mock_make_to_path(**kwargs):
             to_path = kwargs.get("to_path")
-            to_path.touch()
+            to_path.mkdir()
 
         mock_clone.side_effect = mock_make_to_path
         mock_clone.return_value = None
 
         pipeline.download_missing_inputs()
         self.assertIn(
-            "Fetching input from https://github.com/nexB/scancode.io.git", run.log
+            "Fetching input from https://github.com/aboutcode-org/scancode.io.git",
+            run.log,
         )
         input_source.refresh_from_db()
         self.assertEqual("scancode.io.git", input_source.filename)
         self.assertTrue(input_source.exists())
 
     def test_scanpipe_pipeline_class_save_errors_context_manager(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
         self.assertEqual(project1, pipeline.project)
@@ -320,7 +324,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual(expected, DoNothing.get_graph())
 
     def test_scanpipe_pipelines_profile_decorator(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("profile_step")
         pipeline_instance = run.make_pipeline_instance()
 
@@ -373,7 +377,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual([], DoNothing.get_available_groups())
 
     def test_scanpipe_pipeline_class_env_loaded_from_config_file(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
         self.assertEqual({}, pipeline.env)
@@ -388,7 +392,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual({"product_name": "Product"}, pipeline.env)
 
     def test_scanpipe_pipeline_class_env_reloaded_after_extraction(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         input_location = self.data / "settings" / "archived-scancode-config.zip"
         project1.copy_input_from(input_location)
@@ -409,7 +413,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual(expected, pipeline.env)
 
     def test_scanpipe_pipeline_class_flag_ignored_resources(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
         self.assertIsNone(pipeline.env.get("ignored_patterns"))
@@ -425,7 +429,7 @@ class ScanPipePipelinesTest(TestCase):
         mock_flag.assert_called_with(project1, patterns=patterns_args)
 
     def test_scanpipe_pipeline_class_extract_archive(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
 
@@ -443,7 +447,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual("", project_error.traceback)
 
     def test_scanpipe_pipeline_class_extract_archives(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
 
@@ -465,9 +469,9 @@ class ScanPipePipelinesTest(TestCase):
 
 class RootFSPipelineTest(TestCase):
     def test_scanpipe_rootfs_pipeline_extract_input_files_errors(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("analyze_root_filesystem_or_vm_image")
-        pipeline_instance = root_filesystem.RootFS(run)
+        pipeline_instance = analyze_root_filesystem.RootFS(run)
 
         # Create 2 files in the input/ directory to generate error twice
         project1.move_input_from(tempfile.mkstemp()[1])
@@ -656,7 +660,7 @@ class PipelinesIntegrationTest(TestCase):
     @skipIf(from_docker_image, "Random failure in the Docker context.")
     def test_scanpipe_scan_package_pipeline_integration(self):
         pipeline_name = "scan_single_package"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         input_location = self.data / "scancode" / "is-npm-1.0.0.tgz"
         project1.copy_input_from(input_location)
@@ -692,7 +696,7 @@ class PipelinesIntegrationTest(TestCase):
     @skipIf(from_docker_image, "Random failure in the Docker context.")
     def test_scanpipe_scan_package_pipeline_integration_multiple_packages(self):
         pipeline_name = "scan_single_package"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         input_location = self.data / "scancode" / "multiple-is-npm-1.0.0.tar.gz"
         project1.copy_input_from(input_location)
@@ -724,7 +728,7 @@ class PipelinesIntegrationTest(TestCase):
     def test_scanpipe_scan_package_single_extract_input_to_codebase_directory(
         self, mock_is_archive
     ):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("scan_single_package")
         pipeline_instance = scan_single_package.ScanSinglePackage(run)
 
@@ -748,7 +752,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_scan_package_single_file(self):
         pipeline_name = "scan_single_package"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         input_location = self.data / "manifests" / "openpdf-parent-1.3.11.pom.xml"
         project1.copy_input_from(input_location)
@@ -769,9 +773,36 @@ class PipelinesIntegrationTest(TestCase):
         )
         self.assertPipelineResultEqual(expected_file, scancode_file)
 
+    @mock.patch("git.repo.base.Repo.clone_from")
+    def test_scanpipe_scan_package_single_package_git_repo(self, mock_clone):
+        pipeline_name = "scan_single_package"
+        project1 = make_project()
+
+        download_url = "https://github.com/aboutcode-org/scancode.io.git"
+        project1.add_input_source(download_url=download_url)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        # Create the "fetched" git directory content
+        def mock_make_git_directory(**kwargs):
+            to_path = kwargs.get("to_path")  # scancode.io.git
+            to_path.mkdir()
+            file_location = self.data / "aboutcode" / "notice.NOTICE"
+            copy_input(file_location, to_path)
+
+        mock_clone.side_effect = mock_make_git_directory
+        mock_clone.return_value = None
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(2, project1.codebaseresources.count())
+        self.assertEqual(0, project1.discoveredpackages.count())
+
     def test_scanpipe_scan_codebase_pipeline_integration(self):
         pipeline_name = "scan_codebase"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         filename = "is-npm-1.0.0.tgz"
         input_location = self.data / "scancode" / filename
@@ -794,7 +825,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_inspect_packages_creates_packages_npm(self):
         pipeline_name = "inspect_packages"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         filename = "is-npm-1.0.0.tgz"
         input_location = self.data / "scancode" / filename
@@ -825,7 +856,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_inspect_packages_creates_packages_pypi(self):
         pipeline_name = "inspect_packages"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         input_location = self.data / "manifests" / "python-inspector-0.10.0.zip"
         project1.copy_input_from(input_location)
@@ -842,7 +873,7 @@ class PipelinesIntegrationTest(TestCase):
     @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_inspect_packages_with_resolved_dependencies_npm(self):
         pipeline_name = "inspect_packages"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         input_location = self.data / "dependencies" / "resolved_dependencies_npm.zip"
         project1.copy_input_from(input_location)
@@ -870,7 +901,7 @@ class PipelinesIntegrationTest(TestCase):
     @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_inspect_packages_with_resolved_dependencies_poetry(self):
         pipeline_name = "inspect_packages"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         input_location = self.data / "dependencies" / "resolved_dependencies_poetry.zip"
         project1.copy_input_from(input_location)
@@ -897,7 +928,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_resolved_dependencies_cocoapods(self):
         pipeline_name = "resolve_dependencies"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         input_location = (
             self.data / "dependencies" / "resolved_dependencies_cocoapods.zip"
@@ -926,7 +957,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_resolved_dependencies_pip_inspect(self):
         pipeline_name = "resolve_dependencies"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         input_location = self.data / "dependencies" / "resolved_dependencies_pip.zip"
         project1.copy_input_from(input_location)
@@ -952,7 +983,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_resolved_dependencies_nuget(self):
         pipeline_name = "resolve_dependencies"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         input_location = self.data / "dependencies" / "resolved_dependencies_nuget.zip"
         project1.copy_input_from(input_location)
@@ -979,7 +1010,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_scan_codebase_can_process_wheel(self):
         pipeline_name = "scan_codebase"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         filename = "daglib-0.6.0-py3-none-any.whl"
         input_location = self.data / "scancode" / filename
@@ -1005,7 +1036,7 @@ class PipelinesIntegrationTest(TestCase):
     @skipIf(sys.platform != "linux", "Expected results are inconsistent across OS")
     def test_scanpipe_docker_pipeline_alpine_integration(self):
         pipeline_name = "analyze_docker_image"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         filename = "alpine_3_15_4.tar.gz"
         input_location = self.data / "docker" / filename
@@ -1028,7 +1059,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_docker_pipeline_does_not_report_errors_for_broken_symlinks(self):
         pipeline_name = "analyze_docker_image"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         filename = "minitag.tar"
         input_location = self.data / "image-with-symlinks" / filename
@@ -1038,7 +1069,8 @@ class PipelinesIntegrationTest(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        exitcode, out = pipeline.execute()
+        with redirect_stderr(io.StringIO()):
+            exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
         project_messages = project1.projectmessages.all()
@@ -1054,7 +1086,7 @@ class PipelinesIntegrationTest(TestCase):
     @skipIf(sys.platform != "linux", "RPM related features only supported on Linux.")
     def test_scanpipe_docker_pipeline_rpm_integration(self):
         pipeline_name = "analyze_docker_image"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         filename = "centos.tar.gz"
         input_location = self.data / "docker" / filename
@@ -1077,7 +1109,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_docker_pipeline_debian_integration(self):
         pipeline_name = "analyze_docker_image"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         filename = "debian.tar.gz"
         input_location = self.data / "docker" / filename
@@ -1100,7 +1132,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_docker_pipeline_distroless_debian_integration(self):
         pipeline_name = "analyze_docker_image"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         filename = "gcr_io_distroless_base.tar.gz"
         input_location = self.data / "docker" / filename
@@ -1125,7 +1157,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_rootfs_pipeline_integration(self):
         pipeline_name = "analyze_root_filesystem_or_vm_image"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         input_location = self.data / "rootfs" / "basic-rootfs.tar.gz"
         project1.copy_input_from(input_location)
@@ -1146,7 +1178,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_load_inventory_pipeline_integration(self):
         pipeline_name = "load_inventory"
-        project1 = Project.objects.create(name="Tool: scancode-toolkit")
+        project1 = make_project()
 
         input_location = self.data / "asgiref" / "asgiref-3.3.0_toolkit_scan.json"
         project1.copy_input_from(input_location)
@@ -1168,7 +1200,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, result_file)
 
         # Using the ScanCode.io JSON output as the input
-        project2 = Project.objects.create(name="Tool: scanpipe")
+        project2 = make_project()
 
         input_location = self.data / "asgiref" / "asgiref-3.3.0_scanpipe_output.json"
         project2.copy_input_from(input_location)
@@ -1190,7 +1222,7 @@ class PipelinesIntegrationTest(TestCase):
         self, mock_bulk_search_by_purl, mock_is_configured, mock_is_available
     ):
         pipeline_name = "find_vulnerabilities"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         package1 = DiscoveredPackage.create_from_data(project1, package_data1)
 
         run = project1.add_pipeline(pipeline_name)
@@ -1236,7 +1268,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_resolve_dependencies_pipeline_integration(self):
         pipeline_name = "resolve_dependencies"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         selected_groups = ["DynamicResolver"]
 
         run = project1.add_pipeline(
@@ -1254,7 +1286,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_resolve_dependencies_pipeline_integration_empty_manifest(self):
         pipeline_name = "resolve_dependencies"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         selected_groups = ["DynamicResolver"]
 
         run = project1.add_pipeline(
@@ -1270,9 +1302,12 @@ class PipelinesIntegrationTest(TestCase):
         expected = "No packages could be resolved"
         self.assertIn(expected, message.description)
 
-    def test_scanpipe_resolve_dependencies_pipeline_integration_misc(self):
+    @mock.patch("scanpipe.pipes.resolve.resolve_dependencies")
+    def test_scanpipe_resolve_dependencies_pipeline_integration_misc(
+        self, mock_resolve_dependencies
+    ):
         pipeline_name = "resolve_dependencies"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         selected_groups = ["DynamicResolver"]
 
         input_location = self.data / "manifests" / "requirements.txt"
@@ -1283,16 +1318,17 @@ class PipelinesIntegrationTest(TestCase):
         )
         pipeline = run.make_pipeline_instance()
 
+        mock_resolve_dependencies.return_value = mock.Mock(packages=[package_data1])
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
         self.assertEqual(1, project1.discoveredpackages.count())
 
     @mock.patch("scanpipe.pipes.resolve.resolve_dependencies")
     def test_scanpipe_resolve_dependencies_pipeline_pypi_integration(
-        self, resolve_dependencies
+        self, mock_resolve_dependencies
     ):
         pipeline_name = "resolve_dependencies"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         selected_groups = ["DynamicResolver"]
 
         run = project1.add_pipeline(
@@ -1301,7 +1337,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline = run.make_pipeline_instance()
 
         project1.move_input_from(tempfile.mkstemp(suffix="requirements.txt")[1])
-        resolve_dependencies.return_value = mock.Mock(packages=[package_data1])
+        mock_resolve_dependencies.return_value = mock.Mock(packages=[package_data1])
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
@@ -1314,7 +1350,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_load_sbom_pipeline_aboutfile_integration(self):
         pipeline_name = "load_sbom"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         input_location = self.data / "manifests" / "Django-4.0.8-py3-none-any.whl.ABOUT"
         project1.copy_input_from(input_location)
@@ -1334,7 +1370,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_load_sbom_pipeline_spdx_integration(self):
         pipeline_name = "load_sbom"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         input_location = self.data / "manifests" / "toml.spdx.json"
         project1.copy_input_from(input_location)
@@ -1356,7 +1392,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_load_sbom_pipeline_cyclonedx_integration(self):
         pipeline_name = "load_sbom"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         input_location = self.data / "cyclonedx" / "nested.cdx.json"
         project1.copy_input_from(input_location)
@@ -1431,7 +1467,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_load_sbom_pipeline_cyclonedx_with_dependencies_integration(self):
         pipeline_name = "load_sbom"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         input_location = self.data / "cyclonedx" / "laravel-7.12.0" / "bom.1.4.json"
         project1.copy_input_from(input_location)
@@ -1456,7 +1492,7 @@ class PipelinesIntegrationTest(TestCase):
         mock_uuid4.return_value = forced_uuid
         mock_request.return_value = None
         pipeline_name = "map_deploy_to_develop"
-        project1 = Project.objects.create(name="Analysis", uuid=forced_uuid)
+        project1 = make_project(name="Analysis", uuid=forced_uuid)
         selected_groups = ["Java"]
 
         jar_location = self.data / "d2d" / "jars"
@@ -1481,7 +1517,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_deploy_to_develop_pipeline_extract_input_files_errors(self):
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         run = project1.add_pipeline("map_deploy_to_develop")
         pipeline_instance = deploy_to_develop.DeployToDevelop(run)
 
@@ -1493,7 +1529,14 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_instance.get_inputs()
         with mock.patch("scanpipe.pipes.scancode.extract_archive") as extract_archive:
             extract_archive.return_value = {"path/to/resource": ["error1", "error2"]}
-            pipeline_instance.extract_inputs_to_codebase_directory()
+            inputs_with_codebase_path_destination = [
+                (pipeline_instance.from_files, project1.codebase_path / d2d.FROM),
+                (pipeline_instance.to_files, project1.codebase_path / d2d.TO),
+            ]
+
+            for input_files, codebase_path in inputs_with_codebase_path_destination:
+                for input_file_path in input_files:
+                    pipeline_instance.extract_archive(input_file_path, codebase_path)
 
         projects_errors = project1.projectmessages.all()
         self.assertEqual(2, len(projects_errors))
@@ -1513,7 +1556,7 @@ class PipelinesIntegrationTest(TestCase):
         mock_uuid4.return_value = forced_uuid
         mock_request.return_value = None
         pipeline_name = "map_deploy_to_develop"
-        project1 = Project.objects.create(name="Analysis", uuid=forced_uuid)
+        project1 = make_project(name="Analysis", uuid=forced_uuid)
         selected_groups = ["Java"]
 
         data_dir = self.data / "d2d" / "about_files"
@@ -1552,7 +1595,7 @@ class PipelinesIntegrationTest(TestCase):
     ):
         pipeline_name1 = "load_inventory"
         pipeline_name2 = "populate_purldb"
-        project1 = Project.objects.create(name="Utility: PurlDB")
+        project1 = make_project()
 
         input_location = self.data / "asgiref" / "asgiref-3.3.0_toolkit_scan.json"
         project1.copy_input_from(input_location)
@@ -1594,7 +1637,7 @@ class PipelinesIntegrationTest(TestCase):
         self, mock_is_available, mock_request_post
     ):
         pipeline_name = "populate_purldb"
-        project1 = Project.objects.create(name="Utility: PurlDB")
+        project1 = make_project()
 
         def mock_request_post_return(url, data, headers, timeout):
             payload = json.loads(data)
@@ -1634,7 +1677,7 @@ class PipelinesIntegrationTest(TestCase):
     @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_collect_symbols_ctags_pipeline_integration(self):
         pipeline_name = "collect_symbols_ctags"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         dir = project1.codebase_path / "codefile"
         dir.mkdir(parents=True)
@@ -1658,7 +1701,7 @@ class PipelinesIntegrationTest(TestCase):
     @skipIf(sys.platform != "linux", "Only supported on Linux")
     def test_scanpipe_collect_strings_gettext_pipeline_integration(self):
         pipeline_name = "collect_strings_gettext"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         dir = project1.codebase_path / "codefile"
         dir.mkdir(parents=True)
@@ -1685,7 +1728,7 @@ class PipelinesIntegrationTest(TestCase):
     @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_collect_symbols_pygments_pipeline_integration(self):
         pipeline_name = "collect_symbols_pygments"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         dir = project1.codebase_path / "codefile"
         dir.mkdir(parents=True)
@@ -1716,7 +1759,7 @@ class PipelinesIntegrationTest(TestCase):
     @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_collect_symbols_tree_sitter_pipeline_integration(self):
         pipeline_name = "collect_symbols_tree_sitter"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
 
         dir = project1.codebase_path / "codefile"
         dir.mkdir(parents=True)
@@ -1751,7 +1794,7 @@ class PipelinesIntegrationTest(TestCase):
         self, mock_collect_data, mock_is_configured, mock_is_available
     ):
         pipeline_name = "enrich_with_purldb"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         package1 = make_package(project1, package_url="pkg:npm/csvtojson@2.0.10")
 
         mock_is_configured.return_value = True

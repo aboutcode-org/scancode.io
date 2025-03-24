@@ -31,6 +31,7 @@ from taggit.forms import TagWidget
 
 from scanpipe.models import Project
 from scanpipe.models import Run
+from scanpipe.models import WebhookSubscription
 from scanpipe.pipelines import convert_markdown_to_html
 from scanpipe.pipes import fetch
 from scanpipe.policies import load_policies_yaml
@@ -238,7 +239,22 @@ class EditInputSourceTagForm(forms.Form):
         return input_source
 
 
-class ArchiveProjectForm(forms.Form):
+class BaseProjectActionForm(forms.Form):
+    select_across = forms.BooleanField(
+        label="",
+        required=False,
+        initial=0,
+        help_text="All project matching current search and filters will be included.",
+    )
+    url_query = forms.CharField(
+        widget=forms.HiddenInput,
+        required=False,
+        help_text="Stores the current URL filters.",
+    )
+
+
+class ProjectArchiveForm(BaseProjectActionForm):
+    prefix = "archive"
     remove_input = forms.BooleanField(
         label="Remove inputs",
         initial=True,
@@ -253,6 +269,74 @@ class ArchiveProjectForm(forms.Form):
         label="Remove outputs",
         initial=False,
         required=False,
+    )
+
+    def get_action_kwargs(self):
+        return {
+            "remove_input": self.cleaned_data["remove_input"],
+            "remove_codebase": self.cleaned_data["remove_codebase"],
+            "remove_output": self.cleaned_data["remove_output"],
+        }
+
+
+class ProjectResetForm(BaseProjectActionForm):
+    prefix = "reset"
+    keep_input = forms.BooleanField(
+        label="Keep inputs",
+        initial=True,
+        required=False,
+    )
+    restore_pipelines = forms.BooleanField(
+        label="Restore existing pipelines",
+        initial=False,
+        required=False,
+    )
+    execute_now = forms.BooleanField(
+        label="Execute restored pipeline(s) now",
+        initial=False,
+        required=False,
+    )
+
+    def get_action_kwargs(self):
+        return {
+            "keep_input": self.cleaned_data["keep_input"],
+            "restore_pipelines": self.cleaned_data["restore_pipelines"],
+            "execute_now": self.cleaned_data["execute_now"],
+        }
+
+
+class ProjectOutputDownloadForm(BaseProjectActionForm):
+    prefix = "download"
+    output_format = forms.ChoiceField(
+        label="Choose the output format to include in the ZIP file",
+        choices=[
+            ("json", "JSON"),
+            ("xlsx", "XLSX"),
+            ("spdx", "SPDX"),
+            ("cyclonedx", "CycloneDX"),
+            ("attribution", "Attribution"),
+        ],
+        required=True,
+        initial="json",
+        widget=forms.RadioSelect,
+    )
+
+
+class ProjectReportForm(BaseProjectActionForm):
+    prefix = "report"
+    model_name = forms.ChoiceField(
+        label="Choose the object type to include in the XLSX file",
+        choices=[
+            ("package", "Packages"),
+            ("dependency", "Dependencies"),
+            ("resource", "Resources"),
+            ("relation", "Relations"),
+            ("message", "Messages"),
+            ("todo", "TODOs"),
+        ],
+        required=True,
+        initial="package",
+        widget=forms.RadioSelect,
     )
 
 
@@ -383,6 +467,7 @@ class ProjectSettingsForm(forms.ModelForm):
         "ignored_vulnerabilities",
         "policies",
         "attribution_template",
+        "scan_max_file_size",
         "product_name",
         "product_version",
     ]
@@ -456,6 +541,15 @@ class ProjectSettingsForm(forms.ModelForm):
             "the entire HTML code into this field."
         ),
         widget=forms.Textarea(attrs={"class": "textarea is-dynamic", "rows": 3}),
+    )
+    scan_max_file_size = forms.IntegerField(
+        label="Max file size to scan",
+        required=False,
+        help_text=(
+            "Maximum file size in bytes which should be skipped from scanning."
+            "File size is in bytes. Example: 5 MB is 5242880 bytes."
+        ),
+        widget=forms.NumberInput(attrs={"class": "input"}),
     )
     product_name = forms.CharField(
         label="Product name",
@@ -610,3 +704,23 @@ class PipelineRunStepSelectionForm(forms.ModelForm):
     def get_step_choices(pipeline_class):
         """Return a `choices` list of tuple suitable for a Django ChoiceField."""
         return [(step.__name__, step.__name__) for step in pipeline_class.get_steps()]
+
+
+class WebhookSubscriptionForm(forms.ModelForm):
+    class Meta:
+        model = WebhookSubscription
+        fields = [
+            "target_url",
+            "trigger_on_each_run",
+            "include_summary",
+            "include_results",
+            "is_active",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        target_url_field = self.fields["target_url"]
+        target_url_field.widget.attrs["class"] = "input"
+
+    def save(self, project):
+        return project.add_webhook_subscription(**self.cleaned_data)

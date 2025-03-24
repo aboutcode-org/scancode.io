@@ -44,6 +44,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import EMPTY_VALUES
 from django.db import models
 from django.db import transaction
+from django.db.models import Case
 from django.db.models import Count
 from django.db.models import IntegerField
 from django.db.models import OuterRef
@@ -51,6 +52,7 @@ from django.db.models import Prefetch
 from django.db.models import Q
 from django.db.models import Subquery
 from django.db.models import TextField
+from django.db.models import When
 from django.db.models.functions import Cast
 from django.db.models.functions import Lower
 from django.dispatch import receiver
@@ -518,6 +520,16 @@ class ProjectQuerySet(models.QuerySet):
 
         return self.annotate(**annotations)
 
+    def get_active_archived_counts(self):
+        return self.aggregate(
+            active_count=Count(
+                Case(When(is_archived=False, then=1), output_field=IntegerField())
+            ),
+            archived_count=Count(
+                Case(When(is_archived=True, then=1), output_field=IntegerField())
+            ),
+        )
+
 
 class UUIDTaggedItem(GenericUUIDTaggedItemBase, TaggedItemBase):
     class Meta:
@@ -561,7 +573,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     )
     notes = models.TextField(blank=True)
     settings = models.JSONField(default=dict, blank=True)
-    labels = TaggableManager(through=UUIDTaggedItem)
+    labels = TaggableManager(through=UUIDTaggedItem, ordering=["name"])
     purl = models.CharField(
         max_length=2048,
         blank=True,
@@ -591,6 +603,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Save this project instance.
         The workspace directories are set up during project creation.
         """
+        # True if the model has not been saved to the database yet.
+        is_new = self._state.adding
+        # True if the new instance is a clone of an existing one.
+        is_clone = kwargs.pop("is_clone", False)
+        # True if the global webhook creation should be skipped.
+        skip_global_webhook = kwargs.pop("skip_global_webhook", False)
+
         if not self.slug:
             self.slug = get_project_slug(project=self)
 
@@ -599,6 +618,19 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.setup_work_directory()
 
         super().save(*args, **kwargs)
+
+        global_webhook = settings.SCANCODEIO_GLOBAL_WEBHOOK
+        if global_webhook and is_new and not is_clone and not skip_global_webhook:
+            self.setup_global_webhook()
+
+    def setup_global_webhook(self):
+        """
+        Create a global webhook subscription instance from values defined in the
+        settings.
+        """
+        webhook_data = settings.SCANCODEIO_GLOBAL_WEBHOOK
+        if webhook_data.get("target_url"):
+            self.add_webhook_subscription(**webhook_data)
 
     def archive(self, remove_input=False, remove_codebase=False, remove_output=False):
         """
@@ -625,17 +657,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         shutil.rmtree(self.tmp_path, ignore_errors=True)
         self.setup_work_directory()
 
-        self.is_archived = True
-        self.save(update_fields=["is_archived"])
+        self.update(is_archived=True)
 
-    def delete_related_objects(self):
+    def delete_related_objects(self, keep_input=False, keep_labels=False):
         """
         Delete all related object instances using the private `_raw_delete` model API.
         This bypass the objects collection, cascade deletions, and signals.
         It results in a much faster objects deletion, but it needs to be applied in the
         correct models order as the cascading event will not be triggered.
         Note that this approach is used in Django's `fast_deletes` but the scanpipe
-        models are cannot be fast-deleted as they have cascades and relations.
+        models cannot be fast-deleted as they have cascades and relations.
         """
         # Use default `delete()` on the DiscoveredPackage model, as the
         # `codebase_resources (ManyToManyField)` records need to collected and
@@ -645,7 +676,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         _, deleted_counter = self.discoveredpackages.all().delete()
 
         # Removes all tags from this project by deleting the UUIDTaggedItem instances.
-        self.labels.clear()
+        if not keep_labels:
+            self.labels.clear()
 
         relationships = [
             self.webhookdeliveries,
@@ -655,8 +687,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.discovereddependencies,
             self.codebaseresources,
             self.runs,
-            self.inputsources,
         ]
+
+        if not keep_input:
+            relationships.append(self.inputsources)
 
         for qs in relationships:
             count = qs.all()._raw_delete(qs.db)
@@ -676,14 +710,25 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         return super().delete(*args, **kwargs)
 
-    def reset(self, keep_input=True):
+    def reset(self, keep_input=True, restore_pipelines=False, execute_now=False):
         """
         Reset the project by deleting all related database objects and all work
         directories except the input directory—when the `keep_input` option is True.
         """
         self._raise_if_run_in_progress()
 
-        self.delete_related_objects()
+        restore_pipeline_kwargs = []
+        if restore_pipelines:
+            restore_pipeline_kwargs = [
+                {
+                    "pipeline_name": run.pipeline_name,
+                    "execute_now": execute_now,
+                    "selected_groups": run.selected_groups,
+                }
+                for run in self.runs.all()
+            ]
+
+        self.delete_related_objects(keep_input=keep_input, keep_labels=True)
 
         work_directories = [
             self.codebase_path,
@@ -703,6 +748,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         self.setup_work_directory()
 
+        for pipeline_kwargs in restore_pipeline_kwargs:
+            self.add_pipeline(**pipeline_kwargs)
+
     def clone(
         self,
         clone_name,
@@ -713,11 +761,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         execute_now=False,
     ):
         """Clone this project using the provided ``clone_name`` as new project name."""
-        new_project = Project.objects.create(
+        new_project = Project(
             name=clone_name,
             purl=self.purl,
             settings=self.settings if copy_settings else {},
         )
+        new_project.save(is_clone=True)
 
         if labels := self.labels.names():
             new_project.labels.add(*labels)
@@ -905,6 +954,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             ignored_scope_index[entry.get("package_type")].append(entry.get("scope"))
 
         return dict(ignored_scope_index)
+
+    @cached_property
+    def get_scan_max_file_size(self):
+        """
+        Return a the ``scan_max_file_size`` settings value defined in this
+        Project env.
+        """
+        scan_max_file_size = self.get_env(field_name="scan_max_file_size")
+        if scan_max_file_size:
+            return scan_max_file_size
 
     @cached_property
     def ignored_dependency_scopes_index(self):
@@ -2851,6 +2910,18 @@ class CodebaseResource(
             if not topdown:
                 yield child
 
+    def extracted_to(self, codebase=None):
+        """Return the path this Resource archive was extracted to or None."""
+        extract_path = f"{self.path}-extract"
+        return self.project.get_resource(extract_path)
+
+    def extracted_from(self, codebase=None):
+        """Return the path to an archive this Resource was extracted from or None."""
+        path = self.path
+        if "-extract" in path:
+            archive_path, _, _ = self.path.rpartition("-extract")
+            return self.project.get_resource(archive_path)
+
     def get_absolute_url(self):
         return reverse("resource_detail", args=[self.project.slug, self.path])
 
@@ -2913,7 +2984,9 @@ class CodebaseResource(
         cleaned_data = {
             field_name: value
             for field_name, value in resource_data.items()
-            if field_name in cls.model_fields() and value not in EMPTY_VALUES
+            if field_name in cls.model_fields()
+            and value not in EMPTY_VALUES
+            and field_name != "project"
         }
 
         return cls.objects.create(project=project, **cleaned_data)
@@ -3072,12 +3145,15 @@ class DiscoveredPackageQuerySet(
         )
         return self.annotate(resources_count=count_subquery)
 
-    def only_package_url_fields(self):
+    def only_package_url_fields(self, extra=None):
         """
         Only select and return the UUID and PURL fields.
         Minimum requirements to render a Package link in the UI.
         """
-        return self.only("uuid", *PACKAGE_URL_FIELDS)
+        if not extra:
+            extra = []
+
+        return self.only("uuid", *PACKAGE_URL_FIELDS, *extra)
 
     def filter(self, *args, **kwargs):
         """Add support for using ``package_url`` as a field lookup."""
@@ -3451,7 +3527,9 @@ class DiscoveredPackage(
         cleaned_data = {
             field_name: value
             for field_name, value in package_data.items()
-            if field_name in cls.model_fields() and value not in EMPTY_VALUES
+            if field_name in cls.model_fields()
+            and value not in EMPTY_VALUES
+            and field_name != "project"
         }
 
         discovered_package = cls(project=project, **cleaned_data)
@@ -3655,7 +3733,9 @@ class DiscoveredPackage(
 
 
 class DiscoveredDependencyQuerySet(
-    PackageURLQuerySetMixin, VulnerabilityQuerySetMixin, ProjectRelatedQuerySet
+    PackageURLQuerySetMixin,
+    VulnerabilityQuerySetMixin,
+    ProjectRelatedQuerySet,
 ):
     def prefetch_for_serializer(self):
         """
@@ -3675,6 +3755,16 @@ class DiscoveredDependencyQuerySet(
                 "datafile_resource", queryset=CodebaseResource.objects.only("path")
             ),
         )
+
+    def only_package_url_fields(self, extra=None):
+        """
+        Only select and return the UUID and PURL fields.
+        Minimum requirements to render a Package link in the UI.
+        """
+        if not extra:
+            extra = []
+
+        return self.only("dependency_uid", *PACKAGE_URL_FIELDS, *extra)
 
 
 class DiscoveredDependency(
@@ -3912,7 +4002,9 @@ class DiscoveredDependency(
         cleaned_data = {
             field_name: value
             for field_name, value in dependency_data.items()
-            if field_name in cls.model_fields() and value not in EMPTY_VALUES
+            if field_name in cls.model_fields()
+            and value not in EMPTY_VALUES
+            and field_name != "project"
         }
 
         return cls.objects.create(
@@ -4072,6 +4164,73 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
 
         return payload
 
+    @staticmethod
+    def get_slack_payload(pipeline_run):
+        """
+        Get a custom payload dedicated to Slack webhooks.
+        See https://api.slack.com/messaging/webhooks
+        """
+        status = pipeline_run.status
+        project = pipeline_run.project
+
+        if site_url := scanpipe_app.site_url:
+            project_url = site_url + project.get_absolute_url()
+            project_display = f"<{project_url}|{project.name}>"
+        else:
+            project_display = project.name
+
+        status_to_color = {
+            Run.Status.SUCCESS: "#48c78e",
+            Run.Status.FAILURE: "#f14668",
+            # The following status do not trigger the webhook delivery:
+            # Run.Status.STOPPED: "#f14668",
+            # Run.Status.STALE: "#363636",
+        }
+        color = status_to_color.get(status, "")
+
+        pipeline_name = pipeline_run.pipeline_name
+        pretext = f"Project *{project_display}* update:"
+        text = f"Pipeline `{pipeline_name}` completed with {status}."
+        blocks = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": text,
+                },
+            }
+        ]
+
+        # Adds the task output in case of run failure
+        if pipeline_run.status == Run.Status.FAILURE and pipeline_run.task_output:
+            slack_text_max_length = 3000  # Slack's block message limit
+            output_text = pipeline_run.task_output
+            # Truncate the task output and add an indicator if it was cut off
+            if len(output_text) > slack_text_max_length:
+                output_text = (
+                    output_text[: slack_text_max_length - 30] + "\n... (truncated)"
+                )
+
+            task_output_block = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"```{output_text}```",
+                },
+            }
+            blocks.append(task_output_block)
+
+        return {
+            "username": "ScanCode.io",
+            "text": pretext,
+            "attachments": [
+                {
+                    "color": color,
+                    "blocks": blocks,
+                }
+            ],
+        }
+
     def deliver(self, pipeline_run, timeout=10):
         """Deliver this Webhook by sending a POST request to the `target_url`."""
         logger.info(f"Delivering Webhook {self.uuid}")
@@ -4080,7 +4239,11 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             logger.info(f"Webhook {self.uuid} is not active.")
             return False
 
-        payload = self.get_payload(pipeline_run)
+        if "hooks.slack.com" in self.target_url:
+            payload = self.get_slack_payload(pipeline_run)
+        else:
+            payload = self.get_payload(pipeline_run)
+
         delivery = WebhookDelivery(
             project=self.project,
             webhook_subscription=self,

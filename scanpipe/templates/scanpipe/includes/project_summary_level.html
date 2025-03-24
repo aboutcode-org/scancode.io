@@ -1,83 +1,60 @@
 {% load humanize %}
-<nav class="level is-mobile">
+<nav class="level mx-5 mb-3">
+  {% url 'project_packages' project.slug as project_packages_url %}
   <div class="level-item has-text-centered">
     <div>
-      <p class="heading">Packages</p>
-      <p class="{{ title_class }} is-flex is-align-items-center is-justify-content-center">
+      <p class="heading">
+        <a href="{{ project_packages_url }}">
+          Packages
+        </a>
+      </p>
+      <p class="title is-flex is-align-items-center is-justify-content-center">
         {% if project.package_count %}
-          <a href="{% url 'project_packages' project.slug %}">
+          <a href="{{ project_packages_url }}">
             {{ project.package_count|intcomma }}
           </a>
           {% if project.vulnerable_package_count %}
-            <a href="{% url 'project_packages' project.slug %}?is_vulnerable=yes" class="has-text-danger is-size-5 ml-2">
-              {{ project.vulnerable_package_count|intcomma }}
+            <a href="{{ project_packages_url }}?is_vulnerable=yes" class="has-text-danger is-size-5 ml-3">
               <i class="fa-solid fa-bug is-size-6"></i>
+              {{ project.vulnerable_package_count|intcomma }}
             </a>
           {% endif %}
         {% else %}
-          <span>0</span>
+          <span class="has-text-grey">0</span>
         {% endif %}
       </p>
     </div>
   </div>
+  {% url 'project_dependencies' project.slug as project_dependencies_url %}
   <div class="level-item has-text-centered">
     <div>
-      <p class="heading">Dependencies</p>
-      <p class="{{ title_class }} is-flex is-align-items-center is-justify-content-center">
+      <p class="heading">
+        <a href="{{ project_dependencies_url }}">
+          Dependencies
+        </a>
+      </p>
+      <p class="title is-flex is-align-items-center is-justify-content-center">
         {% if project.dependency_count %}
-          <a href="{% url 'project_dependencies' project.slug %}">
+          <a href="{{ project_dependencies_url }}">
             {{ project.dependency_count|intcomma }}
           </a>
           {% if project.vulnerable_dependency_count %}
-            <a href="{% url 'project_dependencies' project.slug %}?is_vulnerable=yes" class="has-text-danger is-size-5 ml-2">
-              {{ project.vulnerable_dependency_count|intcomma }}
+            <a href="{{ project_dependencies_url }}?is_vulnerable=yes" class="has-text-danger is-size-5 ml-3">
               <i class="fa-solid fa-bug is-size-6"></i>
+              {{ project.vulnerable_dependency_count|intcomma }}
             </a>
           {% endif %}
         {% else %}
-          <span>0</span>
+          <span class="has-text-grey">0</span>
         {% endif %}
       </p>
     </div>
   </div>
-  <div class="level-item has-text-centered">
-    <div>
-      <p class="heading">Resources</p>
-      <p class="{{ title_class }}">
-        {% if project.resource_count %}
-          <a href="{{ project_resources_url }}">
-            {{ project.resource_count|intcomma }}
-          </a>
-        {% else %}
-          <span>0</span>
-        {% endif %}
-      </p>
-    </div>
-  </div>
+  {% include "scanpipe/includes/project_summary_level_item.html" with label="Resources" count=project.resource_count url=project_resources_url only %}
   {% if project.relation_count %}
-    <div class="level-item has-text-centered">
-      <div>
-        <p class="heading">Relations</p>
-        <p class="{{ title_class }}">
-          <a href="{% url 'project_relations' project.slug %}">
-            {{ project.relation_count|intcomma }}
-          </a>
-        </p>
-      </div>
-    </div>
+    {% url 'project_relations' project.slug as project_relations_url %}
+    {% include "scanpipe/includes/project_summary_level_item.html" with label="Relations" count=project.relation_count url=project_relations_url only %}
   {% endif %}
-  <div class="level-item has-text-centered">
-    <div>
-      <p class="heading">Messages</p>
-      <p class="{{ title_class }}">
-        {% if project.message_count %}
-          <a href="{% url 'project_messages' project.slug %}">
-            {{ project.message_count|intcomma }}
-          </a>
-        {% else %}
-          <span>0</span>
-        {% endif %}
-      </p>
-    </div>
-  </div>
+  {% url 'project_messages' project.slug as project_messages_url %}
+  {% include "scanpipe/includes/project_summary_level_item.html" with label="Messages" count=project.message_count url=project_messages_url only %}
 </nav>

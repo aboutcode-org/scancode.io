@@ -25,6 +25,7 @@ from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
+from scanpipe.pipes import input
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
@@ -70,8 +71,10 @@ class DeployToDevelop(Pipeline):
             cls.map_java_to_class,
             cls.map_jar_to_source,
             cls.map_javascript,
+            cls.map_javascript_symbols,
             cls.map_elf,
             cls.map_go,
+            cls.map_rust,
             cls.match_directories_to_purldb,
             cls.match_resources_to_purldb,
             cls.map_javascript_post_purldb_match,
@@ -129,7 +132,10 @@ class DeployToDevelop(Pipeline):
 
         for input_files, codebase_path in inputs_with_codebase_path_destination:
             for input_file_path in input_files:
-                self.extract_archive(input_file_path, codebase_path)
+                if input.is_archive(input_file_path):
+                    self.extract_archive(input_file_path, codebase_path)
+                else:
+                    input.copy_input(input_file_path, codebase_path)
 
         # Reload the project env post-extraction as the scancode-config.yml file
         # may be located in one of the extracted archives.
@@ -191,6 +197,11 @@ class DeployToDevelop(Pipeline):
         """
         d2d.map_javascript(project=self.project, logger=self.log)
 
+    @optional_step("JavaScript")
+    def map_javascript_symbols(self):
+        """Map deployed JavaScript, TypeScript to its sources using symbols."""
+        d2d.map_javascript_symbols(project=self.project, logger=self.log)
+
     @optional_step("Elf")
     def map_elf(self):
         """Map ELF binaries to their sources."""
@@ -198,8 +209,13 @@ class DeployToDevelop(Pipeline):
 
     @optional_step("Go")
     def map_go(self):
-        """Map Go binaries to their sources."""
+        """Map Go binaries to their sources using paths."""
         d2d.map_go_paths(project=self.project, logger=self.log)
+
+    @optional_step("Rust")
+    def map_rust(self):
+        """Map Rust binaries to their sources using symbols."""
+        d2d.map_rust_paths(project=self.project, logger=self.log)
 
     def match_directories_to_purldb(self):
         """Match selected directories in PurlDB."""

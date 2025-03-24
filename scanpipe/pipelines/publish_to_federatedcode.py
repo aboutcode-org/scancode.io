@@ -88,8 +88,7 @@ class PublishToFederatedCode(Pipeline):
             logger=self.log,
         )
         self.log(
-            f"Scan result for '{self.project.purl}' "
-            f"pushed to '{self.package_git_repo}'"
+            f"Scan result for '{self.project.purl}' pushed to '{self.package_git_repo}'"
         )
 
     def delete_local_clone(self):

@@ -257,3 +257,8 @@ class ScanPipeConfig(AppConfig):
                 run.sync_with_job()
         else:
             logger.info("No Run to synchronize.")
+
+    @property
+    def site_url(self):
+        if site_url := settings.SCANCODEIO_SITE_URL:
+            return site_url.rstrip("/")

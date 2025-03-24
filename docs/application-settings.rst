@@ -165,6 +165,18 @@ The value unit is second and is defined as an integer::
 
 Default: ``120`` (2 minutes)
 
+SCANCODEIO_SCAN_MAX_FILE_SIZE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Maximum file size allowed for a file to be scanned when scanning a codebase.
+
+The value unit is bytes and is defined as an integer, see the following
+example of setting this at 5 MB::
+
+    SCANCODEIO_SCAN_MAX_FILE_SIZE=5242880
+
+Default: ``None`` (all files will be scanned)
+
 .. _scancodeio_settings_pipelines_dirs:
 
 SCANCODEIO_PIPELINES_DIRS
@@ -255,6 +267,54 @@ The web server can be started in DEBUG mode with:
 .. code-block:: console
 
     $ SCANCODEIO_LOG_LEVEL=DEBUG make run
+
+.. _scancodeio_settings_site_url:
+
+SCANCODEIO_SITE_URL
+^^^^^^^^^^^^^^^^^^^
+
+The base URL of the ScanCode.io application instance.
+This setting is **required** to generate absolute URLs referencing objects within the
+application, such as in webhook notifications.
+
+The value should be a fully qualified URL, including the scheme (e.g., ``https://``).
+
+Example configuration in the ``.env`` file::
+
+    SCANCODEIO_SITE_URL=https://scancode.example.com/
+
+Default: ``""`` (empty)
+
+.. _scancodeio_settings_global_webhook:
+
+SCANCODEIO_GLOBAL_WEBHOOK
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This setting defines a **global webhook** that will be automatically added as a
+``WebhookSubscription`` for each new project.
+
+The webhook is configured as a dictionary and must include a ``target_url``.
+Additional options control when the webhook is triggered and what data is included
+in the payload.
+
+Example configuration in the ``.env`` file::
+
+    SCANCODEIO_GLOBAL_WEBHOOK=target_url=https://webhook.url,trigger_on_each_run=False,include_summary=True,include_results=False
+
+The available options are:
+
+- ``target_url`` (**required**): The URL where the webhook payload will be sent.
+- ``trigger_on_each_run`` (**default**: ``False``): If ``True``, the webhook is triggered
+  on every pipeline run.
+- ``include_summary`` (**default**: ``False``): If ``True``, a summary of the pipeline
+  run results is included in the payload.
+- ``include_results`` (**default**: ``False``): If ``True``, detailed scan results
+  are included in the payload.
+
+If this setting is provided, ScanCode.io will create a webhook subscription
+**only for newly created projects that are not clones**.
+
+Default: ``{}`` (no global webhook is set)
 
 TIME_ZONE
 ^^^^^^^^^
