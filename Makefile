@@ -62,6 +62,7 @@ envfile:
 	@if test -f ${ENV_FILE}; then echo ".env file exists already"; exit 1; fi
 	@mkdir -p $(shell dirname ${ENV_FILE}) && touch ${ENV_FILE}
 	@echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
+	@echo COMPOSE_PROJECT_NAME=\"scancodeio\" >> ${ENV_FILE}
 
 doc8:
 	@echo "-> Run doc8 validation"
