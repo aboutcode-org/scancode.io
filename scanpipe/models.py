@@ -2855,7 +2855,7 @@ class CodebaseResource(
         """
         parent_path = self.parent_path()
         return parent_path and self.project.codebaseresources.get(path=parent_path)
-    
+
     def siblings(self, codebase=None):
         """
         Return a sequence of sibling Resource objects for this Resource
@@ -3081,7 +3081,7 @@ class CodebaseResource(
     def serialize(self):
         """
         Return a mapping of represting this CodebaseResource and it's data in a form
-        that can be serialized to JSON, YAML, etc. it can be used to reconstruct 
+        that can be serialized to JSON, YAML, etc. it can be used to reconstruct
         the resource
         """
         serializable = defaultdict(dict)
@@ -3090,6 +3090,7 @@ class CodebaseResource(
         if self.location:
             serializable["location"] = self.location
         return dict(serializable)
+
 
 class CodebaseRelation(
     UUIDPKModel,
