@@ -1,3 +1,4 @@
+name: scancodeio
 services:
   db:
     image: docker.io/library/postgres:13
