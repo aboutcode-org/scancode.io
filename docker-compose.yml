@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:13
+    image: docker.io/library/postgres:13
     env_file:
       - docker.env
     volumes:
@@ -9,7 +9,7 @@ services:
     restart: always
 
   redis:
-    image: redis
+    image: docker.io/library/redis:latest
     # Enable redis data persistence using the "Append Only File" with the
     # default policy of fsync every second. See https://redis.io/topics/persistence
     command: redis-server --appendonly yes
@@ -54,7 +54,7 @@ services:
       - web
 
   nginx:
-    image: nginx:alpine
+    image: docker.io/library/nginx:alpine
     ports:
       - "${NGINX_PUBLISHED_HTTP_PORT:-80}:80"
       - "${NGINX_PUBLISHED_HTTPS_PORT:-443}:443"
@@ -67,7 +67,7 @@ services:
     restart: always
 
   clamav:
-    image: clamav/clamav
+    image: docker.io/clamav/clamav:latest
     volumes:
       - clamav_data:/var/lib/clamav
       - workspace:/var/scancodeio/workspace/

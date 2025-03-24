@@ -1,13 +1,13 @@
 services:
   db:
-    image: postgres:13
+    image: docker.io/library/postgres:13
     env_file:
       - docker.env
     volumes:
       - db_data:/var/lib/postgresql/data/
 
   redis:
-    image: redis
+    image: docker.io/library/redis:latest
     # Enable redis data persistence using the "Append Only File" with the
     # default policy of fsync every second. See https://redis.io/topics/persistence
     command: redis-server --appendonly yes
@@ -45,7 +45,7 @@ services:
       - web # Ensure that potential db migrations run first
 
   nginx:
-    image: nginx
+    image: docker.io/library/nginx:latest
     ports:
       - 80:80
       - 443:443
