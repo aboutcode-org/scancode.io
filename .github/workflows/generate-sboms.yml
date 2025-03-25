@@ -10,6 +10,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Ensure scancode-inputs directory exists
+        run: mkdir -p scancode-inputs
+
       - name: Build the Docker image from local Dockerfile
         run: docker build -t local-image .
 
