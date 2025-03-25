@@ -19,6 +19,11 @@ jobs:
       - name: Run pip freeze inside the built Docker container
         run: docker run --rm local-image pip freeze --all --exclude scancodeio > scancode-inputs/requirements.txt
 
+      - name: Collect all .ABOUT files in the scancodeio/ directory
+        run: |
+          mkdir -p scancode-inputs/about-files  # Create the directory if it doesn't exist
+          find scancodeio/ -type f -name "*.ABOUT" -exec cp {} scancode-inputs/about-files/ \;
+
       - name: Resolve the dependencies using ScanCode-action
         uses: nexB/scancode-action@main
         with:
