@@ -1,6 +1,6 @@
 name: Generate SBOMS
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   generate-sboms:
@@ -20,6 +20,7 @@ jobs:
         run: docker run --rm local-image pip freeze --all --exclude scancodeio > scancode-inputs/requirements.txt
 
       - name: Resolve the dependencies using ScanCode-action
-        uses: nexB/scancode-action@alpha
+        uses: nexB/scancode-action@main
         with:
           pipelines: "resolve_dependencies:DynamicResolver"
+          scancodeio-repo-branch: main
