@@ -79,6 +79,12 @@ check:
 	@echo "-> Run Ruff format validation"
 	@${ACTIVATE} ruff format --check
 	@$(MAKE) doc8
+	@echo "-> Run ABOUT files validation"
+	@${ACTIVATE} about check etc/thirdparty/
+	@${ACTIVATE} about check scancodeio/
+	# Needs a --exclude scanpipe/tests/ argument
+	# https://github.com/aboutcode-org/aboutcode-toolkit/issues/583
+	# @${ACTIVATE} about check scanpipe/
 
 check-deploy:
 	@echo "-> Check Django deployment settings"
