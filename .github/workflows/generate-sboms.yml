@@ -1,0 +1,22 @@
+name: Generate SBOMS
+
+on: [push, pull_request]
+
+jobs:
+  generate-sboms:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build the Docker image from local Dockerfile
+        run: docker build -t local-image .
+
+      - name: Run pip freeze inside the built Docker container
+        run: docker run --rm local-image pip freeze --all --exclude scancodeio > scancode-inputs/requirements.txt
+
+      - name: Resolve the dependencies using ScanCode-action
+        uses: nexB/scancode-action@alpha
+        with:
+          pipelines: "resolve_dependencies:DynamicResolver"
