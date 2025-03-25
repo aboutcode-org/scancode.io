@@ -1,6 +1,10 @@
 name: Generate SBOMS
 
-on: [push]
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"
 
 env:
   INPUTS_PATH: scancode-inputs
