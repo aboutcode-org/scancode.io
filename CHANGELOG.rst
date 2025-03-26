@@ -9,6 +9,9 @@ v34.10.1 (unreleased)
   Resolving requirements.txt files will now return proper license data.
   https://github.com/aboutcode-org/scancode.io/issues/1598
 
+- Add support for installing on Apple Silicon (macOS ARM64) in dev mode.
+  https://github.com/aboutcode-org/scancode.io/pull/1646
+
 v34.10.0 (2025-03-21)
 ---------------------
 
