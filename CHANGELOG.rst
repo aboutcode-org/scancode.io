@@ -1,8 +1,19 @@
 Changelog
 =========
 
-v34.9.6 (unreleased)
---------------------
+v34.10.1 (unreleased)
+---------------------
+
+- Convert the ``declared_license`` field value return by ``python-inspector`` in
+  ``resolve_pypi_packages``.
+  Resolving requirements.txt files will now return proper license data.
+  https://github.com/aboutcode-org/scancode.io/issues/1598
+
+- Add support for installing on Apple Silicon (macOS ARM64) in dev mode.
+  https://github.com/aboutcode-org/scancode.io/pull/1646
+
+v34.10.0 (2025-03-21)
+---------------------
 
 - Rename the ``docker``, ``docker_windows``, and ``root_filesystem`` modules to
   ``analyze_docker``, ``analyze_docker_windows``, and ``analyze_root_filesystem``
@@ -16,6 +27,21 @@ v34.9.6 (unreleased)
   * Add a new ``SCANCODEIO_GLOBAL_WEBHOOK`` setting
   * Add a new chapter dedicated to Webhooks management in the documentation
   * Add support for custom payload dedicated to Slack webhooks
+
+- Upgrade Bulma CSS library to version 1.0.2
+  https://github.com/aboutcode-org/scancode.io/pull/1268
+
+- Disable the creation of the global webhook in the ``batch-create`` command by default.
+  The global webhook can be created by providing the ``--create-global-webhook`` option.
+  A ``--no-global-webhook`` option was also added to the ``create-project`` command to
+  provide the ability to skip the global webhook creation.
+  https://github.com/aboutcode-org/scancode.io/pull/1629
+
+- Add support for "Permission denied" file access in make_codebase_resource.
+  https://github.com/aboutcode-org/scancode.io/issues/1630
+
+- Refine the ``scan_single_package`` pipeline to work on git fetched inputs.
+  https://github.com/aboutcode-org/scancode.io/issues/1376
 
 v34.9.5 (2025-02-19)
 --------------------

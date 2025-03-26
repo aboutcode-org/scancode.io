@@ -199,6 +199,22 @@ class ScanPipeManagementCommandTest(TestCase):
             "Project other_project created with work directory", out.getvalue()
         )
 
+    @override_settings(SCANCODEIO_GLOBAL_WEBHOOK={"target_url": "https://webhook.url"})
+    @mock.patch.object(Project, "setup_global_webhook")
+    def test_scanpipe_management_command_create_project_no_global_webhook(
+        self, mock_setup_webhook
+    ):
+        out = StringIO()
+        options = ["--no-global-webhook"]
+        call_command("create-project", "my_project", *options, stdout=out)
+        self.assertIn("Project my_project created", out.getvalue())
+        mock_setup_webhook.assert_not_called()
+
+        options = []
+        call_command("create-project", "my_project_v2", *options, stdout=out)
+        self.assertIn("Project my_project_v2 created", out.getvalue())
+        mock_setup_webhook.assert_called()
+
     def test_scanpipe_management_command_batch_create(self):
         expected = "You must provide either --input-directory or --input-list as input."
         with self.assertRaisesMessage(CommandError, expected):
@@ -276,6 +292,28 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertFalse(input_source3.is_uploaded)
         self.assertEqual("", input_source3.tag)
         self.assertFalse(input_source3.exists())
+
+    @override_settings(SCANCODEIO_GLOBAL_WEBHOOK={"target_url": "https://webhook.url"})
+    @mock.patch.object(Project, "setup_global_webhook")
+    def test_scanpipe_management_command_batch_create_global_webhook(
+        self, mock_setup_webhook
+    ):
+        input_directory = self.data / "commands" / "batch-create-directory"
+        options = ["--input-directory", str(input_directory)]
+        out = StringIO()
+        call_command("batch-create", *options, stdout=out)
+        self.assertIn("2 projects created.", out.getvalue())
+        mock_setup_webhook.assert_not_called()
+
+        options += [
+            "--create-global-webhook",
+            "--project-name-suffix",
+            "with-webhook",
+        ]
+        out = StringIO()
+        call_command("batch-create", *options, stdout=out)
+        self.assertIn("2 projects created.", out.getvalue())
+        mock_setup_webhook.assert_called()
 
     def test_scanpipe_management_command_add_input_file(self):
         out = StringIO()
@@ -1288,3 +1326,19 @@ class ScanPipeManagementCommandMixinTest(TestCase):
                     execute=True,
                     run_async=True,
                 )
+
+    @override_settings(SCANCODEIO_GLOBAL_WEBHOOK={"target_url": "https://webhook.url"})
+    @mock.patch.object(Project, "setup_global_webhook")
+    def test_scanpipe_management_command_mixin_create_project_no_global_webhook(
+        self, mock_setup_webhook
+    ):
+        project = self.create_project_command.create_project(
+            name="no global webhook",
+            create_global_webhook=False,
+        )
+        self.assertTrue(project.pk)
+        mock_setup_webhook.assert_not_called()
+
+        project = self.create_project_command.create_project(name="with global webhook")
+        self.assertTrue(project.pk)
+        mock_setup_webhook.assert_called()

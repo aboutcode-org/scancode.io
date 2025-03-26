@@ -26,6 +26,7 @@ VENV_LOCATION=.venv
 ACTIVATE?=. ${VENV_LOCATION}/bin/activate;
 MANAGE=${VENV_LOCATION}/bin/python manage.py
 VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
+PIP_ARGS=--find-links=./etc/thirdparty/dummy_dist
 # Do not depend on Python to generate the SECRET_KEY
 GET_SECRET_KEY=`head -c50 /dev/urandom | base64 | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
@@ -51,11 +52,11 @@ virtualenv:
 
 conf: virtualenv
 	@echo "-> Install dependencies"
-	@${ACTIVATE} pip install -e .
+	@${ACTIVATE} pip install ${PIP_ARGS} --editable .
 
 dev: virtualenv
 	@echo "-> Configure and install development dependencies"
-	@${ACTIVATE} pip install -e .[dev]
+	@${ACTIVATE} pip install ${PIP_ARGS} --editable .[dev]
 
 envfile:
 	@echo "-> Create the .env file and generate a secret key"
@@ -79,6 +80,12 @@ check:
 	@echo "-> Run Ruff format validation"
 	@${ACTIVATE} ruff format --check
 	@$(MAKE) doc8
+	@echo "-> Run ABOUT files validation"
+	@${ACTIVATE} about check etc/thirdparty/
+	@${ACTIVATE} about check scancodeio/
+	# Needs a --exclude scanpipe/tests/ argument
+	# https://github.com/aboutcode-org/aboutcode-toolkit/issues/583
+	# @${ACTIVATE} about check scanpipe/
 
 check-deploy:
 	@echo "-> Check Django deployment settings"

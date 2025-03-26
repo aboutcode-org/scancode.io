@@ -105,6 +105,9 @@ Optional arguments:
 
 - ``--pipeline PIPELINES`` Pipelines names to add on the project.
 
+.. warning::
+    Pipelines are added and are executed in order.
+
 .. tip::
     Use the "pipeline_name:option1,option2" syntax to select optional steps:
 
@@ -137,8 +140,8 @@ Optional arguments:
   of running in the current thread.
   Applies only when ``--execute`` is provided.
 
-.. warning::
-    Pipelines are added and are executed in order.
+- ``--no-global-webhook`` Skip the creation of the global webhook. This option is
+  only useful if a global webhook is defined in the settings.
 
 .. _cli_batch_create:
 
@@ -195,6 +198,9 @@ Optional arguments:
 - ``--async`` Add the pipeline run to the tasks queue for execution by a worker instead
   of running in the current thread.
   Applies only when ``--execute`` is provided.
+
+- ``--create-global-webhook`` Create the global webhook for each project, if enabled in
+  the settings. If not provided, the global webhook subscriptions are not created.
 
 Example: Processing Multiple Docker Images
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

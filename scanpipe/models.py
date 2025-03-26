@@ -607,6 +607,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         is_new = self._state.adding
         # True if the new instance is a clone of an existing one.
         is_clone = kwargs.pop("is_clone", False)
+        # True if the global webhook creation should be skipped.
+        skip_global_webhook = kwargs.pop("skip_global_webhook", False)
 
         if not self.slug:
             self.slug = get_project_slug(project=self)
@@ -617,7 +619,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         super().save(*args, **kwargs)
 
-        if settings.SCANCODEIO_GLOBAL_WEBHOOK and is_new and not is_clone:
+        global_webhook = settings.SCANCODEIO_GLOBAL_WEBHOOK
+        if global_webhook and is_new and not is_clone and not skip_global_webhook:
             self.setup_global_webhook()
 
     def setup_global_webhook(self):
@@ -4188,6 +4191,34 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         pipeline_name = pipeline_run.pipeline_name
         pretext = f"Project *{project_display}* update:"
         text = f"Pipeline `{pipeline_name}` completed with {status}."
+        blocks = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": text,
+                },
+            }
+        ]
+
+        # Adds the task output in case of run failure
+        if pipeline_run.status == Run.Status.FAILURE and pipeline_run.task_output:
+            slack_text_max_length = 3000  # Slack's block message limit
+            output_text = pipeline_run.task_output
+            # Truncate the task output and add an indicator if it was cut off
+            if len(output_text) > slack_text_max_length:
+                output_text = (
+                    output_text[: slack_text_max_length - 30] + "\n... (truncated)"
+                )
+
+            task_output_block = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"```{output_text}```",
+                },
+            }
+            blocks.append(task_output_block)
 
         return {
             "username": "ScanCode.io",
@@ -4195,15 +4226,7 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             "attachments": [
                 {
                     "color": color,
-                    "blocks": [
-                        {
-                            "type": "section",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": text,
-                            },
-                        }
-                    ],
+                    "blocks": blocks,
                 }
             ],
         }
