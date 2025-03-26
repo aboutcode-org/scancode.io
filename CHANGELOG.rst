@@ -1,6 +1,14 @@
 Changelog
 =========
 
+v34.10.1 (unreleased)
+---------------------
+
+- Convert the ``declared_license`` field value return by ``python-inspector`` in
+  ``resolve_pypi_packages``.
+  Resolving requirements.txt files will now return proper license data.
+  https://github.com/aboutcode-org/scancode.io/issues/1598
+
 v34.10.0 (2025-03-21)
 ---------------------
 

@@ -199,7 +199,14 @@ def resolve_pypi_packages(input_location):
         prefer_source=True,
     )
 
-    return inspector_output.packages
+    packages = inspector_output.packages
+
+    # python-inspector returns the `extracted_license_statement` under the
+    # `declared_license` field.
+    for package in packages:
+        package["extracted_license_statement"] = package.get("declared_license", "")
+
+    return packages
 
 
 def resolve_about_package(input_location):
