@@ -1906,6 +1906,35 @@ class ScanPipeModelsTest(TestCase):
         ]
         self.assertEqual(expected, sorted([resource.path for resource in descendants]))
 
+    def test_scanpipe_codebase_resource_ancestors(self):
+        path = "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py"
+        resource = self.project_asgiref.codebaseresources.get(path=path)
+        ancestors = list(resource.ancestors())
+        self.assertEqual(2, len(ancestors))
+        self.assertNotIn(resource.path, ancestors)
+        expected = [
+            "asgiref-3.3.0-py3-none-any.whl-extract",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
+        ]
+        self.assertEqual(expected, [resource.path for resource in ancestors])
+
+    def test_scanpipe_codebase_resource_serialize(self):
+        resource1 = make_resource_file(self.project1, path="pathtoresource/resource1")
+        expected = {
+            "location": resource1.location,
+            "type": "file",
+            "name": "resource1",
+        }
+        self.assertEqual(expected, resource1.serialize())
+
+        resource2 = make_resource_directory(self.project1, path="pathtodir/resource2")
+        expected = {
+            "location": resource2.location,
+            "type": "directory",
+            "name": "resource2",
+        }
+        self.assertEqual(expected, resource2.serialize())
+
     def test_scanpipe_codebase_resource_children(self):
         path = "asgiref-3.3.0-py3-none-any.whl-extract"
         resource = self.project_asgiref.codebaseresources.get(path=path)
