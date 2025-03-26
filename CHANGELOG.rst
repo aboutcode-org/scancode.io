@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.10.1 (unreleased)
+v34.10.1 (2025-03-26)
 ---------------------
 
 - Convert the ``declared_license`` field value return by ``python-inspector`` in
