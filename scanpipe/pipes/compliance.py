@@ -72,9 +72,21 @@ def group_compliance_alerts_by_severity(queryset):
     string representations of the instances associated with that severity.
     """
     compliance_alerts = defaultdict(list)
+    severity_levels = ['error', 'warning', 'missing']
+
     for instance in queryset:
         compliance_alerts[instance.compliance_alert].append(str(instance))
-    return dict(compliance_alerts)
+
+    # Sort keys for consistent ordering (["error", "warning", "missing"])
+    sorted_keys = sorted(
+        compliance_alerts.keys(),
+        key=lambda label: severity_levels.index(label) if label in severity_levels else len(severity_levels)
+    )
+
+    sorted_compliance_alerts = {
+        label: compliance_alerts[label] for label in sorted_keys
+    }
+    return sorted_compliance_alerts
 
 
 def get_project_compliance_alerts(project, fail_level="error"):
