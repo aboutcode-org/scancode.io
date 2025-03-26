@@ -1302,7 +1302,7 @@ class PipelinesIntegrationTest(TestCase):
         expected = "No packages could be resolved"
         self.assertIn(expected, message.description)
 
-    @mock.patch("scanpipe.pipes.resolve.resolve_dependencies")
+    @mock.patch("scanpipe.pipes.resolve.python_inspector.resolve_dependencies")
     def test_scanpipe_resolve_dependencies_pipeline_integration_misc(
         self, mock_resolve_dependencies
     ):
@@ -1323,7 +1323,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, exitcode, msg=out)
         self.assertEqual(1, project1.discoveredpackages.count())
 
-    @mock.patch("scanpipe.pipes.resolve.resolve_dependencies")
+    @mock.patch("scanpipe.pipes.resolve.python_inspector.resolve_dependencies")
     def test_scanpipe_resolve_dependencies_pipeline_pypi_integration(
         self, mock_resolve_dependencies
     ):

@@ -113,7 +113,7 @@ class ScanPipeResolvePipesTest(TestCase):
         }
         self.assertEqual([expected], packages)
 
-    @mock.patch("scanpipe.pipes.resolve.resolve_dependencies")
+    @mock.patch("scanpipe.pipes.resolve.python_inspector.resolve_dependencies")
     def test_scanpipe_pipes_resolve_resolve_pypi_packages(self, mock_resolve):
         # Generated with:
         # $ python-inspector --python-version 3.12 --operating-system linux \
