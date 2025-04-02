@@ -13,8 +13,13 @@ PYTHON_EXE?=python3
 VENV=venv
 ACTIVATE?=. ${VENV}/bin/activate;
 
+
+conf:
+	@echo "-> Install dependencies"
+	./configure
+
 dev:
-	@echo "-> Configure the development envt."
+	@echo "-> Configure and install development dependencies"
 	./configure --dev
 
 doc8:
