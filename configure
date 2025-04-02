@@ -35,7 +35,7 @@ DEV_REQUIREMENTS="--editable .[testing] --constraint requirements.txt --constrai
 VIRTUALENV_DIR=venv
 
 # Cleanable files and directories to delete with the --clean option
-CLEANABLE="build dist venv .cache .eggs"
+CLEANABLE="build dist venv .cache .eggs *.egg-info docs/_build/ pip-selfcheck.json"
 
 # extra  arguments passed to pip
 PIP_EXTRA_ARGS=" "
@@ -167,6 +167,7 @@ clean() {
     for cln in $CLEANABLE;
         do rm -rf "${CFG_ROOT_DIR:?}/${cln:?}";
     done
+    find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
     set +e
     exit
 }
