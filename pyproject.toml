@@ -66,6 +66,7 @@ include = [
   "docs/**/*.py",
   "*.py",
   "."
+
 ]
 # ignore test data and testfiles: they should never be linted nor formatted 
 exclude = [
@@ -78,8 +79,9 @@ exclude = [
 # vulnerablecode, fetchcode
   "**/tests/*/test_data/**/*",
   "**/tests/test_data/**/*",
+# django migrations
+  "**/migrations/**/*"
 ]
-
 
 [tool.ruff.lint]
 # Rules: https://docs.astral.sh/ruff/rules/
