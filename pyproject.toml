@@ -1,7 +1,71 @@
+[build-system]
+requires = ["setuptools >= 50", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+norecursedirs = [
+   ".git",
+   "bin",
+   "dist",
+   "build",
+   "_build",
+   "etc",
+   "local",
+   "ci",
+   "docs",
+   "man",
+   "share",
+   "samples",
+   ".cache",
+   ".settings",
+   "Include",
+   "include",
+   "Lib",
+   "lib",
+   "lib64",
+   "Lib64",
+   "Scripts",
+   "thirdparty",
+   "tmp",
+   "venv",
+   ".venv",
+   "tests/data",
+   "*/tests/test_data",
+   ".eggs",
+   "src/*/data",
+   "tests/*/data"
+]
+
+python_files = "*.py"
+
+python_classes = "Test"
+python_functions = "test"
+
+addopts = [
+    "-rfExXw",
+    "--strict-markers",
+    "--doctest-modules"
+]
+
 [tool.ruff]
 line-length = 88
 extend-exclude = ["migrations", "var"]
 target-version = "py310"
+
+# ignore test data and testfiles: they should never be linted nor formatted 
+exclude = [
+# main style
+  "**/tests/data/**/*",
+# scancode-toolkit
+  "**/tests/*/data/**/*",
+# dejacode, purldb
+  "**/tests/testfiles/**/*",
+# vulnerablecode, fetchcode
+  "**/tests/*/test_data/**/*",
+  "**/tests/test_data/**/*",
+# django migrations
+  "**/migrations/**/*"
+]
 
 [tool.ruff.lint]
 # Rules: https://docs.astral.sh/ruff/rules/
@@ -15,6 +79,7 @@ select = [
     "I",  # isort
     "C9", # McCabe complexity
 ]
+
 ignore = ["D1", "D203", "D205", "D212", "D400", "D415"]
 
 [tool.ruff.lint.isort]
@@ -33,6 +98,12 @@ section-order = [
 max-complexity = 10
 
 [tool.ruff.lint.per-file-ignores]
-# Allow the usage of assert in the test_spdx file.
-"**/test_spdx.py*" = ["S101"]
+# Allow the usage of assert in the test file.
+"**/tests/*" = ["S101"]
+"**/test_*.py" = ["S101"]
 "scanpipe/pipes/spdx.py" = ["UP006", "UP035"]
+
+
+[tool.doc8]
+ignore-path = ["docs/build", "doc/build", "docs/_build", "doc/_build"]
+max-line-length=100

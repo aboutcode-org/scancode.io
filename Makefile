@@ -66,7 +66,7 @@ envfile:
 
 doc8:
 	@echo "-> Run doc8 validation"
-	@${ACTIVATE} doc8 --max-line-length 100 --ignore-path docs/_build/ --quiet docs/
+	@${ACTIVATE} doc8 --quiet docs/ *.rst
 
 valid:
 	@echo "-> Run Ruff format"
@@ -147,6 +147,10 @@ docs:
 	rm -rf docs/_build/
 	@${ACTIVATE} sphinx-build docs/ docs/_build/
 
+docs-check:
+	@${ACTIVATE} sphinx-build -E -W -b html docs/ docs/_build/
+	@${ACTIVATE} sphinx-build -E -W -b linkcheck docs/ docs/_build/
+
 bump:
 	@echo "-> Bump the version"
 	@${ACTIVATE} bumpver update --no-fetch --patch
@@ -167,4 +171,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run run-docker-dev test fasttest docs bump docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run run-docker-dev test fasttest docs docs-check bump docker-images offline-package
