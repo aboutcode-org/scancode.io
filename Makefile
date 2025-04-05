@@ -159,7 +159,7 @@ docker-images:
 	@echo "-> Save the service images to a tar archive in the build/ directory"
 	@rm -rf build/
 	@mkdir -p build/
-	@docker save postgres redis scancodeio-worker scancodeio-web nginx | gzip > build/scancodeio-images.tar.gz
+	@docker save postgres redis scancodeio-worker scancodeio-web nginx clamav/clamav | gzip > build/scancodeio-images.tar.gz
 
 offline-package: docker-images
 	@echo "-> Build package for offline installation in dist/"
