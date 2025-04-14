@@ -20,13 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-from collections import Counter
-
 from aboutcode.pipeline import LoopProgress
-
-STRING_MATCHING_RATIO_JAVASCRIPT = 0.7
-SMALL_FILE_STRING_THRESHOLD_JAVASCRIPT = 10
-STRING_MATCHING_RATIO_JAVASCRIPT_SMALL_FILE = 0.5
 
 
 class XgettextNotFound(Exception):
@@ -72,37 +66,3 @@ def _collect_and_store_resource_strings(resource):
     result = strings_xgettext.collect_strings(resource.location)
     strings = [item["string"] for item in result if "string" in item]
     resource.update_extra_data({"source_strings": strings})
-
-
-def match_source_strings_to_deployed(source_strings, deployed_strings):
-    common_strings_ratio = 0
-    is_match = False
-    deployed_strings_set = set(deployed_strings)
-    source_strings_set = set(source_strings)
-    source_strings_count = len(source_strings)
-    deployed_strings_count = len(deployed_strings)
-    total_strings_count = source_strings_count + deployed_strings_count
-    source_strings_counter = Counter(source_strings)
-    deployed_strings_counter = Counter(deployed_strings)
-
-    common_strings = source_strings_set.intersection(deployed_strings_set)
-    total_common_strings_count = sum(
-        [
-            source_strings_counter.get(string, 0)
-            + deployed_strings_counter.get(string, 0)
-            for string in common_strings
-        ]
-    )
-
-    if total_common_strings_count:
-        common_strings_ratio = total_common_strings_count / total_strings_count
-
-    if common_strings_ratio > STRING_MATCHING_RATIO_JAVASCRIPT:
-        is_match = True
-    elif (
-        source_strings_count > SMALL_FILE_STRING_THRESHOLD_JAVASCRIPT
-        and common_strings_ratio > STRING_MATCHING_RATIO_JAVASCRIPT_SMALL_FILE
-    ):
-        is_match = True
-
-    return is_match, common_strings_ratio

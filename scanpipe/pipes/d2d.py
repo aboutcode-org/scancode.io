@@ -62,7 +62,7 @@ from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
 from scanpipe.pipes import resolve
 from scanpipe.pipes import scancode
-from scanpipe.pipes import strings
+from scanpipe.pipes import stringmap
 from scanpipe.pipes import symbolmap
 from scanpipe.pipes import symbols
 
@@ -2198,18 +2198,20 @@ def _map_javascript_strings(to_resource, javascript_from_resources, logger):
     """
     ignoreable_string_threshold = 5
     to_strings = to_resource.extra_data.get("source_strings")
+    to_strings_set = set(to_strings)
 
-    if not to_strings and len(to_strings) > ignoreable_string_threshold:
+    if not to_strings or len(to_strings_set) < ignoreable_string_threshold:
         return 0
 
     best_matching_score = 0
     best_match = None
     for source_js in javascript_from_resources:
         from_strings = source_js.extra_data.get("source_strings")
-        if not from_strings and len(from_strings) > ignoreable_string_threshold:
+        from_strings_set = set(from_strings)
+        if not from_strings or len(from_strings_set) < ignoreable_string_threshold:
             continue
 
-        is_match, similarity = strings.match_source_strings_to_deployed(
+        is_match, similarity = stringmap.match_source_strings_to_deployed(
             source_strings=from_strings,
             deployed_strings=to_strings,
         )

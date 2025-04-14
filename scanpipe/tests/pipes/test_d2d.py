@@ -38,6 +38,7 @@ from scanpipe.models import Project
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import scancode
+from scanpipe.pipes import symbols
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import make_resource_directory
@@ -1752,5 +1753,42 @@ class ScanPipeD2DPipesTest(TestCase):
             1,
             self.project1.codebaserelations.filter(
                 map_type="javascript_symbols"
+            ).count(),
+        )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_javascript_strings(self):
+        to_dir = self.project1.codebase_path / "to/project.tar.zst-extract/"
+        to_resource_file = (
+            self.data / "d2d-javascript/strings/cesium/source-decodeI3S.js"
+        )
+        to_dir.mkdir(parents=True)
+        copy_input(to_resource_file, to_dir)
+
+        from_input_location = (
+            self.data / "d2d-javascript/strings/cesium/deployed-decodeI3S.js"
+        )
+        from_dir = self.project1.codebase_path / "from/project.zip/"
+        from_dir.mkdir(parents=True)
+        copy_input(from_input_location, from_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+        symbols.collect_and_store_tree_sitter_symbols_and_strings(
+            project=self.project1,
+        )
+
+        buffer = io.StringIO()
+        d2d.map_javascript_strings(self.project1, logger=buffer.write)
+        expected = (
+            "Mapping 1 JavaScript resources using string "
+            "literals against 1 from/ resources."
+        )
+        self.assertIn(expected, buffer.getvalue())
+
+        self.assertEqual(1, self.project1.codebaserelations.count())
+        self.assertEqual(
+            1,
+            self.project1.codebaserelations.filter(
+                map_type="javascript_strings",
             ).count(),
         )
