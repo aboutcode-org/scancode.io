@@ -72,6 +72,7 @@ class DeployToDevelop(Pipeline):
             cls.map_jar_to_source,
             cls.map_javascript,
             cls.map_javascript_symbols,
+            cls.map_javascript_strings,
             cls.map_elf,
             cls.map_go,
             cls.map_rust,
@@ -201,6 +202,11 @@ class DeployToDevelop(Pipeline):
     def map_javascript_symbols(self):
         """Map deployed JavaScript, TypeScript to its sources using symbols."""
         d2d.map_javascript_symbols(project=self.project, logger=self.log)
+
+    @optional_step("JavaScript")
+    def map_javascript_strings(self):
+        """Map deployed JavaScript, TypeScript to its sources using string literals."""
+        d2d.map_javascript_strings(project=self.project, logger=self.log)
 
     @optional_step("Elf")
     def map_elf(self):
