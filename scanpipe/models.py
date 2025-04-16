@@ -4042,7 +4042,10 @@ class DiscoveredDependency(
 
     @property
     def spdx_id(self):
-        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.dependency_uid}"
+        # We cannot rely on `dependency_uid` for the SPDX ID because it may contain
+        # PURL components that are not SPDX-compliant. According to the spec,
+        # "SPDXID is a unique string containing letters, numbers, ., and/or -"
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
 
     def as_spdx(self):
         """Return this Dependency as an SPDX Package entry."""
