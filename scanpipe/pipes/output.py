@@ -280,6 +280,16 @@ class JSONResultsGenerator:
         )
 
 
+JSON_EXCLUDE_FIELDS = [
+    "extra_data",
+    "package_data",
+    "license_detections",
+    "other_license_detections",
+    "license_clues",
+    "affected_by_vulnerabilities",
+]
+
+
 def to_json(project):
     """
     Generate output for the provided `project` in JSON format.

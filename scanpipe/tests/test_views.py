@@ -29,6 +29,7 @@ from unittest import mock
 
 from django.apps import apps
 from django.core.exceptions import SuspiciousFileOperation
+from django.http import FileResponse
 from django.http.response import Http404
 from django.test import TestCase
 from django.test import override_settings
@@ -1325,3 +1326,88 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(200, response.status_code)
         self.assertContains(response, "Policies file format error")
+
+    def test_scanpipe_views_export_json_returns_valid_response(self):
+        url = reverse("project_resources", args=[self.project1.slug])
+        response = self.client.get(url + "?export_json=True")
+
+        self.assertIsInstance(response, FileResponse)
+        self.assertEqual(response.get("Content-Type"), "application/json")
+        self.assertTrue(response.get("Content-Disposition").startswith("attachment"))
+
+    def test_scanpipe_views_export_json_correct_filename(self):
+        url = reverse("project_resources", args=[self.project1.slug])
+        response = self.client.get(url + "?export_json=True")
+
+        actual_filename = response.get("Content-Disposition")
+        expected_filename = (
+            f'attachment; filename="{self.project1.name}_codebaseresource.json"'
+        )
+        self.assertEqual(actual_filename, expected_filename)
+
+    def test_scanpipe_views_export_json_contains_expected_fields(self):
+        make_resource_file(self.project1, "file1.txt")
+        url = reverse("project_resources", args=[self.project1.slug])
+        response = self.client.get(url + "?export_json=True")
+
+        file_content = b"".join(response.streaming_content).decode("utf-8")
+        json_data = json.loads(file_content)
+
+        expected_fields = [
+            "path",
+            "type",
+            "name",
+            "status",
+            "for_packages",
+            "tag",
+            "extension",
+            "size",
+            "md5",
+            "sha1",
+            "sha256",
+            "sha512",
+            "mime_type",
+            "file_type",
+            "programming_language",
+            "is_binary",
+            "is_text",
+            "is_archive",
+            "is_media",
+            "is_legal",
+            "is_manifest",
+            "is_readme",
+            "is_top_level",
+            "is_key_file",
+            "detected_license_expression",
+            "detected_license_expression_spdx",
+            "percentage_of_license_text",
+            "compliance_alert",
+            "copyrights",
+            "holders",
+            "authors",
+            "emails",
+            "urls",
+        ]
+
+        for field in expected_fields:
+            self.assertIn(field, json_data)
+
+    def test_scanpipe_views_export_json_excludes_fields(self):
+        make_resource_file(self.project1, "file1.txt")
+        url = reverse("project_resources", args=[self.project1.slug])
+        response = self.client.get(url + "?export_json=True")
+
+        file_content = b"".join(response.streaming_content).decode("utf-8")
+        json_data = json.loads(file_content)
+
+        excluded_fields = [
+            "extra_data",
+            "package_data",
+            "license_detections",
+            "other_license_detections",
+            "license_clues",
+            "affected_by_vulnerabilities",
+        ]
+
+        for field in excluded_fields:
+            self.assertNotIn(field, json_data)
