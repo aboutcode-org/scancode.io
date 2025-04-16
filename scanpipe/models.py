@@ -129,6 +129,18 @@ class UUIDPKModel(models.Model):
         return str(self.uuid)[0:8]
 
 
+class UUIDFieldMixin(models.Model):
+    uuid = models.UUIDField(
+        verbose_name=_("UUID"),
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+    )
+
+    class Meta:
+        abstract = True
+
+
 class HashFieldsMixin(models.Model):
     """
     The hash fields are not indexed by default, use the `indexes` in Meta as needed:
@@ -3400,6 +3412,7 @@ class AbstractPackage(models.Model):
 
 class DiscoveredPackage(
     ProjectRelatedModel,
+    UUIDFieldMixin,
     ExtraDataFieldMixin,
     SaveProjectMessageMixin,
     UpdateFromDataMixin,
@@ -3421,9 +3434,6 @@ class DiscoveredPackage(
 
     license_expression_field = "declared_license_expression"
 
-    uuid = models.UUIDField(
-        verbose_name=_("UUID"), default=uuid.uuid4, unique=True, editable=False
-    )
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
     )
@@ -3769,6 +3779,7 @@ class DiscoveredDependencyQuerySet(
 
 class DiscoveredDependency(
     ProjectRelatedModel,
+    UUIDFieldMixin,
     SaveProjectMessageMixin,
     UpdateFromDataMixin,
     VulnerabilityMixin,
