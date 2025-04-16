@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v34.10.2 (unreleased)
+---------------------
+
+- Add a ``UUID`` field on the DiscoveredDependency model.
+  Use the UUID for the DiscoveredDependency spdx_id for better SPDX compatibility.
+  https://github.com/aboutcode-org/scancode.io/issues/1651
+
 v34.10.1 (2025-03-26)
 ---------------------
 
