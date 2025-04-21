@@ -32,6 +32,7 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+import openpyxl
 from rest_framework import status
 from rest_framework.exceptions import ErrorDetail
 from rest_framework.test import APIClient
@@ -51,9 +52,14 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
+from scanpipe.models import WebhookSubscription
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.output import JSONResultsGenerator
 from scanpipe.tests import dependency_data1
+from scanpipe.tests import make_message
+from scanpipe.tests import make_package
+from scanpipe.tests import make_project
+from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
@@ -64,7 +70,7 @@ class ScanPipeAPITest(TransactionTestCase):
     data = Path(__file__).parent / "data"
 
     def setUp(self):
-        self.project1 = Project.objects.create(name="Analysis")
+        self.project1 = make_project(name="Analysis")
         self.resource1 = CodebaseResource.objects.create(
             project=self.project1,
             path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
@@ -98,8 +104,8 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertContains(response, self.project1_detail_url)
 
     def test_scanpipe_api_project_list(self):
-        Project.objects.create(name="2")
-        Project.objects.create(name="3")
+        make_project(name="2")
+        make_project(name="3")
 
         with self.assertNumQueries(8):
             response = self.csrf_client.get(self.project_list_url)
@@ -116,8 +122,8 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertNotContains(response, "dependency_count")
 
     def test_scanpipe_api_project_list_filters(self):
-        project2 = Project.objects.create(name="pro2ject", is_archived=True)
-        project3 = Project.objects.create(name="3project", is_archived=True)
+        project2 = make_project(name="pro2ject", is_archived=True)
+        project3 = make_project(name="3project", is_archived=True)
 
         response = self.csrf_client.get(self.project_list_url)
         self.assertEqual(3, response.data["count"])
@@ -174,6 +180,15 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertContains(response, project2.uuid)
         self.assertContains(response, project3.uuid)
 
+        project2.labels.add("label1")
+        project3.labels.add("label1")
+        data = {"label": "label1"}
+        response = self.csrf_client.get(self.project_list_url, data=data)
+        self.assertEqual(2, response.data["count"])
+        self.assertNotContains(response, self.project1.uuid)
+        self.assertContains(response, project2.uuid)
+        self.assertContains(response, project3.uuid)
+
     def test_scanpipe_api_project_detail(self):
         response = self.csrf_client.get(self.project1_detail_url)
         self.assertIn(self.project1_detail_url, response.data["url"])
@@ -210,7 +225,7 @@ class ScanPipeAPITest(TransactionTestCase):
             "total": 1,
             "is_runtime": 1,
             "is_optional": 0,
-            "is_resolved": 0,
+            "is_pinned": 0,
         }
         self.assertEqual(expected, response.data["discovered_dependencies_summary"])
 
@@ -439,6 +454,7 @@ class ScanPipeAPITest(TransactionTestCase):
             "scan_single_package", response.data["runs"][1]["pipeline_name"]
         )
 
+        # Not supported as the comma `,` is used as the separator for optional steps.
         data = {
             "name": "Multi string",
             "pipeline": "analyze_docker_image,scan_single_package",
@@ -448,10 +464,8 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {
             "pipeline": [
                 ErrorDetail(
-                    string=(
-                        '"analyze_docker_image,scan_single_package" '
-                        "is not a valid choice."
-                    ),
+                    string='"analyze_docker_image,scan_single_package" is not a valid '
+                    "choice.",
                     code="invalid_choice",
                 )
             ]
@@ -487,13 +501,52 @@ class ScanPipeAPITest(TransactionTestCase):
     def test_scanpipe_api_project_create_labels(self):
         data = {
             "name": "Project1",
-            "labels": ["label1", "label2"],
+            "labels": ["label2", "label1"],
         }
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
-        self.assertEqual(data["labels"], sorted(response.data["labels"]))
+        self.assertEqual(sorted(data["labels"]), response.data["labels"])
         project = Project.objects.get(name=data["name"])
-        self.assertEqual(data["labels"], sorted(project.labels.names()))
+        self.assertEqual(sorted(data["labels"]), list(project.labels.names()))
+
+    def test_scanpipe_api_project_create_pipeline_groups(self):
+        data = {
+            "name": "Project1",
+            "pipeline": "inspect_packages:StaticResolver",
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(
+            ["StaticResolver"], response.data["runs"][0]["selected_groups"]
+        )
+        run = Project.objects.get(name="Project1").runs.get()
+        self.assertEqual("inspect_packages", run.pipeline_name)
+        self.assertEqual(["StaticResolver"], run.selected_groups)
+
+        data = {
+            "name": "Mix of string and list plus selected groups",
+            "pipeline": [
+                "map_deploy_to_develop:Java,JavaScript",
+                "inspect_packages:StaticResolver",
+            ],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(
+            "map_deploy_to_develop", response.data["runs"][0]["pipeline_name"]
+        )
+        self.assertEqual("inspect_packages", response.data["runs"][1]["pipeline_name"])
+        self.assertEqual(
+            ["Java", "JavaScript"], response.data["runs"][0]["selected_groups"]
+        )
+        self.assertEqual(
+            ["StaticResolver"], response.data["runs"][1]["selected_groups"]
+        )
+        runs = Project.objects.get(name=data["name"]).runs.all()
+        self.assertEqual("map_deploy_to_develop", runs[0].pipeline_name)
+        self.assertEqual("inspect_packages", runs[1].pipeline_name)
+        self.assertEqual(["Java", "JavaScript"], runs[0].selected_groups)
+        self.assertEqual(["StaticResolver"], runs[1].selected_groups)
 
     def test_scanpipe_api_project_create_webhooks(self):
         data = {
@@ -617,6 +670,47 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = ["name", "summary", "description", "steps", "available_groups"]
         self.assertEqual(expected, list(response.data[0].keys()))
 
+    def test_scanpipe_api_project_action_report(self):
+        url = reverse("project-report")
+
+        response = self.csrf_client.get(url)
+        self.assertEqual(400, response.status_code)
+        expected = (
+            "Specifies the model to include in the XLSX report. Using: ?model=MODEL"
+        )
+        self.assertEqual(expected, response.data["error"])
+
+        data = {"model": "bad value"}
+        response = self.csrf_client.get(url, data=data)
+        self.assertEqual(400, response.status_code)
+        expected = "bad value is not on of the valid choices"
+        self.assertEqual(expected, response.data["error"])
+
+        make_package(self.project1, package_url="pkg:generic/p1")
+        project2 = make_project()
+        project2.labels.add("label1")
+        package2 = make_package(project2, package_url="pkg:generic/p2")
+
+        data = {
+            "model": "package",
+            "label": "label1",
+        }
+        response = self.csrf_client.get(url, data=data)
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(response.filename.startswith("scancodeio-report-"))
+        self.assertTrue(response.filename.endswith(".xlsx"))
+
+        output_file = io.BytesIO(b"".join(response.streaming_content))
+        workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
+        self.assertEqual(["PACKAGES"], workbook.get_sheet_names())
+
+        todos_sheet = workbook.get_sheet_by_name("PACKAGES")
+        rows = list(todos_sheet.values)
+        self.assertEqual(2, len(rows))
+        self.assertEqual("project", rows[0][0])  # header row
+        self.assertEqual(project2.name, rows[1][0])
+        self.assertEqual(package2.package_url, rows[1][1])
+
     def test_scanpipe_api_project_action_resources(self):
         url = reverse("project-resources", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
@@ -648,6 +742,37 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.get(url)
         self.assertEqual("error", response.data["results"][0]["compliance_alert"])
 
+    def test_scanpipe_api_project_action_resources_filterset(self):
+        make_resource_file(
+            self.project1,
+            path="path/",
+        )
+        url = reverse("project-resources", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(2, response.data["count"])
+
+        response = self.csrf_client.get(url + "?path=path/")
+        self.assertEqual(1, response.data["count"])
+        package = response.data["results"][0]
+        self.assertEqual("path/", package["path"])
+
+        response = self.csrf_client.get(url + "?path=unknown")
+        self.assertEqual(0, response.data["count"])
+
+        response = self.csrf_client.get(url + "?compliance_alert=a")
+        self.assertEqual(400, response.status_code)
+        expected = {
+            "compliance_alert": [
+                "Select a valid choice. a is not one of the available choices."
+            ]
+        }
+        self.assertEqual(expected, response.data["errors"])
+
+        # Using a field name available on the Project model to make sure the
+        # ProjectFilterSet is bypassed.
+        response = self.csrf_client.get(url + "?slug=aaa")
+        self.assertEqual(2, response.data["count"])
+
     def test_scanpipe_api_project_action_packages(self):
         url = reverse("project-packages", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
@@ -659,6 +784,24 @@ class ScanPipeAPITest(TransactionTestCase):
         package = response.data["results"][0]
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package["purl"])
         self.assertEqual("adduser", package["name"])
+
+    def test_scanpipe_api_project_action_packages_filterset(self):
+        make_package(self.project1, package_url="pkg:generic/name@1.0")
+        url = reverse("project-packages", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(2, response.data["count"])
+
+        response = self.csrf_client.get(url + "?version=1.0")
+        self.assertEqual(1, response.data["count"])
+        package = response.data["results"][0]
+        self.assertEqual("pkg:generic/name@1.0", package["purl"])
+
+        response = self.csrf_client.get(url + "?version=2.0")
+        self.assertEqual(0, response.data["count"])
+
+        response = self.csrf_client.get(url + "?size=a")
+        self.assertEqual(400, response.status_code)
+        self.assertEqual({"size": ["Enter a number."]}, response.data["errors"])
 
     def test_scanpipe_api_project_action_dependencies(self):
         url = reverse("project-dependencies", args=[self.project1.uuid])
@@ -694,15 +837,18 @@ class ScanPipeAPITest(TransactionTestCase):
         }
         self.assertEqual(expected, relation)
 
+    def test_scanpipe_api_project_action_relations_filterset(self):
+        url = reverse("project-relations", args=[self.project1.uuid])
+        response = self.csrf_client.get(url + "?map_type=about_file")
+        self.assertEqual(0, response.data["count"])
+
+        map_type = self.codebase_relation1.map_type
+        response = self.csrf_client.get(url + f"?map_type={map_type}")
+        self.assertEqual(1, response.data["count"])
+
     def test_scanpipe_api_project_action_messages(self):
         url = reverse("project-messages", args=[self.project1.uuid])
-        ProjectMessage.objects.create(
-            project=self.project1,
-            severity=ProjectMessage.Severity.ERROR,
-            description="Error",
-            model="ModelName",
-            details={},
-        )
+        make_message(self.project1, description="Error")
 
         response = self.csrf_client.get(url)
         self.assertEqual(1, response.data["count"])
@@ -713,7 +859,6 @@ class ScanPipeAPITest(TransactionTestCase):
         message = response.data["results"][0]
         self.assertEqual("error", message["severity"])
         self.assertEqual("Error", message["description"])
-        self.assertEqual("ModelName", message["model"])
         self.assertEqual({}, message["details"])
 
     def test_scanpipe_api_project_action_file_content(self):
@@ -834,7 +979,7 @@ class ScanPipeAPITest(TransactionTestCase):
         run = self.project1.runs.get()
         self.assertEqual(data["pipeline"], run.pipeline_name)
 
-        project2 = Project.objects.create(name="Analysis 2")
+        project2 = make_project(name="Analysis 2")
         url = reverse("project-add-pipeline", args=[project2.uuid])
         data["execute_now"] = True
         response = self.csrf_client.post(url, data=data)
@@ -859,7 +1004,9 @@ class ScanPipeAPITest(TransactionTestCase):
         }
         response = self.csrf_client.post(url, data=data)
         self.assertEqual({"status": "Pipeline added."}, response.data)
-        self.assertEqual("analyze_docker_image", self.project1.runs.get().pipeline_name)
+        run = self.project1.runs.get()
+        self.assertEqual("analyze_docker_image", run.pipeline_name)
+        self.assertEqual(["group1", "group2"], run.selected_groups)
 
     def test_scanpipe_api_project_action_add_input(self):
         url = reverse("project-add-input", args=[self.project1.uuid])
@@ -896,6 +1043,42 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = "Cannot add inputs once a pipeline has started to execute."
         self.assertEqual(expected, response.data.get("status"))
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+    def test_scanpipe_api_project_action_add_webhook(self):
+        url = reverse("project-add-webhook", args=[self.project1.uuid])
+
+        # Test missing target_url
+        response = self.csrf_client.post(url, data={})
+        self.assertEqual(
+            {"target_url": ["This field is required."]},
+            response.data,
+        )
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+        # Test invalid URL
+        data = {"target_url": "invalid-url"}
+        response = self.csrf_client.post(url, data=data)
+        self.assertIn("target_url", response.data)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+        # Test valid webhook creation
+        data = {
+            "target_url": "https://example.com/webhook",
+            "trigger_on_each_run": True,
+            "include_summary": True,
+            "include_results": False,
+            "is_active": True,
+        }
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual({"status": "Webhook added."}, response.data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+
+        webhook = WebhookSubscription.objects.get(project=self.project1)
+        self.assertEqual(webhook.target_url, data["target_url"])
+        self.assertTrue(webhook.trigger_on_each_run)
+        self.assertTrue(webhook.include_summary)
+        self.assertFalse(webhook.include_results)
+        self.assertTrue(webhook.is_active)
 
     def test_scanpipe_api_run_detail(self):
         run1 = self.project1.add_pipeline("analyze_docker_image")
@@ -1028,6 +1211,40 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {"status": "Output file NOT_FOUND not found"}
         self.assertEqual(expected, response.data)
+
+    def test_scanpipe_api_project_action_compliance(self):
+        project = make_project()
+        url = reverse("project-compliance", args=[project.uuid])
+        response = self.csrf_client.get(url)
+        expected = {"compliance_alerts": {}}
+        self.assertEqual(expected, response.data)
+
+        make_resource_file(
+            project,
+            path="path/",
+            compliance_alert=CodebaseResource.Compliance.WARNING,
+        )
+        make_package(
+            project,
+            package_url="pkg:generic/name@1.0",
+            compliance_alert=CodebaseResource.Compliance.ERROR,
+        )
+
+        response = self.csrf_client.get(url)
+        expected = {
+            "compliance_alerts": {"packages": {"error": ["pkg:generic/name@1.0"]}}
+        }
+        self.assertEqual(expected, response.data)
+
+        data = {"fail_level": "WARNING"}
+        response = self.csrf_client.get(url, data=data)
+        expected = {
+            "compliance_alerts": {
+                "packages": {"error": ["pkg:generic/name@1.0"]},
+                "resources": {"warning": ["path/"]},
+            }
+        }
+        self.assertDictEqual(expected, response.data)
 
     def test_scanpipe_api_serializer_get_model_serializer(self):
         self.assertEqual(

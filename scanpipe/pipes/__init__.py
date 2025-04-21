@@ -68,8 +68,22 @@ def make_codebase_resource(project, location, save=True, **extra_fields):
     the error raised on save() is not stored in the database and the creation is
     skipped.
     """
+    from scanpipe.pipes import flag
+
     relative_path = Path(location).relative_to(project.codebase_path)
-    resource_data = scancode.get_resource_info(location=str(location))
+    try:
+        resource_data = scancode.get_resource_info(location=str(location))
+    except OSError as error:
+        logger.error(
+            f"Failed to read resource at {location}: "
+            f"Permission denied or file inaccessible."
+        )
+        resource_data = {"status": flag.RESOURCE_READ_ERROR}
+        project.add_error(
+            model=CodebaseResource,
+            details={"resource_path": str(relative_path)},
+            exception=error,
+        )
 
     if extra_fields:
         resource_data.update(**extra_fields)
@@ -113,7 +127,7 @@ def collect_and_create_codebase_resources(project, batch_size=5000):
     Collect and create codebase resources including the "to/" and "from/" context using
     the resource tag field.
 
-    The default ``batch_size`` can be overriden, although the benefits of a value
+    The default ``batch_size`` can be overridden, although the benefits of a value
     greater than 5000 objects are usually not significant.
     """
     model_class = CodebaseResource

@@ -14,12 +14,12 @@
         "--summary": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "output_format_version": "3.2.0",
+      "output_format_version": "4.0.0",
       "message": null,
       "errors": [],
       "warnings": [],
       "extra_data": {
-        "spdx_license_list_version": "3.24",
+        "spdx_license_list_version": "3.26",
         "files_count": 6
       }
     }
@@ -98,7 +98,7 @@
           "matches": [
             {
               "license_expression": "mit",
-              "spdx_license_expression": "MIT",
+              "license_expression_spdx": "MIT",
               "from_file": "codebase/is-npm/package.json",
               "start_line": 1,
               "end_line": 1,
@@ -186,7 +186,7 @@
           "matches": [
             {
               "license_expression": "mit",
-              "spdx_license_expression": "MIT",
+              "license_expression_spdx": "MIT",
               "from_file": "codebase/is-npm/node_modules/is-npm/package.json",
               "start_line": 1,
               "end_line": 1,
@@ -236,7 +236,7 @@
       "scope": "devDependencies",
       "is_runtime": false,
       "is_optional": true,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
@@ -251,7 +251,7 @@
       "scope": "devDependencies",
       "is_runtime": false,
       "is_optional": true,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
@@ -592,7 +592,7 @@
               "matches": [
                 {
                   "license_expression": "mit",
-                  "spdx_license_expression": "MIT",
+                  "license_expression_spdx": "MIT",
                   "from_file": "codebase/is-npm/node_modules/is-npm/package.json",
                   "start_line": 1,
                   "end_line": 1,
@@ -630,7 +630,7 @@
               "scope": "devDependencies",
               "is_runtime": false,
               "is_optional": true,
-              "is_resolved": false,
+              "is_pinned": false,
               "is_direct": true,
               "resolved_package": {},
               "extra_data": {}
@@ -660,7 +660,7 @@
           "matches": [
             {
               "license_expression": "mit",
-              "spdx_license_expression": "MIT",
+              "license_expression_spdx": "MIT",
               "from_file": "codebase/is-npm/node_modules/is-npm/package.json",
               "start_line": 5,
               "end_line": 5,
@@ -739,7 +739,7 @@
           "matches": [
             {
               "license_expression": "mit",
-              "spdx_license_expression": "MIT",
+              "license_expression_spdx": "MIT",
               "from_file": "codebase/is-npm/node_modules/is-npm/readme.md",
               "start_line": 28,
               "end_line": 30,
@@ -862,7 +862,7 @@
               "matches": [
                 {
                   "license_expression": "mit",
-                  "spdx_license_expression": "MIT",
+                  "license_expression_spdx": "MIT",
                   "from_file": "codebase/is-npm/package.json",
                   "start_line": 1,
                   "end_line": 1,
@@ -900,7 +900,7 @@
               "scope": "devDependencies",
               "is_runtime": false,
               "is_optional": true,
-              "is_resolved": false,
+              "is_pinned": false,
               "is_direct": true,
               "resolved_package": {},
               "extra_data": {}
@@ -930,7 +930,7 @@
           "matches": [
             {
               "license_expression": "mit",
-              "spdx_license_expression": "MIT",
+              "license_expression_spdx": "MIT",
               "from_file": "codebase/is-npm/package.json",
               "start_line": 5,
               "end_line": 5,
@@ -1009,7 +1009,7 @@
           "matches": [
             {
               "license_expression": "mit",
-              "spdx_license_expression": "MIT",
+              "license_expression_spdx": "MIT",
               "from_file": "codebase/is-npm/readme.md",
               "start_line": 28,
               "end_line": 30,

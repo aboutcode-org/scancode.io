@@ -96,7 +96,7 @@
               "rule_relevance": 99,
               "rule_identifier": "bsd-new_89.RULE",
               "license_expression": "bsd-new",
-              "spdx_license_expression": "BSD-3-Clause"
+              "license_expression_spdx": "BSD-3-Clause"
             }
           ],
           "identifier": "bsd_new-261898a0-0118-87c4-7092-14e4ff134882",
@@ -118,7 +118,7 @@
               "rule_relevance": 99,
               "rule_identifier": "pypi_bsd_license.RULE",
               "license_expression": "bsd-new",
-              "spdx_license_expression": "BSD-3-Clause"
+              "license_expression_spdx": "BSD-3-Clause"
             }
           ],
           "identifier": "bsd_new-f4e99f86-00ab-18d9-a65d-a3a12767dcf5",
@@ -217,7 +217,7 @@
               "rule_relevance": 99,
               "rule_identifier": "bsd-new_89.RULE",
               "license_expression": "bsd-new",
-              "spdx_license_expression": "BSD-3-Clause"
+              "license_expression_spdx": "BSD-3-Clause"
             }
           ],
           "identifier": "bsd_new-261898a0-0118-87c4-7092-14e4ff134882",
@@ -239,7 +239,7 @@
               "rule_relevance": 99,
               "rule_identifier": "pypi_bsd_license.RULE",
               "license_expression": "bsd-new",
-              "spdx_license_expression": "BSD-3-Clause"
+              "license_expression_spdx": "BSD-3-Clause"
             }
           ],
           "identifier": "bsd_new-f4e99f86-00ab-18d9-a65d-a3a12767dcf5",
@@ -276,11 +276,11 @@
   "dependencies": [
     {
       "purl": "pkg:pypi/pytest",
-      "extracted_requirement": "pytest; extra == \"tests\"",
+      "extracted_requirement": "",
       "scope": "tests",
       "is_runtime": true,
       "is_optional": true,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/pytest?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -292,11 +292,11 @@
     },
     {
       "purl": "pkg:pypi/pytest",
-      "extracted_requirement": "pytest; extra == \"tests\"",
+      "extracted_requirement": "",
       "scope": "tests",
       "is_runtime": true,
       "is_optional": true,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/pytest?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -308,11 +308,11 @@
     },
     {
       "purl": "pkg:pypi/pytest-asyncio",
-      "extracted_requirement": "pytest-asyncio; extra == \"tests\"",
+      "extracted_requirement": "",
       "scope": "tests",
       "is_runtime": true,
       "is_optional": true,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -324,11 +324,11 @@
     },
     {
       "purl": "pkg:pypi/pytest-asyncio",
-      "extracted_requirement": "pytest-asyncio; extra == \"tests\"",
+      "extracted_requirement": "",
       "scope": "tests",
       "is_runtime": true,
       "is_optional": true,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -422,23 +422,23 @@
               "purl": "pkg:pypi/pytest",
               "scope": "tests",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
-              "is_resolved": false,
               "resolved_package": {},
-              "extracted_requirement": "pytest; extra == \"tests\""
+              "extracted_requirement": null
             },
             {
               "purl": "pkg:pypi/pytest-asyncio",
               "scope": "tests",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
-              "is_resolved": false,
               "resolved_package": {},
-              "extracted_requirement": "pytest-asyncio; extra == \"tests\""
+              "extracted_requirement": null
             }
           ],
           "download_url": null,
@@ -579,7 +579,7 @@
                   "rule_relevance": 99,
                   "rule_identifier": "bsd-new_89.RULE",
                   "license_expression": "bsd-new",
-                  "spdx_license_expression": "BSD-3-Clause"
+                  "license_expression_spdx": "BSD-3-Clause"
                 }
               ],
               "identifier": "bsd_new-261898a0-0118-87c4-7092-14e4ff134882",
@@ -601,7 +601,7 @@
                   "rule_relevance": 99,
                   "rule_identifier": "pypi_bsd_license.RULE",
                   "license_expression": "bsd-new",
-                  "spdx_license_expression": "BSD-3-Clause"
+                  "license_expression_spdx": "BSD-3-Clause"
                 }
               ],
               "identifier": "bsd_new-f4e99f86-00ab-18d9-a65d-a3a12767dcf5",
@@ -769,7 +769,7 @@
               "rule_relevance": 100,
               "rule_identifier": "bsd-new_683.RULE",
               "license_expression": "bsd-new",
-              "spdx_license_expression": "BSD-3-Clause"
+              "license_expression_spdx": "BSD-3-Clause"
             }
           ],
           "identifier": "bsd_new-72cae3bc-4423-3a9e-be84-ee8bb5120a4d",
@@ -840,7 +840,7 @@
               "rule_relevance": 99,
               "rule_identifier": "bsd-new_89.RULE",
               "license_expression": "bsd-new",
-              "spdx_license_expression": "BSD-3-Clause"
+              "license_expression_spdx": "BSD-3-Clause"
             }
           ],
           "identifier": "bsd_new-261898a0-0118-87c4-7092-14e4ff134882",
@@ -861,7 +861,7 @@
               "rule_relevance": 99,
               "rule_identifier": "pypi_bsd_license.RULE",
               "license_expression": "bsd-new",
-              "spdx_license_expression": "BSD-3-Clause"
+              "license_expression_spdx": "BSD-3-Clause"
             }
           ],
           "identifier": "bsd_new-f4e99f86-00ab-18d9-a65d-a3a12767dcf5",
@@ -933,23 +933,23 @@
               "purl": "pkg:pypi/pytest",
               "scope": "tests",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
-              "is_resolved": false,
               "resolved_package": {},
-              "extracted_requirement": "pytest; extra == \"tests\""
+              "extracted_requirement": null
             },
             {
               "purl": "pkg:pypi/pytest-asyncio",
               "scope": "tests",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": true,
-              "is_resolved": false,
               "resolved_package": {},
-              "extracted_requirement": "pytest-asyncio; extra == \"tests\""
+              "extracted_requirement": null
             }
           ],
           "download_url": null,
@@ -1090,7 +1090,7 @@
                   "rule_relevance": 99,
                   "rule_identifier": "bsd-new_89.RULE",
                   "license_expression": "bsd-new",
-                  "spdx_license_expression": "BSD-3-Clause"
+                  "license_expression_spdx": "BSD-3-Clause"
                 }
               ],
               "identifier": "bsd_new-261898a0-0118-87c4-7092-14e4ff134882",
@@ -1112,7 +1112,7 @@
                   "rule_relevance": 99,
                   "rule_identifier": "pypi_bsd_license.RULE",
                   "license_expression": "bsd-new",
-                  "spdx_license_expression": "BSD-3-Clause"
+                  "license_expression_spdx": "BSD-3-Clause"
                 }
               ],
               "identifier": "bsd_new-f4e99f86-00ab-18d9-a65d-a3a12767dcf5",
@@ -1545,7 +1545,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_174.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-5a90b5fa-5d10-5a98-d2a7-ef089c46a900",

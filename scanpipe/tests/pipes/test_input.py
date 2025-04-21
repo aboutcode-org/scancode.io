@@ -109,6 +109,25 @@ class ScanPipeInputPipesTest(TestCase):
         self.assertEqual(57, project.codebaseresources.count())
         self.assertEqual(18, project.codebaserelations.count())
 
+    def test_scanpipe_pipes_scancode_load_inventory_extra_data(self):
+        project = Project.objects.create(name="1")
+        input_location = self.data / "asgiref" / "asgiref-3.3.0_scanpipe_output.json"
+        scan_data = json.loads(input_location.read_text())
+        extra_data = {"key": "value"}
+        scan_data["headers"][0]["extra_data"] = extra_data
+
+        input.load_inventory_from_scanpipe(project, scan_data)
+        project.refresh_from_db()
+        self.assertEqual(extra_data, project.extra_data)
+
+        project.extra_data = {}
+        project.save()
+        input.load_inventory_from_scanpipe(
+            project, scan_data, extra_data_prefix="file.ext"
+        )
+        project.refresh_from_db()
+        self.assertEqual({"file.ext": extra_data}, project.extra_data)
+
     def test_scanpipe_pipes_input_load_inventory_from_xlsx(self):
         project1 = Project.objects.create(name="Analysis")
         input_location = self.data / "outputs" / "asgiref-3.6.0-output.xlsx"
@@ -117,6 +136,25 @@ class ScanPipeInputPipesTest(TestCase):
         self.assertEqual(2, project1.discoveredpackages.count())
         self.assertEqual(8, project1.discovereddependencies.count())
         self.assertEqual(0, project1.codebaserelations.count())
+
+    def test_scanpipe_pipes_input_load_inventory_from_xlsx_layers_sheet(self):
+        project1 = Project.objects.create(name="Analysis")
+        input_location = self.data / "outputs" / "docker_ghcr.io_kyverno_sbom.xlsx"
+        input.load_inventory_from_xlsx(project1, input_location)
+        project1.refresh_from_db()
+        expected_location = (
+            self.data / "outputs" / "docker_ghcr.io_kyverno_sbom_expected.json"
+        )
+        expected = json.loads(expected_location.read_text())
+        self.assertEqual(expected, project1.extra_data)
+
+        project1.extra_data = {}
+        project1.save()
+        input.load_inventory_from_xlsx(
+            project1, input_location, extra_data_prefix="file.ext"
+        )
+        project1.refresh_from_db()
+        self.assertEqual({"file.ext": expected}, project1.extra_data)
 
     def test_scanpipe_pipes_input_load_inventory_from_project_xlsx_output(self):
         fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
@@ -174,7 +212,7 @@ class ScanPipeInputPipesTest(TestCase):
             "scope": "install",
             "is_runtime": "True",
             "is_optional": None,
-            "is_resolved": None,
+            "is_pinned": None,
             "dependency_uid": "pkg:pypi/typing-extensions?uuid=57a6f83a-1763",
             "for_package_uid": "pkg:pypi/asgiref@3.6.0?uuid=0aa676d0-240c-4838",
             "datafile_path": "asgiref-3.6.0.dist-info/METADATA",

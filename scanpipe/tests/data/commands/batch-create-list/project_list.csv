@@ -1,0 +1,3 @@
+project_name,input_urls,
+project-v1,"https://example.com/source.zip#from,https://example.com/binary.bin#to",
+project-v2,https://example.com/filename.zip,

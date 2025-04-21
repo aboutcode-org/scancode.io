@@ -1,19 +1,21 @@
 {% load humanize %}
-<div class="is-flex is-justify-content-space-between">
-  <div>
-    {% block paginator_count %}
-      {{ paginator.count|intcomma }} results
-    {% endblock %}
-  </div>
+<div id="pagination-header" class="is-flex is-justify-content-space-between">
+  {% if not hide_results_count %}
+    <div>
+      {% block paginator_count %}
+        {{ paginator.count|intcomma }} results
+      {% endblock %}
+    </div>
+  {% endif %}
   <div>
     {% if page_obj.has_previous %}
-      <a href="?page={{ page_obj.previous_page_number }}{% if url_params_without_page %}&{{ url_params_without_page }}{% endif %}">&laquo;</a>
+      <a class="previous-page" href="?page={{ page_obj.previous_page_number }}{% if url_params_without_page %}&{{ url_params_without_page }}{% endif %}">&laquo;</a>
     {% else %}
       <span>&laquo;</span>
     {% endif %}
     Page {{ page_obj.number|intcomma }} of {{ page_obj.paginator.num_pages|intcomma }}
     {% if page_obj.has_next %}
-      <a href="?page={{ page_obj.next_page_number }}{% if url_params_without_page %}&{{ url_params_without_page }}{% endif %}">&raquo;</a>
+      <a class="next-page" href="?page={{ page_obj.next_page_number }}{% if url_params_without_page %}&{{ url_params_without_page }}{% endif %}">&raquo;</a>
     {% else %}
       <span>&raquo;</span>
     {% endif %}

@@ -297,11 +297,14 @@ def get_bom_instance_from_file(input_location):
         cyclonedx_document = delete_ignored_root_properties(cyclonedx_document)
         cyclonedx_document = cleanup_components_properties(cyclonedx_document)
 
-        if errors := validate_document(cyclonedx_document):
-            error_msg = (
-                f'CycloneDX document "{input_path.name}" is not valid:\n{errors}'
-            )
-            raise ValueError(error_msg)
+        # Instead of validating and raising an error (which halts the entire loading
+        # process), we proceed to load as much data as possible.
+        # This approach prioritizes displaying data in the UI over the output of
+        # validate_document() which is not quite pertinent in its current state.
+        # Additionally, the ValidationError from validate_document() might include the
+        # entire document content, which is impractical for large files.
+        #
+        # validation_error = validate_document(cyclonedx_document)
 
         cyclonedx_bom = Bom.from_json(data=cyclonedx_document)
         return cyclonedx_bom

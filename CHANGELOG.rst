@@ -1,6 +1,250 @@
 Changelog
 =========
 
+v34.10.2 (unreleased)
+---------------------
+
+- Add a ``UUID`` field on the DiscoveredDependency model.
+  Use the UUID for the DiscoveredDependency spdx_id for better SPDX compatibility.
+  https://github.com/aboutcode-org/scancode.io/issues/1651
+
+v34.10.1 (2025-03-26)
+---------------------
+
+- Convert the ``declared_license`` field value return by ``python-inspector`` in
+  ``resolve_pypi_packages``.
+  Resolving requirements.txt files will now return proper license data.
+  https://github.com/aboutcode-org/scancode.io/issues/1598
+
+- Add support for installing on Apple Silicon (macOS ARM64) in dev mode.
+  https://github.com/aboutcode-org/scancode.io/pull/1646
+
+v34.10.0 (2025-03-21)
+---------------------
+
+- Rename the ``docker``, ``docker_windows``, and ``root_filesystem`` modules to
+  ``analyze_docker``, ``analyze_docker_windows``, and ``analyze_root_filesystem``
+  for consistency.
+
+- Refine and document the Webhook system
+  https://github.com/aboutcode-org/scancode.io/issues/1587
+  * Add UI to add/delete Webhooks from the project settings
+  * Add a new ``add-webhook`` management command
+  * Add a ``add_webhook`` REST API action
+  * Add a new ``SCANCODEIO_GLOBAL_WEBHOOK`` setting
+  * Add a new chapter dedicated to Webhooks management in the documentation
+  * Add support for custom payload dedicated to Slack webhooks
+
+- Upgrade Bulma CSS library to version 1.0.2
+  https://github.com/aboutcode-org/scancode.io/pull/1268
+
+- Disable the creation of the global webhook in the ``batch-create`` command by default.
+  The global webhook can be created by providing the ``--create-global-webhook`` option.
+  A ``--no-global-webhook`` option was also added to the ``create-project`` command to
+  provide the ability to skip the global webhook creation.
+  https://github.com/aboutcode-org/scancode.io/pull/1629
+
+- Add support for "Permission denied" file access in make_codebase_resource.
+  https://github.com/aboutcode-org/scancode.io/issues/1630
+
+- Refine the ``scan_single_package`` pipeline to work on git fetched inputs.
+  https://github.com/aboutcode-org/scancode.io/issues/1376
+
+v34.9.5 (2025-02-19)
+--------------------
+
+- Add support for the XLSX report in REST API.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Add options to the Project reset action.
+  Also, the Project labels are kept during reset.
+  https://github.com/aboutcode-org/scancode.io/issues/1568
+
+- Add aboutcode.pipeline as an install_requires external dependency to prevent conflicts
+  with other aboutcode submodules.
+  https://github.com/aboutcode-org/scancode.io/issues/1423
+
+- Add a ``add-webhook`` management command that allows to add webhook subscription on
+  a project.
+  https://github.com/aboutcode-org/scancode.io/issues/1587
+
+- Add proper progress logging for the ``assemble`` section of the
+  ``scan_for_application_packages``.
+  https://github.com/aboutcode-org/scancode.io/issues/1601
+
+v34.9.4 (2025-01-21)
+--------------------
+
+- Improve Project list page navigation.
+  A top previous/next page navigation was added in the header for consistency with other
+  list views.
+  Any paginated view can now be navigated using the left/right keyboard keys.
+  https://github.com/aboutcode-org/scancode.io/issues/1200
+
+- Add support for importing the ``extra_data`` value from the JSON input with the
+  ``load_inventory`` pipeline.
+  When multiple JSON files are provided as inputs, the ``extra`` is prefixed with
+  the input filename.
+  https://github.com/aboutcode-org/scancode.io/issues/926
+
+- Disable CycloneDX document strict validation, which halts the entire loading process,
+  and let the data loading process handle the data issues.
+  https://github.com/aboutcode-org/scancode.io/issues/1515
+
+- Add a report action on project list to export XLSX containing packages from selected
+  projects.
+  https://github.com/aboutcode-org/scancode.io/issues/1437
+
+- Add a download action on project list to enable bulk download of Project output files.
+  https://github.com/aboutcode-org/scancode.io/issues/1518
+
+- Add labels to Project level search.
+  The labels are now always presented in alphabetical order for consistency.
+  https://github.com/aboutcode-org/scancode.io/issues/1520
+
+- Add a ``batch-create`` management command that allows to create multiple projects
+  at once from a directory containing input files.
+  https://github.com/aboutcode-org/scancode.io/issues/1437
+
+- Do not download input_urls in management commands. The fetch/download is delegated to
+  the pipeline execution.
+  https://github.com/aboutcode-org/scancode.io/issues/1437
+
+- Add a "TODOS" sheet containing on REQUIRES_REVIEW resources in XLSX.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Improve XLSX output for Vulnerabilities.
+  Replace the ``affected_by_vulnerabilities`` field in the PACKAGES and DEPENDENCIES
+  sheets with a dedicated VULNERABILITIES sheet.
+  https://github.com/aboutcode-org/scancode.io/issues/1519
+
+- Keep the InputSource objects when using ``reset`` on Projects.
+  https://github.com/aboutcode-org/scancode.io/issues/1536
+
+- Add a ``report`` management command that allows to generate XLSX reports for
+  multiple projects at once using labels and searching by project name.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Add the ability to "select across" in Projects list when using the "select all"
+  checkbox on paginated list.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Update scancode-toolkit to v32.3.2. See CHANGELOG for updates:
+  https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.3.2
+  https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.3.1
+
+- Adds  a project settings ``scan_max_file_size`` and a scancode.io settings field
+  ``SCANCODEIO_SCAN_MAX_FILE_SIZE`` to skip scanning files above a certain
+  file size (in bytes) as a temporary fix for large memory spikes while
+  scanning for licenses in certain large files.
+  https://github.com/aboutcode-org/scancode-toolkit/issues/3711
+
+v34.9.3 (2024-12-31)
+--------------------
+
+- Refine the available settings for RQ_QUEUES:
+  * Rename the RQ_QUEUES sub-settings to SCANCODEIO_RQ_REDIS_*
+  * Add SCANCODEIO_RQ_REDIS_SSL setting to enable SSL.
+  https://github.com/aboutcode-org/scancode.io/issues/1465
+
+- Add support to map binaries to source files using symbols
+  for rust binaries and source files. This adds also using
+  ``rust-inspector`` to extract symbols from rust binaries.
+  This is a new optional ``Rust`` step in the
+  ``map_deploy_to_develop`` pipeline.
+  https://github.com/aboutcode-org/scancode.io/issues/1435
+
+v34.9.2 (2024-12-10)
+--------------------
+
+- Fix an issue with the ``scan_rootfs_for_system_packages`` pipe when a namespace is
+  missing for the discovered packages.
+  https://github.com/aboutcode-org/scancode.io/issues/1462
+
+v34.9.1 (2024-12-09)
+--------------------
+
+- Add the ability to filter on Project endpoint API actions.
+  The list of ``resources``, ``packages``, ``dependencies``, ``relations``, and
+  ``messages`` can be filtered providing the ``?field_name=value`` in the URL
+  parameters.
+  https://github.com/aboutcode-org/scancode.io/issues/1449
+
+- Fix the ability to provide multiple optional step when defining pipelines in the
+  REST API.
+  The support for providing pipeline names as a comma-separated single string was
+  remove as the comma is used as the optional step separator.
+  Use a list of pipeline names instead.
+  https://github.com/aboutcode-org/scancode.io/issues/1454
+
+- Make the header row of tables sticky to the top of the screen so it is always
+  visible.
+  https://github.com/aboutcode-org/scancode.io/issues/1457
+
+v34.9.0 (2024-11-14)
+--------------------
+
+- Add ability to declared pipeline selected groups in create project REST API endpoint.
+  https://github.com/aboutcode-org/scancode.io/issues/1426
+
+- Add a new ``list-pipelines`` management command.
+  https://github.com/aboutcode-org/scancode.io/issues/1397
+
+- Refactor the policies related code to its own module.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
+- Add support for project-specific license policies and compliance alerts.
+  Enhance Project model to handle policies from local settings, project input
+  "policies.yml" files, or global app settings.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
+- Refactor the ``group`` decorator for pipeline steps as ``optional_step``.
+  The steps decorated as optional are not included by default anymore.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
+- Add a new ``PublishToFederatedCode`` pipeline (addon) to push scan result
+  to FederatedCode.
+  https://github.com/nexB/scancode.io/pull/1400
+
+- Add new ``purl`` field to project model. https://github.com/nexB/scancode.io/pull/1400
+
+v34.8.3 (2024-10-30)
+--------------------
+
+- Include the ``aboutcode`` module in the wheel and source distribution.
+  https://github.com/aboutcode-org/scancode.io/issues/1423
+
+- Update ScanCode-toolkit to v32.3.0
+  https://github.com/aboutcode-org/scancode.io/issues/1418
+
+v34.8.2 (2024-10-28)
+--------------------
+
+- Add ``android_analysis`` to ``extra_requires``. This installs the package
+  ``android_inspector``, which provides a pipeline for Android APK
+  deploy-to-development analysis.
+
+- Remove the sleep time in the context of testing ``matchcode.poll_run_url_status``
+  to speed up the test.
+  https://github.com/aboutcode-org/scancode.io/issues/1411
+
+- Add ability to specify the CycloneDX output spec version using the ``output``
+  management command and providing the ``cyclonedx:VERSION`` syntax as format value.
+  https://github.com/aboutcode-org/scancode-action/issues/8
+
+- Add new ``compliance`` REST API action that list all compliance alert for a given
+  project. The severity level can be provided using the
+  ``?fail_level={ERROR,WARNING,MISSING}`` parameter.
+  https://github.com/aboutcode-org/scancode.io/issues/1346
+
+- Add new ``Compliance alerts`` panel in the project detail view.
+  https://github.com/aboutcode-org/scancode.io/issues/1346
+
+v34.8.1 (2024-09-06)
+--------------------
+
+- Upgrade Django to security release 5.1.1 and related dependencies.
+
 v34.8.0 (2024-08-15)
 --------------------
 

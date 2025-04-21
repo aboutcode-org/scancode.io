@@ -156,7 +156,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx_license_id_gpl-2.0-only_for_gpl-2.0.RULE",
               "license_expression": "gpl-2.0",
-              "spdx_license_expression": "GPL-2.0-only"
+              "license_expression_spdx": "GPL-2.0-only"
             }
           ],
           "identifier": "gpl_2_0-7541c21a-b2c9-c697-2794-bf0cfcdf32f9",
@@ -275,7 +275,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-mit-1b937028f397e2c5fe4eb6a0abd781ab80f9eeff",
               "license_expression": "mit",
-              "spdx_license_expression": "MIT"
+              "license_expression_spdx": "MIT"
             }
           ],
           "identifier": "mit-704ced38-ea60-e53b-6c20-390fe781b1c3",
@@ -514,7 +514,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx_license_id_gpl-2.0-only_for_gpl-2.0.RULE",
               "license_expression": "gpl-2.0",
-              "spdx_license_expression": "GPL-2.0-only"
+              "license_expression_spdx": "GPL-2.0-only"
             }
           ],
           "identifier": "gpl_2_0-7541c21a-b2c9-c697-2794-bf0cfcdf32f9",
@@ -598,7 +598,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx_license_id_gpl-2.0-only_for_gpl-2.0.RULE",
               "license_expression": "gpl-2.0",
-              "spdx_license_expression": "GPL-2.0-only"
+              "license_expression_spdx": "GPL-2.0-only"
             }
           ],
           "identifier": "gpl_2_0-7541c21a-b2c9-c697-2794-bf0cfcdf32f9",
@@ -693,7 +693,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-mpl_2_0_and_mit-5514313e881fb20dc746d1ac1e3a53a643c808d7",
               "license_expression": "mpl-2.0 AND mit",
-              "spdx_license_expression": "MPL-2.0 AND MIT"
+              "license_expression_spdx": "MPL-2.0 AND MIT"
             }
           ],
           "identifier": "mpl_2_0_and_mit-0ec4a3d2-4f7b-39d7-f14f-8bb7666de6d5",
@@ -788,7 +788,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-openssl_ssleay-b5dd48b21e3399670d584d4ade9a9791a24c58cd",
               "license_expression": "openssl-ssleay",
-              "spdx_license_expression": "OpenSSL"
+              "license_expression_spdx": "OpenSSL"
             }
           ],
           "identifier": "openssl_ssleay-602fb366-4d56-7dcd-cac5-129d99473599",
@@ -907,7 +907,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-bsd_simplified_and_bsd_new-dc707a661bb1da34ff773b7e9955e0235b3b3f74",
               "license_expression": "bsd-simplified AND bsd-new",
-              "spdx_license_expression": "BSD-2-Clause AND BSD-3-Clause"
+              "license_expression_spdx": "BSD-2-Clause AND BSD-3-Clause"
             }
           ],
           "identifier": "bsd_simplified_and_bsd_new-571c460d-b906-8e23-30cd-5429d912eee3",
@@ -991,7 +991,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-isc_and__bsd_new_or_mit-7471dfe24fdc3b7a8943273ac320469f644d2688",
               "license_expression": "isc AND (bsd-new OR mit)",
-              "spdx_license_expression": "ISC AND (BSD-3-Clause OR MIT)"
+              "license_expression_spdx": "ISC AND (BSD-3-Clause OR MIT)"
             }
           ],
           "identifier": "isc_and__bsd_new_or_mit-00412b1c-2d3c-5fef-ddd7-9c04aca09dd5",
@@ -1086,7 +1086,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-openssl_ssleay-b5dd48b21e3399670d584d4ade9a9791a24c58cd",
               "license_expression": "openssl-ssleay",
-              "spdx_license_expression": "OpenSSL"
+              "license_expression_spdx": "OpenSSL"
             }
           ],
           "identifier": "openssl_ssleay-602fb366-4d56-7dcd-cac5-129d99473599",
@@ -1181,7 +1181,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-mit-1b937028f397e2c5fe4eb6a0abd781ab80f9eeff",
               "license_expression": "mit",
-              "spdx_license_expression": "MIT"
+              "license_expression_spdx": "MIT"
             }
           ],
           "identifier": "mit-704ced38-ea60-e53b-6c20-390fe781b1c3",
@@ -1276,7 +1276,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-mit_and_bsd_new_and_gpl_2_0_plus-a42688b31c355df3bef97265e8ca20360250716e",
               "license_expression": "mit AND bsd-new AND gpl-2.0-plus",
-              "spdx_license_expression": "MIT AND BSD-3-Clause AND GPL-2.0-or-later"
+              "license_expression_spdx": "MIT AND BSD-3-Clause AND GPL-2.0-or-later"
             }
           ],
           "identifier": "mit_and_bsd_new_and_gpl_2_0_plus-f5dc1480-e57f-fd40-8614-8d2a83cd4bb9",
@@ -1360,7 +1360,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx_license_id_gpl-2.0-only_for_gpl-2.0.RULE",
               "license_expression": "gpl-2.0",
-              "spdx_license_expression": "GPL-2.0-only"
+              "license_expression_spdx": "GPL-2.0-only"
             }
           ],
           "identifier": "gpl_2_0-7541c21a-b2c9-c697-2794-bf0cfcdf32f9",
@@ -1444,7 +1444,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx_license_id_gpl-2.0-only_for_gpl-2.0.RULE",
               "license_expression": "gpl-2.0",
-              "spdx_license_expression": "GPL-2.0-only"
+              "license_expression_spdx": "GPL-2.0-only"
             }
           ],
           "identifier": "gpl_2_0-7541c21a-b2c9-c697-2794-bf0cfcdf32f9",
@@ -1528,7 +1528,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-zlib-2023583c09c2e5aa14d564036e304041c0f1ace3",
               "license_expression": "zlib",
-              "spdx_license_expression": "Zlib"
+              "license_expression_spdx": "Zlib"
             }
           ],
           "identifier": "zlib-f742edbd-d484-7a19-19f0-f4582738f149",

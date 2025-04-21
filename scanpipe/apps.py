@@ -35,8 +35,10 @@ from django.db.models import BLANK_CHOICE_DASH
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
-import saneyaml
 from licensedcode.models import load_licenses
+
+from scanpipe.policies import load_policies_file
+from scanpipe.policies import make_license_policy_index
 
 try:
     from importlib import metadata as importlib_metadata
@@ -218,36 +220,21 @@ class ScanPipeConfig(AppConfig):
         """
         Compute and sets the `license_policies` on the app instance.
 
-        If the policies file is available but formatted properly or doesn't
+        If the policies file is available but not formatted properly or doesn't
         include the proper content, we want to raise an exception while the app
         is loading to warn system admins about the issue.
         """
-        policies_file_location = getattr(settings, "SCANCODEIO_POLICIES_FILE", None)
+        policies_file_setting = getattr(settings, "SCANCODEIO_POLICIES_FILE", None)
+        if not policies_file_setting:
+            return
 
-        if policies_file_location:
-            policies_file = Path(policies_file_location).expanduser()
-
-            if policies_file.exists():
-                logger.debug(style.SUCCESS(f"Load policies from {policies_file}"))
-                policies = saneyaml.load(policies_file.read_text())
-                license_policies = policies.get("license_policies", [])
-                self.license_policies_index = self.get_policies_index(
-                    policies_list=license_policies,
-                    key="license_key",
-                )
-
-            else:
-                logger.debug(style.WARNING("Policies file not found."))
-
-    @staticmethod
-    def get_policies_index(policies_list, key):
-        """Return an inverted index by `key` of the `policies_list`."""
-        return {policy.get(key): policy for policy in policies_list}
-
-    @property
-    def policies_enabled(self):
-        """Return True if the policies were provided and loaded properly."""
-        return bool(self.license_policies_index)
+        policies_file = Path(policies_file_setting).expanduser()
+        if policies_file.exists():
+            policies = load_policies_file(policies_file)
+            logger.debug(style.SUCCESS(f"Loaded policies from {policies_file}"))
+            self.license_policies_index = make_license_policy_index(policies)
+        else:
+            logger.debug(style.WARNING("Policies file not found."))
 
     def sync_runs_and_jobs(self):
         """Synchronize ``QUEUED`` and ``RUNNING`` Run with their related Jobs."""
@@ -262,3 +249,8 @@ class ScanPipeConfig(AppConfig):
                 run.sync_with_job()
         else:
             logger.info("No Run to synchronize.")
+
+    @property
+    def site_url(self):
+        if site_url := settings.SCANCODEIO_SITE_URL:
+            return site_url.rstrip("/")

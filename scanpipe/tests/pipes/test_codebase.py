@@ -173,8 +173,7 @@ class ScanPipeCodebasePipesTest(TestCase):
             "virtual_root/asgiref-3.3.0-py3-none-any.whl",
             "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract",
             "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
-            "virtual_root/"
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
             "virtual_root/"
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
             "virtual_root/"

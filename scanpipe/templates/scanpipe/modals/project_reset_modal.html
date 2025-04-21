@@ -5,21 +5,41 @@
       <p class="modal-card-title">Reset this project, are you sure?</p>
       <button class="delete" aria-label="close"></button>
     </header>
-    <section class="modal-card-body">
-      <div class="notification is-danger has-text-weight-semibold">
-        This action cannot be undone.
-      </div>
-      <p class="mb-2">
-        This action will <strong>delete all related database entries and all data on disks</strong> except for the input/ directory.
-      </p>
-      <p class="mb-5">
-        Are you sure you want to do this?
-      </p>
-    </section>
     <form action="{% url 'project_reset' project.slug %}" method="post">{% csrf_token %}
-      <footer class="modal-card-foot is-flex is-justify-content-space-between">
-        <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
-        <button class="button is-danger is-no-close" type="submit">Yes, Reset Project</button>
+      <section class="modal-card-body">
+        <div class="notification is-danger has-text-weight-semibold">
+          This action cannot be undone.
+        </div>
+        <p class="mb-2">
+          This action will <strong>delete all related database entries and all data on disks</strong> except for the input/ directory.
+        </p>
+        <p class="mb-5">
+          Are you sure you want to do this?
+        </p>
+        <div class="field">
+          <label class="label">
+            {{ reset_form.keep_input }}
+            {{ reset_form.keep_input.label }}
+          </label>
+        </div>
+        <div class="field">
+          <label class="label">
+            {{ reset_form.restore_pipelines }}
+            {{ reset_form.restore_pipelines.label }}
+          </label>
+        </div>
+        <div class="field">
+          <label class="label">
+            {{ reset_form.execute_now }}
+            {{ reset_form.execute_now.label }}
+          </label>
+        </div>
+      </section>
+      <footer class="modal-card-foot is-justify-content-flex-end">
+        <div class="buttons">
+          <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
+          <button class="button is-danger is-no-close" type="submit">Yes, Reset Project</button>
+        </div>
       </footer>
     </form>
   </div>
