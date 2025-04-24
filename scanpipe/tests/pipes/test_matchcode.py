@@ -366,3 +366,56 @@ class MatchCodePipesTest(TestCase):
         }
         self.assertEqual(expected_extra_data, codebase_resource1.extra_data)
         self.assertFalse(codebase_resource2.extra_data)
+
+    def test_scanpipe_pipes_matchcode_fingerprint_stemmed_codebase_resources(self):
+        # This resource should not have a fingerprint
+        copy_input(
+            self.data / "aboutcode" / "notice.NOTICE", self.project1.codebase_path
+        )
+        codebase_resource1 = CodebaseResource.objects.create(
+            project=self.project1, path="notice.NOTICE", is_text=True
+        )
+
+        # This resource should not have a fingerprint
+        copy_input(
+            self.data / "scancode" / "is-npm-1.0.0.tgz", self.project1.codebase_path
+        )
+        codebase_resource2 = CodebaseResource.objects.create(
+            project=self.project1, path="is-npm-1.0.0.tgz"
+        )
+
+        # This resource should have a fingerprint
+        copy_input(
+            self.data / "matchcode" / "fingerprinting" / "handleError.js",
+            self.project1.codebase_path,
+        )
+        codebase_resource3 = CodebaseResource.objects.create(
+            project=self.project1, path="handleError.js", is_text=True
+        )
+
+        matchcode.fingerprint_stemmed_codebase_resources(self.project1)
+        codebase_resource1.refresh_from_db()
+        codebase_resource2.refresh_from_db()
+        codebase_resource3.refresh_from_db()
+
+        expected_extra_data = {
+            "stemmed_halo1": "0000001ebf495b2fde7beb419238f8a4e8427b41",
+            "stemmed_snippets": [
+                {"snippet": "7089085d2b66fc610e31a54edf2ddc76", "position": 0},
+                {"snippet": "accf246732a0ea80d8c59af1a69dc074", "position": 2},
+                {"snippet": "a163d9edfaa1f6daf2c1e92fcd4b8b8a", "position": 3},
+                {"snippet": "7ebfad556997dc224a75499ee4411169", "position": 4},
+                {"snippet": "a77f64bd3bfef4323bd6cbc3c93aab4f", "position": 7},
+                {"snippet": "6a2bcde13a7f15492c3e2e4436c4217e", "position": 8},
+                {"snippet": "2c988df1972a487121338ec1b947df1a", "position": 9},
+                {"snippet": "bebb16613133c76d2c260474fc82ab34", "position": 10},
+                {"snippet": "979167ee18b8e80590c2c083ed9e1a8a", "position": 11},
+                {"snippet": "d7a3167b8a401f9147ce5ed773fab894", "position": 12},
+                {"snippet": "251fb1d28cc5d7ae002ff82b87377233", "position": 13},
+                {"snippet": "ed139c8a1f4764c33cdc3432097a2dc6", "position": 15},
+                {"snippet": "6c37ff7b040d2c75a0b94597d73d42da", "position": 18},
+            ],
+        }
+        self.assertEqual(expected_extra_data, codebase_resource3.extra_data)
+        self.assertFalse(codebase_resource1.extra_data)
+        self.assertFalse(codebase_resource2.extra_data)
