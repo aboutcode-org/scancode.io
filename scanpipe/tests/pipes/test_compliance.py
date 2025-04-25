@@ -71,7 +71,6 @@ class ScanPipeCompliancePipesTest(TestCase):
             compliance_alert=CodebaseResource.Compliance.MISSING,
         )
         compliance_alerts = get_project_compliance_alerts(project, fail_level="missing")
-        print(compliance_alerts)
         expected = {
             "packages": {
                 "error": ["pkg:generic/name@1.0", "pkg:generic/name@2.0"],
