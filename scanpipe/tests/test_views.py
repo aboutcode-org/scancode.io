@@ -56,6 +56,7 @@ from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 from scanpipe.tests import package_data2
+from scanpipe.views import CodebaseResourceDetailsView
 from scanpipe.views import ProjectActionView
 from scanpipe.views import ProjectCodebaseView
 from scanpipe.views import ProjectDetailView
@@ -1325,3 +1326,17 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(200, response.status_code)
         self.assertContains(response, "Policies file format error")
+
+    def test_scanpipe_views_codebase_resource_details_get_matched_snippet_annotations(
+        self,
+    ):
+        resource1 = make_resource_file(self.project1, "inherits.js")
+        extra_data_loc = self.data / "matchcode" / "fingerprinting" / "extra_data.json"
+        with open(extra_data_loc) as f:
+            extra_data = json.load(f)
+        resource1.extra_data.update(extra_data)
+        resource1.save()
+        resource1.refresh_from_db()
+        results = CodebaseResourceDetailsView.get_matched_snippet_annotations(resource1)
+        expected_results = [{"start_line": 1, "end_line": 6}]
+        self.assertEqual(expected_results, results)

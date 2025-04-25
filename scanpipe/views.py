@@ -1949,7 +1949,8 @@ class CodebaseResourceDetailsView(
 
         return annotations
 
-    def get_matched_snippet_annotations(self, resource):
+    @staticmethod
+    def get_matched_snippet_annotations(resource):
         # convert qspan from list of ints to Spans
         matched_snippet_annotations = []
         matched_snippets = resource.extra_data.get("matched_snippets")
@@ -1985,9 +1986,6 @@ class CodebaseResourceDetailsView(
             "licenses": license_annotations,
         }
 
-        matched_snippet_annotations = self.get_matched_snippet_annotations(resource)
-        context["detected_values"]["matched_snippets"] = matched_snippet_annotations
-
         fields = [
             ("copyrights", "copyright"),
             ("holders", "holder"),
@@ -1998,6 +1996,9 @@ class CodebaseResourceDetailsView(
         for field_name, value_key in fields:
             annotations = self.get_annotations(getattr(resource, field_name), value_key)
             context["detected_values"][field_name] = annotations
+
+        matched_snippet_annotations = self.get_matched_snippet_annotations(resource)
+        context["detected_values"]["matched snippets"] = matched_snippet_annotations
 
         return context
 
