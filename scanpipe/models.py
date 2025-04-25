@@ -2884,15 +2884,15 @@ class CodebaseResource(
         """
         if not self.has_parent():
             return []
-        anscesotrs = deque()
+        ancestors = deque()
         current = self.parent()
-        anscesotrs_appendleft = anscesotrs.appendleft
+        ancestors_appendleft = ancestors.appendleft
 
         while current:
-            anscesotrs_appendleft(current)
+            ancestors_appendleft(current)
             current = current.parent()
 
-        return list(anscesotrs)
+        return list(ancestors)
 
     def children(self, codebase=None):
         """
@@ -3077,19 +3077,6 @@ class CodebaseResource(
             contributors=list(set(holders + authors)),
             types=self.get_spdx_types(),
         )
-
-    def serialize(self):
-        """
-        Return a mapping of represting this CodebaseResource and it's data in a form
-        that can be serialized to JSON, YAML, etc. it can be used to reconstruct
-        the resource
-        """
-        serializable = defaultdict(dict)
-        serializable["name"] = self.name
-        serializable["type"] = self.type.value
-        if self.location:
-            serializable["location"] = self.location
-        return dict(serializable)
 
 
 class CodebaseRelation(
