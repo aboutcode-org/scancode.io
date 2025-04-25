@@ -63,14 +63,15 @@ class ScanPipeCompliancePipesTest(TestCase):
         make_package(
             project,
             package_url="pkg:generic/name@2.0",
-            compliance_alert=CodebaseResource.Compliance.WARNING,
+            compliance_alert=CodebaseResource.Compliance.ERROR,
         )
         make_package(
             project,
             package_url="pkg:generic/name@3.0",
             compliance_alert=CodebaseResource.Compliance.MISSING,
         )
-        compliance_alerts = get_project_compliance_alerts(project)
+        compliance_alerts = get_project_compliance_alerts(project, fail_level="missing")
+        print(compliance_alerts)
         expected = {
             "packages": {
                 "error": ["pkg:generic/name@1.0", "pkg:generic/name@2.0"],

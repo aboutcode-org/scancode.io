@@ -72,7 +72,7 @@ def group_compliance_alerts_by_severity(queryset):
     string representations of the instances associated with that severity.
     """
     compliance_alerts = defaultdict(list)
-    severity_levels = ['error', 'warning', 'missing']
+    severity_levels = queryset.compliance_alerts_ordered_by_severity()
 
     for instance in queryset:
         compliance_alerts[instance.compliance_alert].append(str(instance))
@@ -80,7 +80,9 @@ def group_compliance_alerts_by_severity(queryset):
     # Sort keys for consistent ordering (["error", "warning", "missing"])
     sorted_keys = sorted(
         compliance_alerts.keys(),
-        key=lambda label: severity_levels.index(label) if label in severity_levels else len(severity_levels)
+        key=lambda label: severity_levels.index(label)
+        if label in severity_levels
+        else len(severity_levels),
     )
 
     sorted_compliance_alerts = {
