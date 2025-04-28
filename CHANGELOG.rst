@@ -8,6 +8,11 @@ v34.10.2 (unreleased)
   Use the UUID for the DiscoveredDependency spdx_id for better SPDX compatibility.
   https://github.com/aboutcode-org/scancode.io/issues/1651
 
+- Add MatchCode-specific functions to compute fingerprints from stemmed code
+  files. Update CodebaseResource file content view to display snippet matches,
+  if available, when the codebase has been sent for matching to MatchCode.
+  https://github.com/aboutcode-org/scancode.io/pull/1656
+
 v34.10.1 (2025-03-26)
 ---------------------
 
