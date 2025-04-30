@@ -36,6 +36,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.exceptions import ValidationError
 from django.core.files.storage.filesystem import FileSystemStorage
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Prefetch
 from django.db.models.manager import Manager
 from django.http import FileResponse
@@ -495,6 +496,55 @@ class ExportXLSXMixin:
 
         if request.GET.get(self.export_xlsx_query_param):
             return self.export_xlsx_file_response()
+
+        return response
+
+
+class ExportJSONMixin:
+    """
+    Add the ability to export the current filtered QuerySet of a `FilterView`
+    into JSON format.
+    """
+
+    export_json_query_param = "export_json"
+
+    def get_export_json_queryset(self):
+        return self.filterset.qs
+
+    def get_export_json_filename(self):
+        return f"{self.project.name}_{self.model._meta.model_name}.json"
+
+    def export_json_file_response(self):
+        from scanpipe.api.serializers import get_model_serializer
+
+        queryset = self.get_export_json_queryset()
+        serializer_class = get_model_serializer(queryset.model)
+        serializer = serializer_class(queryset, many=True)
+        serialized_data = json.dumps(serializer.data, indent=2, cls=DjangoJSONEncoder)
+
+        output_file = io.BytesIO(serialized_data.encode("utf-8"))
+
+        return FileResponse(
+            output_file,
+            as_attachment=True,
+            filename=self.get_export_json_filename(),
+            content_type="application/json",
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        query_dict = self.request.GET.copy()
+        query_dict[self.export_json_query_param] = True
+        context["export_json_url_query"] = query_dict.urlencode()
+
+        return context
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+
+        if request.GET.get(self.export_json_query_param):
+            return self.export_json_file_response()
 
         return response
 
@@ -1543,6 +1593,7 @@ class CodebaseResourceListView(
     ProjectRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
+    ExportJSONMixin,
     PaginatedFilterView,
 ):
     model = CodebaseResource
@@ -1616,6 +1667,7 @@ class DiscoveredPackageListView(
     ProjectRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
+    ExportJSONMixin,
     PaginatedFilterView,
 ):
     model = DiscoveredPackage
@@ -1672,6 +1724,7 @@ class DiscoveredDependencyListView(
     ProjectRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
+    ExportJSONMixin,
     PaginatedFilterView,
 ):
     model = DiscoveredDependency
@@ -1741,6 +1794,7 @@ class ProjectMessageListView(
     ProjectRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
+    ExportJSONMixin,
     FilterView,
 ):
     model = ProjectMessage
@@ -1765,6 +1819,7 @@ class CodebaseRelationListView(
     PrefetchRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
+    ExportJSONMixin,
     PaginatedFilterView,
 ):
     model = CodebaseRelation
