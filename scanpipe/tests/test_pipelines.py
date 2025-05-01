@@ -537,6 +537,7 @@ class PipelinesIntegrationTest(TestCase):
         "notes",
         "settings",
         "description",
+        "traceback",
     ]
 
     def _without_keys(self, data, exclude_keys):
