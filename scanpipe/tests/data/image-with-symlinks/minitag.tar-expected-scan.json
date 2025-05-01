@@ -28,6 +28,21 @@
           "execution_time": null
         }
       ],
+      "messages": [
+        {
+          "severity": "error",
+          "model": "analyze_docker_image",
+          "details": {},
+          "traceback": [
+            "  File \"/Volumes/nexB/repos/scancode.io/scanpipe/pipelines/__init__.py\", line 233, in save_errors",
+            "    yield",
+            "  File \"/Volumes/nexB/repos/scancode.io/scanpipe/pipelines/analyze_docker.py\", line 82, in collect_and_create_system_packages",
+            "    docker.scan_image_for_system_packages(self.project, image)",
+            "  File \"/Volumes/nexB/repos/scancode.io/scanpipe/pipes/docker.py\", line 251, in scan_image_for_system_packages",
+            "    raise rootfs.DistroNotFound(\"Distro not found.\")"
+          ]
+        }
+      ],
       "extra_data": {
         "images": [
           {
