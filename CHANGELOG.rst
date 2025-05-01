@@ -16,6 +16,9 @@ v34.10.2 (unreleased)
 - Add the ability to export filtered QuerySet of a FilterView into the JSON format.
   https://github.com/aboutcode-org/scancode.io/pull/1572
 
+- Include ``ProjectMessage`` records in the JSON output ``headers`` section.
+  https://github.com/aboutcode-org/scancode.io/issues/1659
+
 v34.10.1 (2025-03-26)
 ---------------------
 
