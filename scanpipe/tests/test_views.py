@@ -29,6 +29,7 @@ from unittest import mock
 
 from django.apps import apps
 from django.core.exceptions import SuspiciousFileOperation
+from django.http import FileResponse
 from django.http.response import Http404
 from django.test import TestCase
 from django.test import override_settings
@@ -56,6 +57,7 @@ from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 from scanpipe.tests import package_data2
+from scanpipe.views import CodebaseResourceDetailsView
 from scanpipe.views import ProjectActionView
 from scanpipe.views import ProjectCodebaseView
 from scanpipe.views import ProjectDetailView
@@ -1325,3 +1327,224 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(200, response.status_code)
         self.assertContains(response, "Policies file format error")
+
+    def test_scanpipe_views_codebase_resource_details_get_matched_snippet_annotations(
+        self,
+    ):
+        resource1 = make_resource_file(self.project1, "inherits.js")
+        extra_data_loc = self.data / "matchcode" / "fingerprinting" / "extra_data.json"
+        with open(extra_data_loc) as f:
+            extra_data = json.load(f)
+        resource1.extra_data.update(extra_data)
+        resource1.save()
+        resource1.refresh_from_db()
+        results = CodebaseResourceDetailsView.get_matched_snippet_annotations(resource1)
+        expected_results = [{"start_line": 1, "end_line": 6}]
+        self.assertEqual(expected_results, results)
+
+    def test_project_packages_export_json(self):
+        make_package(self.project1, package_url="pkg:type/a")
+
+        url = reverse("project_packages", args=[self.project1.slug])
+        response = self.client.get(url + "?export_json=True")
+
+        self.assertIsInstance(response, FileResponse)
+        self.assertEqual(response.get("Content-Type"), "application/json")
+        self.assertTrue(response.get("Content-Disposition").startswith("attachment"))
+
+        file_content = b"".join(response.streaming_content).decode("utf-8")
+        json_data = json.loads(file_content)
+
+        expected_fields = [
+            "purl",
+            "type",
+            "namespace",
+            "name",
+            "version",
+            "qualifiers",
+            "subpath",
+            "tag",
+            "primary_language",
+            "description",
+            "notes",
+            "release_date",
+            "parties",
+            "keywords",
+            "homepage_url",
+            "download_url",
+            "bug_tracking_url",
+            "code_view_url",
+            "vcs_url",
+            "repository_homepage_url",
+            "repository_download_url",
+            "api_data_url",
+            "size",
+            "md5",
+            "sha1",
+            "sha256",
+            "sha512",
+            "copyright",
+            "holder",
+            "declared_license_expression",
+            "declared_license_expression_spdx",
+            "other_license_expression",
+            "other_license_expression_spdx",
+            "extracted_license_statement",
+            "compliance_alert",
+            "notice_text",
+            "source_packages",
+            "package_uid",
+            "is_private",
+            "is_virtual",
+            "datasource_ids",
+            "datafile_paths",
+            "file_references",
+            "missing_resources",
+            "modified_resources",
+        ]
+
+        for field in expected_fields:
+            self.assertIn(field, json_data[0])
+
+    def test_project_dependencies_export_json(self):
+        make_resource_file(self.project1, "file.ext")
+        make_dependency(self.project1)
+
+        url = reverse("project_dependencies", args=[self.project1.slug])
+        response = self.client.get(url + "?export_json=True")
+
+        self.assertIsInstance(response, FileResponse)
+        self.assertEqual(response.get("Content-Type"), "application/json")
+        self.assertTrue(response.get("Content-Disposition").startswith("attachment"))
+
+        file_content = b"".join(response.streaming_content).decode("utf-8")
+        json_data = json.loads(file_content)
+
+        expected_fields = [
+            "purl",
+            "extracted_requirement",
+            "scope",
+            "is_runtime",
+            "is_optional",
+            "is_pinned",
+            "is_direct",
+            "dependency_uid",
+            "for_package_uid",
+            "resolved_to_package_uid",
+            "datafile_path",
+            "datasource_id",
+            "package_type",
+        ]
+
+        for field in expected_fields:
+            self.assertIn(field, json_data[0])
+
+    def test_project_relations_export_json(self):
+        make_relation(
+            from_resource=make_resource_file(self.project1, "file1.ext"),
+            to_resource=make_resource_file(self.project1, "file2.ext"),
+            map_type="path",
+        )
+
+        url = reverse("project_relations", args=[self.project1.slug])
+        response = self.client.get(url + "?export_json=True")
+
+        self.assertIsInstance(response, FileResponse)
+        self.assertEqual(response.get("Content-Type"), "application/json")
+        self.assertTrue(response.get("Content-Disposition").startswith("attachment"))
+
+        file_content = b"".join(response.streaming_content).decode("utf-8")
+        json_data = json.loads(file_content)
+
+        expected_fields = [
+            "to_resource",
+            "status",
+            "map_type",
+            "score",
+            "from_resource",
+        ]
+
+        for field in expected_fields:
+            self.assertIn(field, json_data[0])
+
+    def test_project_messages_export_json(self):
+        self.project1.add_message("warning")
+
+        url = reverse("project_messages", args=[self.project1.slug])
+        response = self.client.get(url + "?export_json=True")
+
+        self.assertIsInstance(response, FileResponse)
+        self.assertEqual(response.get("Content-Type"), "application/json")
+        self.assertTrue(response.get("Content-Disposition").startswith("attachment"))
+
+        file_content = b"".join(response.streaming_content).decode("utf-8")
+        json_data = json.loads(file_content)
+
+        expected_fields = [
+            "uuid",
+            "severity",
+            "description",
+            "model",
+            "details",
+            "traceback",
+            "created_date",
+        ]
+
+        for field in expected_fields:
+            self.assertIn(field, json_data[0])
+
+    def test_project_codebase_resources_export_json(self):
+        make_resource_file(self.project1, "file.ext")
+
+        url = reverse("project_resources", args=[self.project1.slug])
+        response = self.client.get(url + "?export_json=True")
+
+        self.assertIsInstance(response, FileResponse)
+        self.assertEqual(response.get("Content-Type"), "application/json")
+        self.assertTrue(response.get("Content-Disposition").startswith("attachment"))
+
+        file_content = b"".join(response.streaming_content).decode("utf-8")
+        json_data = json.loads(file_content)
+
+        expected_fields = [
+            "path",
+            "type",
+            "name",
+            "status",
+            "for_packages",
+            "tag",
+            "extension",
+            "size",
+            "mime_type",
+            "file_type",
+            "programming_language",
+            "detected_license_expression",
+            "detected_license_expression_spdx",
+            "license_detections",
+            "license_clues",
+            "percentage_of_license_text",
+            "compliance_alert",
+            "copyrights",
+            "holders",
+            "authors",
+            "package_data",
+            "emails",
+            "urls",
+            "md5",
+            "sha1",
+            "sha256",
+            "sha512",
+            "is_binary",
+            "is_text",
+            "is_archive",
+            "is_media",
+            "is_legal",
+            "is_manifest",
+            "is_readme",
+            "is_top_level",
+            "is_key_file",
+            "extra_data",
+        ]
+
+        for field in expected_fields:
+            self.assertIn(field, json_data[0])
