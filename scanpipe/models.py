@@ -2214,15 +2214,6 @@ class ComplianceAlertQuerySetMixin:
 
         return self.filter(compliance_alert__in=severity_mapping[severity])
 
-    def compliance_alerts_ordered_by_severity(self):
-        """Return a list of compliance alerts ordered by severity."""
-        compliance = self.model.Compliance
-        return [
-            compliance.ERROR.value,
-            compliance.WARNING.value,
-            compliance.MISSING.value,
-        ]
-
 
 def convert_glob_to_django_regex(glob_pattern):
     """

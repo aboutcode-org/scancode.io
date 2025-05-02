@@ -23,6 +23,7 @@
 from collections import defaultdict
 
 from scanpipe.models import PACKAGE_URL_FIELDS
+from scanpipe.models import ComplianceAlertMixin
 from scanpipe.pipes import flag
 from scanpipe.pipes import scancode
 
@@ -72,7 +73,7 @@ def group_compliance_alerts_by_severity(queryset):
     string representations of the instances associated with that severity.
     """
     compliance_alerts = defaultdict(list)
-    severity_levels = queryset.compliance_alerts_ordered_by_severity()
+    severity_levels = ComplianceAlertMixin.COMPLIANCE_SEVERITY_MAP
 
     for instance in queryset:
         compliance_alerts[instance.compliance_alert].append(str(instance))
@@ -80,9 +81,8 @@ def group_compliance_alerts_by_severity(queryset):
     # Sort keys for consistent ordering (["error", "warning", "missing"])
     sorted_keys = sorted(
         compliance_alerts.keys(),
-        key=lambda label: severity_levels.index(label)
-        if label in severity_levels
-        else len(severity_levels),
+        key=lambda label: severity_levels.get(label, len(severity_levels)),
+        reverse=True,
     )
 
     sorted_compliance_alerts = {
