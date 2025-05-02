@@ -1,6 +1,37 @@
 Changelog
 =========
 
+
+=======
+v34.11.0 (2025-05-02)
+---------------------
+
+- Add a ``UUID`` field on the DiscoveredDependency model.
+  Use the UUID for the DiscoveredDependency spdx_id for better SPDX compatibility.
+  https://github.com/aboutcode-org/scancode.io/issues/1651
+
+- Add MatchCode-specific functions to compute fingerprints from stemmed code
+  files. Update CodebaseResource file content view to display snippet matches,
+  if available, when the codebase has been sent for matching to MatchCode.
+  https://github.com/aboutcode-org/scancode.io/pull/1656
+
+- Add the ability to export filtered QuerySet of a FilterView into the JSON format.
+  https://github.com/aboutcode-org/scancode.io/pull/1572
+
+- Include ``ProjectMessage`` records in the JSON output ``headers`` section.
+  https://github.com/aboutcode-org/scancode.io/issues/1659
+
+v34.10.1 (2025-03-26)
+---------------------
+
+- Convert the ``declared_license`` field value return by ``python-inspector`` in
+  ``resolve_pypi_packages``.
+  Resolving requirements.txt files will now return proper license data.
+  https://github.com/aboutcode-org/scancode.io/issues/1598
+
+- Add support for installing on Apple Silicon (macOS ARM64) in dev mode.
+  https://github.com/aboutcode-org/scancode.io/pull/1646
+
 v34.10.0 (2025-03-21)
 ---------------------
 

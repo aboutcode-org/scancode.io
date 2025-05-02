@@ -2429,6 +2429,11 @@ class ScanPipeModelsTest(TestCase):
         # Reset the index value
         scanpipe_app.license_policies_index = None
 
+    def test_scanpipe_discovered_package_model_spdx_id(self):
+        package1 = make_package(self.project1, "pkg:type/a")
+        expected = f"SPDXRef-scancodeio-discoveredpackage-{package1.uuid}"
+        self.assertEqual(expected, package1.spdx_id)
+
     def test_scanpipe_model_create_user_creates_auth_token(self):
         basic_user = User.objects.create_user(username="basic_user")
         self.assertTrue(basic_user.auth_token.key)
@@ -2492,13 +2497,18 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual([], list(c.declared_dependencies.all()))
         self.assertEqual([b_c], list(c.resolved_from_dependencies.all()))
 
-    def test_scanpipe_discovered_dependency_model_is_vulnerable_property(self):
+    def test_scanpipe_discovered_package_model_is_vulnerable_property(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
         self.assertFalse(package.is_vulnerable)
         package.update(
             affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
         )
         self.assertTrue(package.is_vulnerable)
+
+    def test_scanpipe_discovered_dependency_model_spdx_id(self):
+        dependency1 = make_dependency(self.project1)
+        expected = f"SPDXRef-scancodeio-discovereddependency-{dependency1.uuid}"
+        self.assertEqual(expected, dependency1.spdx_id)
 
     def test_scanpipe_package_model_integrity_with_toolkit_package_model(self):
         scanpipe_only_fields = [

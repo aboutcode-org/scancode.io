@@ -224,10 +224,14 @@ class JSONResultsGenerator:
         return json.dumps(data, indent=2, cls=DjangoJSONEncoder)
 
     def get_headers(self, project):
+        from scanpipe.api.serializers import ProjectMessageSerializer
         from scanpipe.api.serializers import RunSerializer
 
         runs = project.runs.all()
         runs = RunSerializer(runs, many=True, exclude_fields=("url", "project"))
+
+        messages = project.projectmessages.all()
+        messages = ProjectMessageSerializer(messages, many=True)
 
         other_tools = [f"pkg:pypi/scancode-toolkit@{scancode_toolkit_version}"]
 
@@ -242,6 +246,7 @@ class JSONResultsGenerator:
             "settings": project.settings,
             "input_sources": project.get_inputs_with_source(),
             "runs": runs.data,
+            "messages": messages.data,
             "extra_data": project.extra_data,
         }
         yield self.encode(headers)
