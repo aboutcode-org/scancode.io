@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v34.10.2 (unreleased)
+v34.11.0 (2025-05-02)
 ---------------------
 
 - Add a ``UUID`` field on the DiscoveredDependency model.
