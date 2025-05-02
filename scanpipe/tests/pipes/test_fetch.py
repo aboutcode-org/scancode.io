@@ -38,7 +38,7 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual(fetch.fetch_http, fetch.get_fetcher("http://a.b/f.z"))
         self.assertEqual(fetch.fetch_http, fetch.get_fetcher("https://a.b/f.z"))
         self.assertEqual(fetch.fetch_docker_image, fetch.get_fetcher("docker://image"))
-        git_http_url = "https://github.com/nexB/scancode.io.git"
+        git_http_url = "https://github.com/aboutcode-org/scancode.io.git"
         self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(git_http_url))
         self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(git_http_url + "/"))
 
@@ -229,7 +229,7 @@ class ScanPipeFetchPipesTest(TestCase):
     @mock.patch("git.repo.base.Repo.clone_from")
     def test_scanpipe_pipes_fetch_git_repo(self, mock_clone_from):
         mock_clone_from.return_value = None
-        url = "https://github.com/nexB/scancode.io.git"
+        url = "https://github.com/aboutcode-org/scancode.io.git"
         download = fetch.fetch_git_repo(url)
 
         self.assertEqual(url, download.uri)
