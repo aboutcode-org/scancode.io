@@ -2508,6 +2508,16 @@ class ComplianceAlertMixin(models.Model):
         ERROR = "error"
         MISSING = "missing"
 
+    # Map each compliance status to a severity level.
+    # Higher numbers indicate more severe compliance issues.
+    # This allows consistent comparison and sorting of compliance states.
+    COMPLIANCE_SEVERITY_MAP = {
+        Compliance.OK: 0,
+        Compliance.MISSING: 1,
+        Compliance.WARNING: 2,
+        Compliance.ERROR: 3,
+    }
+
     compliance_alert = models.CharField(
         max_length=10,
         blank=True,
@@ -2541,7 +2551,7 @@ class ComplianceAlertMixin(models.Model):
         Injects policies, if the feature is enabled, when the
         ``license_expression_field`` field value has changed.
 
-        `codebase` is not used in this context but required for compatibility
+        ``codebase`` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
         if self.policies_enabled:
@@ -2563,7 +2573,10 @@ class ComplianceAlertMixin(models.Model):
         return self.project.policies_enabled
 
     def compute_compliance_alert(self):
-        """Compute and return the compliance_alert value from the licenses policies."""
+        """
+        Compute and return the compliance_alert value from the license policies.
+        Chooses the most severe compliance_alert found among licenses.
+        """
         license_expression = getattr(self, self.license_expression_field, "")
         if not license_expression:
             return ""
@@ -2583,17 +2596,12 @@ class ComplianceAlertMixin(models.Model):
             else:
                 alerts.append(self.Compliance.MISSING)
 
-        compliance_ordered_by_severity = [
-            self.Compliance.ERROR,
-            self.Compliance.WARNING,
-            self.Compliance.MISSING,
-        ]
+        if not alerts:
+            return self.Compliance.OK
 
-        for compliance_severity in compliance_ordered_by_severity:
-            if compliance_severity in alerts:
-                return compliance_severity
-
-        return self.Compliance.OK
+        # Return the most severe alert based on the defined severity
+        severity = self.COMPLIANCE_SEVERITY_MAP.get
+        return max(alerts, key=severity)
 
 
 class FileClassifierFieldsModelMixin(models.Model):
