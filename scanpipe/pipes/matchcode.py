@@ -314,6 +314,10 @@ def send_project_json_to_matchcode(
             timeout=timeout,
             files=files,
         )
+
+    if not response:
+        raise MatchCodeIOException("Invalid response from MatchCode.io")
+
     match_url = response["url"]
     run_url = response["runs"][0]["url"]
     return match_url, run_url

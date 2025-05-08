@@ -63,10 +63,10 @@ class MatchToMatchCode(Pipeline):
                 "related settings to a MatchCode.io instance or reach out "
                 "to the maintainers for other arrangements."
             )
-            raise Exception(msg)
+            raise matchcode.MatchCodeIOException(msg)
 
         if not matchcode.is_available():
-            raise Exception("MatchCode.io is not available.")
+            raise matchcode.MatchCodeIOException("MatchCode.io is not available.")
 
     def send_project_json_to_matchcode(self):
         """Create a JSON scan of the project Codebase and send it to MatchCode.io."""
