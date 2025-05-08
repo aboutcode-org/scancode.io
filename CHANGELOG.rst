@@ -1,6 +1,14 @@
 Changelog
 =========
 
+v34.12.0 (unreleased)
+---------------------
+
+- Raise a ``MatchCodeIOException`` when the response from the MatchCode.io service is
+  not valid in ``send_project_json_to_matchcode``.
+  This generally means an issue on the MatchCode.io server side.
+  https://github.com/aboutcode-org/scancode.io/issues/1665
+
 v34.11.0 (2025-05-02)
 ---------------------
 
