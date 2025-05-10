@@ -32,6 +32,7 @@ from django.utils import timezone
 
 from scanpipe.models import Project
 from scanpipe.models import Run
+from scanpipe.tests import filter_warnings
 from scanpipe.tests import license_policies_index
 from scanpipe.tests.pipelines.register_from_file import RegisterFromFile
 
@@ -124,6 +125,7 @@ class ScanPipeAppsTest(TestCase):
         self.assertIn(main_pipeline, choices)
         self.assertNotIn(addon_pipeline, choices)
 
+    @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_apps_get_new_pipeline_name(self):
         self.assertEqual(
             "scan_codebase", scanpipe_app.get_new_pipeline_name("scan_codebase")
