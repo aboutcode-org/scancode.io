@@ -510,6 +510,16 @@ class ScanPipeModelsTest(TestCase):
         input_source = self.project1.add_input_source(download_url=url_with_fragment)
         self.assertEqual("tag_value", input_source.tag)
 
+    def test_scanpipe_project_model_add_input_source_tag_from_fragment(self):
+        download_url = (
+            "https://download.url/amqp-2.6.1-py2.py3-none-any.whl"
+            "#sha256=aa7f313fb887c91f15474c1229907a04dac0b8135822d6603437803424c0aa59"
+        )
+        source = self.project1.add_input_source(download_url=download_url)
+        self.assertEqual(
+            "sha256=aa7f313fb887c91f15474c1229907a04dac0b813582", source.tag
+        )
+
     def test_scanpipe_project_model_add_downloads(self):
         file_location = self.data / "aboutcode" / "notice.NOTICE"
         copy_input(file_location, self.project1.tmp_path)
