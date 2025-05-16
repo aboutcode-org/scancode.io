@@ -22,6 +22,7 @@
 
 import hashlib
 import json
+import logging
 from contextlib import suppress
 from pathlib import Path
 
@@ -62,6 +63,8 @@ PROSPECTIVE_JAVASCRIPT_MAP = {
     },
 }
 
+logger = logging.getLogger(__name__)
+
 
 def is_source_mapping_in_minified(resource, map_file_name):
     """Return True if a string contains a source mapping in its last 5 lines."""
@@ -89,11 +92,18 @@ def source_content_sha1_list(map_file):
 
 def load_json_from_file(location):
     """Return the deserialized json content from ``location``."""
-    with open(location) as f:
-        try:
+    try:
+        with open(location) as f:
             return json.load(f)
-        except json.JSONDecodeError:
-            return
+    except UnicodeDecodeError as e:
+        logger.error(f"Failed to decode {location} as JSON: {str(e)}")
+        return
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON format in {location}: {str(e)}")
+        return
+    except Exception as e:
+        logger.error(f"Unexpected error while reading {location}: {str(e)}")
+        return
 
 
 def get_map_sources(map_file):
