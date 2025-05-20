@@ -52,7 +52,7 @@ session = requests.Session()
 MATCHCODEIO_API_URL = None
 MATCHCODEIO_URL = settings.MATCHCODEIO_URL
 if MATCHCODEIO_URL:
-    MATCHCODEIO_API_URL = f"{MATCHCODEIO_URL.rstrip('/')}/api/"
+    MATCHCODEIO_API_URL = f"{MATCHCODEIO_URL}/api/"
 
 # Basic Authentication
 MATCHCODEIO_USER = settings.MATCHCODEIO_USER
