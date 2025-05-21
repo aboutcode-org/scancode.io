@@ -42,6 +42,9 @@
                   {% endif %}
                 </div>
               {% endif %}
+              {% if relation.extra_data.matched_symbols_ratio %}
+                {{ relation.extra_data.matched_symbols_ratio }}
+              {% endif %}
             </td>
             <td class="break-all">
               <a href="{% url 'resource_detail' project.slug relation.from_resource.path %}#viewer">{{ relation.from_resource.path }}</a>
