@@ -56,6 +56,7 @@ from scanpipe.models import WebhookSubscription
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.output import JSONResultsGenerator
 from scanpipe.tests import dependency_data1
+from scanpipe.tests import filter_warnings
 from scanpipe.tests import make_message
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
@@ -472,6 +473,7 @@ class ScanPipeAPITest(TransactionTestCase):
         }
         self.assertEqual(expected, response.data)
 
+    @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_api_project_create_pipeline_old_name_compatibility(self):
         data = {
             "name": "Single string",
@@ -986,6 +988,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual({"status": "Pipeline added."}, response.data)
         mock_execute_pipeline_task.assert_called_once()
 
+    @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_api_project_action_add_pipeline_old_name_compatibility(self):
         url = reverse("project-add-pipeline", args=[self.project1.uuid])
         data = {
