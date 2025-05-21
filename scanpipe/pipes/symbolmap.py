@@ -85,6 +85,9 @@ class SymbolsMatchResult:
         mapping = {}
         for stats_field in STATS_FIELDS:
             value = getattr(self, stats_field)
+            if isinstance(value, list):
+                value = sorted(value)
+
             mapping[stats_field] = value
 
         return mapping
@@ -105,7 +108,7 @@ def map_resources_with_symbols(
     unmapped_source_files_with_stats = {}
 
     # These are of type string
-    paths_not_mapped = to_resource.extra_data[f"{map_type}_not_mapped"] = []
+    paths_not_mapped = to_resource.extra_data[f"{map_type}_paths_not_mapped"] = []
     for result in match_source_paths_to_binary(
         to_resource=to_resource,
         from_resources=from_resources,
