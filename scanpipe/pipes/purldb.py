@@ -50,7 +50,7 @@ session = requests.Session()
 PURLDB_API_URL = None
 PURLDB_URL = settings.PURLDB_URL
 if PURLDB_URL:
-    PURLDB_API_URL = f"{PURLDB_URL.rstrip('/')}/api/"
+    PURLDB_API_URL = f"{PURLDB_URL}/api/"
 
 # Basic Authentication
 PURLDB_USER = settings.PURLDB_USER
