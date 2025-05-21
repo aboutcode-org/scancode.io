@@ -32,12 +32,11 @@
   --nexb-orange: 247, 191, 60;
   --alt-orange-rgb: 255, 153, 112;
   --hl-gray-09: #24292e;
+  --custom-tooltip-bg-rgb: 54, 59, 65;
+  --custom-tooltip-padding: 0.35em 0.75em;
 }
 .theme-dark,
 [data-theme="dark"] {
-  .is-light {
-    background-color: var(--bulma-scheme-main-ter) !important;
-  }
   .hljs {
     background: transparent !important;
   }
@@ -61,22 +60,39 @@
 }
 .panel {
   --bulma-panel-radius: var(--bulma-radius-medium);
+  --bulma-panel-heading-size: 1em;
+  --bulma-panel-heading-line-height: 1em;
+  --bulma-panel-heading-padding: 0.75em 1em;
+}
+.title {
+  --bulma-title-weight: var(--bulma-weight-semibold);
+  --bulma-title-size: 1.5rem;
+  color: var(--bulma-title-color);
+}
+.heading {
+  font-size: var(--bulma-size-medium);
+  font-weight: var(--bulma-weight-semibold);
+}
+.heading a {
+  color: var(--bulma-body-color);
+}
+.heading a:hover {
+  color: var(--bulma-body-color);
+  text-decoration: underline;
+}
+.level-item {
+  padding-bottom: .5rem !important;
+  padding-top: .5rem !important;
+}
+.level-item:hover {
+  background: rgba(50, 115, 220, 0.1);
+  border-radius: 8px;
 }
 .button[disabled] {
   background-color: transparent !important;
 }
 .modal-card-head {
   background-color: var(--bulma-scheme-main-bis);
-}
-.title {
-  --bulma-title-weight: var(--bulma-weight-semibold);
-}
-.heading {
-  display: block;
-  font-size: 0.75rem;
-  letter-spacing: 1px;
-  margin-bottom: 5px;
-  text-transform: uppercase;
 }
 .is-black-link {
   color: var(--bulma-text-strong);
@@ -160,7 +176,7 @@ pre.is-small {
 }
 .bb-chart .bb-chart-arcs .bb-chart-arcs-title {
   font-size: 15px !important;
-  fill: #4a4a4a !important;
+  fill: var(--bulma-text) !important;
   text-transform: uppercase;
 }
 svg {
@@ -168,6 +184,9 @@ svg {
 }
 .highlight {
   width: 100%;
+}
+.panel .highlight pre code {
+  border-radius: 0;
 }
 .log pre {
   background-color: #1c1d21;
@@ -195,7 +214,11 @@ svg {
 thead.is-sticky {
   top: -1px;
   z-index: 19;
-  background-color: var(--bulma-scheme-main);
+  background-color: var(--bulma-table-striped-row-even-background-color);
+  box-shadow: 0 2px 0 var(--bulma-border);
+}
+#column-runs {
+  min-width: 280px;
 }
 #inputs-panel .panel-block.dropdown:hover {
   background-color: #f5f5f5;
@@ -216,12 +239,39 @@ a[target="_blank"] .fa-up-right-from-square {
 .is-wider-x2 .dropdown-menu {
   min-width: 24rem;
 }
+.copy-to-clipboard {
+  position: relative;
+}
+.copy-tooltip {
+  position: absolute;
+  background-color: rgb(var(--custom-tooltip-bg-rgb));
+  color: var(--bulma-white);
+  padding: var(--custom-tooltip-padding);
+  border-radius: var(--bulma-radius-small);
+  font-size: var(--bulma-size-small);
+  width: max-content;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  text-align: center;
+  word-wrap: break-word;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.copy-tooltip.visible {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.3s ease, visibility 0s linear 0s;
+}
 .is-tooltip .dropdown-content {
-  background-color: #363636;
+  background-color: rgb(var(--custom-tooltip-bg-rgb));
+  color: var(--bulma-white);
 }
 .is-tooltip .dropdown-item {
   font-weight: normal;
-  color: #fff;
+  color: var(--bulma-white);
 }
 .dropdown.is-hoverable.is-disabled:hover .dropdown-menu {
   display: none;

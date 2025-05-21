@@ -129,6 +129,18 @@ class UUIDPKModel(models.Model):
         return str(self.uuid)[0:8]
 
 
+class UUIDFieldMixin(models.Model):
+    uuid = models.UUIDField(
+        verbose_name=_("UUID"),
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+    )
+
+    class Meta:
+        abstract = True
+
+
 class HashFieldsMixin(models.Model):
     """
     The hash fields are not indexed by default, use the `indexes` in Meta as needed:
@@ -607,6 +619,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         is_new = self._state.adding
         # True if the new instance is a clone of an existing one.
         is_clone = kwargs.pop("is_clone", False)
+        # True if the global webhook creation should be skipped.
+        skip_global_webhook = kwargs.pop("skip_global_webhook", False)
 
         if not self.slug:
             self.slug = get_project_slug(project=self)
@@ -617,7 +631,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         super().save(*args, **kwargs)
 
-        if settings.SCANCODEIO_GLOBAL_WEBHOOK and is_new and not is_clone:
+        global_webhook = settings.SCANCODEIO_GLOBAL_WEBHOOK
+        if global_webhook and is_new and not is_clone and not skip_global_webhook:
             self.setup_global_webhook()
 
     def setup_global_webhook(self):
@@ -1194,10 +1209,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if not download_url and not filename:
             raise Exception("Provide at least a value for download_url or filename.")
 
-        # Add tag can be provided using the "#<fragment>" part of the URL
         if download_url:
             parsed_url = urlparse(download_url)
-            tag = parsed_url.fragment or tag
+            # Add tag can be provided using the "#<fragment>" part of the URL
+            if not tag and parsed_url.fragment:
+                tag = parsed_url.fragment[:50]
 
         return InputSource.objects.create(
             project=self,
@@ -2493,6 +2509,16 @@ class ComplianceAlertMixin(models.Model):
         ERROR = "error"
         MISSING = "missing"
 
+    # Map each compliance status to a severity level.
+    # Higher numbers indicate more severe compliance issues.
+    # This allows consistent comparison and sorting of compliance states.
+    COMPLIANCE_SEVERITY_MAP = {
+        Compliance.OK: 0,
+        Compliance.MISSING: 1,
+        Compliance.WARNING: 2,
+        Compliance.ERROR: 3,
+    }
+
     compliance_alert = models.CharField(
         max_length=10,
         blank=True,
@@ -2526,7 +2552,7 @@ class ComplianceAlertMixin(models.Model):
         Injects policies, if the feature is enabled, when the
         ``license_expression_field`` field value has changed.
 
-        `codebase` is not used in this context but required for compatibility
+        ``codebase`` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
         if self.policies_enabled:
@@ -2548,7 +2574,10 @@ class ComplianceAlertMixin(models.Model):
         return self.project.policies_enabled
 
     def compute_compliance_alert(self):
-        """Compute and return the compliance_alert value from the licenses policies."""
+        """
+        Compute and return the compliance_alert value from the license policies.
+        Chooses the most severe compliance_alert found among licenses.
+        """
         license_expression = getattr(self, self.license_expression_field, "")
         if not license_expression:
             return ""
@@ -2568,17 +2597,12 @@ class ComplianceAlertMixin(models.Model):
             else:
                 alerts.append(self.Compliance.MISSING)
 
-        compliance_ordered_by_severity = [
-            self.Compliance.ERROR,
-            self.Compliance.WARNING,
-            self.Compliance.MISSING,
-        ]
+        if not alerts:
+            return self.Compliance.OK
 
-        for compliance_severity in compliance_ordered_by_severity:
-            if compliance_severity in alerts:
-                return compliance_severity
-
-        return self.Compliance.OK
+        # Return the most severe alert based on the defined severity
+        severity = self.COMPLIANCE_SEVERITY_MAP.get
+        return max(alerts, key=severity)
 
 
 class FileClassifierFieldsModelMixin(models.Model):
@@ -3397,6 +3421,7 @@ class AbstractPackage(models.Model):
 
 class DiscoveredPackage(
     ProjectRelatedModel,
+    UUIDFieldMixin,
     ExtraDataFieldMixin,
     SaveProjectMessageMixin,
     UpdateFromDataMixin,
@@ -3418,9 +3443,6 @@ class DiscoveredPackage(
 
     license_expression_field = "declared_license_expression"
 
-    uuid = models.UUIDField(
-        verbose_name=_("UUID"), default=uuid.uuid4, unique=True, editable=False
-    )
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
     )
@@ -3766,6 +3788,7 @@ class DiscoveredDependencyQuerySet(
 
 class DiscoveredDependency(
     ProjectRelatedModel,
+    UUIDFieldMixin,
     SaveProjectMessageMixin,
     UpdateFromDataMixin,
     VulnerabilityMixin,
@@ -4028,7 +4051,10 @@ class DiscoveredDependency(
 
     @property
     def spdx_id(self):
-        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.dependency_uid}"
+        # We cannot rely on `dependency_uid` for the SPDX ID because it may contain
+        # PURL components that are not SPDX-compliant. According to the spec,
+        # "SPDXID is a unique string containing letters, numbers, ., and/or -"
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
 
     def as_spdx(self):
         """Return this Dependency as an SPDX Package entry."""
@@ -4188,6 +4214,34 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         pipeline_name = pipeline_run.pipeline_name
         pretext = f"Project *{project_display}* update:"
         text = f"Pipeline `{pipeline_name}` completed with {status}."
+        blocks = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": text,
+                },
+            }
+        ]
+
+        # Adds the task output in case of run failure
+        if pipeline_run.status == Run.Status.FAILURE and pipeline_run.task_output:
+            slack_text_max_length = 3000  # Slack's block message limit
+            output_text = pipeline_run.task_output
+            # Truncate the task output and add an indicator if it was cut off
+            if len(output_text) > slack_text_max_length:
+                output_text = (
+                    output_text[: slack_text_max_length - 30] + "\n... (truncated)"
+                )
+
+            task_output_block = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"```{output_text}```",
+                },
+            }
+            blocks.append(task_output_block)
 
         return {
             "username": "ScanCode.io",
@@ -4195,15 +4249,7 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             "attachments": [
                 {
                     "color": color,
-                    "blocks": [
-                        {
-                            "type": "section",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": text,
-                            },
-                        }
-                    ],
+                    "blocks": blocks,
                 }
             ],
         }

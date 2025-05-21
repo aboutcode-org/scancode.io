@@ -1714,6 +1714,7 @@
   "model": "scanpipe.discovereddependency",
   "pk": 1,
   "fields": {
+    "uuid": "13818fb7-6094-4868-97ca-384a8fc8d16d",
     "type": "pypi",
     "namespace": "",
     "name": "pytest",
@@ -1739,6 +1740,7 @@
   "model": "scanpipe.discovereddependency",
   "pk": 2,
   "fields": {
+    "uuid": "fd5a81e5-0739-406e-9189-7b8a3644ef0d",
     "type": "pypi",
     "namespace": "",
     "name": "pytest-asyncio",
@@ -1764,6 +1766,7 @@
   "model": "scanpipe.discovereddependency",
   "pk": 3,
   "fields": {
+    "uuid": "2f1d3742-0553-4c4f-8731-1ffbbc13827d",
     "type": "pypi",
     "namespace": "",
     "name": "pytest",
@@ -1789,6 +1792,7 @@
   "model": "scanpipe.discovereddependency",
   "pk": 4,
   "fields": {
+    "uuid": "e175db55-d0f3-4224-b6d4-2b0ad553b865",
     "type": "pypi",
     "namespace": "",
     "name": "pytest-asyncio",

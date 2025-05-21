@@ -1,8 +1,8 @@
 {% load humanize %}
 {% if compliance_alerts %}
   <div class="column is-half">
-    <nav id="compliance-panel" class="panel is-info">
-      <p class="panel-heading py-2 is-size-6">
+    <nav id="compliance-panel" class="panel is-dark">
+      <p class="panel-heading">
         Compliance alerts
       </p>
       {% for model_name, model_alerts in compliance_alerts.items  %}

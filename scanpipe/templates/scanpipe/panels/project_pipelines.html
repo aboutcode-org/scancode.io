@@ -1,5 +1,5 @@
 <article class="panel is-dark">
-  <p class="panel-heading py-2 is-size-6">
+  <p class="panel-heading">
     Pipelines
   </p>
   {% for run in pipeline_runs %}
@@ -35,7 +35,7 @@
     {% if project.is_archived %}
       <button class="button is-link is-outlined is-fullwidth" disabled>Add pipeline</button>
     {% else %}
-      <button class="button is-link is-outlined is-fullwidth modal-button" data-target="add-pipeline-modal" aria-haspopup="true">
+      <button class="button is-link {% if pipeline_runs %}is-outlined{% endif %} is-fullwidth modal-button" data-target="add-pipeline-modal" aria-haspopup="true">
         Add pipeline
       </button>
       {% if project.can_start_pipelines %}

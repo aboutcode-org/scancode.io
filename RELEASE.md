@@ -9,7 +9,7 @@
   - `CHANGELOG.rst` (set date)
 - Commit and push this branch
 - Create a PR and merge once approved
-- Tag and push that tag. This will triggers the `pypi-release.yml` GitHub workflow that 
+- Tag and push that tag. This will trigger the `pypi-release.yml` GitHub workflow that 
   takes care of building the dist release files and upload those to pypi:
   ```
   VERSION=vx.x.x  # <- Set the new version here

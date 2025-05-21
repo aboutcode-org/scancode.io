@@ -24,6 +24,8 @@ from collections import Counter
 from dataclasses import dataclass
 from dataclasses import field
 
+from scipy.spatial.distance import jensenshannon
+
 from aboutcode.pipeline import LoopProgress
 from scanpipe.models import CodebaseRelation
 from scanpipe.pipes import flag
@@ -39,6 +41,10 @@ MATCHING_RATIO_RUST = 0.5
 SMALL_FILE_SYMBOLS_THRESHOLD = 20
 MATCHING_RATIO_RUST_SMALL_FILE = 0.4
 MATCHING_RATIO_ELF = 0.05
+MATCHING_RATIO_JAVASCRIPT = 0.7
+SMALL_FILE_SYMBOLS_THRESHOLD_JAVASCRIPT = 30
+MATCHING_RATIO_JAVASCRIPT_SMALL_FILE = 0.5
+JAVASCRIPT_DECOMPOSED_SYMBOLS_THRESHOLD = 0.5
 STATS_FIELDS = [
     "matched_symbols",
     "unmatched_symbols",
@@ -242,3 +248,69 @@ def match_source_paths_to_binary(
             extra_data=match_stats,
         )
         yield symbol_match_result
+
+
+def is_decomposed_javascript(symbols):
+    """Return whether given set of symbols represents decomposed JavaScript code."""
+    meaningful_symbols = sum(1 for k in symbols if len(k) > 3)
+    ratio = meaningful_symbols / len(symbols) if meaningful_symbols > 0 else 0
+
+    return ratio < JAVASCRIPT_DECOMPOSED_SYMBOLS_THRESHOLD
+
+
+def get_symbols_probability_distribution(symbols, unique_symbols):
+    """Compute probability distribution of symbols based on their frequency."""
+    counter = Counter(symbols)
+    total_count = len(symbols)
+
+    probability_dist = [
+        (counter.get(symbol) / total_count) if symbol in counter else 0
+        for symbol in unique_symbols
+    ]
+
+    return probability_dist
+
+
+def get_similarity_between_source_and_deployed_symbols(
+    source_symbols,
+    deployed_symbols,
+    matching_ratio,
+    matching_ratio_small_file,
+    small_file_threshold,
+):
+    """
+    Compute similarity between source and deployed symbols based on Jensen-Shannon
+    Divergence and return whether they match based on provided threshold.
+    """
+    unique_symbols = set(source_symbols).union(set(deployed_symbols))
+
+    source_probability_dist = get_symbols_probability_distribution(
+        source_symbols, unique_symbols
+    )
+    deployed_probability_dist = get_symbols_probability_distribution(
+        deployed_symbols, unique_symbols
+    )
+
+    divergence = jensenshannon(source_probability_dist, deployed_probability_dist)
+    similarity = 1 - divergence
+
+    matching_threshold = matching_ratio
+    if len(deployed_symbols) <= small_file_threshold:
+        matching_threshold = matching_ratio_small_file
+
+    is_match = similarity >= matching_threshold
+
+    return is_match, similarity
+
+
+def match_javascript_source_symbols_to_deployed(source_symbols, deployed_symbols):
+    """Match source and deployed symbols using Jensen-Shannon Divergence."""
+    is_match, similarity = get_similarity_between_source_and_deployed_symbols(
+        source_symbols=source_symbols,
+        deployed_symbols=deployed_symbols,
+        matching_ratio=MATCHING_RATIO_JAVASCRIPT,
+        matching_ratio_small_file=MATCHING_RATIO_JAVASCRIPT_SMALL_FILE,
+        small_file_threshold=SMALL_FILE_SYMBOLS_THRESHOLD_JAVASCRIPT,
+    )
+
+    return is_match, similarity

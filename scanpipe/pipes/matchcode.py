@@ -28,6 +28,8 @@ from django.conf import settings
 import requests
 from matchcode_toolkit.fingerprinting import compute_codebase_directory_fingerprints
 from matchcode_toolkit.fingerprinting import get_file_fingerprint_hashes
+from matchcode_toolkit.fingerprinting import get_line_by_pos
+from matchcode_toolkit.fingerprinting import get_stemmed_file_fingerprint_hashes
 from scancode import Scanner
 
 from scanpipe.pipes import codebase
@@ -254,6 +256,48 @@ def fingerprint_codebase_resources(
     )
 
 
+def fingerprint_stemmed_codebase_resource(location, with_threading=True, **kwargs):
+    """
+    Compute stemmed code fingerprints for the resource at `location` using the
+    scancode-toolkit direct API.
+
+    Return a dictionary of scan `results` and a list of `errors`.
+    """
+    scanners = [
+        Scanner("stemmed_fingerprints", get_stemmed_file_fingerprint_hashes),
+    ]
+    return _scan_resource(location, scanners, with_threading=with_threading)
+
+
+def fingerprint_stemmed_codebase_resources(
+    project, resource_qs=None, progress_logger=None, to_codebase_only=False
+):
+    """
+    Compute stemmed code fingerprints for the resources from `project`.
+
+    These resource fingerprints are used for matching purposes on matchcode.
+
+    Multiprocessing is enabled by default on this pipe, the number of processes can be
+    controlled through the SCANCODEIO_PROCESSES setting.
+
+    If `to_codebase_only` is True, the only resources from the `to/` codebase
+    are computed.
+    """
+    # Checking for None to make the distinction with an empty resource_qs queryset
+    if resource_qs is None:
+        resource_qs = project.codebaseresources.filter(is_text=True)
+
+    if to_codebase_only:
+        resource_qs = resource_qs.to_codebase()
+
+    scan_resources(
+        resource_qs=resource_qs,
+        scan_func=fingerprint_stemmed_codebase_resource,
+        save_func=save_resource_fingerprints,
+        progress_logger=progress_logger,
+    )
+
+
 def send_project_json_to_matchcode(
     project, timeout=DEFAULT_TIMEOUT, api_url=MATCHCODEIO_API_URL
 ):
@@ -270,6 +314,10 @@ def send_project_json_to_matchcode(
             timeout=timeout,
             files=files,
         )
+
+    if not response:
+        raise MatchCodeIOException("Invalid response from MatchCode.io")
+
     match_url = response["url"]
     run_url = response["runs"][0]["url"]
     return match_url, run_url
@@ -362,3 +410,16 @@ def create_packages_from_match_results(project, match_results):
             package_data=matched_package,
             status=flag.MATCHED_TO_PURLDB_PACKAGE,
         )
+    match_resources = match_results.get("files", [])
+    for match_resource in match_resources:
+        if match_resource["type"] != "file":
+            continue
+        match_resource_extra_data = match_resource["extra_data"]
+        if match_resource_extra_data:
+            resource = project.codebaseresources.get(path=match_resource["path"])
+            # compute line_by_pos for displaying matches in CodebaseResource detail view
+            with open(resource.location) as f:
+                content = f.read()
+                line_by_pos = get_line_by_pos(content)
+            match_resource_extra_data["line_by_pos"] = line_by_pos
+            resource.update_extra_data(match_resource_extra_data)

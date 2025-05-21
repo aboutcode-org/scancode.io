@@ -1628,3 +1628,36 @@ class ScanPipeD2DPipesTest(TestCase):
             )
         except DataError:
             self.fail("DataError was raised, but it should not occur.")
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_javascript_symbols(self):
+        to_dir = self.project1.codebase_path / "to/project.tar.zst-extract/"
+        to_resource_file = (
+            self.data / "d2d-javascript/symbols/cesium/to_chunk-CNPP6TQ2.js"
+        )
+        to_dir.mkdir(parents=True)
+        copy_input(to_resource_file, to_dir)
+
+        from_input_location = (
+            self.data / "d2d-javascript/symbols/cesium/from_EllipseGeometryLibrary.js"
+        )
+        from_dir = self.project1.codebase_path / "from/project.zip/"
+        from_dir.mkdir(parents=True)
+        copy_input(from_input_location, from_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        buffer = io.StringIO()
+        d2d.map_javascript_symbols(self.project1, logger=buffer.write)
+        expected = (
+            "Mapping 1 JavaScript resources using symbols against 1 from/ codebase."
+        )
+        self.assertIn(expected, buffer.getvalue())
+
+        self.assertEqual(1, self.project1.codebaserelations.count())
+        self.assertEqual(
+            1,
+            self.project1.codebaserelations.filter(
+                map_type="javascript_symbols"
+            ).count(),
+        )

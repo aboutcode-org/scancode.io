@@ -2002,3 +2002,98 @@ def map_binaries_with_symbols(
             map_type=map_type,
             logger=logger,
         )
+
+
+def map_javascript_symbols(project, logger=None):
+    """Map deployed JavaScript, TypeScript to its sources using symbols."""
+    project_files = project.codebaseresources.files()
+
+    javascript_to_resources = (
+        project_files.to_codebase()
+        .has_no_relation()
+        .filter(extension__in=[".ts", ".js"])
+    )
+
+    javascript_from_resources = (
+        project_files.from_codebase()
+        .exclude(path__contains="/test/")
+        .filter(extension__in=[".ts", ".js"])
+    )
+
+    if not (javascript_from_resources.exists() and javascript_to_resources.exists()):
+        return
+
+    symbols.collect_and_store_tree_sitter_symbols_and_strings(
+        project=project,
+        logger=logger,
+        project_files=javascript_from_resources,
+    )
+
+    symbols.collect_and_store_tree_sitter_symbols_and_strings(
+        project=project,
+        logger=logger,
+        project_files=javascript_to_resources,
+    )
+
+    javascript_from_resources_withsymbols = javascript_from_resources.exclude(
+        extra_data={}
+    )
+    javascript_to_resources_withsymbols = javascript_to_resources.exclude(extra_data={})
+
+    javascript_from_resources_count = javascript_from_resources_withsymbols.count()
+    javascript_to_resources_count = javascript_to_resources_withsymbols.count()
+    if logger:
+        logger(
+            f"Mapping {javascript_to_resources_count:,d} JavaScript resources using"
+            f" symbols against {javascript_from_resources_count:,d} from/ codebase."
+        )
+
+    resource_iterator = javascript_to_resources_withsymbols.iterator(chunk_size=2000)
+    progress = LoopProgress(javascript_to_resources_count, logger)
+
+    resource_mapped = 0
+    for to_resource in progress.iter(resource_iterator):
+        resource_mapped += _map_javascript_symbols(
+            to_resource, javascript_from_resources_withsymbols, logger
+        )
+
+    if logger:
+        logger(f"{resource_mapped:,d} resource mapped using symbols")
+
+
+def _map_javascript_symbols(to_resource, javascript_from_resources, logger):
+    """
+    Map a deployed JavaScript resource to its source using symbols and
+    return 1 if match is found otherwise return 0.
+    """
+    to_symbols = to_resource.extra_data.get("source_symbols")
+
+    if not to_symbols or symbolmap.is_decomposed_javascript(to_symbols):
+        return 0
+
+    best_matching_score = 0
+    best_match = None
+    for source_js in javascript_from_resources:
+        from_symbols = source_js.extra_data.get("source_symbols")
+        if not from_symbols:
+            continue
+
+        is_match, similarity = symbolmap.match_javascript_source_symbols_to_deployed(
+            source_symbols=from_symbols,
+            deployed_symbols=to_symbols,
+        )
+
+        if is_match and similarity > best_matching_score:
+            best_matching_score = similarity
+            best_match = source_js
+
+    if best_match:
+        pipes.make_relation(
+            from_resource=best_match,
+            to_resource=to_resource,
+            map_type="javascript_symbols",
+            extra_data={"jsd_similarity_score": similarity},
+        )
+        to_resource.update(status=flag.MAPPED)
+        return 1
+    return 0

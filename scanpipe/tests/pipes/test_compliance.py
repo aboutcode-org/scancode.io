@@ -53,3 +53,29 @@ class ScanPipeCompliancePipesTest(TestCase):
             "resources": {"warning": ["path/"]},
         }
         self.assertEqual(expected, compliance_alerts)
+
+        # Testing the compliance alert ordering by severity
+        make_resource_file(
+            project,
+            path="path2/",
+            compliance_alert=CodebaseResource.Compliance.ERROR,
+        )
+        make_package(
+            project,
+            package_url="pkg:generic/name@2.0",
+            compliance_alert=CodebaseResource.Compliance.ERROR,
+        )
+        make_package(
+            project,
+            package_url="pkg:generic/name@3.0",
+            compliance_alert=CodebaseResource.Compliance.MISSING,
+        )
+        compliance_alerts = get_project_compliance_alerts(project, fail_level="missing")
+        expected = {
+            "packages": {
+                "error": ["pkg:generic/name@1.0", "pkg:generic/name@2.0"],
+                "missing": ["pkg:generic/name@3.0"],
+            },
+            "resources": {"error": ["path2/"], "warning": ["path/"]},
+        }
+        self.assertEqual(expected, compliance_alerts)

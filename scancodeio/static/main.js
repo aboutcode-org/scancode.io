@@ -356,6 +356,54 @@ class PaginationNavigator {
   }
 }
 
+// Copy to Clipboard (using `navigator.clipboard`)
+
+function enableCopyToClipboard(selector) {
+  const elements = document.querySelectorAll(selector);
+
+  elements.forEach(element => {
+    element.addEventListener("click", async () => {
+      let textToCopy = "";
+
+      // Determine the text to copy
+      if (element.hasAttribute("data-copy")) {
+        textToCopy = element.getAttribute("data-copy"); // From a custom attribute
+      } else if (element.value) {
+        textToCopy = element.value; // From an input field
+      } else {
+        textToCopy = element.innerText.trim(); // From the element's text
+      }
+
+      // Default tooltip text or custom text from data-copy-feedback attribute
+      const tooltipText = element.getAttribute('data-copy-feedback') || 'Copied!';
+
+      if (textToCopy) {
+        try {
+          await navigator.clipboard.writeText(textToCopy).then(() => {
+            // Create a tooltip
+            const tooltip = document.createElement('span');
+            tooltip.classList.add('copy-tooltip');
+            tooltip.textContent = tooltipText;
+            element.appendChild(tooltip);
+
+            // Show the tooltip
+            setTimeout(() => {
+              tooltip.classList.add('visible');
+            }, 0); // Add class immediately to trigger CSS transition
+
+            // Remove the tooltip after 1.5 seconds
+            setTimeout(() => {
+              element.removeChild(tooltip);
+            }, 1500);
+          });
+        } catch (err) {
+          console.error("Clipboard copy failed:", err);
+        }
+      }
+    });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 
   setupOpenModalButtons();
@@ -365,6 +413,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setupTextarea();
   setupHighlightControls();
   setupSelectCheckbox();
+  enableCopyToClipboard(".copy-to-clipboard");
 
   const paginationContainer = document.querySelector("#pagination-header");
   if (paginationContainer) {
@@ -402,6 +451,14 @@ document.addEventListener('DOMContentLoaded', function () {
     $dropdowns.forEach(function ($el) {
       $el.classList.remove('is-active');
     });
+  }
+
+  // Timezone
+  // Detects the user's current timezone using the browser's API
+  // and stores it in a cookie to be used by the backend for localization.
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (timezone) {
+    document.cookie = `client_timezone=${timezone}; path=/; SameSite=Lax`;
   }
 
 });
