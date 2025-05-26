@@ -1554,6 +1554,7 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data / "d2d" / "flume-ng-node-d2d.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_deploy_to_develop_pipeline_integration_elfs(self):
         pipeline_name = "map_deploy_to_develop"
         project1 = make_project(name="Analysis")
