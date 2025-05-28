@@ -48,6 +48,7 @@ from go_inspector.plugin import collect_and_parse_symbols
 from packagedcode.npm import NpmPackageJsonHandler
 from rust_inspector.binary import collect_and_parse_rust_symbols
 from summarycode.classify import LEGAL_STARTS_ENDS
+from source_inspector.symbols_tree_sitter import get_tree
 
 from aboutcode.pipeline import LoopProgress
 from scanpipe import pipes
@@ -1945,7 +1946,7 @@ def map_elfs_binaries_with_symbols(project, logger=None):
     )
 
     # Collect source symbols from elf related source files
-    elf_from_resources = from_resources.filter(extension__in=[".c", ".cpp", ".h"])
+    elf_from_resources = from_resources.filter(extension__in=[".c", ".cpp", ".h", ".pyx", ".pxd"])
 
     map_binaries_with_symbols(
         project=project,
@@ -2146,3 +2147,39 @@ def _map_javascript_symbols(to_resource, javascript_from_resources, logger):
         to_resource.update(status=flag.MAPPED)
         return 1
     return 0
+
+
+def map_python_pyx_to_binaries(project, logger=None):
+    """Map ELF binaries to their sources in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase().filter(extension__endswith=".pyx")
+    to_resources = (
+        project.codebaseresources.files().to_codebase().has_no_relation().elfs()
+    )
+
+    # Collect binary symbols from binaries
+    for resource in to_resources:
+        try:
+            binary_symbols = collect_and_parse_elf_symbols(resource.location)
+            resource.update_extra_data(binary_symbols)
+        except Exception as e:
+            logger(f"Error parsing binary symbols at: {resource.location_path!r} {e!r}")
+
+    for resource in from_resources:
+        tree, _ = get_tree(resource.location)
+        function_definitions = [node for node in tree.root_node.children if node.type == "function_definition"]
+        identifiers = []
+        for node in function_definitions:
+            for child in node.children:
+                if child.type == "identifier":
+                    identifiers.append(child.text.decode())
+
+        identifiers_qs = Q()
+        for identifier in identifiers:
+            identifiers_qs |= Q(extra_data__icontains=identifier)
+        matching_elfs = to_resources.filter(identifiers_qs)
+        for matching_elf in matching_elfs:
+            pipes.make_relation(
+                from_resource=resource,
+                to_resource=matching_elf,
+                map_type="python_pyx_match",
+            )
