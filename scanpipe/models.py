@@ -3464,6 +3464,15 @@ class DiscoveredPackage(
     notes = models.TextField(blank=True)
     source_packages = models.JSONField(default=list, blank=True)
     tag = models.CharField(blank=True, max_length=50)
+    analysis_subproject = models.OneToOneField(
+        Project,
+        related_name="analyzed_package",
+        help_text=_("Sub-project dedicated to analyzing this package."),
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        editable=False,
+    )
 
     objects = DiscoveredPackageQuerySet.as_manager()
 
