@@ -236,7 +236,7 @@ class JSONResultsGenerator:
         other_tools = [f"pkg:pypi/scancode-toolkit@{scancode_toolkit_version}"]
 
         headers = {
-            "tool_name": "scanpipe",
+            "tool_name": "ScanCode.io",
             "tool_version": scancodeio_version,
             "other_tools": other_tools,
             "notice": SCAN_NOTICE,
