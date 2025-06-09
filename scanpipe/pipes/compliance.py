@@ -26,6 +26,7 @@ from scanpipe.models import PACKAGE_URL_FIELDS
 from scanpipe.models import ComplianceAlertMixin
 from scanpipe.pipes import flag
 from scanpipe.pipes import scancode
+from scanpipe import policies
 
 """
 A common compliance pattern for images is to store known licenses in a /licenses
@@ -123,3 +124,19 @@ def get_project_compliance_alerts(project, fail_level="error"):
     }
 
     return project_compliance_alerts
+
+def add_clarity_compliance_to_summary(summary, project):
+    """
+    Add clarity compliance alert to summary data.
+    Called from make_results_summary function.
+    """
+    
+    clarity_score = summary.get("license_clarity_score", {}).get("score")
+    if clarity_score is None:
+        return summary
+    
+    clarity_policies = project.clarity_policy_index
+    clarity_compliance = policies.evaluate_clarity_compliance(clarity_score, clarity_policies)
+    
+    summary["clarity_compliance_alert"] = clarity_compliance
+    return summary

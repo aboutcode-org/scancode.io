@@ -1503,30 +1503,50 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         The policies are loaded from the following locations in that order:
         1. the project local settings
         2. the "policies.yml" file in the project input/ directory
-        3. the global app settings license policies
+        3. the global app settings license and clarity policies
         """
         if policies_from_settings := self.get_env("policies"):
             policies_dict = policies_from_settings
             if isinstance(policies_from_settings, str):
                 policies_dict = policies.load_policies_yaml(policies_from_settings)
-            return policies.make_license_policy_index(policies_dict)
+            return {
+                'license_policies': policies.make_license_policy_index(policies_dict),
+                'clarity_policies': policies.make_clarity_policy_index(policies_dict)
+            }
 
         elif policies_file := self.get_input_policies_file():
             policies_dict = policies.load_policies_file(policies_file)
-            return policies.make_license_policy_index(policies_dict)
+            return {
+                'license_policies': policies.make_license_policy_index(policies_dict),
+                'clarity_policies': policies.make_clarity_policy_index(policies_dict)
+            }
 
         else:
-            return scanpipe_app.license_policies_index
+            return {
+                'license_policies': scanpipe_app.license_policies_index,
+                'clarity_policies': getattr(scanpipe_app, 'clarity_policies_index', [])
+            }
 
     @cached_property
     def policy_index(self):
-        """Return the cached policy index for this project instance."""
-        return self.get_policy_index()
+        """Return the cached license policy index for this project instance"""
+        full_policies = self.get_policy_index()
+        return full_policies.get('license_policies', {})
+
+    @cached_property
+    def clarity_policy_index(self):
+        """Return clarity policies"""
+        full_policies = self.get_policy_index()
+        clarity_policies = full_policies.get('clarity_policies', [])
+        return clarity_policies
 
     @property
     def policies_enabled(self):
-        """Return True if the policies are enabled for this project."""
-        return bool(self.policy_index)
+        """Return True if any policies (license or clarity) are enabled for this project."""
+        full_policies = self.get_policy_index()
+        license_policies = full_policies.get('license_policies', {})
+        clarity_policies = full_policies.get('clarity_policies', [])
+        return bool(license_policies or clarity_policies)
 
 
 class GroupingQuerySetMixin:

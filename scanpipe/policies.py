@@ -54,6 +54,27 @@ def validate_policies(policies_dict):
             "The `license_policies` key is missing from provided policies data."
         )
 
+    if "clarity_policies" in policies_dict:
+        clarity_policies = policies_dict["clarity_policies"]
+        if not isinstance(clarity_policies, list):
+            raise ValidationError("The `clarity_policies` must be a list.")
+        
+        for policy in clarity_policies:
+            if not isinstance(policy, dict):
+                raise ValidationError("Each clarity policy must be a dictionary.")
+            if "threshold" not in policy:
+                raise ValidationError("Each clarity policy must have a 'threshold' field.")
+            
+            threshold = policy["threshold"]
+            if isinstance(threshold, str):
+                try:
+                    policy["threshold"] = float(threshold) if '.' in threshold else int(threshold)
+                except ValueError:
+                    raise ValidationError(f"Clarity policy 'threshold' must be a valid number. Got: {threshold}")
+            
+            if not isinstance(policy["threshold"], (int, float)):
+                raise ValidationError("Clarity policy 'threshold' must be a number.")
+
     return True
 
 
@@ -63,3 +84,30 @@ def make_license_policy_index(policies_dict):
 
     license_policies = policies_dict.get("license_policies", [])
     return {policy.get("license_key"): policy for policy in license_policies}
+
+
+def make_clarity_policy_index(policies_dict):
+    """Return a list of clarity policies sorted by threshold (descending)."""
+    if "clarity_policies" not in policies_dict:
+        return []
+    
+    clarity_policies = policies_dict.get("clarity_policies", [])
+    return sorted(clarity_policies, key=lambda p: p.get("threshold", 0), reverse=True)
+
+
+def evaluate_clarity_compliance(clarity_score, clarity_policies):
+    """
+    Evaluate clarity score against policies and return compliance alert.
+    Returns the most appropriate compliance alert based on the score.
+    """
+    if not clarity_policies:
+        return ""
+    
+    if clarity_score is None:
+        return "missing"
+    
+    for policy in clarity_policies:
+        if clarity_score >= policy.get("threshold", 0):
+            return policy.get("compliance_alert", "")
+    
+    return "error"

@@ -39,6 +39,7 @@ from licensedcode.models import load_licenses
 
 from scanpipe.policies import load_policies_file
 from scanpipe.policies import make_license_policy_index
+from scanpipe.policies import make_clarity_policy_index
 
 try:
     from importlib import metadata as importlib_metadata
@@ -218,7 +219,7 @@ class ScanPipeConfig(AppConfig):
 
     def set_policies(self):
         """
-        Compute and sets the `license_policies` on the app instance.
+        Compute and sets the `license_policies` and `clarity_policies` on the app instance.
 
         If the policies file is available but not formatted properly or doesn't
         include the proper content, we want to raise an exception while the app
@@ -233,8 +234,7 @@ class ScanPipeConfig(AppConfig):
             policies = load_policies_file(policies_file)
             logger.debug(style.SUCCESS(f"Loaded policies from {policies_file}"))
             self.license_policies_index = make_license_policy_index(policies)
-        else:
-            logger.debug(style.WARNING("Policies file not found."))
+            self.clarity_policies_index = make_clarity_policy_index(policies) 
 
     def sync_runs_and_jobs(self):
         """Synchronize ``QUEUED`` and ``RUNNING`` Run with their related Jobs."""

@@ -934,6 +934,7 @@ def make_results_summary(project, scan_results_location):
     """
     from scanpipe.api.serializers import CodebaseResourceSerializer
     from scanpipe.api.serializers import DiscoveredPackageSerializer
+    from scanpipe import policies
 
     with open(scan_results_location) as f:
         scan_data = json.load(f)
@@ -963,5 +964,11 @@ def make_results_summary(project, scan_results_location):
     summary["key_files_packages"] = [
         DiscoveredPackageSerializer(package).data for package in key_files_packages_qs
     ]
+
+    clarity_score = summary.get("license_clarity_score", {}).get("score")
+    if clarity_score is not None:
+        clarity_policies = project.clarity_policy_index
+        clarity_compliance = policies.evaluate_clarity_compliance(clarity_score, clarity_policies)
+        summary["clarity_compliance_alert"] = clarity_compliance
 
     return summary
