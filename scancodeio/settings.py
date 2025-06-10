@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -347,6 +348,15 @@ STATIC_ROOT = env.str("STATIC_ROOT", default="/var/scancodeio/static/")
 STATICFILES_DIRS = [
     PROJECT_DIR("static"),
 ]
+
+# Media files (Uploaded package archives, etc.)
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(str(ROOT_DIR), "media")
+
+# Package storage settings
+
+ENABLE_PACKAGE_STORAGE = env.bool("ENABLE_PACKAGE_STORAGE", default=False)
 
 # Third-party apps
 

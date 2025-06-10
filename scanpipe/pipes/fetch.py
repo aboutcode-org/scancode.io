@@ -21,6 +21,7 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import cgi
+import hashlib
 import json
 import logging
 import os
@@ -33,6 +34,7 @@ from urllib.parse import unquote
 from urllib.parse import urlparse
 
 from django.conf import settings
+from django.core.files import File
 
 import git
 import requests
@@ -41,6 +43,9 @@ from commoncode.hash import multi_checksums
 from commoncode.text import python_safe_name
 from plugincode.location_provider import get_location
 from requests import auth as request_auth
+
+from scanpipe.models import DownloadedPackage
+from scanpipe.models import PackageArchive
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -345,6 +350,80 @@ def fetch_git_repo(url, to=None):
     )
 
 
+def store_package_archive(project, url=None, file_path=None):
+    """
+    Store a package in PackageArchive and link it to DownloadedPackage.
+
+    Args:
+        project: The ScanCode.io Project instance.
+        url (str, optional): The URL from which the package was downloaded.
+        file_path (str or Path, optional): Path to the package file.
+
+    Returns:
+        DownloadedPackage: The created DownloadedPackage instance, or
+        None if storage is disabled or an error occurs.
+
+    """
+    logger.info(
+        f"store_package_archive called with project: {project}, url: {url},"
+        "file_path: {file_path}"
+    )
+
+    if not getattr(settings, "ENABLE_PACKAGE_STORAGE", False):
+        logger.info("Package storage disabled (ENABLE_PACKAGE_STORAGE=False)")
+        return None
+
+    if not file_path:
+        input_files = project.input_files.all()
+        if not input_files:
+            logger.info("No input files found for project")
+            return None
+        file_path = input_files[0].path
+        logger.info(f"Using first input file: {file_path}")
+
+    file_path = str(file_path)
+    logger.info(f"Processing file: {file_path}")
+
+    try:
+        with open(file_path, "rb") as f:
+            checksum = hashlib.sha256(f.read()).hexdigest()
+        logger.info(f"Calculated SHA256: {checksum}")
+    except FileNotFoundError as e:
+        logger.error(f"File not found: {file_path}, error: {e}")
+        return None
+
+    try:
+        archive, created = PackageArchive.objects.get_or_create(
+            checksum_sha256=checksum,
+            defaults={
+                "storage_path": file_path,
+                "package_file": File(
+                    open(file_path, "rb"), name=os.path.basename(file_path)
+                ),
+            },
+        )
+        logger.info(
+            f"PackageArchive {'created' if created else 'retrieved'}:"
+            "{archive.checksum_sha256}"
+        )
+    except Exception as e:
+        logger.error(f"Error creating PackageArchive: {e}")
+        return None
+
+    try:
+        dp = DownloadedPackage.objects.create(
+            project=project,
+            url=url or "",
+            filename=os.path.basename(file_path),
+            package_archive=archive,
+        )
+        logger.info(f"DownloadedPackage created: {dp.url}, {dp.filename}")
+        return dp
+    except Exception as e:
+        logger.error(f"Error creating DownloadedPackage: {e}")
+        return None
+
+
 SCHEME_TO_FETCHER_MAPPING = {
     "http": fetch_http,
     "https": fetch_http,
@@ -372,15 +451,30 @@ def get_fetcher(url):
     raise ValueError(error_msg)
 
 
-def fetch_url(url):
+def fetch_url(url, project=None):
     """Fetch provided `url` and returns the result as a `Download` object."""
     fetcher = get_fetcher(url)
     logger.info(f'Fetching "{url}" using {fetcher.__name__}')
     downloaded = fetcher(url)
+    if (
+    project
+    and getattr(settings, "ENABLE_PACKAGE_STORAGE", False)
+    and project.use_local_storage
+    ):
+      logger.info(
+        f"Storing package for project: {project.name} with url={url}"
+        )
+      store_package_archive(project, url, downloaded.path)
+    elif project and not project.use_local_storage:
+        logger.info(
+          f"Skipping package storage for project: {project.name} "
+          "(local storage disabled)"
+        )
     return downloaded
 
 
-def fetch_urls(urls):
+
+def fetch_urls(urls, project=None):
     """
     Fetch provided `urls` list.
     The `urls` can also be provided as a string containing one URL per line.

@@ -20,9 +20,14 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import logging
+from pathlib import Path
+
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import resolve
+from scanpipe.pipes.fetch import store_package_archive
 
+logger = logging.getLogger(__name__)
 
 class LoadSBOM(ScanCodebase):
     """
@@ -44,6 +49,7 @@ class LoadSBOM(ScanCodebase):
             cls.flag_empty_files,
             cls.flag_ignored_resources,
             cls.get_sbom_inputs,
+            cls.store_sbom_files,
             cls.get_packages_from_sboms,
             cls.create_packages_from_sboms,
             cls.create_dependencies_from_sboms,
@@ -52,6 +58,34 @@ class LoadSBOM(ScanCodebase):
     def get_sbom_inputs(self):
         """Locate all the SBOMs among the codebase resources."""
         self.manifest_resources = resolve.get_manifest_resources(self.project)
+
+    def store_sbom_files(self):
+        """Store SBOM files locally if enabled."""
+        if not self.project.use_local_storage:
+            logger.info(f"Local storage is disabled for project: {self.project.name}."
+                         "Skipping file storage.")
+            return []
+
+        logger.info(f"Storing SBOM files for project: {self.project.name}")
+        stored_files = []
+
+        for resource in self.manifest_resources:
+            resource_path = resource.path
+            if not Path(resource_path).exists():
+                logger.error(f"Invalid or missing file path: {resource_path}")
+                continue
+            resource_path_str = str(resource_path)
+            logger.info(f"Storing SBOM file: {resource_path_str}")
+            try:
+                result = store_package_archive(
+                    self.project, url=None, file_path=resource_path_str
+                )
+                logger.info(f"Stored SBOM file {resource_path_str}: {result}")
+                stored_files.append(result)
+            except Exception as e:
+                logger.error(f"Failed to store {resource_path_str}: {e}")
+
+        return stored_files
 
     def get_packages_from_sboms(self):
         """Get packages data from SBOMs."""

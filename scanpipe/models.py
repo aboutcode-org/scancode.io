@@ -561,7 +561,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     notes = models.TextField(blank=True)
     settings = models.JSONField(default=dict, blank=True)
     labels = TaggableManager(through=UUIDTaggedItem)
-
+    use_local_storage = models.BooleanField(default=False,
+                         help_text="Store packages locally if enabled.")
     objects = ProjectQuerySet.as_manager()
 
     class Meta:
@@ -4132,6 +4133,102 @@ class WebhookDelivery(UUIDPKModel, ProjectRelatedModel):
     @property
     def success(self):
         return self.response_status_code in (200, 201, 202)
+
+
+class PackageArchive(UUIDPKModel):
+    """
+    Stores metadata about a package archive file stored in the project's storage.
+    Each archive is uniquely identified by its SHA256 checksum.
+    """
+
+    checksum_sha256 = models.CharField(
+        max_length=64,
+        unique=True,
+        db_index=True,
+        help_text=_("SHA256 checksum of the package archive file."),
+    )
+    storage_path = models.CharField(
+        max_length=1024,
+        blank=True,
+        help_text=_("Path to the stored archive file"),
+    )
+    package_file = models.FileField(
+        upload_to="packages/",
+        null=True,
+        blank=True,
+        help_text=_("The actual package archive file ( ZIP or TAR)."),
+    )
+    created_date = models.DateTimeField(
+        auto_now_add=True,
+        help_text=_("Date when the archive was added to storage."),
+    )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["checksum_sha256"], name="checksum_idx"),
+        ]
+
+    def __str__(self):
+        return f"Archive {self.checksum_sha256[:8]} at {self.storage_path
+        or self.package_file.name}"
+
+
+class DownloadedPackage(UUIDPKModel):
+    """
+    Tracks packages downloaded or provided as input for a project, linked to a
+    PackageArchive. Each instance represents a package associated with a project,
+    including its source URL (if downloaded) and scan details.
+    """
+
+    project = models.ForeignKey(
+        Project,
+        related_name="downloadedpackages",
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+    url = models.URLField(
+        max_length=1024,
+        db_index=True,
+        blank=True,
+        help_text=_("URL from which the package was downloaded, if applicable."),
+    )
+    filename = models.CharField(
+        max_length=255,
+        help_text=_("Name of the package file."),
+    )
+    download_date = models.DateTimeField(
+        auto_now_add=True,
+        help_text=_("Date when the package was downloaded or added."),
+    )
+    scan_log = models.TextField(
+        blank=True,
+        help_text=_("Log output from scanning the package."),
+    )
+    scan_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("Date when the package was scanned."),
+    )
+    package_archive = models.ForeignKey(
+        PackageArchive,
+        on_delete=models.CASCADE,
+        help_text=_("The stored archive file associated with this package."),
+    )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["url"], name="url_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["url", "project"],
+                condition=Q(url__gt=""),
+                name="%(app_label)s_%(class)s_unique_url_project",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.filename} for project {self.project.name}"
 
 
 @receiver(models.signals.post_save, sender=settings.AUTH_USER_MODEL)
