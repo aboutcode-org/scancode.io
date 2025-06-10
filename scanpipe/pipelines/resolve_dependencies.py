@@ -24,8 +24,9 @@ from aboutcode.pipeline import optional_step
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import resolve
 from scanpipe.pipes import scancode
+from scanpipe.pipes.fetch import store_package_archive
 
-
+logger = logging.getLogger(__name__)
 class ResolveDependencies(ScanCodebase):
     """
     Resolve dependencies from package manifests and lockfiles.
@@ -47,7 +48,9 @@ class ResolveDependencies(ScanCodebase):
             cls.collect_and_create_codebase_resources,
             cls.flag_ignored_resources,
             cls.get_manifest_inputs,
+            cls.store_manifest_files,
             cls.scan_for_application_packages,
+             cls.store_package_archives,
             cls.create_packages_and_dependencies,
             cls.get_packages_from_manifest,
             cls.create_resolved_packages,

@@ -23,6 +23,9 @@
 from scanpipe.pipelines.analyze_root_filesystem import RootFS
 from scanpipe.pipes import docker
 from scanpipe.pipes import rootfs
+from scanpipe.pipes.fetch import store_package_archive
+
+logger = logging.getLogger(__name__)
 
 
 class Docker(RootFS):
@@ -36,6 +39,7 @@ class Docker(RootFS):
             cls.find_images_os_and_distro,
             cls.collect_images_information,
             cls.collect_and_create_codebase_resources,
+            cls.store_package_archives,
             cls.collect_and_create_system_packages,
             cls.flag_uninteresting_codebase_resources,
             cls.flag_empty_files,
@@ -74,6 +78,38 @@ class Docker(RootFS):
         """Collect and labels all image files as CodebaseResources."""
         for image in self.images:
             docker.create_codebase_resources(self.project, image)
+        self.package_files = []
+        for resource in self.project.codebaseresources.filter(extension=".deb"):
+            self.package_files.append(resource.path)
+            logger.debug(f"Found package file: {resource.path}")
+
+    def store_package_archives(self):
+        """Store identified package archives."""
+        if not self.project.use_local_storage:
+           logger.info(f"Local storage is disabled for project: {self.project.name}."
+                        "Skipping package storage.")
+           return []
+
+        logger.info(
+           f"Storing package archives for project: {self.project.name},"
+             "files: {self.package_files}"
+        )
+        stored_files = []
+        for package_path in self.package_files:
+            if not Path(package_path).exists():
+               logger.error(f"Invalid or missing package path: {package_path}")
+               continue
+            package_path_str = str(package_path)
+            logger.info(f"Storing package archive: {package_path_str}")
+            try:
+                result = store_package_archive(
+                  self.project, url=None, file_path=package_path_str
+                )
+                logger.info(f"Stored package archive {package_path_str}: {result}")
+                stored_files.append(result)
+            except Exception as e:
+                   logger.error(f"Failed to store {package_path_str}: {e}")
+        return stored_files
 
     def collect_and_create_system_packages(self):
         """Collect installed system packages for each layer based on the distro."""

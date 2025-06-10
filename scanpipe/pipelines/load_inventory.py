@@ -21,10 +21,13 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
+import logging
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import input
+from scanpipe.pipes.fetch import store_package_archive
 
+logger = logging.getLogger(__name__)
 
 class LoadInventory(Pipeline):
     """
@@ -42,12 +45,40 @@ class LoadInventory(Pipeline):
     def steps(cls):
         return (
             cls.get_inputs,
+            cls.store_inventory_files,
             cls.build_inventory_from_scans,
         )
 
     def get_inputs(self):
         """Locate all the supported input files from the project's input/ directory."""
         self.input_paths = self.project.inputs(extensions=self.supported_extensions)
+
+    def store_inventory_files(self):
+        """Store input inventory files locally if enabled."""
+        if not self.project.use_local_storage:
+            logger.info(f"Local storage is disabled for project: {self.project.name}."
+                         "Skipping file storage.")
+            return []
+
+        logger.info(f"Storing inventory files for project: {self.project.name}")
+        stored_files = []
+
+        for input_path in self.input_paths:
+            if not input_path.exists():
+                logger.error(f"Invalid or missing file path: {input_path}")
+                continue
+            input_path_str = str(input_path)
+            logger.info(f"Storing inventory file: {input_path_str}")
+            try:
+                result = store_package_archive(
+                    self.project, url=None, file_path=input_path_str
+                )
+                logger.info(f"Stored inventory file {input_path_str}: {result}")
+                stored_files.append(result)
+            except Exception as e:
+                logger.error(f"Failed to store {input_path_str}: {e}")
+
+        return stored_files
 
     def build_inventory_from_scans(self):
         """

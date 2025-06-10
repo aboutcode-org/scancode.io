@@ -24,8 +24,9 @@ from scanpipe.pipelines.analyze_docker import Docker
 from scanpipe.pipes import docker
 from scanpipe.pipes import rootfs
 from scanpipe.pipes import windows
+from scanpipe.pipes.fetch import store_package_archive
 
-
+logger = logging.getLogger(__name__)
 class DockerWindows(Docker):
     """Analyze Windows Docker images."""
 
@@ -37,6 +38,7 @@ class DockerWindows(Docker):
             cls.find_images_os_and_distro,
             cls.collect_images_information,
             cls.collect_and_create_codebase_resources,
+            cls.store_package_archives,
             cls.collect_and_create_system_packages,
             cls.flag_known_software_packages,
             cls.flag_uninteresting_codebase_resources,
@@ -49,6 +51,39 @@ class DockerWindows(Docker):
             cls.flag_data_files_with_no_clues,
             cls.flag_not_analyzed_codebase_resources,
         )
+
+    def store_package_archives(self):
+        """Store identified package archives for Windows images."""
+        if not self.project.use_local_storage:
+            logger.info(f"Local storage is disabled for project: {self.project.name}."
+                         "Skipping package storage.")
+            return []
+
+        logger.info(f"Storing package archives for project: {self.project.name}")
+        stored_files = []
+
+        package_files = [
+            resource.path
+            for resource in self.project.codebaseresources.filter(
+                extension__in=[".msi", ".exe"])
+        ]
+
+        for package_path in package_files:
+            if not Path(package_path).exists():
+                logger.error(f"Invalid or missing package path: {package_path}")
+                continue
+            package_path_str = str(package_path)
+            logger.info(f"Storing package archive: {package_path_str}")
+            try:
+                result = store_package_archive(
+                    self.project, url=None, file_path=package_path_str
+                )
+                logger.info(f"Stored package archive {package_path_str}: {result}")
+                stored_files.append(result)
+            except Exception as e:
+                logger.error(f"Failed to store {package_path_str}: {e}")
+
+        return stored_files
 
     def flag_known_software_packages(self):
         """Flag files from known software packages by checking common install paths."""

@@ -20,8 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import hashlib
 import io
 import json
+import os
 import shutil
 import sys
 import tempfile
@@ -38,6 +40,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.core.files import File
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.db import DataError
@@ -61,6 +64,8 @@ from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import DownloadedPackage
+from scanpipe.models import PackageArchive
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
@@ -72,6 +77,7 @@ from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.models import get_project_work_directory
 from scanpipe.models import normalize_package_url_data
 from scanpipe.pipes.fetch import Download
+from scanpipe.pipes.fetch import fetch_url
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import dependency_data2
@@ -2655,6 +2661,185 @@ class ScanPipeModelsTest(TestCase):
         self.assertQuerySetEqual(
             qs.compliance_issues(severities.MISSING), [error, missing, warning]
         )
+
+    def test_scanpipe_package_archive_model_creation(self):
+        """Test PackageArchive creation with checksum_sha256."""
+        sample_file_path = self.data / "scancode" / "InjectCode-Examples.zip"
+        with sample_file_path.open("rb") as f:
+            checksum = hashlib.sha256(f.read()).hexdigest()
+
+        archive = PackageArchive.objects.create(
+            checksum_sha256=checksum,
+            storage_path=str(self.project1.input_path / "InjectCode-Examples.zip"),
+        )
+        self.assertIsNotNone(archive.uuid)
+        self.assertEqual(checksum, archive.checksum_sha256)
+        self.assertEqual(
+            str(self.project1.input_path / "InjectCode-Examples.zip"),
+            archive.storage_path,
+        )
+        self.assertIsNotNone(archive.created_date)
+
+    def test_scanpipe_package_archive_model_creation_without_storage_path(self):
+        """Test PackageArchive creation without storage_path."""
+        sample_file_path = self.data / "scancode" / "InjectCode-Examples.zip"
+        with sample_file_path.open("rb") as f:
+            checksum = hashlib.sha256(f.read()).hexdigest()
+
+        archive = PackageArchive.objects.create(checksum_sha256=checksum)
+        self.assertIsNotNone(archive.uuid)
+        self.assertEqual(checksum, archive.checksum_sha256)
+        self.assertEqual("", archive.storage_path)
+
+    def test_scanpipe_package_archive_model_unique_checksum(self):
+        """Test checksum_sha256 uniqueness."""
+        sample_file_path = self.data / "scancode" / "InjectCode-Examples.zip"
+        with sample_file_path.open("rb") as f:
+            checksum = hashlib.sha256(f.read()).hexdigest()
+
+        PackageArchive.objects.create(
+            checksum_sha256=checksum,
+            storage_path=str(self.project1.input_path / "InjectCode-Examples.zip"),
+        )
+
+    def test_scanpipe_downloaded_package_model_unique_url_project(self):
+        """Test url and project uniqueness."""
+        sample_file_path = self.data / "scancode" / "InjectCode-Examples.zip"
+        with sample_file_path.open("rb") as f:
+            checksum = hashlib.sha256(f.read()).hexdigest()
+
+        archive = PackageArchive.objects.create(
+            checksum_sha256=checksum,
+            storage_path=str(self.project1.input_path / "InjectCode-Examples.zip"),
+        )
+        url = "https://github.com/rustyzone/Inject-Code-Examples-ZIP/raw/main/InjectCode-Examples.zip"
+        DownloadedPackage.objects.create(
+            url=url,
+            filename="InjectCode-Examples.zip",
+            project=self.project1,
+            package_archive=archive,
+        )
+        with self.assertRaises(IntegrityError):
+            DownloadedPackage.objects.create(
+                url=url,
+                filename="InjectCode-Examples2.zip",
+                project=self.project1,
+                package_archive=archive,
+            )
+
+    def test_scanpipe_downloaded_package_model_multiple_empty_url(self):
+        """
+        Test a single DownloadedPackage with an empty URL linked to
+        a PackageArchive.
+        """
+        sample_file_path = self.data / "scancode" / "InjectCode-Examples.zip"
+        with sample_file_path.open("rb") as f:
+            checksum = hashlib.sha256(f.read()).hexdigest()
+
+        archive = PackageArchive.objects.create(
+            checksum_sha256=checksum,
+            storage_path=str(self.project1.input_path / "InjectCode-Examples.zip"),
+        )
+        pkg = DownloadedPackage.objects.create(
+            url="",
+            filename="InjectCode-Examples.zip",
+            project=self.project1,
+            package_archive=archive,
+        )
+        self.assertEqual("", pkg.url)
+        self.assertEqual("InjectCode-Examples.zip", pkg.filename)
+        self.assertEqual(archive, pkg.package_archive)
+
+    def test_scanpipe_downloaded_package_model_with_sample_file(self):
+        """Test DownloadedPackage with sample file in input directory."""
+        sample_file_path = self.data / "scancode" / "InjectCode-Examples.zip"
+        with sample_file_path.open("rb") as f:
+            checksum = hashlib.sha256(f.read()).hexdigest()
+
+        archive = PackageArchive.objects.create(
+            checksum_sha256=checksum,
+            storage_path=str(self.project1.input_path / "InjectCode-Examples.zip"),
+        )
+        copy_input(sample_file_path, self.project1.input_path)
+        pkg = DownloadedPackage.objects.create(
+            url="https://github.com/rustyzone/Inject-Code-Examples-ZIP/raw/main/InjectCode-Examples.zip",
+            filename="InjectCode-Examples.zip",
+            project=self.project1,
+            package_archive=archive,
+        )
+        input_file_path = self.project1.input_path / "InjectCode-Examples.zip"
+        self.assertTrue(input_file_path.exists())
+        self.assertEqual("InjectCode-Examples.zip", pkg.filename)
+
+    def test_scanpipe_package_archive_model_file_storage(self):
+        """Test storing a file in PackageArchive."""
+        sample_file_path = self.data / "scancode" / "InjectCode-Examples.zip"
+        with sample_file_path.open("rb") as f:
+            checksum = hashlib.sha256(f.read()).hexdigest()
+
+        archive = PackageArchive.objects.create(
+            checksum_sha256=checksum,
+            storage_path=str(self.project1.input_path / "InjectCode-Examples.zip"),
+            package_file=File(
+                sample_file_path.open("rb"), name="InjectCode-Examples.zip"
+            ),
+        )
+        DownloadedPackage.objects.create(
+            url="https://example.com/InjectCode-Examples.zip",
+            filename="InjectCode-Examples.zip",
+            project=self.project1,
+            package_archive=archive,
+        )
+        self.assertTrue(archive.package_file, "FileField should not be empty")
+        self.assertTrue(
+            archive.package_file.name.startswith("packages/"),
+            f"Expected path to start with 'packages/', got {archive.package_file.name}",
+        )
+        base_filename = os.path.basename(archive.package_file.name)
+        self.assertTrue(
+            base_filename.startswith("InjectCode-Examples"),
+            "Expected base filename to start with 'InjectCode-Examples',"
+            "got {base_filename}",
+        )
+        self.assertEqual(checksum, archive.checksum_sha256)
+
+    def test_fetch_url_stores_package(self):
+        """Test that fetch_url stores packages when ENABLE_PACKAGE_STORAGE is True."""
+        sample_file_path = self.data / "scancode" / "InjectCode-Examples.zip"
+        with sample_file_path.open("rb") as f:
+            checksum = hashlib.sha256(f.read()).hexdigest()
+
+        download = Download(
+            uri="https://example.com/InjectCode-Examples.zip",
+            directory=str(self.project1.input_path),
+            filename="InjectCode-Examples.zip",
+            path=str(sample_file_path),
+            size=1234,
+            sha1="fake_sha1",
+            md5="fake_md5",
+        )
+
+        with patch("scanpipe.pipes.fetch.get_fetcher") as mock_fetcher:
+            mock_fetcher.return_value = lambda x: download
+            with override_settings(ENABLE_PACKAGE_STORAGE=True):
+                fetch_url(
+                    "https://example.com/InjectCode-Examples.zip", project=self.project1
+                )
+
+        archive = PackageArchive.objects.get(checksum_sha256=checksum)
+        self.assertTrue(archive.package_file.name.startswith("packages/"))
+        self.assertTrue(
+            os.path.basename(archive.package_file.name).startswith(
+                "InjectCode-Examples"
+            )
+        )
+
+        dp = DownloadedPackage.objects.get(
+            url="https://example.com/InjectCode-Examples.zip"
+        )
+        self.assertEqual("InjectCode-Examples.zip", dp.filename)
+        self.assertEqual(self.project1, dp.project)
+        self.assertEqual(archive, dp.package_archive)
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):

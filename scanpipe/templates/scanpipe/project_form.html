@@ -57,6 +57,11 @@
                 <label class="label" for="{{ form.pipeline.id_for_label }}">
                   {{ form.pipeline.label }}
                 </label>
+                <label class="checkbox" for="{{ form.use_local_storage.id_for_label }}" 
+                 title="If checked, packages will be stored on the local filesystem.">
+                {{ form.use_local_storage }}
+                Store packages locally
+             </label>
                 <label class="checkbox" for="{{ form.execute_now.id_for_label }}">
                   {{ form.execute_now }}
                   {{ form.execute_now.label }}
@@ -68,7 +73,6 @@
                 </span>
               </div>
             </div>
-
             <div class="field">
               {{ form.selected_groups }}
             </div>
