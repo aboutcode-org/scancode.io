@@ -42,6 +42,7 @@ class ScanPipeFetchPipesTest(TestCase):
         git_http_url = "https://github.com/aboutcode-org/scancode.io.git"
         self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(git_http_url))
         self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(git_http_url + "/"))
+        self.assertEqual(fetch.fetch_package_url, fetch.get_fetcher("pkg:npm/d3@5.8.0"))
 
         with self.assertRaises(ValueError) as cm:
             fetch.get_fetcher("")
@@ -87,6 +88,25 @@ class ScanPipeFetchPipesTest(TestCase):
         mock_get.return_value = make_mock_response(url=url, headers=headers)
         downloaded_file = fetch.fetch_http(url)
         self.assertTrue(Path(downloaded_file.directory, "another_name.zip").exists())
+
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_package_url(self, mock_get):
+        package_url = "pkg:not_a_valid_purl"
+        with self.assertRaises(ValueError) as cm:
+            fetch.fetch_package_url(package_url)
+        expected = f"purl is missing the required type component: '{package_url}'."
+        self.assertEqual(expected, str(cm.exception))
+
+        package_url = "pkg:generic/name@version"
+        with self.assertRaises(ValueError) as cm:
+            fetch.fetch_package_url(package_url)
+        expected = f"Could not resolve a download URL for {package_url}."
+        self.assertEqual(expected, str(cm.exception))
+
+        package_url = "pkg:npm/d3@5.8.0"
+        mock_get.return_value = make_mock_response(url="https://exa.com/filename.zip")
+        downloaded_file = fetch.fetch_package_url(package_url)
+        self.assertTrue(Path(downloaded_file.directory, "filename.zip").exists())
 
     @mock.patch("scanpipe.pipes.fetch.get_docker_image_platform")
     @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")
