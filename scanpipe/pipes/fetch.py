@@ -41,6 +41,8 @@ import requests
 from commoncode import command
 from commoncode.hash import multi_checksums
 from commoncode.text import python_safe_name
+from packageurl import PackageURL
+from packageurl.contrib import purl2url
 from plugincode.location_provider import get_location
 from requests import auth as request_auth
 
@@ -361,6 +363,7 @@ def fetch_git_repo(url, to=None):
     )
 
 
+
 def store_package_archive(project, url=None, file_path=None):
     """
     Store a package in PackageArchive and link it to DownloadedPackage.
@@ -435,6 +438,7 @@ def store_package_archive(project, url=None, file_path=None):
         return None
 
 
+
 SCHEME_TO_FETCHER_MAPPING = {
     "http": fetch_http,
     "https": fetch_http,
@@ -449,6 +453,9 @@ def get_fetcher(url):
 
     if url.rstrip("/").endswith(".git"):
         return fetch_git_repo
+
+    if url.startswith("pkg:"):
+        return fetch_package_url
 
     # Not using `urlparse(url).scheme` for the scheme as it converts to lower case.
     scheme = url.split("://")[0]

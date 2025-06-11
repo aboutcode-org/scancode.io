@@ -84,6 +84,7 @@ from scanpipe.tests import dependency_data2
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import make_dependency
 from scanpipe.tests import make_message
+from scanpipe.tests import make_mock_response
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_directory
@@ -1479,9 +1480,7 @@ class ScanPipeModelsTest(TestCase):
     @mock.patch("requests.sessions.Session.get")
     def test_scanpipe_input_source_model_fetch(self, mock_get):
         download_url = "https://download.url/file.zip"
-        mock_get.return_value = mock.Mock(
-            content=b"\x00", headers={}, status_code=200, url=download_url
-        )
+        mock_get.return_value = make_mock_response(url=download_url)
 
         input_source = self.project1.add_input_source(download_url=download_url)
         destination = input_source.fetch()
