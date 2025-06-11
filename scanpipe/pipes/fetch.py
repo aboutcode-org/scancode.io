@@ -41,6 +41,8 @@ import requests
 from commoncode import command
 from commoncode.hash import multi_checksums
 from commoncode.text import python_safe_name
+from packageurl import PackageURL
+from packageurl.contrib import purl2url
 from plugincode.location_provider import get_location
 from requests import auth as request_auth
 
@@ -361,6 +363,7 @@ def fetch_git_repo(url, to=None):
     )
 
 
+<<<<<<< HEAD
 def store_package_archive(project, url=None, file_path=None):
     """
     Store a package in PackageArchive and link it to DownloadedPackage.
@@ -433,6 +436,17 @@ def store_package_archive(project, url=None, file_path=None):
     except Exception as e:
         logger.error(f"Error creating DownloadedPackage: {e}")
         return None
+=======
+def fetch_package_url(url):
+    # Ensure the provided Package URL is valid, or raise a ValueError.
+    PackageURL.from_string(url)
+
+    # Resolve a Download URL using purl2url.
+    if download_url := purl2url.get_download_url(url):
+        return fetch_http(download_url)
+
+    raise ValueError(f"Could not resolve a download URL for {url}.")
+>>>>>>> 5d3601a5 (Add support for using Package URL (purl) as project input. (#1686))
 
 
 SCHEME_TO_FETCHER_MAPPING = {
@@ -449,6 +463,9 @@ def get_fetcher(url):
 
     if url.rstrip("/").endswith(".git"):
         return fetch_git_repo
+
+    if url.startswith("pkg:"):
+        return fetch_package_url
 
     # Not using `urlparse(url).scheme` for the scheme as it converts to lower case.
     scheme = url.split("://")[0]
