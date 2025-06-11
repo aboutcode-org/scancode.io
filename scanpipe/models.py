@@ -597,12 +597,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         ),
     )
 
-    package_count_cache = models.IntegerField()
-    dependency_count_cache = models.IntegerField()
-    resource_count_cache = models.IntegerField()
-    message_count_cache = models.IntegerField()
-    relation_count_cache = models.IntegerField()
-
     objects = ProjectQuerySet.as_manager()
 
     class Meta:
