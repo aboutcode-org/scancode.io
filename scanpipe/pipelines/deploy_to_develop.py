@@ -20,11 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-<<<<<<< HEAD
-=======
-import logging
-from pathlib import Path
->>>>>>> c845a20f (Add required imports)
 from aboutcode.pipeline import optional_step
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline

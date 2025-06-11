@@ -585,7 +585,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     )
     notes = models.TextField(blank=True)
     settings = models.JSONField(default=dict, blank=True)
-<<<<<<< HEAD
+
     labels = TaggableManager(through=UUIDTaggedItem, ordering=["name"])
     purl = models.CharField(
         max_length=2048,
@@ -598,11 +598,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         ),
     )
 
-=======
+
     labels = TaggableManager(through=UUIDTaggedItem)
     use_local_storage = models.BooleanField(default=False,
                          help_text="Store packages locally if enabled.")
->>>>>>> 0cade5ed (add support to store packages/archives locally)
     objects = ProjectQuerySet.as_manager()
 
     class Meta:
