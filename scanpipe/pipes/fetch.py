@@ -51,6 +51,17 @@ logger = logging.getLogger("scanpipe.pipes")
 
 Download = namedtuple("Download", "uri directory filename path size sha1 md5")
 
+# Time (in seconds) to wait for the server to send data before giving up.
+# The ``REQUEST_CONNECTION_TIMEOUT`` defines:
+# - Connect timeout: The maximum time to wait for the client to establish a connection
+#   to the server.
+# - Read timeout: The maximum time to wait for a server response once the connection
+#   is established.
+# Notes: Use caution when lowering this value, as some servers
+# (e.g., https://cdn.kernel.org/) may take longer to respond to HTTP requests under
+# certain conditions.
+HTTP_REQUEST_TIMEOUT = 30
+
 
 def run_command_safely(command_args):
     """
@@ -112,7 +123,7 @@ def fetch_http(uri, to=None):
     path.
     """
     request_session = get_request_session(uri)
-    response = request_session.get(uri, timeout=5)
+    response = request_session.get(uri, timeout=HTTP_REQUEST_TIMEOUT)
 
     if response.status_code != 200:
         raise requests.RequestException
@@ -510,7 +521,7 @@ def check_urls_availability(urls):
 
         request_session = get_request_session(url)
         try:
-            response = request_session.head(url, timeout=5)
+            response = request_session.head(url, timeout=HTTP_REQUEST_TIMEOUT)
             response.raise_for_status()
         except requests.exceptions.RequestException:
             errors.append(url)

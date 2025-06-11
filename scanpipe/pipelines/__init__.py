@@ -72,8 +72,13 @@ class CommonStepsMixin:
         """Flag ignored resources based on Project ``ignored_patterns`` setting."""
         from scanpipe.pipes import flag
 
-        if ignored_patterns := self.env.get("ignored_patterns"):
-            flag.flag_ignored_patterns(self.project, patterns=ignored_patterns)
+        ignored_patterns = self.env.get("ignored_patterns", [])
+
+        if isinstance(ignored_patterns, str):
+            ignored_patterns = ignored_patterns.splitlines()
+        ignored_patterns.extend(flag.DEFAULT_IGNORED_PATTERNS)
+
+        flag.flag_ignored_patterns(self.project, patterns=ignored_patterns)
 
     def extract_archive(self, location, target):
         """Extract archive at `location` to `target`. Save errors as messages."""

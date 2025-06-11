@@ -148,11 +148,11 @@ class ResolveDependencies(ScanCodebase):
         """
         scancode.process_package_data(self.project, static_resolve=True)
 
-    @group("DynamicResolver")
+    @optional_step("DynamicResolver")
     def get_packages_from_manifest(self):
         """
         Resolve package data from lockfiles/requirement files with package
-        requirements/dependenices.
+        requirements/dependencies.
         """
         self.resolved_packages = resolve.get_packages(
             project=self.project,
@@ -161,7 +161,7 @@ class ResolveDependencies(ScanCodebase):
             model="get_packages_from_manifest",
         )
 
-    @group("DynamicResolver")
+    @optional_step("DynamicResolver")
     def create_resolved_packages(self):
         """
         Create the dynamically resolved packages and their dependencies

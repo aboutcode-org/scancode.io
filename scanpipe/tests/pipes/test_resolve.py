@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
 from pathlib import Path
 from unittest import mock
 
@@ -31,6 +32,7 @@ from scanpipe.pipes import resolve
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.pipes.scancode import extract_archives
 from scanpipe.tests import make_package
+from scanpipe.tests import make_project
 from scanpipe.tests import package_data1
 
 
@@ -110,6 +112,44 @@ class ScanPipeResolvePipesTest(TestCase):
             "version": "4.0.8",
         }
         self.assertEqual([expected], packages)
+
+    @mock.patch("scanpipe.pipes.resolve.python_inspector.resolve_dependencies")
+    def test_scanpipe_pipes_resolve_resolve_pypi_packages(self, mock_resolve):
+        # Generated with:
+        # $ python-inspector --python-version 3.12 --operating-system linux \
+        #     --specifier pip==25.0.1 --json -
+        inspector_output_location = (
+            self.data / "resolve" / "python_inspector_resolve_dependencies.json"
+        )
+        with open(inspector_output_location) as f:
+            inspector_output = json.loads(f.read())
+
+        mock_resolve.return_value = mock.Mock(packages=inspector_output["packages"])
+
+        packages = resolve.resolve_pypi_packages("")
+        self.assertEqual(2, len(packages))
+        package_data = packages[0]
+        self.assertEqual("pip", package_data["name"])
+        self.assertEqual("25.0.1", package_data["version"])
+        self.assertEqual("Python", package_data["primary_language"])
+        self.assertIsNone(package_data["license_expression"])
+        expected_license = {
+            "license": "MIT",
+            "classifiers": ["License :: OSI Approved :: MIT License"],
+        }
+        self.assertEqual(expected_license, package_data["extracted_license_statement"])
+
+        project = make_project()
+        resolve.create_packages_and_dependencies(
+            project=project,
+            packages=packages,
+            resolved=True,
+        )
+
+        self.assertEqual(2, project.discoveredpackages.count())
+
+        package = project.discoveredpackages.all()[0]
+        self.assertEqual(str(expected_license), package.extracted_license_statement)
 
     def test_scanpipe_pipes_resolve_resolve_about_packages(self):
         input_location = self.manifest_location / "Django-4.0.8-py3-none-any.whl.ABOUT"
@@ -248,7 +288,7 @@ class ScanPipeResolvePipesTest(TestCase):
         self.assertEqual(parent, dependency.for_package)
         self.assertEqual(child, dependency.resolved_to_package)
         self.assertTrue(dependency.is_runtime)
-        self.assertTrue(dependency.is_resolved)
+        self.assertTrue(dependency.is_pinned)
         self.assertTrue(dependency.is_direct)
         self.assertFalse(dependency.is_optional)
 

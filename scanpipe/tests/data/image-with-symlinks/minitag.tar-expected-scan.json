@@ -28,6 +28,14 @@
           "execution_time": null
         }
       ],
+      "messages": [
+        {
+          "severity": "error",
+          "model": "analyze_docker_image",
+          "details": {},
+          "traceback": []
+        }
+      ],
       "extra_data": {
         "images": [
           {

@@ -44,6 +44,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import EMPTY_VALUES
 from django.db import models
 from django.db import transaction
+from django.db.models import Case
 from django.db.models import Count
 from django.db.models import IntegerField
 from django.db.models import OuterRef
@@ -51,6 +52,7 @@ from django.db.models import Prefetch
 from django.db.models import Q
 from django.db.models import Subquery
 from django.db.models import TextField
+from django.db.models import When
 from django.db.models.functions import Cast
 from django.db.models.functions import Lower
 from django.dispatch import receiver
@@ -92,6 +94,7 @@ from taggit.models import TaggedItemBase
 
 import scancodeio
 from scanpipe import humanize_time
+from scanpipe import policies
 from scanpipe import tasks
 
 logger = logging.getLogger(__name__)
@@ -124,6 +127,18 @@ class UUIDPKModel(models.Model):
     @property
     def short_uuid(self):
         return str(self.uuid)[0:8]
+
+
+class UUIDFieldMixin(models.Model):
+    uuid = models.UUIDField(
+        verbose_name=_("UUID"),
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+    )
+
+    class Meta:
+        abstract = True
 
 
 class HashFieldsMixin(models.Model):
@@ -517,6 +532,16 @@ class ProjectQuerySet(models.QuerySet):
 
         return self.annotate(**annotations)
 
+    def get_active_archived_counts(self):
+        return self.aggregate(
+            active_count=Count(
+                Case(When(is_archived=False, then=1), output_field=IntegerField())
+            ),
+            archived_count=Count(
+                Case(When(is_archived=True, then=1), output_field=IntegerField())
+            ),
+        )
+
 
 class UUIDTaggedItem(GenericUUIDTaggedItemBase, TaggedItemBase):
     class Meta:
@@ -581,6 +606,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Save this project instance.
         The workspace directories are set up during project creation.
         """
+        # True if the model has not been saved to the database yet.
+        is_new = self._state.adding
+        # True if the new instance is a clone of an existing one.
+        is_clone = kwargs.pop("is_clone", False)
+        # True if the global webhook creation should be skipped.
+        skip_global_webhook = kwargs.pop("skip_global_webhook", False)
+
         if not self.slug:
             self.slug = get_project_slug(project=self)
 
@@ -589,6 +621,19 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.setup_work_directory()
 
         super().save(*args, **kwargs)
+
+        global_webhook = settings.SCANCODEIO_GLOBAL_WEBHOOK
+        if global_webhook and is_new and not is_clone and not skip_global_webhook:
+            self.setup_global_webhook()
+
+    def setup_global_webhook(self):
+        """
+        Create a global webhook subscription instance from values defined in the
+        settings.
+        """
+        webhook_data = settings.SCANCODEIO_GLOBAL_WEBHOOK
+        if webhook_data.get("target_url"):
+            self.add_webhook_subscription(**webhook_data)
 
     def archive(self, remove_input=False, remove_codebase=False, remove_output=False):
         """
@@ -615,17 +660,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         shutil.rmtree(self.tmp_path, ignore_errors=True)
         self.setup_work_directory()
 
-        self.is_archived = True
-        self.save(update_fields=["is_archived"])
+        self.update(is_archived=True)
 
-    def delete_related_objects(self):
+    def delete_related_objects(self, keep_input=False, keep_labels=False):
         """
         Delete all related object instances using the private `_raw_delete` model API.
         This bypass the objects collection, cascade deletions, and signals.
         It results in a much faster objects deletion, but it needs to be applied in the
         correct models order as the cascading event will not be triggered.
         Note that this approach is used in Django's `fast_deletes` but the scanpipe
-        models are cannot be fast-deleted as they have cascades and relations.
+        models cannot be fast-deleted as they have cascades and relations.
         """
         # Use default `delete()` on the DiscoveredPackage model, as the
         # `codebase_resources (ManyToManyField)` records need to collected and
@@ -635,7 +679,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         _, deleted_counter = self.discoveredpackages.all().delete()
 
         # Removes all tags from this project by deleting the UUIDTaggedItem instances.
-        self.labels.clear()
+        if not keep_labels:
+            self.labels.clear()
 
         relationships = [
             self.webhookdeliveries,
@@ -645,8 +690,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.discovereddependencies,
             self.codebaseresources,
             self.runs,
-            self.inputsources,
         ]
+
+        if not keep_input:
+            relationships.append(self.inputsources)
 
         for qs in relationships:
             count = qs.all()._raw_delete(qs.db)
@@ -666,14 +713,25 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         return super().delete(*args, **kwargs)
 
-    def reset(self, keep_input=True):
+    def reset(self, keep_input=True, restore_pipelines=False, execute_now=False):
         """
         Reset the project by deleting all related database objects and all work
         directories except the input directory—when the `keep_input` option is True.
         """
         self._raise_if_run_in_progress()
 
-        self.delete_related_objects()
+        restore_pipeline_kwargs = []
+        if restore_pipelines:
+            restore_pipeline_kwargs = [
+                {
+                    "pipeline_name": run.pipeline_name,
+                    "execute_now": execute_now,
+                    "selected_groups": run.selected_groups,
+                }
+                for run in self.runs.all()
+            ]
+
+        self.delete_related_objects(keep_input=keep_input, keep_labels=True)
 
         work_directories = [
             self.codebase_path,
@@ -693,6 +751,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         self.setup_work_directory()
 
+        for pipeline_kwargs in restore_pipeline_kwargs:
+            self.add_pipeline(**pipeline_kwargs)
+
     def clone(
         self,
         clone_name,
@@ -703,10 +764,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         execute_now=False,
     ):
         """Clone this project using the provided ``clone_name`` as new project name."""
-        new_project = Project.objects.create(
+        new_project = Project(
             name=clone_name,
+            purl=self.purl,
             settings=self.settings if copy_settings else {},
         )
+        new_project.save(is_clone=True)
 
         if labels := self.labels.names():
             new_project.labels.add(*labels)
@@ -781,44 +844,56 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if config_directory.exists():
             return config_directory
 
-    def get_input_config_file(self):
+    def get_file_from_work_directory(self, filename):
         """
-        Return the ``scancode-config.yml`` file from the input/ directory
+        Return the ``filename`` file from the input/ directory
         or from the codebase/ immediate subdirectories.
 
         Priority order:
-        1. If a config file exists directly in the input/ directory, return it.
-        2. If exactly one config file exists in a codebase/ immediate subdirectory,
-        return it.
-        3. If multiple config files are found in subdirectories, report an error.
+        1. If a ``filename`` file exists directly in the input/ directory, return it.
+        2. If exactly one ``filename`` file exists in a codebase/ immediate
+        subdirectory, return it.
+        3. If multiple ``filename`` files are found in subdirectories, report an error.
         """
-        config_filename = settings.SCANCODEIO_CONFIG_FILE
+        # Check for the ``filename`` file in the root of the input/ directory.
+        root_file = self.input_path / filename
+        if root_file.exists():
+            return root_file
 
-        # Check for the config file in the root of the input/ directory.
-        root_config_file = self.input_path / config_filename
-        if root_config_file.exists():
-            return root_config_file
+        # Search for files in immediate codebase/ subdirectories.
+        subdir_files = list(self.codebase_path.glob(f"*/{filename}"))
 
-        # Search for config files in immediate codebase/ subdirectories.
-        subdir_config_files = list(self.codebase_path.glob(f"*/{config_filename}"))
+        # If exactly one file is found in codebase/ subdirectories, return it.
+        if len(subdir_files) == 1:
+            return subdir_files[0]
 
-        # If exactly one config file is found in codebase/ subdirectories, return it.
-        if len(subdir_config_files) == 1:
-            return subdir_config_files[0]
-
-        # If multiple config files are found, report an error.
-        if len(subdir_config_files) > 1:
+        # If multiple files are found, report an error.
+        if len(subdir_files) > 1:
             self.add_warning(
-                f"More than one {config_filename} found. "
+                f"More than one {filename} found. "
                 f"Could not determine which one to use.",
                 model="Project",
                 details={
                     "resources": [
-                        str(path.relative_to(self.work_path))
-                        for path in subdir_config_files
+                        str(path.relative_to(self.work_path)) for path in subdir_files
                     ]
                 },
             )
+
+    def get_input_config_file(self):
+        """
+        Return the ``scancode-config.yml`` file from the input/ directory
+        or from the codebase/ immediate subdirectories.
+        """
+        config_filename = settings.SCANCODEIO_CONFIG_FILE
+        return self.get_file_from_work_directory(config_filename)
+
+    def get_input_policies_file(self):
+        """
+        Return the "policies.yml" file from the input/ directory
+        or from the codebase/ immediate subdirectories.
+        """
+        return self.get_file_from_work_directory("policies.yml")
 
     def get_settings_as_yml(self):
         """Return the ``settings`` file content as yml, suitable for a config file."""
@@ -882,6 +957,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             ignored_scope_index[entry.get("package_type")].append(entry.get("scope"))
 
         return dict(ignored_scope_index)
+
+    @cached_property
+    def get_scan_max_file_size(self):
+        """
+        Return a the ``scan_max_file_size`` settings value defined in this
+        Project env.
+        """
+        scan_max_file_size = self.get_env(field_name="scan_max_file_size")
+        if scan_max_file_size:
+            return scan_max_file_size
 
     @cached_property
     def ignored_dependency_scopes_index(self):
@@ -1115,10 +1200,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if not download_url and not filename:
             raise Exception("Provide at least a value for download_url or filename.")
 
-        # Add tag can be provided using the "#<fragment>" part of the URL
         if download_url:
             parsed_url = urlparse(download_url)
-            tag = parsed_url.fragment or tag
+            # Add tag can be provided using the "#<fragment>" part of the URL
+            if not tag and parsed_url.fragment:
+                tag = parsed_url.fragment[:50]
 
         return InputSource.objects.create(
             project=self,
@@ -1400,6 +1486,38 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         project, False otherwise.
         """
         return self.resource_count == 1
+
+    def get_policy_index(self):
+        """
+        Return the policy index for this project instance.
+
+        The policies are loaded from the following locations in that order:
+        1. the project local settings
+        2. the "policies.yml" file in the project input/ directory
+        3. the global app settings license policies
+        """
+        if policies_from_settings := self.get_env("policies"):
+            policies_dict = policies_from_settings
+            if isinstance(policies_from_settings, str):
+                policies_dict = policies.load_policies_yaml(policies_from_settings)
+            return policies.make_license_policy_index(policies_dict)
+
+        elif policies_file := self.get_input_policies_file():
+            policies_dict = policies.load_policies_file(policies_file)
+            return policies.make_license_policy_index(policies_dict)
+
+        else:
+            return scanpipe_app.license_policies_index
+
+    @cached_property
+    def policy_index(self):
+        """Return the cached policy index for this project instance."""
+        return self.get_policy_index()
+
+    @property
+    def policies_enabled(self):
+        """Return True if the policies are enabled for this project."""
+        return bool(self.policy_index)
 
 
 class GroupingQuerySetMixin:
@@ -2382,6 +2500,16 @@ class ComplianceAlertMixin(models.Model):
         ERROR = "error"
         MISSING = "missing"
 
+    # Map each compliance status to a severity level.
+    # Higher numbers indicate more severe compliance issues.
+    # This allows consistent comparison and sorting of compliance states.
+    COMPLIANCE_SEVERITY_MAP = {
+        Compliance.OK: 0,
+        Compliance.MISSING: 1,
+        Compliance.WARNING: 2,
+        Compliance.ERROR: 3,
+    }
+
     compliance_alert = models.CharField(
         max_length=10,
         blank=True,
@@ -2415,10 +2543,10 @@ class ComplianceAlertMixin(models.Model):
         Injects policies, if the feature is enabled, when the
         ``license_expression_field`` field value has changed.
 
-        `codebase` is not used in this context but required for compatibility
+        ``codebase`` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
-        if scanpipe_app.policies_enabled:
+        if self.policies_enabled:
             loaded_license_expression = getattr(self, "_loaded_license_expression", "")
             license_expression = getattr(self, self.license_expression_field, "")
             if license_expression != loaded_license_expression:
@@ -2428,36 +2556,44 @@ class ComplianceAlertMixin(models.Model):
 
         super().save(*args, **kwargs)
 
+    @property
+    def policy_index(self):
+        return self.project.policy_index
+
+    @cached_property
+    def policies_enabled(self):
+        return self.project.policies_enabled
+
     def compute_compliance_alert(self):
-        """Compute and return the compliance_alert value from the licenses policies."""
+        """
+        Compute and return the compliance_alert value from the license policies.
+        Chooses the most severe compliance_alert found among licenses.
+        """
         license_expression = getattr(self, self.license_expression_field, "")
         if not license_expression:
             return ""
 
-        alerts = []
-        policy_index = scanpipe_app.license_policies_index
+        policy_index = self.policy_index
+        if not policy_index:
+            return
 
         licensing = get_licensing()
         parsed = licensing.parse(license_expression, simple=True)
         license_keys = licensing.license_keys(parsed)
 
+        alerts = []
         for license_key in license_keys:
             if policy := policy_index.get(license_key):
                 alerts.append(policy.get("compliance_alert") or self.Compliance.OK)
             else:
                 alerts.append(self.Compliance.MISSING)
 
-        compliance_ordered_by_severity = [
-            self.Compliance.ERROR,
-            self.Compliance.WARNING,
-            self.Compliance.MISSING,
-        ]
+        if not alerts:
+            return self.Compliance.OK
 
-        for compliance_severity in compliance_ordered_by_severity:
-            if compliance_severity in alerts:
-                return compliance_severity
-
-        return self.Compliance.OK
+        # Return the most severe alert based on the defined severity
+        severity = self.COMPLIANCE_SEVERITY_MAP.get
+        return max(alerts, key=severity)
 
 
 class FileClassifierFieldsModelMixin(models.Model):
@@ -2786,6 +2922,18 @@ class CodebaseResource(
             if not topdown:
                 yield child
 
+    def extracted_to(self, codebase=None):
+        """Return the path this Resource archive was extracted to or None."""
+        extract_path = f"{self.path}-extract"
+        return self.project.get_resource(extract_path)
+
+    def extracted_from(self, codebase=None):
+        """Return the path to an archive this Resource was extracted from or None."""
+        path = self.path
+        if "-extract" in path:
+            archive_path, _, _ = self.path.rpartition("-extract")
+            return self.project.get_resource(archive_path)
+
     def get_absolute_url(self):
         return reverse("resource_detail", args=[self.project.slug, self.path])
 
@@ -2848,7 +2996,9 @@ class CodebaseResource(
         cleaned_data = {
             field_name: value
             for field_name, value in resource_data.items()
-            if field_name in cls.model_fields() and value not in EMPTY_VALUES
+            if field_name in cls.model_fields()
+            and value not in EMPTY_VALUES
+            and field_name != "project"
         }
 
         return cls.objects.create(project=project, **cleaned_data)
@@ -3007,12 +3157,15 @@ class DiscoveredPackageQuerySet(
         )
         return self.annotate(resources_count=count_subquery)
 
-    def only_package_url_fields(self):
+    def only_package_url_fields(self, extra=None):
         """
         Only select and return the UUID and PURL fields.
         Minimum requirements to render a Package link in the UI.
         """
-        return self.only("uuid", *PACKAGE_URL_FIELDS)
+        if not extra:
+            extra = []
+
+        return self.only("uuid", *PACKAGE_URL_FIELDS, *extra)
 
     def filter(self, *args, **kwargs):
         """Add support for using ``package_url`` as a field lookup."""
@@ -3259,6 +3412,7 @@ class AbstractPackage(models.Model):
 
 class DiscoveredPackage(
     ProjectRelatedModel,
+    UUIDFieldMixin,
     ExtraDataFieldMixin,
     SaveProjectMessageMixin,
     UpdateFromDataMixin,
@@ -3280,9 +3434,6 @@ class DiscoveredPackage(
 
     license_expression_field = "declared_license_expression"
 
-    uuid = models.UUIDField(
-        verbose_name=_("UUID"), default=uuid.uuid4, unique=True, editable=False
-    )
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
     )
@@ -3386,7 +3537,9 @@ class DiscoveredPackage(
         cleaned_data = {
             field_name: value
             for field_name, value in package_data.items()
-            if field_name in cls.model_fields() and value not in EMPTY_VALUES
+            if field_name in cls.model_fields()
+            and value not in EMPTY_VALUES
+            and field_name != "project"
         }
 
         discovered_package = cls(project=project, **cleaned_data)
@@ -3590,7 +3743,9 @@ class DiscoveredPackage(
 
 
 class DiscoveredDependencyQuerySet(
-    PackageURLQuerySetMixin, VulnerabilityQuerySetMixin, ProjectRelatedQuerySet
+    PackageURLQuerySetMixin,
+    VulnerabilityQuerySetMixin,
+    ProjectRelatedQuerySet,
 ):
     def prefetch_for_serializer(self):
         """
@@ -3611,9 +3766,20 @@ class DiscoveredDependencyQuerySet(
             ),
         )
 
+    def only_package_url_fields(self, extra=None):
+        """
+        Only select and return the UUID and PURL fields.
+        Minimum requirements to render a Package link in the UI.
+        """
+        if not extra:
+            extra = []
+
+        return self.only("dependency_uid", *PACKAGE_URL_FIELDS, *extra)
+
 
 class DiscoveredDependency(
     ProjectRelatedModel,
+    UUIDFieldMixin,
     SaveProjectMessageMixin,
     UpdateFromDataMixin,
     VulnerabilityMixin,
@@ -3696,7 +3862,7 @@ class DiscoveredDependency(
         default=False,
         help_text=_("True if this dependency is an optional dependency"),
     )
-    is_resolved = models.BooleanField(
+    is_pinned = models.BooleanField(
         default=False,
         help_text=_(
             "True if this dependency version requirement has been pinned "
@@ -3718,7 +3884,7 @@ class DiscoveredDependency(
         verbose_name_plural = "discovered dependencies"
         ordering = [
             "-is_runtime",
-            "-is_resolved",
+            "-is_pinned",
             "is_optional",
             "dependency_uid",
             "for_package",
@@ -3729,7 +3895,7 @@ class DiscoveredDependency(
             models.Index(fields=["scope"]),
             models.Index(fields=["is_runtime"]),
             models.Index(fields=["is_optional"]),
-            models.Index(fields=["is_resolved"]),
+            models.Index(fields=["is_pinned"]),
             models.Index(fields=["is_direct"]),
         ]
         constraints = [
@@ -3847,7 +4013,9 @@ class DiscoveredDependency(
         cleaned_data = {
             field_name: value
             for field_name, value in dependency_data.items()
-            if field_name in cls.model_fields() and value not in EMPTY_VALUES
+            if field_name in cls.model_fields()
+            and value not in EMPTY_VALUES
+            and field_name != "project"
         }
 
         return cls.objects.create(
@@ -3874,7 +4042,10 @@ class DiscoveredDependency(
 
     @property
     def spdx_id(self):
-        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.dependency_uid}"
+        # We cannot rely on `dependency_uid` for the SPDX ID because it may contain
+        # PURL components that are not SPDX-compliant. According to the spec,
+        # "SPDXID is a unique string containing letters, numbers, ., and/or -"
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
 
     def as_spdx(self):
         """Return this Dependency as an SPDX Package entry."""
@@ -4007,6 +4178,73 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
 
         return payload
 
+    @staticmethod
+    def get_slack_payload(pipeline_run):
+        """
+        Get a custom payload dedicated to Slack webhooks.
+        See https://api.slack.com/messaging/webhooks
+        """
+        status = pipeline_run.status
+        project = pipeline_run.project
+
+        if site_url := scanpipe_app.site_url:
+            project_url = site_url + project.get_absolute_url()
+            project_display = f"<{project_url}|{project.name}>"
+        else:
+            project_display = project.name
+
+        status_to_color = {
+            Run.Status.SUCCESS: "#48c78e",
+            Run.Status.FAILURE: "#f14668",
+            # The following status do not trigger the webhook delivery:
+            # Run.Status.STOPPED: "#f14668",
+            # Run.Status.STALE: "#363636",
+        }
+        color = status_to_color.get(status, "")
+
+        pipeline_name = pipeline_run.pipeline_name
+        pretext = f"Project *{project_display}* update:"
+        text = f"Pipeline `{pipeline_name}` completed with {status}."
+        blocks = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": text,
+                },
+            }
+        ]
+
+        # Adds the task output in case of run failure
+        if pipeline_run.status == Run.Status.FAILURE and pipeline_run.task_output:
+            slack_text_max_length = 3000  # Slack's block message limit
+            output_text = pipeline_run.task_output
+            # Truncate the task output and add an indicator if it was cut off
+            if len(output_text) > slack_text_max_length:
+                output_text = (
+                    output_text[: slack_text_max_length - 30] + "\n... (truncated)"
+                )
+
+            task_output_block = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"```{output_text}```",
+                },
+            }
+            blocks.append(task_output_block)
+
+        return {
+            "username": "ScanCode.io",
+            "text": pretext,
+            "attachments": [
+                {
+                    "color": color,
+                    "blocks": blocks,
+                }
+            ],
+        }
+
     def deliver(self, pipeline_run, timeout=10):
         """Deliver this Webhook by sending a POST request to the `target_url`."""
         logger.info(f"Delivering Webhook {self.uuid}")
@@ -4015,7 +4253,11 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             logger.info(f"Webhook {self.uuid} is not active.")
             return False
 
-        payload = self.get_payload(pipeline_run)
+        if "hooks.slack.com" in self.target_url:
+            payload = self.get_slack_payload(pipeline_run)
+        else:
+            payload = self.get_payload(pipeline_run)
+
         delivery = WebhookDelivery(
             project=self.project,
             webhook_subscription=self,

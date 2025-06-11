@@ -28,6 +28,7 @@
           "execution_time": null
         }
       ],
+      "messages": [],
       "extra_data": {
         "images": [
           {
@@ -17961,7 +17962,7 @@
                   "rule_relevance": 100,
                   "rule_identifier": "gpl-2.0-plus_22.RULE",
                   "license_expression": "gpl-2.0-plus",
-                  "spdx_license_expression": "GPL-2.0-or-later"
+                  "license_expression_spdx": "GPL-2.0-or-later"
                 },
                 {
                   "score": 100.0,
@@ -17976,7 +17977,7 @@
                   "rule_relevance": 100,
                   "rule_identifier": "gpl-2.0-plus_25.RULE",
                   "license_expression": "gpl-2.0-plus",
-                  "spdx_license_expression": "GPL-2.0-or-later"
+                  "license_expression_spdx": "GPL-2.0-or-later"
                 },
                 {
                   "score": 100.0,
@@ -17991,7 +17992,7 @@
                   "rule_relevance": 100,
                   "rule_identifier": "gpl-2.0_1166.RULE",
                   "license_expression": "gpl-2.0",
-                  "spdx_license_expression": "GPL-2.0-only"
+                  "license_expression_spdx": "GPL-2.0-only"
                 }
               ],
               "identifier": "gpl_2_0_plus_and_gpl_2_0-c60cf274-d3ce-d029-06f8-cdf674420dbe",
@@ -18013,7 +18014,7 @@
                   "rule_relevance": 100,
                   "rule_identifier": "mpl-2.0_75.RULE",
                   "license_expression": "mpl-2.0",
-                  "spdx_license_expression": "MPL-2.0"
+                  "license_expression_spdx": "MPL-2.0"
                 },
                 {
                   "score": 100.0,
@@ -18028,7 +18029,7 @@
                   "rule_relevance": 100,
                   "rule_identifier": "mpl-2.0.LICENSE",
                   "license_expression": "mpl-2.0",
-                  "spdx_license_expression": "MPL-2.0"
+                  "license_expression_spdx": "MPL-2.0"
                 }
               ],
               "identifier": "mpl_2_0-a4e80716-0ace-81d4-b4b0-3d29c3a0f1e2",
@@ -61868,7 +61869,13 @@
       "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
-      "authors": [],
+      "authors": [
+        {
+          "author": "Santiago Vila <sanvila@debian.org>",
+          "end_line": 5,
+          "start_line": 5
+        }
+      ],
       "package_data": [],
       "for_packages": [],
       "emails": [
@@ -61909,7 +61916,13 @@
       "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
-      "authors": [],
+      "authors": [
+        {
+          "author": "Marco d'Itri <md@linux.it>",
+          "end_line": 4,
+          "start_line": 4
+        }
+      ],
       "package_data": [],
       "for_packages": [],
       "emails": [

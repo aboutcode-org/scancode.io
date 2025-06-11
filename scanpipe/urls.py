@@ -112,6 +112,11 @@ urlpatterns = [
         name="project_settings",
     ),
     path(
+        "project/<slug:slug>/settings/webhooks/add",
+        views.ProjectSettingsWebhookCreateView.as_view(),
+        name="project_settings_add_webhook",
+    ),
+    path(
         "project/<slug:slug>/codebase/",
         views.ProjectCodebaseView.as_view(),
         name="project_codebase",
@@ -167,6 +172,11 @@ urlpatterns = [
         name="project_delete_input",
     ),
     path(
+        "project/<slug:slug>/delete_webhook/<uuid:webhook_uuid>/",
+        views.delete_webhook_view,
+        name="project_delete_webhook",
+    ),
+    path(
         "project/<slug:slug>/download_input/<str:filename>/",
         views.download_input_view,
         name="project_download_input",
@@ -205,6 +215,11 @@ urlpatterns = [
         "project/<slug:slug>/resource_license_summary/",
         views.ProjectResourceLicenseSummaryView.as_view(),
         name="project_resource_license_summary",
+    ),
+    path(
+        "project/<slug:slug>/compliance_panel/",
+        views.ProjectCompliancePanelView.as_view(),
+        name="project_compliance_panel",
     ),
     path(
         "project/<slug:slug>/",

@@ -36,13 +36,13 @@
                 {{ package.declared_license_expression }}
               </a>
             </td>
-            {% if display_compliance_alert %}
-              <td>
+            <td>
+              {% if package.compliance_alert %}
                 <a href="?compliance_alert={{ package.compliance_alert }}" class="is-black-link">
                   {{ package.compliance_alert }}
                 </a>
-              </td>
-            {% endif %}
+              {% endif %}
+            </td>
             <td title="{{ package.copyright }}">
               {{ package.copyright|truncatechars:150|linebreaksbr }}
             </td>

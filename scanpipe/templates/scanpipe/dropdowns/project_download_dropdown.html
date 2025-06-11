@@ -21,9 +21,11 @@
       <div class="dropdown-item">
         <strong>CycloneDX</strong>
         <div class="has-text-weight-semibold">
-          <a href="{% url 'project_results' project.slug 'cyclonedx' '1.6' %}" class="tag is-link is-light mr-1">1.6</a>
-          <a href="{% url 'project_results' project.slug 'cyclonedx' '1.5' %}" class="tag is-link is-light mr-1">1.5</a>
-          <a href="{% url 'project_results' project.slug 'cyclonedx' '1.4' %}" class="tag is-link is-light">1.4</a>
+          <div class="buttons">
+            <a href="{% url 'project_results' project.slug 'cyclonedx' '1.6' %}" class="tag is-link">1.6</a>
+            <a href="{% url 'project_results' project.slug 'cyclonedx' '1.5' %}" class="tag">1.5</a>
+            <a href="{% url 'project_results' project.slug 'cyclonedx' '1.4' %}" class="tag">1.4</a>
+          </div>
         </div>
       </div>
       <a href="{% url 'project_results' project.slug 'attribution' %}" class="dropdown-item">

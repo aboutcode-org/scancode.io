@@ -20,6 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+from collections import defaultdict
+
+from scanpipe.models import PACKAGE_URL_FIELDS
+from scanpipe.models import ComplianceAlertMixin
 from scanpipe.pipes import flag
 from scanpipe.pipes import scancode
 
@@ -57,3 +61,65 @@ def analyze_compliance_licenses(project):
     for codebase_resource in qs:
         scan_results, scan_errors = scancode.scan_file(codebase_resource.location)
         codebase_resource.set_scan_results(scan_results)
+
+
+def group_compliance_alerts_by_severity(queryset):
+    """
+    Group compliance alerts by their severity for a given queryset.
+
+    This function iterates through a queryset of instances, grouping each instance
+    by its compliance alert severity level. It returns a dictionary where each key
+    is a severity level (e.g., "error", "warning"), and the value is a list of
+    string representations of the instances associated with that severity.
+    """
+    compliance_alerts = defaultdict(list)
+    severity_levels = ComplianceAlertMixin.COMPLIANCE_SEVERITY_MAP
+
+    for instance in queryset:
+        compliance_alerts[instance.compliance_alert].append(str(instance))
+
+    # Sort keys for consistent ordering (["error", "warning", "missing"])
+    sorted_keys = sorted(
+        compliance_alerts.keys(),
+        key=lambda label: severity_levels.get(label, len(severity_levels)),
+        reverse=True,
+    )
+
+    sorted_compliance_alerts = {
+        label: compliance_alerts[label] for label in sorted_keys
+    }
+    return sorted_compliance_alerts
+
+
+def get_project_compliance_alerts(project, fail_level="error"):
+    """
+    Retrieve compliance alerts for a given project at a specified severity level.
+
+    This function checks for compliance alerts in the provided project, filtering them
+    by the specified severity level (e.g., "error", "warning"). It gathers compliance
+    alerts for both discovered packages and codebase resources, and returns them in
+    a structured dictionary.
+    """
+    package_qs = (
+        project.discoveredpackages.compliance_issues(severity=fail_level)
+        .only(*PACKAGE_URL_FIELDS, "compliance_alert")
+        .order_by(*PACKAGE_URL_FIELDS)
+    )
+    resource_qs = (
+        project.codebaseresources.compliance_issues(severity=fail_level)
+        .only("path", "compliance_alert")
+        .order_by("path")
+    )
+
+    queryset_mapping = {
+        "packages": package_qs,
+        "resources": resource_qs,
+    }
+
+    project_compliance_alerts = {
+        model_name: compliance_alerts
+        for model_name, queryset in queryset_mapping.items()
+        if (compliance_alerts := group_compliance_alerts_by_severity(queryset))
+    }
+
+    return project_compliance_alerts

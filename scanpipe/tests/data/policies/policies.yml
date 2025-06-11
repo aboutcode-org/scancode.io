@@ -1,0 +1,10 @@
+license_policies:
+-   license_key: apache-2.0
+    label: Approved License
+    compliance_alert: ''
+-   license_key: mpl-2.0
+    label: Restricted License
+    compliance_alert: warning
+-   license_key: gpl-3.0
+    label: Prohibited License
+    compliance_alert: error

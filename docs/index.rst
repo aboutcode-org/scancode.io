@@ -44,11 +44,13 @@ you’ll find information on:
     custom-pipelines
     scanpipe-pipes
     project-configuration
+    policies
     data-models
     output-files
     command-line-interface
     rest-api
     automation
+    webhooks
     application-settings
     distros-os-images
 

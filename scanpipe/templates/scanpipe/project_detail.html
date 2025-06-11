@@ -26,9 +26,16 @@
         </nav>
         <div class="subtitle is-size-6">
           <span class="has-text-grey">
-            <span title="{{ project.created_date|date:'N j, Y, P T' }}">
-              Created {{ project.created_date|naturaltime }}
-            </span>
+            {% now "Y-m-d" as today %}
+            {% if project.created_date|date:"Y-m-d" == today %}
+              <span title="{{ project.created_date }}">
+                Created {{ project.created_date|naturaltime }}
+              </span>
+            {% else %}
+              <span title="{{ project.created_date|naturaltime }}">
+                Created {{ project.created_date }}
+              </span>
+            {% endif %}
           </span>
           {% include 'scanpipe/includes/project_labels.html' with labels=labels only %}
           <a class="modal-button is-size-7" data-target="add-labels-modal" aria-haspopup="true">
@@ -37,7 +44,7 @@
         </div>
       </div>
       <div style="min-width:fit-content;">
-        <a href="{% url 'project_settings' project.slug %}" class="button is-smaller is-info is-outlined">
+        <a href="{% url 'project_settings' project.slug %}" class="button is-smaller">
           <span class="icon width-1">
             <i class="fa-solid fa-sliders-h"></i>
           </span>
@@ -53,23 +60,26 @@
       </div>
     </section>
 
-    <hr class="mx-5 mt-0">
-    {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" %}
+    <hr class="mx-5 mt-0 mb-2">
+    {% include "scanpipe/includes/project_summary_level.html" with project=project %}
 
     <section class="pt-0 mx-5">
       {% if project.resource_count or project.package_count %}
         {% include "scanpipe/includes/project_downloads.html" with project=project only %}
       {% elif not pipeline_runs %}
-        <article class="message is-warning">
+        <article class="message is-link">
           <div class="message-body">
             <p class="block">
               <span class="icon width-1 height-1 mr-1">
                 <i class="fa-solid fa-info-circle"></i>
               </span>
               <span>
-                Add
-                {% if not inputs_with_source %}<strong>Inputs</strong>{% endif %}
-                and execute a <strong>pipeline</strong> to generate some results.
+                {% if not input_sources %}
+                  <a href="#" class="modal-button has-text-weight-bold" data-target="add-inputs-modal" aria-haspopup="true">Add Inputs</a>
+                  and
+                {% endif %}
+                <a href="#" class="modal-button has-text-weight-bold" data-target="add-pipeline-modal" aria-haspopup="true">Execute a pipeline</a>
+                to generate some results.
               </span>
             </p>
           </div>
@@ -107,9 +117,15 @@
         <div hx-get="{% url 'project_resource_license_summary' project.slug %}" hx-trigger="load" hx-swap="outerHTML"></div>
       </div>
 
+      {% if policies_enabled %}
+        <div class="columns">
+          <div hx-get="{% url 'project_compliance_panel' project.slug %}" hx-trigger="load" hx-swap="outerHTML"></div>
+        </div>
+      {% endif %}
+
       {% if project.extra_data %}
-        <article id="project-extra-data" class="panel is-info">
-          <p class="panel-heading py-2 is-size-6">
+        <article id="project-extra-data" class="panel is-dark">
+          <p class="panel-heading">
             Project data
           </p>
           <div class="panel-block p-0 is-more is-more-clipped">

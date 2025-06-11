@@ -28,6 +28,7 @@
           "execution_time": null
         }
       ],
+      "messages": [],
       "extra_data": {}
     }
   ],
@@ -77,7 +78,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-bsd_simplified_or_apache_2_0-4e6ba7864502b4956354d47c70173db3283d1005",
               "license_expression": "bsd-simplified OR apache-2.0",
-              "spdx_license_expression": "BSD-2-Clause OR Apache-2.0"
+              "license_expression_spdx": "BSD-2-Clause OR Apache-2.0"
             }
           ],
           "identifier": "bsd_simplified_or_apache_2_0-dd30dee1-b8d2-187f-c9f9-69fd2ff5e39a",
@@ -205,7 +206,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-apache_2_0_and_bsd_new_and_mit-5a0e0d1daea60cb9191d19fe5324c57e89cbcbf8",
               "license_expression": "apache-2.0 AND bsd-new AND mit",
-              "spdx_license_expression": "Apache-2.0 AND BSD-3-Clause AND MIT"
+              "license_expression_spdx": "Apache-2.0 AND BSD-3-Clause AND MIT"
             }
           ],
           "identifier": "apache_2_0_and_bsd_new_and_mit-4d4f1034-453c-8cde-3ab0-bd35ddc243e6",
@@ -282,7 +283,7 @@
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-apache_2_0_and_bsd_new_and_mit-5a0e0d1daea60cb9191d19fe5324c57e89cbcbf8",
               "license_expression": "apache-2.0 AND bsd-new AND mit",
-              "spdx_license_expression": "Apache-2.0 AND BSD-3-Clause AND MIT"
+              "license_expression_spdx": "Apache-2.0 AND BSD-3-Clause AND MIT"
             }
           ],
           "identifier": "apache_2_0_and_bsd_new_and_mit-4d4f1034-453c-8cde-3ab0-bd35ddc243e6",
@@ -320,7 +321,7 @@
       "scope": "install",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/attrs?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -336,7 +337,7 @@
       "scope": "install",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/attrs?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -352,7 +353,7 @@
       "scope": "install",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/attrs?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -368,7 +369,7 @@
       "scope": "testing",
       "is_runtime": true,
       "is_optional": true,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/packaging?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/setuptools@70.1.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -384,7 +385,7 @@
       "scope": "",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": true,
+      "is_pinned": true,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/packaging@21.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -400,7 +401,7 @@
       "scope": "",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": true,
+      "is_pinned": true,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/packaging@21.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -416,7 +417,7 @@
       "scope": "",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": true,
+      "is_pinned": true,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/packaging@21.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -432,7 +433,7 @@
       "scope": "install",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/pyparsing?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/packaging@21.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -448,7 +449,7 @@
       "scope": "install",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/semantic-version?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -464,7 +465,7 @@
       "scope": "install",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/semantic-version?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -480,7 +481,7 @@
       "scope": "install",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/semantic-version?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -496,7 +497,7 @@
       "scope": "install",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/semver?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -512,7 +513,7 @@
       "scope": "install",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/semver?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -528,7 +529,7 @@
       "scope": "install",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/semver?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -544,7 +545,7 @@
       "scope": "",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": true,
+      "is_pinned": true,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/setuptools@70.1.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -560,7 +561,7 @@
       "scope": "",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": true,
+      "is_pinned": true,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/setuptools@70.1.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -576,7 +577,7 @@
       "scope": "",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": true,
+      "is_pinned": true,
       "is_direct": true,
       "dependency_uid": "pkg:pypi/setuptools@70.1.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/univers@0.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -718,10 +719,10 @@
               "purl": "pkg:pypi/packaging@21.0",
               "scope": null,
               "is_direct": true,
+              "is_pinned": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,
-              "is_resolved": true,
               "resolved_package": {
                 "md5": null,
                 "name": "packaging",
@@ -749,10 +750,10 @@
                     "purl": "pkg:pypi/pyparsing",
                     "scope": "install",
                     "is_direct": true,
+                    "is_pinned": false,
                     "extra_data": {},
                     "is_runtime": true,
                     "is_optional": false,
-                    "is_resolved": false,
                     "resolved_package": {},
                     "extracted_requirement": ">=2.0.2"
                   }
@@ -782,7 +783,7 @@
                         "rule_relevance": 100,
                         "rule_identifier": "spdx-license-identifier-bsd_simplified_or_apache_2_0-4e6ba7864502b4956354d47c70173db3283d1005",
                         "license_expression": "bsd-simplified OR apache-2.0",
-                        "spdx_license_expression": "BSD-2-Clause OR Apache-2.0"
+                        "license_expression_spdx": "BSD-2-Clause OR Apache-2.0"
                       }
                     ],
                     "identifier": "bsd_simplified_or_apache_2_0-dd30dee1-b8d2-187f-c9f9-69fd2ff5e39a",
@@ -805,10 +806,10 @@
               "purl": "pkg:pypi/setuptools@70.1.0",
               "scope": null,
               "is_direct": true,
+              "is_pinned": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,
-              "is_resolved": true,
               "resolved_package": {
                 "md5": null,
                 "name": "setuptools",
@@ -843,10 +844,10 @@
                     "purl": "pkg:pypi/packaging",
                     "scope": "testing",
                     "is_direct": true,
+                    "is_pinned": false,
                     "extra_data": {},
                     "is_runtime": true,
                     "is_optional": true,
-                    "is_resolved": false,
                     "resolved_package": {},
                     "extracted_requirement": ">=23.2"
                   }
@@ -876,10 +877,10 @@
               "purl": "pkg:pypi/attrs",
               "scope": "install",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,
-              "is_resolved": false,
               "resolved_package": {},
               "extracted_requirement": null
             },
@@ -887,10 +888,10 @@
               "purl": "pkg:pypi/semantic-version",
               "scope": "install",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,
-              "is_resolved": false,
               "resolved_package": {},
               "extracted_requirement": null
             },
@@ -898,12 +899,12 @@
               "purl": "pkg:pypi/semver",
               "scope": "install",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {
                 "python_version": "< 3.8"
               },
               "is_runtime": true,
               "is_optional": false,
-              "is_resolved": false,
               "resolved_package": {},
               "extracted_requirement": null
             }
@@ -933,7 +934,7 @@
                   "rule_relevance": 100,
                   "rule_identifier": "spdx-license-identifier-apache_2_0_and_bsd_new_and_mit-5a0e0d1daea60cb9191d19fe5324c57e89cbcbf8",
                   "license_expression": "apache-2.0 AND bsd-new AND mit",
-                  "spdx_license_expression": "Apache-2.0 AND BSD-3-Clause AND MIT"
+                  "license_expression_spdx": "Apache-2.0 AND BSD-3-Clause AND MIT"
                 }
               ],
               "identifier": "apache_2_0_and_bsd_new_and_mit-4d4f1034-453c-8cde-3ab0-bd35ddc243e6",

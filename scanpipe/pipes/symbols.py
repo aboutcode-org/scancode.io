@@ -110,14 +110,19 @@ def _collect_and_store_pygments_symbols_and_strings(resource):
     )
 
 
-def collect_and_store_tree_sitter_symbols_and_strings(project, logger=None):
+def collect_and_store_tree_sitter_symbols_and_strings(
+    project, logger=None, project_files=None
+):
     """
     Collect symbols from codebase files using tree-sitter and store
     them in the extra data field.
+
+    Collect from `project_files` instead of all codebase files if specified.
     """
     from source_inspector import symbols_tree_sitter
 
-    project_files = project.codebaseresources.files()
+    if not project_files:
+        project_files = project.codebaseresources.files()
 
     language_qs = Q()
 
@@ -131,12 +136,25 @@ def collect_and_store_tree_sitter_symbols_and_strings(project, logger=None):
     ).filter(language_qs)
 
     resources_count = resources.count()
+    if logger:
+        logger(
+            f"Getting source symbols and strings from {resources_count:,d}"
+            " resources using tree-sitter."
+        )
 
     resource_iterator = resources.iterator(chunk_size=2000)
     progress = LoopProgress(resources_count, logger)
 
     for resource in progress.iter(resource_iterator):
-        _collect_and_store_tree_sitter_symbols_and_strings(resource)
+        try:
+            _collect_and_store_tree_sitter_symbols_and_strings(resource)
+        except Exception as e:
+            project.add_error(
+                description=f"Cannot collect strings from resource at {resource.path}",
+                exception=e,
+                model="collect_and_store_tree_sitter_symbols_and_strings",
+                details={"resource_path": resource.path},
+            )
 
 
 def _collect_and_store_tree_sitter_symbols_and_strings(resource):

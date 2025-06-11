@@ -28,6 +28,7 @@
           "execution_time": null
         }
       ],
+      "messages": [],
       "extra_data": {}
     }
   ],
@@ -175,7 +176,7 @@
               "rule_relevance": 100,
               "rule_identifier": "package-manifest-unknown-cb9ea49fe36cb2e1ba6d87c68e1195a492f762cf",
               "license_expression": "unknown",
-              "spdx_license_expression": "LicenseRef-scancode-unknown"
+              "license_expression_spdx": "LicenseRef-scancode-unknown"
             }
           ],
           "identifier": "unknown-0669ac45-20f6-defd-ec9f-2b6aafc9f944",
@@ -408,7 +409,7 @@
       "scope": "dependencies",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": false,
+      "is_pinned": false,
       "is_direct": true,
       "dependency_uid": "pkg:npm/athena-express?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:npm/create-athena-partition@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -424,7 +425,7 @@
       "scope": "dependencies",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": true,
+      "is_pinned": true,
       "is_direct": true,
       "dependency_uid": "pkg:npm/bluebird?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:npm/csvtojson@2.0.10?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -440,7 +441,7 @@
       "scope": "dependencies",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": true,
+      "is_pinned": true,
       "is_direct": true,
       "dependency_uid": "pkg:npm/csvtojson?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:npm/athena-express@6.0.4?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -456,7 +457,7 @@
       "scope": "dependencies",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": true,
+      "is_pinned": true,
       "is_direct": true,
       "dependency_uid": "pkg:npm/is-utf8?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:npm/strip-bom@2.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -472,7 +473,7 @@
       "scope": "dependencies",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": true,
+      "is_pinned": true,
       "is_direct": true,
       "dependency_uid": "pkg:npm/lodash?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:npm/csvtojson@2.0.10?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -488,7 +489,7 @@
       "scope": "dependencies",
       "is_runtime": true,
       "is_optional": false,
-      "is_resolved": true,
+      "is_pinned": true,
       "is_direct": true,
       "dependency_uid": "pkg:npm/strip-bom?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:npm/csvtojson@2.0.10?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -627,10 +628,10 @@
               "purl": "pkg:npm/athena-express",
               "scope": "dependencies",
               "is_direct": true,
+              "is_pinned": false,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,
-              "is_resolved": false,
               "resolved_package": {},
               "extracted_requirement": "^6.0.4"
             }
@@ -660,7 +661,7 @@
                   "rule_relevance": 100,
                   "rule_identifier": "package-manifest-unknown-cb9ea49fe36cb2e1ba6d87c68e1195a492f762cf",
                   "license_expression": "unknown",
-                  "spdx_license_expression": "LicenseRef-scancode-unknown"
+                  "license_expression_spdx": "LicenseRef-scancode-unknown"
                 }
               ],
               "identifier": "unknown-0669ac45-20f6-defd-ec9f-2b6aafc9f944",
@@ -742,10 +743,10 @@
               "purl": "pkg:npm/athena-express@6.0.4",
               "scope": "dependencies",
               "is_direct": false,
+              "is_pinned": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,
-              "is_resolved": true,
               "resolved_package": {
                 "md5": null,
                 "name": "athena-express",
@@ -773,10 +774,10 @@
                     "purl": "pkg:npm/csvtojson",
                     "scope": "dependencies",
                     "is_direct": true,
+                    "is_pinned": true,
                     "extra_data": {},
                     "is_runtime": true,
                     "is_optional": false,
-                    "is_resolved": true,
                     "resolved_package": {},
                     "extracted_requirement": "^2.0.10"
                   }
@@ -806,10 +807,10 @@
               "purl": "pkg:npm/bluebird@3.7.2",
               "scope": "dependencies",
               "is_direct": false,
+              "is_pinned": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,
-              "is_resolved": true,
               "resolved_package": {
                 "md5": null,
                 "name": "bluebird",
@@ -858,10 +859,10 @@
               "purl": "pkg:npm/csvtojson@2.0.10",
               "scope": "dependencies",
               "is_direct": false,
+              "is_pinned": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,
-              "is_resolved": true,
               "resolved_package": {
                 "md5": null,
                 "name": "csvtojson",
@@ -889,10 +890,10 @@
                     "purl": "pkg:npm/bluebird",
                     "scope": "dependencies",
                     "is_direct": true,
+                    "is_pinned": true,
                     "extra_data": {},
                     "is_runtime": true,
                     "is_optional": false,
-                    "is_resolved": true,
                     "resolved_package": {},
                     "extracted_requirement": "^3.5.1"
                   },
@@ -900,10 +901,10 @@
                     "purl": "pkg:npm/lodash",
                     "scope": "dependencies",
                     "is_direct": true,
+                    "is_pinned": true,
                     "extra_data": {},
                     "is_runtime": true,
                     "is_optional": false,
-                    "is_resolved": true,
                     "resolved_package": {},
                     "extracted_requirement": "^4.17.3"
                   },
@@ -911,10 +912,10 @@
                     "purl": "pkg:npm/strip-bom",
                     "scope": "dependencies",
                     "is_direct": true,
+                    "is_pinned": true,
                     "extra_data": {},
                     "is_runtime": true,
                     "is_optional": false,
-                    "is_resolved": true,
                     "resolved_package": {},
                     "extracted_requirement": "^2.0.0"
                   }
@@ -944,10 +945,10 @@
               "purl": "pkg:npm/is-utf8@0.2.1",
               "scope": "dependencies",
               "is_direct": false,
+              "is_pinned": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,
-              "is_resolved": true,
               "resolved_package": {
                 "md5": null,
                 "name": "is-utf8",
@@ -996,10 +997,10 @@
               "purl": "pkg:npm/lodash@4.17.21",
               "scope": "dependencies",
               "is_direct": false,
+              "is_pinned": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,
-              "is_resolved": true,
               "resolved_package": {
                 "md5": null,
                 "name": "lodash",
@@ -1048,10 +1049,10 @@
               "purl": "pkg:npm/strip-bom@2.0.0",
               "scope": "dependencies",
               "is_direct": false,
+              "is_pinned": true,
               "extra_data": {},
               "is_runtime": true,
               "is_optional": false,
-              "is_resolved": true,
               "resolved_package": {
                 "md5": null,
                 "name": "strip-bom",
@@ -1079,10 +1080,10 @@
                     "purl": "pkg:npm/is-utf8",
                     "scope": "dependencies",
                     "is_direct": true,
+                    "is_pinned": true,
                     "extra_data": {},
                     "is_runtime": true,
                     "is_optional": false,
-                    "is_resolved": true,
                     "resolved_package": {},
                     "extracted_requirement": "^0.2.0"
                   }

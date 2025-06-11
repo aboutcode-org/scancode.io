@@ -21,7 +21,9 @@
         {
           "pipeline_name": "map_deploy_to_develop",
           "status": "not_started",
-          "selected_groups": null,
+          "selected_groups": [
+            "Java"
+          ],
           "selected_steps": null,
           "scancodeio_version": "",
           "task_id": null,
@@ -32,6 +34,7 @@
           "execution_time": null
         }
       ],
+      "messages": [],
       "extra_data": {}
     }
   ],
@@ -91,22 +94,10 @@
       "type": "directory",
       "name": "from",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -116,9 +107,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -126,13 +129,25 @@
       "type": "file",
       "name": "flume-ng-node-1.9.0-sources.jar",
       "status": "not-deployed",
+      "for_packages": [],
       "tag": "from",
       "extension": ".jar",
+      "programming_language": "",
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
       "md5": "6cd8849386d7a379cd0fd6699e0b063d",
       "sha1": "54eea690bdea9a6f8d7d5e34b1ad14bed7ae104c",
       "sha256": "8b0a235d2b070c838e90ad4ce921e3f7f8a0fe2494d3c5e44003980530aadbbc",
       "sha512": "",
-      "programming_language": "",
       "is_binary": true,
       "is_text": false,
       "is_archive": true,
@@ -142,18 +157,6 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
-      "detected_license_expression": "",
-      "detected_license_expression_spdx": "",
-      "license_detections": [],
-      "license_clues": [],
-      "percentage_of_license_text": null,
-      "copyrights": [],
-      "holders": [],
-      "authors": [],
-      "package_data": [],
-      "for_packages": [],
-      "emails": [],
-      "urls": [],
       "extra_data": {}
     },
     {
@@ -161,22 +164,10 @@
       "type": "directory",
       "name": "flume-ng-node-1.9.0-sources.jar-extract",
       "status": "mapped",
+      "for_packages": [],
       "tag": "from",
       "extension": ".jar-extract",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -186,9 +177,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -196,22 +199,10 @@
       "type": "directory",
       "name": "META-INF",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -221,9 +212,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -231,22 +234,10 @@
       "type": "file",
       "name": "MANIFEST.MF",
       "status": "not-deployed",
+      "for_packages": [],
       "tag": "from",
       "extension": ".MF",
-      "md5": "67d06f6cc4c1b9c448655e0f192f354d",
-      "sha1": "b962b9e8ba0b3ad271dbc7ac35c4ae23a47d6c1d",
-      "sha256": "f3e7468674d97e36f38225944345621c4be0ace7ddd37f203910c8084bdca991",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": true,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -256,9 +247,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "67d06f6cc4c1b9c448655e0f192f354d",
+      "sha1": "b962b9e8ba0b3ad271dbc7ac35c4ae23a47d6c1d",
+      "sha256": "f3e7468674d97e36f38225944345621c4be0ace7ddd37f203910c8084bdca991",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -266,22 +269,10 @@
       "type": "directory",
       "name": "maven",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -291,9 +282,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -301,22 +304,10 @@
       "type": "directory",
       "name": "org.apache.flume",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": ".flume",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -326,9 +317,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -336,13 +339,25 @@
       "type": "directory",
       "name": "flume-ng-node",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "from",
       "extension": "",
+      "programming_language": "",
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
       "md5": "",
       "sha1": "",
       "sha256": "",
       "sha512": "",
-      "programming_language": "",
       "is_binary": false,
       "is_text": false,
       "is_archive": false,
@@ -352,18 +367,6 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
-      "detected_license_expression": "",
-      "detected_license_expression_spdx": "",
-      "license_detections": [],
-      "license_clues": [],
-      "percentage_of_license_text": null,
-      "copyrights": [],
-      "holders": [],
-      "authors": [],
-      "package_data": [],
-      "for_packages": [],
-      "emails": [],
-      "urls": [],
       "extra_data": {}
     },
     {
@@ -371,22 +374,10 @@
       "type": "file",
       "name": "pom.properties",
       "status": "no-licenses",
+      "for_packages": [],
       "tag": "from",
       "extension": ".properties",
-      "md5": "9135eb35a776e56eada1b3720a4ef83a",
-      "sha1": "53c1d3880a1bc54f7b2ef72c7c92f0db7d3a8134",
-      "sha256": "0daf0d4a0c61b6016db1a07fd0d5d8ea7f581d7242caa3c4eb3fa61a6181fdd4",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": true,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -396,23 +387,12 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
-    },
-    {
-      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.xml",
-      "type": "file",
-      "name": "pom.xml",
-      "status": "scanned",
-      "tag": "from",
-      "extension": ".xml",
-      "md5": "43bdb64cf3d14e0a43c8a5758e3a2620",
-      "sha1": "b2124ffb0f6800b06523eac41b26e12a5cdf4819",
-      "sha256": "0406069c2bf1f01be144ab40b339a18df1323fd9fd9e1624c4adb3a925b8eba2",
+      "md5": "9135eb35a776e56eada1b3720a4ef83a",
+      "sha1": "53c1d3880a1bc54f7b2ef72c7c92f0db7d3a8134",
+      "sha256": "0daf0d4a0c61b6016db1a07fd0d5d8ea7f581d7242caa3c4eb3fa61a6181fdd4",
       "sha512": "",
-      "programming_language": "",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -422,6 +402,19 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {}
+    },
+    {
+      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.xml",
+      "type": "file",
+      "name": "pom.xml",
+      "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
+      "tag": "from",
+      "extension": ".xml",
+      "programming_language": "",
       "detected_license_expression": "apache-2.0",
       "detected_license_expression_spdx": "Apache-2.0",
       "license_detections": [
@@ -440,7 +433,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -454,9 +447,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -470,160 +460,10 @@
           "start_line": 21
         }
       ],
-      "extra_data": {}
-    },
-    {
-      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org",
-      "type": "directory",
-      "name": "org",
-      "status": "ignored-directory",
-      "tag": "from",
-      "extension": "",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
+      "md5": "43bdb64cf3d14e0a43c8a5758e3a2620",
+      "sha1": "b2124ffb0f6800b06523eac41b26e12a5cdf4819",
+      "sha256": "0406069c2bf1f01be144ab40b339a18df1323fd9fd9e1624c4adb3a925b8eba2",
       "sha512": "",
-      "programming_language": "",
-      "is_binary": false,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
-      "detected_license_expression": "",
-      "detected_license_expression_spdx": "",
-      "license_detections": [],
-      "license_clues": [],
-      "percentage_of_license_text": null,
-      "copyrights": [],
-      "holders": [],
-      "authors": [],
-      "package_data": [],
-      "for_packages": [],
-      "emails": [],
-      "urls": [],
-      "extra_data": {}
-    },
-    {
-      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache",
-      "type": "directory",
-      "name": "apache",
-      "status": "ignored-directory",
-      "tag": "from",
-      "extension": "",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
-      "sha512": "",
-      "programming_language": "",
-      "is_binary": false,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
-      "detected_license_expression": "",
-      "detected_license_expression_spdx": "",
-      "license_detections": [],
-      "license_clues": [],
-      "percentage_of_license_text": null,
-      "copyrights": [],
-      "holders": [],
-      "authors": [],
-      "package_data": [],
-      "for_packages": [],
-      "emails": [],
-      "urls": [],
-      "extra_data": {}
-    },
-    {
-      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume",
-      "type": "directory",
-      "name": "flume",
-      "status": "ignored-directory",
-      "tag": "from",
-      "extension": "",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
-      "sha512": "",
-      "programming_language": "",
-      "is_binary": false,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
-      "detected_license_expression": "",
-      "detected_license_expression_spdx": "",
-      "license_detections": [],
-      "license_clues": [],
-      "percentage_of_license_text": null,
-      "copyrights": [],
-      "holders": [],
-      "authors": [],
-      "package_data": [],
-      "for_packages": [],
-      "emails": [],
-      "urls": [],
-      "extra_data": {}
-    },
-    {
-      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node",
-      "type": "directory",
-      "name": "node",
-      "status": "ignored-directory",
-      "tag": "from",
-      "extension": "",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
-      "sha512": "",
-      "programming_language": "",
-      "is_binary": false,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
-      "detected_license_expression": "",
-      "detected_license_expression_spdx": "",
-      "license_detections": [],
-      "license_clues": [],
-      "percentage_of_license_text": null,
-      "copyrights": [],
-      "holders": [],
-      "authors": [],
-      "package_data": [],
-      "for_packages": [],
-      "emails": [],
-      "urls": [],
-      "extra_data": {}
-    },
-    {
-      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.java",
-      "type": "file",
-      "name": "AbstractConfigurationProvider.java",
-      "status": "scanned",
-      "tag": "from",
-      "extension": ".java",
-      "md5": "25cc8e54e7e9bf9d6b1d896e3eabba73",
-      "sha1": "722b7c40c930948de7bf004e0208de72854258ed",
-      "sha256": "bdca4252a1ff230d12d95638eba42b29abc4cea1fe04fa5623cd75dc3bc17ca8",
-      "sha512": "",
-      "programming_language": "Java",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -633,6 +473,159 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {}
+    },
+    {
+      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org",
+      "type": "directory",
+      "name": "org",
+      "status": "ignored-directory",
+      "for_packages": [],
+      "tag": "from",
+      "extension": "",
+      "programming_language": "",
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "extra_data": {}
+    },
+    {
+      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache",
+      "type": "directory",
+      "name": "apache",
+      "status": "ignored-directory",
+      "for_packages": [],
+      "tag": "from",
+      "extension": "",
+      "programming_language": "",
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "extra_data": {}
+    },
+    {
+      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume",
+      "type": "directory",
+      "name": "flume",
+      "status": "ignored-directory",
+      "for_packages": [],
+      "tag": "from",
+      "extension": "",
+      "programming_language": "",
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "extra_data": {}
+    },
+    {
+      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node",
+      "type": "directory",
+      "name": "node",
+      "status": "ignored-directory",
+      "for_packages": [],
+      "tag": "from",
+      "extension": "",
+      "programming_language": "",
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "extra_data": {}
+    },
+    {
+      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.java",
+      "type": "file",
+      "name": "AbstractConfigurationProvider.java",
+      "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
+      "tag": "from",
+      "extension": ".java",
+      "programming_language": "Java",
       "detected_license_expression": "apache-2.0",
       "detected_license_expression_spdx": "Apache-2.0",
       "license_detections": [
@@ -651,7 +644,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -665,9 +658,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -676,22 +666,10 @@
           "start_line": 10
         }
       ],
-      "extra_data": {
-        "java_package": "org.apache.flume.node"
-      }
-    },
-    {
-      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/AbstractZooKeeperConfigurationProvider.java",
-      "type": "file",
-      "name": "AbstractZooKeeperConfigurationProvider.java",
-      "status": "scanned",
-      "tag": "from",
-      "extension": ".java",
-      "md5": "68665f01917b3e889869dc4562a499a5",
-      "sha1": "e8c23cd71a7a1ec212bc05180bbf4687f7e49bad",
-      "sha256": "746b3d565dd5f6515ce68b57560f803c0db8552509486bbdad3540dc15b2d680",
+      "md5": "25cc8e54e7e9bf9d6b1d896e3eabba73",
+      "sha1": "722b7c40c930948de7bf004e0208de72854258ed",
+      "sha256": "bdca4252a1ff230d12d95638eba42b29abc4cea1fe04fa5623cd75dc3bc17ca8",
       "sha512": "",
-      "programming_language": "Java",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -701,6 +679,21 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
+    },
+    {
+      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/AbstractZooKeeperConfigurationProvider.java",
+      "type": "file",
+      "name": "AbstractZooKeeperConfigurationProvider.java",
+      "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
+      "tag": "from",
+      "extension": ".java",
+      "programming_language": "Java",
       "detected_license_expression": "apache-2.0",
       "detected_license_expression_spdx": "Apache-2.0",
       "license_detections": [
@@ -719,7 +712,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -733,9 +726,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -744,22 +734,10 @@
           "start_line": 10
         }
       ],
-      "extra_data": {
-        "java_package": "org.apache.flume.node"
-      }
-    },
-    {
-      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/Application.java",
-      "type": "file",
-      "name": "Application.java",
-      "status": "scanned",
-      "tag": "from",
-      "extension": ".java",
-      "md5": "4ce1f3c26f90c7484226187c6c87e604",
-      "sha1": "9d07e500ce98c434e4d8bc44eec9a99b60db56c1",
-      "sha256": "fb0e63c2f49864f9d0cb783b4c80f13dc77f2494431a91449a00de9505475505",
+      "md5": "68665f01917b3e889869dc4562a499a5",
+      "sha1": "e8c23cd71a7a1ec212bc05180bbf4687f7e49bad",
+      "sha256": "746b3d565dd5f6515ce68b57560f803c0db8552509486bbdad3540dc15b2d680",
       "sha512": "",
-      "programming_language": "Java",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -769,6 +747,21 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
+    },
+    {
+      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/Application.java",
+      "type": "file",
+      "name": "Application.java",
+      "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
+      "tag": "from",
+      "extension": ".java",
+      "programming_language": "Java",
       "detected_license_expression": "apache-2.0",
       "detected_license_expression_spdx": "Apache-2.0",
       "license_detections": [
@@ -787,7 +780,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -801,9 +794,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -812,22 +802,10 @@
           "start_line": 10
         }
       ],
-      "extra_data": {
-        "java_package": "org.apache.flume.node"
-      }
-    },
-    {
-      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/ConfigurationProvider.java",
-      "type": "file",
-      "name": "ConfigurationProvider.java",
-      "status": "scanned",
-      "tag": "from",
-      "extension": ".java",
-      "md5": "318484f1071022f375cd0fd99e9fe844",
-      "sha1": "dde981f3bc981e630b3e8673321c2d152d39761c",
-      "sha256": "6768adff7b9027b50ba16fa24a8ac900a0a24c7df34ed0027547d049a7b6e4e6",
+      "md5": "4ce1f3c26f90c7484226187c6c87e604",
+      "sha1": "9d07e500ce98c434e4d8bc44eec9a99b60db56c1",
+      "sha256": "fb0e63c2f49864f9d0cb783b4c80f13dc77f2494431a91449a00de9505475505",
       "sha512": "",
-      "programming_language": "Java",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -837,6 +815,21 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
+    },
+    {
+      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/ConfigurationProvider.java",
+      "type": "file",
+      "name": "ConfigurationProvider.java",
+      "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
+      "tag": "from",
+      "extension": ".java",
+      "programming_language": "Java",
       "detected_license_expression": "apache-2.0",
       "detected_license_expression_spdx": "Apache-2.0",
       "license_detections": [
@@ -855,7 +848,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -869,9 +862,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -880,22 +870,10 @@
           "start_line": 10
         }
       ],
-      "extra_data": {
-        "java_package": "org.apache.flume.node"
-      }
-    },
-    {
-      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/EnvVarResolverProperties.java",
-      "type": "file",
-      "name": "EnvVarResolverProperties.java",
-      "status": "scanned",
-      "tag": "from",
-      "extension": ".java",
-      "md5": "0b5d41bb2a83d6d7c34d0342934c34d9",
-      "sha1": "f914f23c105fea38535d4a9cc3e61999dc3f419c",
-      "sha256": "6d7f701fb23dc9097fa98465c76417bdecfa8b8981fcf3c473babab443e8e244",
+      "md5": "318484f1071022f375cd0fd99e9fe844",
+      "sha1": "dde981f3bc981e630b3e8673321c2d152d39761c",
+      "sha256": "6768adff7b9027b50ba16fa24a8ac900a0a24c7df34ed0027547d049a7b6e4e6",
       "sha512": "",
-      "programming_language": "Java",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -905,6 +883,21 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
+    },
+    {
+      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/EnvVarResolverProperties.java",
+      "type": "file",
+      "name": "EnvVarResolverProperties.java",
+      "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
+      "tag": "from",
+      "extension": ".java",
+      "programming_language": "Java",
       "detected_license_expression": "apache-2.0",
       "detected_license_expression_spdx": "Apache-2.0",
       "license_detections": [
@@ -923,7 +916,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -937,9 +930,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -948,22 +938,10 @@
           "start_line": 10
         }
       ],
-      "extra_data": {
-        "java_package": "org.apache.flume.node"
-      }
-    },
-    {
-      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/MaterializedConfiguration.java",
-      "type": "file",
-      "name": "MaterializedConfiguration.java",
-      "status": "scanned",
-      "tag": "from",
-      "extension": ".java",
-      "md5": "ec5bbed5c90dd8f949070676cb586f14",
-      "sha1": "5b0993f6046d6480d461f452be73ae341e6be52d",
-      "sha256": "8f2624adfdcf713843d59ca24667e501f770a7342798d75f5211cb07d37988f9",
+      "md5": "0b5d41bb2a83d6d7c34d0342934c34d9",
+      "sha1": "f914f23c105fea38535d4a9cc3e61999dc3f419c",
+      "sha256": "6d7f701fb23dc9097fa98465c76417bdecfa8b8981fcf3c473babab443e8e244",
       "sha512": "",
-      "programming_language": "Java",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -973,6 +951,21 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
+    },
+    {
+      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/MaterializedConfiguration.java",
+      "type": "file",
+      "name": "MaterializedConfiguration.java",
+      "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
+      "tag": "from",
+      "extension": ".java",
+      "programming_language": "Java",
       "detected_license_expression": "apache-2.0",
       "detected_license_expression_spdx": "Apache-2.0",
       "license_detections": [
@@ -991,7 +984,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -1005,9 +998,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -1016,22 +1006,10 @@
           "start_line": 10
         }
       ],
-      "extra_data": {
-        "java_package": "org.apache.flume.node"
-      }
-    },
-    {
-      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.java",
-      "type": "file",
-      "name": "PollingPropertiesFileConfigurationProvider.java",
-      "status": "scanned",
-      "tag": "from",
-      "extension": ".java",
-      "md5": "68f6d61433f918a7bcf22fe0213fe04b",
-      "sha1": "e96999b5777151c1bff27b1477573f56906673b6",
-      "sha256": "56a528d423ce11c0c44ccc98dbb913afba2932be33a4f3d1a52a2544cac414f8",
+      "md5": "ec5bbed5c90dd8f949070676cb586f14",
+      "sha1": "5b0993f6046d6480d461f452be73ae341e6be52d",
+      "sha256": "8f2624adfdcf713843d59ca24667e501f770a7342798d75f5211cb07d37988f9",
       "sha512": "",
-      "programming_language": "Java",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -1041,6 +1019,21 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
+    },
+    {
+      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.java",
+      "type": "file",
+      "name": "PollingPropertiesFileConfigurationProvider.java",
+      "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
+      "tag": "from",
+      "extension": ".java",
+      "programming_language": "Java",
       "detected_license_expression": "apache-2.0",
       "detected_license_expression_spdx": "Apache-2.0",
       "license_detections": [
@@ -1059,7 +1052,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -1073,9 +1066,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -1084,22 +1074,10 @@
           "start_line": 10
         }
       ],
-      "extra_data": {
-        "java_package": "org.apache.flume.node"
-      }
-    },
-    {
-      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.java",
-      "type": "file",
-      "name": "PollingZooKeeperConfigurationProvider.java",
-      "status": "scanned",
-      "tag": "from",
-      "extension": ".java",
-      "md5": "58ec2918f431867d9c9ea8befeeced4b",
-      "sha1": "81f0fa1d3f453de83d4e9189dcbf1328d64a9343",
-      "sha256": "08159ca7e2a8302b57b400b15e25ff8c08f163d981cb556e9db00e59728cc20f",
+      "md5": "68f6d61433f918a7bcf22fe0213fe04b",
+      "sha1": "e96999b5777151c1bff27b1477573f56906673b6",
+      "sha256": "56a528d423ce11c0c44ccc98dbb913afba2932be33a4f3d1a52a2544cac414f8",
       "sha512": "",
-      "programming_language": "Java",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -1109,6 +1087,21 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
+    },
+    {
+      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.java",
+      "type": "file",
+      "name": "PollingZooKeeperConfigurationProvider.java",
+      "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
+      "tag": "from",
+      "extension": ".java",
+      "programming_language": "Java",
       "detected_license_expression": "apache-2.0",
       "detected_license_expression_spdx": "Apache-2.0",
       "license_detections": [
@@ -1127,7 +1120,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -1141,9 +1134,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -1152,22 +1142,10 @@
           "start_line": 10
         }
       ],
-      "extra_data": {
-        "java_package": "org.apache.flume.node"
-      }
-    },
-    {
-      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PropertiesFileConfigurationProvider.java",
-      "type": "file",
-      "name": "PropertiesFileConfigurationProvider.java",
-      "status": "scanned",
-      "tag": "from",
-      "extension": ".java",
-      "md5": "cef9275033012ec0f912ef1109f01fbb",
-      "sha1": "a6f3affc8facfe9a92b556b3c11b3c075688b45e",
-      "sha256": "e78cfc4d9fc50ebc81bd69dccae00103fcaf726071ff230784fb7eb00eeab0c5",
+      "md5": "58ec2918f431867d9c9ea8befeeced4b",
+      "sha1": "81f0fa1d3f453de83d4e9189dcbf1328d64a9343",
+      "sha256": "08159ca7e2a8302b57b400b15e25ff8c08f163d981cb556e9db00e59728cc20f",
       "sha512": "",
-      "programming_language": "Java",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -1177,6 +1155,21 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
+    },
+    {
+      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PropertiesFileConfigurationProvider.java",
+      "type": "file",
+      "name": "PropertiesFileConfigurationProvider.java",
+      "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
+      "tag": "from",
+      "extension": ".java",
+      "programming_language": "Java",
       "detected_license_expression": "apache-2.0",
       "detected_license_expression_spdx": "Apache-2.0",
       "license_detections": [
@@ -1195,7 +1188,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -1209,9 +1202,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -1220,22 +1210,10 @@
           "start_line": 10
         }
       ],
-      "extra_data": {
-        "java_package": "org.apache.flume.node"
-      }
-    },
-    {
-      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/SimpleMaterializedConfiguration.java",
-      "type": "file",
-      "name": "SimpleMaterializedConfiguration.java",
-      "status": "scanned",
-      "tag": "from",
-      "extension": ".java",
-      "md5": "a5b33250eebe26c6b0e30265becaa403",
-      "sha1": "c9b5e8429af585ac9d24529afcf9ca0219d7da6b",
-      "sha256": "87485b21e5a7a663727e03cff31556a1aab4bd7b631dc82201e8e43a57477bea",
+      "md5": "cef9275033012ec0f912ef1109f01fbb",
+      "sha1": "a6f3affc8facfe9a92b556b3c11b3c075688b45e",
+      "sha256": "e78cfc4d9fc50ebc81bd69dccae00103fcaf726071ff230784fb7eb00eeab0c5",
       "sha512": "",
-      "programming_language": "Java",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -1245,6 +1223,21 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
+    },
+    {
+      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/SimpleMaterializedConfiguration.java",
+      "type": "file",
+      "name": "SimpleMaterializedConfiguration.java",
+      "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
+      "tag": "from",
+      "extension": ".java",
+      "programming_language": "Java",
       "detected_license_expression": "apache-2.0",
       "detected_license_expression_spdx": "Apache-2.0",
       "license_detections": [
@@ -1263,7 +1256,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -1277,9 +1270,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -1288,22 +1278,10 @@
           "start_line": 10
         }
       ],
-      "extra_data": {
-        "java_package": "org.apache.flume.node"
-      }
-    },
-    {
-      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/StaticZooKeeperConfigurationProvider.java",
-      "type": "file",
-      "name": "StaticZooKeeperConfigurationProvider.java",
-      "status": "scanned",
-      "tag": "from",
-      "extension": ".java",
-      "md5": "af68b58aa5e07cb74e06e1d46248bfb3",
-      "sha1": "52161da2cca6fd0cbf691676cb6c01d68bad7552",
-      "sha256": "9d2617809955f00c68eb97c64bd2e50c9e316c1c2d0500c9ef973b87195f4a5d",
+      "md5": "a5b33250eebe26c6b0e30265becaa403",
+      "sha1": "c9b5e8429af585ac9d24529afcf9ca0219d7da6b",
+      "sha256": "87485b21e5a7a663727e03cff31556a1aab4bd7b631dc82201e8e43a57477bea",
       "sha512": "",
-      "programming_language": "Java",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -1313,6 +1291,21 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
+    },
+    {
+      "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/StaticZooKeeperConfigurationProvider.java",
+      "type": "file",
+      "name": "StaticZooKeeperConfigurationProvider.java",
+      "status": "scanned",
+      "for_packages": [
+        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
+      ],
+      "tag": "from",
+      "extension": ".java",
+      "programming_language": "Java",
       "detected_license_expression": "apache-2.0",
       "detected_license_expression_spdx": "Apache-2.0",
       "license_detections": [
@@ -1331,7 +1324,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-4bde3f57-78aa-4201-96bf-531cba09e7de",
@@ -1345,9 +1338,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:local-files/fixed-namespace-for-testing-5642512d1758/fixed-name-for-testing-5642512d1758?uuid=b74fe5df-e965-415e-ba65-f38421a0695d"
-      ],
       "emails": [],
       "urls": [
         {
@@ -1356,6 +1346,19 @@
           "start_line": 10
         }
       ],
+      "md5": "af68b58aa5e07cb74e06e1d46248bfb3",
+      "sha1": "52161da2cca6fd0cbf691676cb6c01d68bad7552",
+      "sha256": "9d2617809955f00c68eb97c64bd2e50c9e316c1c2d0500c9ef973b87195f4a5d",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {
         "java_package": "org.apache.flume.node"
       }
@@ -1365,22 +1368,10 @@
       "type": "directory",
       "name": "to",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -1390,9 +1381,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {
         "directory_content": "00000016f6905f141bf50bae2421a9d20202a6df",
         "directory_structure": "000000168425541886e8c01e0a07ceb2afbb3c15"
@@ -1403,13 +1406,25 @@
       "type": "file",
       "name": "flume-ng-node-1.9.0.jar",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".jar",
+      "programming_language": "",
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
       "md5": "37bc40b5615567388bdbfa43ba2a5b24",
       "sha1": "49b1917cc20a746cb555ae214aafb828c61a2714",
       "sha256": "5c718f3fc476fa65cc6827262f0897f2c8e247a1f431ec5c22b5b89897a62dd6",
       "sha512": "",
-      "programming_language": "",
       "is_binary": true,
       "is_text": false,
       "is_archive": true,
@@ -1419,6 +1434,17 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {}
+    },
+    {
+      "path": "to/flume-ng-node-1.9.0.jar-extract",
+      "type": "directory",
+      "name": "flume-ng-node-1.9.0.jar-extract",
+      "status": "ignored-directory",
+      "for_packages": [],
+      "tag": "to",
+      "extension": ".jar-extract",
+      "programming_language": "",
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -1428,23 +1454,12 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
-    },
-    {
-      "path": "to/flume-ng-node-1.9.0.jar-extract",
-      "type": "directory",
-      "name": "flume-ng-node-1.9.0.jar-extract",
-      "status": "ignored-directory",
-      "tag": "to",
-      "extension": ".jar-extract",
       "md5": "",
       "sha1": "",
       "sha256": "",
       "sha512": "",
-      "programming_language": "",
       "is_binary": false,
       "is_text": false,
       "is_archive": false,
@@ -1454,18 +1469,6 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
-      "detected_license_expression": "",
-      "detected_license_expression_spdx": "",
-      "license_detections": [],
-      "license_clues": [],
-      "percentage_of_license_text": null,
-      "copyrights": [],
-      "holders": [],
-      "authors": [],
-      "package_data": [],
-      "for_packages": [],
-      "emails": [],
-      "urls": [],
       "extra_data": {
         "directory_content": "00000015f6b05fb41bf70bae3429b9d20282eedf",
         "directory_structure": "00000015822152ae57126ba22fed87b28e4ed08b"
@@ -1476,22 +1479,10 @@
       "type": "directory",
       "name": "META-INF",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -1501,9 +1492,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {
         "directory_content": "000000060010c318512cc22e0005b8d20642a013",
         "directory_structure": "00000006784130a18a8159bc4811a2c2104c5929"
@@ -1514,22 +1517,10 @@
       "type": "file",
       "name": "DEPENDENCIES",
       "status": "requires-review",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
-      "md5": "5eb50b01261a885fd0de993f46ecc9eb",
-      "sha1": "03d13af648281f4e4d66b1aca27ee6fff7262360",
-      "sha256": "209c31ddfb4ffaabe574b9c4ec1954c6a87c64229ea25a00511d56a20ecc72e5",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": true,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "apache-2.0 AND bsd-new AND epl-1.0 AND lgpl-2.1 AND public-domain AND (cddl-1.0 OR gpl-2.0 WITH classpath-exception-2.0) AND mit",
       "detected_license_expression_spdx": "Apache-2.0 AND BSD-3-Clause AND EPL-1.0 AND LGPL-2.1-only AND LicenseRef-scancode-public-domain AND (CDDL-1.0 OR GPL-2.0-only WITH Classpath-exception-2.0) AND MIT",
       "license_detections": [
@@ -1548,7 +1539,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1563,7 +1554,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 99.0,
@@ -1578,7 +1569,7 @@
               "rule_relevance": 99,
               "rule_identifier": "maven_pom_12.RULE",
               "license_expression": "bsd-new",
-              "spdx_license_expression": "BSD-3-Clause"
+              "license_expression_spdx": "BSD-3-Clause"
             },
             {
               "score": 100.0,
@@ -1593,7 +1584,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1608,7 +1599,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1623,7 +1614,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1638,7 +1629,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_19.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -1653,7 +1644,7 @@
               "rule_relevance": 100,
               "rule_identifier": "lgpl-2.1_40.RULE",
               "license_expression": "lgpl-2.1",
-              "spdx_license_expression": "LGPL-2.1-only"
+              "license_expression_spdx": "LGPL-2.1-only"
             },
             {
               "score": 99.0,
@@ -1668,7 +1659,7 @@
               "rule_relevance": 99,
               "rule_identifier": "pypi_public_domain.RULE",
               "license_expression": "public-domain",
-              "spdx_license_expression": "LicenseRef-scancode-public-domain"
+              "license_expression_spdx": "LicenseRef-scancode-public-domain"
             },
             {
               "score": 100.0,
@@ -1683,7 +1674,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_188.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1698,7 +1689,7 @@
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_1.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1713,7 +1704,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1728,7 +1719,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1743,7 +1734,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1758,7 +1749,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1773,7 +1764,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1788,7 +1779,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1803,7 +1794,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1818,7 +1809,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1833,7 +1824,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1848,7 +1839,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1863,7 +1854,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1878,7 +1869,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1893,7 +1884,7 @@
               "rule_relevance": 100,
               "rule_identifier": "cddl-1.0_or_gpl-2.0_with_classpath-exception-2.0_1.RULE",
               "license_expression": "cddl-1.0 OR gpl-2.0 WITH classpath-exception-2.0",
-              "spdx_license_expression": "CDDL-1.0 OR GPL-2.0-only WITH Classpath-exception-2.0"
+              "license_expression_spdx": "CDDL-1.0 OR GPL-2.0-only WITH Classpath-exception-2.0"
             },
             {
               "score": 100.0,
@@ -1908,7 +1899,7 @@
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_21.RULE",
               "license_expression": "bsd-new",
-              "spdx_license_expression": "BSD-3-Clause"
+              "license_expression_spdx": "BSD-3-Clause"
             },
             {
               "score": 100.0,
@@ -1923,7 +1914,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1938,7 +1929,7 @@
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_1.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1953,7 +1944,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1968,7 +1959,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -1983,7 +1974,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -1998,7 +1989,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -2013,7 +2004,7 @@
               "rule_relevance": 100,
               "rule_identifier": "mit_51.RULE",
               "license_expression": "mit",
-              "spdx_license_expression": "MIT"
+              "license_expression_spdx": "MIT"
             },
             {
               "score": 100.0,
@@ -2028,7 +2019,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2043,7 +2034,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2058,7 +2049,7 @@
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_5.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2073,7 +2064,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2088,7 +2079,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2103,7 +2094,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2118,7 +2109,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2133,7 +2124,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2148,7 +2139,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2163,7 +2154,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2178,7 +2169,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2193,7 +2184,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_209.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2208,7 +2199,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_209.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2223,7 +2214,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_209.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2238,7 +2229,7 @@
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_5.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2253,7 +2244,7 @@
               "rule_relevance": 100,
               "rule_identifier": "maven_pom_5.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2268,7 +2259,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2283,7 +2274,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_143.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2298,7 +2289,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2313,7 +2304,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -2328,7 +2319,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2343,7 +2334,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -2358,7 +2349,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2373,7 +2364,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -2388,7 +2379,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2403,7 +2394,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -2418,7 +2409,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2433,7 +2424,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -2448,7 +2439,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2463,7 +2454,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -2478,7 +2469,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_203.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             },
             {
               "score": 100.0,
@@ -2493,7 +2484,7 @@
               "rule_relevance": 100,
               "rule_identifier": "epl-1.0_20.RULE",
               "license_expression": "epl-1.0",
-              "spdx_license_expression": "EPL-1.0"
+              "license_expression_spdx": "EPL-1.0"
             },
             {
               "score": 100.0,
@@ -2508,7 +2499,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0_212.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0_and_bsd_new_and_epl_1_0_and_lgpl_2_1_and_public_domain_and__cddl_1_0_or_gpl_2_0_with_classpath_exception_2_0__and_mit-89f48bad-a653-527d-8324-71e8d9738745",
@@ -2522,7 +2513,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [
         {
@@ -2776,20 +2766,10 @@
           "start_line": 98
         }
       ],
-      "extra_data": {}
-    },
-    {
-      "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/LICENSE",
-      "type": "file",
-      "name": "LICENSE",
-      "status": "review-dangling-legal-file",
-      "tag": "to",
-      "extension": "",
-      "md5": "3b83ef96387f14655fc854ddc3c6bd57",
-      "sha1": "2b8b815229aa8a61e483fb4ba0588b8b6c491890",
-      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "md5": "5eb50b01261a885fd0de993f46ecc9eb",
+      "sha1": "03d13af648281f4e4d66b1aca27ee6fff7262360",
+      "sha256": "209c31ddfb4ffaabe574b9c4ec1954c6a87c64229ea25a00511d56a20ecc72e5",
       "sha512": "",
-      "programming_language": "",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -2799,6 +2779,17 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {}
+    },
+    {
+      "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/LICENSE",
+      "type": "file",
+      "name": "LICENSE",
+      "status": "review-dangling-legal-file",
+      "for_packages": [],
+      "tag": "to",
+      "extension": "",
+      "programming_language": "",
       "detected_license_expression": "apache-2.0",
       "detected_license_expression_spdx": "Apache-2.0",
       "license_detections": [
@@ -2817,7 +2808,7 @@
               "rule_relevance": 100,
               "rule_identifier": "apache-2.0.LICENSE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-ab23f79b-ec38-9a8a-9b23-85059407f34d",
@@ -2831,7 +2822,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [
         {
@@ -2845,20 +2835,10 @@
           "start_line": 196
         }
       ],
-      "extra_data": {}
-    },
-    {
-      "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
-      "type": "file",
-      "name": "MANIFEST.MF",
-      "status": "requires-review",
-      "tag": "to",
-      "extension": ".MF",
-      "md5": "13d7452a4e969ebd58ac609d3efd4936",
-      "sha1": "d64b931d5eeea17c3b1357e19ab722fd47025bfb",
-      "sha256": "8fad1ad63489ffafbfe841b9116aba142185567693e5c810dfd17c2e0d60ed68",
+      "md5": "3b83ef96387f14655fc854ddc3c6bd57",
+      "sha1": "2b8b815229aa8a61e483fb4ba0588b8b6c491890",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
       "sha512": "",
-      "programming_language": "",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -2868,6 +2848,17 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {}
+    },
+    {
+      "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
+      "type": "file",
+      "name": "MANIFEST.MF",
+      "status": "requires-review",
+      "for_packages": [],
+      "tag": "to",
+      "extension": ".MF",
+      "programming_language": "",
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -2877,7 +2868,6 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [
         {
@@ -2886,20 +2876,10 @@
           "start_line": 11
         }
       ],
-      "extra_data": {}
-    },
-    {
-      "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/NOTICE",
-      "type": "file",
-      "name": "NOTICE",
-      "status": "review-dangling-legal-file",
-      "tag": "to",
-      "extension": "",
-      "md5": "5aaf03002f53327047c5f87bb9322d20",
-      "sha1": "6bb508636d5e839671133b3236188e77b2744b47",
-      "sha256": "559a9d062e2979a9b6ed797ab6fb1034b84cd8b8cdc9dc0e98232c01a703a548",
+      "md5": "13d7452a4e969ebd58ac609d3efd4936",
+      "sha1": "d64b931d5eeea17c3b1357e19ab722fd47025bfb",
+      "sha256": "8fad1ad63489ffafbfe841b9116aba142185567693e5c810dfd17c2e0d60ed68",
       "sha512": "",
-      "programming_language": "",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -2909,6 +2889,17 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {}
+    },
+    {
+      "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/NOTICE",
+      "type": "file",
+      "name": "NOTICE",
+      "status": "review-dangling-legal-file",
+      "for_packages": [],
+      "tag": "to",
+      "extension": "",
+      "programming_language": "",
       "detected_license_expression": "apache-2.0",
       "detected_license_expression_spdx": "Apache-2.0",
       "license_detections": [
@@ -2927,7 +2918,7 @@
               "rule_relevance": 95,
               "rule_identifier": "apache-2.0_product_includes_2.RULE",
               "license_expression": "apache-2.0",
-              "spdx_license_expression": "Apache-2.0"
+              "license_expression_spdx": "Apache-2.0"
             }
           ],
           "identifier": "apache_2_0-482220ca-c07b-bf59-66ed-6e7eaf9f3b1e",
@@ -2953,7 +2944,6 @@
       ],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [
         {
@@ -2962,22 +2952,12 @@
           "start_line": 6
         }
       ],
-      "extra_data": {}
-    },
-    {
-      "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven",
-      "type": "directory",
-      "name": "maven",
-      "status": "ignored-directory",
-      "tag": "to",
-      "extension": "",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
+      "md5": "5aaf03002f53327047c5f87bb9322d20",
+      "sha1": "6bb508636d5e839671133b3236188e77b2744b47",
+      "sha256": "559a9d062e2979a9b6ed797ab6fb1034b84cd8b8cdc9dc0e98232c01a703a548",
       "sha512": "",
-      "programming_language": "",
       "is_binary": false,
-      "is_text": false,
+      "is_text": true,
       "is_archive": false,
       "is_media": false,
       "is_legal": false,
@@ -2985,6 +2965,17 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
+      "extra_data": {}
+    },
+    {
+      "path": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven",
+      "type": "directory",
+      "name": "maven",
+      "status": "ignored-directory",
+      "for_packages": [],
+      "tag": "to",
+      "extension": "",
+      "programming_language": "",
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -2994,9 +2985,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {
         "directory_content": "000000028100c33213b86008020528d44042801b",
         "directory_structure": "00000002084a08825003091489160ca815610801"
@@ -3007,22 +3010,10 @@
       "type": "directory",
       "name": "org.apache.flume",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": ".flume",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3032,9 +3023,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {
         "directory_content": "000000028100c33213b86008020528d44042801b",
         "directory_structure": "00000002121544006009e0c10381209a1212197c"
@@ -3045,22 +3048,10 @@
       "type": "directory",
       "name": "flume-ng-node",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3070,9 +3061,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {
         "directory_content": "000000028100c33213b86008020528d44042801b",
         "directory_structure": "0000000202a00930141226001804441005044108"
@@ -3083,22 +3086,10 @@
       "type": "file",
       "name": "pom.properties",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".properties",
-      "md5": "9135eb35a776e56eada1b3720a4ef83a",
-      "sha1": "53c1d3880a1bc54f7b2ef72c7c92f0db7d3a8134",
-      "sha256": "0daf0d4a0c61b6016db1a07fd0d5d8ea7f581d7242caa3c4eb3fa61a6181fdd4",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": true,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3108,9 +3099,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "9135eb35a776e56eada1b3720a4ef83a",
+      "sha1": "53c1d3880a1bc54f7b2ef72c7c92f0db7d3a8134",
+      "sha256": "0daf0d4a0c61b6016db1a07fd0d5d8ea7f581d7242caa3c4eb3fa61a6181fdd4",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -3118,22 +3121,10 @@
       "type": "file",
       "name": "pom.xml",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".xml",
-      "md5": "43bdb64cf3d14e0a43c8a5758e3a2620",
-      "sha1": "b2124ffb0f6800b06523eac41b26e12a5cdf4819",
-      "sha256": "0406069c2bf1f01be144ab40b339a18df1323fd9fd9e1624c4adb3a925b8eba2",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": true,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3143,9 +3134,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "43bdb64cf3d14e0a43c8a5758e3a2620",
+      "sha1": "b2124ffb0f6800b06523eac41b26e12a5cdf4819",
+      "sha256": "0406069c2bf1f01be144ab40b339a18df1323fd9fd9e1624c4adb3a925b8eba2",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -3153,13 +3156,25 @@
       "type": "directory",
       "name": "org",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
+      "programming_language": "",
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
       "md5": "",
       "sha1": "",
       "sha256": "",
       "sha512": "",
-      "programming_language": "",
       "is_binary": false,
       "is_text": false,
       "is_archive": false,
@@ -3169,18 +3184,6 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
-      "detected_license_expression": "",
-      "detected_license_expression_spdx": "",
-      "license_detections": [],
-      "license_clues": [],
-      "percentage_of_license_text": null,
-      "copyrights": [],
-      "holders": [],
-      "authors": [],
-      "package_data": [],
-      "for_packages": [],
-      "emails": [],
-      "urls": [],
       "extra_data": {
         "directory_content": "0000000ffeb15fb49bd31b9c3429add31282eedf",
         "directory_structure": "0000000f18268fe56bf99797b01199f7ce38e313"
@@ -3191,22 +3194,10 @@
       "type": "directory",
       "name": "apache",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3216,9 +3207,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {
         "directory_content": "0000000ffeb15fb49bd31b9c3429add31282eedf",
         "directory_structure": "0000000ff089e2d03d8f3196d03a490028be4485"
@@ -3229,22 +3232,10 @@
       "type": "directory",
       "name": "flume",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3254,9 +3245,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {
         "directory_content": "0000000ffeb15fb49bd31b9c3429add31282eedf",
         "directory_structure": "0000000f25b5ec0e0491dcbddf370d52b70b5907"
@@ -3267,22 +3270,10 @@
       "type": "directory",
       "name": "node",
       "status": "ignored-directory",
+      "for_packages": [],
       "tag": "to",
       "extension": "",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3292,9 +3283,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {
         "directory_content": "0000000ffeb15fb49bd31b9c3429add31282eedf",
         "directory_structure": "0000000f22941765f1862ea1a6b7eabafce8986a"
@@ -3305,22 +3308,10 @@
       "type": "file",
       "name": "AbstractConfigurationProvider$ChannelComponent.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
-      "md5": "4c09a598f46332add2e53c4737fc6acf",
-      "sha1": "494297b9de3242aa6f99d502deaa1862c215c3d0",
-      "sha256": "82c21b7ea513225e776617968a6da4ffb5bdf79e9c2eda8eccdafd67da61fdfa",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": true,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3330,9 +3321,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "4c09a598f46332add2e53c4737fc6acf",
+      "sha1": "494297b9de3242aa6f99d502deaa1862c215c3d0",
+      "sha256": "82c21b7ea513225e776617968a6da4ffb5bdf79e9c2eda8eccdafd67da61fdfa",
+      "sha512": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -3340,22 +3343,10 @@
       "type": "file",
       "name": "AbstractConfigurationProvider.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
-      "md5": "58bb3c2bc489a5cba79e72ac6fdac008",
-      "sha1": "1061d965a8d13f2e61ab9e23aca2708de3df7cee",
-      "sha256": "7d2362092801c41ab7e4bb43eed6a7c6491d8212b0925708fbe6038ea9040baa",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": true,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3365,9 +3356,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "58bb3c2bc489a5cba79e72ac6fdac008",
+      "sha1": "1061d965a8d13f2e61ab9e23aca2708de3df7cee",
+      "sha256": "7d2362092801c41ab7e4bb43eed6a7c6491d8212b0925708fbe6038ea9040baa",
+      "sha512": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -3375,22 +3378,10 @@
       "type": "file",
       "name": "AbstractZooKeeperConfigurationProvider.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
-      "md5": "b5a1a31a17d70a66a30118b51862bde1",
-      "sha1": "121d2a9e3fdbe3b949bdeb66a61e9294e37222e7",
-      "sha256": "3e3f5fda945d39babd3eeff11d21b78516b23dd697b02732a802e45243116c18",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": true,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3400,9 +3391,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "b5a1a31a17d70a66a30118b51862bde1",
+      "sha1": "121d2a9e3fdbe3b949bdeb66a61e9294e37222e7",
+      "sha256": "3e3f5fda945d39babd3eeff11d21b78516b23dd697b02732a802e45243116c18",
+      "sha512": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -3410,22 +3413,10 @@
       "type": "file",
       "name": "Application$1.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
-      "md5": "712ce8e290d886ad23b5b5aa21cb3e61",
-      "sha1": "86a51d3717bf0fd00086c6ed2fc01f37921e6ba8",
-      "sha256": "9b85cd8818bb8b7e85f7cafcf7f61670571827dd9e6f70d5bde40361a38b0fb9",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": true,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3435,9 +3426,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "712ce8e290d886ad23b5b5aa21cb3e61",
+      "sha1": "86a51d3717bf0fd00086c6ed2fc01f37921e6ba8",
+      "sha256": "9b85cd8818bb8b7e85f7cafcf7f61670571827dd9e6f70d5bde40361a38b0fb9",
+      "sha512": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -3445,22 +3448,10 @@
       "type": "file",
       "name": "Application.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
-      "md5": "6a3fdabd9dca0f528d6b072eafa3c099",
-      "sha1": "7d2dd1b4b0e9b58d2f0d7c0c2b88fe2fce911508",
-      "sha256": "b18d17981bbcf8759835d887c708b672509584725b9c5bc77db252e9581ab32d",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": true,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3470,9 +3461,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "6a3fdabd9dca0f528d6b072eafa3c099",
+      "sha1": "7d2dd1b4b0e9b58d2f0d7c0c2b88fe2fce911508",
+      "sha256": "b18d17981bbcf8759835d887c708b672509584725b9c5bc77db252e9581ab32d",
+      "sha512": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -3480,22 +3483,10 @@
       "type": "file",
       "name": "ConfigurationProvider.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
-      "md5": "a0a489cd3c4ee667d33bcc5ee20d7f2f",
-      "sha1": "8db1b92f53e8f6ddb011d98d75da6205b09e7c4f",
-      "sha256": "8e6681ea7ea04929ce9c06b6c5fda16e5ca7b5d1d5ebe662c7b2edf4ef0bc0f8",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": true,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3505,9 +3496,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "a0a489cd3c4ee667d33bcc5ee20d7f2f",
+      "sha1": "8db1b92f53e8f6ddb011d98d75da6205b09e7c4f",
+      "sha256": "8e6681ea7ea04929ce9c06b6c5fda16e5ca7b5d1d5ebe662c7b2edf4ef0bc0f8",
+      "sha512": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -3515,22 +3518,10 @@
       "type": "file",
       "name": "EnvVarResolverProperties.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
-      "md5": "6acf3c2cece5623fa48f8de4d6f619ac",
-      "sha1": "4adf3a0410bff19811067f79ba3bf0ea4cf850ed",
-      "sha256": "b0b6d4accef26ba1da3538c7de3fde4fadd9dd76f3b6061c42e146b55115178d",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": true,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3540,9 +3531,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "6acf3c2cece5623fa48f8de4d6f619ac",
+      "sha1": "4adf3a0410bff19811067f79ba3bf0ea4cf850ed",
+      "sha256": "b0b6d4accef26ba1da3538c7de3fde4fadd9dd76f3b6061c42e146b55115178d",
+      "sha512": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -3550,22 +3553,10 @@
       "type": "file",
       "name": "MaterializedConfiguration.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
-      "md5": "e2d0468bf278193a1d8fe82cf88a19d6",
-      "sha1": "682b1c89b194ec29f44876ed158370d6bf84b202",
-      "sha256": "2bd752945a4965f461e0d7c2c260c29723ec8ddfb8291919351cdccc055cfc7f",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": true,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3575,9 +3566,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "e2d0468bf278193a1d8fe82cf88a19d6",
+      "sha1": "682b1c89b194ec29f44876ed158370d6bf84b202",
+      "sha256": "2bd752945a4965f461e0d7c2c260c29723ec8ddfb8291919351cdccc055cfc7f",
+      "sha512": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -3585,22 +3588,10 @@
       "type": "file",
       "name": "PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
-      "md5": "8841a8f1510e091fa799458de77831d0",
-      "sha1": "562c6e25e4e2597851d622b40f059292205c4fc0",
-      "sha256": "54e730f3ce423be02ff36c1d39f5d08d6f02b7d85d85ddb78d58605cbb5ce231",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": true,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3610,9 +3601,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "8841a8f1510e091fa799458de77831d0",
+      "sha1": "562c6e25e4e2597851d622b40f059292205c4fc0",
+      "sha256": "54e730f3ce423be02ff36c1d39f5d08d6f02b7d85d85ddb78d58605cbb5ce231",
+      "sha512": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -3620,22 +3623,10 @@
       "type": "file",
       "name": "PollingPropertiesFileConfigurationProvider.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
-      "md5": "020ec7b6fc51e6932142595c36fa1efb",
-      "sha1": "f6f10eff73c6fb6acc8a303865c9a8608775f91a",
-      "sha256": "5bfc65d989ae3b6d28208e2544c1e35fdd433d59850eab3aa9426c8aac375893",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": true,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3645,9 +3636,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "020ec7b6fc51e6932142595c36fa1efb",
+      "sha1": "f6f10eff73c6fb6acc8a303865c9a8608775f91a",
+      "sha256": "5bfc65d989ae3b6d28208e2544c1e35fdd433d59850eab3aa9426c8aac375893",
+      "sha512": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -3655,22 +3658,10 @@
       "type": "file",
       "name": "PollingZooKeeperConfigurationProvider$1.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
-      "md5": "4bcf06144b0ed84e62bc4d4a40511f4c",
-      "sha1": "ea35273795682e8743db87e7b797d7733b7f67aa",
-      "sha256": "0256effde5dd0a68e1a14ca69ff08978cf1ae95408e611b7e6fdd6c9ae6ac2ac",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": true,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3680,9 +3671,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "4bcf06144b0ed84e62bc4d4a40511f4c",
+      "sha1": "ea35273795682e8743db87e7b797d7733b7f67aa",
+      "sha256": "0256effde5dd0a68e1a14ca69ff08978cf1ae95408e611b7e6fdd6c9ae6ac2ac",
+      "sha512": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -3690,22 +3693,10 @@
       "type": "file",
       "name": "PollingZooKeeperConfigurationProvider.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
-      "md5": "532b3474093ccd976d10cefff49bf0e4",
-      "sha1": "f0fb3a43b268fdfa2c0cd05a2e60257119ef52be",
-      "sha256": "6fe1921cfa4347536f91f897bbda41b8cd4833d0cbfa0a95d57912d174af664a",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": true,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3715,9 +3706,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "532b3474093ccd976d10cefff49bf0e4",
+      "sha1": "f0fb3a43b268fdfa2c0cd05a2e60257119ef52be",
+      "sha256": "6fe1921cfa4347536f91f897bbda41b8cd4833d0cbfa0a95d57912d174af664a",
+      "sha512": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -3725,22 +3728,10 @@
       "type": "file",
       "name": "PropertiesFileConfigurationProvider.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
-      "md5": "022640c15e6a0e199a5e5476604ce920",
-      "sha1": "188009bab2fad19a25822c7c05fa36dbdb1400b2",
-      "sha256": "b9494daaa7dc827b826f95cce51686797605933017924bc6836e74dfe955f54e",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": true,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3750,9 +3741,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "022640c15e6a0e199a5e5476604ce920",
+      "sha1": "188009bab2fad19a25822c7c05fa36dbdb1400b2",
+      "sha256": "b9494daaa7dc827b826f95cce51686797605933017924bc6836e74dfe955f54e",
+      "sha512": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -3760,22 +3763,10 @@
       "type": "file",
       "name": "SimpleMaterializedConfiguration.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
-      "md5": "876dbb6f8e3723450193a1d777936f2f",
-      "sha1": "3673714ed860323e184670f7fc99baaf2259e5dc",
-      "sha256": "bed14cff0dd864f1f27b2b0ddcf7fbd8be0653572d9e3ac67a2e27f1b2132b78",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": true,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3785,9 +3776,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "876dbb6f8e3723450193a1d777936f2f",
+      "sha1": "3673714ed860323e184670f7fc99baaf2259e5dc",
+      "sha256": "bed14cff0dd864f1f27b2b0ddcf7fbd8be0653572d9e3ac67a2e27f1b2132b78",
+      "sha512": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     },
     {
@@ -3795,22 +3798,10 @@
       "type": "file",
       "name": "StaticZooKeeperConfigurationProvider.class",
       "status": "mapped",
+      "for_packages": [],
       "tag": "to",
       "extension": ".class",
-      "md5": "45c5f180d0b4decc4e75b00830004699",
-      "sha1": "29e9db67892e08387b89d441cb71c2f9616e1c5d",
-      "sha256": "0c5cc30415dc587696eccd3a521866990594abd863e81efa99d3ef7f6ba363cc",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": true,
-      "is_text": false,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "",
       "detected_license_expression_spdx": "",
       "license_detections": [],
@@ -3820,9 +3811,21 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
       "emails": [],
       "urls": [],
+      "md5": "45c5f180d0b4decc4e75b00830004699",
+      "sha1": "29e9db67892e08387b89d441cb71c2f9616e1c5d",
+      "sha256": "0c5cc30415dc587696eccd3a521866990594abd863e81efa99d3ef7f6ba363cc",
+      "sha512": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
       "extra_data": {}
     }
   ],

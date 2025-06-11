@@ -34,6 +34,7 @@ from pathlib import Path
 from django.apps import apps
 from django.conf import settings
 from django.db.models import ObjectDoesNotExist
+from django.db.models import Q
 
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
@@ -57,6 +58,7 @@ logger = logging.getLogger("scanpipe.pipes")
 """
 Utilities to deal with ScanCode toolkit features and objects.
 """
+
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -286,7 +288,12 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
 
 
 def scan_resources(
-    resource_qs, scan_func, save_func, scan_func_kwargs=None, progress_logger=None
+    resource_qs,
+    scan_func,
+    save_func,
+    scan_func_kwargs=None,
+    progress_logger=None,
+    file_size_limit=None,
 ):
     """
     Run the `scan_func` on the codebase resources of the provided `resource_qs`.
@@ -306,9 +313,21 @@ def scan_resources(
     if not scan_func_kwargs:
         scan_func_kwargs = {}
 
-    resource_count = resource_qs.count()
+    # Skip scanning files larger than the specified max size
+    skipped_files_max_size = flag.flag_and_ignore_files_over_max_size(
+        resource_qs=resource_qs,
+        file_size_limit=file_size_limit,
+    )
+    if file_size_limit and skipped_files_max_size:
+        logger.info(
+            f"Skipped {skipped_files_max_size} files over the size of {file_size_limit}"
+        )
+
+    scan_resource_qs = resource_qs.filter(~Q(status=flag.IGNORED_BY_MAX_FILE_SIZE))
+
+    resource_count = scan_resource_qs.count()
     logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")
-    resource_iterator = resource_qs.iterator(chunk_size=2000)
+    resource_iterator = scan_resource_qs.iterator(chunk_size=2000)
     progress = LoopProgress(resource_count, logger=progress_logger)
     max_workers = get_max_workers(keep_available=1)
 
@@ -347,6 +366,7 @@ def scan_resources(
                     "CPU core for successful execution."
                 )
                 raise broken_pool_error from InsufficientResourcesError(message)
+
             save_func(resource, scan_results, scan_errors)
 
 
@@ -362,16 +382,27 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
     if resource_qs is None:
         resource_qs = project.codebaseresources.no_status()
 
+    # Get max file size limit set in project settings, or alternatively
+    # get it from scancodeio settings
+    file_size_limit = project.get_scan_max_file_size
+    if not file_size_limit:
+        file_size_limit = settings.SCANCODEIO_SCAN_MAX_FILE_SIZE
+
     scan_resources(
         resource_qs=resource_qs,
         scan_func=scan_file,
         save_func=save_scan_file_results,
         progress_logger=progress_logger,
+        file_size_limit=file_size_limit,
     )
 
 
 def scan_for_application_packages(
-    project, assemble=True, package_only=False, resource_qs=None, progress_logger=None
+    project,
+    assemble=True,
+    package_only=False,
+    resource_qs=None,
+    progress_logger=logger.info,
 ):
     """
     Run a package scan on resources without a status for a `project`,
@@ -395,6 +426,7 @@ def scan_for_application_packages(
 
     # Collect detected Package data and save it to the CodebaseResource it was
     # detected from.
+    progress_logger("Collecting package data from resources:")
     scan_resources(
         resource_qs=resource_qs,
         scan_func=scan_for_package_data,
@@ -406,7 +438,9 @@ def scan_for_application_packages(
     # Iterate through CodebaseResources with Package data and handle them using
     # the proper Package handler from packagedcode.
     if assemble:
-        assemble_packages(project=project)
+        progress_logger("Assembling collected package data:")
+        progress_logger("Progress: 0%")
+        assemble_packages(project=project, progress_logger=progress_logger)
 
 
 def add_resource_to_package(package_uid, resource, project):
@@ -435,46 +469,58 @@ def add_resource_to_package(package_uid, resource, project):
     resource.discovered_packages.add(package)
 
 
-def assemble_packages(project):
+def assemble_packages(project, progress_logger):
     """
     Create instances of DiscoveredPackage and DiscoveredDependency for `project`
     from the parsed package data present in the CodebaseResources of `project`,
     using the respective package handlers for each package manifest type.
     """
     logger.info(f"Project {project} assemble_packages:")
-    seen_resource_paths = set()
+    processed_paths = set()
 
-    for resource in project.codebaseresources.has_package_data():
-        if resource.path in seen_resource_paths:
+    resources_with_package = project.codebaseresources.has_package_data()
+    progress = LoopProgress(resources_with_package.count(), logger=progress_logger)
+
+    for resource in progress.iter(resources_with_package):
+        progress.log_progress()
+
+        if resource.path in processed_paths:
             continue
 
-        logger.info(f"  Processing: {resource.path}")
-        for package_mapping in resource.package_data:
-            pd = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
-            logger.info(f"  Package data: {pd.purl}")
+        assemble_package(resource, project, processed_paths)
 
-            handler = get_package_handler(pd)
-            logger.info(f"  Selected package handler: {handler.__name__}")
 
-            items = handler.assemble(
-                package_data=pd,
-                resource=resource,
-                codebase=project,
-                package_adder=add_resource_to_package,
-            )
+def assemble_package(resource, project, processed_paths):
+    """
+    Process a single resource to assemble packages, dependencies, and related codebase
+    resources.
+    """
+    logger.info(f"  Processing: {resource.path}")
 
-            for item in items:
-                logger.info(f"    Processing item: {item}")
-                if isinstance(item, packagedcode_models.Package):
-                    package_data = item.to_dict()
-                    pipes.update_or_create_package(project, package_data)
-                elif isinstance(item, packagedcode_models.Dependency):
-                    dependency_data = item.to_dict()
-                    pipes.update_or_create_dependency(project, dependency_data)
-                elif isinstance(item, CodebaseResource):
-                    seen_resource_paths.add(item.path)
-                else:
-                    logger.info(f"Unknown Package assembly item type: {item!r}")
+    for mapping in resource.package_data:
+        package_data = packagedcode_models.PackageData.from_dict(mapping=mapping)
+        logger.info(f"  Package data: {package_data.purl}")
+
+        handler = get_package_handler(package_data)
+        logger.info(f"  Selected package handler: {handler.__name__}")
+
+        extracted_items = handler.assemble(
+            package_data=package_data,
+            resource=resource,
+            codebase=project,
+            package_adder=add_resource_to_package,
+        )
+
+        for item in extracted_items:
+            logger.info(f"    Processing item: {item}")
+            if isinstance(item, packagedcode_models.Package):
+                pipes.update_or_create_package(project, item.to_dict())
+            elif isinstance(item, packagedcode_models.Dependency):
+                pipes.update_or_create_dependency(project, item.to_dict())
+            elif isinstance(item, CodebaseResource):
+                processed_paths.add(item.path)
+            else:
+                logger.info(f"Unknown Package assembly item type: {item!r}")
 
 
 def process_package_data(project, static_resolve=False):

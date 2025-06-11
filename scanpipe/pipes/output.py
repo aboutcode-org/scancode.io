@@ -22,6 +22,7 @@
 
 import csv
 import decimal
+import io
 import json
 import re
 from operator import attrgetter
@@ -52,7 +53,13 @@ from scancode_config import __version__ as scancode_toolkit_version
 
 from scancodeio import SCAN_NOTICE
 from scancodeio import __version__ as scancodeio_version
+from scanpipe.models import CodebaseRelation
+from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
+from scanpipe.models import DiscoveredPackage
+from scanpipe.models import ProjectMessage
 from scanpipe.pipes import docker
+from scanpipe.pipes import flag
 from scanpipe.pipes import spdx
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -67,7 +74,7 @@ def get_queryset(project, model_name):
     """Return a consistent QuerySet for all supported outputs (json, xlsx, csv, ...)"""
     querysets = {
         "discoveredpackage": (
-            project.discoveredpackages.all().order_by(
+            DiscoveredPackage.objects.order_by(
                 "type",
                 "namespace",
                 "name",
@@ -75,9 +82,7 @@ def get_queryset(project, model_name):
             )
         ),
         "discovereddependency": (
-            project.discovereddependencies.all()
-            .prefetch_for_serializer()
-            .order_by(
+            DiscoveredDependency.objects.prefetch_for_serializer().order_by(
                 "type",
                 "namespace",
                 "name",
@@ -86,14 +91,20 @@ def get_queryset(project, model_name):
             )
         ),
         "codebaseresource": (
-            project.codebaseresources.without_symlinks().prefetch_for_serializer()
+            CodebaseResource.objects.without_symlinks().prefetch_for_serializer()
         ),
         "codebaserelation": (
-            project.codebaserelations.select_related("from_resource", "to_resource")
+            CodebaseRelation.objects.select_related("from_resource", "to_resource")
         ),
-        "projectmessage": project.projectmessages.all(),
+        "projectmessage": ProjectMessage.objects.all(),
+        "todo": CodebaseResource.objects.files().status(flag.REQUIRES_REVIEW),
     }
-    return querysets.get(model_name)
+
+    queryset = querysets.get(model_name)
+    if project:
+        queryset = queryset.project(project)
+
+    return queryset
 
 
 def queryset_to_csv_file(queryset, fieldnames, output_file):
@@ -213,10 +224,14 @@ class JSONResultsGenerator:
         return json.dumps(data, indent=2, cls=DjangoJSONEncoder)
 
     def get_headers(self, project):
+        from scanpipe.api.serializers import ProjectMessageSerializer
         from scanpipe.api.serializers import RunSerializer
 
         runs = project.runs.all()
         runs = RunSerializer(runs, many=True, exclude_fields=("url", "project"))
+
+        messages = project.projectmessages.all()
+        messages = ProjectMessageSerializer(messages, many=True)
 
         other_tools = [f"pkg:pypi/scancode-toolkit@{scancode_toolkit_version}"]
 
@@ -231,6 +246,7 @@ class JSONResultsGenerator:
             "settings": project.settings,
             "input_sources": project.get_inputs_with_source(),
             "runs": runs.data,
+            "messages": messages.data,
             "extra_data": project.extra_data,
         }
         yield self.encode(headers)
@@ -291,10 +307,30 @@ model_name_to_worksheet_name = {
     "codebaseresource": "RESOURCES",
     "codebaserelation": "RELATIONS",
     "projectmessage": "MESSAGES",
+    "todo": "TODOS",
+}
+
+model_name_to_object_type = {
+    "discoveredpackage": "package",
+    "discovereddependency": "dependency",
+    "codebaseresource": "resource",
+    "codebaserelation": "relation",
+    "projectmessage": "message",
+    "todo": "todo",
+}
+
+object_type_to_model_name = {
+    value: key for key, value in model_name_to_object_type.items()
 }
 
 
-def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
+def queryset_to_xlsx_worksheet(
+    queryset,
+    workbook,
+    exclude_fields=None,
+    prepend_fields=None,
+    worksheet_name=None,
+):
     """
     Add a new worksheet to the ``workbook`` ``xlsxwriter.Workbook`` using the
     ``queryset``. The ``queryset`` "model_name" is used as a name for the
@@ -308,13 +344,16 @@ def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
 
     model_class = queryset.model
     model_name = model_class._meta.model_name
-    worksheet_name = model_name_to_worksheet_name.get(model_name)
+    worksheet_name = worksheet_name or model_name_to_worksheet_name.get(model_name)
 
     fields = get_serializer_fields(model_class)
     exclude_fields = exclude_fields or []
+    prepend_fields = prepend_fields or []
     fields = [field for field in fields if field not in exclude_fields]
+    if prepend_fields:
+        fields = prepend_fields + fields
 
-    return _add_xlsx_worksheet(
+    return add_xlsx_worksheet(
         workbook=workbook,
         worksheet_name=worksheet_name,
         rows=queryset,
@@ -322,7 +361,7 @@ def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
     )
 
 
-def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
+def add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     """
     Add a new ``worksheet_name`` worksheet to the ``workbook``
     ``xlsxwriter.Workbook``. Write the iterable of ``rows`` objects using their
@@ -332,17 +371,23 @@ def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     """
     worksheet = workbook.add_worksheet(worksheet_name)
     worksheet.set_default_row(height=14)
+    worksheet.freeze_panes(1, 0)  # Freeze the header row
+    cell_format = workbook.add_format({"font_size": 10})
 
     header = list(fields) + ["xlsx_errors"]
-    worksheet.write_row(row=0, col=0, data=header)
+    worksheet.write_row(row=0, col=0, data=header, cell_format=cell_format)
 
     errors_count = 0
     errors_col_index = len(fields) - 1  # rows and cols are zero-indexed
 
     for row_index, record in enumerate(rows, start=1):
         row_errors = []
+        record_is_dict = isinstance(record, dict)
         for col_index, field in enumerate(fields):
-            value = getattr(record, field)
+            if record_is_dict:
+                value = record.get(field)
+            else:
+                value = getattr(record, field)
 
             if not value:
                 continue
@@ -353,14 +398,49 @@ def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
                 row_errors.append(error)
 
             if value:
-                worksheet.write_string(row_index, col_index, str(value))
+                worksheet.write_string(
+                    row=row_index,
+                    col=col_index,
+                    string=str(value),
+                    cell_format=cell_format,
+                )
 
         if row_errors:
             errors_count += len(row_errors)
             row_errors = "\n".join(row_errors)
-            worksheet.write_string(row_index, errors_col_index, row_errors)
+            worksheet.write_string(
+                row=row_index,
+                col=errors_col_index,
+                string=row_errors,
+                cell_format=cell_format,
+            )
 
     return errors_count
+
+
+def get_xlsx_report(project_qs, model_short_name, output_file=None):
+    model_name = object_type_to_model_name.get(model_short_name)
+    if not model_name:
+        raise ValueError(f"{model_short_name} is not valid.")
+
+    worksheet_name = model_name_to_worksheet_name.get(model_short_name)
+
+    worksheet_queryset = get_queryset(project=None, model_name=model_name)
+    worksheet_queryset = worksheet_queryset.filter(project__in=project_qs)
+
+    if not output_file:
+        output_file = io.BytesIO()
+
+    with xlsxwriter.Workbook(output_file) as workbook:
+        queryset_to_xlsx_worksheet(
+            worksheet_queryset,
+            workbook,
+            exclude_fields=XLSX_EXCLUDE_FIELDS,
+            prepend_fields=["project"],
+            worksheet_name=worksheet_name,
+        )
+
+    return output_file
 
 
 # Some scan attributes such as "copyrights" are list of dicts.
@@ -438,6 +518,16 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
     return value, error
 
 
+XLSX_EXCLUDE_FIELDS = [
+    "extra_data",
+    "package_data",
+    "license_detections",
+    "other_license_detections",
+    "license_clues",
+    "affected_by_vulnerabilities",
+]
+
+
 def to_xlsx(project):
     """
     Generate output for the provided ``project`` in XLSX format.
@@ -448,16 +538,10 @@ def to_xlsx(project):
     with possible error messages for a row when converting the data to XLSX
     exceed the limits of what can be stored in a cell.
     """
+    exclude_fields = XLSX_EXCLUDE_FIELDS.copy()
     output_file = project.get_output_file_path("results", "xlsx")
-    exclude_fields = [
-        "extra_data",
-        "package_data",
-        "license_detections",
-        "other_license_detections",
-        "license_clues",
-    ]
 
-    if not scanpipe_app.policies_enabled:
+    if not project.policies_enabled:
         exclude_fields.append("compliance_alert")
 
     model_names = [
@@ -474,9 +558,77 @@ def to_xlsx(project):
             queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields)
 
         if layers_data := docker.get_layers_data(project):
-            _add_xlsx_worksheet(workbook, "LAYERS", layers_data, docker.layer_fields)
+            add_xlsx_worksheet(workbook, "LAYERS", layers_data, docker.layer_fields)
+
+        add_vulnerabilities_sheet(workbook, project)
+        add_todos_sheet(workbook, project, exclude_fields)
 
     return output_file
+
+
+def add_vulnerabilities_sheet(workbook, project):
+    vulnerable_packages_queryset = (
+        DiscoveredPackage.objects.project(project)
+        .vulnerable()
+        .only_package_url_fields(extra=["affected_by_vulnerabilities"])
+        .order_by_package_url()
+    )
+    vulnerable_dependencies_queryset = (
+        DiscoveredDependency.objects.project(project)
+        .vulnerable()
+        .only_package_url_fields(extra=["affected_by_vulnerabilities"])
+        .order_by_package_url()
+    )
+    vulnerable_querysets = [
+        vulnerable_packages_queryset,
+        vulnerable_dependencies_queryset,
+    ]
+
+    vulnerability_fields = [
+        "vulnerability_id",
+        "aliases",
+        "summary",
+        "risk_score",
+        "exploitability",
+        "weighted_severity",
+        "resource_url",
+    ]
+    sheet_fields = ["object_type", "package_url"] + vulnerability_fields
+
+    rows = []
+    for queryset in vulnerable_querysets:
+        model_name = queryset.model._meta.model_name
+        object_type = model_name_to_object_type.get(model_name)
+
+        for package in queryset:
+            package_url = package.package_url
+
+            for vulnerability_data in package.affected_by_vulnerabilities:
+                row = {
+                    "object_type": object_type,
+                    "package_url": package_url,
+                    **{
+                        field_name: vulnerability_data.get(field_name, "")
+                        for field_name in vulnerability_fields
+                    },
+                }
+                rows.append(row)
+
+    if rows:
+        add_xlsx_worksheet(
+            workbook=workbook,
+            worksheet_name="VULNERABILITIES",
+            rows=rows,
+            fields=sheet_fields,
+        )
+
+
+def add_todos_sheet(workbook, project, exclude_fields):
+    todos_queryset = get_queryset(project, "todo")
+    if todos_queryset:
+        queryset_to_xlsx_worksheet(
+            todos_queryset, workbook, exclude_fields, worksheet_name="TODOS"
+        )
 
 
 def _get_spdx_extracted_licenses(license_expressions):
@@ -893,3 +1045,12 @@ def to_attribution(project):
 
     output_file.write_text(rendered_template)
     return output_file
+
+
+FORMAT_TO_FUNCTION_MAPPING = {
+    "json": to_json,
+    "xlsx": to_xlsx,
+    "spdx": to_spdx,
+    "cyclonedx": to_cyclonedx,
+    "attribution": to_attribution,
+}
