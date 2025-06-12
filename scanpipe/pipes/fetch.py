@@ -363,7 +363,6 @@ def fetch_git_repo(url, to=None):
     )
 
 
-<<<<<<< HEAD
 def store_package_archive(project, url=None, file_path=None):
     """
     Store a package in PackageArchive and link it to DownloadedPackage.
@@ -436,17 +435,6 @@ def store_package_archive(project, url=None, file_path=None):
     except Exception as e:
         logger.error(f"Error creating DownloadedPackage: {e}")
         return None
-=======
-def fetch_package_url(url):
-    # Ensure the provided Package URL is valid, or raise a ValueError.
-    PackageURL.from_string(url)
-
-    # Resolve a Download URL using purl2url.
-    if download_url := purl2url.get_download_url(url):
-        return fetch_http(download_url)
-
-    raise ValueError(f"Could not resolve a download URL for {url}.")
->>>>>>> 5d3601a5 (Add support for using Package URL (purl) as project input. (#1686))
 
 
 SCHEME_TO_FETCHER_MAPPING = {
