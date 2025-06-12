@@ -139,6 +139,13 @@ def get_resources(location, with_dir=False):
             rootfs_path=rootfs_path,
         )
 
+    if with_dir:
+        rootfs_path = pipes.normalize_path("")
+        yield Resource(
+            location=location,
+            rootfs_path=rootfs_path,
+        )
+
     for top, dirs, files in os.walk(location):
         for f in files:
             yield get_res(parent=top, fname=f)
