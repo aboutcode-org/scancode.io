@@ -48,6 +48,7 @@ from scanpipe.models import Run
 from scanpipe.models import WebhookSubscription
 from scanpipe.pipes import flag
 from scanpipe.pipes import purldb
+from scanpipe.tests import make_mock_response
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
@@ -963,12 +964,7 @@ class ScanPipeManagementCommandTest(TestCase):
         mock_get_latest_output.return_value = (
             self.data / "scancode" / "is-npm-1.0.0_summary.json"
         )
-        mock_download_get.return_value = mock.Mock(
-            content=b"\x00",
-            headers={},
-            status_code=200,
-            url=download_url,
-        )
+        mock_download_get.return_value = make_mock_response(url=download_url)
 
         self.assertFalse(WebhookSubscription.objects.exists())
 
@@ -1016,12 +1012,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "status": f"updated scannable_uri {scannable_uri_uuid} "
             "scan_status to 'failed'"
         }
-        mock_download_get.return_value = mock.Mock(
-            content=b"\x00",
-            headers={},
-            status_code=200,
-            url=download_url,
-        )
+        mock_download_get.return_value = make_mock_response(url=download_url)
 
         options = [
             "--max-loops",
@@ -1075,18 +1066,8 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
 
         mock_download_get.side_effect = [
-            mock.Mock(
-                content=b"\x00",
-                headers={},
-                status_code=200,
-                url=download_url1,
-            ),
-            mock.Mock(
-                content=b"\x00",
-                headers={},
-                status_code=200,
-                url=download_url2,
-            ),
+            make_mock_response(url=download_url1),
+            make_mock_response(url=download_url2),
         ]
 
         mock_request_post.side_effect = [

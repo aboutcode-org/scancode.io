@@ -101,6 +101,16 @@ def make_message(project, **data):
     )
 
 
+def make_mock_response(url, content=b"\x00", status_code=200, headers=None):
+    """Return a mock HTTP response object for testing purposes."""
+    response = mock.Mock()
+    response.url = url
+    response.content = content
+    response.status_code = status_code
+    response.headers = headers or {}
+    return response
+
+
 resource_data1 = {
     "path": "notice.NOTICE",
     "type": "file",

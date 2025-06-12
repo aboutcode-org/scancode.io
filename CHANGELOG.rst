@@ -4,6 +4,10 @@ Changelog
 v34.12.0 (unreleased)
 ---------------------
 
+- Add support for using Package URL (purl) as project input.
+  This implementation is based on ``purl2url.get_download_url``.
+  https://github.com/aboutcode-org/scancode.io/issues/1383
+
 - Raise a ``MatchCodeIOException`` when the response from the MatchCode.io service is
   not valid in ``send_project_json_to_matchcode``.
   This generally means an issue on the MatchCode.io server side.
