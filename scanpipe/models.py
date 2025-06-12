@@ -2739,6 +2739,14 @@ class CodebaseResource(
             'Eg.: "/usr/bin/bash" for a path of "tarball-extract/rootfs/usr/bin/bash"'
         ),
     )
+
+    ancestor = models.CharField(
+        max_length=2000,
+        null=True,
+        blank=True,
+        help_text="Path of the immediate parent directory of this resource. Its '.' for top-level resources.",
+    )
+
     status = models.CharField(
         blank=True,
         max_length=50,
@@ -2832,6 +2840,7 @@ class CodebaseResource(
             models.Index(fields=["compliance_alert"]),
             models.Index(fields=["is_binary"]),
             models.Index(fields=["is_text"]),
+            models.Index(fields=["project", "ancestor"]),
         ]
         constraints = [
             models.UniqueConstraint(
