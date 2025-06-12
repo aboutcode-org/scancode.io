@@ -22,8 +22,7 @@
 
 import logging
 from pathlib import Path
-
-from aboutcode.pipeline import group
+from aboutcode.pipeline import optional_step
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d

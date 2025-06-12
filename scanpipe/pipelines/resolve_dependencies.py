@@ -22,7 +22,7 @@
 
 import logging
 from pathlib import Path
-
+from aboutcode.pipeline import optional_step
 from aboutcode.pipeline import group
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import resolve
