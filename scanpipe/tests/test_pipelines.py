@@ -1209,7 +1209,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(16, project1.codebaseresources.count())
+        self.assertEqual(17, project1.codebaseresources.count())
         self.assertEqual(2, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
 
