@@ -2744,7 +2744,10 @@ class CodebaseResource(
         max_length=2000,
         null=True,
         blank=True,
-        help_text="Path of the immediate parent directory of this resource. Its '.' for top-level resources.",
+        help_text=_(
+            "Path of the immediate parent directory of a resource. "
+            "For top level resources the value is '.'"
+        ),
     )
 
     status = models.CharField(
