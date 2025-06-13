@@ -49,8 +49,23 @@ mocked_now = mock.Mock(now=lambda: datetime(2010, 10, 10, 10, 10, 10))
 
 
 def make_project(name=None, **data):
+    """
+    Create and return a Project instance.
+    Labels can be provided using the labels=["labels1", "labels2"] argument.
+    """
     name = name or str(uuid.uuid4())[:8]
-    return Project.objects.create(name=name, **data)
+    pipelines = data.pop("pipelines", [])
+    labels = data.pop("labels", [])
+
+    project = Project.objects.create(name=name, **data)
+
+    for pipeline in pipelines:
+        project.add_pipeline(pipeline)
+
+    if labels:
+        project.labels.add(*labels)
+
+    return project
 
 
 def make_resource_file(project, path, **data):
