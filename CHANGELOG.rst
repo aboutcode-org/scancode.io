@@ -4,6 +4,10 @@ Changelog
 v34.12.0 (unreleased)
 ---------------------
 
+- Add filtering by label and pipeline in the ``flush-projects`` management command.
+  Also, a new ``--dry-run`` option is available to test the filters before applying
+  the deletion.
+
 - Add support for using Package URL (purl) as project input.
   This implementation is based on ``purl2url.get_download_url``.
   https://github.com/aboutcode-org/scancode.io/issues/1383
