@@ -2858,7 +2858,9 @@ class CodebaseResource(
 
     def save(self, *args, **kwargs):
         if self.path and not self.parent_directory_path:
-            self.parent_directory_path = parent_directory(str(self.path), with_trail=False)
+            self.parent_directory_path = parent_directory(
+                str(self.path), with_trail=False
+            )
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
