@@ -863,6 +863,64 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data / "scancode" / "is-npm-1.0.0_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
+    def test_scanpipe_scan_codebase_creates_top_level_paths(self):
+        pipeline_name = "scan_codebase"
+        project1 = make_project()
+
+        filename = "is-npm-1.0.0.tgz"
+        input_location = self.data / "scancode" / filename
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        expected_top_level_paths = ["is-npm-1.0.0.tgz", "is-npm-1.0.0.tgz-extract"]
+
+        top_level_resources = project1.codebaseresources.filter(
+            parent_directory_path=None
+        )
+        top_level_paths = [res.path for res in top_level_resources]
+
+        self.assertListEqual(top_level_paths, expected_top_level_paths)
+
+    def test_scanpipe_scan_codebase_creates_parent_directory_path_field(self):
+        pipeline_name = "scan_codebase"
+        project1 = make_project()
+
+        filename = "is-npm-1.0.0.tgz"
+        input_location = self.data / "scancode" / filename
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        expected_top_level_paths = ["is-npm-1.0.0.tgz", "is-npm-1.0.0.tgz-extract"]
+        expected_nested_paths = [
+            "is-npm-1.0.0.tgz-extract/package/index.js",
+            "is-npm-1.0.0.tgz-extract/package/package.json",
+            "is-npm-1.0.0.tgz-extract/package/readme.md",
+        ]
+
+        top_level_resources = project1.codebaseresources.filter(
+            parent_directory_path=None
+        )
+        top_level_paths = [res.path for res in top_level_resources]
+
+        self.assertListEqual(top_level_paths, expected_top_level_paths)
+
+        nested_resources = project1.codebaseresources.filter(
+            parent_directory_path="is-npm-1.0.0.tgz-extract/package"
+        )
+        nested_paths = [res.path for res in nested_resources]
+
+        self.assertListEqual(nested_paths, expected_nested_paths)
+
     def test_scanpipe_inspect_packages_creates_packages_npm(self):
         pipeline_name = "inspect_packages"
         project1 = make_project()
