@@ -2740,13 +2740,13 @@ class CodebaseResource(
         ),
     )
 
-    ancestor = models.CharField(
+    parent_directory_path = models.CharField(
         max_length=2000,
         null=True,
         blank=True,
         help_text=_(
             "Path of the immediate parent directory of a resource. "
-            "For top level resources the value is '.'"
+            "For top level resources the value is set to None"
         ),
     )
 
@@ -2843,7 +2843,7 @@ class CodebaseResource(
             models.Index(fields=["compliance_alert"]),
             models.Index(fields=["is_binary"]),
             models.Index(fields=["is_text"]),
-            models.Index(fields=["project", "ancestor"]),
+            models.Index(fields=["project", "parent_directory_path"]),
         ]
         constraints = [
             models.UniqueConstraint(
