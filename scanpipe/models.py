@@ -2856,6 +2856,11 @@ class CodebaseResource(
     def __str__(self):
         return self.path
 
+    def save(self, *args, **kwargs):
+        if self.path and not self.parent_directory_path:
+            self.parent_directory_path = parent_directory(str(self.path), with_trail=False)
+        super().save(*args, **kwargs)
+
     def get_absolute_url(self):
         return reverse("resource_detail", args=[self.project.slug, self.path])
 
