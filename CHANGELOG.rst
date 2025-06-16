@@ -4,6 +4,10 @@ Changelog
 v34.12.0 (unreleased)
 ---------------------
 
+- Display matched snippets details in "Resource viewer", including the package,
+  resource, and similarity values.
+  https://github.com/aboutcode-org/scancode.io/issues/1688
+
 - Add filtering by label and pipeline in the ``flush-projects`` management command.
   Also, a new ``--dry-run`` option is available to test the filters before applying
   the deletion.
