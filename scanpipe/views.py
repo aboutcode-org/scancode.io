@@ -2006,24 +2006,33 @@ class CodebaseResourceDetailsView(
 
     @staticmethod
     def get_matched_snippet_annotations(resource):
-        # convert qspan from list of ints to Spans
-        matched_snippet_annotations = []
         matched_snippets = resource.extra_data.get("matched_snippets")
-        if matched_snippets:
-            line_by_pos = resource.extra_data.get("line_by_pos")
-            for matched_snippet in matched_snippets:
-                match_detections = matched_snippet["match_detections"]
-                qspan = Span(match_detections)
-                for span in qspan.subspans():
-                    # line_by_pos is stored as JSON and keys in JSON are always
-                    # strings
-                    matched_snippet_annotations.append(
-                        {
-                            "start_line": line_by_pos[str(span.start)],
-                            "end_line": line_by_pos[str(span.end)],
-                        }
-                    )
-        return matched_snippet_annotations
+        line_by_pos = resource.extra_data.get("line_by_pos")
+        if not matched_snippets:
+            return []
+
+        snippet_annotations = []
+        for snippet in matched_snippets:
+            package = snippet.get("package", "")
+            resource = snippet.get("resource", "")
+            similarity = snippet.get("similarity", 0)
+            text = (
+                f"package: {package}\nresource: {resource}\nsimilarity: {similarity}\n"
+            )
+
+            # convert qspan from list of ints to Spans
+            qspan = Span(snippet["match_detections"])
+            for span in qspan.subspans():
+                # line_by_pos is stored as JSON and keys in JSON are always strings
+                snippet_annotations.append(
+                    {
+                        "start_line": line_by_pos[str(span.start)],
+                        "end_line": line_by_pos[str(span.end)],
+                        "text": text,
+                    }
+                )
+
+        return snippet_annotations
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
