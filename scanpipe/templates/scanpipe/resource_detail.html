@@ -57,8 +57,8 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="{% static 'ace-1.20.0.min.js' %}" crossorigin="anonymous"></script>
-  <script src="{% static 'ace-1.20.0-ext-searchbox.min.js' %}" crossorigin="anonymous"></script>
+  <script src="{% static 'ace-1.42.0.min.js' %}" crossorigin="anonymous"></script>
+  <script src="{% static 'ace-1.42.0-ext-searchbox.min.js' %}" crossorigin="anonymous"></script>
   {{ detected_values|json_script:"detected_values" }}
   <script>
     let editor = ace.edit("editor", {

@@ -17,6 +17,8 @@ v34.12.0 (unreleased)
   This generally means an issue on the MatchCode.io server side.
   https://github.com/aboutcode-org/scancode.io/issues/1665
 
+- Upgrade Ace JS library to latest version 1.42.0.
+
 v34.11.0 (2025-05-02)
 ---------------------
 
