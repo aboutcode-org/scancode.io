@@ -2064,10 +2064,6 @@ class CodebaseResourceDetailsView(
         matched_snippet_annotations = self.get_matched_snippet_annotations(resource)
         context["detected_values"]["matched snippets"] = matched_snippet_annotations
 
-        from pprint import pprint
-
-        pprint(context["detected_values"])
-
         return context
 
 
