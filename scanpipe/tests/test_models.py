@@ -2053,7 +2053,7 @@ class ScanPipeModelsTest(TestCase):
             path="asgiref-3.3.0.whl-extract/asgiref/compatibility.py"
         )
         expected_parent_path = "asgiref-3.3.0.whl-extract/asgiref"
-        self.assertEqual(expected_parent_path, asgiref_resource.parent_path())
+        self.assertEqual(expected_parent_path, asgiref_resource.parent_directory())
         self.assertTrue(asgiref_resource.has_parent())
         expected_parent = self.project_asgiref.codebaseresources.get(
             path="asgiref-3.3.0.whl-extract/asgiref"
