@@ -7,6 +7,7 @@ v34.12.0 (unreleased)
 - Add filtering by label and pipeline in the ``flush-projects`` management command.
   Also, a new ``--dry-run`` option is available to test the filters before applying
   the deletion.
+  https://github.com/aboutcode-org/scancode.io/pull/1690
 
 - Add support for using Package URL (purl) as project input.
   This implementation is based on ``purl2url.get_download_url``.
@@ -16,6 +17,10 @@ v34.12.0 (unreleased)
   not valid in ``send_project_json_to_matchcode``.
   This generally means an issue on the MatchCode.io server side.
   https://github.com/aboutcode-org/scancode.io/issues/1665
+
+- Upgrade Bulma CSS and Ace JS libraries to latest versions.
+  Refine the CSS for the Resource viewer.
+  https://github.com/aboutcode-org/scancode.io/pull/1692
 
 v34.11.0 (2025-05-02)
 ---------------------
