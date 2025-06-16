@@ -1646,15 +1646,15 @@ class ScanPipeModelsTest(TestCase):
         resource.update(detected_license_expression=license_expression)
         self.assertEqual("warning", resource.compute_compliance_alert())
 
-    def test_scanpipe_codebase_root_parent_directory_path(self):
+    def test_scanpipe_codebase_root_parent_path(self):
         resource1 = self.project1.codebaseresources.create(path="file")
 
-        self.assertEqual("", resource1.parent_directory_path)
+        self.assertEqual("", resource1.parent_path)
 
-    def test_scanpipe_codebase_regular_parent_directory_path(self):
+    def test_scanpipe_codebase_regular_parent_path(self):
         resource2 = self.project1.codebaseresources.create(path="dir1/dir2/file")
 
-        self.assertEqual("dir1/dir2", resource2.parent_directory_path)
+        self.assertEqual("dir1/dir2", resource2.parent_path)
 
     def test_scanpipe_scan_fields_model_mixin_methods(self):
         expected = [

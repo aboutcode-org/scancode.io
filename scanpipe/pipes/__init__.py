@@ -97,7 +97,7 @@ def make_codebase_resource(project, location, save=True, **extra_fields):
     codebase_resource = CodebaseResource(
         project=project,
         path=relative_path,
-        parent_directory_path=parent_path,
+        parent_path=parent_path,
         **resource_data,
     )
 

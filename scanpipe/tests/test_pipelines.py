@@ -880,13 +880,13 @@ class PipelinesIntegrationTest(TestCase):
         expected_top_level_paths = ["is-npm-1.0.0.tgz", "is-npm-1.0.0.tgz-extract"]
 
         top_level_resources = project1.codebaseresources.filter(
-            parent_directory_path=None
+            parent_path=None
         )
         top_level_paths = [res.path for res in top_level_resources]
 
         self.assertListEqual(top_level_paths, expected_top_level_paths)
 
-    def test_scanpipe_scan_codebase_creates_parent_directory_path_field(self):
+    def test_scanpipe_scan_codebase_creates_parent_path_field(self):
         pipeline_name = "scan_codebase"
         project1 = make_project()
 
@@ -908,14 +908,14 @@ class PipelinesIntegrationTest(TestCase):
         ]
 
         top_level_resources = project1.codebaseresources.filter(
-            parent_directory_path=None
+            parent_path=None
         )
         top_level_paths = [res.path for res in top_level_resources]
 
         self.assertListEqual(top_level_paths, expected_top_level_paths)
 
         nested_resources = project1.codebaseresources.filter(
-            parent_directory_path="is-npm-1.0.0.tgz-extract/package"
+            parent_path="is-npm-1.0.0.tgz-extract/package"
         )
         nested_paths = [res.path for res in nested_resources]
 

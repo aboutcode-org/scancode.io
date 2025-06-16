@@ -2740,7 +2740,7 @@ class CodebaseResource(
         ),
     )
 
-    parent_directory_path = models.CharField(
+    parent_path = models.CharField(
         max_length=2000,
         null=True,
         blank=True,
@@ -2843,7 +2843,7 @@ class CodebaseResource(
             models.Index(fields=["compliance_alert"]),
             models.Index(fields=["is_binary"]),
             models.Index(fields=["is_text"]),
-            models.Index(fields=["project", "parent_directory_path"]),
+            models.Index(fields=["project", "parent_path"]),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -2857,8 +2857,8 @@ class CodebaseResource(
         return self.path
 
     def save(self, *args, **kwargs):
-        if self.path and not self.parent_directory_path:
-            self.parent_directory_path = parent_directory(
+        if self.path and not self.parent_path:
+            self.parent_path = parent_directory(
                 str(self.path), with_trail=False
             )
         super().save(*args, **kwargs)
