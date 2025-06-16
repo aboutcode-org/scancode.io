@@ -1339,7 +1339,17 @@ class ScanPipeViewsTest(TestCase):
         resource1.save()
         resource1.refresh_from_db()
         results = CodebaseResourceDetailsView.get_matched_snippet_annotations(resource1)
-        expected_results = [{"start_line": 1, "end_line": 6}]
+        expected_results = [
+            {
+                "start_line": 1,
+                "end_line": 6,
+                "text": (
+                    "package: pkg:github/isaacs/inherits@v2.0.3\n"
+                    "resource: inherits-2.0.3/inherits.js\n"
+                    "similarity: 1.0\n"
+                ),
+            }
+        ]
         self.assertEqual(expected_results, results)
 
     def test_project_packages_export_json(self):
