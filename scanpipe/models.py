@@ -2933,7 +2933,7 @@ class CodebaseResource(
     def parent_directory(self):
         """Return the parent path for this CodebaseResource or None."""
         parent_path = parent_directory(str(self.path), with_trail=False)
-        return None if parent_path == "" else parent_path
+        return parent_path or None
 
     def has_parent(self):
         """
