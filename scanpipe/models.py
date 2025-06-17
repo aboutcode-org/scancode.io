@@ -2745,8 +2745,9 @@ class CodebaseResource(
         null=True,
         blank=True,
         help_text=_(
-            "Path of the immediate parent directory of a resource. "
-            "For top level resources the value is set to None"
+            "The path of the resource's parent directory. "
+            "Set to None for top-level (root) resources. "
+            "Used to efficiently retrieve a directory's contents."
         ),
     )
 
@@ -2858,7 +2859,7 @@ class CodebaseResource(
 
     def save(self, *args, **kwargs):
         if self.path and not self.parent_path:
-            self.parent_path = parent_directory(str(self.path), with_trail=False)
+            self.parent_path = self.parent_directory()
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
@@ -2931,7 +2932,8 @@ class CodebaseResource(
 
     def parent_directory(self):
         """Return the parent path for this CodebaseResource or None."""
-        return parent_directory(self.path, with_trail=False)
+        parent_path = parent_directory(str(self.path), with_trail=False)
+        return None if parent_path == "" else parent_path
 
     def has_parent(self):
         """

@@ -1649,7 +1649,7 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_codebase_root_parent_path(self):
         resource1 = self.project1.codebaseresources.create(path="file")
 
-        self.assertEqual("", resource1.parent_path)
+        self.assertIsNone(resource1.parent_path)
 
     def test_scanpipe_codebase_regular_parent_path(self):
         resource2 = self.project1.codebaseresources.create(path="dir1/dir2/file")
