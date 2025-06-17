@@ -139,8 +139,9 @@ def get_resources(location, with_dir=False):
             rootfs_path=rootfs_path,
         )
 
+    # Explicitly yields the root directory as a resource when `with_dir` is True
     if with_dir:
-        rootfs_path = pipes.normalize_path("")
+        rootfs_path = "/"
         yield Resource(
             location=location,
             rootfs_path=rootfs_path,
