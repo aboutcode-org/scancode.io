@@ -402,13 +402,14 @@ def create_packages_from_match_results(project, match_results):
     matched_packages = match_results.get("packages", [])
     for matched_package in matched_packages:
         package_uid = matched_package["package_uid"]
+        match_status = matched_package.get("extra_data", {}).get("matchcodeio_match_status", flag.MATCHED_TO_PURLDB_PACKAGE)
         resource_paths = resource_paths_by_package_uids[package_uid]
         resources = project.codebaseresources.filter(path__in=resource_paths)
         create_package_from_purldb_data(
             project,
             resources=resources,
             package_data=matched_package,
-            status=flag.MATCHED_TO_PURLDB_PACKAGE,
+            status=match_status,
         )
     match_resources = match_results.get("files", [])
     for match_resource in match_resources:
