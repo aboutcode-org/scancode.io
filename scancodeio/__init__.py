@@ -87,6 +87,7 @@ __version__ = get_version(VERSION)
 # Turn off the warnings for the following modules.
 warnings.filterwarnings("ignore", module="extractcode")
 warnings.filterwarnings("ignore", module="typecode")
+warnings.filterwarnings("ignore", module="clamd")
 
 
 def command_line():
