@@ -53,6 +53,7 @@ from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import FIXTURES_REGEN
+from scanpipe.tests import make_mock_response
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
 from scanpipe.tests import package_data1
@@ -226,9 +227,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual("", run.log)
 
         download_url = "https://download.url/file.zip"
-        mock_get.return_value = mock.Mock(
-            content=b"\x00", headers={}, status_code=200, url=download_url
-        )
+        mock_get.return_value = make_mock_response(url=download_url)
         input_source2 = project1.add_input_source(download_url=download_url)
         pipeline.download_missing_inputs()
         self.assertIn("Fetching input from https://download.url/file.zip", run.log)
@@ -559,13 +558,15 @@ class PipelinesIntegrationTest(TestCase):
         return data
 
     def purl_fields_with_fake_uuid(self, value, key):
+        purl_fields = ["purl", "for_packages", "package_uid"]
         purl_name = "fixed-name-for-testing-5642512d1758"
         purl_namespace = "fixed-namespace-for-testing-5642512d1758"
+
         if key == "name":
             return purl_name
         elif key == "namespace":
             return purl_namespace
-        elif key == "purl" or key == "for_packages":
+        elif key in purl_fields:
             purl_old = PackageURL.from_string(value)
             if purl_old.type != "local-files":
                 return purl_with_fake_uuid(value)
@@ -578,7 +579,7 @@ class PipelinesIntegrationTest(TestCase):
                 qualifiers=purl_old.qualifiers,
                 subpath=purl_old.subpath,
             )
-            return purl.to_string()
+            return purl_with_fake_uuid(purl.to_string())
 
     def _normalize_package_uids(self, data):
         """
@@ -611,7 +612,11 @@ class PipelinesIntegrationTest(TestCase):
                             for package_uid in value
                         ]
                     )
-                if is_local_files and key in ("name", "namespace", "purl") and value:
+                if (
+                    is_local_files
+                    and key in ("name", "namespace", "purl", "package_uid")
+                    and value
+                ):
                     value = self.purl_fields_with_fake_uuid(value, key)
                 normalized_data[key] = value
             return normalized_data
@@ -634,6 +639,37 @@ class PipelinesIntegrationTest(TestCase):
                 mappings_by_uid[uid] = mapping
             data["dependencies"] = list(dict(sorted(mappings_by_uid.items())).values())
         return data
+
+    def test_package_uids_normalized_in_pipeline_integration_tests(self):
+        self.maxDiff = 1000
+        data = {
+            "type": "local-files",
+            "package_uid": (
+                "pkg:local-files/analysis-438ebaf4/42440f35-1091-4c03-8c96-a0ed3d3caf23"
+                "?uuid=42440f35-1091-4c03-8c96-a0ed3d3caf24"
+            ),
+            "for_packages": [
+                (
+                    "pkg:local-files/analysis-438ebaf4/42440f35-1091-4c03-8c96-a0ed3d3caf23"
+                    "?uuid=42440f35-1091-4c03-8c96-a0ed3d3caf24"
+                )
+            ],
+        }
+        normalized_data = self._normalize_package_uids(data=data)
+        expected_data = {
+            "type": "local-files",
+            "package_uid": (
+                "pkg:local-files/fixed-namespace-for-testing-5642512d1758/"
+                "fixed-name-for-testing-5642512d1758?uuid=fixed-uid-done-for-testing-5642512d1758"
+            ),
+            "for_packages": [
+                (
+                    "pkg:local-files/fixed-namespace-for-testing-5642512d1758/"
+                    "fixed-name-for-testing-5642512d1758?uuid=fixed-uid-done-for-testing-5642512d1758"
+                )
+            ],
+        }
+        self.assertEqual(normalized_data, expected_data)
 
     def assertPipelineResultEqual(
         self, expected_file, result_file, sort_dependencies=False, regen=FIXTURES_REGEN
@@ -1515,6 +1551,31 @@ class PipelinesIntegrationTest(TestCase):
 
         result_file = output.to_json(project1)
         expected_file = self.data / "d2d" / "flume-ng-node-d2d.json"
+        self.assertPipelineResultEqual(expected_file, result_file)
+
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
+    def test_scanpipe_deploy_to_develop_pipeline_integration_elfs(self):
+        pipeline_name = "map_deploy_to_develop"
+        project1 = make_project(name="Analysis")
+        selected_groups = ["Elf"]
+
+        elf_location = self.data / "d2d-elfs"
+        project1.copy_input_from(elf_location / "from-brotli-d2d.zip")
+        project1.copy_input_from(elf_location / "to-brotli-d2d.zip")
+
+        run = project1.add_pipeline(
+            pipeline_name=pipeline_name, selected_groups=selected_groups
+        )
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(17, project1.codebaseresources.count())
+        self.assertEqual(7, project1.codebaserelations.count())
+
+        result_file = output.to_json(project1)
+        expected_file = self.data / "d2d-elfs" / "brotli-elf-d2d.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_deploy_to_develop_pipeline_extract_input_files_errors(self):

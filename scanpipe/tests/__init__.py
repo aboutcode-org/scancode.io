@@ -69,8 +69,23 @@ def filter_warnings(action, category, module=None):
 
 
 def make_project(name=None, **data):
+    """
+    Create and return a Project instance.
+    Labels can be provided using the labels=["labels1", "labels2"] argument.
+    """
     name = name or str(uuid.uuid4())[:8]
-    return Project.objects.create(name=name, **data)
+    pipelines = data.pop("pipelines", [])
+    labels = data.pop("labels", [])
+
+    project = Project.objects.create(name=name, **data)
+
+    for pipeline in pipelines:
+        project.add_pipeline(pipeline)
+
+    if labels:
+        project.labels.add(*labels)
+
+    return project
 
 
 def make_resource_file(project, path, **data):
@@ -119,6 +134,16 @@ def make_message(project, **data):
         project=project,
         **data,
     )
+
+
+def make_mock_response(url, content=b"\x00", status_code=200, headers=None):
+    """Return a mock HTTP response object for testing purposes."""
+    response = mock.Mock()
+    response.url = url
+    response.content = content
+    response.status_code = status_code
+    response.headers = headers or {}
+    return response
 
 
 resource_data1 = {

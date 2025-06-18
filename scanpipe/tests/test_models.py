@@ -78,6 +78,7 @@ from scanpipe.tests import dependency_data2
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import make_dependency
 from scanpipe.tests import make_message
+from scanpipe.tests import make_mock_response
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_directory
@@ -509,6 +510,16 @@ class ScanPipeModelsTest(TestCase):
         url_with_fragment = "https://download.url#tag_value"
         input_source = self.project1.add_input_source(download_url=url_with_fragment)
         self.assertEqual("tag_value", input_source.tag)
+
+    def test_scanpipe_project_model_add_input_source_tag_from_fragment(self):
+        download_url = (
+            "https://download.url/amqp-2.6.1-py2.py3-none-any.whl"
+            "#sha256=aa7f313fb887c91f15474c1229907a04dac0b8135822d6603437803424c0aa59"
+        )
+        source = self.project1.add_input_source(download_url=download_url)
+        self.assertEqual(
+            "sha256=aa7f313fb887c91f15474c1229907a04dac0b813582", source.tag
+        )
 
     def test_scanpipe_project_model_add_downloads(self):
         file_location = self.data / "aboutcode" / "notice.NOTICE"
@@ -1463,9 +1474,7 @@ class ScanPipeModelsTest(TestCase):
     @mock.patch("requests.sessions.Session.get")
     def test_scanpipe_input_source_model_fetch(self, mock_get):
         download_url = "https://download.url/file.zip"
-        mock_get.return_value = mock.Mock(
-            content=b"\x00", headers={}, status_code=200, url=download_url
-        )
+        mock_get.return_value = make_mock_response(url=download_url)
 
         input_source = self.project1.add_input_source(download_url=download_url)
         destination = input_source.fetch()
@@ -2044,7 +2053,7 @@ class ScanPipeModelsTest(TestCase):
             path="asgiref-3.3.0.whl-extract/asgiref/compatibility.py"
         )
         expected_parent_path = "asgiref-3.3.0.whl-extract/asgiref"
-        self.assertEqual(expected_parent_path, asgiref_resource.parent_path())
+        self.assertEqual(expected_parent_path, asgiref_resource.parent_directory())
         self.assertTrue(asgiref_resource.has_parent())
         expected_parent = self.project_asgiref.codebaseresources.get(
             path="asgiref-3.3.0.whl-extract/asgiref"

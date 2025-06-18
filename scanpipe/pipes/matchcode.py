@@ -52,7 +52,7 @@ session = requests.Session()
 MATCHCODEIO_API_URL = None
 MATCHCODEIO_URL = settings.MATCHCODEIO_URL
 if MATCHCODEIO_URL:
-    MATCHCODEIO_API_URL = f"{MATCHCODEIO_URL.rstrip('/')}/api/"
+    MATCHCODEIO_API_URL = f"{MATCHCODEIO_URL}/api/"
 
 # Basic Authentication
 MATCHCODEIO_USER = settings.MATCHCODEIO_USER
@@ -314,6 +314,10 @@ def send_project_json_to_matchcode(
             timeout=timeout,
             files=files,
         )
+
+    if not response:
+        raise MatchCodeIOException("Invalid response from MatchCode.io")
+
     match_url = response["url"]
     run_url = response["runs"][0]["url"]
     return match_url, run_url

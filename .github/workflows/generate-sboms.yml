@@ -32,7 +32,7 @@ jobs:
           find scancodeio/ -type f -name "*.ABOUT" -exec cp {} "${{ env.INPUTS_PATH }}/about-files/" \;
 
       - name: Resolve the dependencies using ScanCode-action
-        uses: nexB/scancode-action@main
+        uses: aboutcode-org/scancode-action@main
         with:
           pipelines: "resolve_dependencies:DynamicResolver"
           inputs-path: ${{ env.INPUTS_PATH }}

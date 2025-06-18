@@ -1209,10 +1209,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if not download_url and not filename:
             raise Exception("Provide at least a value for download_url or filename.")
 
-        # Add tag can be provided using the "#<fragment>" part of the URL
         if download_url:
             parsed_url = urlparse(download_url)
-            tag = parsed_url.fragment or tag
+            # Add tag can be provided using the "#<fragment>" part of the URL
+            if not tag and parsed_url.fragment:
+                tag = parsed_url.fragment[:50]
 
         return InputSource.objects.create(
             project=self,
@@ -2508,6 +2509,16 @@ class ComplianceAlertMixin(models.Model):
         ERROR = "error"
         MISSING = "missing"
 
+    # Map each compliance status to a severity level.
+    # Higher numbers indicate more severe compliance issues.
+    # This allows consistent comparison and sorting of compliance states.
+    COMPLIANCE_SEVERITY_MAP = {
+        Compliance.OK: 0,
+        Compliance.MISSING: 1,
+        Compliance.WARNING: 2,
+        Compliance.ERROR: 3,
+    }
+
     compliance_alert = models.CharField(
         max_length=10,
         blank=True,
@@ -2541,7 +2552,7 @@ class ComplianceAlertMixin(models.Model):
         Injects policies, if the feature is enabled, when the
         ``license_expression_field`` field value has changed.
 
-        `codebase` is not used in this context but required for compatibility
+        ``codebase`` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
         if self.policies_enabled:
@@ -2563,7 +2574,10 @@ class ComplianceAlertMixin(models.Model):
         return self.project.policies_enabled
 
     def compute_compliance_alert(self):
-        """Compute and return the compliance_alert value from the licenses policies."""
+        """
+        Compute and return the compliance_alert value from the license policies.
+        Chooses the most severe compliance_alert found among licenses.
+        """
         license_expression = getattr(self, self.license_expression_field, "")
         if not license_expression:
             return ""
@@ -2583,17 +2597,12 @@ class ComplianceAlertMixin(models.Model):
             else:
                 alerts.append(self.Compliance.MISSING)
 
-        compliance_ordered_by_severity = [
-            self.Compliance.ERROR,
-            self.Compliance.WARNING,
-            self.Compliance.MISSING,
-        ]
+        if not alerts:
+            return self.Compliance.OK
 
-        for compliance_severity in compliance_ordered_by_severity:
-            if compliance_severity in alerts:
-                return compliance_severity
-
-        return self.Compliance.OK
+        # Return the most severe alert based on the defined severity
+        severity = self.COMPLIANCE_SEVERITY_MAP.get
+        return max(alerts, key=severity)
 
 
 class FileClassifierFieldsModelMixin(models.Model):
@@ -2840,7 +2849,7 @@ class CodebaseResource(
 
         return part_and_subpath
 
-    def parent_path(self):
+    def parent_directory(self):
         """Return the parent path for this CodebaseResource or None."""
         return parent_directory(self.path, with_trail=False)
 
@@ -2849,7 +2858,7 @@ class CodebaseResource(
         Return True if this CodebaseResource has a parent CodebaseResource or
         False otherwise.
         """
-        parent_path = self.parent_path()
+        parent_path = self.parent_directory()
         if not parent_path:
             return False
         if self.project.codebaseresources.filter(path=parent_path).exists():
@@ -2864,7 +2873,7 @@ class CodebaseResource(
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
-        parent_path = self.parent_path()
+        parent_path = self.parent_directory()
         return parent_path and self.project.codebaseresources.get(path=parent_path)
 
     def siblings(self, codebase=None):
