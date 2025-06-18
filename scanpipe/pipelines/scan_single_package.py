@@ -21,6 +21,7 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
+import logging
 
 from django.core.serializers.json import DjangoJSONEncoder
 
@@ -29,8 +30,11 @@ from commoncode.hash import multi_checksums
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import input
 from scanpipe.pipes import scancode
+from scanpipe.pipes.fetch import store_package_archive
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import is_archive
+
+logger = logging.getLogger(__name__)
 
 
 class ScanSinglePackage(Pipeline):
@@ -47,6 +51,7 @@ class ScanSinglePackage(Pipeline):
     def steps(cls):
         return (
             cls.get_package_input,
+            cls.store_package,
             cls.collect_input_information,
             cls.extract_input_to_codebase_directory,
             cls.extract_archives,
@@ -78,6 +83,34 @@ class ScanSinglePackage(Pipeline):
             raise Exception("Only 1 input file supported")
 
         self.input_path = inputs[0]
+
+    def store_package(self):
+        """
+        Store the package archive and create a DownloadedPackage entry if applicable.
+        Uses the input_path from get_package_input and the optional URL for
+        downloaded packages.
+        """
+        if not self.project.use_local_storage:
+           self.log(f"Local storage is disabled for project: {self.project.name}."
+                     "Skipping package storage.")
+           return []
+        logger.info(
+            f"Starting store_package for project: {self.project},"
+            "input: {self.input_path}"
+        )
+
+        file_path = self.input_path
+        if not file_path:
+            logger.error("No input file path available for storage")
+            return None
+
+        url = None
+
+        logger.info(f"Calling store_package_archive with URL: {url}, File: {file_path}")
+        result = store_package_archive(self.project, url=url, file_path=file_path)
+
+        logger.info(f"store_package completed, result: {result}")
+        return result
 
     def collect_input_information(self):
         """Collect and store information about the project input."""
