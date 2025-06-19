@@ -34,6 +34,7 @@ v34.12.0 (unreleased)
   https://github.com/aboutcode-org/scancode.io/issues/1697
 
 - Add "Package Compliance Alert" chart in the Policies section.
+  https://github.com/aboutcode-org/scancode.io/pull/1699
 
 v34.11.0 (2025-05-02)
 ---------------------
