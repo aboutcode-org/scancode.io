@@ -4,6 +4,9 @@ Changelog
 v34.12.0 (unreleased)
 ---------------------
 
+- Add support for Python 3.13
+  https://github.com/aboutcode-org/scancode.io/pull/1469/files
+
 - Display matched snippets details in "Resource viewer", including the package,
   resource, and similarity values.
   https://github.com/aboutcode-org/scancode.io/issues/1688
