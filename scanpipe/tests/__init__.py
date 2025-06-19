@@ -22,7 +22,9 @@
 
 import os
 import uuid
+import warnings
 from datetime import datetime
+from functools import wraps
 from unittest import mock
 
 from django.apps import apps
@@ -46,6 +48,24 @@ scanpipe_app.register_pipeline("raise_exception", RaiseException)
 
 FIXTURES_REGEN = os.environ.get("SCANCODEIO_TEST_FIXTURES_REGEN", False)
 mocked_now = mock.Mock(now=lambda: datetime(2010, 10, 10, 10, 10, 10))
+
+
+def filter_warnings(action, category, module=None):
+    """Apply a warning filter to a function."""
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            original_filters = warnings.filters[:]
+            try:
+                warnings.filterwarnings(action, category=category, module=module)
+                return func(*args, **kwargs)
+            finally:
+                warnings.filters = original_filters
+
+        return wrapper
+
+    return decorator
 
 
 def make_string(length):
