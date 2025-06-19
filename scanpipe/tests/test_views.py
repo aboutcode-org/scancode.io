@@ -500,19 +500,28 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_details_charts_compliance_alert(self):
         url = reverse("project_charts", args=[self.project1.slug])
         resource = make_resource_file(self.project1)
-        expected = 'id="compliance_alert_chart"'
+        expected_resource_id = 'id="compliance_alert_chart"'
+        expected_package_id = 'id="package_compliance_alert_chart"'
 
         response = self.client.get(url)
-        self.assertNotContains(response, expected)
+        self.assertNotContains(response, expected_resource_id)
+        self.assertNotContains(response, expected_package_id)
 
         # Do not trigger the save() logic.
         CodebaseResource.objects.filter(id=resource.id).update(
             compliance_alert=CodebaseResource.Compliance.ERROR
         )
+        make_package(
+            self.project1,
+            package_url="pkg:generic/name@1.0",
+            compliance_alert=DiscoveredPackage.Compliance.WARNING,
+        )
 
         response = self.client.get(url)
-        self.assertContains(response, expected)
+        self.assertContains(response, expected_resource_id)
+        self.assertContains(response, expected_package_id)
         self.assertContains(response, '{"error": 1}')
+        self.assertContains(response, '{"warning": 1}')
 
     def test_scanpipe_views_project_details_charts_copyrights(self):
         url = reverse("project_charts", args=[self.project1.slug])
@@ -617,7 +626,7 @@ class ScanPipeViewsTest(TestCase):
         make_package(
             self.project1,
             package_url="pkg:generic/name@1.0",
-            compliance_alert=CodebaseResource.Compliance.ERROR,
+            compliance_alert=DiscoveredPackage.Compliance.ERROR,
         )
 
         expected_url = reverse("project_compliance_panel", args=[self.project1.slug])
@@ -985,7 +994,7 @@ class ScanPipeViewsTest(TestCase):
         make_package(
             self.project1,
             package_url="pkg:generic/name@1.0",
-            compliance_alert=CodebaseResource.Compliance.ERROR,
+            compliance_alert=DiscoveredPackage.Compliance.ERROR,
         )
 
         mock_policies_enabled.return_value = False
