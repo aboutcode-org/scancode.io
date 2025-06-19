@@ -4,7 +4,8 @@ Changelog
 v34.12.0 (unreleased)
 ---------------------
 
-- Add support for Python 3.13
+- Add support for Python 3.13.
+  Upgrade the base image in Dockerfile to ``python:3.13-slim``.
   https://github.com/aboutcode-org/scancode.io/pull/1469/files
 
 - Display matched snippets details in "Resource viewer", including the package,
