@@ -33,6 +33,8 @@ v34.12.0 (unreleased)
 - Add "(No value detected)" for Copyright and Holder charts.
   https://github.com/aboutcode-org/scancode.io/issues/1697
 
+- Add "Package Compliance Alert" chart in the Policies section.
+
 v34.11.0 (2025-05-02)
 ---------------------
 
