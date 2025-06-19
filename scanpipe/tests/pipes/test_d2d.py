@@ -193,7 +193,9 @@ class ScanPipeD2DPipesTest(TestCase):
             self.assertEqual(package, resource.discovered_packages.get())
 
     @mock.patch("scanpipe.pipes.purldb.request_get")
-    def test_scanpipe_pipes_d2d_match_purldb_directories(self, mock_request_get):
+    def test_scanpipe_pipes_d2d_match_purldb_directories(
+        self, mock_request_get: object
+    ) -> object:
         to_1 = make_resource_directory(
             self.project1,
             "to/package.jar-extract",

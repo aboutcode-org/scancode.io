@@ -491,11 +491,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertNotContains(response, 'id="dependency-charts"')
         self.assertNotContains(response, 'id="resource-charts-charts"')
 
-        CodebaseResource.objects.create(
-            project=self.project1,
-            programming_language="Python",
-            type=CodebaseResource.Type.FILE,
-        )
+        make_resource_file(self.project1, path="", programming_language="Python")
 
         with self.assertNumQueries(12):
             response = self.client.get(url)
@@ -503,18 +499,13 @@ class ScanPipeViewsTest(TestCase):
 
     def test_scanpipe_views_project_details_charts_compliance_alert(self):
         url = reverse("project_charts", args=[self.project1.slug])
+        resource = make_resource_file(self.project1)
         expected = 'id="compliance_alert_chart"'
 
         response = self.client.get(url)
         self.assertNotContains(response, expected)
 
-        response = self.client.get(url)
-        self.assertNotContains(response, expected)
-
-        resource = CodebaseResource.objects.create(
-            project=self.project1,
-            type=CodebaseResource.Type.FILE,
-        )
+        # Do not trigger the save() logic.
         CodebaseResource.objects.filter(id=resource.id).update(
             compliance_alert=CodebaseResource.Compliance.ERROR
         )
@@ -522,6 +513,27 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertContains(response, expected)
         self.assertContains(response, '{"error": 1}')
+
+    def test_scanpipe_views_project_details_charts_copyrights(self):
+        url = reverse("project_charts", args=[self.project1.slug])
+
+        make_resource_file(self.project1)
+        copyrights = [
+            {
+                "copyright": "Copyright (c) nexB Inc. and others",
+                "start_line": 2,
+                "end_line": 2,
+            }
+        ]
+        make_resource_file(self.project1, copyrights=copyrights)
+
+        response = self.client.get(url)
+        expected = (
+            '<script id="file_copyrights" type="application/json">'
+            '{"Copyright (c) nexB Inc. and others": 1, "(No value detected)": 1}'
+            "</script>"
+        )
+        self.assertContains(response, expected)
 
     def test_scanpipe_views_project_details_scan_summary_panels(self):
         url = self.project1.get_absolute_url()
@@ -1089,18 +1101,8 @@ class ScanPipeViewsTest(TestCase):
             self.data / "codebase" / "b.txt",
         ]
         copy_inputs(resource_files, self.project1.codebase_path)
-        resource1 = CodebaseResource.objects.create(
-            project=self.project1,
-            path="a.txt",
-            type=CodebaseResource.Type.FILE,
-            is_text=True,
-        )
-        resource2 = CodebaseResource.objects.create(
-            project=self.project1,
-            path="b.txt",
-            type=CodebaseResource.Type.FILE,
-            is_text=True,
-        )
+        resource1 = make_resource_file(self.project1, path="a.txt")
+        resource2 = make_resource_file(self.project1, path="b.txt")
         data = {
             "from_path": resource1.path,
             "to_path": resource2.path,
