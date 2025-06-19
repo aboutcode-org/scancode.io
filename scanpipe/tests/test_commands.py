@@ -48,6 +48,7 @@ from scanpipe.models import Run
 from scanpipe.models import WebhookSubscription
 from scanpipe.pipes import flag
 from scanpipe.pipes import purldb
+from scanpipe.tests import filter_warnings
 from scanpipe.tests import make_mock_response
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
@@ -391,6 +392,7 @@ class ScanPipeManagementCommandTest(TestCase):
             expected, sorted([path.name for path in project.codebase_path.iterdir()])
         )
 
+    @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_management_command_add_pipeline(self):
         out = StringIO()
 
@@ -1284,6 +1286,7 @@ class ScanPipeManagementCommandMixinTest(TestCase):
         )
         self.assertEqual(notes, project.notes)
 
+    @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_management_command_mixin_create_project_pipelines(self):
         expected = "non-existing is not a valid pipeline"
         with self.assertRaisesMessage(CommandError, expected):

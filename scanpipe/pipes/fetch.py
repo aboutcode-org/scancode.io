@@ -20,7 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-import cgi
+
 import hashlib
 import json
 import logging
@@ -131,7 +131,7 @@ def fetch_http(uri, to=None):
         raise requests.RequestException
 
     content_disposition = response.headers.get("content-disposition", "")
-    _, params = cgi.parse_header(content_disposition)
+    _, params = parse_header_parameters(content_disposition)
     filename = params.get("filename")
     if not filename:
         # Using `response.url` in place of provided `Scan.uri` since the former
