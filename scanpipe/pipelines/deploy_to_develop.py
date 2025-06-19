@@ -233,7 +233,10 @@ class DeployToDevelop(Pipeline):
 
     @optional_step("Python")
     def map_python(self):
-        """Map binaries from Python packages to their sources using dwarf paths and symbols."""
+        """
+        Map binaries from Python packages to their sources using dwarf paths and
+        symbols.
+        """
         d2d.map_python_pyx_to_binaries(project=self.project, logger=self.log)
 
     def match_directories_to_purldb(self):

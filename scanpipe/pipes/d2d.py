@@ -47,8 +47,8 @@ from extractcode import EXTRACT_SUFFIX
 from go_inspector.plugin import collect_and_parse_symbols
 from packagedcode.npm import NpmPackageJsonHandler
 from rust_inspector.binary import collect_and_parse_rust_symbols
-from summarycode.classify import LEGAL_STARTS_ENDS
 from source_inspector.symbols_tree_sitter import get_tree
+from summarycode.classify import LEGAL_STARTS_ENDS
 
 from aboutcode.pipeline import LoopProgress
 from scanpipe import pipes
@@ -1946,7 +1946,9 @@ def map_elfs_binaries_with_symbols(project, logger=None):
     )
 
     # Collect source symbols from elf related source files
-    elf_from_resources = from_resources.filter(extension__in=[".c", ".cpp", ".h", ".pyx", ".pxd"])
+    elf_from_resources = from_resources.filter(
+        extension__in=[".c", ".cpp", ".h", ".pyx", ".pxd"]
+    )
 
     map_binaries_with_symbols(
         project=project,
@@ -2151,7 +2153,11 @@ def _map_javascript_symbols(to_resource, javascript_from_resources, logger):
 
 def map_python_pyx_to_binaries(project, logger=None):
     """Map ELF binaries to their sources in ``project``."""
-    from_resources = project.codebaseresources.files().from_codebase().filter(extension__endswith=".pyx")
+    from_resources = (
+        project.codebaseresources.files()
+        .from_codebase()
+        .filter(extension__endswith=".pyx")
+    )
     to_resources = (
         project.codebaseresources.files().to_codebase().has_no_relation().elfs()
     )
@@ -2165,14 +2171,23 @@ def map_python_pyx_to_binaries(project, logger=None):
             logger(f"Error parsing binary symbols at: {resource.location_path!r} {e!r}")
 
     for resource in from_resources:
+        # open Cython source file, create AST, parse it for function definitions
+        # and save them in a list
         tree, _ = get_tree(resource.location)
-        function_definitions = [node for node in tree.root_node.children if node.type == "function_definition"]
+        function_definitions = [
+            node
+            for node in tree.root_node.children
+            if node.type == "function_definition"
+        ]
         identifiers = []
         for node in function_definitions:
             for child in node.children:
                 if child.type == "identifier":
                     identifiers.append(child.text.decode())
 
+        # Find matching to/ resource by checking to see which to/ resource's
+        # extra_data field contains function definitions found from Cython
+        # source files
         identifiers_qs = Q()
         for identifier in identifiers:
             identifiers_qs |= Q(extra_data__icontains=identifier)
