@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-import cgi
 import json
 import logging
 import os
@@ -33,12 +32,15 @@ from urllib.parse import unquote
 from urllib.parse import urlparse
 
 from django.conf import settings
+from django.utils.http import parse_header_parameters
 
 import git
 import requests
 from commoncode import command
 from commoncode.hash import multi_checksums
 from commoncode.text import python_safe_name
+from packageurl import PackageURL
+from packageurl.contrib import purl2url
 from plugincode.location_provider import get_location
 from requests import auth as request_auth
 
@@ -124,7 +126,7 @@ def fetch_http(uri, to=None):
         raise requests.RequestException
 
     content_disposition = response.headers.get("content-disposition", "")
-    _, params = cgi.parse_header(content_disposition)
+    _, params = parse_header_parameters(content_disposition)
     filename = params.get("filename")
     if not filename:
         # Using `response.url` in place of provided `Scan.uri` since the former
@@ -356,6 +358,17 @@ def fetch_git_repo(url, to=None):
     )
 
 
+def fetch_package_url(url):
+    # Ensure the provided Package URL is valid, or raise a ValueError.
+    PackageURL.from_string(url)
+
+    # Resolve a Download URL using purl2url.
+    if download_url := purl2url.get_download_url(url):
+        return fetch_http(download_url)
+
+    raise ValueError(f"Could not resolve a download URL for {url}.")
+
+
 SCHEME_TO_FETCHER_MAPPING = {
     "http": fetch_http,
     "https": fetch_http,
@@ -370,6 +383,9 @@ def get_fetcher(url):
 
     if url.rstrip("/").endswith(".git"):
         return fetch_git_repo
+
+    if url.startswith("pkg:"):
+        return fetch_package_url
 
     # Not using `urlparse(url).scheme` for the scheme as it converts to lower case.
     scheme = url.split("://")[0]

@@ -53,6 +53,7 @@ from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import FIXTURES_REGEN
+from scanpipe.tests import make_mock_response
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
 from scanpipe.tests import package_data1
@@ -226,9 +227,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual("", run.log)
 
         download_url = "https://download.url/file.zip"
-        mock_get.return_value = mock.Mock(
-            content=b"\x00", headers={}, status_code=200, url=download_url
-        )
+        mock_get.return_value = make_mock_response(url=download_url)
         input_source2 = project1.add_input_source(download_url=download_url)
         pipeline.download_missing_inputs()
         self.assertIn("Fetching input from https://download.url/file.zip", run.log)
@@ -1554,6 +1553,7 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data / "d2d" / "flume-ng-node-d2d.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_deploy_to_develop_pipeline_integration_elfs(self):
         pipeline_name = "map_deploy_to_develop"
         project1 = make_project(name="Analysis")

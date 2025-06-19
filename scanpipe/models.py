@@ -2849,7 +2849,7 @@ class CodebaseResource(
 
         return part_and_subpath
 
-    def parent_path(self):
+    def parent_directory(self):
         """Return the parent path for this CodebaseResource or None."""
         return parent_directory(self.path, with_trail=False)
 
@@ -2858,7 +2858,7 @@ class CodebaseResource(
         Return True if this CodebaseResource has a parent CodebaseResource or
         False otherwise.
         """
-        parent_path = self.parent_path()
+        parent_path = self.parent_directory()
         if not parent_path:
             return False
         if self.project.codebaseresources.filter(path=parent_path).exists():
@@ -2873,7 +2873,7 @@ class CodebaseResource(
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
-        parent_path = self.parent_path()
+        parent_path = self.parent_directory()
         return parent_path and self.project.codebaseresources.get(path=parent_path)
 
     def siblings(self, codebase=None):

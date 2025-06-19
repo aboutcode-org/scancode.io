@@ -549,6 +549,14 @@ Optional arguments:
 
     scanpipe flush-projects --retain-days 7
 
+- ``--dry-run`` Do not delete any projects; just print the ones that would be flushed.
+
+- ``--label LABELS`` Filter projects by the provided label.
+  Multiple labels can be provided by using this argument multiple times.
+
+- ``--pipeline PIPELINES`` Filter projects by the provided pipeline name.
+  Multiple pipeline name can be provided by using this argument multiple times.
+
 - ``--no-input`` Does not prompt the user for input of any kind.
 
 
