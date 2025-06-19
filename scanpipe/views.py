@@ -1029,10 +1029,9 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
             for field_name in fields:
                 if field_name in ["holders", "copyrights"]:
                     field_values = (
-                        data.get(field_name[:-1])
+                        data.get(field_name[:-1]) if isinstance(data, dict) else ""
                         for entry in qs_values
-                        for data in entry.get(field_name, [])
-                        if isinstance(data, dict)
+                        for data in (entry.get(field_name, []) or [""])
                     )
                 else:
                     field_values = (entry[field_name] for entry in qs_values)

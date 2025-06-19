@@ -26,6 +26,9 @@ v34.12.0 (unreleased)
   Refine the CSS for the Resource viewer.
   https://github.com/aboutcode-org/scancode.io/pull/1692
 
+- Add "(No value detected)" for Copyright and Holder charts.
+  https://github.com/aboutcode-org/scancode.io/issues/1697
+
 v34.11.0 (2025-05-02)
 ---------------------
 
@@ -182,6 +185,13 @@ v34.9.3 (2024-12-31)
   * Rename the RQ_QUEUES sub-settings to SCANCODEIO_RQ_REDIS_*
   * Add SCANCODEIO_RQ_REDIS_SSL setting to enable SSL.
   https://github.com/aboutcode-org/scancode.io/issues/1465
+
+- Add support to map binaries to source files using symbols
+  for rust binaries and source files. This adds also using
+  ``rust-inspector`` to extract symbols from rust binaries.
+  This is a new optional ``Rust`` step in the
+  ``map_deploy_to_develop`` pipeline.
+  https://github.com/aboutcode-org/scancode.io/issues/1435
 
 v34.9.2 (2024-12-10)
 --------------------
