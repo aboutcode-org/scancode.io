@@ -48,12 +48,16 @@ FIXTURES_REGEN = os.environ.get("SCANCODEIO_TEST_FIXTURES_REGEN", False)
 mocked_now = mock.Mock(now=lambda: datetime(2010, 10, 10, 10, 10, 10))
 
 
+def make_string(length):
+    return str(uuid.uuid4())[:length]
+
+
 def make_project(name=None, **data):
     """
     Create and return a Project instance.
     Labels can be provided using the labels=["labels1", "labels2"] argument.
     """
-    name = name or str(uuid.uuid4())[:8]
+    name = name or make_string(8)
     pipelines = data.pop("pipelines", [])
     labels = data.pop("labels", [])
 
@@ -68,26 +72,35 @@ def make_project(name=None, **data):
     return project
 
 
-def make_resource_file(project, path, **data):
+def make_resource(project, path, **data):
     return CodebaseResource.objects.create(
         project=project,
         path=path,
         name=path.split("/")[-1],
-        extension="." + path.split(".")[-1],
-        type=CodebaseResource.Type.FILE,
-        is_text=True,
         tag=path.split("/")[0],
         **data,
     )
 
 
-def make_resource_directory(project, path, **data):
-    return CodebaseResource.objects.create(
+def make_resource_file(project, path=None, **data):
+    if path is None:  # Empty string is allowed as path
+        path = make_string(5)
+
+    return make_resource(
         project=project,
         path=path,
-        name=path.split("/")[-1],
+        extension="." + path.split(".")[-1],
+        type=CodebaseResource.Type.FILE,
+        is_text=True,
+        **data,
+    )
+
+
+def make_resource_directory(project, path, **data):
+    return make_resource(
+        project=project,
+        path=path,
         type=CodebaseResource.Type.DIRECTORY,
-        tag=path.split("/")[0],
         **data,
     )
 
@@ -105,7 +118,7 @@ def make_dependency(project, **data):
 
 def make_message(project, **data):
     if "model" not in data:
-        data["model"] = str(uuid.uuid4())[:8]
+        data["model"] = make_string(8)
 
     if "severity" not in data:
         data["severity"] = ProjectMessage.Severity.ERROR
