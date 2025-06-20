@@ -77,6 +77,8 @@ class DeployToDevelop(Pipeline):
             cls.map_javascript,
             cls.map_javascript_symbols,
             cls.map_elf,
+            cls.map_macho,
+            cls.map_winpe,
             cls.map_go,
             cls.map_rust,
             cls.match_directories_to_purldb,
@@ -245,6 +247,16 @@ class DeployToDevelop(Pipeline):
         """Map ELF binaries to their sources using dwarf paths and symbols."""
         d2d.map_elfs_with_dwarf_paths(project=self.project, logger=self.log)
         d2d.map_elfs_binaries_with_symbols(project=self.project, logger=self.log)
+
+    @optional_step("MacOS")
+    def map_macho(self):
+        """Map mach0 binaries to their sources using symbols."""
+        d2d.map_macho_binaries_with_symbols(project=self.project, logger=self.log)
+
+    @optional_step("Windows")
+    def map_winpe(self):
+        """Map winpe binaries to their sources using symbols."""
+        d2d.map_winpe_binaries_with_symbols(project=self.project, logger=self.log)
 
     @optional_step("Go")
     def map_go(self):
