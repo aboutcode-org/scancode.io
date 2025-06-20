@@ -25,12 +25,19 @@ from django.core.exceptions import ValidationError
 import saneyaml
 
 
-def load_policies_yaml(policies_yaml):
-    """Load provided ``policies_yaml``."""
+def load_yaml_content(yaml_content):
+    """Load and parse YAML content into a Python dictionary."""
     try:
-        return saneyaml.load(policies_yaml)
+        return saneyaml.load(yaml_content)
     except saneyaml.YAMLError as e:
         raise ValidationError(f"Policies file format error: {e}")
+
+
+def load_policies_yaml(policies_yaml):
+    """Load provided ``policies_yaml``."""
+    data = load_yaml_content(policies_yaml)
+    validate_policies(data)
+    return data
 
 
 def load_policies_file(policies_file, validate=True):

@@ -94,7 +94,7 @@ from taggit.models import TaggedItemBase
 
 import scancodeio
 from scanpipe import humanize_time
-from scanpipe import policies
+from scanpipe import license_policies
 from scanpipe import tasks
 
 logger = logging.getLogger(__name__)
@@ -1508,12 +1508,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if policies_from_settings := self.get_env("policies"):
             policies_dict = policies_from_settings
             if isinstance(policies_from_settings, str):
-                policies_dict = policies.load_policies_yaml(policies_from_settings)
-            return policies.make_license_policy_index(policies_dict)
+                policies_dict = license_policies.load_policies_yaml(
+                    policies_from_settings
+                )
+            return license_policies.make_license_policy_index(policies_dict)
 
         elif policies_file := self.get_input_policies_file():
-            policies_dict = policies.load_policies_file(policies_file)
-            return policies.make_license_policy_index(policies_dict)
+            policies_dict = license_policies.load_policies_file(policies_file)
+            return license_policies.make_license_policy_index(policies_dict)
 
         else:
             return scanpipe_app.license_policies_index
