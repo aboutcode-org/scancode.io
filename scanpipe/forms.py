@@ -29,13 +29,13 @@ from packageurl import PackageURL
 from taggit.forms import TagField
 from taggit.forms import TagWidget
 
+from scanpipe.license_policies import load_policies_yaml
+from scanpipe.license_policies import validate_policies
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.models import WebhookSubscription
 from scanpipe.pipelines import convert_markdown_to_html
 from scanpipe.pipes import fetch
-from scanpipe.policies import load_policies_yaml
-from scanpipe.policies import validate_policies
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
