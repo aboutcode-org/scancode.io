@@ -229,7 +229,7 @@ class AbstractTaskFieldsModel(models.Model):
         Note that projects with queued or running pipeline runs cannot be deleted.
         See the `_raise_if_run_in_progress` method.
         The following if statements should not be triggered unless the `.delete()`
-        method is directly call from a instance of this class.
+        method is directly call from an instance of this class.
         """
         with suppress(redis.exceptions.ConnectionError, AttributeError):
             if self.status == self.Status.RUNNING:

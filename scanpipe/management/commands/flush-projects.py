@@ -112,7 +112,6 @@ class Command(BaseCommand):
             self.stdout.write(msg)
             self.stdout.write("\n".join([f"- {project.name}" for project in projects]))
             return
-            # sys.exit(0)
 
         if options["interactive"]:
             confirm = input(

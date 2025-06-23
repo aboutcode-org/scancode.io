@@ -1,8 +1,8 @@
 Changelog
 =========
 
-v34.12.0 (unreleased)
----------------------
+v35.0.0 (2025-06-23)
+--------------------
 
 - Add support for Python 3.13.
   Upgrade the base image in Dockerfile to ``python:3.13-slim``.
