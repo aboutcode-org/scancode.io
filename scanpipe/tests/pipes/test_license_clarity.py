@@ -20,17 +20,18 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import tempfile
 from pathlib import Path
 
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
 from scanpipe.pipes.license_clarity import ClarityThresholdsPolicy
-from scanpipe.pipes.license_clarity import load_clarity_thresholds_from_yaml
 from scanpipe.pipes.license_clarity import load_clarity_thresholds_from_file
+from scanpipe.pipes.license_clarity import load_clarity_thresholds_from_yaml
+
 
 class ClarityThresholdsPolicyTest(TestCase):
+    data = Path(__file__).parent.parent / "data"
     """Test ClarityThresholdsPolicy class functionality."""
 
     def test_valid_thresholds_initialization(self):
@@ -149,21 +150,12 @@ license_policies:
             load_clarity_thresholds_from_yaml(yaml_content)
 
     def test_load_from_existing_file(self):
-        yaml_content = """
-license_clarity_thresholds:
-    90: ok
-    70: warning
-"""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
-            f.write(yaml_content)
-            temp_path = f.name
-
-        try:
-            policy = load_clarity_thresholds_from_file(temp_path)
-            self.assertIsNotNone(policy)
-            self.assertEqual(policy.get_alert_for_score(95), "ok")
-        finally:
-            Path(temp_path).unlink()
+        test_file = self.data / "license_clarity" / "sample_thresholds.yml"
+        policy = load_clarity_thresholds_from_file(test_file)
+        self.assertIsNotNone(policy)
+        self.assertEqual(policy.get_alert_for_score(95), "ok")
+        self.assertEqual(policy.get_alert_for_score(75), "warning")
+        self.assertEqual(policy.get_alert_for_score(50), "error")
 
     def test_load_from_nonexistent_file(self):
         policy = load_clarity_thresholds_from_file("/nonexistent/file.yml")

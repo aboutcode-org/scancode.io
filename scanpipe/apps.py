@@ -37,8 +37,8 @@ from django.utils.translation import gettext_lazy as _
 
 from licensedcode.models import load_licenses
 
-from scanpipe.license_policies import load_policies_file
-from scanpipe.license_policies import make_license_policy_index
+from scanpipe.policies import load_policies_file
+from scanpipe.policies import make_license_policy_index
 
 try:
     from importlib import metadata as importlib_metadata

@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-# clarity_thresholds.py (updated)
 """
 License Clarity Thresholds Management
 
@@ -39,6 +38,8 @@ license_clarity_thresholds:
   80: ok # Scores >= 80 get 'ok' alert
   50: warning # Scores 50-79 get 'warning' alert
 """
+
+from pathlib import Path
 
 from django.core.exceptions import ValidationError
 
@@ -152,8 +153,6 @@ def load_clarity_thresholds_from_file(file_path):
         ClarityThresholdsPolicy: Configured policy object or None if file not found
 
     """
-    from pathlib import Path
-
     file_path = Path(file_path)
 
     if not file_path.exists():

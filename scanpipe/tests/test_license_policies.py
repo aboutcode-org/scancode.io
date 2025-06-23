@@ -27,11 +27,11 @@ from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
-from scanpipe.license_policies import load_policies_file
-from scanpipe.license_policies import load_policies_yaml
-from scanpipe.license_policies import make_license_policy_index
-from scanpipe.license_policies import validate_policies
 from scanpipe.pipes.input import copy_input
+from scanpipe.policies import load_policies_file
+from scanpipe.policies import load_policies_yaml
+from scanpipe.policies import make_license_policy_index
+from scanpipe.policies import validate_policies
 from scanpipe.tests import global_policies
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import make_project
