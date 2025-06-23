@@ -139,14 +139,22 @@ def collect_and_store_tree_sitter_symbols_and_strings(
     if logger:
         logger(
             f"Getting source symbols and strings from {resources_count:,d}"
-            " from/ resources using tree-sitter."
+            " resources using tree-sitter."
         )
 
     resource_iterator = resources.iterator(chunk_size=2000)
     progress = LoopProgress(resources_count, logger)
 
     for resource in progress.iter(resource_iterator):
-        _collect_and_store_tree_sitter_symbols_and_strings(resource)
+        try:
+            _collect_and_store_tree_sitter_symbols_and_strings(resource)
+        except Exception as e:
+            project.add_error(
+                description=f"Cannot collect strings from resource at {resource.path}",
+                exception=e,
+                model="collect_and_store_tree_sitter_symbols_and_strings",
+                details={"resource_path": resource.path},
+            )
 
 
 def _collect_and_store_tree_sitter_symbols_and_strings(resource):

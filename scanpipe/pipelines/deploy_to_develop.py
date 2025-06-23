@@ -74,7 +74,10 @@ class DeployToDevelop(Pipeline, DefaultEcosystemConfig):
             cls.map_java_to_class,
             cls.map_jar_to_source,
             cls.map_javascript,
+            cls.map_javascript_symbols,
             cls.map_elf,
+            cls.map_macho,
+            cls.map_winpe,
             cls.map_go,
             cls.map_rust,
             cls.match_directories_to_purldb,
@@ -181,10 +184,26 @@ class DeployToDevelop(Pipeline, DefaultEcosystemConfig):
         """
         d2d.map_javascript(project=self.project, logger=self.log)
 
+    @optional_step("JavaScript")
+    def map_javascript_symbols(self):
+        """Map deployed JavaScript, TypeScript to its sources using symbols."""
+        d2d.map_javascript_symbols(project=self.project, logger=self.log)
+
     @optional_step("Elf")
     def map_elf(self):
-        """Map ELF binaries to their sources."""
-        d2d.map_elfs(project=self.project, logger=self.log)
+        """Map ELF binaries to their sources using dwarf paths and symbols."""
+        d2d.map_elfs_with_dwarf_paths(project=self.project, logger=self.log)
+        d2d.map_elfs_binaries_with_symbols(project=self.project, logger=self.log)
+
+    @optional_step("MacOS")
+    def map_macho(self):
+        """Map mach0 binaries to their sources using symbols."""
+        d2d.map_macho_binaries_with_symbols(project=self.project, logger=self.log)
+
+    @optional_step("Windows")
+    def map_winpe(self):
+        """Map winpe binaries to their sources using symbols."""
+        d2d.map_winpe_binaries_with_symbols(project=self.project, logger=self.log)
 
     @optional_step("Go")
     def map_go(self):
@@ -194,7 +213,7 @@ class DeployToDevelop(Pipeline, DefaultEcosystemConfig):
     @optional_step("Rust")
     def map_rust(self):
         """Map Rust binaries to their sources using symbols."""
-        d2d.map_rust_paths(project=self.project, logger=self.log)
+        d2d.map_rust_binaries_with_symbols(project=self.project, logger=self.log)
 
     def match_directories_to_purldb(self):
         """Match selected directories in PurlDB."""

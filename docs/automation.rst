@@ -79,8 +79,8 @@ automation methods such as a cron job or a git hook::
 Seamlessly integrate ScanCode.io into your GitHub Workflows to enable automated scans
 as an integral part of your development process.
 
-Visit the `scancode-action repository <https://github.com/nexB/scancode-action>`_ to
-explore and learn more about the GitHub Action for ScanCode.io.
+Visit the `scancode-action repository <https://github.com/aboutcode-org/scancode-action>`_
+to explore and learn more about the GitHub Action for ScanCode.io.
 The repository provides detailed information, usage instructions,
 and configuration options to help you incorporate code scanning effortlessly into your
 workflows.

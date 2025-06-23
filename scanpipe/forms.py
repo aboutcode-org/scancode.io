@@ -31,6 +31,7 @@ from taggit.forms import TagWidget
 
 from scanpipe.models import Project
 from scanpipe.models import Run
+from scanpipe.models import WebhookSubscription
 from scanpipe.pipelines import convert_markdown_to_html
 from scanpipe.pipes import fetch
 from scanpipe.policies import load_policies_yaml
@@ -63,16 +64,17 @@ class InputsBaseForm(forms.Form):
         label="Download URLs",
         required=False,
         help_text=(
-            "Provide one or more URLs to download, one per line. "
-            "Files are fetched at the beginning of the pipeline run execution."
+            "Enter one or more download URLs, one per line. "
+            "Files will be fetched when the pipeline starts."
         ),
         widget=forms.Textarea(
             attrs={
                 "class": "textarea is-dynamic",
-                "rows": 2,
+                "rows": 3,
                 "placeholder": (
                     "https://domain.com/archive.zip\n"
-                    "docker://docker-reference (e.g.: docker://postgres:13)"
+                    "docker://docker-reference (e.g.: docker://postgres:13)\n"
+                    "pkg://type/name@version"
                 ),
             },
         ),
@@ -703,3 +705,23 @@ class PipelineRunStepSelectionForm(forms.ModelForm):
     def get_step_choices(pipeline_class):
         """Return a `choices` list of tuple suitable for a Django ChoiceField."""
         return [(step.__name__, step.__name__) for step in pipeline_class.get_steps()]
+
+
+class WebhookSubscriptionForm(forms.ModelForm):
+    class Meta:
+        model = WebhookSubscription
+        fields = [
+            "target_url",
+            "trigger_on_each_run",
+            "include_summary",
+            "include_results",
+            "is_active",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        target_url_field = self.fields["target_url"]
+        target_url_field.widget.attrs["class"] = "input"
+
+    def save(self, project):
+        return project.add_webhook_subscription(**self.cleaned_data)

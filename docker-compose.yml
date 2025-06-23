@@ -22,7 +22,7 @@ services:
     command: wait-for-it --strict --timeout=60 db:5432 -- sh -c "
         ./manage.py migrate &&
         ./manage.py collectstatic --no-input --verbosity 0 --clear &&
-        gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 --workers 8 ${GUNICORN_RELOAD_FLAG}"
+        gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 --workers 8 ${GUNICORN_RELOAD_FLAG:-}"
     env_file:
       - docker.env
     expose:

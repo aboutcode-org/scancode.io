@@ -1,5 +1,10 @@
 # Changelog
 
+## Release 0.2.1 (February 24, 2025)
+
+* Include the ``optional_step`` steps in the ``get_graph()`` list.
+  [Issue #1599](https://github.com/aboutcode-org/scancode.io/issues/1599)
+
 ## Release 0.2.0 (November 21, 2024)
 
 * Refactor the ``group`` decorator for pipeline optional steps as ``optional_step``.

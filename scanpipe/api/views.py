@@ -44,6 +44,7 @@ from scanpipe.api.serializers import PipelineSerializer
 from scanpipe.api.serializers import ProjectMessageSerializer
 from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import RunSerializer
+from scanpipe.api.serializers import WebhookSubscriptionSerializer
 from scanpipe.filters import DependencyFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectMessageFilterSet
@@ -327,7 +328,9 @@ class ProjectViewSet(
             if pipeline_name in scanpipe_app.pipelines:
                 execute_now = request.data.get("execute_now")
                 project.add_pipeline(pipeline_name, execute_now, selected_groups=groups)
-                return Response({"status": "Pipeline added."})
+                return Response(
+                    {"status": "Pipeline added."}, status=status.HTTP_201_CREATED
+                )
 
             message = {"status": f"{pipeline} is not a valid pipeline."}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
@@ -367,7 +370,26 @@ class ProjectViewSet(
         for url in input_urls:
             project.add_input_source(download_url=url)
 
-        return Response({"status": "Input(s) added."})
+        return Response({"status": "Input(s) added."}, status=status.HTTP_201_CREATED)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        serializer_class=WebhookSubscriptionSerializer,
+    )
+    def add_webhook(self, request, *args, **kwargs):
+        project = self.get_object()
+
+        # Validate input using the serializer
+        serializer = WebhookSubscriptionSerializer(data=request.data)
+        if serializer.is_valid():
+            project.add_webhook_subscription(**serializer.validated_data)
+            return Response(
+                {"status": "Webhook added."}, status=status.HTTP_201_CREATED
+            )
+
+        # Return validation errors
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):
         try:

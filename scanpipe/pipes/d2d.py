@@ -38,7 +38,10 @@ from django.db.models.expressions import Subquery
 from django.db.models.functions import Concat
 from django.template.defaultfilters import pluralize
 
+from binary_inspector.binary import collect_and_parse_macho_symbols
+from binary_inspector.binary import collect_and_parse_winpe_symbols
 from commoncode.paths import common_prefix
+from elf_inspector.binary import collect_and_parse_elf_symbols
 from elf_inspector.dwarf import get_dwarf_paths
 from extractcode import EXTRACT_SUFFIX
 from go_inspector.plugin import collect_and_parse_symbols
@@ -1782,11 +1785,11 @@ def map_paths_resource(
                     relations_to_create[rel_key] = relation
         if paths_not_mapped:
             to_resource.status = flag.REQUIRES_REVIEW
-            to_resource.save()
             logger(
                 f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT mapped for: "
                 f"{to_resource.path!r}"
             )
+        to_resource.save()
 
     if relations_to_create:
         rels = CodebaseRelation.objects.bulk_create(relations_to_create.values())
@@ -1869,7 +1872,7 @@ def is_invalid_match(match, matched_path_length):
     return matched_path_length == 1 and len(match.resource_ids) != 1
 
 
-def map_elfs(project, logger=None):
+def map_elfs_with_dwarf_paths(project, logger=None):
     """Map ELF binaries to their sources in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
     to_resources = (
@@ -1985,10 +1988,10 @@ def map_go_paths(project, logger=None):
         )
 
 
-def map_rust_paths(project, logger=None):
-    """Map Rust binaries to their source in ``project``."""
+def map_rust_binaries_with_symbols(project, logger=None):
+    """Map Rust binaries to their source using symbols in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
-    to_resources = (
+    to_binaries = (
         project.codebaseresources.files()
         .to_codebase()
         .has_no_relation()
@@ -1997,30 +2000,117 @@ def map_rust_paths(project, logger=None):
 
     # Collect source symbols from rust source files
     rust_from_resources = from_resources.filter(extension=".rs")
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=rust_from_resources,
+        to_resources=to_binaries,
+        binary_symbols_func=collect_and_parse_rust_symbols,
+        map_type="rust_symbols",
+        logger=logger,
+    )
+
+
+def map_elfs_binaries_with_symbols(project, logger=None):
+    """Map Elf binaries to their source using symbols in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    elf_binaries = (
+        project.codebaseresources.files().to_codebase().has_no_relation().elfs()
+    )
+
+    # Collect source symbols from elf related source files
+    elf_from_resources = from_resources.filter(extension__in=[".c", ".cpp", ".h"])
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=elf_from_resources,
+        to_resources=elf_binaries,
+        binary_symbols_func=collect_and_parse_elf_symbols,
+        map_type="elf_symbols",
+        logger=logger,
+    )
+
+
+def map_macho_binaries_with_symbols(project, logger=None):
+    """Map macho binaries to their source using symbols in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    macho_binaries = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .has_no_relation()
+        .macho_binaries()
+    )
+
+    # Collect source symbols from macos related source files
+    mac_from_resources = from_resources.filter(
+        extension__in=[".c", ".cpp", ".h", ".m", ".swift"]
+    )
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=mac_from_resources,
+        to_resources=macho_binaries,
+        binary_symbols_func=collect_and_parse_macho_symbols,
+        map_type="macho_symbols",
+        logger=logger,
+    )
+
+
+def map_winpe_binaries_with_symbols(project, logger=None):
+    """Map winpe binaries to their source using symbols in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    winexe_binaries = (
+        project.codebaseresources.files().to_codebase().has_no_relation().win_exes()
+    )
+
+    # Collect source symbols from windows related source files
+    windows_from_resources = from_resources.filter(
+        extension__in=[".c", ".cpp", ".h", ".cs"]
+    )
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=windows_from_resources,
+        to_resources=winexe_binaries,
+        binary_symbols_func=collect_and_parse_winpe_symbols,
+        map_type="winpe_symbols",
+        logger=logger,
+    )
+
+
+def map_binaries_with_symbols(
+    project,
+    from_resources,
+    to_resources,
+    binary_symbols_func,
+    map_type,
+    logger=None,
+):
+    """Map Binaries to their source using symbols in ``project``."""
     symbols.collect_and_store_tree_sitter_symbols_and_strings(
         project=project,
         logger=logger,
-        project_files=rust_from_resources,
+        project_files=from_resources,
     )
 
     # Collect binary symbols from rust binaries
     for resource in to_resources:
         try:
-            binary_symbols = collect_and_parse_rust_symbols(resource.location_path)
+            binary_symbols = binary_symbols_func(resource.location)
             resource.update_extra_data(binary_symbols)
         except Exception as e:
-            logger(f"Can not parse {resource.location_path!r} {e!r}")
+            logger(f"Error parsing binary symbols at: {resource.location_path!r} {e!r}")
 
     if logger:
         logger(
             f"Mapping {to_resources.count():,d} to/ resources using symbols "
-            f"with {rust_from_resources.count():,d} from/ resources."
+            f"with {from_resources.count():,d} from/ resources."
         )
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
     progress = LoopProgress(to_resources.count(), logger)
     for to_resource in progress.iter(resource_iterator):
-        binary_symbols = to_resource.extra_data.get("rust_symbols")
+        binary_symbols = to_resource.extra_data.get(map_type)
         if not binary_symbols:
             continue
 
@@ -2028,9 +2118,105 @@ def map_rust_paths(project, logger=None):
             logger(f"Mapping source files to binary at {to_resource.path}")
 
         symbolmap.map_resources_with_symbols(
+            project=project,
             to_resource=to_resource,
-            from_resources=rust_from_resources,
+            from_resources=from_resources,
             binary_symbols=binary_symbols,
-            map_type="rust_symbols",
+            map_type=map_type,
             logger=logger,
         )
+
+
+def map_javascript_symbols(project, logger=None):
+    """Map deployed JavaScript, TypeScript to its sources using symbols."""
+    project_files = project.codebaseresources.files()
+
+    javascript_to_resources = (
+        project_files.to_codebase()
+        .has_no_relation()
+        .filter(extension__in=[".ts", ".js"])
+    )
+
+    javascript_from_resources = (
+        project_files.from_codebase()
+        .exclude(path__contains="/test/")
+        .filter(extension__in=[".ts", ".js"])
+    )
+
+    if not (javascript_from_resources.exists() and javascript_to_resources.exists()):
+        return
+
+    symbols.collect_and_store_tree_sitter_symbols_and_strings(
+        project=project,
+        logger=logger,
+        project_files=javascript_from_resources,
+    )
+
+    symbols.collect_and_store_tree_sitter_symbols_and_strings(
+        project=project,
+        logger=logger,
+        project_files=javascript_to_resources,
+    )
+
+    javascript_from_resources_withsymbols = javascript_from_resources.exclude(
+        extra_data={}
+    )
+    javascript_to_resources_withsymbols = javascript_to_resources.exclude(extra_data={})
+
+    javascript_from_resources_count = javascript_from_resources_withsymbols.count()
+    javascript_to_resources_count = javascript_to_resources_withsymbols.count()
+    if logger:
+        logger(
+            f"Mapping {javascript_to_resources_count:,d} JavaScript resources using"
+            f" symbols against {javascript_from_resources_count:,d} from/ codebase."
+        )
+
+    resource_iterator = javascript_to_resources_withsymbols.iterator(chunk_size=2000)
+    progress = LoopProgress(javascript_to_resources_count, logger)
+
+    resource_mapped = 0
+    for to_resource in progress.iter(resource_iterator):
+        resource_mapped += _map_javascript_symbols(
+            to_resource, javascript_from_resources_withsymbols, logger
+        )
+
+    if logger:
+        logger(f"{resource_mapped:,d} resource mapped using symbols")
+
+
+def _map_javascript_symbols(to_resource, javascript_from_resources, logger):
+    """
+    Map a deployed JavaScript resource to its source using symbols and
+    return 1 if match is found otherwise return 0.
+    """
+    to_symbols = to_resource.extra_data.get("source_symbols")
+
+    if not to_symbols or symbolmap.is_decomposed_javascript(to_symbols):
+        return 0
+
+    best_matching_score = 0
+    best_match = None
+    for source_js in javascript_from_resources:
+        from_symbols = source_js.extra_data.get("source_symbols")
+        if not from_symbols:
+            continue
+
+        is_match, similarity = symbolmap.match_javascript_source_symbols_to_deployed(
+            source_symbols=from_symbols,
+            deployed_symbols=to_symbols,
+        )
+
+        if is_match and similarity > best_matching_score:
+            best_matching_score = similarity
+            best_match = source_js
+
+    if best_match:
+        pipes.make_relation(
+            from_resource=best_match,
+            to_resource=to_resource,
+            map_type="javascript_symbols",
+            extra_data={"jsd_similarity_score": similarity},
+        )
+        to_resource.update(status=flag.MAPPED)
+        return 1
+    return 0

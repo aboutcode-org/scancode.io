@@ -105,6 +105,9 @@ Optional arguments:
 
 - ``--pipeline PIPELINES`` Pipelines names to add on the project.
 
+.. warning::
+    Pipelines are added and are executed in order.
+
 .. tip::
     Use the "pipeline_name:option1,option2" syntax to select optional steps:
 
@@ -137,8 +140,8 @@ Optional arguments:
   of running in the current thread.
   Applies only when ``--execute`` is provided.
 
-.. warning::
-    Pipelines are added and are executed in order.
+- ``--no-global-webhook`` Skip the creation of the global webhook. This option is
+  only useful if a global webhook is defined in the settings.
 
 .. _cli_batch_create:
 
@@ -195,6 +198,9 @@ Optional arguments:
 - ``--async`` Add the pipeline run to the tasks queue for execution by a worker instead
   of running in the current thread.
   Applies only when ``--execute`` is provided.
+
+- ``--create-global-webhook`` Create the global webhook for each project, if enabled in
+  the settings. If not provided, the global webhook subscriptions are not created.
 
 Example: Processing Multiple Docker Images
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -342,6 +348,47 @@ add the docker pipeline to your project::
     Use the "pipeline_name:option1,option2" syntax to select optional steps:
 
     ``--pipeline map_deploy_to_develop:Java,JavaScript``
+
+
+.. _cli_add_webhook:
+
+`$ scanpipe add-webhook --project PROJECT TARGET_URL`
+-----------------------------------------------------
+
+Adds a webhook subscription to a project.
+
+Required arguments:
+
+- ``target-url``
+  The target URL to which the webhook should send POST requests.
+
+Optional arguments:
+
+- ``--trigger-on-each-run``
+  Trigger the webhook after each individual pipeline run.
+
+- ``--include-summary``
+  Include summary data in the payload.
+
+- ``--include-results``
+  Include results data in the payload.
+
+- ``--inactive``
+  Create the webhook but set it as inactive.
+
+Example usage:
+
+1. Add an active webhook that triggers after each pipeline run::
+
+   $ scanpipe add-webhook my_project https://example.com/webhook --trigger-on-each-run
+
+2. Add a webhook that includes summary and results data::
+
+   $ scanpipe add-webhook my_project https://example.com/webhook --include-summary --include-results
+
+3. Add an inactive webhook::
+
+   $ scanpipe add-webhook my_project https://example.com/webhook --inactive
 
 
 `$ scanpipe execute --project PROJECT`
@@ -501,6 +548,14 @@ Optional arguments:
   For example, to delete all projects created more than one week ago::
 
     scanpipe flush-projects --retain-days 7
+
+- ``--dry-run`` Do not delete any projects; just print the ones that would be flushed.
+
+- ``--label LABELS`` Filter projects by the provided label.
+  Multiple labels can be provided by using this argument multiple times.
+
+- ``--pipeline PIPELINES`` Filter projects by the provided pipeline name.
+  Multiple pipeline name can be provided by using this argument multiple times.
 
 - ``--no-input`` Does not prompt the user for input of any kind.
 

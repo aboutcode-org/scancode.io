@@ -202,8 +202,23 @@ How can I trigger a pipeline scan from a CI/CD, such as Jenkins, TeamCity or Azu
 You can refer to the :ref:`automation` to automate your projects management.
 
 Also, A new GitHub action is available at
-`scancode-action repository <https://github.com/nexB/scancode-action>`_
+`scancode-action repository <https://github.com/aboutcode-org/scancode-action>`_
 to run ScanCode.io pipelines from your GitHub Workflows.
+
+How can I get notified about my project progression?
+-----------------------------------------------------
+
+You can monitor your project's progress in multiple ways:
+
+- **User Interface:** The project details page provides real-time updates on pipeline
+  execution.
+- **REST API:** Use the API to programmatically check the status of your projects.
+- **CLI Monitoring:** The ``scanpipe list-projects`` command provides an overview of
+  project states.
+- **Webhook Integration:** You can set up webhooks to receive updates in your preferred
+  notification system. For more details, refer to the :ref:`webhooks` section.
+- **Slack notifications:** Get project updates directly in Slack by configuring an
+  incoming webhook. See :ref:`webhooks_slack_notifications` for setup instructions.
 
 .. _faq_tag_input_files:
 
@@ -307,6 +322,39 @@ data older than 7 days::
   command.
 
 How can I provide my license policies?
----------------------------------------
+--------------------------------------
 
 For detailed information about the policies system, refer to :ref:`policies`.
+
+Can you analyze Dockerfiles?
+----------------------------
+
+We have code in https://github.com/aboutcode-org/container-inspector/blob/main/src/container_inspector/dockerfile.py
+for this ... but this may not be wired in other tools at the moment.
+It can for instance map dockerfile instructions to actual docker image history,
+https://github.com/aboutcode-org/container-inspector/blob/main/src/container_inspector/dockerfile.py#L204
+
+Can you analyze a built image? (Build Docker Image Analysis)
+------------------------------------------------------------
+
+Yes, we do this in ScanCode.io. We have one fairly unique feature to actually account
+for all files used in all layers.
+
+Can you analyze all layers of a running container?
+--------------------------------------------------
+
+ScanCode.io scans all layers of images. We can scan all layers of a running container
+if you save the running container as an image first.
+We can also fetch images from registries, local files and technically also from a
+running container, say in a local docker ... but this has not yet been tested so far.
+We do not introspect k8s clusters to analyze the deployed and running images
+there (yet) and that would be a nice future addition.
+For now we can instead work on the many images there, save and analyze them.
+
+Can you analyze Docker in Docker?
+---------------------------------
+
+The input to ScanCode is a local saved image: Docker or OCI.
+Docker in Docker support will demand to have access to the saved images
+(either extracted from the Docker images in Docker, or mounted in a volume or saved
+from the Docker in the Docker image). Once saved we can analyze these alright.

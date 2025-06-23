@@ -441,6 +441,7 @@ def create_project(
     labels=None,
     execute=False,
     run_async=False,
+    create_global_webhook=True,
     command=None,
 ):
     verbosity = getattr(command, "verbosity", 1)
@@ -462,7 +463,11 @@ def create_project(
         pipelines=pipelines, input_files=input_files, copy_from=copy_from
     )
 
-    project.save()
+    save_kwargs = {}
+    if not create_global_webhook:
+        save_kwargs = {"skip_global_webhook": True}
+
+    project.save(**save_kwargs)
 
     if labels:
         project.labels.add(*labels)
@@ -520,6 +525,15 @@ class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
             default=list(),
             help="Optional labels for the project.",
         )
+        parser.add_argument(
+            "--no-global-webhook",
+            action="store_true",
+            help=(
+                "Skip the creation of the global webhook. "
+                "This option is only useful if a global webhook is defined in the "
+                "settings."
+            ),
+        )
 
     def create_project(
         self,
@@ -532,6 +546,7 @@ class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
         labels=None,
         execute=False,
         run_async=False,
+        create_global_webhook=True,
     ):
         if execute and not pipelines:
             raise CommandError("The --execute option requires one or more pipelines.")
@@ -546,5 +561,6 @@ class CreateProjectCommandMixin(ExecuteProjectCommandMixin):
             labels=labels,
             execute=execute,
             run_async=run_async,
+            create_global_webhook=create_global_webhook,
             command=self,
         )

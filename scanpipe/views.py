@@ -36,6 +36,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.exceptions import ValidationError
 from django.core.files.storage.filesystem import FileSystemStorage
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Prefetch
 from django.db.models.manager import Manager
 from django.http import FileResponse
@@ -61,6 +62,7 @@ from django.views.generic.edit import UpdateView
 import saneyaml
 import xlsxwriter
 from django_filters.views import FilterView
+from licensedcode.spans import Span
 from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
 
 from scancodeio.auth import ConditionalLoginRequired
@@ -86,11 +88,11 @@ from scanpipe.forms import ProjectOutputDownloadForm
 from scanpipe.forms import ProjectReportForm
 from scanpipe.forms import ProjectResetForm
 from scanpipe.forms import ProjectSettingsForm
+from scanpipe.forms import WebhookSubscriptionForm
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
-from scanpipe.models import InputSource
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
@@ -197,6 +199,14 @@ class PrefetchRelatedViewMixin:
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(*self.prefetch_related)
+
+
+class HTTPResponseHXRedirect(HttpResponseRedirect):
+    status_code = 200
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self["HX-Redirect"] = self["Location"]
 
 
 def render_as_yaml(value):
@@ -486,6 +496,55 @@ class ExportXLSXMixin:
 
         if request.GET.get(self.export_xlsx_query_param):
             return self.export_xlsx_file_response()
+
+        return response
+
+
+class ExportJSONMixin:
+    """
+    Add the ability to export the current filtered QuerySet of a `FilterView`
+    into JSON format.
+    """
+
+    export_json_query_param = "export_json"
+
+    def get_export_json_queryset(self):
+        return self.filterset.qs
+
+    def get_export_json_filename(self):
+        return f"{self.project.name}_{self.model._meta.model_name}.json"
+
+    def export_json_file_response(self):
+        from scanpipe.api.serializers import get_model_serializer
+
+        queryset = self.get_export_json_queryset()
+        serializer_class = get_model_serializer(queryset.model)
+        serializer = serializer_class(queryset, many=True)
+        serialized_data = json.dumps(serializer.data, indent=2, cls=DjangoJSONEncoder)
+
+        output_file = io.BytesIO(serialized_data.encode("utf-8"))
+
+        return FileResponse(
+            output_file,
+            as_attachment=True,
+            filename=self.get_export_json_filename(),
+            content_type="application/json",
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        query_dict = self.request.GET.copy()
+        query_dict[self.export_json_query_param] = True
+        context["export_json_url_query"] = query_dict.urlencode()
+
+        return context
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+
+        if request.GET.get(self.export_json_query_param):
+            return self.export_json_file_response()
 
         return response
 
@@ -860,6 +919,7 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
         project = self.get_object()
         context["archive_form"] = ProjectArchiveForm()
         context["reset_form"] = ProjectResetForm()
+        context["webhook_form"] = WebhookSubscriptionForm()
         context["webhook_subscriptions"] = project.webhooksubscriptions.all()
         return context
 
@@ -876,6 +936,23 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
         filename = output.safe_filename(settings.SCANCODEIO_CONFIG_FILE)
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
+
+
+class ProjectSettingsWebhookCreateView(
+    ConditionalLoginRequired, FormAjaxMixin, UpdateView
+):
+    model = Project
+    form_class = WebhookSubscriptionForm
+    template_name = "scanpipe/forms/project_webhook_form.html"
+
+    def get_success_url(self):
+        url = reverse("project_settings", args=[self.object.slug])
+        return url + "#webhooks"
+
+    def form_valid(self, form):
+        form.save(project=self.object)
+        messages.success(self.request, "Webhook added to the project.")
+        return HTTPResponseHXRedirect(self.get_success_url())
 
 
 class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
@@ -936,7 +1013,7 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
             },
             "package": {
                 "queryset": project.discoveredpackages,
-                "fields": ["type", "declared_license_expression"],
+                "fields": ["type", "declared_license_expression", "compliance_alert"],
             },
             "dependency": {
                 "queryset": project.discovereddependencies,
@@ -952,10 +1029,9 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
             for field_name in fields:
                 if field_name in ["holders", "copyrights"]:
                     field_values = (
-                        data.get(field_name[:-1])
+                        data.get(field_name[:-1]) if isinstance(data, dict) else ""
                         for entry in qs_values
-                        for data in entry.get(field_name, [])
-                        if isinstance(data, dict)
+                        for data in (entry.get(field_name, []) or [""])
                     )
                 else:
                     field_values = (entry[field_name] for entry in qs_values)
@@ -1323,18 +1399,10 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
         )
 
 
-class HTTPResponseHXRedirect(HttpResponseRedirect):
-    status_code = 200
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self["HX-Redirect"] = self["Location"]
-
-
 class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, UpdateView):
     model = Project
     form_class = ProjectCloneForm
-    template_name = "scanpipe/includes/project_clone_form.html"
+    template_name = "scanpipe/forms/project_clone_form.html"
 
     def form_valid(self, form):
         super().form_valid(form)
@@ -1358,7 +1426,7 @@ def execute_pipelines_view(request, slug):
 @conditional_login_required
 def stop_pipeline_view(request, slug, run_uuid):
     project = get_object_or_404(Project, slug=slug)
-    run = get_object_or_404(Run, uuid=run_uuid, project=project)
+    run = get_object_or_404(project.runs, uuid=run_uuid)
 
     if run.status != run.Status.RUNNING:
         raise Http404("Pipeline is not running.")
@@ -1371,7 +1439,7 @@ def stop_pipeline_view(request, slug, run_uuid):
 @conditional_login_required
 def delete_pipeline_view(request, slug, run_uuid):
     project = get_object_or_404(Project, slug=slug)
-    run = get_object_or_404(Run, uuid=run_uuid, project=project)
+    run = get_object_or_404(project.runs, uuid=run_uuid)
 
     if run.status not in [run.Status.NOT_STARTED, run.Status.QUEUED]:
         raise Http404("Only non started or queued pipelines can be deleted.")
@@ -1389,11 +1457,24 @@ def delete_input_view(request, slug, input_uuid):
     if not project.can_change_inputs:
         raise Http404("Inputs cannot be deleted on this project.")
 
-    input_source = get_object_or_404(InputSource, uuid=input_uuid, project=project)
+    input_source = get_object_or_404(project.inputsources, uuid=input_uuid)
     input_source.delete()
     messages.success(request, f"Input {input_source.filename} deleted.")
 
     return redirect(project)
+
+
+@require_POST
+@conditional_login_required
+def delete_webhook_view(request, slug, webhook_uuid):
+    project = get_object_or_404(Project, slug=slug)
+    webhook = get_object_or_404(project.webhooksubscriptions, uuid=webhook_uuid)
+
+    webhook.delete()
+    messages.success(request, "Webhook deleted.")
+
+    success_url = reverse("project_settings", args=[project.slug]) + "#webhooks"
+    return redirect(success_url)
 
 
 def download_project_file(request, slug, filename, path_type):
@@ -1511,6 +1592,7 @@ class CodebaseResourceListView(
     ProjectRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
+    ExportJSONMixin,
     PaginatedFilterView,
 ):
     model = CodebaseResource
@@ -1584,12 +1666,13 @@ class DiscoveredPackageListView(
     ProjectRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
+    ExportJSONMixin,
     PaginatedFilterView,
 ):
     model = DiscoveredPackage
     filterset_class = PackageFilterSet
     template_name = "scanpipe/package_list.html"
-    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 10)
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 100)
     table_columns = [
         {
             "field_name": "package_url",
@@ -1640,6 +1723,7 @@ class DiscoveredDependencyListView(
     ProjectRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
+    ExportJSONMixin,
     PaginatedFilterView,
 ):
     model = DiscoveredDependency
@@ -1709,6 +1793,7 @@ class ProjectMessageListView(
     ProjectRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
+    ExportJSONMixin,
     FilterView,
 ):
     model = ProjectMessage
@@ -1733,6 +1818,7 @@ class CodebaseRelationListView(
     PrefetchRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
+    ExportJSONMixin,
     PaginatedFilterView,
 ):
     model = CodebaseRelation
@@ -1917,6 +2003,36 @@ class CodebaseResourceDetailsView(
 
         return annotations
 
+    @staticmethod
+    def get_matched_snippet_annotations(resource):
+        matched_snippets = resource.extra_data.get("matched_snippets")
+        line_by_pos = resource.extra_data.get("line_by_pos")
+        if not matched_snippets:
+            return []
+
+        snippet_annotations = []
+        for snippet in matched_snippets:
+            package = snippet.get("package", "")
+            resource = snippet.get("resource", "")
+            similarity = snippet.get("similarity", 0)
+            text = (
+                f"package: {package}\nresource: {resource}\nsimilarity: {similarity}\n"
+            )
+
+            # convert qspan from list of ints to Spans
+            qspan = Span(snippet["match_detections"])
+            for span in qspan.subspans():
+                # line_by_pos is stored as JSON and keys in JSON are always strings
+                snippet_annotations.append(
+                    {
+                        "start_line": line_by_pos[str(span.start)],
+                        "end_line": line_by_pos[str(span.end)],
+                        "text": text,
+                    }
+                )
+
+        return snippet_annotations
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         resource = self.object
@@ -1943,6 +2059,9 @@ class CodebaseResourceDetailsView(
         for field_name, value_key in fields:
             annotations = self.get_annotations(getattr(resource, field_name), value_key)
             context["detected_values"][field_name] = annotations
+
+        matched_snippet_annotations = self.get_matched_snippet_annotations(resource)
+        context["detected_values"]["matched snippets"] = matched_snippet_annotations
 
         return context
 

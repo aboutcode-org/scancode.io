@@ -1486,7 +1486,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
-        d2d.map_elfs(project=self.project1, logger=buffer.write)
+        d2d.map_elfs_with_dwarf_paths(project=self.project1, logger=buffer.write)
         self.assertEqual(
             1,
             CodebaseRelation.objects.filter(
@@ -1532,7 +1532,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
     @skipIf(sys.platform == "darwin", "Test is failing on macOS")
-    def test_scanpipe_pipes_d2d_map_rust_paths(self):
+    def test_scanpipe_pipes_d2d_map_rust_symbols(self):
         input_dir = self.project1.input_path
         input_resources = [
             self.data / "d2d-rust/to-trustier-binary-linux.tar.gz",
@@ -1554,7 +1554,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
-        d2d.map_rust_paths(project=self.project1, logger=buffer.write)
+        d2d.map_rust_binaries_with_symbols(project=self.project1, logger=buffer.write)
         self.assertEqual(
             2,
             CodebaseRelation.objects.filter(
@@ -1565,6 +1565,99 @@ class ScanPipeD2DPipesTest(TestCase):
             0,
             CodebaseResource.objects.filter(
                 project=self.project1, status="requires-review"
+            ).count(),
+        )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_elf_symbols(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-elfs/to-brotli-d2d.zip",
+            self.data / "d2d-elfs/from-brotli-d2d.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_elfs_binaries_with_symbols(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            7,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="elf_symbols"
+            ).count(),
+        )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_macho_symbols(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-macho/from-lumen.zip",
+            self.data / "d2d-macho/to-lumen.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_macho_binaries_with_symbols(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            9,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="macho_symbols"
+            ).count(),
+        )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_winpe_symbols(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-winpe/to-translucent.zip",
+            self.data / "d2d-winpe/from-translucent.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_winpe_binaries_with_symbols(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            4,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="winpe_symbols"
             ).count(),
         )
 
@@ -1628,3 +1721,36 @@ class ScanPipeD2DPipesTest(TestCase):
             )
         except DataError:
             self.fail("DataError was raised, but it should not occur.")
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_javascript_symbols(self):
+        to_dir = self.project1.codebase_path / "to/project.tar.zst-extract/"
+        to_resource_file = (
+            self.data / "d2d-javascript/symbols/cesium/to_chunk-CNPP6TQ2.js"
+        )
+        to_dir.mkdir(parents=True)
+        copy_input(to_resource_file, to_dir)
+
+        from_input_location = (
+            self.data / "d2d-javascript/symbols/cesium/from_EllipseGeometryLibrary.js"
+        )
+        from_dir = self.project1.codebase_path / "from/project.zip/"
+        from_dir.mkdir(parents=True)
+        copy_input(from_input_location, from_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        buffer = io.StringIO()
+        d2d.map_javascript_symbols(self.project1, logger=buffer.write)
+        expected = (
+            "Mapping 1 JavaScript resources using symbols against 1 from/ codebase."
+        )
+        self.assertIn(expected, buffer.getvalue())
+
+        self.assertEqual(1, self.project1.codebaserelations.count())
+        self.assertEqual(
+            1,
+            self.project1.codebaserelations.filter(
+                map_type="javascript_symbols"
+            ).count(),
+        )

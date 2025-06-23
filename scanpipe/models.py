@@ -129,6 +129,18 @@ class UUIDPKModel(models.Model):
         return str(self.uuid)[0:8]
 
 
+class UUIDFieldMixin(models.Model):
+    uuid = models.UUIDField(
+        verbose_name=_("UUID"),
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+    )
+
+    class Meta:
+        abstract = True
+
+
 class HashFieldsMixin(models.Model):
     """
     The hash fields are not indexed by default, use the `indexes` in Meta as needed:
@@ -217,7 +229,7 @@ class AbstractTaskFieldsModel(models.Model):
         Note that projects with queued or running pipeline runs cannot be deleted.
         See the `_raise_if_run_in_progress` method.
         The following if statements should not be triggered unless the `.delete()`
-        method is directly call from a instance of this class.
+        method is directly call from an instance of this class.
         """
         with suppress(redis.exceptions.ConnectionError, AttributeError):
             if self.status == self.Status.RUNNING:
@@ -603,6 +615,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Save this project instance.
         The workspace directories are set up during project creation.
         """
+        # True if the model has not been saved to the database yet.
+        is_new = self._state.adding
+        # True if the new instance is a clone of an existing one.
+        is_clone = kwargs.pop("is_clone", False)
+        # True if the global webhook creation should be skipped.
+        skip_global_webhook = kwargs.pop("skip_global_webhook", False)
+
         if not self.slug:
             self.slug = get_project_slug(project=self)
 
@@ -611,6 +630,19 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.setup_work_directory()
 
         super().save(*args, **kwargs)
+
+        global_webhook = settings.SCANCODEIO_GLOBAL_WEBHOOK
+        if global_webhook and is_new and not is_clone and not skip_global_webhook:
+            self.setup_global_webhook()
+
+    def setup_global_webhook(self):
+        """
+        Create a global webhook subscription instance from values defined in the
+        settings.
+        """
+        webhook_data = settings.SCANCODEIO_GLOBAL_WEBHOOK
+        if webhook_data.get("target_url"):
+            self.add_webhook_subscription(**webhook_data)
 
     def archive(self, remove_input=False, remove_codebase=False, remove_output=False):
         """
@@ -741,11 +773,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         execute_now=False,
     ):
         """Clone this project using the provided ``clone_name`` as new project name."""
-        new_project = Project.objects.create(
+        new_project = Project(
             name=clone_name,
             purl=self.purl,
             settings=self.settings if copy_settings else {},
         )
+        new_project.save(is_clone=True)
 
         if labels := self.labels.names():
             new_project.labels.add(*labels)
@@ -1176,10 +1209,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if not download_url and not filename:
             raise Exception("Provide at least a value for download_url or filename.")
 
-        # Add tag can be provided using the "#<fragment>" part of the URL
         if download_url:
             parsed_url = urlparse(download_url)
-            tag = parsed_url.fragment or tag
+            # Add tag can be provided using the "#<fragment>" part of the URL
+            if not tag and parsed_url.fragment:
+                tag = parsed_url.fragment[:50]
 
         return InputSource.objects.create(
             project=self,
@@ -2475,6 +2509,16 @@ class ComplianceAlertMixin(models.Model):
         ERROR = "error"
         MISSING = "missing"
 
+    # Map each compliance status to a severity level.
+    # Higher numbers indicate more severe compliance issues.
+    # This allows consistent comparison and sorting of compliance states.
+    COMPLIANCE_SEVERITY_MAP = {
+        Compliance.OK: 0,
+        Compliance.MISSING: 1,
+        Compliance.WARNING: 2,
+        Compliance.ERROR: 3,
+    }
+
     compliance_alert = models.CharField(
         max_length=10,
         blank=True,
@@ -2508,7 +2552,7 @@ class ComplianceAlertMixin(models.Model):
         Injects policies, if the feature is enabled, when the
         ``license_expression_field`` field value has changed.
 
-        `codebase` is not used in this context but required for compatibility
+        ``codebase`` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
         if self.policies_enabled:
@@ -2530,7 +2574,10 @@ class ComplianceAlertMixin(models.Model):
         return self.project.policies_enabled
 
     def compute_compliance_alert(self):
-        """Compute and return the compliance_alert value from the licenses policies."""
+        """
+        Compute and return the compliance_alert value from the license policies.
+        Chooses the most severe compliance_alert found among licenses.
+        """
         license_expression = getattr(self, self.license_expression_field, "")
         if not license_expression:
             return ""
@@ -2550,17 +2597,12 @@ class ComplianceAlertMixin(models.Model):
             else:
                 alerts.append(self.Compliance.MISSING)
 
-        compliance_ordered_by_severity = [
-            self.Compliance.ERROR,
-            self.Compliance.WARNING,
-            self.Compliance.MISSING,
-        ]
+        if not alerts:
+            return self.Compliance.OK
 
-        for compliance_severity in compliance_ordered_by_severity:
-            if compliance_severity in alerts:
-                return compliance_severity
-
-        return self.Compliance.OK
+        # Return the most severe alert based on the defined severity
+        severity = self.COMPLIANCE_SEVERITY_MAP.get
+        return max(alerts, key=severity)
 
 
 class FileClassifierFieldsModelMixin(models.Model):
@@ -2807,7 +2849,7 @@ class CodebaseResource(
 
         return part_and_subpath
 
-    def parent_path(self):
+    def parent_directory(self):
         """Return the parent path for this CodebaseResource or None."""
         return parent_directory(self.path, with_trail=False)
 
@@ -2816,7 +2858,7 @@ class CodebaseResource(
         Return True if this CodebaseResource has a parent CodebaseResource or
         False otherwise.
         """
-        parent_path = self.parent_path()
+        parent_path = self.parent_directory()
         if not parent_path:
             return False
         if self.project.codebaseresources.filter(path=parent_path).exists():
@@ -2831,7 +2873,7 @@ class CodebaseResource(
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
-        parent_path = self.parent_path()
+        parent_path = self.parent_directory()
         return parent_path and self.project.codebaseresources.get(path=parent_path)
 
     def siblings(self, codebase=None):
@@ -2888,6 +2930,18 @@ class CodebaseResource(
             yield from child.walk(topdown=topdown)
             if not topdown:
                 yield child
+
+    def extracted_to(self, codebase=None):
+        """Return the path this Resource archive was extracted to or None."""
+        extract_path = f"{self.path}-extract"
+        return self.project.get_resource(extract_path)
+
+    def extracted_from(self, codebase=None):
+        """Return the path to an archive this Resource was extracted from or None."""
+        path = self.path
+        if "-extract" in path:
+            archive_path, _, _ = self.path.rpartition("-extract")
+            return self.project.get_resource(archive_path)
 
     def get_absolute_url(self):
         return reverse("resource_detail", args=[self.project.slug, self.path])
@@ -3367,6 +3421,7 @@ class AbstractPackage(models.Model):
 
 class DiscoveredPackage(
     ProjectRelatedModel,
+    UUIDFieldMixin,
     ExtraDataFieldMixin,
     SaveProjectMessageMixin,
     UpdateFromDataMixin,
@@ -3388,9 +3443,6 @@ class DiscoveredPackage(
 
     license_expression_field = "declared_license_expression"
 
-    uuid = models.UUIDField(
-        verbose_name=_("UUID"), default=uuid.uuid4, unique=True, editable=False
-    )
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
     )
@@ -3736,6 +3788,7 @@ class DiscoveredDependencyQuerySet(
 
 class DiscoveredDependency(
     ProjectRelatedModel,
+    UUIDFieldMixin,
     SaveProjectMessageMixin,
     UpdateFromDataMixin,
     VulnerabilityMixin,
@@ -3998,7 +4051,10 @@ class DiscoveredDependency(
 
     @property
     def spdx_id(self):
-        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.dependency_uid}"
+        # We cannot rely on `dependency_uid` for the SPDX ID because it may contain
+        # PURL components that are not SPDX-compliant. According to the spec,
+        # "SPDXID is a unique string containing letters, numbers, ., and/or -"
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
 
     def as_spdx(self):
         """Return this Dependency as an SPDX Package entry."""
@@ -4131,6 +4187,73 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
 
         return payload
 
+    @staticmethod
+    def get_slack_payload(pipeline_run):
+        """
+        Get a custom payload dedicated to Slack webhooks.
+        See https://api.slack.com/messaging/webhooks
+        """
+        status = pipeline_run.status
+        project = pipeline_run.project
+
+        if site_url := scanpipe_app.site_url:
+            project_url = site_url + project.get_absolute_url()
+            project_display = f"<{project_url}|{project.name}>"
+        else:
+            project_display = project.name
+
+        status_to_color = {
+            Run.Status.SUCCESS: "#48c78e",
+            Run.Status.FAILURE: "#f14668",
+            # The following status do not trigger the webhook delivery:
+            # Run.Status.STOPPED: "#f14668",
+            # Run.Status.STALE: "#363636",
+        }
+        color = status_to_color.get(status, "")
+
+        pipeline_name = pipeline_run.pipeline_name
+        pretext = f"Project *{project_display}* update:"
+        text = f"Pipeline `{pipeline_name}` completed with {status}."
+        blocks = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": text,
+                },
+            }
+        ]
+
+        # Adds the task output in case of run failure
+        if pipeline_run.status == Run.Status.FAILURE and pipeline_run.task_output:
+            slack_text_max_length = 3000  # Slack's block message limit
+            output_text = pipeline_run.task_output
+            # Truncate the task output and add an indicator if it was cut off
+            if len(output_text) > slack_text_max_length:
+                output_text = (
+                    output_text[: slack_text_max_length - 30] + "\n... (truncated)"
+                )
+
+            task_output_block = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"```{output_text}```",
+                },
+            }
+            blocks.append(task_output_block)
+
+        return {
+            "username": "ScanCode.io",
+            "text": pretext,
+            "attachments": [
+                {
+                    "color": color,
+                    "blocks": blocks,
+                }
+            ],
+        }
+
     def deliver(self, pipeline_run, timeout=10):
         """Deliver this Webhook by sending a POST request to the `target_url`."""
         logger.info(f"Delivering Webhook {self.uuid}")
@@ -4139,7 +4262,11 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             logger.info(f"Webhook {self.uuid} is not active.")
             return False
 
-        payload = self.get_payload(pipeline_run)
+        if "hooks.slack.com" in self.target_url:
+            payload = self.get_slack_payload(pipeline_run)
+        else:
+            payload = self.get_payload(pipeline_run)
+
         delivery = WebhookDelivery(
             project=self.project,
             webhook_subscription=self,

@@ -34,6 +34,8 @@ NO_LICENSES = "no-licenses"
 UNKNOWN_LICENSE = "unknown-license"
 NOT_ANALYZED = "not-analyzed"
 
+RESOURCE_READ_ERROR = "resource-read-error"
+
 IGNORED_WHITEOUT = "ignored-whiteout"
 IGNORED_EMPTY_FILE = "ignored-empty-file"
 IGNORED_WHITESPACE_FILE = "ignored-whitespace-file"

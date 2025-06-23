@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import importlib.util
 import inspect
 import logging
 import sys
@@ -134,7 +135,14 @@ class ScanPipeConfig(AppConfig):
         after being found.
         """
         module_name = inspect.getmodulename(path)
-        module = SourceFileLoader(module_name, str(path)).load_module()
+
+        loader = SourceFileLoader(module_name, str(path))
+        spec = importlib.util.spec_from_loader(module_name, loader)
+        if spec and spec.loader:
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        else:
+            raise ImportError(f"Could not load module from path: {path}")
 
         def is_local_module_pipeline(obj):
             return is_pipeline(obj) and obj.__module__ == module_name
@@ -249,3 +257,8 @@ class ScanPipeConfig(AppConfig):
                 run.sync_with_job()
         else:
             logger.info("No Run to synchronize.")
+
+    @property
+    def site_url(self):
+        if site_url := settings.SCANCODEIO_SITE_URL:
+            return site_url.rstrip("/")
