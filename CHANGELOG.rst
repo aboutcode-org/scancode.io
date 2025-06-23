@@ -1,8 +1,21 @@
 Changelog
 =========
 
-v34.12.0 (unreleased)
----------------------
+v35.0.0 (2025-06-23)
+--------------------
+
+- Add support for Python 3.13.
+  Upgrade the base image in Dockerfile to ``python:3.13-slim``.
+  https://github.com/aboutcode-org/scancode.io/pull/1469/files
+
+- Display matched snippets details in "Resource viewer", including the package,
+  resource, and similarity values.
+  https://github.com/aboutcode-org/scancode.io/issues/1688
+
+- Add filtering by label and pipeline in the ``flush-projects`` management command.
+  Also, a new ``--dry-run`` option is available to test the filters before applying
+  the deletion.
+  https://github.com/aboutcode-org/scancode.io/pull/1690
 
 - Add support for using Package URL (purl) as project input.
   This implementation is based on ``purl2url.get_download_url``.
@@ -12,6 +25,16 @@ v34.12.0 (unreleased)
   not valid in ``send_project_json_to_matchcode``.
   This generally means an issue on the MatchCode.io server side.
   https://github.com/aboutcode-org/scancode.io/issues/1665
+
+- Upgrade Bulma CSS and Ace JS libraries to latest versions.
+  Refine the CSS for the Resource viewer.
+  https://github.com/aboutcode-org/scancode.io/pull/1692
+
+- Add "(No value detected)" for Copyright and Holder charts.
+  https://github.com/aboutcode-org/scancode.io/issues/1697
+
+- Add "Package Compliance Alert" chart in the Policies section.
+  https://github.com/aboutcode-org/scancode.io/pull/1699
 
 v34.11.0 (2025-05-02)
 ---------------------

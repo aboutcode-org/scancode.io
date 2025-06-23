@@ -38,6 +38,8 @@ from django.db.models.expressions import Subquery
 from django.db.models.functions import Concat
 from django.template.defaultfilters import pluralize
 
+from binary_inspector.binary import collect_and_parse_macho_symbols
+from binary_inspector.binary import collect_and_parse_winpe_symbols
 from commoncode.paths import common_prefix
 from elf_inspector.binary import collect_and_parse_elf_symbols
 from elf_inspector.dwarf import get_dwarf_paths
@@ -1942,7 +1944,7 @@ def map_elfs_binaries_with_symbols(project, logger=None):
         project.codebaseresources.files().to_codebase().has_no_relation().elfs()
     )
 
-    # Collect source symbols from rust source files
+    # Collect source symbols from elf related source files
     elf_from_resources = from_resources.filter(extension__in=[".c", ".cpp", ".h"])
 
     map_binaries_with_symbols(
@@ -1951,6 +1953,53 @@ def map_elfs_binaries_with_symbols(project, logger=None):
         to_resources=elf_binaries,
         binary_symbols_func=collect_and_parse_elf_symbols,
         map_type="elf_symbols",
+        logger=logger,
+    )
+
+
+def map_macho_binaries_with_symbols(project, logger=None):
+    """Map macho binaries to their source using symbols in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    macho_binaries = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .has_no_relation()
+        .macho_binaries()
+    )
+
+    # Collect source symbols from macos related source files
+    mac_from_resources = from_resources.filter(
+        extension__in=[".c", ".cpp", ".h", ".m", ".swift"]
+    )
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=mac_from_resources,
+        to_resources=macho_binaries,
+        binary_symbols_func=collect_and_parse_macho_symbols,
+        map_type="macho_symbols",
+        logger=logger,
+    )
+
+
+def map_winpe_binaries_with_symbols(project, logger=None):
+    """Map winpe binaries to their source using symbols in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    winexe_binaries = (
+        project.codebaseresources.files().to_codebase().has_no_relation().win_exes()
+    )
+
+    # Collect source symbols from windows related source files
+    windows_from_resources = from_resources.filter(
+        extension__in=[".c", ".cpp", ".h", ".cs"]
+    )
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=windows_from_resources,
+        to_resources=winexe_binaries,
+        binary_symbols_func=collect_and_parse_winpe_symbols,
+        map_type="winpe_symbols",
         logger=logger,
     )
 
