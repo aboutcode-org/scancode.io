@@ -36,9 +36,10 @@ v35.0.0 (2025-06-23)
 - Add "Package Compliance Alert" chart in the Policies section.
   https://github.com/aboutcode-org/scancode.io/pull/1699
 
-- Catch ``NotImplementedError`` in ``get_unique_unresolved_purls`` and properly
-  log error in project.
+- Update univers to v31.0.0, catch ``NotImplementedError`` in
+  ``get_unique_unresolved_purls``, and properly log error in project.
   https://github.com/aboutcode-org/scancode.io/pull/1700
+  https://github.com/aboutcode-org/scancode.io/pull/1701
 
 v34.11.0 (2025-05-02)
 ---------------------
