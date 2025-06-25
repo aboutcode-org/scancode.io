@@ -47,7 +47,7 @@ from extractcode import EXTRACT_SUFFIX
 from go_inspector.plugin import collect_and_parse_symbols
 from packagedcode.npm import NpmPackageJsonHandler
 from rust_inspector.binary import collect_and_parse_rust_symbols
-from source_inspector.symbols_tree_sitter import get_tree
+from source_inspector.symbols_tree_sitter import get_tree_and_language_info
 from summarycode.classify import LEGAL_STARTS_ENDS
 
 from aboutcode.pipeline import LoopProgress
@@ -2173,7 +2173,7 @@ def map_python_pyx_to_binaries(project, logger=None):
     for resource in from_resources:
         # open Cython source file, create AST, parse it for function definitions
         # and save them in a list
-        tree, _ = get_tree(resource.location)
+        tree, _ = get_tree_and_language_info(resource.location)
         function_definitions = [
             node
             for node in tree.root_node.children
