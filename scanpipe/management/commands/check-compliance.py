@@ -82,12 +82,25 @@ class Command(ProjectCommand):
                     self.stderr.write(f" > {severity.upper()}: {len(entries)}")
                     if self.verbosity > 1:
                         self.stderr.write("   " + "\n   ".join(entries))
+
         return count > 0
 
     def check_vulnerabilities(self):
-        packages = self.project.discoveredpackages.vulnerable()
-        dependencies = self.project.discovereddependencies.vulnerable()
-        vulnerable_records = list(packages) + list(dependencies)
+        # TODO: Remove duplication with scanpipe.pipes.output.add_vulnerabilities_sheet
+        vulnerable_packages_queryset = (
+            self.project.discoveredpackages.vulnerable()
+            .only_package_url_fields(extra=["affected_by_vulnerabilities"])
+            .order_by_package_url()
+        )
+        vulnerable_dependencies_queryset = (
+            self.project.discovereddependencies.vulnerable()
+            .only_package_url_fields(extra=["affected_by_vulnerabilities"])
+            .order_by_package_url()
+        )
+
+        vulnerable_records = list(vulnerable_packages_queryset) + list(
+            vulnerable_dependencies_queryset
+        )
         count = len(vulnerable_records)
 
         if self.verbosity > 0:
@@ -95,6 +108,12 @@ class Command(ProjectCommand):
                 self.stderr.write(f"{count} vulnerable records found:")
                 for entry in vulnerable_records:
                     self.stderr.write(str(entry))
+                    vulnerability_ids = [
+                        vulnerability.get("vulnerability_id")
+                        for vulnerability in entry.affected_by_vulnerabilities
+                    ]
+                    self.stderr.write(" > " + ", ".join(vulnerability_ids))
             else:
                 self.stdout.write("No vulnerabilities found")
+
         return count > 0

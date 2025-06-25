@@ -1212,6 +1212,32 @@ class ScanPipeManagementCommandTest(TestCase):
         )
         self.assertEqual(expected, out_value)
 
+    def test_scanpipe_management_command_check_compliance_vulnerabilities(self):
+        project = make_project(name="my_project")
+        package1 = make_package(project, package_url="pkg:generic/name@1.0")
+
+        out = StringIO()
+        options = ["--project", project.name, "--fail-on-vulnerabilities"]
+        with self.assertRaises(SystemExit) as cm:
+            call_command("check-compliance", *options, stdout=out)
+        self.assertEqual(cm.exception.code, 0)
+        out_value = out.getvalue().strip()
+        self.assertEqual("No vulnerabilities found", out_value)
+
+        package1.update(
+            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
+        )
+        out = StringIO()
+        options = ["--project", project.name, "--fail-on-vulnerabilities"]
+        with self.assertRaises(SystemExit) as cm:
+            call_command("check-compliance", *options, stderr=out)
+        self.assertEqual(cm.exception.code, 1)
+        out_value = out.getvalue().strip()
+        expected = (
+            "1 vulnerable records found:\npkg:generic/name@1.0\n > VCID-cah8-awtr-aaad"
+        )
+        self.assertEqual(expected, out_value)
+
     def test_scanpipe_management_command_report(self):
         label1 = "label1"
         project1 = make_project("project1", labels=[label1])
