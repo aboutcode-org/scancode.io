@@ -1946,9 +1946,7 @@ def map_elfs_binaries_with_symbols(project, logger=None):
     )
 
     # Collect source symbols from elf related source files
-    elf_from_resources = from_resources.filter(
-        extension__in=[".c", ".cpp", ".h", ".pyx", ".pxd"]
-    )
+    elf_from_resources = from_resources.filter(extension__in=[".c", ".cpp", ".h"])
 
     map_binaries_with_symbols(
         project=project,
@@ -2152,7 +2150,7 @@ def _map_javascript_symbols(to_resource, javascript_from_resources, logger):
 
 
 def map_python_pyx_to_binaries(project, logger=None):
-    """Map ELF binaries to their sources in ``project``."""
+    """Map Cython source to their compiled binaries in ``project``."""
     from_resources = (
         project.codebaseresources.files()
         .from_codebase()
