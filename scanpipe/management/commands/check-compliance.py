@@ -60,50 +60,41 @@ class Command(ProjectCommand):
         super().handle(*args, **options)
         exit_code = 0
 
-        fail_level = options["fail_level"]
-        compliance_alerts = get_project_compliance_alerts(self.project, fail_level)
-
-        compliance_alerts_count = sum(
-            len(issues_by_severity)
-            for model_alerts in compliance_alerts.values()
-            for issues_by_severity in model_alerts.values()
-        )
-
-        if compliance_alerts_count:
+        if self.check_compliance(options["fail_level"]):
             exit_code = 1
-            if self.verbosity > 0:
-                msg = [
-                    f"{compliance_alerts_count} compliance issues detected on this "
-                    f"project."
-                ]
-                for label, issues in compliance_alerts.items():
-                    msg.append(f"[{label}]")
-                    for severity, entries in issues.items():
-                        msg.append(f" > {severity.upper()}: {len(entries)}")
-                        if self.verbosity > 1:
-                            msg.append("   " + "\n   ".join(entries))
 
-                self.stderr.write("\n".join(msg))
-
-        if options["fail_on_vulnerabilities"]:
-            if self.handle_vulnerabilities():
-                exit_code = 1
+        if options["fail_on_vulnerabilities"] and self.check_vulnerabilities():
+            exit_code = 1
 
         sys.exit(exit_code)
 
-    def handle_vulnerabilities(self):
-        packages_qs = self.project.discoveredpackages.vulnerable()
-        dependencies_qs = self.project.discovereddependencies.vulnerable()
-        vulnerability_count = packages_qs.count() + dependencies_qs.count()
+    def check_compliance(self, fail_level):
+        alerts = get_project_compliance_alerts(self.project, fail_level)
+        count = sum(
+            len(issues) for model in alerts.values() for issues in model.values()
+        )
 
-        if vulnerability_count:
-            if self.verbosity > 0:
-                self.stderr.write(f"{vulnerability_count} vulnerabilities found:")
-                for entry in [*packages_qs, *dependencies_qs]:
+        if count and self.verbosity > 0:
+            self.stderr.write(f"{count} compliance issues detected.")
+            for label, model in alerts.items():
+                self.stderr.write(f"[{label}]")
+                for severity, entries in model.items():
+                    self.stderr.write(f" > {severity.upper()}: {len(entries)}")
+                    if self.verbosity > 1:
+                        self.stderr.write("   " + "\n   ".join(entries))
+        return count > 0
+
+    def check_vulnerabilities(self):
+        packages = self.project.discoveredpackages.vulnerable()
+        dependencies = self.project.discovereddependencies.vulnerable()
+        vulnerable_records = list(packages) + list(dependencies)
+        count = len(vulnerable_records)
+
+        if self.verbosity > 0:
+            if count:
+                self.stderr.write(f"{count} vulnerable records found:")
+                for entry in vulnerable_records:
                     self.stderr.write(str(entry))
-            return True
-
-        else:
-            if self.verbosity > 0:
+            else:
                 self.stdout.write("No vulnerabilities found")
-            return False
+        return count > 0
