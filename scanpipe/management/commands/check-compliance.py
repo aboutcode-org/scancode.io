@@ -45,9 +45,21 @@ class Command(ProjectCommand):
                 "non-zero status. Default is ERROR."
             ),
         )
+        parser.add_argument(
+            "--fail-on-vulnerabilities",
+            action="store_true",
+            help=(
+                "Exit with a non-zero status if known vulnerabilities are detected in "
+                "discovered packages and dependencies. "
+                "Requires the `find_vulnerabilities` pipeline to be executed "
+                "beforehand."
+            ),
+        )
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
+        exit_code = 0
+
         fail_level = options["fail_level"]
         compliance_alerts = get_project_compliance_alerts(self.project, fail_level)
 
@@ -56,20 +68,42 @@ class Command(ProjectCommand):
             for model_alerts in compliance_alerts.values()
             for issues_by_severity in model_alerts.values()
         )
-        if not compliance_alerts_count:
-            sys.exit(0)
 
-        if self.verbosity > 0:
-            msg = [
-                f"{compliance_alerts_count} compliance issues detected on this project."
-            ]
-            for label, issues in compliance_alerts.items():
-                msg.append(f"[{label}]")
-                for severity, entries in issues.items():
-                    msg.append(f" > {severity.upper()}: {len(entries)}")
-                    if self.verbosity > 1:
-                        msg.append("   " + "\n   ".join(entries))
+        if compliance_alerts_count:
+            exit_code = 1
+            if self.verbosity > 0:
+                msg = [
+                    f"{compliance_alerts_count} compliance issues detected on this "
+                    f"project."
+                ]
+                for label, issues in compliance_alerts.items():
+                    msg.append(f"[{label}]")
+                    for severity, entries in issues.items():
+                        msg.append(f" > {severity.upper()}: {len(entries)}")
+                        if self.verbosity > 1:
+                            msg.append("   " + "\n   ".join(entries))
 
-            self.stderr.write("\n".join(msg))
+                self.stderr.write("\n".join(msg))
 
-        sys.exit(1)
+        if options["fail_on_vulnerabilities"]:
+            if self.handle_vulnerabilities():
+                exit_code = 1
+
+        sys.exit(exit_code)
+
+    def handle_vulnerabilities(self):
+        packages_qs = self.project.discoveredpackages.vulnerable()
+        dependencies_qs = self.project.discovereddependencies.vulnerable()
+        vulnerability_count = packages_qs.count() + dependencies_qs.count()
+
+        if vulnerability_count:
+            if self.verbosity > 0:
+                self.stderr.write(f"{vulnerability_count} vulnerabilities found:")
+                for entry in [*packages_qs, *dependencies_qs]:
+                    self.stderr.write(str(entry))
+            return True
+
+        else:
+            if self.verbosity > 0:
+                self.stdout.write("No vulnerabilities found")
+            return False
