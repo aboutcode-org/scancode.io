@@ -49,6 +49,7 @@ from scanpipe.models import WebhookSubscription
 from scanpipe.pipes import flag
 from scanpipe.pipes import purldb
 from scanpipe.tests import filter_warnings
+from scanpipe.tests import make_dependency
 from scanpipe.tests import make_mock_response
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
@@ -1224,8 +1225,12 @@ class ScanPipeManagementCommandTest(TestCase):
         out_value = out.getvalue().strip()
         self.assertEqual("No vulnerabilities found", out_value)
 
-        package1.update(
-            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
+        vulnerability_data = [{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
+        package1.update(affected_by_vulnerabilities=vulnerability_data)
+        make_dependency(
+            project,
+            dependency_uid="dependency1",
+            affected_by_vulnerabilities=vulnerability_data,
         )
         out = StringIO()
         options = ["--project", project.name, "--fail-on-vulnerabilities"]
@@ -1234,7 +1239,11 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(cm.exception.code, 1)
         out_value = out.getvalue().strip()
         expected = (
-            "1 vulnerable records found:\npkg:generic/name@1.0\n > VCID-cah8-awtr-aaad"
+            "2 vulnerable records found:\n"
+            "pkg:generic/name@1.0\n"
+            " > VCID-cah8-awtr-aaad\n"
+            "dependency1\n"
+            " > VCID-cah8-awtr-aaad"
         )
         self.assertEqual(expected, out_value)
 

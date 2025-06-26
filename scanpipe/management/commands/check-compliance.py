@@ -86,21 +86,10 @@ class Command(ProjectCommand):
         return count > 0
 
     def check_vulnerabilities(self):
-        # TODO: Remove duplication with scanpipe.pipes.output.add_vulnerabilities_sheet
-        vulnerable_packages_queryset = (
-            self.project.discoveredpackages.vulnerable()
-            .only_package_url_fields(extra=["affected_by_vulnerabilities"])
-            .order_by_package_url()
-        )
-        vulnerable_dependencies_queryset = (
-            self.project.discovereddependencies.vulnerable()
-            .only_package_url_fields(extra=["affected_by_vulnerabilities"])
-            .order_by_package_url()
-        )
+        packages = self.project.discoveredpackages.vulnerable_ordered()
+        dependencies = self.project.discovereddependencies.vulnerable_ordered()
 
-        vulnerable_records = list(vulnerable_packages_queryset) + list(
-            vulnerable_dependencies_queryset
-        )
+        vulnerable_records = list(packages) + list(dependencies)
         count = len(vulnerable_records)
 
         if self.verbosity > 0:
