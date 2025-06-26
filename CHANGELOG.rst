@@ -1,6 +1,15 @@
 Changelog
 =========
 
+v35.1.0 (unreleased)
+--------------------
+
+- Add a ``--fail-on-vulnerabilities`` option in ``check-compliance`` management command.
+  When this option is enabled, the command will exit with a non-zero status if known
+  vulnerabilities are detected in discovered packages and dependencies.
+  Requires the ``find_vulnerabilities`` pipeline to be executed beforehand.
+  https://github.com/aboutcode-org/scancode.io/pull/1702
+
 v35.0.0 (2025-06-23)
 --------------------
 
