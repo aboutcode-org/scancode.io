@@ -20,12 +20,16 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+from pathlib import Path
+
 from extractcode import EXTRACT_SUFFIX
 
+from scanpipe.models import DiscoveredPackage
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import flag
 from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
+from scanpipe.pipes.fetch import store_package_archive
 
 
 class RootFS(Pipeline):
@@ -39,6 +43,7 @@ class RootFS(Pipeline):
             cls.collect_rootfs_information,
             cls.collect_and_create_codebase_resources,
             cls.collect_and_create_system_packages,
+            cls.store_package_archives,
             cls.flag_uninteresting_codebase_resources,
             cls.flag_empty_files,
             cls.flag_ignored_resources,
@@ -86,6 +91,75 @@ class RootFS(Pipeline):
         with self.save_errors(rootfs.DistroNotFound, rootfs.DistroNotSupported):
             for rfs in self.root_filesystems:
                 rootfs.scan_rootfs_for_system_packages(self.project, rfs)
+
+    def store_package_archives(self):
+        """
+        Store package archives (.deb, .apk) found in the root filesystem or fetch
+        them for detected system packages if configured to do so.
+        """
+        if not self.project.use_local_storage:
+           self.log(f"Local storage is disabled for project: {self.project.name}."
+                    "Skipping package storage.")
+           return []
+        if not self.env.get("STORE_DOWNLOADED_PACKAGES", True):
+            self.log("Package storage skipped: STORE_DOWNLOADED_PACKAGES is disabled")
+            return
+
+        self.log(f"Storing package archives for project: {self.project.name}")
+        stored_files = []
+
+        package_files = [
+            resource.path
+            for resource in self.project.codebaseresources.filter(
+                extension__in=[".deb", ".apk"]
+            )
+        ]
+        for package_path in package_files:
+            if not Path(package_path).exists():
+                self.log(f"Package file not found: {package_path}", level="ERROR")
+                continue
+            result = store_package_archive(
+                self.project, url=None, file_path=str(package_path)
+            )
+            self.log(f"Stored package archive: {package_path}, Result: {result}")
+            stored_files.append(result)
+        system_packages = DiscoveredPackage.objects.filter(project=self.project)
+        self.log(f"Found {system_packages.count()} system packages")
+
+        for pkg in system_packages:
+            if "alpine" in pkg.purl:
+                pkg_name = pkg.name
+                pkg_version = pkg.version
+                apk_url = f"http://dl-cdn.alpinelinux.org/alpine/v3.18/main/x86_64/{pkg_name}-{pkg_version}.apk"
+                try:
+                    import requests
+
+                    response = requests.get(apk_url, stream=True, timeout=10)
+                    response.raise_for_status()
+                    dest_path = (
+                        Path(self.project.work_directory)
+                        / "tmp"
+                        / f"{pkg_name}-{pkg_version}.apk"
+                    )
+                    dest_path.parent.mkdir(exist_ok=True)
+                    with open(dest_path, "wb") as f:
+                        for chunk in response.iter_content(1024):
+                            f.write(chunk)
+                    result = store_package_archive(
+                        self.project, url=apk_url, file_path=str(dest_path)
+                    )
+                    self.log(
+                        f"Stored system package archive: {pkg_name}, URL: {apk_url},"
+                        "Result: {result}"
+                    )
+                    stored_files.append(result)
+                except Exception as e:
+                    self.log(
+                        f"Failed to fetch/store {pkg_name} from {apk_url}: {e}",
+                        level="WARNING",
+                    )
+
+        return stored_files
 
     def flag_uninteresting_codebase_resources(self):
         """Flag files—not worth tracking—that don’t belong to any system packages."""

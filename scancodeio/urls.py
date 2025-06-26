@@ -21,6 +21,7 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 from django.urls import include
 from django.urls import path
@@ -53,6 +54,8 @@ urlpatterns = auth_urlpatterns + [
     path("", include("scanpipe.urls")),
     path("", RedirectView.as_view(url="project/")),
 ]
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
 if settings.SCANCODEIO_ENABLE_ADMIN_SITE:
