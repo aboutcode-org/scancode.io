@@ -1630,3 +1630,35 @@ class ScanPipeViewsTest(TestCase):
 
         for field in expected_fields:
             self.assertIn(field, json_data[0])
+
+    def test_file_tree_base_url_lists_top_level_nodes(self):
+        make_resource_file(self.project1, path="child1.txt")
+        make_resource_file(self.project1, path="dir1")
+
+        url = reverse("file_tree", kwargs={"slug": self.project1.slug})
+        response = self.client.get(url)
+        children = response.context[-1]["children"]
+
+        child1 = children[0]
+        dir1 = children[1]
+
+        self.assertEqual(child1.path, "child1.txt")
+        self.assertEqual(dir1.path, "dir1")
+
+    def test_file_tree_nested_url_lists_only_children_of_given_path(self):
+        make_resource_file(self.project1, path="parent/child1.txt")
+        make_resource_file(self.project1, path="parent/dir1")
+        make_resource_file(self.project1, path="parent/dir1/child2.txt")
+
+        url = reverse("file_tree", kwargs={"slug": self.project1.slug})
+        response = self.client.get(url + "?path=parent&tree=true")
+        children = response.context["children"]
+
+        child1 = children[0]
+        dir1 = children[1]
+
+        self.assertEqual(child1.path, "parent/child1.txt")
+        self.assertEqual(dir1.path, "parent/dir1")
+
+        self.assertFalse(child1.has_children)
+        self.assertTrue(dir1.has_children)

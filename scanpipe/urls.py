@@ -251,5 +251,10 @@ urlpatterns = [
         views.LicenseListView.as_view(),
         name="license_list",
     ),
+    path(
+        "project/<slug:slug>/codebase_tree/",
+        views.CodebaseResourceTreeView.as_view(),
+        name="file_tree",
+    ),
     path("monitor/", include("django_rq.urls")),
 ]

@@ -37,6 +37,8 @@ from django.core.exceptions import SuspiciousFileOperation
 from django.core.exceptions import ValidationError
 from django.core.files.storage.filesystem import FileSystemStorage
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import Exists
+from django.db.models import OuterRef
 from django.db.models import Prefetch
 from django.db.models.manager import Manager
 from django.http import FileResponse
@@ -2756,3 +2758,35 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
             "children": children,
         }
         return node
+
+
+class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
+    template_name = "scanpipe/resource_tree.html"
+
+    def get(self, request, *args, **kwargs):
+        slug = self.kwargs.get("slug")
+        project = get_object_or_404(Project, slug=slug)
+        path = request.GET.get("path", None)
+
+        base_qs = (
+            CodebaseResource.objects.filter(project=project, parent_path=path)
+            .only("path", "name", "type")
+            .order_by("path")
+        )
+
+        subdirs = CodebaseResource.objects.filter(
+            project=project,
+            parent_path=OuterRef("path"),
+        )
+
+        children = base_qs.annotate(has_children=Exists(subdirs))
+
+        context = {
+            "project": project,
+            "path": path,
+            "children": children,
+        }
+
+        if request.GET.get("tree") == "true":
+            return render(request, "scanpipe/panels/file_tree_panel.html", context)
+        return render(request, self.template_name, context)
