@@ -1008,6 +1008,24 @@ class ScanPipeViewsTest(TestCase):
         expected = f"/project/{self.project1.slug}/packages/?compliance_alert=error"
         self.assertContains(response, expected)
 
+    @mock.patch.object(Project, "policies_enabled", new_callable=mock.PropertyMock)
+    def test_scanpipe_views_project_clarity_compliance_panel_view(
+        self, mock_policies_enabled
+    ):
+        url = reverse("clarity_compliance_panel", args=[self.project1.slug])
+        self.project1.extra_data = {"clarity_compliance_alert": "error"}
+        self.project1.save(update_fields=["extra_data"])
+
+        mock_policies_enabled.return_value = False
+        response = self.client.get(url)
+        self.assertEqual(404, response.status_code)
+
+        mock_policies_enabled.return_value = True
+        response = self.client.get(url)
+        self.assertContains(response, "Clarity Compliance")
+        self.assertContains(response, "Error")
+        self.assertContains(response, "License clarity is insufficient")
+
     def test_scanpipe_views_pipeline_help_view(self):
         url = reverse("pipeline_help", args=["not_existing_pipeline"])
         response = self.client.get(url)

@@ -1,0 +1,36 @@
+{% if clarity_compliance_alert %}
+  <div class="column is-half">
+    <nav id="clarity-compliance-panel" class="panel
+      {% if clarity_compliance_alert == 'error' %}is-danger
+      {% elif clarity_compliance_alert == 'warning' %}is-warning
+      {% elif clarity_compliance_alert == 'ok' %}is-success
+      {% else %}is-light{% endif %}">
+      <p class="panel-heading">
+        Clarity Compliance
+      </p>
+      <div class="panel-block">
+        <span class="tag is-rounded
+          {% if clarity_compliance_alert == 'error' %}is-danger
+          {% elif clarity_compliance_alert == 'warning' %}is-warning
+          {% elif clarity_compliance_alert == 'ok' %}is-success
+          {% else %}is-light{% endif %}">
+          {{ clarity_compliance_alert|title }}
+        </span>
+        {% if clarity_compliance_score %}
+          <span class="ml-2">Score: {{ clarity_compliance_score }}</span>
+        {% endif %}
+        <span class="ml-2">
+          {% if clarity_compliance_alert == "ok" %}
+            License clarity is sufficient.
+          {% elif clarity_compliance_alert == "warning" %}
+            License clarity is borderline. Please review.
+          {% elif clarity_compliance_alert == "error" %}
+            License clarity is insufficient! Immediate attention required.
+          {% else %}
+            No clarity compliance data available.
+          {% endif %}
+        </span>
+      </div>
+    </nav>
+  </div>
+{% endif %}
