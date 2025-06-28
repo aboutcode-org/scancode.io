@@ -56,19 +56,39 @@ class Command(ProjectCommand):
             for model_alerts in compliance_alerts.values()
             for issues_by_severity in model_alerts.values()
         )
-        if not compliance_alerts_count:
+
+        extra_data = self.project.extra_data or {}
+        clarity_alert = extra_data.get("clarity_compliance_alert")
+
+        severity_map = {"ok": 0, "warning": 1, "error": 2}
+        fail_level_map = {"MISSING": 0, "WARNING": 1, "ERROR": 2}
+
+        clarity_alert_severity = severity_map.get(clarity_alert, 0)
+        fail_level_severity = fail_level_map.get(fail_level.upper(), 2)
+
+        clarity_issue_count = (
+            1
+            if clarity_alert_severity >= fail_level_severity and clarity_alert != "ok"
+            else 0
+        )
+
+        total_issues = compliance_alerts_count + clarity_issue_count
+
+        if total_issues == 0:
             sys.exit(0)
 
         if self.verbosity > 0:
-            msg = [
-                f"{compliance_alerts_count} compliance issues detected on this project."
-            ]
+            msg = [f"{total_issues} compliance issues detected on this project."]
             for label, issues in compliance_alerts.items():
                 msg.append(f"[{label}]")
                 for severity, entries in issues.items():
                     msg.append(f" > {severity.upper()}: {len(entries)}")
                     if self.verbosity > 1:
                         msg.append("   " + "\n   ".join(entries))
+
+            if clarity_issue_count:
+                msg.append("[License Clarity Compliance]")
+                msg.append(f" > Alert Level: {clarity_alert}")
 
             self.stderr.write("\n".join(msg))
 
