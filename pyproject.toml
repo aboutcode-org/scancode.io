@@ -36,3 +36,5 @@ max-complexity = 10
 # Allow the usage of assert in the test_spdx file.
 "**/test_spdx.py*" = ["S101"]
 "scanpipe/pipes/spdx.py" = ["UP006", "UP035"]
+# Allow complexity in management commands
+"scanpipe/management/commands/*" = ["C901"]

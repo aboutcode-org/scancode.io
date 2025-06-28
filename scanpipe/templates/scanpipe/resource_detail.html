@@ -7,7 +7,7 @@
   <style>
     #resource-viewer #editor {
       min-height:730px;
-      border: lightgrey 1px solid;
+      border: var(--bulma-grey) 1px solid;
     }
     #resource-viewer .tag {
       height: 1.5em;
@@ -17,6 +17,14 @@
     #resource-viewer .nav-button .button {
       height: auto;
       padding: 0 .25rem 0 .25rem;
+    }
+    #resource-viewer #detected-data-buttons {
+      background-color: var(--bulma-pre-background);
+      border-left: var(--bulma-grey) 1px solid;
+      border-right: var(--bulma-grey) 1px solid;
+    }
+    #resource-viewer #detected-data-buttons p.control {
+      border-right: var(--bulma-grey) 1px solid;
     }
     .ace_tooltip .ace_icon {display: none;}
     {# Full screen inspired by ace/demo/scrollable-page.html #}
@@ -57,8 +65,8 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="{% static 'ace-1.20.0.min.js' %}" crossorigin="anonymous"></script>
-  <script src="{% static 'ace-1.20.0-ext-searchbox.min.js' %}" crossorigin="anonymous"></script>
+  <script src="{% static 'ace-1.42.0.min.js' %}" crossorigin="anonymous"></script>
+  <script src="{% static 'ace-1.42.0-ext-searchbox.min.js' %}" crossorigin="anonymous"></script>
   {{ detected_values|json_script:"detected_values" }}
   <script>
     let editor = ace.edit("editor", {

@@ -58,16 +58,26 @@
     {% include "scanpipe/includes/resource_chart_column.html" with field_name="detected_license_expression" url=resources_url %}
     <div class="column"></div>
   </div>
-  {% if file_compliance_alert %}
-    <hr>
-    <h3 class="title is-4 has-text-centered mb-3">
-      Policies
-    </h3>
-    <div class="columns is-gapless">
+{% endif %}
+
+{% if file_compliance_alert or package_compliance_alert %}
+  <hr>
+  <h3 class="title is-4 has-text-centered mb-3">
+    Policies
+  </h3>
+  <div class="columns is-gapless">
+    {% if file_compliance_alert %}
       {% include "scanpipe/includes/resource_chart_column.html" with field_name="compliance_alert" url=resources_url %}
+    {% endif %}
+    {% if package_compliance_alert %}
+      <div class="column">
+        <div id="package_compliance_alert_chart" data-url="{{ packages_url }}" data-lookup_field="compliance_alert"></div>
+      </div>
+    {% endif %}
+    {% if not file_compliance_alert or not package_compliance_alert %}
       <div class="column"></div>
-    </div>
-  {% endif %}
+    {% endif %}
+  </div>
 {% endif %}
 
 {% block scripts %}
@@ -79,6 +89,7 @@
   {{ file_compliance_alert|json_script:"file_compliance_alert" }}
   {{ package_declared_license_expression|json_script:"package_declared_license_expression" }}
   {{ package_type|json_script:"package_type" }}
+  {{ package_compliance_alert|json_script:"package_compliance_alert" }}
   {{ dependency_type|json_script:"dependency_type" }}
   {{ dependency_is_runtime|json_script:"dependency_is_runtime" }}
   {{ dependency_is_optional|json_script:"dependency_is_optional" }}
@@ -154,6 +165,7 @@
     {% if project.package_count %}
       makeChart("package_type", "#package_type_chart", "Package\nType");
       makeChart("package_declared_license_expression", "#package_license_chart", "Package\nLicense\nExpression");
+      makeChart("package_compliance_alert", "#package_compliance_alert_chart", "Package\nCompliance\nAlert");
     {% endif %}
     {% if project.dependency_count %}
       makeChart("dependency_type", "#dependency_type_chart", "Package\nType");
@@ -167,7 +179,7 @@
       makeChart("file_holders", "#holders_chart", "Holder");
       makeChart("file_copyrights", "#copyrights_chart", "Copyright");
       makeChart("file_detected_license_expression", "#detected_license_expression_chart", "Detected\nLicense\nExpression");
-      makeChart("file_compliance_alert", "#compliance_alert_chart", "Compliance\nAlert");
+      makeChart("file_compliance_alert", "#compliance_alert_chart", "Resource\nCompliance\nAlert");
     {% endif %}
   </script>
 {% endblock %}

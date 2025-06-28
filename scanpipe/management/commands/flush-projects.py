@@ -49,26 +49,69 @@ class Command(BaseCommand):
             default=0,
         )
         parser.add_argument(
+            "--label",
+            action="append",
+            dest="labels",
+            default=list(),
+            help=(
+                "Filter projects by the provided label. "
+                "Multiple labels can be provided by using this argument multiple times."
+            ),
+        )
+        parser.add_argument(
+            "--pipeline",
+            action="append",
+            dest="pipelines",
+            default=list(),
+            help=(
+                "Filter projects by the provided pipeline name. "
+                "Multiple pipeline name can be provided by using this argument multiple"
+                " times."
+            ),
+        )
+        parser.add_argument(
             "--no-input",
             action="store_false",
             dest="interactive",
             help="Do not prompt the user for input of any kind.",
         )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help=(
+                "Do not delete any projects; just print the ones that would be flushed."
+            ),
+        )
 
     def handle(self, *inputs, **options):
         verbosity = options["verbosity"]
         retain_days = options["retain_days"]
-        projects = Project.objects.all()
+        labels = options["labels"]
+        pipelines = options["pipelines"]
+        dry_run = options["dry_run"]
+        projects = Project.objects.order_by("-created_date").distinct()
 
         if retain_days:
             cutoff_date = timezone.now() - datetime.timedelta(days=retain_days)
             projects = projects.filter(created_date__lt=cutoff_date)
 
+        if labels:
+            projects = projects.filter(labels__name__in=labels)
+
+        if pipelines:
+            projects = projects.filter(runs__pipeline_name__in=pipelines)
+
         projects_count = projects.count()
         if projects_count == 0:
             if verbosity > 0:
-                self.stdout.write("No projects to remove.")
+                self.stdout.write("No projects to delete.")
             sys.exit(0)
+
+        if dry_run:
+            msg = self.style.WARNING(f"{projects_count} projects would be deleted:")
+            self.stdout.write(msg)
+            self.stdout.write("\n".join([f"- {project.name}" for project in projects]))
+            return
 
         if options["interactive"]:
             confirm = input(

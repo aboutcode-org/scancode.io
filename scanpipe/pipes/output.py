@@ -567,21 +567,11 @@ def to_xlsx(project):
 
 
 def add_vulnerabilities_sheet(workbook, project):
-    vulnerable_packages_queryset = (
-        DiscoveredPackage.objects.project(project)
-        .vulnerable()
-        .only_package_url_fields(extra=["affected_by_vulnerabilities"])
-        .order_by_package_url()
-    )
-    vulnerable_dependencies_queryset = (
-        DiscoveredDependency.objects.project(project)
-        .vulnerable()
-        .only_package_url_fields(extra=["affected_by_vulnerabilities"])
-        .order_by_package_url()
-    )
+    vulnerable_packages = project.discoveredpackages.vulnerable_ordered()
+    vulnerable_dependencies = project.discovereddependencies.vulnerable_ordered()
     vulnerable_querysets = [
-        vulnerable_packages_queryset,
-        vulnerable_dependencies_queryset,
+        vulnerable_packages,
+        vulnerable_dependencies,
     ]
 
     vulnerability_fields = [
