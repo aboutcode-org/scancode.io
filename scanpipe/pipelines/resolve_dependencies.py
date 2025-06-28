@@ -21,7 +21,12 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import logging
+<<<<<<< HEAD
+=======
+from pathlib import Path
+>>>>>>> ca3a1ac0c0147a6f3f59999a67bf586eab9b8a36
 from aboutcode.pipeline import optional_step
+from aboutcode.pipeline import group
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import resolve
 from scanpipe.pipes import scancode
@@ -61,7 +66,36 @@ class ResolveDependencies(ScanCodebase):
         """Locate package manifest files with a supported package resolver."""
         self.manifest_resources = resolve.get_manifest_resources(self.project)
 
-    @optional_step("StaticResolver")
+    def store_manifest_files(self):
+        """Store manifest files locally if enabled."""
+        if not self.project.use_local_storage:
+            logger.info(f"Local storage is disabled for project: {self.project.name}."
+                         "Skipping file storage.")
+            return []
+
+        logger.info(f"Storing manifest files for project: {self.project.name}")
+        stored_files = []
+
+        for resource in self.manifest_resources:
+            resource_path = resource.path
+            if not Path(resource_path).exists():
+                logger.error(f"Invalid or missing file path: {resource_path}")
+                continue
+            resource_path_str = str(resource_path)
+            logger.info(f"Storing manifest file: {resource_path_str}")
+            try:
+                result = store_package_archive(
+                    self.project, url=None, file_path=resource_path_str
+                )
+                logger.info(f"Stored manifest file {resource_path_str}: {result}")
+                stored_files.append(result)
+            except Exception as e:
+                logger.error(f"Failed to store {resource_path_str}: {e}")
+
+        return stored_files
+
+
+    @group("StaticResolver")
     def scan_for_application_packages(self):
         """
         Scan and assemble application packages from package manifests
@@ -74,7 +108,42 @@ class ResolveDependencies(ScanCodebase):
             progress_logger=self.log,
         )
 
-    @optional_step("StaticResolver")
+    def store_package_archives(self):
+        """Store package archives locally if enabled."""
+        if not self.project.use_local_storage:
+            logger.info(f"Local storage is disabled for project: {self.project.name}."
+                         "Skipping package storage.")
+            return []
+
+        logger.info(f"Storing package archives for project: {self.project.name}")
+        stored_files = []
+        package_files = [
+            resource.path
+            for resource in self.project.codebaseresources.filter(
+                extension__in=[
+                    ".whl", ".tar.gz", ".zip", ".deb", ".rpm", ".apk", ".nupkg"
+                    ]
+            )
+        ]
+
+        for package_path in package_files:
+            if not Path(package_path).exists():
+                logger.error(f"Invalid or missing package path: {package_path}")
+                continue
+            package_path_str = str(package_path)
+            logger.info(f"Storing package archive: {package_path_str}")
+            try:
+                result = store_package_archive(
+                    self.project, url=None, file_path=package_path_str
+                )
+                logger.info(f"Stored package archive {package_path_str}: {result}")
+                stored_files.append(result)
+            except Exception as e:
+                logger.error(f"Failed to store {package_path_str}: {e}")
+
+        return stored_files
+
+    @group("StaticResolver")
     def create_packages_and_dependencies(self):
         """
         Create the statically resolved packages and their dependencies

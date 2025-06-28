@@ -21,6 +21,10 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import logging
+<<<<<<< HEAD
+=======
+from pathlib import Path
+>>>>>>> ca3a1ac0c0147a6f3f59999a67bf586eab9b8a36
 from aboutcode.pipeline import optional_step
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline

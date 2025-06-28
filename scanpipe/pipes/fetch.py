@@ -363,6 +363,10 @@ def fetch_git_repo(url, to=None):
     )
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> ca3a1ac0c0147a6f3f59999a67bf586eab9b8a36
 def store_package_archive(project, url=None, file_path=None):
     """
     Store a package in PackageArchive and link it to DownloadedPackage.
@@ -437,6 +441,10 @@ def store_package_archive(project, url=None, file_path=None):
         return None
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> ca3a1ac0c0147a6f3f59999a67bf586eab9b8a36
 SCHEME_TO_FETCHER_MAPPING = {
     "http": fetch_http,
     "https": fetch_http,

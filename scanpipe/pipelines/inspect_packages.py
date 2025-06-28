@@ -21,7 +21,13 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import logging
+<<<<<<< HEAD
 from aboutcode.pipeline import optional_step
+=======
+from pathlib import Path
+
+from aboutcode.pipeline import group
+>>>>>>> ca3a1ac0c0147a6f3f59999a67bf586eab9b8a36
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import scancode
 from scanpipe.pipes.fetch import store_package_archive
