@@ -74,8 +74,26 @@ class Command(ProjectCommand):
             len(issues) for model in alerts.values() for issues in model.values()
         )
 
-        if count and self.verbosity > 0:
-            self.stderr.write(f"{count} compliance issues detected.")
+        extra_data = self.project.extra_data or {}
+        clarity_alert = extra_data.get("clarity_compliance_alert")
+
+        severity_map = {"ok": 0, "warning": 1, "error": 2}
+        fail_level_map = {"MISSING": 0, "WARNING": 1, "ERROR": 2}
+
+        clarity_alert_severity = severity_map.get(clarity_alert, 0)
+        fail_level_severity = fail_level_map.get(fail_level.upper(), 2)
+
+        clarity_issue_count = (
+            1
+            if (clarity_alert_severity >= fail_level_severity and clarity_alert != "ok")
+            else 0
+        )
+
+        total_issues = count + clarity_issue_count
+
+        if total_issues and self.verbosity > 0:
+            self.stderr.write(f"{total_issues} compliance issues detected.")
+
             for label, model in alerts.items():
                 self.stderr.write(f"[{label}]")
                 for severity, entries in model.items():
@@ -83,7 +101,11 @@ class Command(ProjectCommand):
                     if self.verbosity > 1:
                         self.stderr.write("   " + "\n   ".join(entries))
 
-        return count > 0
+            if clarity_issue_count:
+                self.stderr.write("[License Clarity Compliance]")
+                self.stderr.write(f" > Alert Level: {clarity_alert}")
+
+        return total_issues > 0
 
     def check_vulnerabilities(self):
         packages = self.project.discoveredpackages.vulnerable_ordered()
