@@ -1,10 +1,6 @@
 {% if clarity_compliance_alert %}
   <div class="column is-half">
-    <nav id="clarity-compliance-panel" class="panel
-      {% if clarity_compliance_alert == 'error' %}is-danger
-      {% elif clarity_compliance_alert == 'warning' %}is-warning
-      {% elif clarity_compliance_alert == 'ok' %}is-success
-      {% else %}is-light{% endif %}">
+    <nav id="clarity-compliance-panel" class="panel is-dark">
       <p class="panel-heading">
         Clarity Compliance
       </p>
