@@ -66,7 +66,7 @@ class DeployToDevelop(Pipeline):
             cls.flag_whitespace_files,
             cls.flag_ignored_resources,
             cls.load_ecosystem_config,
-            cls.load_ecosystem_config_ruby,
+            cls.map_ruby,
             cls.map_about_files,
             cls.map_checksum,
             cls.match_archives_to_purldb,
@@ -136,7 +136,7 @@ class DeployToDevelop(Pipeline):
         d2d_config.load_ecosystem_config(pipeline=self, options=self.selected_groups)
 
     @optional_step("Ruby")
-    def load_ecosystem_config_ruby(self):
+    def map_ruby(self):
         """Load Ruby specific configurations for d2d steps."""
         pass
 
