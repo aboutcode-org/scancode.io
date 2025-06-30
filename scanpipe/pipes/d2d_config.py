@@ -129,41 +129,31 @@ def load_ecosystem_config(pipeline, options):
     - which source files to get source symbols from
     - which unmapped paths to ignore in deployed binaries
     """
-    configs_by_ecosystem = {
-        ecosystem.ecosystem_option: ecosystem
-        for ecosystem in ECOSYSTEM_CONFIGS.values()
-    }
-
     # Add default configurations which are common accross ecosystems
     pipeline.ecosystem_config = ECOSYSTEM_CONFIGS.get("Default")
 
     # Add configurations for each selected ecosystem
     for selected_option in options:
-        if selected_option not in configs_by_ecosystem:
+        if selected_option not in ECOSYSTEM_CONFIGS:
             continue
 
+        ecosystem_config = get_ecosystem_config(ecosystem=selected_option)
         add_ecosystem_config(
             pipeline_ecosystem_config=pipeline.ecosystem_config,
-            configs_by_ecosystem=configs_by_ecosystem,
-            selected_option=selected_option,
+            ecosystem_config=ecosystem_config,
         )
 
 
-def add_ecosystem_config(
-    pipeline_ecosystem_config, configs_by_ecosystem, selected_option
-):
+def add_ecosystem_config(pipeline_ecosystem_config, ecosystem_config):
     """
-    Set the `pipeline_ecosystem_config` values from all the individual ecosystem
-    based configurations defined in `configs_by_ecosystem`, based on pipeline
-    `selected_option` which selects an ecosytem.
+    Set the `pipeline_ecosystem_config` values from an individual ecosystem
+    based configuration defined in `ecosystem_config`.
     """
     d2d_pipeline_configs = [
         "purldb_package_extensions",
         "purldb_resource_extensions",
         "deployed_resource_path_exclusions",
     ]
-
-    ecosystem_config = configs_by_ecosystem.get(selected_option)
 
     for config_name in d2d_pipeline_configs:
         config_value = getattr(ecosystem_config, config_name)
