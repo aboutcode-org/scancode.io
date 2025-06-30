@@ -1209,19 +1209,6 @@ class ProjectCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
             fail_level="missing",
         )
         context["compliance_alerts"] = compliance_alerts
-        return context
-
-
-class ClarityCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
-    model = Project
-    template_name = "scanpipe/panels/clarity_compliance.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        project = self.object
-
-        if not project.policies_enabled:
-            raise Http404
 
         extra_data = project.extra_data or {}
         context["clarity_compliance_alert"] = extra_data.get("clarity_compliance_alert")

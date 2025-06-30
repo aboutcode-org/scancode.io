@@ -222,11 +222,6 @@ urlpatterns = [
         name="project_compliance_panel",
     ),
     path(
-        "projects/<slug:slug>/clarity_compliance_panel/",
-        views.ClarityCompliancePanelView.as_view(),
-        name="clarity_compliance_panel",
-    ),
-    path(
         "project/<slug:slug>/",
         views.ProjectDetailView.as_view(),
         name="project_detail",
