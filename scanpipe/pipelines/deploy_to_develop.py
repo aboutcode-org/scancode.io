@@ -156,7 +156,7 @@ class DeployToDevelop(Pipeline):
 
         d2d.match_purldb_resources(
             project=self.project,
-            extensions=self.purldb_package_extensions,
+            extensions=self.matchable_package_extensions,
             matcher_func=d2d.match_purldb_package,
             logger=self.log,
         )
@@ -234,7 +234,7 @@ class DeployToDevelop(Pipeline):
 
         d2d.match_purldb_resources(
             project=self.project,
-            extensions=self.purldb_resource_extensions,
+            extensions=self.matchable_resource_extensions,
             matcher_func=d2d.match_purldb_resource,
             logger=self.log,
         )
@@ -290,7 +290,7 @@ class DeployToDevelop(Pipeline):
         )
         d2d.match_unmapped_resources(
             project=self.project,
-            matched_extensions=self.ecosystem_config.purldb_resource_extensions,
+            matched_extensions=self.ecosystem_config.matchable_resource_extensions,
             logger=self.log,
         )
         d2d.flag_undeployed_resources(project=self.project)

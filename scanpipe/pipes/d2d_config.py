@@ -36,13 +36,13 @@ class EcosystemConfig:
     # are options in the pipelines
     ecosystem_option: str = "Default"
 
-    # These are extensions for packages of this ecosystem which
-    # need to be matched from purldb
-    purldb_package_extensions: list = field(default_factory=list)
+    # These are extensions for package archive files for this ecosystem
+    # that are matchable against the purldb using matchcode
+    matchable_package_extensions: list = field(default_factory=list)
 
-    # These are extensions for resources of this ecosystem which
-    # need to be matched from purldb
-    purldb_resource_extensions: list = field(default_factory=list)
+    # These are extensions for file of this ecosystem that are
+    # matchable against the purldb using matchcode
+    matchable_resource_extensions: list = field(default_factory=list)
 
     # Extensions for document files which do not require review
     doc_extensions: list = field(default_factory=list)
@@ -60,11 +60,15 @@ class EcosystemConfig:
     # which are not so useful in mapping
     standard_symbols_to_exclude: list = field(default_factory=list)
 
+    # File extesions which should be looked at for source symbol extraction
+    # for mapping using symbols for a specific selected option/ecosystem
+    source_symbol_extensions: list = field(default_factory=list)
+
 
 # Dictionary of ecosystem configurations
 ECOSYSTEM_CONFIGS = {
     "Default": EcosystemConfig(
-        purldb_package_extensions=[".zip", ".tar.gz", ".tar.xz"],
+        matchable_package_extensions=[".zip", ".tar.gz", ".tar.xz"],
         devel_resource_path_exclusions=["*/tests/*"],
         doc_extensions=[
             ".pdf",
@@ -79,12 +83,12 @@ ECOSYSTEM_CONFIGS = {
     ),
     "Java": EcosystemConfig(
         ecosystem_option="Java",
-        purldb_package_extensions=[".jar", ".war"],
-        purldb_resource_extensions=[".class"],
+        matchable_package_extensions=[".jar", ".war"],
+        matchable_resource_extensions=[".class"],
     ),
     "JavaScript": EcosystemConfig(
         ecosystem_option="JavaScript",
-        purldb_resource_extensions=[
+        matchable_resource_extensions=[
             ".map",
             ".js",
             ".mjs",
@@ -98,20 +102,34 @@ ECOSYSTEM_CONFIGS = {
             ".sass",
             ".soy",
         ],
+        source_symbol_extensions=[".ts", ".js"],
     ),
     "Go": EcosystemConfig(
         ecosystem_option="Go",
-        purldb_resource_extensions=[".go"],
+        matchable_resource_extensions=[".go"],
     ),
     "Rust": EcosystemConfig(
         ecosystem_option="Rust",
-        purldb_resource_extensions=[".rs"],
+        matchable_resource_extensions=[".rs"],
+        source_symbol_extensions=[".rs"],
     ),
     "Ruby": EcosystemConfig(
         ecosystem_option="Ruby",
-        purldb_package_extensions=[".gem"],
-        purldb_resource_extensions=[".rb"],
+        matchable_package_extensions=[".gem"],
+        matchable_resource_extensions=[".rb"],
         deployed_resource_path_exclusions=["*checksums.yaml.gz*", "*metadata.gz*"],
+    ),
+    "Elf": EcosystemConfig(
+        ecosystem_option="Elf",
+        source_symbol_extensions=[".c", ".cpp", ".h"],
+    ),
+    "MacOS": EcosystemConfig(
+        ecosystem_option="MacOS",
+        source_symbol_extensions=[".c", ".cpp", ".h", ".m", ".swift"],
+    ),
+    "Windows": EcosystemConfig(
+        ecosystem_option="Windows",
+        source_symbol_extensions=[".c", ".cpp", ".h", ".cs"],
     ),
 }
 
@@ -150,8 +168,8 @@ def add_ecosystem_config(pipeline_ecosystem_config, ecosystem_config):
     based configuration defined in `ecosystem_config`.
     """
     d2d_pipeline_configs = [
-        "purldb_package_extensions",
-        "purldb_resource_extensions",
+        "matchable_package_extensions",
+        "matchable_resource_extensions",
         "deployed_resource_path_exclusions",
     ]
 
