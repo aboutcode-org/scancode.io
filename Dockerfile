@@ -28,6 +28,8 @@ LABEL org.opencontainers.image.licenses="Apache-2.0"
 
 ENV APP_NAME scancodeio
 ENV APP_USER app
+ENV APP_UID=1000
+ENV APP_GID=1000
 ENV APP_DIR /opt/$APP_NAME
 ENV VENV_LOCATION /opt/$APP_NAME/.venv
 
@@ -64,9 +66,9 @@ RUN apt-get update \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Create the APP_USER group and user
-RUN addgroup --system $APP_USER \
- && adduser --system --group --home=$APP_DIR $APP_USER \
+# Create the APP_USER group and user with specific UID and GID
+RUN groupadd --gid $APP_GID $APP_USER \
+ && useradd --uid $APP_UID --gid $APP_GID --home-dir $APP_DIR --create-home $APP_USER \
  && chown $APP_USER:$APP_USER $APP_DIR
 
 # Create the /var/APP_NAME directory with proper permission for APP_USER
