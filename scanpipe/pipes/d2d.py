@@ -1474,7 +1474,7 @@ def ignore_unmapped_resources_from_config(project, patterns_to_ignore, logger=No
     if logger:
         logger(
             f"Ignoring {ignored_resources_count:,d} to/ resources with "
-            "from ecosystem specific configurations."
+            "ecosystem specific configurations."
         )
 
 
