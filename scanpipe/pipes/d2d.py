@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,12 +18,15 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import re
 from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
+from dataclasses import dataclass
 from pathlib import Path
+from re import match as regex_match
 
 from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.core.exceptions import MultipleObjectsReturned
@@ -35,15 +38,22 @@ from django.db.models.expressions import Subquery
 from django.db.models.functions import Concat
 from django.template.defaultfilters import pluralize
 
+from binary_inspector.binary import collect_and_parse_macho_symbols
+from binary_inspector.binary import collect_and_parse_winpe_symbols
 from commoncode.paths import common_prefix
+from elf_inspector.binary import collect_and_parse_elf_symbols
+from elf_inspector.dwarf import get_dwarf_paths
 from extractcode import EXTRACT_SUFFIX
+from go_inspector.plugin import collect_and_parse_symbols
 from packagedcode.npm import NpmPackageJsonHandler
+from rust_inspector.binary import collect_and_parse_rust_symbols
 from summarycode.classify import LEGAL_STARTS_ENDS
 
+from aboutcode.pipeline import LoopProgress
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
-from scanpipe.pipes import LoopProgress
+from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
 from scanpipe.pipes import js
@@ -52,15 +62,24 @@ from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
 from scanpipe.pipes import resolve
 from scanpipe.pipes import scancode
+from scanpipe.pipes import symbolmap
+from scanpipe.pipes import symbols
 
 FROM = "from/"
 TO = "to/"
 
 
 def get_inputs(project):
-    """Locate the ``from`` and ``to`` input files in project inputs/ directory."""
+    """
+    Locate the ``from`` and ``to`` input files in project inputs/ directory.
+    The input source can be flagged using a "from-" / "to-" prefix in the filename or
+    by adding a "#from" / "#to" fragment at the end of the download URL.
+    """
     from_files = list(project.inputs("from*"))
+    from_files.extend([input.path for input in project.inputsources.filter(tag="from")])
+
     to_files = list(project.inputs("to*"))
+    to_files.extend([input.path for input in project.inputsources.filter(tag="to")])
 
     if len(from_files) < 1:
         raise FileNotFoundError("from* input files not found.")
@@ -176,14 +195,24 @@ def map_java_to_class(project, logger=None):
     to_resources = project_files.to_codebase().has_no_relation()
 
     to_resources_dot_class = to_resources.filter(extension=".class")
-    resource_count = to_resources_dot_class.count()
-    if logger:
-        logger(f"Mapping {resource_count:,d} .class resources to .java")
+    from_resources_dot_java = (
+        from_resources.filter(extension=".java")
+        # The "java_package" extra_data value is set during the `find_java_packages`,
+        # it is required to build the index.
+        .filter(extra_data__java_package__isnull=False)
+    )
+    to_resource_count = to_resources_dot_class.count()
+    from_resource_count = from_resources_dot_java.count()
 
-    from_resources_dot_java = from_resources.filter(extension=".java")
-    if not from_resources_dot_java.exists():
+    if not from_resource_count:
         logger("No .java resources to map.")
         return
+
+    if logger:
+        logger(
+            f"Mapping {to_resource_count:,d} .class resources to "
+            f"{from_resource_count:,d} .java"
+        )
 
     # build an index using from-side Java fully qualified class file names
     # built from the "java_package" and file name
@@ -193,7 +222,7 @@ def map_java_to_class(project, logger=None):
     from_classes_index = pathmap.build_index(indexables, with_subpaths=False)
 
     resource_iterator = to_resources_dot_class.iterator(chunk_size=2000)
-    progress = LoopProgress(resource_count, logger)
+    progress = LoopProgress(to_resource_count, logger)
 
     for to_resource in progress.iter(resource_iterator):
         _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
@@ -212,11 +241,8 @@ def get_indexable_qualified_java_paths_from_values(resource_values):
         (123, "org/apache/commons/LoggerImpl.java")
     """
     for resource_id, resource_name, resource_extra_data in resource_values:
-        java_package = resource_extra_data and resource_extra_data.get("java_package")
-        if not java_package:
-            continue
         fully_qualified = jvm.get_fully_qualified_java_path(
-            java_package,
+            java_package=resource_extra_data.get("java_package"),
             filename=resource_name,
         )
         yield resource_id, fully_qualified
@@ -545,7 +571,7 @@ def match_purldb_resource(
                 package_data = package_data_by_purldb_urls[package_instance_url]
             sha1 = result["sha1"]
             resources = resources_by_sha1.get(sha1) or []
-            if not resources:
+            if not (resources and package_data):
                 continue
             _, matched_resources_count = create_package_from_purldb_data(
                 project=project,
@@ -644,7 +670,10 @@ def _match_purldb_resources(
 
     for to_resource in progress.iter(resource_iterator):
         resources_by_sha1[to_resource.sha1].append(to_resource)
-        if to_resource.path.endswith(".map"):
+        if (
+            to_resource.path.endswith(".map")
+            and "json" in to_resource.file_type.lower()
+        ):
             for js_sha1 in js.source_content_sha1_list(to_resource):
                 resources_by_sha1[js_sha1].append(to_resource)
         processed_resources_count += 1
@@ -774,78 +803,231 @@ def _map_javascript_resource(
             resource.update(status=flag.MAPPED)
 
 
-def _map_about_file_resource(project, about_file_resource, to_resources):
-    about_file_location = str(about_file_resource.location_path)
-    package_data = resolve.resolve_about_package(about_file_location)
+@dataclass
+class AboutFileIndexes:
+    """
+    About file indexes are used to create packages from
+    About files and map the resources described in them
+    to the respective packages created, using regex path
+    patterns and other About file data.
+    """
 
-    error_message_details = {
-        "path": about_file_resource.path,
-        "package_data": package_data,
-    }
-    if not package_data:
-        project.add_error(
-            description="Cannot create package from ABOUT file",
-            model="map_about_files",
-            details=error_message_details,
+    # Mapping of About file paths and the regex pattern
+    # string for the files documented
+    regex_by_about_path: dict
+    # Mapping of About file paths and a list of path pattern
+    # strings, for the files to be ignored
+    ignore_regex_by_about_path: dict
+    # Resource objects for About files present in the codebase,
+    # by their path
+    about_resources_by_path: dict
+    # mapping of package data present in the About file, by path
+    about_pkgdata_by_path: dict
+    # List of mapped resources for each About file, by path
+    mapped_resources_by_aboutpath: dict
+
+    @classmethod
+    def create_indexes(cls, project, from_about_files, logger=None):
+        """
+        Return an ABOUT file index, containing path pattern mappings,
+        package data, and resources, created from `from_about_files`,
+        the About file resources.
+        """
+        about_pkgdata_by_path = {}
+        regex_by_about_path = {}
+        ignore_regex_by_about_path = {}
+        about_resources_by_path = {}
+        mapped_resources_by_aboutpath = {}
+
+        count_indexed_about_files = 0
+
+        for about_file_resource in from_about_files:
+            package_data = resolve.resolve_about_package(
+                input_location=str(about_file_resource.location_path)
+            )
+            error_message_details = {"package_data": package_data}
+            if not package_data:
+                project.add_error(
+                    description="Cannot create package from ABOUT file",
+                    model="map_about_files",
+                    details=error_message_details,
+                    object_instance=about_file_resource,
+                )
+                continue
+
+            about_pkgdata_by_path[about_file_resource.path] = package_data
+            files_pattern = package_data.get("filename")
+            if not files_pattern:
+                # Cannot map anything without the about_resource value.
+                project.add_error(
+                    description="ABOUT file does not have about_resource",
+                    model="map_about_files",
+                    details=error_message_details,
+                    object_instance=about_file_resource,
+                )
+                continue
+            else:
+                count_indexed_about_files += 1
+                regex = convert_glob_to_django_regex(files_pattern)
+                regex_by_about_path[about_file_resource.path] = regex
+
+            if extra_data := package_data.get("extra_data"):
+                ignore_regex = []
+                for pattern in extra_data.get("ignored_resources", []):
+                    ignore_regex.append(convert_glob_to_django_regex(pattern))
+                if ignore_regex:
+                    ignore_regex_by_about_path[about_file_resource.path] = ignore_regex
+
+            about_resources_by_path[about_file_resource.path] = about_file_resource
+            mapped_resources_by_aboutpath[about_file_resource.path] = []
+
+        if logger:
+            logger(
+                f"Created mapping index from {count_indexed_about_files:,d} .ABOUT "
+                f"files in the from/ codebase."
+            )
+
+        return cls(
+            about_pkgdata_by_path=about_pkgdata_by_path,
+            regex_by_about_path=regex_by_about_path,
+            ignore_regex_by_about_path=ignore_regex_by_about_path,
+            about_resources_by_path=about_resources_by_path,
+            mapped_resources_by_aboutpath=mapped_resources_by_aboutpath,
         )
-        return
 
-    filename = package_data.get("filename")
-    if not filename:
-        # Cannot map anything without the about_resource value.
-        project.add_error(
-            description="ABOUT file does not have about_resource",
-            model="map_about_files",
-            details=error_message_details,
+    def get_matched_about_path(self, to_resource):
+        """
+        Map `to_resource` using the about file index, and if
+        mapped, return the path string to the About file it
+        was mapped to, and if not mapped or ignored, return
+        None.
+        """
+        resource_mapped = False
+        for about_path, regex_pattern in self.regex_by_about_path.items():
+            if regex_match(pattern=regex_pattern, string=to_resource.path):
+                resource_mapped = True
+                break
+
+        if not resource_mapped:
+            return
+
+        ignore_regex_patterns = self.ignore_regex_by_about_path.get(about_path, [])
+        ignore_resource = False
+        for ignore_regex_pattern in ignore_regex_patterns:
+            if regex_match(pattern=ignore_regex_pattern, string=to_resource.path):
+                ignore_resource = True
+                break
+
+        if ignore_resource:
+            return
+
+        return about_path
+
+    def map_deployed_to_devel_using_about(self, to_resources):
+        """
+        Return mapped resources which are mapped using the
+        path patterns in About file indexes. Resources are
+        mapped for each About file in the index, and
+        their status is updated accordingly.
+        """
+        mapped_to_resources = []
+
+        for to_resource in to_resources:
+            about_path = self.get_matched_about_path(to_resource)
+            if not about_path:
+                continue
+
+            mapped_resources_about = self.mapped_resources_by_aboutpath.get(about_path)
+            if mapped_resources_about:
+                mapped_resources_about.append(to_resource)
+            else:
+                self.mapped_resources_by_aboutpath[about_path] = [to_resource]
+            mapped_to_resources.append(to_resource)
+            to_resource.update(status=flag.ABOUT_MAPPED)
+
+        return mapped_to_resources
+
+    def get_about_file_companions(self, about_path):
+        """
+        Given an ``about_path`` path string to an About file,
+        get CodebaseResource objects for the companion license
+        and notice files.
+        """
+        about_file_resource = self.about_resources_by_path.get(about_path)
+        about_file_extra_data = self.about_pkgdata_by_path.get(about_path).get(
+            "extra_data"
         )
-        return
 
-    ignored_resources = []
-    if extra_data := package_data.get("extra_data"):
-        ignored_resources = extra_data.get("ignored_resources")
-
-    # Fetch all resources that are covered by the .ABOUT file.
-    codebase_resources = to_resources.filter(path__contains=f"/{filename.lstrip('/')}")
-    if not codebase_resources:
-        # If there's nothing to map on the ``to/`` do not create the package.
-        project.add_warning(
-            description=(
-                "Resource paths listed at about_resource is not found"
-                " in the to/ codebase"
-            ),
-            model="map_about_files",
-            details=error_message_details,
+        about_file_companion_names = [
+            about_file_extra_data.get("license_file"),
+            about_file_extra_data.get("notice_file"),
+        ]
+        about_file_companions = about_file_resource.siblings().filter(
+            name__in=about_file_companion_names
         )
-        return
+        return about_file_companions
 
-    # Ignore resources for paths in `ignored_resources` attribute
-    if ignored_resources:
-        lookups = Q()
-        for resource_path in ignored_resources:
-            lookups |= Q(**{"path__contains": resource_path})
-        codebase_resources = codebase_resources.filter(~lookups)
+    def create_about_packages_relations(self, project):
+        """
+        Create packages using About file package data, if the About file
+        has mapped resources on the to/ codebase and creates the mappings
+        for the package created and mapped resources.
+        """
+        about_purls = set()
+        mapped_about_resources = []
 
-    # Create the Package using .ABOUT data and assigned related codebase_resources
-    pipes.update_or_create_package(project, package_data, codebase_resources)
+        for about_path, mapped_resources in self.mapped_resources_by_aboutpath.items():
+            about_file_resource = self.about_resources_by_path[about_path]
+            package_data = self.about_pkgdata_by_path[about_path]
 
-    # Map the .ABOUT file resource to all related resources in the ``to/`` side.
-    for to_resource in codebase_resources:
-        pipes.make_relation(
-            from_resource=about_file_resource,
-            to_resource=to_resource,
-            map_type="about_file",
-        )
+            if not mapped_resources:
+                error_message_details = {
+                    "resource_path": about_path,
+                    "package_data": package_data,
+                }
+                project.add_warning(
+                    description=(
+                        "Resource paths listed at about_resource is not found"
+                        " in the to/ codebase"
+                    ),
+                    model="map_about_files",
+                    details=error_message_details,
+                )
+                continue
 
-    codebase_resources.update(status=flag.ABOUT_MAPPED)
-    about_file_resource.update(status=flag.ABOUT_MAPPED)
+            # Create the Package using .ABOUT data and assign related codebase_resources
+            about_package = pipes.update_or_create_package(
+                project=project,
+                package_data=package_data,
+                codebase_resources=mapped_resources,
+            )
+            about_purls.add(about_package.purl)
+            mapped_about_resources.append(about_file_resource)
+
+            # Map the .ABOUT file resource to all related resources in the ``to/`` side.
+            for mapped_resource in mapped_resources:
+                pipes.make_relation(
+                    from_resource=about_file_resource,
+                    to_resource=mapped_resource,
+                    map_type="about_file",
+                )
+
+            about_file_resource.update(status=flag.ABOUT_MAPPED)
+
+            about_file_companions = self.get_about_file_companions(about_path)
+            about_file_companions.update(status=flag.ABOUT_MAPPED)
+
+        return about_purls, mapped_about_resources
 
 
 def map_about_files(project, logger=None):
     """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
     project_resources = project.codebaseresources
-    from_files = project_resources.files().from_codebase()
-    from_about_files = from_files.filter(extension=".ABOUT")
-    to_resources = project_resources.to_codebase()
+    from_about_files = (
+        project_resources.files().from_codebase().filter(extension=".ABOUT")
+    )
+    if not from_about_files.exists():
+        return
 
     if logger:
         logger(
@@ -853,15 +1035,30 @@ def map_about_files(project, logger=None):
             f"codebase."
         )
 
-    for about_file_resource in from_about_files:
-        _map_about_file_resource(project, about_file_resource, to_resources)
+    indexes = AboutFileIndexes.create_indexes(
+        project=project, from_about_files=from_about_files
+    )
 
-        about_file_companions = (
-            about_file_resource.siblings()
-            .filter(name__startswith=about_file_resource.name_without_extension)
-            .filter(extension__in=[".LICENSE", ".NOTICE"])
+    # Ignoring empty or ignored files as they are not relevant anyway
+    to_resources = project_resources.to_codebase().no_status()
+    mapped_to_resources = indexes.map_deployed_to_devel_using_about(
+        to_resources=to_resources,
+    )
+    if logger:
+        logger(
+            f"Mapped {len(mapped_to_resources):,d} resources from the "
+            f"to/ codebase to the About files in the from. codebase."
         )
-        about_file_companions.update(status=flag.ABOUT_MAPPED)
+
+    about_purls, mapped_about_resources = indexes.create_about_packages_relations(
+        project=project,
+    )
+    if logger:
+        logger(
+            f"Created {len(about_purls):,d} new packages from "
+            f"{len(mapped_about_resources):,d} About files which "
+            f"were mapped to resources in the to/ side."
+        )
 
 
 def map_javascript_post_purldb_match(project, logger=None):
@@ -1437,21 +1634,20 @@ def match_purldb_resources_post_process(project, logger=None):
     map_count = 0
 
     for directory in progress.iter(resource_iterator):
-        map_count += _match_purldb_resources_post_process(
-            directory, to_extract_directories, to_resources
-        )
+        map_count += _match_purldb_resources_post_process(directory, to_resources)
 
     logger(f"{map_count:,d} resource processed")
 
 
-def _match_purldb_resources_post_process(
-    directory_path, to_extract_directories, to_resources
-):
+def _match_purldb_resources_post_process(directory, to_resources):
+    # Escape special character in directory path
+    escaped_directory_path = re.escape(directory.path)
+
     # Exclude the content of nested archive.
     interesting_codebase_resources = (
-        to_resources.filter(path__startswith=directory_path)
+        to_resources.filter(path__startswith=directory.path)
         .filter(status=flag.MATCHED_TO_PURLDB_RESOURCE)
-        .exclude(path__regex=rf"^{directory_path}.*-extract\/.*$")
+        .exclude(path__regex=rf"^{escaped_directory_path}.*-extract\/.*$")
     )
 
     if not interesting_codebase_resources:
@@ -1484,3 +1680,469 @@ def _match_purldb_resources_post_process(
             package.add_resources(unmapped_resources)
 
     return interesting_codebase_resources.count()
+
+
+def map_paths_resource(
+    to_resource, from_resources, from_resources_index, map_types, logger=None
+):
+    """
+    Map paths found in the ``to_resource`` extra_data to paths of the ``from_resources``
+    CodebaseResource queryset using the precomputed ``from_resources_index`` path index.
+    """
+    # Accumulate unique relation objects for bulk creation
+    relations_to_create = {}
+
+    for map_type in map_types:
+        # These are of type string
+        paths_in_binary = to_resource.extra_data.get(map_type, [])
+        paths_not_mapped = to_resource.extra_data[f"{map_type}_not_mapped"] = []
+        for item in process_paths_in_binary(
+            to_resource=to_resource,
+            from_resources=from_resources,
+            from_resources_index=from_resources_index,
+            map_type=map_type,
+            paths_in_binary=paths_in_binary,
+        ):
+            if isinstance(item, str):
+                paths_not_mapped.append(item)
+            else:
+                rel_key, relation = item
+                if rel_key not in relations_to_create:
+                    relations_to_create[rel_key] = relation
+        if paths_not_mapped:
+            to_resource.status = flag.REQUIRES_REVIEW
+            logger(
+                f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT mapped for: "
+                f"{to_resource.path!r}"
+            )
+        to_resource.save()
+
+    if relations_to_create:
+        rels = CodebaseRelation.objects.bulk_create(relations_to_create.values())
+        logger(
+            f"Created {len(rels)} mappings using "
+            f"{', '.join(map_types)} for: {to_resource.path!r}"
+        )
+    else:
+        logger(f"No mappings using {', '.join(map_types)} for: {to_resource.path!r}")
+
+
+def process_paths_in_binary(
+    to_resource,
+    from_resources,
+    from_resources_index,
+    map_type,
+    paths_in_binary,
+):
+    """
+    Process list of paths in binary and Yield either:
+    - a tuple of (unique key for a relationship, ``CodebaseRelation`` object)
+    - Or a path if it was not mapped
+    """
+    for path in paths_in_binary:
+        match = pathmap.find_paths(path, from_resources_index)
+        if not match:
+            yield path
+            continue
+
+        matched_path_length = match.matched_path_length
+        if is_invalid_match(match, matched_path_length):
+            yield path
+            continue
+
+        matched_from_resources = [
+            from_resources.get(id=rid) for rid in match.resource_ids
+        ]
+        matched_from_resources = sort_matched_from_resources(matched_from_resources)
+        winning_from_resource = matched_from_resources[0]
+
+        path_length = count_path_segments(path) - 1
+        extra_data = {
+            "path_score": f"{matched_path_length}/{path_length}",
+            map_type: path,
+        }
+
+        rel_key = (winning_from_resource.path, to_resource.path, map_type)
+        relation = CodebaseRelation(
+            project=winning_from_resource.project,
+            from_resource=winning_from_resource,
+            to_resource=to_resource,
+            map_type=map_type,
+            extra_data=extra_data,
+        )
+        yield rel_key, relation
+
+
+def count_path_segments(path):
+    """Return the number of path segments in POSIX ``path`` string"""
+    return len(path.strip("/").split("/"))
+
+
+def sort_matched_from_resources(matched_from_resources):
+    """
+    Return the sorted list of ``matched_from_resources``
+    based on path length and path.
+    """
+
+    def sorter(res):
+        return count_path_segments(res.path), res.path
+
+    return sorted(matched_from_resources, key=sorter)
+
+
+def is_invalid_match(match, matched_path_length):
+    """
+    Check if the match is invalid based on the ``matched_path_length`` and the number
+    of resource IDs.
+    """
+    return matched_path_length == 1 and len(match.resource_ids) != 1
+
+
+def map_elfs_with_dwarf_paths(project, logger=None):
+    """Map ELF binaries to their sources in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    to_resources = (
+        project.codebaseresources.files().to_codebase().has_no_relation().elfs()
+    )
+    for resource in to_resources:
+        try:
+            paths = get_elf_file_dwarf_paths(resource.location_path)
+            resource.update_extra_data(paths)
+        except Exception as exception:
+            project.add_warning(
+                exception=exception,
+                object_instance=resource,
+                description=f"Cannot parse binary at {resource.path}",
+                model="map_elfs",
+                details={"path": resource.path},
+            )
+
+    if logger:
+        logger(
+            f"Mapping {to_resources.count():,d} to/ resources using paths "
+            f"with {from_resources.count():,d} from/ resources."
+        )
+
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
+    )
+
+    if logger:
+        logger("Done building from/ resources index.")
+
+    resource_iterator = to_resources.iterator(chunk_size=2000)
+    progress = LoopProgress(to_resources.count(), logger)
+    for to_resource in progress.iter(resource_iterator):
+        map_paths_resource(
+            to_resource,
+            from_resources,
+            from_resources_index,
+            map_types=["dwarf_compiled_paths", "dwarf_included_paths"],
+            logger=logger,
+        )
+
+
+def get_elf_file_dwarf_paths(location):
+    """Retrieve dwarf paths for ELF files."""
+    paths = get_dwarf_paths(location)
+    compiled_paths = paths.get("compiled_paths") or []
+    included_paths = paths.get("included_paths") or []
+    dwarf_paths = {}
+    if compiled_paths:
+        dwarf_paths["dwarf_compiled_paths"] = compiled_paths
+    if included_paths:
+        dwarf_paths["dwarf_included_paths"] = included_paths
+    return dwarf_paths
+
+
+def get_go_file_paths(location):
+    """Retrieve Go file paths."""
+    go_symbols = (
+        collect_and_parse_symbols(location, check_type=False).get("go_symbols") or {}
+    )
+    file_paths = {}
+    go_file_paths = go_symbols.get("file_paths") or []
+    if go_file_paths:
+        file_paths["go_file_paths"] = go_file_paths
+    return file_paths
+
+
+def map_go_paths(project, logger=None):
+    """Map Go binaries to their source in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    to_resources = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .has_no_relation()
+        .executable_binaries()
+    )
+    for resource in to_resources:
+        try:
+            paths = get_go_file_paths(resource.location_path)
+            resource.update_extra_data(paths)
+        except Exception as exception:
+            project.add_warning(
+                exception=exception,
+                object_instance=resource,
+                description=f"Cannot parse binary at {resource.path}",
+                model="map_go_paths",
+                details={"path": resource.path},
+            )
+
+    if logger:
+        logger(
+            f"Mapping {to_resources.count():,d} to/ resources using paths "
+            f"with {from_resources.count():,d} from/ resources."
+        )
+
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
+    )
+
+    if logger:
+        logger("Done building from/ resources index.")
+
+    resource_iterator = to_resources.iterator(chunk_size=2000)
+    progress = LoopProgress(to_resources.count(), logger)
+    for to_resource in progress.iter(resource_iterator):
+        map_paths_resource(
+            to_resource,
+            from_resources,
+            from_resources_index,
+            map_types=["go_file_paths"],
+            logger=logger,
+        )
+
+
+def map_rust_binaries_with_symbols(project, logger=None):
+    """Map Rust binaries to their source using symbols in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    to_binaries = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .has_no_relation()
+        .executable_binaries()
+    )
+
+    # Collect source symbols from rust source files
+    rust_from_resources = from_resources.filter(extension=".rs")
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=rust_from_resources,
+        to_resources=to_binaries,
+        binary_symbols_func=collect_and_parse_rust_symbols,
+        map_type="rust_symbols",
+        logger=logger,
+    )
+
+
+def map_elfs_binaries_with_symbols(project, logger=None):
+    """Map Elf binaries to their source using symbols in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    elf_binaries = (
+        project.codebaseresources.files().to_codebase().has_no_relation().elfs()
+    )
+
+    # Collect source symbols from elf related source files
+    elf_from_resources = from_resources.filter(extension__in=[".c", ".cpp", ".h"])
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=elf_from_resources,
+        to_resources=elf_binaries,
+        binary_symbols_func=collect_and_parse_elf_symbols,
+        map_type="elf_symbols",
+        logger=logger,
+    )
+
+
+def map_macho_binaries_with_symbols(project, logger=None):
+    """Map macho binaries to their source using symbols in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    macho_binaries = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .has_no_relation()
+        .macho_binaries()
+    )
+
+    # Collect source symbols from macos related source files
+    mac_from_resources = from_resources.filter(
+        extension__in=[".c", ".cpp", ".h", ".m", ".swift"]
+    )
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=mac_from_resources,
+        to_resources=macho_binaries,
+        binary_symbols_func=collect_and_parse_macho_symbols,
+        map_type="macho_symbols",
+        logger=logger,
+    )
+
+
+def map_winpe_binaries_with_symbols(project, logger=None):
+    """Map winpe binaries to their source using symbols in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    winexe_binaries = (
+        project.codebaseresources.files().to_codebase().has_no_relation().win_exes()
+    )
+
+    # Collect source symbols from windows related source files
+    windows_from_resources = from_resources.filter(
+        extension__in=[".c", ".cpp", ".h", ".cs"]
+    )
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=windows_from_resources,
+        to_resources=winexe_binaries,
+        binary_symbols_func=collect_and_parse_winpe_symbols,
+        map_type="winpe_symbols",
+        logger=logger,
+    )
+
+
+def map_binaries_with_symbols(
+    project,
+    from_resources,
+    to_resources,
+    binary_symbols_func,
+    map_type,
+    logger=None,
+):
+    """Map Binaries to their source using symbols in ``project``."""
+    symbols.collect_and_store_tree_sitter_symbols_and_strings(
+        project=project,
+        logger=logger,
+        project_files=from_resources,
+    )
+
+    # Collect binary symbols from rust binaries
+    for resource in to_resources:
+        try:
+            binary_symbols = binary_symbols_func(resource.location)
+            resource.update_extra_data(binary_symbols)
+        except Exception as e:
+            logger(f"Error parsing binary symbols at: {resource.location_path!r} {e!r}")
+
+    if logger:
+        logger(
+            f"Mapping {to_resources.count():,d} to/ resources using symbols "
+            f"with {from_resources.count():,d} from/ resources."
+        )
+
+    resource_iterator = to_resources.iterator(chunk_size=2000)
+    progress = LoopProgress(to_resources.count(), logger)
+    for to_resource in progress.iter(resource_iterator):
+        binary_symbols = to_resource.extra_data.get(map_type)
+        if not binary_symbols:
+            continue
+
+        if logger:
+            logger(f"Mapping source files to binary at {to_resource.path}")
+
+        symbolmap.map_resources_with_symbols(
+            project=project,
+            to_resource=to_resource,
+            from_resources=from_resources,
+            binary_symbols=binary_symbols,
+            map_type=map_type,
+            logger=logger,
+        )
+
+
+def map_javascript_symbols(project, logger=None):
+    """Map deployed JavaScript, TypeScript to its sources using symbols."""
+    project_files = project.codebaseresources.files()
+
+    javascript_to_resources = (
+        project_files.to_codebase()
+        .has_no_relation()
+        .filter(extension__in=[".ts", ".js"])
+    )
+
+    javascript_from_resources = (
+        project_files.from_codebase()
+        .exclude(path__contains="/test/")
+        .filter(extension__in=[".ts", ".js"])
+    )
+
+    if not (javascript_from_resources.exists() and javascript_to_resources.exists()):
+        return
+
+    symbols.collect_and_store_tree_sitter_symbols_and_strings(
+        project=project,
+        logger=logger,
+        project_files=javascript_from_resources,
+    )
+
+    symbols.collect_and_store_tree_sitter_symbols_and_strings(
+        project=project,
+        logger=logger,
+        project_files=javascript_to_resources,
+    )
+
+    javascript_from_resources_withsymbols = javascript_from_resources.exclude(
+        extra_data={}
+    )
+    javascript_to_resources_withsymbols = javascript_to_resources.exclude(extra_data={})
+
+    javascript_from_resources_count = javascript_from_resources_withsymbols.count()
+    javascript_to_resources_count = javascript_to_resources_withsymbols.count()
+    if logger:
+        logger(
+            f"Mapping {javascript_to_resources_count:,d} JavaScript resources using"
+            f" symbols against {javascript_from_resources_count:,d} from/ codebase."
+        )
+
+    resource_iterator = javascript_to_resources_withsymbols.iterator(chunk_size=2000)
+    progress = LoopProgress(javascript_to_resources_count, logger)
+
+    resource_mapped = 0
+    for to_resource in progress.iter(resource_iterator):
+        resource_mapped += _map_javascript_symbols(
+            to_resource, javascript_from_resources_withsymbols, logger
+        )
+
+    if logger:
+        logger(f"{resource_mapped:,d} resource mapped using symbols")
+
+
+def _map_javascript_symbols(to_resource, javascript_from_resources, logger):
+    """
+    Map a deployed JavaScript resource to its source using symbols and
+    return 1 if match is found otherwise return 0.
+    """
+    to_symbols = to_resource.extra_data.get("source_symbols")
+
+    if not to_symbols or symbolmap.is_decomposed_javascript(to_symbols):
+        return 0
+
+    best_matching_score = 0
+    best_match = None
+    for source_js in javascript_from_resources:
+        from_symbols = source_js.extra_data.get("source_symbols")
+        if not from_symbols:
+            continue
+
+        is_match, similarity = symbolmap.match_javascript_source_symbols_to_deployed(
+            source_symbols=from_symbols,
+            deployed_symbols=to_symbols,
+        )
+
+        if is_match and similarity > best_matching_score:
+            best_matching_score = similarity
+            best_match = source_js
+
+    if best_match:
+        pipes.make_relation(
+            from_resource=best_match,
+            to_resource=to_resource,
+            map_type="javascript_symbols",
+            extra_data={"jsd_similarity_score": similarity},
+        )
+        to_resource.update(status=flag.MAPPED)
+        return 1
+    return 0

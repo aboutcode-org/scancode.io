@@ -22,18 +22,23 @@
 
 import json
 from pathlib import Path
+from unittest import mock
 
 from django.test import TestCase
 
 from scanpipe import pipes
 from scanpipe.models import Project
 from scanpipe.pipes import resolve
+from scanpipe.pipes.input import copy_inputs
+from scanpipe.pipes.scancode import extract_archives
+from scanpipe.tests import make_package
+from scanpipe.tests import make_project
 from scanpipe.tests import package_data1
 
 
 class ScanPipeResolvePipesTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
-    manifest_location = data_location / "manifests"
+    data = Path(__file__).parent.parent / "data"
+    manifest_location = data / "manifests"
 
     def test_scanpipe_pipes_resolve_get_default_package_type(self):
         self.assertIsNone(resolve.get_default_package_type(input_location=""))
@@ -47,13 +52,16 @@ class ScanPipeResolvePipesTest(TestCase):
         input_location = self.manifest_location / "toml.json"
         self.assertEqual("spdx", resolve.get_default_package_type(input_location))
 
-        input_location = self.data_location / "cyclonedx/nested.cdx.json"
+        input_location = self.data / "cyclonedx/nested.cdx.json"
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
-        input_location = self.data_location / "cyclonedx/asgiref-3.3.0.json"
+        input_location = self.data / "cyclonedx/asgiref-3.3.0.json"
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
-        input_location = self.data_location / "cyclonedx/missing_schema.json"
+        input_location = self.data / "cyclonedx/missing_schema.json"
+        self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
+
+        input_location = self.data / "cyclonedx/laravel-7.12.0/bom.1.4.xml"
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
     def test_scanpipe_pipes_resolve_set_license_expression(self):
@@ -84,14 +92,19 @@ class ScanPipeResolvePipesTest(TestCase):
         scancode_expression = "mit OR gpl-2.0 WITH generic-exception"
         self.assertEqual(scancode_expression, resolve.convert_spdx_expression(spdx))
 
-    def test_scanpipe_pipes_resolve_resolve_packages(self):
+    def test_scanpipe_pipes_resolve_get_packages_from_manifest(self):
         # ScanCode.io resolvers
         input_location = self.manifest_location / "Django-4.0.8-py3-none-any.whl.ABOUT"
-        packages = resolve.resolve_packages(str(input_location))
+        packages = resolve.get_packages_from_manifest(
+            input_location=str(input_location),
+            package_registry=resolve.sbom_registry,
+        )
         expected = {
             "filename": "Django-4.0.8-py3-none-any.whl",
             "download_url": "https://python.org/Django-4.0.8-py3-none-any.whl",
             "declared_license_expression": "bsd-new",
+            "extra_data": {"license_file": "bsd-new.LICENSE"},
+            "extracted_license_statement": None,
             "md5": "386349753c386e574dceca5067e2788a",
             "name": "django",
             "sha1": "4cc6f7abda928a0b12cd1f1cd8ad3677519ca04e",
@@ -100,12 +113,43 @@ class ScanPipeResolvePipesTest(TestCase):
         }
         self.assertEqual([expected], packages)
 
-        # ScanCode-toolkit resolvers
-        input_location = self.manifest_location / "package.json"
-        packages = resolve.resolve_packages(str(input_location))
-        expected_location = self.manifest_location / "package.expected.json"
-        expected = json.loads(expected_location.read_text())
-        self.assertEqual(expected, packages)
+    @mock.patch("scanpipe.pipes.resolve.python_inspector.resolve_dependencies")
+    def test_scanpipe_pipes_resolve_resolve_pypi_packages(self, mock_resolve):
+        # Generated with:
+        # $ python-inspector --python-version 3.12 --operating-system linux \
+        #     --specifier pip==25.0.1 --json -
+        inspector_output_location = (
+            self.data / "resolve" / "python_inspector_resolve_dependencies.json"
+        )
+        with open(inspector_output_location) as f:
+            inspector_output = json.loads(f.read())
+
+        mock_resolve.return_value = mock.Mock(packages=inspector_output["packages"])
+
+        packages = resolve.resolve_pypi_packages("")
+        self.assertEqual(2, len(packages))
+        package_data = packages[0]
+        self.assertEqual("pip", package_data["name"])
+        self.assertEqual("25.0.1", package_data["version"])
+        self.assertEqual("Python", package_data["primary_language"])
+        self.assertIsNone(package_data["license_expression"])
+        expected_license = {
+            "license": "MIT",
+            "classifiers": ["License :: OSI Approved :: MIT License"],
+        }
+        self.assertEqual(expected_license, package_data["extracted_license_statement"])
+
+        project = make_project()
+        resolve.create_packages_and_dependencies(
+            project=project,
+            packages=packages,
+            resolved=True,
+        )
+
+        self.assertEqual(2, project.discoveredpackages.count())
+
+        package = project.discoveredpackages.all()[0]
+        self.assertEqual(str(expected_license), package.extracted_license_statement)
 
     def test_scanpipe_pipes_resolve_resolve_about_packages(self):
         input_location = self.manifest_location / "Django-4.0.8-py3-none-any.whl.ABOUT"
@@ -114,6 +158,8 @@ class ScanPipeResolvePipesTest(TestCase):
             "filename": "Django-4.0.8-py3-none-any.whl",
             "download_url": "https://python.org/Django-4.0.8-py3-none-any.whl",
             "declared_license_expression": "bsd-new",
+            "extra_data": {"license_file": "bsd-new.LICENSE"},
+            "extracted_license_statement": None,
             "md5": "386349753c386e574dceca5067e2788a",
             "name": "django",
             "sha1": "4cc6f7abda928a0b12cd1f1cd8ad3677519ca04e",
@@ -124,7 +170,7 @@ class ScanPipeResolvePipesTest(TestCase):
 
         input_location = self.manifest_location / "poor_values.ABOUT"
         package = resolve.resolve_about_packages(str(input_location))
-        expected = {"name": "project"}
+        expected = {"extra_data": {}, "name": "project"}
         self.assertEqual([expected], package)
 
     def test_scanpipe_pipes_resolve_spdx_package_to_discovered_package_data(self):
@@ -155,3 +201,118 @@ class ScanPipeResolvePipesTest(TestCase):
             "md5": "76cf50f29e47676962645632737365a7",
         }
         self.assertEqual(expected, package_data)
+
+    def test_scanpipe_resolve_get_manifest_resources(self):
+        project1 = Project.objects.create(name="Analysis")
+        input_location = self.data / "manifests" / "python-inspector-0.10.0.zip"
+        project1.copy_input_from(input_location)
+        copy_inputs(project1.inputs(), project1.codebase_path)
+
+        extract_archives(project1.codebase_path, recurse=True)
+        pipes.collect_and_create_codebase_resources(project1)
+
+        resources = resolve.get_manifest_resources(project1)
+        self.assertTrue(resources.exists())
+        requirements_resource = project1.codebaseresources.get(
+            path=(
+                "python-inspector-0.10.0.zip-extract/"
+                "python-inspector-0.10.0/requirements.txt"
+            )
+        )
+        self.assertIn(requirements_resource, resources)
+
+    def test_scanpipe_resolve_get_packages_from_sbom(self):
+        project1 = Project.objects.create(name="Analysis")
+        input_location = self.data / "manifests" / "toml.spdx.json"
+
+        project1.copy_input_from(input_location)
+        copy_inputs(project1.inputs(), project1.codebase_path)
+        pipes.collect_and_create_codebase_resources(project1)
+        resources = resolve.get_manifest_resources(project1)
+
+        packages = resolve.get_packages(
+            project1,
+            resolve.sbom_registry,
+            resources,
+        )
+        self.assertEqual(1, len(packages))
+        package = packages[0]
+        self.assertEqual("toml", package["name"])
+        resource1 = project1.codebaseresources.get(name="toml.spdx.json")
+        self.assertEqual([resource1], package.get("codebase_resources"))
+
+        self.assertEqual(["sboms_headers"], list(project1.extra_data.keys()))
+        sboms_headers = project1.extra_data["sboms_headers"]
+        self.assertEqual(["toml.spdx.json"], list(sboms_headers.keys()))
+        expected = [
+            "spdxVersion",
+            "dataLicense",
+            "SPDXID",
+            "name",
+            "documentNamespace",
+            "creationInfo",
+            "comment",
+        ]
+        self.assertEqual(expected, list(sboms_headers["toml.spdx.json"].keys()))
+
+    def test_scanpipe_resolve_create_packages_and_dependencies(self):
+        project1 = Project.objects.create(name="Analysis")
+        input_location = self.data / "manifests" / "toml.spdx.json"
+
+        project1.copy_input_from(input_location)
+        copy_inputs(project1.inputs(), project1.codebase_path)
+        pipes.collect_and_create_codebase_resources(project1)
+        resources = resolve.get_manifest_resources(project1)
+        packages = resolve.get_packages(
+            project1,
+            resolve.sbom_registry,
+            resources,
+        )
+        resolve.create_packages_and_dependencies(project1, packages)
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(0, project1.discovereddependencies.count())
+
+        resource1 = project1.codebaseresources.get(name="toml.spdx.json")
+        package = project1.discoveredpackages.get()
+        self.assertEqual(resource1, package.codebase_resources.get())
+
+    def test_scanpipe_resolve_create_dependencies_from_packages_extra_data(self):
+        p1 = Project.objects.create(name="Analysis")
+        parent_extra_data = {"depends_on": ["child"]}
+        parent = make_package(p1, "pkg:type/parent", extra_data=parent_extra_data)
+        child = make_package(p1, "pkg:type/child", extra_data={"bom_ref": "child"})
+
+        created_count = resolve.create_dependencies_from_packages_extra_data(p1)
+        self.assertEqual(1, created_count)
+        dependency = p1.discovereddependencies.get()
+        self.assertEqual(parent, dependency.for_package)
+        self.assertEqual(child, dependency.resolved_to_package)
+        self.assertTrue(dependency.is_runtime)
+        self.assertTrue(dependency.is_pinned)
+        self.assertTrue(dependency.is_direct)
+        self.assertFalse(dependency.is_optional)
+
+        parent.update_extra_data({"depends_on": ["unknown"]})
+        created_count = resolve.create_dependencies_from_packages_extra_data(p1)
+        self.assertEqual(0, created_count)
+        message = p1.projectmessages.get()
+        self.assertEqual("error", message.severity)
+        self.assertEqual(
+            "Could not find resolved_to package entry: unknown.", message.description
+        )
+        self.assertEqual("create_dependencies", message.model)
+
+    def test_scanpipe_resolve_get_manifest_headers(self):
+        input_location = self.data / "manifests" / "toml.spdx.json"
+        resource = mock.Mock(location=input_location)
+        expected = [
+            "spdxVersion",
+            "dataLicense",
+            "SPDXID",
+            "name",
+            "documentNamespace",
+            "creationInfo",
+            "comment",
+        ]
+        headers = resolve.get_manifest_headers(resource)
+        self.assertEqual(expected, list(headers.keys()))

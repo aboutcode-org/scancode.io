@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
@@ -28,15 +28,11 @@ from scanpipe.pipes.input import copy_inputs
 
 class ScanCodebase(Pipeline):
     """
-    Scan a codebase with ScanCode-toolkit.
+    Scan a codebase for application packages, licenses, and copyrights.
 
-    If the codebase consists of several packages and dependencies, it will try to
-    resolve and scan those too.
-
-    Input files are copied to the project's codebase/ directory and are extracted
-    in place before running the scan.
-    Alternatively, the code can be manually copied to the project codebase/
-    directory.
+    This pipeline does not further scan the files contained in a package
+    for license and copyrights and only considers the declared license
+    of a package. It does not scan for system (Linux distro) packages.
     """
 
     @classmethod
@@ -56,17 +52,7 @@ class ScanCodebase(Pipeline):
         Copy input files to the project's codebase/ directory.
         The code can also be copied there prior to running the Pipeline.
         """
-        copy_inputs(self.project.inputs(), self.project.codebase_path)
-
-    def extract_archives(self):
-        """Extract archives with extractcode."""
-        extract_errors = scancode.extract_archives(
-            location=self.project.codebase_path,
-            recurse=self.env.get("extract_recursively", True),
-        )
-
-        if extract_errors:
-            self.add_error("\n".join(extract_errors))
+        copy_inputs(self.project.inputs("*"), self.project.codebase_path)
 
     def collect_and_create_codebase_resources(self):
         """Collect and create codebase resources."""

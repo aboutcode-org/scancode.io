@@ -72,6 +72,10 @@
       "is_text": true,
       "is_archive": false,
       "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": true,
+      "is_top_level": true,
       "is_key_file": true,
       "detected_license_expression": "mit",
       "detected_license_expression_spdx": "MIT",
@@ -83,17 +87,20 @@
               "matcher": "2-aho",
               "end_line": 30,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mit_30.RULE",
+              "from_file": "codebase/package/readme.md",
               "start_line": 28,
               "matched_text": "## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)",
               "match_coverage": 100.0,
               "matched_length": 2,
               "rule_relevance": 100,
               "rule_identifier": "mit_30.RULE",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
             }
           ],
           "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
-          "license_expression": "mit"
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
         }
       ],
       "license_clues": [],
@@ -157,6 +164,7 @@
       "tag": "",
       "primary_language": "JavaScript",
       "description": "Check if your code is running as an npm script",
+      "notes": "",
       "release_date": null,
       "parties": [
         {
@@ -200,17 +208,20 @@
               "matcher": "1-spdx-id",
               "end_line": 1,
               "rule_url": null,
+              "from_file": "codebase/package/package.json",
               "start_line": 1,
               "matched_text": "MIT",
               "match_coverage": 100.0,
               "matched_length": 1,
               "rule_relevance": 100,
               "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
-              "license_expression": "mit"
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
             }
           ],
           "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
-          "license_expression": "mit"
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
         }
       ],
       "other_license_expression": "",
@@ -220,9 +231,20 @@
       "compliance_alert": "",
       "notice_text": "",
       "source_packages": [],
-      "extra_data": {},
+      "extra_data": {
+        "engines": {
+          "node": ">=0.10.0"
+        }
+      },
       "package_uid": "pkg:npm/is-npm@1.0.0?uuid=ba110d49-b6f2-4c86-8d89-a6fd34838ca8",
-      "datasource_id": "",
+      "is_private": false,
+      "is_virtual": false,
+      "datasource_ids": [
+        "npm_package_json"
+      ],
+      "datafile_paths": [
+        "package/package.json"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],

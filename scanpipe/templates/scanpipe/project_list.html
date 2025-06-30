@@ -9,7 +9,7 @@
     ul#id_is_archived li {margin-right: 1rem;}
     ul#id_is_archived li a {color: #7a7a7a;}
     ul#id_is_archived li a:hover {text-decoration: underline;}
-    ul#id_is_archived li a.is-active {color: #363636;}
+    ul#id_is_archived li a.is-active {color: var(--bulma-text);}
   </style>
 {% endblock %}
 
@@ -24,22 +24,27 @@
           {% include 'scanpipe/includes/breadcrumb.html' %}
           {{ filter.form.is_archived }}
           {% if filter.is_active %}
-            <a class="is-grey-link" href="{% url 'project_list' %}">
+            {{ paginator.count|intcomma }} results
+            <a class="is-grey-link ml-2" href="{% url 'project_list' %}">
               <i class="fa-solid fa-times"></i> Clear search and filters
             </a>
           {% endif %}
+          {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
         </div>
-        <a href="{% url 'project_add' %}" class="button is-smaller is-link">New Project</a>
+        <div class="has-text-right">
+          <a href="{% url 'project_add' %}" class="button is-smaller is-link" style="height:fit-content;">New Project</a>
+          {% include 'scanpipe/includes/pagination_header.html' with hide_results_count=True %}
+        </div>
       </div>
 
       <div class="is-flex mb-3">
         <div class="is-flex-grow-1 mr-2">
-          {% include 'scanpipe/includes/search_field.html' with hide_help=True %}
+          {% include 'scanpipe/includes/search_field.html' with extra_class="is-smaller" hide_help=True %}
         </div>
         <div>
-          {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.pipeline only %}
-          {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.status only %}
-          {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.sort only %}
+          {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.pipeline icon_class='fa-solid fa-filter' only %}
+          {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.status icon_class='fa-solid fa-filter' only %}
+          {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.sort icon_class='fa-solid fa-sort' only %}
           {% include 'scanpipe/dropdowns/project_actions_dropdown.html' %}
         </div>
       </div>
@@ -47,17 +52,13 @@
       {% if object_list %}
         {% include 'scanpipe/includes/project_list_table.html' with projects=object_list %}
       {% else %}
-        <div class="tile is-ancestor">
-          <div class="tile is-parent">
-            <article class="tile is-child box has-text-centered border-dashed">
-              {% if filter.is_active %}
-                No Projects found. <a href="{% url 'project_list' %}">Clear search and filters</a>
-              {% else %}
-                <a href="{% url 'project_add' %}">New Project</a>
-              {% endif %}
-            </article>
-          </div>
-        </div>
+        <article class="box has-text-centered border-dashed">
+          {% if filter.is_active %}
+            No Projects found. <a href="{% url 'project_list' %}">Clear search and filters</a>
+          {% else %}
+            <a href="{% url 'project_add' %}">New Project</a>
+          {% endif %}
+        </article>
       {% endif %}
 
       {% if is_paginated %}
@@ -67,6 +68,8 @@
   </div>
 
   {% include 'scanpipe/modals/run_modal.html' %}
+  {% include "scanpipe/modals/projects_download_modal.html" %}
+  {% include "scanpipe/modals/projects_report_modal.html" %}
   {% include "scanpipe/modals/projects_archive_modal.html" %}
   {% include "scanpipe/modals/projects_delete_modal.html" %}
   {% include "scanpipe/modals/projects_reset_modal.html" %}
@@ -91,6 +94,19 @@
           }
         });
       });
+
+      document.addEventListener("openModal", function(event) {
+        // Get all elements that should be shown or hidden based on the state of the checkboxes
+        const elementsForAllRowsChecked = getAll(".show-on-all-checked");
+        const selectAllCheckbox = document.getElementById("select-all");
+        const displayValue = selectAllCheckbox.checked ? "block" : "none";
+
+        // Iterate through all elements that need to be shown or hidden and apply the display style
+        elementsForAllRowsChecked.forEach((field) => {
+          field.style.display = displayValue;
+        });
+      });
+
     });
   </script>
 {% endblock %}

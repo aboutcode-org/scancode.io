@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,11 +18,12 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import fnmatch
 import logging
 import os
+from collections import Counter
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
@@ -46,6 +47,7 @@ SUPPORTED_DISTROS = [
     "fedora",
     "sles",
     "opensuse",
+    "mariner",
     "opensuse-tumbleweed",
     "photon",
     "windows",
@@ -207,7 +209,7 @@ def _create_system_package(project, purl, package):
     # We have no files for this installed package, we cannot go further.
     if not installed_files:
         logger.info(f"  No installed_files for: {purl}")
-        return
+        return created_package
 
     missing_resources = created_package.missing_resources[:]
     modified_resources = created_package.modified_resources[:]
@@ -243,6 +245,8 @@ def _create_system_package(project, purl, package):
         modified_resources=modified_resources,
     )
 
+    return created_package
+
 
 def scan_rootfs_for_system_packages(project, rootfs):
     """
@@ -263,9 +267,28 @@ def scan_rootfs_for_system_packages(project, rootfs):
     logger.info(f"rootfs location: {rootfs.location}")
 
     installed_packages = rootfs.get_installed_packages(package_getter)
+
+    created_system_packages = []
+    seen_namespaces = []
     for index, (purl, package) in enumerate(installed_packages):
         logger.info(f"Creating package #{index}: {purl}")
-        _create_system_package(project, purl, package)
+        discovered_package = _create_system_package(project, purl, package)
+        created_system_packages.append(discovered_package)
+        if package.namespace:
+            seen_namespaces.append(package.namespace)
+
+    namespace_counts = Counter(seen_namespaces)
+    # Overwrite namespace only when there are multiple namespaces in the packages
+    if not len(namespace_counts.keys()) > 1:
+        return
+
+    most_seen_namespace = max(namespace_counts)
+    # If the distro_id is different from the namespace most seen in packages,
+    # we update all the package namespaces to the distro_id.
+    if most_seen_namespace != distro_id:
+        for discovered_package in created_system_packages:
+            if discovered_package.namespace != distro_id:
+                discovered_package.update(namespace=distro_id)
 
 
 def get_resource_with_md5(project, status):
@@ -323,7 +346,7 @@ def flag_uninteresting_codebase_resources(project):
     - Log file of sorts (such as var) using few heuristics
     """
     uninteresting_and_transient = (
-        "/tmp/",  # nosec
+        "/tmp/",  # noqa: S108
         "/etc/",
         "/proc/",
         "/dev/",

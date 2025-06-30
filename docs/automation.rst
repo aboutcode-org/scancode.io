@@ -24,10 +24,10 @@ automation methods such as a cron job or a git hook::
     # Configure the following variables to your needs
     PROJECT_NAME = f"scan-{datetime.now().isoformat()}"
     INPUT_URLS = [
-        "https://github.com/nexB/scancode.io/archive/refs/tags/v32.4.0.zip",
+        "https://github.com/aboutcode-org/scancode.io/archive/refs/tags/v32.4.0.zip",
     ]
     PIPELINES = [
-        "scan_codebase_package",
+        "inspect_packages",
         "find_vulnerabilities",
     ]
     EXECUTE_NOW = True
@@ -73,15 +73,17 @@ automation methods such as a cron job or a git hook::
     By providing the required environment variables in this manner, you can execute the
     script with the appropriate configurations and credentials.
 
-2. Integrate ScanCode.io with your CI/CD workflow
--------------------------------------------------
+2. Integrating ScanCode.io with GitHub Workflows
+------------------------------------------------
 
-Integrate ScanCode.io seamlessly into your CI/CD workflow by using a GitHub Action,
-enabling automated scans as part of your development process.
+Seamlessly integrate ScanCode.io into your GitHub Workflows to enable automated scans
+as an integral part of your development process.
 
-A GitHub Action for ScanCode.io is currently under development. You can track the
-progress and updates on the development process by visiting the following link:
-https://github.com/nexB/scancode.io/issues/599
+Visit the `scancode-action repository <https://github.com/aboutcode-org/scancode-action>`_
+to explore and learn more about the GitHub Action for ScanCode.io.
+The repository provides detailed information, usage instructions,
+and configuration options to help you incorporate code scanning effortlessly into your
+workflows.
 
 3. Run a Local ScanCode.io app on your machine (management commands)
 --------------------------------------------------------------------

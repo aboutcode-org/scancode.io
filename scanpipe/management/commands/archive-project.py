@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import sys
 
@@ -68,7 +68,8 @@ class Command(ProjectCommand):
                 f"Type 'yes' to continue, or 'no' to cancel: "
             )
             if confirm != "yes":
-                self.stdout.write("Archive cancelled.")
+                if self.verbosity > 0:
+                    self.stdout.write("Archive cancelled.")
                 sys.exit(0)
 
         try:
@@ -80,5 +81,6 @@ class Command(ProjectCommand):
         except RunInProgressError as error:
             raise CommandError(error)
 
-        msg = f"The {self.project} project has been archived."
-        self.stdout.write(msg, self.style.SUCCESS)
+        if self.verbosity > 0:
+            msg = f"The {self.project} project has been archived."
+            self.stdout.write(msg, self.style.SUCCESS)

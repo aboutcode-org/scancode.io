@@ -28,6 +28,7 @@ from unittest import mock
 from django.test import TestCase
 from django.test import TransactionTestCase
 
+from aboutcode.pipeline import LoopProgress
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
@@ -39,6 +40,7 @@ from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import dependency_data1
+from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
@@ -46,7 +48,7 @@ from scanpipe.tests import resource_data1
 
 
 class ScanPipePipesTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def test_scanpipe_pipes_strip_root(self):
         input_paths = [
@@ -111,10 +113,14 @@ class ScanPipePipesTest(TestCase):
 
         # Make sure we can assign a package to multiple Resources calling
         # update_or_create_package() several times.
+        package_data2["package_uid"] = package2.package_uid
         resource2 = make_resource_file(project=p1, path="filename2.ext")
         package2 = pipes.update_or_create_package(p1, package_data2, [resource2])
         self.assertIn(package2, resource1.discovered_packages.all())
         self.assertIn(package2, resource2.discovered_packages.all())
+
+        # Make sure the following does not raise an exception
+        self.assertIsNone(pipes.update_or_create_package(p1, {}, [resource1]))
 
     def test_scanpipe_pipes_update_or_create_package_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")
@@ -154,25 +160,42 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(expected_purl, local_package.purl)
         self.assertEqual("mit", local_package.declared_license_expression)
         self.assertEqual("Copyright", local_package.copyright)
-        self.assertEqual([expected_purl], resource1.for_packages)
+        self.assertEqual(
+            [f"{expected_purl}?uuid={forced_uuid}"], resource1.for_packages
+        )
 
     def test_scanpipe_pipes_update_or_create_package_package_uid(self):
         p1 = Project.objects.create(name="Analysis")
         package_data = dict(package_data1)
 
         package_data["package_uid"] = None
-        pipes.update_or_create_package(p1, package_data)
-        pipes.update_or_create_package(p1, package_data)
+        package1 = pipes.update_or_create_package(p1, package_data)
+        self.assertTrue(package1.package_uid)
 
         package_data["package_uid"] = ""
-        pipes.update_or_create_package(p1, package_data)
+        package2 = pipes.update_or_create_package(p1, package_data)
+        self.assertTrue(package2.package_uid)
 
         del package_data["package_uid"]
-        pipes.update_or_create_package(p1, package_data)
+        package3 = pipes.update_or_create_package(p1, package_data)
+        self.assertTrue(package3.package_uid)
 
-        # Make sure only 1 package was created, then properly found in the db regardless
-        # of the empty/none package_uid.
-        self.assertEqual(1, DiscoveredPackage.objects.count())
+        self.assertNotEqual(package1.package_uid, package2.package_uid)
+        self.assertNotEqual(package2.package_uid, package3.package_uid)
+
+        # A `package_uid` value is generated when not provided, making each
+        # package instance unique.
+        self.assertEqual(3, DiscoveredPackage.objects.count())
+
+        # In that case, there is a match in the db, the object is updated
+        package_data["package_uid"] = package1.package_uid
+        package_data["sha1"] = "sha1"
+        # We need to use an empty field since override=False in update_from_data
+        self.assertEqual("", package1.sha1)
+        pipes.update_or_create_package(p1, package_data)
+        package1.refresh_from_db()
+        self.assertEqual("sha1", package1.sha1)
+        self.assertEqual(3, DiscoveredPackage.objects.count())
 
     def test_scanpipe_pipes_update_or_create_dependency(self):
         p1 = Project.objects.create(name="Analysis")
@@ -188,6 +211,30 @@ class ScanPipePipesTest(TestCase):
         dependency_data["scope"] = "install"
         dependency = pipes.update_or_create_dependency(p1, dependency_data)
         self.assertEqual("install", dependency.scope)
+
+    def test_scanpipe_pipes_update_or_create_dependency_ignored_dependency_scopes(self):
+        p1 = Project.objects.create(name="Analysis")
+        make_resource_file(p1, "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO")
+        pipes.update_or_create_package(p1, package_data1)
+
+        p1.settings = {
+            "ignored_dependency_scopes": [{"package_type": "pypi", "scope": "tests"}]
+        }
+        p1.save()
+
+        dependency_data = dict(dependency_data1)
+        self.assertFalse(pipes.ignore_dependency_scope(p1, dependency_data))
+        dependency = pipes.update_or_create_dependency(p1, dependency_data)
+        for field_name, value in dependency_data.items():
+            self.assertEqual(value, getattr(dependency, field_name), msg=field_name)
+        dependency.delete()
+
+        # Matching the ignored setting
+        dependency_data["package_type"] = "pypi"
+        dependency_data["scope"] = "tests"
+        self.assertTrue(pipes.ignore_dependency_scope(p1, dependency_data))
+        dependency = pipes.update_or_create_dependency(p1, dependency_data)
+        self.assertIsNone(dependency)
 
     def test_scanpipe_pipes_get_or_create_relation(self):
         p1 = Project.objects.create(name="Analysis")
@@ -228,11 +275,11 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
     the tests.
     """
 
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def test_scanpipe_pipes_make_codebase_resource(self):
         p1 = Project.objects.create(name="Analysis")
-        resource_location = str(self.data_location / "notice.NOTICE")
+        resource_location = str(self.data / "aboutcode" / "notice.NOTICE")
 
         with self.assertRaises(ValueError) as cm:
             pipes.make_codebase_resource(p1, resource_location)
@@ -259,6 +306,25 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         self.assertEqual(1, p1.codebaseresources.count())
         self.assertEqual(0, p1.projectmessages.count())
 
+    @mock.patch("scanpipe.pipes.scancode.get_resource_info")
+    def test_scanpipe_pipes_make_codebase_resource_permission_denied(
+        self, mock_get_info
+    ):
+        project = make_project()
+        mock_get_info.side_effect = PermissionError("Permission denied")
+        resource_location = str(project.codebase_path / "notice.NOTICE")
+
+        resource = pipes.make_codebase_resource(project, location=resource_location)
+        self.assertTrue(resource.pk)
+        self.assertEqual(flag.RESOURCE_READ_ERROR, resource.status)
+        self.assertEqual("notice.NOTICE", str(resource.path))
+
+        error = project.projectmessages.get()
+        self.assertEqual("error", error.severity)
+        self.assertEqual("Permission denied", error.description)
+        self.assertEqual("CodebaseResource", error.model)
+        self.assertEqual({"resource_path": "notice.NOTICE"}, error.details)
+
     def test_scanpipe_add_resource_to_package(self):
         project1 = Project.objects.create(name="Analysis")
         resource1 = make_resource_file(project=project1, path="filename.ext")
@@ -273,7 +339,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         self.assertEqual(1, project1.projectmessages.count())
         error = project1.projectmessages.get()
         self.assertEqual("assemble_package", error.model)
-        expected = {"resource": "filename.ext", "package_uid": "not_available"}
+        expected = {"resource_path": "filename.ext", "package_uid": "not_available"}
         self.assertEqual(expected, error.details)
 
         scancode.add_resource_to_package(package1.package_uid, resource1, project1)
@@ -303,14 +369,14 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
 
         buffer = io.StringIO()
         logger = buffer.write
-        progress = pipes.LoopProgress(total_iterations, logger, progress_step=10)
+        progress = LoopProgress(total_iterations, logger, progress_step=10)
         for _ in progress.iter(range(total_iterations)):
             pass
         self.assertEqual(expected, buffer.getvalue())
 
         buffer = io.StringIO()
         logger = buffer.write
-        with pipes.LoopProgress(total_iterations, logger, progress_step) as progress:
+        with LoopProgress(total_iterations, logger, progress_step) as progress:
             for _ in progress.iter(range(total_iterations)):
                 pass
         self.assertEqual(expected, buffer.getvalue())
@@ -319,9 +385,9 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         project1 = Project.objects.create(name="Analysis")
 
         resource_files = [
-            self.data_location / "codebase" / "a.txt",
-            self.data_location / "codebase" / "b.txt",
-            self.data_location / "codebase" / "c.txt",
+            self.data / "codebase" / "a.txt",
+            self.data / "codebase" / "b.txt",
+            self.data / "codebase" / "c.txt",
         ]
         copy_inputs(resource_files, project1.codebase_path)
 
@@ -349,7 +415,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
 
     def test_scanpipe_pipes_get_resource_codebase_root(self):
         p1 = Project.objects.create(name="Analysis")
-        input_location = self.data_location / "codebase" / "a.txt"
+        input_location = self.data / "codebase" / "a.txt"
         file_location = copy_input(input_location, p1.codebase_path)
         codebase_root = pipes.get_resource_codebase_root(p1, file_location)
         self.assertEqual("", codebase_root)
@@ -368,7 +434,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
 
     def test_scanpipe_pipes_collect_and_create_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")
-        input_location = self.data_location / "codebase" / "a.txt"
+        input_location = self.data / "codebase" / "a.txt"
         to_dir = p1.codebase_path / "to"
         to_dir.mkdir()
         from_dir = p1.codebase_path / "from"

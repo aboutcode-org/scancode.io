@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
 
@@ -31,12 +31,14 @@ from scanpipe.pipes import input
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import is_archive
-from scanpipe.pipes.scancode import extract_archive
 
 
 class ScanSinglePackage(Pipeline):
     """
-    Scan a single package file or package archive with ScanCode-toolkit.
+    Scan a single package archive (or package manifest file).
+
+    This pipeline scans a single package for package metadata,
+    declared dependencies, licenses, license clarity score and copyrights.
 
     The output is a summary of the scan results in JSON format.
     """
@@ -47,6 +49,7 @@ class ScanSinglePackage(Pipeline):
             cls.get_package_input,
             cls.collect_input_information,
             cls.extract_input_to_codebase_directory,
+            cls.extract_archives,
             cls.run_scan,
             cls.load_inventory_from_toolkit_scan,
             cls.make_summary_from_scan_results,
@@ -66,10 +69,12 @@ class ScanSinglePackage(Pipeline):
 
     def get_package_input(self):
         """Locate the package input in the project's input/ directory."""
-        input_files = self.project.input_files
-        inputs = list(self.project.inputs())
+        # Using the input_sources model property as it includes input sources instances
+        # as well as any files manually copied into the input/ directory.
+        input_sources = self.project.input_sources
+        inputs = list(self.project.inputs("*"))
 
-        if len(inputs) != 1 or len(input_files) != 1:
+        if len(inputs) != 1 or len(input_sources) != 1:
             raise Exception("Only 1 input file supported")
 
         self.input_path = inputs[0]
@@ -90,30 +95,28 @@ class ScanSinglePackage(Pipeline):
             copy_input(self.input_path, self.project.codebase_path)
             return
 
-        extract_errors = extract_archive(self.input_path, self.project.codebase_path)
-        if extract_errors:
-            self.add_error("\n".join(extract_errors))
+        self.extract_archive(self.input_path, self.project.codebase_path)
+
+        # Reload the project env post-extraction as the scancode-config.yml file
+        # may be located in one of the extracted archives.
+        self.env = self.project.get_env()
 
     def run_scan(self):
         """Scan extracted codebase/ content."""
         scan_output_path = self.project.get_output_file_path("scancode", "json")
         self.scan_output_location = str(scan_output_path.absolute())
 
-        run_scan_args = self.scancode_run_scan_args.copy()
-        if license_score := self.project.get_env("scancode_license_score"):
-            run_scan_args["license_score"] = license_score
-
         scanning_errors = scancode.run_scan(
             location=str(self.project.codebase_path),
             output_file=self.scan_output_location,
-            run_scan_args=run_scan_args,
+            run_scan_args=self.scancode_run_scan_args.copy(),
         )
 
         for resource_path, errors in scanning_errors.items():
             self.project.add_error(
                 description="\n".join(errors),
                 model=self.pipeline_name,
-                details={"path": resource_path},
+                details={"resource_path": resource_path.removeprefix("codebase/")},
             )
 
         if not scan_output_path.exists():

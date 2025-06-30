@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,21 +18,21 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import difflib
 import logging
 import sys
+import time
 import uuid
 from contextlib import suppress
 from datetime import datetime
 from itertools import islice
 from pathlib import Path
-from timeit import default_timer as timer
 
 from django.db.models import Count
 
-from scanpipe import humanize_time
+from scanpipe.models import AbstractTaskFieldsModel
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -68,8 +68,22 @@ def make_codebase_resource(project, location, save=True, **extra_fields):
     the error raised on save() is not stored in the database and the creation is
     skipped.
     """
+    from scanpipe.pipes import flag
+
     relative_path = Path(location).relative_to(project.codebase_path)
-    resource_data = scancode.get_resource_info(location=str(location))
+    try:
+        resource_data = scancode.get_resource_info(location=str(location))
+    except OSError as error:
+        logger.error(
+            f"Failed to read resource at {location}: "
+            f"Permission denied or file inaccessible."
+        )
+        resource_data = {"status": flag.RESOURCE_READ_ERROR}
+        project.add_error(
+            model=CodebaseResource,
+            details={"resource_path": str(relative_path)},
+            exception=error,
+        )
 
     if extra_fields:
         resource_data.update(**extra_fields)
@@ -113,7 +127,7 @@ def collect_and_create_codebase_resources(project, batch_size=5000):
     Collect and create codebase resources including the "to/" and "from/" context using
     the resource tag field.
 
-    The default ``batch_size`` can be overriden, although the benefits of a value
+    The default ``batch_size`` can be overridden, although the benefits of a value
     greater than 5000 objects are usually not significant.
     """
     model_class = CodebaseResource
@@ -155,10 +169,23 @@ def _clean_package_data(package_data):
             if release_date.endswith("Z"):
                 release_date = release_date[:-1]
             package_data["release_date"] = datetime.fromisoformat(release_date).date()
+
+    # Strip leading "codebase/" to make path compatible with
+    # paths stored in resource database
+    cleaned_datafile_paths = [
+        path.removeprefix("codebase/")
+        for path in package_data.get("datafile_paths", [])
+    ]
+    package_data["datafile_paths"] = cleaned_datafile_paths
     return package_data
 
 
-def update_or_create_package(project, package_data, codebase_resources=None):
+def update_or_create_package(
+    project,
+    package_data,
+    codebase_resources=None,
+    is_virtual=False,
+):
     """
     Get, update or create a DiscoveredPackage then return it.
     Use the `project` and `package_data` mapping to lookup and creates the
@@ -170,6 +197,7 @@ def update_or_create_package(project, package_data, codebase_resources=None):
     package_data = _clean_package_data(package_data)
     # No values for package_uid requires to be empty string for proper queryset lookup
     package_uid = package_data.get("package_uid") or ""
+    datasource_id = package_data.get("datasource_id") or ""
 
     package = DiscoveredPackage.objects.get_or_none(
         project=project,
@@ -182,8 +210,14 @@ def update_or_create_package(project, package_data, codebase_resources=None):
     else:
         package = DiscoveredPackage.create_from_data(project, package_data)
 
-    if codebase_resources:
-        package.add_resources(codebase_resources)
+    if package:
+        if datasource_id and datasource_id not in package.datasource_ids:
+            datasource_ids = package.datasource_ids.copy()
+            datasource_ids.append(datasource_id)
+            package.update(datasource_ids=datasource_ids)
+
+        if codebase_resources:
+            package.add_resources(codebase_resources)
 
     return package
 
@@ -199,8 +233,33 @@ def create_local_files_package(project, defaults, codebase_resources=None):
     return update_or_create_package(project, package_data, codebase_resources)
 
 
+def ignore_dependency_scope(project, dependency_data):
+    """
+    Return True if the dependency should be ignored, i.e.: not created.
+    The ignored scopes are defined on the project ``ignored_dependency_scopes`` setting
+    field.
+    """
+    ignored_scope_index = project.ignored_dependency_scopes_index
+    if not ignored_scope_index:
+        return False
+
+    dependency_package_type = dependency_data.get("package_type")
+    dependency_scope = dependency_data.get("scope")
+    if dependency_package_type and dependency_scope:
+        if dependency_scope in ignored_scope_index.get(dependency_package_type, []):
+            return True  # Ignore this dependency entry.
+
+    return False
+
+
 def update_or_create_dependency(
-    project, dependency_data, for_package=None, strip_datafile_path_root=False
+    project,
+    dependency_data,
+    for_package=None,
+    resolved_to_package=None,
+    datafile_resource=None,
+    datasource_id=None,
+    strip_datafile_path_root=False,
 ):
     """
     Get, update or create a DiscoveredDependency then returns it.
@@ -213,28 +272,81 @@ def update_or_create_dependency(
     corresponding CodebaseResource for `datafile_path`. This is used in the case
     where Dependency data is imported from a scancode-toolkit scan, where the
     root path segments are not stripped for `datafile_path`.
+    If the dependency is resolved and a resolved package is created, we have the
+    corresponding package_uid at `resolved_to`.
     """
-    dependency = None
-    dependency_uid = dependency_data.get("dependency_uid")
+    if ignore_dependency_scope(project, dependency_data):
+        return  # Do not create the DiscoveredDependency record.
 
-    if not dependency_uid:
-        dependency_data["dependency_uid"] = uuid.uuid4()
-    else:
-        dependency = project.discovereddependencies.get_or_none(
-            dependency_uid=dependency_uid,
+    dependencies = get_dependencies(project, dependency_data)
+
+    for dependency in dependencies:
+        is_for_new_package = (
+            for_package
+            and dependency.for_package
+            and dependency.for_package != for_package
         )
+        if is_for_new_package:
+            DiscoveredDependency.populate_dependency_uuid(dependency_data)
+            dependency = DiscoveredDependency.create_from_data(
+                project,
+                dependency_data,
+                for_package=for_package,
+                resolved_to_package=resolved_to_package,
+                datafile_resource=datafile_resource,
+                datasource_id=datasource_id,
+                strip_datafile_path_root=strip_datafile_path_root,
+            )
+            break
 
-    if dependency:
-        dependency.update_from_data(dependency_data)
-    else:
+        elif dependency:
+            dependency.update_from_data(dependency_data)
+            if resolved_to_package and not dependency.resolved_to_package:
+                dependency.update(resolved_to_package=resolved_to_package)
+            if for_package and not dependency.for_package:
+                dependency.update(for_package=for_package)
+
+    if not dependencies:
+        DiscoveredDependency.populate_dependency_uuid(dependency_data)
         dependency = DiscoveredDependency.create_from_data(
             project,
             dependency_data,
             for_package=for_package,
+            resolved_to_package=resolved_to_package,
+            datafile_resource=datafile_resource,
+            datasource_id=datasource_id,
             strip_datafile_path_root=strip_datafile_path_root,
         )
 
     return dependency
+
+
+def get_dependencies(project, dependency_data):
+    """
+    Given a `dependency_data` mapping, get a list of DiscoveredDependency objects
+    for that `project` with similar dependency data.
+    """
+    dependency = None
+    dependency_uid = dependency_data.get("dependency_uid")
+    extracted_requirement = dependency_data.get("extracted_requirement") or ""
+
+    dependencies = []
+    if not dependency_uid:
+        purl_data = DiscoveredDependency.extract_purl_data(dependency_data)
+        dependencies = DiscoveredDependency.objects.filter(
+            project=project,
+            extracted_requirement=extracted_requirement,
+            **purl_data,
+        )
+    else:
+        dependency = DiscoveredDependency.objects.get_or_none(
+            project=project,
+            dependency_uid=dependency_uid,
+        )
+        if dependency:
+            dependencies.append(dependency)
+
+    return dependencies
 
 
 def get_or_create_relation(project, relation_data):
@@ -302,78 +414,6 @@ def get_bin_executable(filename):
     return str(Path(sys.executable).parent / filename)
 
 
-class LoopProgress:
-    """
-    A context manager for logging progress in loops.
-
-    Usage::
-
-        total_iterations = 100
-        logger = print  # Replace with your actual logger function
-
-        progress = LoopProgress(total_iterations, logger, progress_step=10)
-        for item in progress.iter(iterator):
-            "Your processing logic here"
-
-        with LoopProgress(total_iterations, logger, progress_step=10) as progress:
-            for item in progress.iter(iterator):
-                "Your processing logic here"
-    """
-
-    def __init__(self, total_iterations, logger, progress_step=10):
-        self.total_iterations = total_iterations
-        self.logger = logger
-        self.progress_step = progress_step
-        self.start_time = timer()
-        self.last_logged_progress = 0
-        self.current_iteration = 0
-
-    def get_eta(self, current_progress):
-        run_time = timer() - self.start_time
-        return round(run_time / current_progress * (100 - current_progress))
-
-    @property
-    def current_progress(self):
-        return int((self.current_iteration / self.total_iterations) * 100)
-
-    @property
-    def eta(self):
-        run_time = timer() - self.start_time
-        return round(run_time / self.current_progress * (100 - self.current_progress))
-
-    def log_progress(self):
-        reasons_to_skip = [
-            not self.logger,
-            not self.current_iteration > 0,
-            self.total_iterations <= self.progress_step,
-        ]
-        if any(reasons_to_skip):
-            return
-
-        if self.current_progress >= self.last_logged_progress + self.progress_step:
-            msg = (
-                f"Progress: {self.current_progress}% "
-                f"({self.current_iteration}/{self.total_iterations})"
-            )
-            if eta := self.eta:
-                msg += f" ETA: {humanize_time(eta)}"
-
-            self.logger(msg)
-            self.last_logged_progress = self.current_progress
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        pass
-
-    def iter(self, iterator):
-        for item in iterator:
-            self.current_iteration += 1
-            self.log_progress()
-            yield item
-
-
 def get_text_str_diff_ratio(str_a, str_b):
     """
     Return a similarity ratio as a float between 0 and 1 by comparing the
@@ -403,3 +443,32 @@ def get_resource_diff_ratio(resource_a, resource_b):
             str_a=resource_a.file_content,
             str_b=resource_b.file_content,
         )
+
+
+def poll_until_success(check, sleep=10, **kwargs):
+    """
+    Given a function `check`, which returns the status of a run, return True
+    when the run instance has completed successfully.
+
+    Return False when the run instance has failed, stopped, or gone stale.
+
+    The arguments for `check` need to be provided as keyword argument into this
+    function.
+    """
+    run_status = AbstractTaskFieldsModel.Status
+    # Return False if the run instance has the following statuses
+    FAIL_STATUSES = [
+        run_status.FAILURE,
+        run_status.STOPPED,
+        run_status.STALE,
+    ]
+    while True:
+        status = check(**kwargs)
+
+        if status == run_status.SUCCESS:
+            return True
+
+        if status in FAIL_STATUSES:
+            return False
+
+        time.sleep(sleep)

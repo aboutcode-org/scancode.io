@@ -52,7 +52,7 @@ java_package_too_far_down = ("\n" * 501) + "package org.apache.logging.log4j.cor
 
 
 class ScanPipeJvmTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def test_scanpipe_pipes_jvm_find_java_package(self):
         package = jvm.find_java_package(java_code.splitlines())
@@ -68,17 +68,17 @@ class ScanPipeJvmTest(TestCase):
         self.assertIsNone(package)
 
     def test_scanpipe_pipes_jvm_get_java_package(self):
-        input_location = self.data_location / "jvm" / "common.java"
+        input_location = self.data / "jvm" / "common.java"
         package = jvm.get_java_package(input_location)
         self.assertEqual({"java_package": "org.apache.logging.log4j.core"}, package)
 
     def test_scanpipe_pipes_jvm_get_java_package_with_string(self):
-        input_location = self.data_location / "jvm" / "common.java"
+        input_location = self.data / "jvm" / "common.java"
         package = jvm.get_java_package(str(input_location))
         self.assertEqual({"java_package": "org.apache.logging.log4j.core"}, package)
 
     def test_scanpipe_pipes_jvm_get_java_package_too_far_down(self):
-        input_location = self.data_location / "jvm" / "no-package.java"
+        input_location = self.data / "jvm" / "no-package.java"
         package = jvm.get_java_package(input_location)
         self.assertIsNone(package)
 

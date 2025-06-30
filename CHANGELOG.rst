@@ -1,8 +1,719 @@
 Changelog
 =========
 
-Unreleased
-----------
+v35.1.0 (unreleased)
+--------------------
+
+- Add a ``--fail-on-vulnerabilities`` option in ``check-compliance`` management command.
+  When this option is enabled, the command will exit with a non-zero status if known
+  vulnerabilities are detected in discovered packages and dependencies.
+  Requires the ``find_vulnerabilities`` pipeline to be executed beforehand.
+  https://github.com/aboutcode-org/scancode.io/pull/1702
+
+v35.0.0 (2025-06-23)
+--------------------
+
+- Add support for Python 3.13.
+  Upgrade the base image in Dockerfile to ``python:3.13-slim``.
+  https://github.com/aboutcode-org/scancode.io/pull/1469/files
+
+- Display matched snippets details in "Resource viewer", including the package,
+  resource, and similarity values.
+  https://github.com/aboutcode-org/scancode.io/issues/1688
+
+- Add filtering by label and pipeline in the ``flush-projects`` management command.
+  Also, a new ``--dry-run`` option is available to test the filters before applying
+  the deletion.
+  https://github.com/aboutcode-org/scancode.io/pull/1690
+
+- Add support for using Package URL (purl) as project input.
+  This implementation is based on ``purl2url.get_download_url``.
+  https://github.com/aboutcode-org/scancode.io/issues/1383
+
+- Raise a ``MatchCodeIOException`` when the response from the MatchCode.io service is
+  not valid in ``send_project_json_to_matchcode``.
+  This generally means an issue on the MatchCode.io server side.
+  https://github.com/aboutcode-org/scancode.io/issues/1665
+
+- Upgrade Bulma CSS and Ace JS libraries to latest versions.
+  Refine the CSS for the Resource viewer.
+  https://github.com/aboutcode-org/scancode.io/pull/1692
+
+- Add "(No value detected)" for Copyright and Holder charts.
+  https://github.com/aboutcode-org/scancode.io/issues/1697
+
+- Add "Package Compliance Alert" chart in the Policies section.
+  https://github.com/aboutcode-org/scancode.io/pull/1699
+
+- Update univers to v31.0.0, catch ``NotImplementedError`` in
+  ``get_unique_unresolved_purls``, and properly log error in project.
+  https://github.com/aboutcode-org/scancode.io/pull/1700
+  https://github.com/aboutcode-org/scancode.io/pull/1701
+
+v34.11.0 (2025-05-02)
+---------------------
+
+- Add a ``UUID`` field on the DiscoveredDependency model.
+  Use the UUID for the DiscoveredDependency spdx_id for better SPDX compatibility.
+  https://github.com/aboutcode-org/scancode.io/issues/1651
+
+- Add MatchCode-specific functions to compute fingerprints from stemmed code
+  files. Update CodebaseResource file content view to display snippet matches,
+  if available, when the codebase has been sent for matching to MatchCode.
+  https://github.com/aboutcode-org/scancode.io/pull/1656
+
+- Add the ability to export filtered QuerySet of a FilterView into the JSON format.
+  https://github.com/aboutcode-org/scancode.io/pull/1572
+
+- Include ``ProjectMessage`` records in the JSON output ``headers`` section.
+  https://github.com/aboutcode-org/scancode.io/issues/1659
+
+v34.10.1 (2025-03-26)
+---------------------
+
+- Convert the ``declared_license`` field value return by ``python-inspector`` in
+  ``resolve_pypi_packages``.
+  Resolving requirements.txt files will now return proper license data.
+  https://github.com/aboutcode-org/scancode.io/issues/1598
+
+- Add support for installing on Apple Silicon (macOS ARM64) in dev mode.
+  https://github.com/aboutcode-org/scancode.io/pull/1646
+
+v34.10.0 (2025-03-21)
+---------------------
+
+- Rename the ``docker``, ``docker_windows``, and ``root_filesystem`` modules to
+  ``analyze_docker``, ``analyze_docker_windows``, and ``analyze_root_filesystem``
+  for consistency.
+
+- Refine and document the Webhook system
+  https://github.com/aboutcode-org/scancode.io/issues/1587
+  * Add UI to add/delete Webhooks from the project settings
+  * Add a new ``add-webhook`` management command
+  * Add a ``add_webhook`` REST API action
+  * Add a new ``SCANCODEIO_GLOBAL_WEBHOOK`` setting
+  * Add a new chapter dedicated to Webhooks management in the documentation
+  * Add support for custom payload dedicated to Slack webhooks
+
+- Upgrade Bulma CSS library to version 1.0.2
+  https://github.com/aboutcode-org/scancode.io/pull/1268
+
+- Disable the creation of the global webhook in the ``batch-create`` command by default.
+  The global webhook can be created by providing the ``--create-global-webhook`` option.
+  A ``--no-global-webhook`` option was also added to the ``create-project`` command to
+  provide the ability to skip the global webhook creation.
+  https://github.com/aboutcode-org/scancode.io/pull/1629
+
+- Add support for "Permission denied" file access in make_codebase_resource.
+  https://github.com/aboutcode-org/scancode.io/issues/1630
+
+- Refine the ``scan_single_package`` pipeline to work on git fetched inputs.
+  https://github.com/aboutcode-org/scancode.io/issues/1376
+
+v34.9.5 (2025-02-19)
+--------------------
+
+- Add support for the XLSX report in REST API.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Add options to the Project reset action.
+  Also, the Project labels are kept during reset.
+  https://github.com/aboutcode-org/scancode.io/issues/1568
+
+- Add aboutcode.pipeline as an install_requires external dependency to prevent conflicts
+  with other aboutcode submodules.
+  https://github.com/aboutcode-org/scancode.io/issues/1423
+
+- Add a ``add-webhook`` management command that allows to add webhook subscription on
+  a project.
+  https://github.com/aboutcode-org/scancode.io/issues/1587
+
+- Add proper progress logging for the ``assemble`` section of the
+  ``scan_for_application_packages``.
+  https://github.com/aboutcode-org/scancode.io/issues/1601
+
+v34.9.4 (2025-01-21)
+--------------------
+
+- Improve Project list page navigation.
+  A top previous/next page navigation was added in the header for consistency with other
+  list views.
+  Any paginated view can now be navigated using the left/right keyboard keys.
+  https://github.com/aboutcode-org/scancode.io/issues/1200
+
+- Add support for importing the ``extra_data`` value from the JSON input with the
+  ``load_inventory`` pipeline.
+  When multiple JSON files are provided as inputs, the ``extra`` is prefixed with
+  the input filename.
+  https://github.com/aboutcode-org/scancode.io/issues/926
+
+- Disable CycloneDX document strict validation, which halts the entire loading process,
+  and let the data loading process handle the data issues.
+  https://github.com/aboutcode-org/scancode.io/issues/1515
+
+- Add a report action on project list to export XLSX containing packages from selected
+  projects.
+  https://github.com/aboutcode-org/scancode.io/issues/1437
+
+- Add a download action on project list to enable bulk download of Project output files.
+  https://github.com/aboutcode-org/scancode.io/issues/1518
+
+- Add labels to Project level search.
+  The labels are now always presented in alphabetical order for consistency.
+  https://github.com/aboutcode-org/scancode.io/issues/1520
+
+- Add a ``batch-create`` management command that allows to create multiple projects
+  at once from a directory containing input files.
+  https://github.com/aboutcode-org/scancode.io/issues/1437
+
+- Do not download input_urls in management commands. The fetch/download is delegated to
+  the pipeline execution.
+  https://github.com/aboutcode-org/scancode.io/issues/1437
+
+- Add a "TODOS" sheet containing on REQUIRES_REVIEW resources in XLSX.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Improve XLSX output for Vulnerabilities.
+  Replace the ``affected_by_vulnerabilities`` field in the PACKAGES and DEPENDENCIES
+  sheets with a dedicated VULNERABILITIES sheet.
+  https://github.com/aboutcode-org/scancode.io/issues/1519
+
+- Keep the InputSource objects when using ``reset`` on Projects.
+  https://github.com/aboutcode-org/scancode.io/issues/1536
+
+- Add a ``report`` management command that allows to generate XLSX reports for
+  multiple projects at once using labels and searching by project name.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Add the ability to "select across" in Projects list when using the "select all"
+  checkbox on paginated list.
+  https://github.com/aboutcode-org/scancode.io/issues/1524
+
+- Update scancode-toolkit to v32.3.2. See CHANGELOG for updates:
+  https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.3.2
+  https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.3.1
+
+- Adds  a project settings ``scan_max_file_size`` and a scancode.io settings field
+  ``SCANCODEIO_SCAN_MAX_FILE_SIZE`` to skip scanning files above a certain
+  file size (in bytes) as a temporary fix for large memory spikes while
+  scanning for licenses in certain large files.
+  https://github.com/aboutcode-org/scancode-toolkit/issues/3711
+
+v34.9.3 (2024-12-31)
+--------------------
+
+- Refine the available settings for RQ_QUEUES:
+  * Rename the RQ_QUEUES sub-settings to SCANCODEIO_RQ_REDIS_*
+  * Add SCANCODEIO_RQ_REDIS_SSL setting to enable SSL.
+  https://github.com/aboutcode-org/scancode.io/issues/1465
+
+- Add support to map binaries to source files using symbols
+  for rust binaries and source files. This adds also using
+  ``rust-inspector`` to extract symbols from rust binaries.
+  This is a new optional ``Rust`` step in the
+  ``map_deploy_to_develop`` pipeline.
+  https://github.com/aboutcode-org/scancode.io/issues/1435
+
+v34.9.2 (2024-12-10)
+--------------------
+
+- Fix an issue with the ``scan_rootfs_for_system_packages`` pipe when a namespace is
+  missing for the discovered packages.
+  https://github.com/aboutcode-org/scancode.io/issues/1462
+
+v34.9.1 (2024-12-09)
+--------------------
+
+- Add the ability to filter on Project endpoint API actions.
+  The list of ``resources``, ``packages``, ``dependencies``, ``relations``, and
+  ``messages`` can be filtered providing the ``?field_name=value`` in the URL
+  parameters.
+  https://github.com/aboutcode-org/scancode.io/issues/1449
+
+- Fix the ability to provide multiple optional step when defining pipelines in the
+  REST API.
+  The support for providing pipeline names as a comma-separated single string was
+  remove as the comma is used as the optional step separator.
+  Use a list of pipeline names instead.
+  https://github.com/aboutcode-org/scancode.io/issues/1454
+
+- Make the header row of tables sticky to the top of the screen so it is always
+  visible.
+  https://github.com/aboutcode-org/scancode.io/issues/1457
+
+v34.9.0 (2024-11-14)
+--------------------
+
+- Add ability to declared pipeline selected groups in create project REST API endpoint.
+  https://github.com/aboutcode-org/scancode.io/issues/1426
+
+- Add a new ``list-pipelines`` management command.
+  https://github.com/aboutcode-org/scancode.io/issues/1397
+
+- Refactor the policies related code to its own module.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
+- Add support for project-specific license policies and compliance alerts.
+  Enhance Project model to handle policies from local settings, project input
+  "policies.yml" files, or global app settings.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
+- Refactor the ``group`` decorator for pipeline steps as ``optional_step``.
+  The steps decorated as optional are not included by default anymore.
+  https://github.com/aboutcode-org/scancode.io/issues/386
+
+- Add a new ``PublishToFederatedCode`` pipeline (addon) to push scan result
+  to FederatedCode.
+  https://github.com/nexB/scancode.io/pull/1400
+
+- Add new ``purl`` field to project model. https://github.com/nexB/scancode.io/pull/1400
+
+v34.8.3 (2024-10-30)
+--------------------
+
+- Include the ``aboutcode`` module in the wheel and source distribution.
+  https://github.com/aboutcode-org/scancode.io/issues/1423
+
+- Update ScanCode-toolkit to v32.3.0
+  https://github.com/aboutcode-org/scancode.io/issues/1418
+
+v34.8.2 (2024-10-28)
+--------------------
+
+- Add ``android_analysis`` to ``extra_requires``. This installs the package
+  ``android_inspector``, which provides a pipeline for Android APK
+  deploy-to-development analysis.
+
+- Remove the sleep time in the context of testing ``matchcode.poll_run_url_status``
+  to speed up the test.
+  https://github.com/aboutcode-org/scancode.io/issues/1411
+
+- Add ability to specify the CycloneDX output spec version using the ``output``
+  management command and providing the ``cyclonedx:VERSION`` syntax as format value.
+  https://github.com/aboutcode-org/scancode-action/issues/8
+
+- Add new ``compliance`` REST API action that list all compliance alert for a given
+  project. The severity level can be provided using the
+  ``?fail_level={ERROR,WARNING,MISSING}`` parameter.
+  https://github.com/aboutcode-org/scancode.io/issues/1346
+
+- Add new ``Compliance alerts`` panel in the project detail view.
+  https://github.com/aboutcode-org/scancode.io/issues/1346
+
+v34.8.1 (2024-09-06)
+--------------------
+
+- Upgrade Django to security release 5.1.1 and related dependencies.
+
+v34.8.0 (2024-08-15)
+--------------------
+
+- Add a new ``enrich_with_purldb`` add-on pipeline to enrich the discovered packages
+  with data available in the PurlDB.
+  https://github.com/nexB/scancode.io/issues/1182
+
+- Add the ability to define a results_url on the Pipeline class.
+  When available, that link is displayed in the UI to easily reach the results view
+  related to the Pipeline run.
+  https://github.com/nexB/scancode.io/pull/1330
+
+- Expands on the existing WebhookSubscription model by adding a few fields to
+  configure the behavior of the Webhooks, and moves some of the fields to a new
+  WebhookDelivery model, which captures the results of a WebhookSubscription
+  "delivery".
+  https://github.com/nexB/scancode.io/issues/1325
+
+- Add support for creating dependencies using the ``load_sboms`` pipeline on CycloneDX
+  SBOM inputs.
+  https://github.com/nexB/scancode.io/issues/1145
+
+- Add a new Dependency view that renders the project dependencies as a tree.
+  https://github.com/nexB/scancode.io/issues/1145
+
+- The ``purldb-scan-worker`` command has been updated to send project results
+  back using the Project webhook subscriptions. This allows us to not have the
+  main task loop to monitor a single project run for completion in order to
+  return data, and allows us to have multiple scan projects active at once while
+  we use ``purldb-scan-worker``. A new option ``--max-concurrent-projects`` has
+  been added to set the number of purldb packages that can be requested and
+  processed at once.
+  https://github.com/nexB/scancode.io/issues/1287
+
+- Add notes field on the DiscoveredPackage model.
+  https://github.com/nexB/scancode.io/issues/1342
+
+- Fix an issue with conflicting groups checkbox id in the Add pipeline modal.
+  https://github.com/nexB/scancode.io/issues/1353
+
+- Move the BasePipeline class to a new `aboutcode.pipeline` module.
+  https://github.com/nexB/scancode.io/issues/1351
+
+- Update link references of ownership from nexB to aboutcode-org
+  https://github.com/aboutcode-org/scancode.io/issues/1350
+
+- Add a new ``check-compliance`` management command to check for compliance issues in
+  a project.
+  https://github.com/nexB/scancode.io/issues/1182
+
+- Fix issues in ``match_to_matchcode`` where the incorrect polling function was
+  used and match results were not properly collected.
+
+v34.7.1 (2024-07-15)
+--------------------
+
+- Add pipeline step selection for a run execution.
+  This allows to run a pipeline in an advanced mode allowing to skip some steps,
+  or restart from a step, like the last failed step.
+  The steps can be edited from the Run "status" modal using the "Select steps" button.
+  This is an advanced feature and should we used with caution.
+  https://github.com/nexB/scancode.io/issues/1303
+
+- Display the resolved_to_package as link in the dependencies tab.
+  https://github.com/nexB/scancode.io/pull/1314
+
+- Add support for multiple instances of a PackageURL in the CycloneDX outputs.
+  The `package_uid` is now included in each BOM Component as a property.
+  https://github.com/nexB/scancode.io/issues/1316
+
+- Add administration interface. Can be enabled with the SCANCODEIO_ENABLE_ADMIN_SITE
+  setting.
+  Add ``--admin`` and ``--super`` options to the ``create-user`` management command.
+  https://github.com/nexB/scancode.io/pull/1323
+
+- Add ``results_url`` and ``summary_url`` on the API ProjectSerializer.
+  https://github.com/nexB/scancode.io/issues/1325
+
+v34.7.0 (2024-07-02)
+--------------------
+
+- Add all "classify" plugin fields from scancode-toolkit on the CodebaseResource model.
+  https://github.com/nexB/scancode.io/issues/1275
+
+- Refine the extraction errors reporting to include the resource path for rendering
+  link to the related resources in the UI.
+  https://github.com/nexB/scancode.io/issues/1273
+
+- Add a ``flush-projects`` management command, to Delete all project data and their
+  related work directories created more than a specified number of days ago.
+  https://github.com/nexB/scancode.io/issues/1289
+
+- Update the ``inspect_packages`` pipeline to have an optional ``StaticResolver``
+  group to create resolved packages and dependency relationships from lockfiles
+  and manifests having pre-resolved dependencies. Also update this pipeline to
+  perform package assembly from multiple manifests and files to create
+  discovered packages. Also update the ``resolve_dependencies`` pipeline to have
+  the same ``StaticResolver`` group and mode the dynamic resolution part to a new
+  optional ``DynamicResolver`` group.
+  See https://github.com/nexB/scancode.io/pull/1244
+
+- Add a new attribute ``is_direct`` to the DiscoveredDependency model and two new
+  attributes ``is_private`` and ``is_virtual`` to the DiscoveredPackage model.
+  Also update the UIs to show these attributes and show the ``package_data`` field
+  contents for CodebaseResources in the ``extra_data`` tab.
+  See https://github.com/nexB/scancode.io/pull/1244
+
+- Update scancode-toolkit to version ``32.2.1``. For the complete list of updates
+  and improvements see https://github.com/nexB/scancode-toolkit/releases/tag/v32.2.0
+  and https://github.com/nexB/scancode-toolkit/releases/tag/v32.2.1
+
+- Add support for providing pipeline "selected_groups" in the ``run`` entry point.
+  https://github.com/nexB/scancode.io/issues/1306
+
+v34.6.3 (2024-06-21)
+--------------------
+
+- Use the ``--option=value`` syntax for args entries in place of ``--option value``
+  for fetching Docker images using skopeo through ``run_command_safely`` calls.
+  https://github.com/nexB/scancode.io/issues/1257
+
+- Fix an issue in the d2d JavaScript mapper.
+  https://github.com/nexB/scancode.io/pull/1274
+
+- Add support for a ``ignored_vulnerabilities`` field on the Project configuration.
+  https://github.com/nexB/scancode.io/issues/1271
+
+v34.6.2 (2024-06-18)
+--------------------
+
+- Store SBOMs headers in the `Project.extra_data` field during the load_sboms
+  pipeline.
+  https://github.com/nexB/scancode.io/issues/1253
+
+- Add support for fetching Git repository as Project input.
+  https://github.com/nexB/scancode.io/issues/921
+
+- Enhance the logging and reporting of input fetch exceptions.
+  https://github.com/nexB/scancode.io/issues/1257
+
+v34.6.1 (2024-06-07)
+--------------------
+
+- Remove print statements from migration files.
+- Display full traceback on error in the ``execute`` management command.
+- Log the Project message creation.
+- Refactor the ``get_env_from_config_file`` to support empty config file.
+
+v34.6.0 (2024-06-07)
+--------------------
+
+- Add a new ``scan_for_virus`` add-on pipeline based on ClamAV scan.
+  Found viruses are stored as "error" Project messages and on their related codebase
+  resource instance using the ``extra_data`` field.
+  https://github.com/nexB/scancode.io/issues/1182
+
+- Add ability to filter by tag on the resource list view.
+  https://github.com/nexB/scancode.io/issues/1217
+
+- Use "unknown" as the Package URL default type when no values are provided for that
+  field. This allows to create a discovered package instance instead of raising a
+  Project error message.
+  https://github.com/nexB/scancode.io/issues/1249
+
+- Rename DiscoveredDependency ``resolved_to`` to ``resolved_to_package``, and
+  ``resolved_dependencies`` to ``resolved_from_dependencies`` for clarity and
+  consistency.
+  Add ``children_packages`` and ``parent_packages`` ManyToMany field on the
+  DiscoveredPackage model.
+  Add full dependency tree in the CycloneDX output.
+  https://github.com/nexB/scancode.io/issues/1066
+
+- Add a new ``run`` entry point for executing pipeline as a single command.
+  https://github.com/nexB/scancode.io/pull/1256
+
+- Generate a DiscoveredPackage.package_uid in create_from_data when not provided.
+  https://github.com/nexB/scancode.io/issues/1256
+
+v34.5.0 (2024-05-22)
+--------------------
+
+- Display the current path location in the "Codebase" panel as a navigation breadcrumbs.
+  https://github.com/nexB/scancode.io/issues/1158
+
+- Fix a rendering issue in the dependency details view when for_package or
+  datafile_resource fields do not have a value.
+  https://github.com/nexB/scancode.io/issues/1177
+
+- Add a new `CollectPygmentsSymbolsAndStrings` pipeline (addon) for collecting source
+  symbol, string and comments using Pygments.
+  https://github.com/nexB/scancode.io/pull/1179
+
+- Workaround an issue with the cyclonedx-python-lib that does not allow to load
+  SBOMs that contains properties with no values.
+  Also, a few fixes pre-validation are applied before deserializing thr SBOM for
+  maximum compatibility.
+  https://github.com/nexB/scancode.io/issues/1185
+  https://github.com/nexB/scancode.io/issues/1230
+
+- Add a new `CollectTreeSitterSymbolsAndStrings` pipeline (addon) for collecting source
+  symbol and string using tree-sitter.
+  https://github.com/nexB/scancode.io/pull/1181
+
+- Fix `inspect_packages` pipeline to properly link discovered packages and dependencies to
+  codebase resources of package manifests where they were found. Also correctly assign
+  the datasource_ids attribute for packages and dependencies.
+  https://github.com/nexB/scancode.io/pull/1180
+
+- Add "Product name" and "Product version" as new project settings.
+  https://github.com/nexB/scancode.io/issues/1197
+
+- Add "Product name" and "Product version" as new project settings.
+  https://github.com/nexB/scancode.io/issues/1197
+
+- Raise the minimum RAM required per CPU code in the docs.
+  A good rule of thumb is to allow **2 GB of memory per CPU**.
+  For example, if Docker is configured for 8 CPUs, a minimum of 16 GB of memory is
+  required.
+  https://github.com/nexB/scancode.io/issues/1191
+
+- Add value validation for the search complex query syntax.
+  https://github.com/nexB/scancode.io/issues/1183
+
+- Bump matchcode-toolkit version to v5.0.0.
+
+- Fix the content of the ``package_url`` field in CycloneDX outputs.
+  https://github.com/nexB/scancode.io/issues/1224
+
+- Enhance support for encoded ``package_url`` during the conversion to model fields.
+  https://github.com/nexB/scancode.io/issues/1171
+
+- Remove the ``scancode_license_score`` option from the Project configuration.
+  https://github.com/nexB/scancode.io/issues/1231
+
+- Remove the ``extract_recursively`` option from the Project configuration.
+  https://github.com/nexB/scancode.io/issues/1236
+
+- Add support for a ``ignored_dependency_scopes`` field on the Project configuration.
+  https://github.com/nexB/scancode.io/issues/1197
+
+- Add support for storing the scancode-config.yml file in codebase.
+  The scancode-config.yml file can be provided as a project input, or can be located
+  in the codebase/ immediate subdirectories. This allows to provide the configuration
+  file as part of an input archive or a git clone for example.
+  https://github.com/nexB/scancode.io/issues/1236
+
+- Provide a downloadable YAML scancode-config.yml template in the documentation.
+  https://github.com/nexB/scancode.io/issues/1197
+
+- Add support for CycloneDX SBOM component properties as generated by external tools.
+  For example, the ``ResolvedUrl`` generated by cdxgen is now imported as the package
+  ``download_url``.
+
+v34.4.0 (2024-04-22)
+--------------------
+
+- Upgrade Gunicorn to v22.0.0 security release.
+
+- Display the list of fields available for the advanced search syntax in the modal UI.
+  https://github.com/nexB/scancode.io/issues/1164
+
+- Add support for CycloneDX 1.6 outputs and inputs.
+  Also, the CycloneDX outputs can be downloaded as 1.6, 1.5, and 1.4 spec versions.
+  https://github.com/nexB/scancode.io/pull/1165
+
+- Update matchcode-toolkit to v4.1.0
+
+- Add a new function
+  `scanpipe.pipes.matchcode.fingerprint_codebase_resources()`, which computes
+  approximate file matching fingerprints for text files using the new
+  `get_file_fingerprint_hashes` function from matchcode-toolkit.
+
+- Rename the `purldb-scan-queue-worker` management command to `purldb-scan-worker`.
+
+- Add `docker-compose.purldb-scan-worker.yml` to run ScanCode.io as a PurlDB
+  scan worker service.
+
+v34.3.0 (2024-04-10)
+--------------------
+
+- Associate resolved packages with their source codebase resource.
+  https://github.com/nexB/scancode.io/issues/1140
+
+- Add a new `CollectSourceStrings` pipeline (addon) for collecting source string using
+  xgettext.
+  https://github.com/nexB/scancode.io/pull/1160
+
+v34.2.0 (2024-03-28)
+--------------------
+
+- Add support for Python 3.12 and upgrade to Python 3.12 in the Dockerfile.
+  https://github.com/nexB/scancode.io/pull/1138
+
+- Add support for CycloneDX XML inputs.
+  https://github.com/nexB/scancode.io/issues/1136
+
+- Upgrade the SPDX schema to v2.3.1
+  https://github.com/nexB/scancode.io/issues/1130
+
+v34.1.0 (2024-03-27)
+--------------------
+
+- Add support for importing CycloneDX SBOM 1.2, 1.3, 1.4 and 1.5 spec formats.
+  https://github.com/nexB/scancode.io/issues/1045
+
+- The pipeline help modal is now available from all project views: form, list, details.
+  The docstring are converted from markdown to html for proper rendering.
+  https://github.com/nexB/scancode.io/pull/1105
+
+- Add a new `CollectSymbols` pipeline (addon) for collecting codebase symbols using
+  Universal Ctags.
+  https://github.com/nexB/scancode.io/pull/1116
+
+- Capture errors during the `inspect_elf_binaries` pipeline execution.
+  Errors on resource inspection are stored as project error message instead of global
+  pipeline failure.
+  The problematic resource path is stored in the message details and displayed in the
+  message list UI as a link to the resource details view.
+  https://github.com/nexB/scancode.io/issues/1121
+  https://github.com/nexB/scancode.io/issues/1122
+
+- Use the `package_only` option in scancode `get_package_data` API in
+  `inspect_packages` pipeline, to skip license and copyright detection in
+  extracted license and copyright statements found in package metadata.
+  https://github.com/nexB/scancode-toolkit/pull/3689
+
+- Rename the ``match_to_purldb`` pipeline to ``match_to_matchcode``, and add
+  MatchCode.io API settings to ScanCode.io settings.
+
+- In the DiscoveredPackage model, rename the "datasource_id" attribute to
+  "datasource_ids" and add a new attribute "datafile_paths". This is aligned
+  with the scancode-toolkit Package model, and package detection information
+  is now stored correctly. Also update the UI for discovered packages to
+  show the corresponding package datafiles and their datasource IDs.
+  A data migration is included to facilitate the migration of existing data.
+  https://github.com/nexB/scancode.io/issues/1099
+
+- Add PurlDB tab, displayed when the PURLDB_URL settings is configured.
+  When loading the package details view, a request is made on the PurlDB to fetch and
+  and display any available data.
+  https://github.com/nexB/scancode.io/issues/1125
+
+- Create a new management command `purldb-scan-queue-worker`, that runs
+  scancode.io as a Package scan queue worker for PurlDB.
+  `purldb-scan-queue-worker` gets the next available Package to be scanned and
+  the list of pipeline names to be run on the Package from PurlDB, creates a
+  Project, fetches the Package, runs the specified pipelines, and returns the
+  results to PurlDB.
+  https://github.com/nexB/scancode.io/pull/1078
+  https://github.com/nexB/purldb/issues/236
+
+- Update matchcode-toolkit to v4.0.0
+
+v34.0.0 (2024-03-04)
+--------------------
+
+- Add ability to "group" pipeline steps to control their inclusion in a pipeline run.
+  The groups can be selected in the UI, or provided using the
+  "pipeline_name:group1,group2" syntax in CLI and REST API.
+  https://github.com/nexB/scancode.io/issues/1045
+
+- Refine pipeline choices in the "Add pipeline" modal based on the project context.
+   * When there is at least one existing pipeline in the project, the modal now includes
+     all addon pipelines along with the existing pipeline for selection.
+   * In cases where no pipelines are assigned to the project, the modal displays all
+     base (non-addon) pipelines for user selection.
+
+   https://github.com/nexB/scancode.io/issues/1071
+
+- Rename pipeline for consistency and precision:
+  * scan_codebase_packages: inspect_packages
+
+  Restructure the inspect_manifest pipeline into:
+  * load_sbom: for loading SPDX/CycloneDX SBOMs and ABOUT files
+  * resolve_dependencies: for resolving package dependencies
+  * inspect_packages: gets package data from package manifests/lockfiles
+
+  A data migration is included to facilitate the migration of existing data.
+  Only the new names are available in the web UI but the REST API and CLI are backward
+  compatible with the old names.
+  https://github.com/nexB/scancode.io/issues/1034
+  https://github.com/nexB/scancode.io/discussions/1035
+
+- Remove "packageFileName" entry from SPDX output.
+  https://github.com/nexB/scancode.io/issues/1076
+
+- Add an add-on pipeline for collecting DWARF debug symbol compilation
+  unit paths when available from elfs.
+  https://github.com/nexB/purldb/issues/260
+
+- Extract all archives recursively in the `scan_single_package` pipeline.
+  https://github.com/nexB/scancode.io/issues/1081
+
+- Add URL scheme validation with explicit error messages for input URLs.
+  https://github.com/nexB/scancode.io/issues/1047
+
+- All supported `output_format` can now be downloaded using the results_download API
+  action providing a value for the new `output_format` parameter.
+  https://github.com/nexB/scancode.io/issues/1091
+
+- Add settings related to fetching private files. Those settings allow to
+  define credentials for various authentication types.
+  https://github.com/nexB/scancode.io/issues/620
+  https://github.com/nexB/scancode.io/issues/203
+
+- Update matchcode-toolkit to v3.0.0
+
+v33.1.0 (2024-02-02)
+--------------------
 
 - Rename multiple pipelines for consistency and precision:
    * docker: analyze_docker_image
@@ -23,6 +734,17 @@ Unreleased
 
 - Improve the inspect_manifest pipeline to accept archives as inputs.
   https://github.com/nexB/scancode.io/issues/1034
+
+- Add support for "tagging" download URL inputs using the "#<fragment>" section of URLs.
+  This feature is particularly useful in the map_develop_to_deploy pipeline when
+  download URLs are utilized as inputs. Tags such as "from" and "to" can be specified
+  by adding "#from" or "#to" fragments at the end of the download URLs.
+  Using the CLI, the uploaded files can be tagged using the "filename:tag" syntax
+  while using the `--input-file` arguments.
+  In the UI, tags can be edited from the Project details view "Inputs" panel.
+  On the REST API, a new `upload_file_tag` field is available to use along the
+  `upload_file`.
+  https://github.com/nexB/scancode.io/issues/708
 
 v33.0.0 (2024-01-16)
 --------------------
@@ -57,9 +779,16 @@ v33.0.0 (2024-01-16)
   project pipeline.
   https://github.com/nexB/scancode.io/issues/997
 
+- In "map_deploy_to_develop" pipeline, add support for path patterns
+  in About file attributes documenting resource paths.
+  https://github.com/nexB/scancode.io/issues/1004
+
 - Fix an issue where the pipeline details cannot be fetched when using URLs that
   include credentials such as "user:pass@domain".
   https://github.com/nexB/scancode.io/issues/998
+
+- Add a new pipeline, ``match_to_purldb``, that check CodebaseResources of a
+  Project against PurlDB for Package matches.
 
 v32.7.0 (2023-10-25)
 --------------------

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,8 +18,9 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import importlib.util
 import inspect
 import logging
 import sys
@@ -35,8 +36,10 @@ from django.db.models import BLANK_CHOICE_DASH
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
-import saneyaml
 from licensedcode.models import load_licenses
+
+from scanpipe.policies import load_policies_file
+from scanpipe.policies import make_license_policy_index
 
 try:
     from importlib import metadata as importlib_metadata
@@ -132,7 +135,14 @@ class ScanPipeConfig(AppConfig):
         after being found.
         """
         module_name = inspect.getmodulename(path)
-        module = SourceFileLoader(module_name, str(path)).load_module()
+
+        loader = SourceFileLoader(module_name, str(path))
+        spec = importlib.util.spec_from_loader(module_name, loader)
+        if spec and spec.loader:
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        else:
+            raise ImportError(f"Could not load module from path: {path}")
 
         def is_local_module_pipeline(obj):
             return is_pipeline(obj) and obj.__module__ == module_name
@@ -178,6 +188,11 @@ class ScanPipeConfig(AppConfig):
             "inspect_manifest": "inspect_packages",
             "deploy_to_develop": "map_deploy_to_develop",
             "scan_package": "scan_single_package",
+            "scan_codebase_packages": "inspect_packages",
+            "collect_pygments_symbols": "collect_symbols_pygments",
+            "collect_source_strings": "collect_strings_gettext",
+            "collect_symbols": "collect_symbols_ctags",
+            "collect_tree_sitter_symbols": "collect_symbols_tree_sitter",
         }
         if new_name := pipeline_old_names_mapping.get(pipeline_name):
             warnings.warn(
@@ -188,6 +203,17 @@ class ScanPipeConfig(AppConfig):
             )
             return new_name
         return pipeline_name
+
+    @staticmethod
+    def extract_group_from_pipeline(pipeline):
+        pipeline_name = pipeline
+        groups = None
+
+        if ":" in pipeline:
+            pipeline_name, value = pipeline.split(":", maxsplit=1)
+            groups = value.split(",") if value else []
+
+        return pipeline_name, groups
 
     def get_scancode_licenses(self):
         """
@@ -202,36 +228,21 @@ class ScanPipeConfig(AppConfig):
         """
         Compute and sets the `license_policies` on the app instance.
 
-        If the policies file is available but formatted properly or doesn't
+        If the policies file is available but not formatted properly or doesn't
         include the proper content, we want to raise an exception while the app
         is loading to warn system admins about the issue.
         """
-        policies_file_location = getattr(settings, "SCANCODEIO_POLICIES_FILE", None)
+        policies_file_setting = getattr(settings, "SCANCODEIO_POLICIES_FILE", None)
+        if not policies_file_setting:
+            return
 
-        if policies_file_location:
-            policies_file = Path(policies_file_location).expanduser()
-
-            if policies_file.exists():
-                logger.debug(style.SUCCESS(f"Load policies from {policies_file}"))
-                policies = saneyaml.load(policies_file.read_text())
-                license_policies = policies.get("license_policies", [])
-                self.license_policies_index = self.get_policies_index(
-                    policies_list=license_policies,
-                    key="license_key",
-                )
-
-            else:
-                logger.debug(style.WARNING("Policies file not found."))
-
-    @staticmethod
-    def get_policies_index(policies_list, key):
-        """Return an inverted index by `key` of the `policies_list`."""
-        return {policy.get(key): policy for policy in policies_list}
-
-    @property
-    def policies_enabled(self):
-        """Return True if the policies were provided and loaded properly."""
-        return bool(self.license_policies_index)
+        policies_file = Path(policies_file_setting).expanduser()
+        if policies_file.exists():
+            policies = load_policies_file(policies_file)
+            logger.debug(style.SUCCESS(f"Loaded policies from {policies_file}"))
+            self.license_policies_index = make_license_policy_index(policies)
+        else:
+            logger.debug(style.WARNING("Policies file not found."))
 
     def sync_runs_and_jobs(self):
         """Synchronize ``QUEUED`` and ``RUNNING`` Run with their related Jobs."""
@@ -246,3 +257,8 @@ class ScanPipeConfig(AppConfig):
                 run.sync_with_job()
         else:
             logger.info("No Run to synchronize.")
+
+    @property
+    def site_url(self):
+        if site_url := settings.SCANCODEIO_SITE_URL:
+            return site_url.rstrip("/")

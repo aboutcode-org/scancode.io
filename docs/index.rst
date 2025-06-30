@@ -32,6 +32,8 @@ you’ll find information on:
     tutorial_api_analyze_package_archive
     tutorial_license_policies
     tutorial_vulnerablecode_integration
+    tutorial_web_ui_symbol_and_string_collection
+    tutorial_cli_end_to_end_scanning_to_dejacode
 
 .. toctree::
     :maxdepth: 2
@@ -42,11 +44,13 @@ you’ll find information on:
     custom-pipelines
     scanpipe-pipes
     project-configuration
+    policies
     data-models
     output-files
     command-line-interface
     rest-api
     automation
+    webhooks
     application-settings
     distros-os-images
 

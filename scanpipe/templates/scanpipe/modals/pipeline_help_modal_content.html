@@ -1,0 +1,39 @@
+<div class="modal-background"></div>
+<div class="modal-card">
+  <header class="modal-card-head">
+    <p class="modal-card-title">
+      <strong>{{ pipeline_name }}</strong>
+    </p>
+    <button class="delete" aria-label="close"></button>
+  </header>
+
+  <section class="modal-card-body border-bottom-radius p-0">
+    <div class="notification is-info is-radiusless mb-0 py-2">
+      <p class="has-text-weight-bold">
+        {{ pipeline_info.summary }}
+      </p>
+      {% if pipeline_info.description %}
+        <p class="mt-3">
+          {{ pipeline_info.description|safe|linebreaksbr }}
+        </p>
+      {% endif %}
+    </div>
+
+    <div class="has-text-centered py-2">
+      {% for step in pipeline_info.steps %}
+        <span class="tag is-info has-text-weight-semibold">{{ step.name }}</span>
+        {% if step.groups %}
+          {% for group in step.groups %}
+            <span class="tag is-warning has-text-weight-semibold">{{ group }}</span>
+          {% endfor %}
+        {% endif %}
+        <div>{{ step.doc|safe }}</div>
+        {% if not forloop.last %}<div class="is-line-height-normal is-size-7">&darr;</div>{% endif %}
+      {% endfor %}
+    </div>
+  </section>
+
+  <footer class="modal-card-foot is-justify-content-flex-end">
+    <button class="button">Close</button>
+  </footer>
+</div>

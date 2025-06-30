@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   db:
     image: postgres:13
@@ -24,7 +22,7 @@ services:
     command: wait-for-it --strict --timeout=60 db:5432 -- sh -c "
         ./manage.py migrate &&
         ./manage.py collectstatic --no-input --verbosity 0 --clear &&
-        gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 --workers 8"
+        gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 --workers 8 ${GUNICORN_RELOAD_FLAG:-}"
     env_file:
       - docker.env
     expose:
@@ -68,8 +66,16 @@ services:
       - web
     restart: always
 
+  clamav:
+    image: clamav/clamav
+    volumes:
+      - clamav_data:/var/lib/clamav
+      - workspace:/var/scancodeio/workspace/
+    restart: always
+
 volumes:
   db_data:
   redis_data:
+  clamav_data:
   static:
   workspace:

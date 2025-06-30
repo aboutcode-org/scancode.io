@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,12 +18,14 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+from aboutcode.pipeline import optional_step
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
+from scanpipe.pipes import input
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
@@ -33,10 +35,22 @@ class DeployToDevelop(Pipeline):
     """
     Establish relationships between two code trees: deployment and development.
 
-    This pipeline is expecting 2 archive files with "from-" and "to-" filename
-    prefixes as inputs:
-    - "from-[FILENAME]" archive containing the development source code
-    - "to-[FILENAME]" archive containing the deployment compiled code
+    This pipeline requires a minimum of two archive files, each properly tagged with:
+
+    - **from** for archives containing the development source code.
+    - **to** for archives containing the deployment compiled code.
+
+    When using download URLs as inputs, the "from" and "to" tags can be
+    provided by adding a "#from" or "#to" fragment at the end of the download URLs.
+
+    When uploading local files:
+
+    - **User Interface:** Use the "Edit flag" link in the "Inputs" panel of the Project
+      details view.
+    - **REST API:** Utilize the "upload_file_tag" field in addition to the
+      "upload_file".
+    - **Command Line Interface:** Tag uploaded files using the "filename:tag" syntax,
+      for example, ``--input-file path/filename:tag``.
     """
 
     @classmethod
@@ -44,7 +58,7 @@ class DeployToDevelop(Pipeline):
         return (
             cls.get_inputs,
             cls.extract_inputs_to_codebase_directory,
-            cls.extract_archives_in_place,
+            cls.extract_archives,
             cls.collect_and_create_codebase_resources,
             cls.fingerprint_codebase_directories,
             cls.flag_empty_files,
@@ -57,6 +71,12 @@ class DeployToDevelop(Pipeline):
             cls.map_java_to_class,
             cls.map_jar_to_source,
             cls.map_javascript,
+            cls.map_javascript_symbols,
+            cls.map_elf,
+            cls.map_macho,
+            cls.map_winpe,
+            cls.map_go,
+            cls.map_rust,
             cls.match_directories_to_purldb,
             cls.match_resources_to_purldb,
             cls.map_javascript_post_purldb_match,
@@ -112,23 +132,16 @@ class DeployToDevelop(Pipeline):
             (self.to_files, self.project.codebase_path / d2d.TO),
         ]
 
-        errors = []
         for input_files, codebase_path in inputs_with_codebase_path_destination:
             for input_file_path in input_files:
-                errors += scancode.extract_archive(input_file_path, codebase_path)
+                if input.is_archive(input_file_path):
+                    self.extract_archive(input_file_path, codebase_path)
+                else:
+                    input.copy_input(input_file_path, codebase_path)
 
-        if errors:
-            self.add_error("\n".join(errors))
-
-    def extract_archives_in_place(self):
-        """Extract recursively from* and to* archives in place with extractcode."""
-        extract_errors = scancode.extract_archives(
-            self.project.codebase_path,
-            recurse=self.env.get("extract_recursively", True),
-        )
-
-        if extract_errors:
-            self.add_error("\n".join(extract_errors))
+        # Reload the project env post-extraction as the scancode-config.yml file
+        # may be located in one of the extracted archives.
+        self.env = self.project.get_env()
 
     def collect_and_create_codebase_resources(self):
         """Collect and create codebase resources."""
@@ -139,10 +152,7 @@ class DeployToDevelop(Pipeline):
         matchcode.fingerprint_codebase_directories(self.project, to_codebase_only=True)
 
     def flag_whitespace_files(self):
-        """
-        Flag whitespace files with size less than or equal
-        to 100 byte as ignored.
-        """
+        """Flag whitespace files with size less than or equal to 100 byte as ignored."""
         d2d.flag_whitespace_files(project=self.project)
 
     def map_about_files(self):
@@ -166,24 +176,59 @@ class DeployToDevelop(Pipeline):
             logger=self.log,
         )
 
+    @optional_step("Java")
     def find_java_packages(self):
         """Find the java package of the .java source files."""
         d2d.find_java_packages(self.project, logger=self.log)
 
+    @optional_step("Java")
     def map_java_to_class(self):
         """Map a .class compiled file to its .java source."""
         d2d.map_java_to_class(project=self.project, logger=self.log)
 
+    @optional_step("Java")
     def map_jar_to_source(self):
         """Map .jar files to their related source directory."""
         d2d.map_jar_to_source(project=self.project, logger=self.log)
 
+    @optional_step("JavaScript")
     def map_javascript(self):
         """
         Map a packed or minified JavaScript, TypeScript, CSS and SCSS
         to its source.
         """
         d2d.map_javascript(project=self.project, logger=self.log)
+
+    @optional_step("JavaScript")
+    def map_javascript_symbols(self):
+        """Map deployed JavaScript, TypeScript to its sources using symbols."""
+        d2d.map_javascript_symbols(project=self.project, logger=self.log)
+
+    @optional_step("Elf")
+    def map_elf(self):
+        """Map ELF binaries to their sources using dwarf paths and symbols."""
+        d2d.map_elfs_with_dwarf_paths(project=self.project, logger=self.log)
+        d2d.map_elfs_binaries_with_symbols(project=self.project, logger=self.log)
+
+    @optional_step("MacOS")
+    def map_macho(self):
+        """Map mach0 binaries to their sources using symbols."""
+        d2d.map_macho_binaries_with_symbols(project=self.project, logger=self.log)
+
+    @optional_step("Windows")
+    def map_winpe(self):
+        """Map winpe binaries to their sources using symbols."""
+        d2d.map_winpe_binaries_with_symbols(project=self.project, logger=self.log)
+
+    @optional_step("Go")
+    def map_go(self):
+        """Map Go binaries to their sources using paths."""
+        d2d.map_go_paths(project=self.project, logger=self.log)
+
+    @optional_step("Rust")
+    def map_rust(self):
+        """Map Rust binaries to their sources using symbols."""
+        d2d.map_rust_binaries_with_symbols(project=self.project, logger=self.log)
 
     def match_directories_to_purldb(self):
         """Match selected directories in PurlDB."""
@@ -209,18 +254,22 @@ class DeployToDevelop(Pipeline):
             logger=self.log,
         )
 
+    @optional_step("JavaScript")
     def map_javascript_post_purldb_match(self):
         """Map minified javascript file based on existing PurlDB match."""
         d2d.map_javascript_post_purldb_match(project=self.project, logger=self.log)
 
+    @optional_step("JavaScript")
     def map_javascript_path(self):
         """Map javascript file based on path."""
         d2d.map_javascript_path(project=self.project, logger=self.log)
 
+    @optional_step("JavaScript")
     def map_javascript_colocation(self):
         """Map JavaScript files based on neighborhood file mapping."""
         d2d.map_javascript_colocation(project=self.project, logger=self.log)
 
+    @optional_step("JavaScript")
     def map_thirdparty_npm_packages(self):
         """Map thirdparty package using package.json metadata."""
         d2d.map_thirdparty_npm_packages(project=self.project, logger=self.log)

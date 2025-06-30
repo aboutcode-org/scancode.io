@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 
 *.db
+*.sqlite3
 .installed.cfg
 parts
 develop-eggs
@@ -42,14 +43,15 @@ share
 selenium
 local
 /dist/
-/.cache/
+/.*cache/
+/.venv/
 /.python-version
 /.pytest_cache/
 /scancodeio.egg-info/
-policies.yml
 *.rdb
 *.aof
 .vscode
+.ipynb_checkpoints
 
 # This is only created when packaging for external redistribution
 /thirdparty/

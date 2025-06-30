@@ -1,0 +1,47 @@
+{
+    "url": "http://192.168.1.12/api/matching/65bf1e6d-6bff-4841-9c9b-db5cf25edfa7/",
+    "uuid": "65bf1e6d-6bff-4841-9c9b-db5cf25edfa7",
+    "created_date": "2024-01-08T23:24:50.060793Z",
+    "input_sources": [
+        {
+            "filename": "test-out.json",
+            "source": "uploaded"
+        }
+    ],
+    "runs": [
+        {
+            "url": "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/",
+            "pipeline_name": "matching",
+            "status": "not_started",
+            "description": "",
+            "project": "http://192.168.1.12/api/matching/65bf1e6d-6bff-4841-9c9b-db5cf25edfa7/",
+            "uuid": "52b2930d-6e85-4b3e-ba3e-17dd9a618650",
+            "created_date": "2024-01-08T23:24:50.063864Z",
+            "scancodeio_version": "",
+            "task_id": null,
+            "task_start_date": null,
+            "task_end_date": null,
+            "task_exitcode": null,
+            "task_output": "",
+            "log": "",
+            "execution_time": null
+        }
+    ],
+    "resource_count": 0,
+    "package_count": 0,
+    "dependency_count": 0,
+    "relation_count": 0,
+    "codebase_resources_summary": {},
+    "discovered_packages_summary": {
+        "total": 0,
+        "with_missing_resources": 0,
+        "with_modified_resources": 0
+    },
+    "discovered_dependencies_summary": {
+        "total": 0,
+        "is_runtime": 0,
+        "is_optional": 0,
+        "is_pinned": 0
+    },
+    "codebase_relations_summary": {}
+}

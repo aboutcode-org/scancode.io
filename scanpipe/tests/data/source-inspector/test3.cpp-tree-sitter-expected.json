@@ -1,0 +1,35 @@
+{
+  "source_strings": [
+    "\"Testing dummy functions:\\n\"",
+    "\"Addition: %d + %d = %d\\n\"",
+    "\"Subtraction: %d - %d = %d\\n\""
+  ],
+  "source_symbols": [
+    "add",
+    "a",
+    "b",
+    "a",
+    "b",
+    "subtract",
+    "a",
+    "b",
+    "a",
+    "b",
+    "main",
+    "x",
+    "y",
+    "printf",
+    "printf",
+    "x",
+    "y",
+    "add",
+    "x",
+    "y",
+    "printf",
+    "x",
+    "y",
+    "subtract",
+    "x",
+    "y"
+  ]
+}

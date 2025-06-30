@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import os
 import sys
@@ -28,12 +28,12 @@ from pathlib import Path
 
 import git
 
-VERSION = "33.0.0"
+VERSION = "35.0.0"
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = PROJECT_DIR.parent
 SCAN_NOTICE = PROJECT_DIR.joinpath("scan.NOTICE").read_text()
-GITHUB_URL = "https://github.com/nexB/scancode.io"
+GITHUB_URL = "https://github.com/aboutcode-org/scancode.io"
 
 
 def get_version(version):
@@ -87,6 +87,7 @@ __version__ = get_version(VERSION)
 # Turn off the warnings for the following modules.
 warnings.filterwarnings("ignore", module="extractcode")
 warnings.filterwarnings("ignore", module="typecode")
+warnings.filterwarnings("ignore", module="clamd")
 
 
 def command_line():
@@ -94,4 +95,29 @@ def command_line():
     from django.core.management import execute_from_command_line
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "scancodeio.settings")
+    execute_from_command_line(sys.argv)
+
+
+def combined_run():
+    """
+    Command line entry point for executing pipeline as a single command.
+
+    This function sets up a pre-configured settings context, requiring no additional
+    configuration.
+    It combines the creation, execution, and result retrieval of the project into a
+    single process.
+    """
+    from django.core.checks.security.base import SECRET_KEY_INSECURE_PREFIX
+    from django.core.management import execute_from_command_line
+    from django.core.management.utils import get_random_secret_key
+
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "scancodeio.settings")
+    secret_key = SECRET_KEY_INSECURE_PREFIX + get_random_secret_key()
+    os.environ.setdefault("SECRET_KEY", secret_key)
+    os.environ.setdefault("SCANCODEIO_DB_ENGINE", "django.db.backends.sqlite3")
+    os.environ.setdefault("SCANCODEIO_DB_NAME", "scancodeio.sqlite3")
+    # Disable multiprocessing
+    os.environ.setdefault("SCANCODEIO_PROCESSES", "0")
+
+    sys.argv.insert(1, "run")
     execute_from_command_line(sys.argv)

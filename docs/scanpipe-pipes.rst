@@ -8,6 +8,11 @@ Generic
 .. automodule:: scanpipe.pipes
     :members:
 
+ClamAV
+------
+.. automodule:: scanpipe.pipes.clamav
+    :members:
+
 Codebase
 --------
 .. automodule:: scanpipe.pipes.codebase
@@ -33,15 +38,30 @@ Docker
 .. automodule:: scanpipe.pipes.docker
     :members:
 
+ELF
+---
+.. automodule:: scanpipe.pipes.elf
+    :members:
+
 Fetch
 -----
 .. automodule:: scanpipe.pipes.fetch
     :members:
     :exclude-members: Download
 
+Flag
+----
+.. automodule:: scanpipe.pipes.flag
+    :members:
+
 Input
 -----
 .. automodule:: scanpipe.pipes.input
+    :members:
+
+JS
+--
+.. automodule:: scanpipe.pipes.js
     :members:
 
 JVM
@@ -49,11 +69,21 @@ JVM
 .. automodule:: scanpipe.pipes.jvm
     :members:
 
+MatchCode
+---------
+.. automodule:: scanpipe.pipes.matchcode
+    :members:
+
 Output
 ------
 .. automodule:: scanpipe.pipes.output
     :members:
     :exclude-members: JSONResultsGenerator
+
+PathMap
+-------
+.. automodule:: scanpipe.pipes.pathmap
+    :members:
 
 PurlDB
 ------
@@ -80,9 +110,14 @@ SPDX
 .. automodule:: scanpipe.pipes.spdx
     :members:
 
-Flag
-----
-.. automodule:: scanpipe.pipes.flag
+Symbolmap
+---------
+.. automodule:: scanpipe.pipes.symbolmap
+    :members:
+
+Symbols
+-------
+.. automodule:: scanpipe.pipes.symbols
     :members:
 
 VulnerableCode

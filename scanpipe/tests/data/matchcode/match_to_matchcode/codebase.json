@@ -1,0 +1,65 @@
+{
+  "headers": [
+    {
+      "tool_name": "scanpipe",
+      "tool_version": "v3.0.0-241-g45d653b",
+      "other_tools": [
+        "pkg:pypi/scancode-toolkit@32.0.8"
+      ],
+      "notice": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n",
+      "uuid": "b47c79e8-14f1-4991-a584-717b39233750",
+      "created_date": "2024-01-09T00:59:38.649Z",
+      "notes": "",
+      "settings": {},
+      "input_sources": [
+        {
+          "filename": "test-out.json",
+          "source": "uploaded"
+        }
+      ],
+      "runs": [],
+      "messages": [],
+      "extra_data": {}
+    }
+  ],
+  "packages": [],
+  "dependencies": [],
+  "files": [
+    {
+      "path": "elasticsearch-x-content-7.17.9-sources.jar",
+      "type": "file",
+      "name": "elasticsearch-x-content-7.17.9-sources.jar",
+      "status": "matched-to-purldb-package",
+      "tag": "",
+      "extension": ".jar",
+      "size": 89821,
+      "md5": "abcc7ad93deadc72f4b4369cb933e8e1",
+      "sha1": "30d21add57abe04beece3f28a079671dbc9043e4",
+      "sha256": "dc433d60ef7e43670500bd97c4f1d217a1880774a1dfb75de7132fb0b5208acd",
+      "sha512": "",
+      "mime_type": "application/zip",
+      "file_type": "Zip archive data, at least v1.0 to extract",
+      "programming_language": "",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": true,
+      "is_media": false,
+      "is_key_file": false,
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "compliance_alert": "",
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "for_packages": [],
+      "emails": [],
+      "urls": [],
+      "extra_data": {}
+    }
+  ],
+  "relations": []
+}

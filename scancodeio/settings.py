@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import sys
 import tempfile
@@ -29,22 +29,29 @@ import environ
 PROJECT_DIR = environ.Path(__file__) - 1
 ROOT_DIR = PROJECT_DIR - 1
 
+# True if running tests through `./manage test`
+IS_TESTS = "test" in sys.argv
+
 # Environment
 
 ENV_FILE = "/etc/scancodeio/.env"
 if not Path(ENV_FILE).exists():
     ENV_FILE = ROOT_DIR(".env")
 
+# Do not use local .env environment when running the tests.
+if IS_TESTS:
+    ENV_FILE = None
+
 env = environ.Env()
 environ.Env.read_env(ENV_FILE)
 
 # Security
 
-SECRET_KEY = env.str("SECRET_KEY")
+SECRET_KEY = env.str("SECRET_KEY", default="")
 
 ALLOWED_HOSTS = env.list(
     "ALLOWED_HOSTS",
-    default=[".localhost", "127.0.0.1", "[::1]", "host.docker.internal"],
+    default=[".localhost", "127.0.0.1", "[::1]", "host.docker.internal", "172.17.0.1"],
 )
 
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
@@ -55,6 +62,8 @@ DEBUG = env.bool("SCANCODEIO_DEBUG", default=False)
 SCANCODEIO_REQUIRE_AUTHENTICATION = env.bool(
     "SCANCODEIO_REQUIRE_AUTHENTICATION", default=False
 )
+
+SCANCODEIO_ENABLE_ADMIN_SITE = env.bool("SCANCODEIO_ENABLE_ADMIN_SITE", default=False)
 
 SECURE_CONTENT_TYPE_NOSNIFF = env.bool("SECURE_CONTENT_TYPE_NOSNIFF", default=True)
 
@@ -98,6 +107,9 @@ SCANCODEIO_TASK_TIMEOUT = env.str("SCANCODEIO_TASK_TIMEOUT", default="24h")
 # Default to 2 minutes.
 SCANCODEIO_SCAN_FILE_TIMEOUT = env.int("SCANCODEIO_SCAN_FILE_TIMEOUT", default=120)
 
+# Default to None which scans all files
+SCANCODEIO_SCAN_MAX_FILE_SIZE = env.int("SCANCODEIO_SCAN_MAX_FILE_SIZE", default=None)
+
 # List views pagination, controls the number of items displayed per page.
 # Syntax in .env: SCANCODEIO_PAGINATE_BY=project=10,project_error=10
 SCANCODEIO_PAGINATE_BY = env.dict(
@@ -114,6 +126,53 @@ SCANCODEIO_PAGINATE_BY = env.dict(
 
 # Default limit for "most common" entries in QuerySets.
 SCANCODEIO_MOST_COMMON_LIMIT = env.int("SCANCODEIO_MOST_COMMON_LIMIT", default=7)
+
+# The base URL (e.g., https://hostname/) of this application instance.
+# Required for generating URLs to reference objects within the app,
+# such as in webhook notifications.
+SCANCODEIO_SITE_URL = env.str("SCANCODEIO_SITE_URL", default="")
+
+# Fetch authentication credentials
+
+# SCANCODEIO_FETCH_BASIC_AUTH="host=user,password;"
+SCANCODEIO_FETCH_BASIC_AUTH = env.dict(
+    "SCANCODEIO_FETCH_BASIC_AUTH",
+    cast={"value": tuple},
+    default={},
+)
+
+# SCANCODEIO_FETCH_DIGEST_AUTH="host=user,password;"
+SCANCODEIO_FETCH_DIGEST_AUTH = env.dict(
+    "SCANCODEIO_FETCH_DIGEST_AUTH",
+    cast={"value": tuple},
+    default={},
+)
+
+# SCANCODEIO_FETCH_HEADERS="host=Header1=value,Header2=value;"
+SCANCODEIO_FETCH_HEADERS = {}
+FETCH_HEADERS_STR = env.str("SCANCODEIO_FETCH_HEADERS", default="")
+for entry in FETCH_HEADERS_STR.split(";"):
+    if entry.strip():
+        host, headers = entry.split("=", 1)
+        SCANCODEIO_FETCH_HEADERS[host] = env.parse_value(headers, cast=dict)
+
+# SCANCODEIO_NETRC_LOCATION="~/.netrc"
+SCANCODEIO_NETRC_LOCATION = env.str("SCANCODEIO_NETRC_LOCATION", default="")
+if SCANCODEIO_NETRC_LOCATION:
+    # Propagate the location to the environ for `requests.utils.get_netrc_auth`
+    env.ENVIRON["NETRC"] = SCANCODEIO_NETRC_LOCATION
+
+# SCANCODEIO_SKOPEO_CREDENTIALS="host1=user:password,host2=user:password"
+SCANCODEIO_SKOPEO_CREDENTIALS = env.dict("SCANCODEIO_SKOPEO_CREDENTIALS", default={})
+
+# SCANCODEIO_SKOPEO_AUTHFILE_LOCATION="/path/to/auth.json"
+SCANCODEIO_SKOPEO_AUTHFILE_LOCATION = env.str(
+    "SCANCODEIO_SKOPEO_AUTHFILE_LOCATION", default=""
+)
+
+# This webhook will be added as WebhookSubscription for each new project.
+# SCANCODEIO_GLOBAL_WEBHOOK=target_url=https://webhook.url,trigger_on_each_run=False,include_summary=True,include_results=False
+SCANCODEIO_GLOBAL_WEBHOOK = env.dict("SCANCODEIO_GLOBAL_WEBHOOK", default={})
 
 # Application definition
 
@@ -137,7 +196,6 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "django_rq",
     "django_probes",
-    "fontawesomefree",
     "taggit",
 ]
 
@@ -149,6 +207,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "scancodeio.middleware.TimezoneMiddleware",
 ]
 
 ROOT_URLCONF = "scancodeio.urls"
@@ -205,7 +264,9 @@ LOGIN_REDIRECT_URL = "project_list"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+        ),
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
@@ -223,19 +284,17 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Testing
 
-# True if running tests through `./manage test`
-IS_TESTS = "test" in sys.argv
-
 if IS_TESTS:
+    from django.core.management.utils import get_random_secret_key
+
+    SECRET_KEY = get_random_secret_key()
     # Do not pollute the workspace while running the tests.
     SCANCODEIO_WORKSPACE_LOCATION = tempfile.mkdtemp()
     SCANCODEIO_REQUIRE_AUTHENTICATION = True
     SCANCODEIO_SCAN_FILE_TIMEOUT = 120
     # The default password hasher is rather slow by design.
     # Using a faster hashing algorithm in the testing context to speed up the run.
-    PASSWORD_HASHERS = [
-        "django.contrib.auth.hashers.MD5PasswordHasher",
-    ]
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 # Debug toolbar
 
@@ -290,6 +349,8 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 LANGUAGE_CODE = "en-us"
 
+FORMAT_MODULE_PATH = ["scancodeio.formats"]
+
 TIME_ZONE = env.str("TIME_ZONE", default="UTC")
 
 USE_I18N = True
@@ -314,10 +375,16 @@ CRISPY_TEMPLATE_PACK = "bootstrap3"
 
 RQ_QUEUES = {
     "default": {
-        "HOST": env.str("SCANCODEIO_REDIS_HOST", default="localhost"),
-        "PORT": env.str("SCANCODEIO_REDIS_PORT", default="6379"),
-        "PASSWORD": env.str("SCANCODEIO_REDIS_PASSWORD", default=""),
-        "DEFAULT_TIMEOUT": env.int("SCANCODEIO_REDIS_DEFAULT_TIMEOUT", default=360),
+        "HOST": env.str("SCANCODEIO_RQ_REDIS_HOST", default="localhost"),
+        "PORT": env.str("SCANCODEIO_RQ_REDIS_PORT", default="6379"),
+        "DB": env.int("SCANCODEIO_RQ_REDIS_DB", default=0),
+        "USERNAME": env.str("SCANCODEIO_RQ_REDIS_USERNAME", default=None),
+        "PASSWORD": env.str("SCANCODEIO_RQ_REDIS_PASSWORD", default=""),
+        "DEFAULT_TIMEOUT": env.int("SCANCODEIO_RQ_REDIS_DEFAULT_TIMEOUT", default=360),
+        # Enable SSL for Redis connections when deploying ScanCode.io in environments
+        # where Redis is hosted on a separate system (e.g., cloud deployment or remote
+        # Redis server) to secure data in transit.
+        "SSL": env.bool("SCANCODEIO_RQ_REDIS_SSL", default=False),
     },
 }
 
@@ -325,6 +392,10 @@ SCANCODEIO_ASYNC = env.bool("SCANCODEIO_ASYNC", default=False)
 if not SCANCODEIO_ASYNC:
     for queue_config in RQ_QUEUES.values():
         queue_config["ASYNC"] = False
+
+# ClamAV virus scan
+CLAMD_USE_TCP = env.bool("CLAMD_USE_TCP", default=True)
+CLAMD_TCP_ADDR = env.str("CLAMD_TCP_ADDR", default="clamav")
 
 # Django restframework
 
@@ -354,14 +425,30 @@ if not SCANCODEIO_REQUIRE_AUTHENTICATION:
 
 # VulnerableCode integration
 
-VULNERABLECODE_URL = env.str("VULNERABLECODE_URL", default="")
+VULNERABLECODE_URL = env.str("VULNERABLECODE_URL", default="").rstrip("/")
 VULNERABLECODE_USER = env.str("VULNERABLECODE_USER", default="")
 VULNERABLECODE_PASSWORD = env.str("VULNERABLECODE_PASSWORD", default="")
 VULNERABLECODE_API_KEY = env.str("VULNERABLECODE_API_KEY", default="")
 
 # PurlDB integration
 
-PURLDB_URL = env.str("PURLDB_URL", default="")
+PURLDB_URL = env.str("PURLDB_URL", default="").rstrip("/")
 PURLDB_USER = env.str("PURLDB_USER", default="")
 PURLDB_PASSWORD = env.str("PURLDB_PASSWORD", default="")
 PURLDB_API_KEY = env.str("PURLDB_API_KEY", default="")
+
+# MatchCode.io integration
+
+MATCHCODEIO_URL = env.str("MATCHCODEIO_URL", default="").rstrip("/")
+MATCHCODEIO_USER = env.str("MATCHCODEIO_USER", default="")
+MATCHCODEIO_PASSWORD = env.str("MATCHCODEIO_PASSWORD", default="")
+MATCHCODEIO_API_KEY = env.str("MATCHCODEIO_API_KEY", default="")
+
+# FederatedCode integration
+
+FEDERATEDCODE_GIT_ACCOUNT_URL = env.str(
+    "FEDERATEDCODE_GIT_ACCOUNT_URL", default=""
+).rstrip("/")
+FEDERATEDCODE_GIT_SERVICE_TOKEN = env.str("FEDERATEDCODE_GIT_SERVICE_TOKEN", default="")
+FEDERATEDCODE_GIT_SERVICE_NAME = env.str("FEDERATEDCODE_GIT_SERVICE_NAME", default="")
+FEDERATEDCODE_GIT_SERVICE_EMAIL = env.str("FEDERATEDCODE_GIT_SERVICE_EMAIL", default="")

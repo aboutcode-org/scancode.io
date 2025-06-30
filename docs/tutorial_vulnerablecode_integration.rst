@@ -16,22 +16,20 @@ Configure VulnerableCode integration
 .. warning::
     The ``find_vulnerabilities`` pipeline requires access to a VulnerableCode database.
 
-You can either run your own instance of VulnerableCode or connect to the public one.
-Authentication is provided using an API key that you can obtain by registering at
-https://public.vulnerablecode.io/account/request_api_key/
+You have the option to either deploy your instance of
+`VulnerableCode <https://github.com/aboutcode-org/vulnerablecode/>`_
+or connect to the `public instance <https://public.vulnerablecode.io/>`_.
 
-Set the ``VULNERABLECODE_URL`` and ``VULNERABLECODE_API_KEY`` in your local settings:
-  - in the ``docker.env`` file if your run with docker
-  - in the ``.env`` for a local development deployment
-
-For example::
+To configure your local environment, set the ``VULNERABLECODE_URL`` in your ``.env``
+file::
 
     VULNERABLECODE_URL=https://public.vulnerablecode.io/
-    VULNERABLECODE_API_KEY=c1fa7dc1fd0a408880ba2dfdf63c1124abca9477
 
-.. note::
-    Optionally contact nexB support at support@nexb.com with your API user email if
-    you are doing a larger scale evaluation and need to ease API throttling limitations.
+**Restarting the services is required following any changes to .env:**
+
+.. code-block:: bash
+
+    docker compose restart web worker
 
 Run the ``find_vulnerabilities`` pipeline
 -----------------------------------------

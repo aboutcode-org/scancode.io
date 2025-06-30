@@ -13,5 +13,9 @@
       <span class="has-text-weight-semibold">{{ segment }}{% if is_extract %}-extract{% endif %}</span>
     {% endif %}
   {% endfor %}
+  {% include 'scanpipe/includes/admin_edit_link.html' %}
+  <button class="copy-to-clipboard has-text-grey ml-2 is-size-6" aria-label="Copy path" data-copy="{{ object.path }}" data-copy-feedback="Resource path copied!">
+    <i class="fa-regular fa-copy"></i>
+  </button>
 </h1>
 {% endspaceless %}

@@ -9,8 +9,9 @@
     </ul>
   </nav>
   {% if object_title %}
-    <h1 class="is-size-5 break-all has-text-weight-semibold has-text-grey-darker">
+    <h1 class="is-size-5 break-all has-text-weight-semibold">
       {{ object_title }}
+      {% include 'scanpipe/includes/admin_edit_link.html' %}
     </h1>
   {% elif template_title %}
     {% include template_title %}

@@ -30,10 +30,9 @@ from django.test import TestCase
 from django.test import override_settings
 from django.utils import timezone
 
-from scanpipe.apps import ScanPipeConfig
 from scanpipe.models import Project
 from scanpipe.models import Run
-from scanpipe.tests import license_policies
+from scanpipe.tests import filter_warnings
 from scanpipe.tests import license_policies_index
 from scanpipe.tests.pipelines.register_from_file import RegisterFromFile
 
@@ -41,16 +40,8 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class ScanPipeAppsTest(TestCase):
-    data_location = Path(__file__).parent / "data"
+    data = Path(__file__).parent / "data"
     pipelines_location = Path(__file__).parent / "pipelines"
-
-    def test_scanpipe_apps_get_policies_index(self):
-        self.assertEqual({}, ScanPipeConfig.get_policies_index([], "license_key"))
-        policies_index = ScanPipeConfig.get_policies_index(
-            policies_list=license_policies,
-            key="license_key",
-        )
-        self.assertEqual(license_policies_index, policies_index)
 
     def test_scanpipe_apps_set_policies(self):
         scanpipe_app.license_policies_index = {}
@@ -66,18 +57,12 @@ class ScanPipeAppsTest(TestCase):
             self.assertEqual({}, scanpipe_app.license_policies_index)
 
         scanpipe_app.license_policies_index = {}
-        policies_files = self.data_location / "policies.yml"
-        with override_settings(SCANCODEIO_POLICIES_FILE=policies_files):
+        policies_files = self.data / "policies" / "policies.yml"
+        with override_settings(SCANCODEIO_POLICIES_FILE=str(policies_files)):
             scanpipe_app.set_policies()
             self.assertEqual(
                 license_policies_index, scanpipe_app.license_policies_index
             )
-
-    def test_scanpipe_apps_policies_enabled(self):
-        scanpipe_app.license_policies_index = {}
-        self.assertFalse(scanpipe_app.policies_enabled)
-        scanpipe_app.license_policies_index = {"key": "value"}
-        self.assertTrue(scanpipe_app.policies_enabled)
 
     def test_scanpipe_apps_register_pipeline_from_file(self):
         path = self.pipelines_location / "do_nothing.py"
@@ -140,6 +125,7 @@ class ScanPipeAppsTest(TestCase):
         self.assertIn(main_pipeline, choices)
         self.assertNotIn(addon_pipeline, choices)
 
+    @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_apps_get_new_pipeline_name(self):
         self.assertEqual(
             "scan_codebase", scanpipe_app.get_new_pipeline_name("scan_codebase")
@@ -150,3 +136,26 @@ class ScanPipeAppsTest(TestCase):
         self.assertEqual(
             "analyze_docker_image", scanpipe_app.get_new_pipeline_name("docker")
         )
+
+    def test_scanpipe_apps_extract_group_from_pipeline(self):
+        pipeline = "map_deploy_to_develop"
+
+        pipeline_str = pipeline
+        pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline_str)
+        self.assertEqual(pipeline, pipeline_name)
+        self.assertEqual(None, groups)
+
+        pipeline_str = "map_deploy_to_develop:"
+        pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline_str)
+        self.assertEqual(pipeline, pipeline_name)
+        self.assertEqual([], groups)
+
+        pipeline_str = "map_deploy_to_develop:group1"
+        pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline_str)
+        self.assertEqual(pipeline, pipeline_name)
+        self.assertEqual(["group1"], groups)
+
+        pipeline_str = "map_deploy_to_develop:group1,group2"
+        pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline_str)
+        self.assertEqual(pipeline, pipeline_name)
+        self.assertEqual(["group1", "group2"], groups)

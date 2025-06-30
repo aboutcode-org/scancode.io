@@ -1,0 +1,41 @@
+<div id="edit-input-tag-modal" class="modal">
+  <div class="modal-background"></div>
+  <form method="post">{% csrf_token %}
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Edit tag</p>
+        <button class="delete" type="button" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        {{ edit_input_tag_from.input_source_uuid }}
+        <div class="field">
+          <label class="label has-text-weight-semibold" for="{{ edit_input_tag_from.tag.id_for_label }}">{{ edit_input_tag_from.tag.label }}</label>
+          <div class="control">
+            {{ edit_input_tag_from.tag }}
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot is-justify-content-flex-end">
+        <div class="buttons">
+          <button class="button" type="button">Cancel</button>
+          <button id="edit-input-tag-button" name="edit-input-tag-submit" class="button is-link is-no-close" type="submit">Update tag</button>
+        </div>
+      </footer>
+    </div>
+  </form>
+</div>
+<script>
+  document.addEventListener("openModal", function(event) {
+    const modal_id = event.detail.modal;
+    if (modal_id !== "edit-input-tag-modal") return;
+
+    const $modal = document.getElementById(modal_id);
+    const $input_source_uuid_input = $modal.querySelector("input#id_input_source_uuid");
+    const $tag_input = $modal.querySelector("input#id_tag");
+
+    const input_source_uuid = event.detail.$button.dataset.inputSourceUuid;
+    const tag_value = event.detail.$button.dataset.tagValue;
+    $input_source_uuid_input.value = input_source_uuid;
+    $tag_input.value = tag_value;
+  });
+</script>

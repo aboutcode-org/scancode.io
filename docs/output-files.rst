@@ -30,6 +30,28 @@ the output file format with the ``–-format`` option:
     ``PROJECT``'s :guilabel:`output/` directory. By default, JSON output
     files are created when no file format is given.
 
+.. _mount_projects_workspace_volume:
+
+.. warning::
+    When running with Docker, ensure that the output files workspace is assigned
+    to a volume to be accessible on the host machine.
+
+    To add local input files to a project using the :ref:`command_line_interface`,
+    additional arguments need to be passed to the ``docker compose`` command.
+
+    For example, using the following command will mount and make available the
+    projects workspace on the host at ``~/projects/``:
+
+    .. code-block:: bash
+
+        mkdir ~/projects/
+        docker compose run --volume ~/projects/:/var/scancodeio/workspace/projects/ \
+            web scanpipe output --project my_project --format json
+
+    Alternatively, you can also locate the Docker volumes directory on your host
+    machine. For instance, on Linux, it's typically found at:
+    ``/var/lib/docker/volumes/``.
+
 Web UI
 ^^^^^^
 When using the ScanCode.io web application, you can download the results of your
@@ -42,11 +64,10 @@ ScanCode.io home screen.
 
 .. image:: images/output-files-projects-list.png
 
-Understanding Output Files
---------------------------
-As previously mentioned, the output file format is set using the ``–-format``
-option to either JSON or XLSX data files. Regardless of the format, the
-data included in either output file remains almost the same.
+Supported formats
+-----------------
+
+.. _output_files_json:
 
 JSON
 ^^^^
@@ -61,7 +82,7 @@ as shown below
       {
         "tool_name": "scanpipe",
         "tool_version": "21.6.10",
-        "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
+        "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/aboutcode-org/scancode-toolkit/ for support and download.",
         "uuid": "f06e257e-3126-4220-87c7-13583ced38a0",
         "created_date": "2021-06-12T19:51:26.218Z",
         "input_files": [
@@ -230,23 +251,85 @@ The results will also include all of the  or files (codebase resources) found.
       "is_archive": false
     }]
 
+.. _output_files_xlsx:
+
 Excel (XLSX)
 ^^^^^^^^^^^^
-ScanCode.io can produce the scan results in a .xlsx file format, which will
-include two Excel sheets for the Discovered Packages and the Codebase Resources.
+ScanCode.io can generate scan results in **Excel (.xlsx)** format. The exported file
+contains multiple sheets, categorized by data type. The following sheets are
+**always included**:
+
+- **PACKAGES**: :ref:`data_models_discovered_package`
+- **DEPENDENCIES**: :ref:`data_models_discovered_dependency`
+- **RESOURCES**: :ref:`data_models_codebase_resource`
+- **RELATIONS**: :ref:`data_models_codebase_relation`
+- **MESSAGES**: :ref:`data_models_project_message`
+
+Additional sheets are included **only when relevant** (i.e., when data is available):
+
+- **LAYERS**: Included when scanning **container images** using the
+  :ref:`pipeline_analyze_docker_image` pipeline.
+- **TODOS**: Contains resources flagged as **"REQUIRES_REVIEW"**.
+- **VULNERABILITIES**: Lists vulnerabilities detected in project **packages** and
+  **dependencies**, typically when using the :ref:`pipeline_find_vulnerabilities`
+  pipeline. This sheet is omitted if no vulnerabilities are found.
+
+.. warning::
+   Unlike JSON exports, the **XLSX output** does not include general scan metadata,
+   such as tool version, execution date, or scan parameters.
+
+   Since it contains only a subset of the project data, it **cannot** be used to
+   recreate the project. For this purpose, prefer the :ref:`output_files_json` output.
+
+.. _output_files_spdx:
+
+SPDX
+^^^^
+
+ScanCode.io can generate Software Bill of Materials (SBOM) in the **SPDX** format,
+which is an open standard for communicating software component information.
+SPDX is widely used for license compliance, security analysis, and software supply
+chain transparency.
+
+For more details, visit: https://spdx.dev/
+
+The SPDX output includes:
+
+- **Packages:** Information about detected software packages, including name, version,
+  licensing, and supplier details.
+- **Files:** A list of scanned files with associated metadata, including licenses and
+  copyright notices.
+- **Relationships:** Dependencies and associations between packages and files.
+- **Licenses:** License expressions for detected components.
 
 .. note::
-    Unlike the JSON file, the XLSX output file does not include any general
-    information about the scan process, tool, date, etc.
+   ScanCode.io produces SPDX documents in **SPDX JSON and Tag/Value formats**.
 
-The **Discovered Packages** data sheet includes details about all packages found:
+.. _output_files_cyclonedx:
 
-.. image:: images/output-files-xlsx-packages.png
+CycloneDX
+^^^^^^^^^
 
-while the **Codebase Resources** sheet includes information about each
-individual file:
+ScanCode.io can generate **CycloneDX** SBOMs, a lightweight standard designed for
+security and dependency management. CycloneDX is optimized for vulnerability analysis
+and software supply chain risk assessment.
 
-.. image:: images/output-files-xlsx-resources.png
+For more details, visit: https://cyclonedx.org/
+
+The CycloneDX output includes:
+
+- **Components:** A list of identified software components, including their
+  versions and licensing information.
+- **Dependencies:** Relationships between software components, useful for analyzing
+  supply chain risks.
+- **Vulnerabilities (when available):** If vulnerability scanning is enabled,
+  detected vulnerabilities will be included in the CycloneDX output.
+- **Metadata:** Information about the scan, including tool details and execution data.
+
+.. note::
+   ScanCode.io produces CycloneDX SBOMs in **JSON format**.
+
+.. _output_files_attribution:
 
 Attribution
 ^^^^^^^^^^^

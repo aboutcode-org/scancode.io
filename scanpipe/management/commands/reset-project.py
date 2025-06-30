@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import sys
 
@@ -27,7 +27,7 @@ from scanpipe.management.commands import ProjectCommand
 
 class Command(ProjectCommand):
     help = (
-        "Reset a project removing all database entrie and all data on disks "
+        "Reset a project removing all database entries and all data on disks "
         "except for the input/ directory."
     )
 
@@ -52,13 +52,15 @@ class Command(ProjectCommand):
                 f"Type 'yes' to continue, or 'no' to cancel: "
             )
             if confirm != "yes":
-                self.stdout.write("Reset cancelled.")
+                if self.verbosity > 0:
+                    self.stdout.write("Reset cancelled.")
                 sys.exit(0)
 
         self.project.reset(keep_input=True)
 
-        msg = (
-            f"All data, except inputs, for the {self.project} project have been "
-            f"removed."
-        )
-        self.stdout.write(msg, self.style.SUCCESS)
+        if self.verbosity > 0:
+            msg = (
+                f"All data, except inputs, for the {self.project} project have been "
+                f"removed."
+            )
+            self.stdout.write(msg, self.style.SUCCESS)

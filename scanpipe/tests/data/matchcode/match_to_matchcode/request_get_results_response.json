@@ -1,0 +1,141 @@
+{
+    "headers": [
+        {
+            "tool_name": "scanpipe",
+            "tool_version": "v3.0.0-241-g45d653b",
+            "other_tools": [
+                "pkg:pypi/scancode-toolkit@32.0.8"
+            ],
+            "notice": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n",
+            "uuid": "b47c79e8-14f1-4991-a584-717b39233750",
+            "created_date": "2024-01-09T00:59:38.649Z",
+            "notes": "",
+            "settings": {},
+            "input_sources": [
+                {
+                    "filename": "test-out.json",
+                    "source": "uploaded"
+                }
+            ],
+            "runs": [
+                {
+                    "pipeline_name": "matching",
+                    "status": "success",
+                    "description": "",
+                    "uuid": "d952e721-14e2-407f-bdff-a1cef83ecd8b",
+                    "created_date": "2024-01-09T00:59:38.652781Z",
+                    "scancodeio_version": "v3.0.0-241-g45d653b",
+                    "task_id": "d952e721-14e2-407f-bdff-a1cef83ecd8b",
+                    "task_start_date": "2024-01-09T00:59:38.691869Z",
+                    "task_end_date": "2024-01-09T00:59:41.453402Z",
+                    "task_exitcode": 0,
+                    "task_output": "",
+                    "log": "2024-01-09 00:59:38.69 Pipeline [matching] starting\n2024-01-09 00:59:38.69 Step [get_inputs] starting\n2024-01-09 00:59:38.69 Step [get_inputs] completed in 0 seconds\n2024-01-09 00:59:38.69 Step [build_inventory_from_scans] starting\n2024-01-09 00:59:38.71 Step [build_inventory_from_scans] completed in 0 seconds\n2024-01-09 00:59:38.71 Step [flag_empty_files] starting\n2024-01-09 00:59:38.71 Step [flag_empty_files] completed in 0 seconds\n2024-01-09 00:59:38.71 Step [match_archives_to_purldb_packages] starting\n2024-01-09 00:59:38.72 Matching 1 resources in PurlDB, using SHA1\n2024-01-09 00:59:41.38 1 resources matched in PurlDB using 1 SHA1s\n2024-01-09 00:59:41.38 Step [match_archives_to_purldb_packages] completed in 3 seconds\n2024-01-09 00:59:41.38 Step [match_archives_to_purldb_resources] starting\n2024-01-09 00:59:41.38 Skipping resource matching as there are 0\n2024-01-09 00:59:41.39 0 resources matched in PurlDB using 0 SHA1s\n2024-01-09 00:59:41.39 Step [match_archives_to_purldb_resources] completed in 0 seconds\n2024-01-09 00:59:41.39 Step [fingerprint_codebase_directories] starting\n2024-01-09 00:59:41.40 Step [fingerprint_codebase_directories] completed in 0 seconds\n2024-01-09 00:59:41.40 Step [match_directories_exact_to_purldb] starting\n2024-01-09 00:59:41.40 Matching 0 directories against PurlDB\n2024-01-09 00:59:41.41 0 directories matched in PurlDB\n2024-01-09 00:59:41.41 Step [match_directories_exact_to_purldb] completed in 0 seconds\n2024-01-09 00:59:41.41 Step [match_resources_to_purldb] starting\n2024-01-09 00:59:41.41 Skipping resource matching as there are 0\n2024-01-09 00:59:41.42 0 resources matched in PurlDB using 0 SHA1s\n2024-01-09 00:59:41.42 Step [match_resources_to_purldb] completed in 0 seconds\n2024-01-09 00:59:41.42 Step [match_directories_to_purldb] starting\n2024-01-09 00:59:41.42 Matching 0 directories against PurlDB\n2024-01-09 00:59:41.43 0 directories matched in PurlDB\n2024-01-09 00:59:41.43 Step [match_directories_to_purldb] completed in 0 seconds\n2024-01-09 00:59:41.43 Step [match_purldb_resources_post_process] starting\n2024-01-09 00:59:41.44 Refining matching for 0 matched-to-purldb-resource archives.\n2024-01-09 00:59:41.44 0 resource processed\n2024-01-09 00:59:41.44 Step [match_purldb_resources_post_process] completed in 0 seconds\n2024-01-09 00:59:41.44 Step [remove_packages_without_resources] starting\n2024-01-09 00:59:41.44 Step [remove_packages_without_resources] completed in 0 seconds\n2024-01-09 00:59:41.45 Pipeline completed in 3 seconds\n",
+                    "execution_time": 2
+                }
+            ],
+            "messages": [],
+            "extra_data": {}
+        }
+    ],
+    "packages": [
+        {
+            "purl": "pkg:maven/org.elasticsearch/elasticsearch-x-content@7.17.9?classifier=sources",
+            "type": "maven",
+            "namespace": "org.elasticsearch",
+            "name": "elasticsearch-x-content",
+            "version": "7.17.9",
+            "qualifiers": "classifier=sources",
+            "subpath": "",
+            "tag": "",
+            "primary_language": "Java",
+            "description": "elasticsearch-x-content\nElasticsearch subproject :libs:elasticsearch-x-content",
+            "release_date": null,
+            "parties": [
+                {
+                    "url": "https://www.elastic.co",
+                    "name": "Elastic",
+                    "role": "developper",
+                    "type": "person",
+                    "email": null
+                }
+            ],
+            "keywords": [],
+            "homepage_url": "https://github.com/elastic/elasticsearch.git",
+            "download_url": "https://repo1.maven.org/maven2/org/elasticsearch/elasticsearch-x-content/7.17.9/elasticsearch-x-content-7.17.9-sources.jar",
+            "bug_tracking_url": "",
+            "code_view_url": "https://github.com/elastic/elasticsearch.git",
+            "vcs_url": "https://github.com/elastic/elasticsearch.git",
+            "repository_homepage_url": "",
+            "repository_download_url": "",
+            "api_data_url": "",
+            "size": null,
+            "md5": "",
+            "sha1": "30d21add57abe04beece3f28a079671dbc9043e4",
+            "sha256": "",
+            "sha512": "",
+            "copyright": "",
+            "holder": "",
+            "declared_license_expression": "(elastic-license-v2 AND elastic-license-v2 AND mongodb-sspl-1.0 AND mongodb-sspl-1.0) AND unknown",
+            "declared_license_expression_spdx": "(Elastic-2.0 AND Elastic-2.0 AND SSPL-1.0 AND SSPL-1.0) AND LicenseRef-scancode-unknown",
+            "license_detections": [],
+            "other_license_expression": "",
+            "other_license_expression_spdx": "",
+            "other_license_detections": [],
+            "extracted_license_statement": "[{'name': 'Elastic License 2.0', 'url': 'https://raw.githubusercontent.com/elastic/elasticsearch/v7.17.9/licenses/ELASTIC-LICENSE-2.0.txt', 'comments': None, 'distribution': 'repo'}, {'name': 'Server Side Public License, v 1', 'url': 'https://www.mongodb.com/licensing/server-side-public-license', 'comments': None, 'distribution': 'repo'}]",
+            "compliance_alert": "",
+            "notice_text": "",
+            "source_packages": [
+                "pkg:maven/org.elasticsearch/elasticsearch-x-content@7.17.9?classifier=sources"
+            ],
+            "extra_data": {},
+            "package_uid": "pkg:maven/org.elasticsearch/elasticsearch-x-content@7.17.9?classifier=sources&uuid=a8814800-8120-4f50-ba4f-08c443ccda8e",
+            "datasource_id": "",
+            "file_references": [],
+            "missing_resources": [],
+            "modified_resources": [],
+            "affected_by_vulnerabilities": []
+        }
+    ],
+    "dependencies": [],
+    "files": [
+        {
+            "path": "elasticsearch-x-content-7.17.9-sources.jar",
+            "type": "file",
+            "name": "elasticsearch-x-content-7.17.9-sources.jar",
+            "status": "matched-to-purldb-package",
+            "tag": "",
+            "extension": ".jar",
+            "size": 89821,
+            "md5": "abcc7ad93deadc72f4b4369cb933e8e1",
+            "sha1": "30d21add57abe04beece3f28a079671dbc9043e4",
+            "sha256": "dc433d60ef7e43670500bd97c4f1d217a1880774a1dfb75de7132fb0b5208acd",
+            "sha512": "",
+            "mime_type": "application/zip",
+            "file_type": "Zip archive data, at least v1.0 to extract",
+            "programming_language": "",
+            "is_binary": true,
+            "is_text": false,
+            "is_archive": true,
+            "is_media": false,
+            "is_key_file": false,
+            "detected_license_expression": "",
+            "detected_license_expression_spdx": "",
+            "license_detections": [],
+            "license_clues": [],
+            "percentage_of_license_text": null,
+            "compliance_alert": "",
+            "copyrights": [],
+            "holders": [],
+            "authors": [],
+            "package_data": [],
+            "for_packages": [
+                "pkg:maven/org.elasticsearch/elasticsearch-x-content@7.17.9?classifier=sources&uuid=a8814800-8120-4f50-ba4f-08c443ccda8e"
+            ],
+            "emails": [],
+            "urls": [],
+            "extra_data": {}
+        }
+    ],
+    "relations": []
+}

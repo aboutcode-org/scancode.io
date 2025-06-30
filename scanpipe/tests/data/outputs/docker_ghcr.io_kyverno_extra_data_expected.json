@@ -1,0 +1,16 @@
+{
+  "layers": [
+    {
+      "layer_tag": "img-12ebda-layer-01-1a058d",
+      "created_by": "/bin/sh -c #(nop) ADD file:762c899ec0505d1a32930ee804c5b008825f41611161be104076cba33b7e5b2b in / ",
+      "layer_id": "1a058d5342cc722ad5439cacae4b2b4eedde51d8fe8800fcf28444302355c16d",
+      "image_id": "12ebda3111cec73a788b0e802a00de04ebf5e9765043925dd396c2d03a7c1e66",
+      "created": "2021-11-12T17:19:44.795237917Z",
+      "size": "5886464",
+      "author": null,
+      "comment": null,
+      "archive_location": "ghcr_io_kyverno_sbom.tar-extract/1a058d5342cc722ad5439cacae4b2b4eedde51d8fe8800fcf28444302355c16d.tar",
+      "xlsx_errors": null
+    }
+  ]
+}

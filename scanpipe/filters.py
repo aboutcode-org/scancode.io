@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,16 +18,18 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import shlex
 
+from django import forms
 from django.apps import apps
 from django.core.exceptions import FieldError
 from django.core.validators import EMPTY_VALUES
 from django.db import models
 from django.db.models import Q
 from django.db.models.fields import BLANK_CHOICE_DASH
+from django.utils.functional import cached_property
 from django.utils.http import urlencode
 from django.utils.translation import gettext as _
 
@@ -51,17 +53,52 @@ ANY_VAR = "_ANY_"
 OTHER_VAR = "_OTHER_"
 
 
-class ParentAllValuesFilter(django_filters.ChoiceFilter):
+class ModelFieldValuesFilter(django_filters.ChoiceFilter):
     """
-    Similar to ``django_filters.AllValuesFilter`` but using the queryset of the parent
-    ``FilterSet``.
+    A filter that provides dynamic choices for a specified model field.
+
+    This filter dynamically generates its choices based on the unique values
+    of a specified CharField in the model's queryset.
     """
+
+    def __init__(self, include_empty=False, include_any=False, *args, **kwargs):
+        self.include_empty = include_empty
+        self.include_any = include_any
+        super().__init__(*args, **kwargs)
+
+    def filter(self, qs, value):
+        if value == "any":
+            return qs
+        return super().filter(qs, value)
 
     @property
     def field(self):
-        qs = self.parent.queryset.distinct()
-        qs = qs.order_by(self.field_name).values_list(self.field_name, flat=True)
-        self.extra["choices"] = [(o, o) for o in qs]
+        """
+        Override the field property to dynamically set the choices for this filter
+        based on unique values from the parent FilterSet's queryset.
+
+        This method retrieves all distinct values for the specified field from the
+        parent FilterSet's queryset.
+        """
+        qs = self.parent.queryset
+        field_name = self.field_name
+        field = qs.model._meta.get_field(field_name)
+
+        choices = []
+        if self.include_empty:
+            choices.append((EMPTY_VAR, f"No {field.verbose_name}"))
+        if self.include_any:
+            choices.append(("any", f"Any {field.verbose_name}"))
+
+        # Retrieve distinct values for the specified field.
+        field_values = (
+            qs.order_by(field_name).values_list(field_name, flat=True).distinct()
+        )
+        value_choices = [
+            (value, value) for value in field_values if value not in EMPTY_VALUES
+        ]
+
+        self.extra["choices"] = choices + value_choices
         return super().field
 
 
@@ -183,6 +220,10 @@ class FilterSetUtilsMixin:
             for value in self.data.getlist(field_name)
         ]
 
+    @cached_property
+    def filters_breadcrumb(self):
+        return self.get_filters_breadcrumb()
+
     @classmethod
     def verbose_name_plural(cls):
         return cls.Meta.model._meta.verbose_name_plural
@@ -209,20 +250,32 @@ class FilterSetUtilsMixin:
         `empty_value` to any filters.
         """
         for name, value in self.form.cleaned_data.items():
-            field_name = self.filters[name].field_name
-            if value == self.empty_value:
+            filter_field = self.filters[name]
+            field_name = filter_field.field_name
+
+            if isinstance(filter_field, QuerySearchFilter):
+                queryset = filter_field.filter(queryset, value)
+            elif value == self.empty_value:
                 queryset = queryset.filter(**{f"{field_name}__in": EMPTY_VALUES})
             elif value == self.any_value:
                 queryset = queryset.filter(~Q(**{f"{field_name}__in": EMPTY_VALUES}))
             elif value == self.other_value and hasattr(queryset, "less_common"):
                 return queryset.less_common(name)
             else:
-                queryset = self.filters[name].filter(queryset, value)
+                queryset = filter_field.filter(queryset, value)
 
         return queryset
 
+    @classmethod
+    def filter_for_lookup(cls, field, lookup_type):
+        """Add support for JSONField storing "list" using the JSONListFilter."""
+        if isinstance(field, models.JSONField) and field.default is list:
+            return JSONContainsFilter, {}
 
-def parse_query_string_to_lookups(query_string, default_lookup_expr, default_field):
+        return super().filter_for_lookup(field, lookup_type)
+
+
+def parse_query_string_to_lookups(query_string, default_lookup_expr, search_fields):
     """Parse a query string and convert it into queryset lookups using Q objects."""
     lookups = Q()
     terms = shlex.split(query_string)
@@ -251,17 +304,40 @@ def parse_query_string_to_lookups(query_string, default_lookup_expr, default_fie
                 field_name = field_name[1:]
                 negated = True
 
+            lookups &= Q(
+                **{f"{field_name}__{lookup_expr}": search_value}, _negated=negated
+            )
+
         else:
             search_value = term
-            field_name = default_field
-
-        lookups &= Q(**{f"{field_name}__{lookup_expr}": search_value}, _negated=negated)
+            for field_name in search_fields:
+                lookups |= Q(**{f"{field_name}__{lookup_expr}": search_value})
 
     return lookups
 
 
+class QuerySearchField(forms.CharField):
+    """Add value validation for the search complex query syntax."""
+
+    def validate(self, value):
+        super().validate(value)
+
+        try:
+            shlex.split(value)
+        except ValueError as error:
+            raise forms.ValidationError(
+                f"The provided search value is invalid: {error}", code="invalid"
+            )
+
+
 class QuerySearchFilter(django_filters.CharFilter):
     """Add support for complex query syntax in search filter."""
+
+    field_class = QuerySearchField
+
+    def __init__(self, search_fields=None, lookup_expr="icontains", *args, **kwargs):
+        super().__init__(lookup_expr=lookup_expr, *args, **kwargs)
+        self.search_fields = search_fields or []
 
     def filter(self, qs, value):
         if not value:
@@ -270,11 +346,11 @@ class QuerySearchFilter(django_filters.CharFilter):
         lookups = parse_query_string_to_lookups(
             query_string=value,
             default_lookup_expr=self.lookup_expr,
-            default_field=self.field_name,
+            search_fields=self.search_fields,
         )
 
         try:
-            return qs.filter(lookups)
+            return qs.filter(lookups).distinct()
         except FieldError:
             return qs.none()
 
@@ -287,7 +363,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     ]
 
     search = QuerySearchFilter(
-        label="Search", field_name="name", lookup_expr="icontains"
+        label="Search", search_fields=["name", "labels__name"], lookup_expr="icontains"
     )
     sort = django_filters.OrderingFilter(
         label="Sort",
@@ -337,6 +413,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         field_name="labels__slug",
         distinct=True,
     )
+    extra_data = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
         model = Project
@@ -351,8 +428,10 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         if not data or data.get("is_archived", "") == "":
             self.queryset = self.queryset.filter(is_archived=False)
 
-        active_count = Project.objects.filter(is_archived=False).count()
-        archived_count = Project.objects.filter(is_archived=True).count()
+        counts = Project.objects.get_active_archived_counts()
+        active_count = counts["active_count"]
+        archived_count = counts["archived_count"]
+
         self.filters["is_archived"].extra["widget"] = BulmaLinkWidget(
             choices=[
                 ("", f'<i class="fa-solid fa-seedling"></i> {active_count} Active'),
@@ -404,11 +483,15 @@ MAP_TYPE_CHOICES = (
     ("about_file", "about file"),
     ("java_to_class", "java to class"),
     ("jar_to_source", "jar to source"),
+    ("javascript_symbols", "js symbols"),
     ("js_compiled", "js compiled"),
     ("js_colocation", "js colocation"),
     ("js_path", "js path"),
     ("path", "path"),
     ("sha1", "sha1"),
+    ("dwarf_included_paths", "dwarf_included_paths"),
+    ("dwarf_compiled_paths", "dwarf_compiled_paths"),
+    ("go_file_paths", "go_file_paths"),
 )
 
 
@@ -432,30 +515,11 @@ class RelationMapTypeFilter(django_filters.ChoiceFilter):
         return super().filter(qs, value)
 
 
-class StatusFilter(django_filters.ChoiceFilter):
-    def filter(self, qs, value):
-        if value == "any":
-            return qs.status()
-        return super().filter(qs, value)
-
-    @staticmethod
-    def get_status_choices(qs, include_any=False):
-        """Return the list of unique status for resources in ``project``."""
-        default_choices = [(EMPTY_VAR, "No status")]
-        if include_any:
-            default_choices.append(("any", "Any status"))
-
-        status_values = (
-            qs.order_by("status").values_list("status", flat=True).distinct()
-        )
-        value_choices = [(status, status) for status in status_values if status]
-        return default_choices + value_choices
-
-
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "status",
         "type",
+        "tag",
         "compliance_alert",
         "in_package",
         "relation_map_type",
@@ -463,7 +527,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
     search = QuerySearchFilter(
         label="Search",
-        field_name="path",
+        search_fields=["path"],
         lookup_expr="icontains",
     )
     sort = django_filters.OrderingFilter(
@@ -488,11 +552,13 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         choices=[(EMPTY_VAR, "None")] + CodebaseResource.Compliance.choices,
     )
     in_package = InPackageFilter(label="In a package")
-    status = StatusFilter()
+    status = ModelFieldValuesFilter(include_empty=True, include_any=True)
+    tag = ModelFieldValuesFilter(include_empty=True, include_any=True)
     relation_map_type = RelationMapTypeFilter(
         label="Relation map type",
         field_name="related_from__map_type",
     )
+    extra_data = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
         model = CodebaseResource
@@ -529,31 +595,19 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_binary",
             "is_text",
             "is_archive",
-            "is_key_file",
             "is_media",
+            "is_legal",
+            "is_manifest",
+            "is_readme",
+            "is_top_level",
+            "is_key_file",
+            "extra_data",
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if status_filter := self.filters.get("status"):
-            status_filter.extra.update(
-                {
-                    "choices": status_filter.get_status_choices(
-                        self.queryset, include_any=True
-                    )
-                }
-            )
-
         license_expression_filer = self.filters["detected_license_expression"]
         license_expression_filer.extra["widget"] = HasValueDropdownWidget()
-
-    @classmethod
-    def filter_for_lookup(cls, field, lookup_type):
-        """Add support for JSONField storing "list" using the JSONListFilter."""
-        if isinstance(field, models.JSONField) and field.default == list:
-            return JSONContainsFilter, {}
-
-        return super().filter_for_lookup(field, lookup_type)
 
 
 class IsVulnerable(django_filters.ChoiceFilter):
@@ -580,15 +634,7 @@ class DiscoveredPackageSearchFilter(QuerySearchFilter):
         if value.startswith("pkg:"):
             return qs.for_package_url(value)
 
-        if ":" in value:
-            return super().filter(qs, value)
-
-        search_fields = ["type", "namespace", "name", "version"]
-        lookups = Q()
-        for field_names in search_fields:
-            lookups |= Q(**{f"{field_names}__{self.lookup_expr}": value})
-
-        return qs.filter(lookups)
+        return super().filter(qs, value)
 
 
 class GroupOrderingFilter(django_filters.OrderingFilter):
@@ -627,7 +673,9 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     ]
 
     search = DiscoveredPackageSearchFilter(
-        label="Search", field_name="name", lookup_expr="icontains"
+        label="Search",
+        search_fields=["type", "namespace", "name", "version"],
+        lookup_expr="icontains",
     )
     sort = GroupOrderingFilter(
         label="Sort",
@@ -656,6 +704,9 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     declared_license_expression = django_filters.filters.CharFilter(
         widget=HasValueDropdownWidget
     )
+    is_private = StrictBooleanFilter()
+    is_virtual = StrictBooleanFilter()
+    extra_data = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
         model = DiscoveredPackage
@@ -689,6 +740,9 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_vulnerable",
             "compliance_alert",
             "tag",
+            "is_private",
+            "is_virtual",
+            "extra_data",
         ]
 
 
@@ -698,13 +752,14 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "scope",
         "is_runtime",
         "is_optional",
-        "is_resolved",
+        "is_pinned",
+        "is_direct",
         "datasource_id",
         "is_vulnerable",
     ]
 
     search = QuerySearchFilter(
-        label="Search", field_name="name", lookup_expr="icontains"
+        label="Search", search_fields=["name"], lookup_expr="icontains"
     )
     sort = GroupOrderingFilter(
         label="Sort",
@@ -718,20 +773,23 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "scope",
             "is_runtime",
             "is_optional",
-            "is_resolved",
+            "is_pinned",
+            "is_direct",
             "for_package",
+            "resolved_to_package",
             "datafile_resource",
             "datasource_id",
         ],
         grouped_fields={"package_url": ["type", "namespace", "name", "version"]},
     )
     purl = PackageURLFilter(label="Package URL")
-    type = ParentAllValuesFilter()
-    scope = ParentAllValuesFilter()
-    datasource_id = ParentAllValuesFilter()
+    type = ModelFieldValuesFilter()
+    scope = ModelFieldValuesFilter()
+    datasource_id = ModelFieldValuesFilter()
     is_runtime = StrictBooleanFilter()
     is_optional = StrictBooleanFilter()
-    is_resolved = StrictBooleanFilter()
+    is_pinned = StrictBooleanFilter()
+    is_direct = StrictBooleanFilter()
     is_vulnerable = IsVulnerable(field_name="affected_by_vulnerabilities")
 
     class Meta:
@@ -749,7 +807,8 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "scope",
             "is_runtime",
             "is_optional",
-            "is_resolved",
+            "is_pinned",
+            "is_direct",
             "datasource_id",
             "is_vulnerable",
         ]
@@ -757,7 +816,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
 class ProjectMessageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = QuerySearchFilter(
-        label="Search", field_name="description", lookup_expr="icontains"
+        label="Search", search_fields=["description"], lookup_expr="icontains"
     )
     sort = django_filters.OrderingFilter(
         label="Sort",
@@ -781,6 +840,26 @@ class ProjectMessageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         self.filters["severity"].extra["widget"] = BulmaDropdownWidget()
 
 
+class StatusFilter(django_filters.ChoiceFilter):
+    def filter(self, qs, value):
+        if value == "any":
+            return qs.status()
+        return super().filter(qs, value)
+
+    @staticmethod
+    def get_status_choices(qs, include_any=False):
+        """Return the list of unique status for resources in ``project``."""
+        default_choices = [(EMPTY_VAR, "No status")]
+        if include_any:
+            default_choices.append(("any", "Any status"))
+
+        status_values = (
+            qs.order_by("status").values_list("status", flat=True).distinct()
+        )
+        value_choices = [(status, status) for status in status_values if status]
+        return default_choices + value_choices
+
+
 class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "status",
@@ -789,7 +868,7 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
     search = QuerySearchFilter(
         label="Search",
-        field_name="to_resource__path",
+        search_fields=["to_resource__path"],
         lookup_expr="icontains",
     )
     sort = django_filters.OrderingFilter(
@@ -802,6 +881,7 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     )
     map_type = django_filters.ChoiceFilter(choices=MAP_TYPE_CHOICES)
     status = StatusFilter(field_name="to_resource__status")
+    extra_data = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
         model = CodebaseRelation
@@ -809,14 +889,13 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "search",
             "map_type",
             "status",
+            "extra_data",
         ]
 
     def __init__(self, *args, **kwargs):
-        project = kwargs.pop("project")
+        project = kwargs.pop("project", None)
         super().__init__(*args, **kwargs)
         if project:
-            status_filter = self.filters.get("status")
             qs = CodebaseResource.objects.filter(project=project)
-            status_filter.extra.update(
-                {"choices": status_filter.get_status_choices(qs)}
-            )
+            status_filter = self.filters["status"]
+            status_filter.extra["choices"] = status_filter.get_status_choices(qs)

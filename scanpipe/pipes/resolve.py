@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,48 +18,171 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
+import logging
 import sys
+import uuid
 from pathlib import Path
 
-from django.core.validators import EMPTY_VALUES
+from django.core.exceptions import MultipleObjectsReturned
+from django.core.exceptions import ObjectDoesNotExist
 
+import python_inspector.api as python_inspector
 from attributecode.model import About
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
 from packageurl import PackageURL
-from python_inspector.api import resolve_dependencies
-from scancode.api import get_package_data
 
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import cyclonedx
 from scanpipe.pipes import flag
 from scanpipe.pipes import spdx
+from scanpipe.pipes import update_or_create_dependency
+from scanpipe.pipes import update_or_create_package
 
 """
 Resolve packages from manifest, lockfile, and SBOM.
 """
 
+logger = logging.getLogger("scanpipe.pipes")
 
-def resolve_packages(input_location):
-    """Resolve the packages from manifest file."""
+
+def resolve_manifest_resources(resource, package_registry):
+    """Get package data from resource."""
+    packages = get_packages_from_manifest(resource.location, package_registry) or []
+
+    for package_data in packages:
+        package_data["codebase_resources"] = [resource]
+
+    return packages
+
+
+def get_packages(project, package_registry, manifest_resources, model=None):
+    """
+    Get package data from package manifests/lockfiles/SBOMs or
+    get package data for resolved packages from package requirements.
+    """
+    resolved_packages = []
+    sboms_headers = {}
+
+    if not manifest_resources.exists():
+        project.add_warning(
+            description="No resources containing package data found in codebase.",
+            model=model,
+        )
+        return []
+
+    for resource in manifest_resources:
+        if packages := resolve_manifest_resources(resource, package_registry):
+            resolved_packages.extend(packages)
+            if headers := get_manifest_headers(resource):
+                sboms_headers[resource.name] = headers
+        else:
+            project.add_error(
+                description="No packages could be resolved",
+                model=model,
+                object_instance=resource,
+            )
+
+    if sboms_headers:
+        project.update_extra_data({"sboms_headers": sboms_headers})
+
+    return resolved_packages
+
+
+def create_packages_and_dependencies(project, packages, resolved=False):
+    """
+    Create DiscoveredPackage and DiscoveredDependency objects for
+    packages detected in a package manifest, lockfile or SBOM.
+
+    If resolved, create packages out of resolved dependencies,
+    otherwise create dependencies.
+    """
+    for package_data in packages:
+        package_data = set_license_expression(package_data)
+        dependencies = package_data.pop("dependencies", [])
+        codebase_resources = package_data.pop("codebase_resources", [])
+        update_or_create_package(project, package_data, codebase_resources)
+
+        for dependency_data in dependencies:
+            if resolved:
+                if resolved_package := dependency_data.get("resolved_package"):
+                    resolved_package.pop("dependencies", [])
+                    update_or_create_package(project, resolved_package)
+            else:
+                update_or_create_dependency(project, dependency_data)
+
+
+def create_dependencies_from_packages_extra_data(project):
+    """
+    Create Dependency objects from the Package extra_data values.
+    The Package instances need to be saved first in the database before creating the
+    Dependency objects.
+    The dependencies declared in the SBOM are stored on the Package.extra_data field
+    and resolved as Dependency objects in this function.
+    """
+    project_packages = project.discoveredpackages.all()
+    created_count = 0
+
+    packages_with_depends_on = project_packages.filter(
+        extra_data__has_key="depends_on"
+    ).prefetch_related("codebase_resources")
+
+    for for_package in packages_with_depends_on:
+        datafile_resource = None
+        codebase_resources = for_package.codebase_resources.all()
+        if len(codebase_resources) == 1:
+            datafile_resource = codebase_resources[0]
+
+        for bom_ref in for_package.extra_data.get("depends_on", []):
+            try:
+                resolved_to_package = project_packages.get(extra_data__bom_ref=bom_ref)
+            except (ObjectDoesNotExist, MultipleObjectsReturned):
+                project.add_error(
+                    description=f"Could not find resolved_to package entry: {bom_ref}.",
+                    model="create_dependencies",
+                )
+                continue
+
+            DiscoveredDependency.objects.create(
+                project=project,
+                dependency_uid=str(uuid.uuid4()),
+                for_package=for_package,
+                resolved_to_package=resolved_to_package,
+                datafile_resource=datafile_resource,
+                is_runtime=True,
+                is_pinned=True,
+                is_direct=True,
+            )
+            created_count += 1
+
+    return created_count
+
+
+def get_packages_from_manifest(input_location, package_registry=None):
+    """
+    Resolve packages or get packages data from a package manifest file/
+    lockfile/SBOM at `input_location`.
+    """
+    logger.info(f"> Get packages from manifest: {input_location}")
     default_package_type = get_default_package_type(input_location)
     # we only try to resolve packages if file at input_location is
     # a package manifest, and ignore for other files
     if not default_package_type:
+        logger.info("  Package type not found.")
         return
 
-    # The ScanCode.io resolvers take precedence over the ScanCode-toolkit ones.
-    resolver = resolver_registry.get(default_package_type)
+    # Get resolvers for available packages/SBOMs in the registry
+    resolver = package_registry.get(default_package_type)
     if resolver:
+        logger.info(f"  Using resolver={resolver.__name__}")
         resolved_packages = resolver(input_location=input_location)
+        return resolved_packages
     else:
-        package_data = get_package_data(location=input_location)
-        resolved_packages = package_data.get("package_data", [])
-
-    return resolved_packages
+        logger.info(f"  No resolvers available for type={default_package_type}")
 
 
 def get_manifest_resources(project):
@@ -73,18 +196,29 @@ def get_manifest_resources(project):
 
 
 def resolve_pypi_packages(input_location):
-    """Resolve the PyPI packages from the `input_location` requirements file."""
+    """Resolve the PyPI packages from the ``input_location`` requirements file."""
     python_version = f"{sys.version_info.major}{sys.version_info.minor}"
     operating_system = "linux"
 
-    inspector_output = resolve_dependencies(
+    resolution_output = python_inspector.resolve_dependencies(
         requirement_files=[input_location],
         python_version=python_version,
         operating_system=operating_system,
+        # Prefer source distributions over binary distributions,
+        # if no source distribution is available then binary distributions are used.
         prefer_source=True,
+        # Activate the verbosity and send it to the logger.
+        verbose=True,
+        printer=logger.info,
     )
 
-    return inspector_output.packages
+    packages = resolution_output.packages
+    # python-inspector returns the `extracted_license_statement` under the
+    # `declared_license` field.
+    for package in packages:
+        package["extracted_license_statement"] = package.get("declared_license", "")
+
+    return packages
 
 
 def resolve_about_package(input_location):
@@ -99,18 +233,15 @@ def resolve_about_package(input_location):
             if value:
                 package_data[field_name] = value
 
+    package_data["extra_data"] = {}
+
     if about_resource := about_data.get("about_resource"):
         package_data["filename"] = list(about_resource.keys())[0]
 
     if ignored_resources := about_data.get("ignored_resources"):
-        extra_data = {"ignored_resources": list(ignored_resources.keys())}
-        package_data["extra_data"] = extra_data
+        package_data["extra_data"]["ignored_resources"] = list(ignored_resources.keys())
 
-    if license_expression := about_data.get("license_expression"):
-        package_data["declared_license_expression"] = license_expression
-
-    if notice_dict := about_data.get("notice_file"):
-        package_data["notice_text"] = list(notice_dict.values())[0]
+    populate_license_notice_fields_about(package_data, about_data)
 
     for field_name, value in about_data.items():
         if field_name.startswith("checksum_"):
@@ -118,6 +249,23 @@ def resolve_about_package(input_location):
 
     package_data = DiscoveredPackage.clean_data(package_data)
     return package_data
+
+
+def populate_license_notice_fields_about(package_data, about_data):
+    """
+    Populate ``package_data`` with license and notice attributes
+    from ``about_data``.
+    """
+    if license_expression := about_data.get("license_expression"):
+        package_data["declared_license_expression"] = license_expression
+
+    if notice_dict := about_data.get("notice_file"):
+        package_data["notice_text"] = list(notice_dict.values())[0]
+        package_data["extra_data"]["notice_file"] = list(notice_dict.keys())[0]
+
+    if license_dict := about_data.get("license_file"):
+        package_data["extra_data"]["license_file"] = list(license_dict.keys())[0]
+        package_data["extracted_license_statement"] = list(license_dict.values())[0]
 
 
 def resolve_about_packages(input_location):
@@ -192,56 +340,6 @@ def resolve_spdx_packages(input_location):
     ]
 
 
-def cyclonedx_component_to_package_data(component_data):
-    """Return package_data from CycloneDX component."""
-    extra_data = {}
-    component = component_data["cdx_package"]
-
-    package_url_dict = {}
-    if component.purl:
-        package_url_dict = PackageURL.from_string(component.purl).to_dict(encode=True)
-
-    declared_license = cyclonedx.get_declared_licenses(licenses=component.licenses)
-
-    if external_references := cyclonedx.get_external_references(component):
-        extra_data["externalReferences"] = external_references
-
-    if nested_components := component_data.get("nested_components"):
-        extra_data["nestedComponents"] = nested_components
-
-    package_data = {
-        "name": component.name,
-        "extracted_license_statement": declared_license,
-        "copyright": component.copyright,
-        "version": component.version,
-        "description": component.description,
-        "extra_data": extra_data,
-        **package_url_dict,
-        **cyclonedx.get_checksums(component),
-        **cyclonedx.get_properties_data(component),
-    }
-
-    return {
-        key: value for key, value in package_data.items() if value not in EMPTY_VALUES
-    }
-
-
-def resolve_cyclonedx_packages(input_location):
-    """Resolve the packages from the `input_location` CycloneDX document file."""
-    input_path = Path(input_location)
-    cyclonedx_document = json.loads(input_path.read_text())
-
-    try:
-        cyclonedx.validate_document(cyclonedx_document)
-    except Exception as e:
-        raise Exception(f'CycloneDX document "{input_path.name}" is not valid: {e}')
-
-    cyclonedx_bom = cyclonedx.get_bom(cyclonedx_document)
-    components = cyclonedx.get_components(cyclonedx_bom)
-
-    return [cyclonedx_component_to_package_data(component) for component in components]
-
-
 def get_default_package_type(input_location):
     """
     Return the package type associated with the provided `input_location`.
@@ -253,25 +351,32 @@ def get_default_package_type(input_location):
         if handler.is_datafile(input_location):
             return handler.default_package_type
 
-        if input_location.endswith((".spdx", ".spdx.json")):
+    if input_location.endswith((".spdx", ".spdx.json")):
+        return "spdx"
+
+    if input_location.endswith(("bom.json", ".cdx.json", "bom.xml", ".cdx.xml")):
+        return "cyclonedx"
+
+    if input_location.endswith((".json", ".xml")):
+        if cyclonedx.is_cyclonedx_bom(input_location):
+            return "cyclonedx"
+        if spdx.is_spdx_document(input_location):
             return "spdx"
 
-        if input_location.endswith((".bom.json", ".cdx.json")):
-            return "cyclonedx"
 
-        if input_location.endswith(".json"):
-            if cyclonedx.is_cyclonedx_bom(input_location):
-                return "cyclonedx"
-            if spdx.is_spdx_document(input_location):
-                return "spdx"
-
-
-# Mapping between the `default_package_type` its related resolver function
+# Mapping between `default_package_type` its related resolver functions
+# for package dependency resolvers
 resolver_registry = {
-    "about": resolve_about_packages,
     "pypi": resolve_pypi_packages,
+}
+
+
+# Mapping between `default_package_type` its related resolver functions
+# for SBOMs and About files
+sbom_registry = {
+    "about": resolve_about_packages,
     "spdx": resolve_spdx_packages,
-    "cyclonedx": resolve_cyclonedx_packages,
+    "cyclonedx": cyclonedx.resolve_cyclonedx_packages,
 }
 
 
@@ -291,3 +396,49 @@ def set_license_expression(package_data):
             package_data["declared_license_expression"] = license_expression
 
     return package_data
+
+
+def get_manifest_headers(resource):
+    """Extract headers from a manifest file based on its package type."""
+    input_location = resource.location
+    package_type = get_default_package_type(input_location)
+    extract_fields = []
+
+    if package_type == "cyclonedx":
+        extract_fields = [
+            "bomFormat",
+            "specVersion",
+            "serialNumber",
+            "version",
+            "metadata",
+        ]
+    elif package_type == "spdx":
+        extract_fields = [
+            "spdxVersion",
+            "dataLicense",
+            "SPDXID",
+            "name",
+            "documentNamespace",
+            "creationInfo",
+            "comment",
+        ]
+
+    if extract_fields:
+        return extract_headers(input_location, extract_fields)
+
+
+def extract_headers(input_location, extract_fields):
+    """Read a file from the given location and extracts specified fields."""
+    input_path = Path(input_location)
+    document_data = input_path.read_text()
+
+    if str(input_location).endswith(".json"):
+        cyclonedx_document = json.loads(document_data)
+        extracted_headers = {
+            field: value
+            for field, value in cyclonedx_document.items()
+            if field in extract_fields
+        }
+        return extracted_headers
+
+    return {}

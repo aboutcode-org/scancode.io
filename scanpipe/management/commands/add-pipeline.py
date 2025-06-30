@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,11 +18,12 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from django.template.defaultfilters import pluralize
 
 from scanpipe.management.commands import ProjectCommand
+from scanpipe.management.commands import extract_group_from_pipelines
 from scanpipe.management.commands import validate_pipelines
 
 
@@ -38,15 +39,20 @@ class Command(ProjectCommand):
             help="One or more pipeline names.",
         )
 
-    def handle(self, *pipeline_names, **options):
-        super().handle(*pipeline_names, **options)
+    def handle(self, *pipelines, **options):
+        super().handle(*pipelines, **options)
 
-        pipeline_names = validate_pipelines(pipeline_names)
-        for pipeline_name in pipeline_names:
-            self.project.add_pipeline(pipeline_name)
+        pipelines_data = extract_group_from_pipelines(pipelines)
+        pipelines_data = validate_pipelines(pipelines_data)
 
-        msg = (
-            f"Pipeline{pluralize(pipeline_names)} {', '.join(pipeline_names)} "
-            f"added to the project"
-        )
-        self.stdout.write(msg, self.style.SUCCESS)
+        for pipeline_name, selected_groups in pipelines_data.items():
+            self.project.add_pipeline(pipeline_name, selected_groups=selected_groups)
+
+        pipeline_names = pipelines_data.keys()
+
+        if self.verbosity > 0:
+            msg = (
+                f"Pipeline{pluralize(pipeline_names)} {', '.join(pipeline_names)} "
+                f"added to the project"
+            )
+            self.stdout.write(msg, self.style.SUCCESS)

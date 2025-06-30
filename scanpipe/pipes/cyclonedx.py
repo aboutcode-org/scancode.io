@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
 from collections import defaultdict
@@ -27,72 +27,20 @@ from pathlib import Path
 
 from django.core.validators import EMPTY_VALUES
 
-import jsonschema
-from hoppr_cyclonedx_models.cyclonedx_1_4 import (
-    CyclonedxSoftwareBillOfMaterialsStandard as Bom_1_4,
-)
-
-SCHEMAS_PATH = Path(__file__).parent / "schemas"
-
-CYCLONEDX_SPEC_VERSION = "1.4"
-CYCLONEDX_SCHEMA_NAME = "bom-1.4.schema.json"
-CYCLONEDX_SCHEMA_PATH = SCHEMAS_PATH / CYCLONEDX_SCHEMA_NAME
-CYCLONEDX_SCHEMA_URL = (
-    "https://raw.githubusercontent.com/"
-    "CycloneDX/specification/master/schema/bom-1.4.schema.json"
-)
-
-SPDX_SCHEMA_NAME = "spdx.schema.json"
-SPDX_SCHEMA_PATH = SCHEMAS_PATH / SPDX_SCHEMA_NAME
-
-JSF_SCHEMA_NAME = "jsf-0.82.schema.json"
-JSF_SCHEMA_PATH = SCHEMAS_PATH / JSF_SCHEMA_NAME
-
-
-def get_bom(cyclonedx_document):
-    """Return CycloneDX BOM object."""
-    return Bom_1_4(**cyclonedx_document)
-
-
-def get_components(bom):
-    """Return list of components from CycloneDX BOM."""
-    return recursive_component_collector(bom.components, [])
-
-
-def bom_attributes_to_dict(cyclonedx_attributes):
-    """Return list of dict from a list of CycloneDX attributes."""
-    if not cyclonedx_attributes:
-        return []
-
-    return [
-        json.loads(attribute.json(exclude_unset=True, by_alias=True))
-        for attribute in cyclonedx_attributes
-    ]
-
-
-def recursive_component_collector(root_component_list, collected):
-    """Return list of components including the nested components."""
-    if not root_component_list:
-        return []
-
-    for component in root_component_list:
-        extra_data = {}
-        if component.components is not None:
-            extra_data = bom_attributes_to_dict(component.components)
-
-        collected.append({"cdx_package": component, "nested_components": extra_data})
-        recursive_component_collector(component.components, collected)
-    return collected
+from cyclonedx.model import license as cdx_license_model
+from cyclonedx.model.bom import Bom
+from cyclonedx.schema import SchemaVersion
+from cyclonedx.validation import ValidationError
+from cyclonedx.validation.json import JsonStrictValidator
+from defusedxml import ElementTree as SafeElementTree
 
 
 def resolve_license(license):
     """Return license expression/id/name from license item."""
-    if "expression" in license:
-        return license["expression"]
-    elif "id" in license["license"]:
-        return license["license"]["id"]
-    else:
-        return license["license"]["name"]
+    if isinstance(license, cdx_license_model.LicenseExpression):
+        return license.value
+    elif isinstance(license, cdx_license_model.License):
+        return license.id or license.name
 
 
 def get_declared_licenses(licenses):
@@ -100,9 +48,7 @@ def get_declared_licenses(licenses):
     if not licenses:
         return ""
 
-    resolved_licenses = [
-        resolve_license(license) for license in bom_attributes_to_dict(licenses)
-    ]
+    resolved_licenses = [resolve_license(license) for license in licenses]
     return "\n".join(resolved_licenses)
 
 
@@ -126,14 +72,14 @@ def get_checksums(component):
 
 
 def get_external_references(component):
-    """Return dict of reference urls from list of `component.externalReferences`."""
-    external_references = component.externalReferences
+    """Return dict of reference urls from list of `component.external_references`."""
+    external_references = component.external_references
     if not external_references:
         return {}
 
     references = defaultdict(list)
     for reference in external_references:
-        references[reference.type].append(reference.url)
+        references[reference.type.value].append(reference.url.uri)
 
     return dict(references)
 
@@ -142,50 +88,243 @@ def get_properties_data(component):
     """Return the properties as dict, extracted from  `component.properties`."""
     prefix = "aboutcode:"
     properties_data = {}
-    properties = component.properties or []
+    properties_dict = {
+        component_property.name: component_property.value
+        for component_property in component.properties
+    }
 
-    for component_property in properties:
-        property_name = component_property.name
-        property_value = component_property.value
+    for property_name, property_value in properties_dict.items():
         if property_name.startswith(prefix) and property_value not in EMPTY_VALUES:
-            field_name = property_name.replace(prefix, "", 1)
-            properties_data[field_name] = property_value
+            package_field_name = property_name.replace(prefix, "", 1)
+            properties_data[package_field_name] = property_value
+
+    # Mapping of few other properties found in SBOM generated by external tools.
+    property_mapping = {
+        "ResolvedUrl": "download_url",  # generated by "CycloneDX/cdxgen"
+    }
+
+    for property_name, package_field_name in property_mapping.items():
+        if properties_data.get(package_field_name) not in EMPTY_VALUES:
+            continue  # Skip if a value is already set for that field
+
+        property_value = properties_dict.get(property_name)
+        if property_value not in EMPTY_VALUES:
+            properties_data[package_field_name] = property_value
 
     return properties_data
 
 
-def validate_document(document, schema=CYCLONEDX_SCHEMA_PATH):
-    """Check the validity of this CycloneDX document."""
+def validate_document(document):
+    """
+    Check the validity of this CycloneDX document.
+
+    The validator is loaded from the document specVersion property.
+    """
     if isinstance(document, str):
         document = json.loads(document)
 
-    if isinstance(schema, Path):
-        schema = schema.read_text()
+    spec_version = document.get("specVersion")
+    if not spec_version:
+        return ValidationError("'specVersion' is a required property")
 
-    if isinstance(schema, str):
-        schema = json.loads(schema)
+    schema_version = SchemaVersion.from_version(spec_version)
 
-    spdx_schema = SPDX_SCHEMA_PATH.read_text()
-    jsf_schema = JSF_SCHEMA_PATH.read_text()
-
-    store = {
-        "http://cyclonedx.org/schema/spdx.schema.json": json.loads(spdx_schema),
-        "http://cyclonedx.org/schema/jsf-0.82.schema.json": json.loads(jsf_schema),
-    }
-
-    resolver = jsonschema.RefResolver.from_schema(schema, store=store)
-    validator = jsonschema.Draft7Validator(schema=schema, resolver=resolver)
-    validator.validate(instance=document)
+    json_validator = JsonStrictValidator(schema_version)
+    return json_validator._validata_data(document)
 
 
 def is_cyclonedx_bom(input_location):
     """Return True if the file at `input_location` is a CycloneDX BOM."""
-    with suppress(Exception):
-        data = json.loads(Path(input_location).read_text())
-        conditions = (
-            data.get("$schema", "").endswith(CYCLONEDX_SCHEMA_NAME),
-            data.get("bomFormat") == "CycloneDX",
-        )
-        if any(conditions):
-            return True
+    if str(input_location).endswith(".json"):
+        with suppress(Exception):
+            data = json.loads(Path(input_location).read_text())
+            if data.get("bomFormat") == "CycloneDX":
+                return True
+
+    elif str(input_location).endswith(".xml"):
+        with suppress(Exception):
+            et = SafeElementTree.parse(input_location)
+            if "cyclonedx" in et.getroot().tag:
+                return True
+
     return False
+
+
+def cyclonedx_component_to_package_data(cdx_component, dependencies=None):
+    """Return package_data from CycloneDX component."""
+    dependencies = dependencies or {}
+    extra_data = {}
+
+    # Store the original bom_ref and dependencies for future processing.
+    bom_ref = str(cdx_component.bom_ref)
+    if bom_ref:
+        extra_data["bom_ref"] = bom_ref
+        if depends_on := dependencies.get(bom_ref):
+            extra_data["depends_on"] = depends_on
+
+    package_url_dict = {}
+    if cdx_component.purl:
+        package_url_dict = cdx_component.purl.to_dict(encode=True)
+
+    declared_license = get_declared_licenses(licenses=cdx_component.licenses)
+
+    if external_references := get_external_references(cdx_component):
+        extra_data["externalReferences"] = external_references
+
+    if nested_components := cdx_component.get_all_nested_components(include_self=False):
+        nested_purls = [component.bom_ref.value for component in nested_components]
+        extra_data["nestedComponents"] = sorted(nested_purls)
+
+    package_data = {
+        "name": cdx_component.name,
+        "extracted_license_statement": declared_license,
+        "copyright": cdx_component.copyright,
+        "version": cdx_component.version,
+        "description": cdx_component.description,
+        "extra_data": extra_data,
+        **package_url_dict,
+        **get_checksums(cdx_component),
+        **get_properties_data(cdx_component),
+    }
+
+    return {
+        key: value for key, value in package_data.items() if value not in EMPTY_VALUES
+    }
+
+
+def get_components(bom):
+    """Return components from CycloneDX BOM except for the metadata.component."""
+    for component in bom.components:
+        yield from component.get_all_nested_components(include_self=True)
+
+
+def delete_ignored_root_properties(cyclonedx_document_json):
+    """
+    Remove root properties from the CycloneDX document that are irrelevant
+    when loading SBOM component data as packages.
+
+    This function aims to maximize compatibility by excluding unsupported SPEC
+    definitions while utilizing the cyclonedx-python-lib library.
+
+    The data contained in these properties is unnecessary for loading components
+    from the SBOM and can be safely disregarded.
+
+    https://github.com/CycloneDX/cyclonedx-python-lib/issues/578
+    """
+    ignored_root_properties = [
+        "metadata",
+        "services",
+        "externalReferences",
+        "compositions",
+        "vulnerabilities",
+        "annotations",
+        "formulation",
+        "declarations",
+        "definitions",
+        "properties",
+    ]
+
+    cleaned_document = {
+        key: value
+        for key, value in cyclonedx_document_json.items()
+        if key not in ignored_root_properties
+    }
+
+    return cleaned_document
+
+
+def cleanup_components_properties(cyclonedx_document_json):
+    """
+    Remove entries for which no values are set, such as ``{"name": ""}`` or
+    ``"licenses":[{}]``.
+
+    Also remove the properties that are not used in the context of loading packages
+    from SBOM and that  may be unsupported by the cyclonedx-python-lib library.
+
+    Class like cyclonedx.model.contact.OrganizationalEntity raise a
+    NoPropertiesProvidedException while it is not enforced in the spec.
+
+    See https://github.com/CycloneDX/cyclonedx-python-lib/issues/600
+    """
+    entries_to_delete = []
+    ignored_properties = [
+        "evidence",
+        "omniborId",
+        "swhid",
+        "swid",
+        "modified",
+        "pedigree",
+        "releaseNotes",
+        "modelCard",
+        "data",
+        "cryptoProperties",
+        "signature",
+    ]
+
+    def is_empty(value):
+        if isinstance(value, dict) and not any(value.values()):
+            return True
+        elif isinstance(value, list) and not any(value):
+            return True
+
+    for component in cyclonedx_document_json["components"]:
+        for property_name, property_value in component.items():
+            if is_empty(property_value) or property_name in ignored_properties:
+                entries_to_delete.append((component, property_name))
+
+    # Delete the keys outside the main check loop
+    for component, property_name in entries_to_delete:
+        del component[property_name]
+
+    return cyclonedx_document_json
+
+
+def get_bom_instance_from_file(input_location):
+    """Return a Bom instance from the `input_location` CycloneDX document file."""
+    input_path = Path(input_location)
+    document_data = input_path.read_text()
+
+    if str(input_location).endswith(".xml"):
+        cyclonedx_document = SafeElementTree.fromstring(document_data)
+        cyclonedx_bom = Bom.from_xml(cyclonedx_document)
+        return cyclonedx_bom
+
+    elif str(input_location).endswith(".json"):
+        cyclonedx_document = json.loads(document_data)
+
+        # Apply a few fixes pre-validation for maximum compatibility
+        cyclonedx_document = delete_ignored_root_properties(cyclonedx_document)
+        cyclonedx_document = cleanup_components_properties(cyclonedx_document)
+
+        # Instead of validating and raising an error (which halts the entire loading
+        # process), we proceed to load as much data as possible.
+        # This approach prioritizes displaying data in the UI over the output of
+        # validate_document() which is not quite pertinent in its current state.
+        # Additionally, the ValidationError from validate_document() might include the
+        # entire document content, which is impractical for large files.
+        #
+        # validation_error = validate_document(cyclonedx_document)
+
+        cyclonedx_bom = Bom.from_json(data=cyclonedx_document)
+        return cyclonedx_bom
+
+
+def resolve_cyclonedx_packages(input_location):
+    """Resolve the packages from the `input_location` CycloneDX document file."""
+    cyclonedx_bom = get_bom_instance_from_file(input_location)
+    if not cyclonedx_bom:
+        return []
+
+    components = get_components(cyclonedx_bom)
+
+    # Store the ``bom_ref`` and the ``depends_on`` values on the extra_data field for
+    # the dependency resolution that take place after the package creation.
+    dependencies = defaultdict(list)
+    for entry in cyclonedx_bom.dependencies:
+        if depends_on := [str(dep.ref) for dep in entry.dependencies]:
+            dependencies[str(entry.ref)].extend(depends_on)
+
+    return [
+        cyclonedx_component_to_package_data(component, dependencies)
+        for component in components
+    ]

@@ -33,6 +33,7 @@
       if (execute_pipeline_links) {
         execute_pipeline_links.addEventListener('click', displayOverlay);
       }
+      htmx.process($modal);
     }).catch(function (error) {
       console.warn('Error:', error);
     });

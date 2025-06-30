@@ -1,0 +1,246 @@
+{
+  "declared_license_expression": "mit",
+  "license_clarity_score": {
+    "score": 90,
+    "declared_license": true,
+    "identification_precision": true,
+    "has_license_text": false,
+    "declared_copyrights": true,
+    "conflicting_license_categories": false,
+    "ambiguous_compound_licensing": false
+  },
+  "declared_holder": "Sindre Sorhus",
+  "primary_language": "JavaScript",
+  "other_license_expressions": [
+    {
+      "value": null,
+      "count": 1
+    }
+  ],
+  "other_holders": [
+    {
+      "value": null,
+      "count": 2
+    }
+  ],
+  "other_languages": [],
+  "license_matches": {
+    "mit": {
+      "package/package.json": [
+        {
+          "license_expression": "mit",
+          "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
+          "matches": [
+            {
+              "license_expression": "mit",
+              "matched_text": "  \"license\": \"MIT\","
+            }
+          ]
+        }
+      ],
+      "package/readme.md": [
+        {
+          "license_expression": "mit",
+          "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
+          "matches": [
+            {
+              "license_expression": "mit",
+              "matched_text": "## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "key_files": [
+    {
+      "path": "package/readme.md",
+      "type": "file",
+      "name": "readme.md",
+      "status": "application-package",
+      "tag": "",
+      "extension": ".md",
+      "md5": "a743e0abf08c28a37ecc4bef4dc02f8c",
+      "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
+      "sha256": "e98b263545fe62a00c73b57412cbdbcd0792e013a76f9c88342623ab5e8467c1",
+      "sha512": "",
+      "programming_language": "",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": true,
+      "is_top_level": true,
+      "is_key_file": true,
+      "detected_license_expression": "mit",
+      "detected_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 30,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mit_30.RULE",
+              "from_file": "codebase/package/readme.md",
+              "start_line": 28,
+              "matched_text": "## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)",
+              "match_coverage": 100.0,
+              "matched_length": 2,
+              "rule_relevance": 100,
+              "rule_identifier": "mit_30.RULE",
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
+            }
+          ],
+          "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
+        }
+      ],
+      "license_clues": [],
+      "percentage_of_license_text": 2.78,
+      "copyrights": [
+        {
+          "end_line": 30,
+          "copyright": "(c) Sindre Sorhus (http://sindresorhus.com)",
+          "start_line": 30
+        }
+      ],
+      "holders": [
+        {
+          "holder": "Sindre Sorhus",
+          "end_line": 30,
+          "start_line": 30
+        }
+      ],
+      "authors": [],
+      "package_data": [],
+      "for_packages": [
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
+      "emails": [],
+      "urls": [
+        {
+          "url": "https://travis-ci.org/sindresorhus/is-npm.svg?branch=master",
+          "end_line": 1,
+          "start_line": 1
+        },
+        {
+          "url": "https://travis-ci.org/sindresorhus/is-npm",
+          "end_line": 1,
+          "start_line": 1
+        },
+        {
+          "url": "https://www.npmjs.org/doc/misc/npm-scripts.html",
+          "end_line": 3,
+          "start_line": 3
+        },
+        {
+          "url": "http://sindresorhus.com/",
+          "end_line": 30,
+          "start_line": 30
+        }
+      ],
+      "extra_data": {},
+      "content": "# is-npm [![Build Status](https://travis-ci.org/sindresorhus/is-npm.svg?branch=master)](https://travis-ci.org/sindresorhus/is-npm)\n\n> Check if your code is running as an [npm script](https://www.npmjs.org/doc/misc/npm-scripts.html)\n\n\n## Install\n\n```sh\n$ npm install --save is-npm\n```\n\n\n## Usage\n\n```js\nvar isNpm = require('is-npm');\nconsole.log(isNpm);\n```\n\n```sh\n$ node foo.js\n#=> false\n$ npm run foo\n#=> true\n```\n\n\n## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)\n"
+    }
+  ],
+  "key_files_packages": [
+    {
+      "purl": "pkg:npm/is-npm@1.0.0",
+      "type": "npm",
+      "namespace": "",
+      "name": "is-npm",
+      "version": "1.0.0",
+      "qualifiers": "",
+      "subpath": "",
+      "tag": "",
+      "primary_language": "JavaScript",
+      "release_date": null,
+      "parties": [
+        {
+          "url": "http://sindresorhus.com",
+          "name": "Sindre Sorhus",
+          "role": "author",
+          "type": "person",
+          "email": "sindresorhus@gmail.com"
+        }
+      ],
+      "keywords": [
+        "npm",
+        "is",
+        "check",
+        "detect",
+        "env",
+        "environment"
+      ],
+      "homepage_url": "",
+      "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "https://github.com/sindresorhus/is-npm",
+      "repository_homepage_url": "https://www.npmjs.com/package/is-npm",
+      "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+      "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "copyright": "",
+      "holder": "",
+      "declared_license_expression": "mit",
+      "declared_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "1-spdx-id",
+              "end_line": 1,
+              "rule_url": null,
+              "from_file": "codebase/package/package.json",
+              "start_line": 1,
+              "matched_text": "MIT",
+              "match_coverage": 100.0,
+              "matched_length": 1,
+              "rule_relevance": 100,
+              "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
+            }
+          ],
+          "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
+        }
+      ],
+      "other_license_expression": "",
+      "other_license_expression_spdx": "",
+      "other_license_detections": [],
+      "extracted_license_statement": "- MIT\n",
+      "notice_text": "",
+      "source_packages": [],
+      "extra_data": {
+        "engines": {
+          "node": ">=0.10.0"
+        }
+      },
+      "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
+      "datasource_ids": [
+        "npm_package_json"
+      ],
+      "datafile_paths": [
+        "package/package.json"
+      ],
+      "file_references": [],
+      "missing_resources": [],
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
+    }
+  ]
+}

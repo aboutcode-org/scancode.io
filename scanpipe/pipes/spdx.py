@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
 import re
@@ -26,6 +26,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
+from datetime import timezone
 from pathlib import Path
 from typing import List  # Python 3.8 compatibility
 
@@ -34,7 +35,7 @@ SPDX_LICENSE_LIST_VERSION = "3.20"
 SPDX_SCHEMA_NAME = "spdx-schema-2.3.json"
 SPDX_SCHEMA_PATH = Path(__file__).parent / "schemas" / SPDX_SCHEMA_NAME
 SPDX_SCHEMA_URL = (
-    "https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/schemas/spdx-schema.json"
+    "https://github.com/spdx/spdx-spec/raw/development/v2.3.1/schemas/spdx-schema.json"
 )
 
 """
@@ -125,7 +126,7 @@ class CreationInfo:
     Format: YYYY-MM-DDThh:mm:ssZ
     """
     created: str = field(
-        default_factory=lambda: datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds")
     )
 
     def as_dict(self):
@@ -356,7 +357,6 @@ class Package:
             "supplier": self.supplier,
             "originator": self.originator,
             "homepage": self.homepage,
-            "packageFileName": self.filename,
             "description": self.description,
             "summary": self.summary,
             "sourceInfo": self.source_info,

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import logging
 
@@ -35,7 +35,7 @@ session = requests.Session()
 VULNERABLECODE_API_URL = None
 VULNERABLECODE_URL = settings.VULNERABLECODE_URL
 if VULNERABLECODE_URL:
-    VULNERABLECODE_API_URL = f'{VULNERABLECODE_URL.rstrip("/")}/api/'
+    VULNERABLECODE_API_URL = f"{VULNERABLECODE_URL}/api/"
 
 # Basic Authentication
 VULNERABLECODE_USER = settings.VULNERABLECODE_USER
@@ -202,7 +202,19 @@ def bulk_search_by_cpes(
     return request_post(url, data, timeout)
 
 
-def fetch_vulnerabilities(packages, chunk_size=1000, logger=logger.info):
+def filter_vulnerabilities(vulnerabilities, ignore_set):
+    """Filter out vulnerabilities based on a list of ignored IDs and aliases."""
+    return [
+        vulnerability
+        for vulnerability in vulnerabilities
+        if vulnerability.get("vulnerability_id") not in ignore_set
+        and not any(alias in ignore_set for alias in vulnerability.get("aliases", []))
+    ]
+
+
+def fetch_vulnerabilities(
+    packages, chunk_size=1000, logger=logger.info, ignore_set=None
+):
     """
     Fetch and store vulnerabilities for each provided ``packages``.
     The PURLs are used for the lookups in batch of ``chunk_size`` per request.
@@ -217,7 +229,12 @@ def fetch_vulnerabilities(packages, chunk_size=1000, logger=logger.info):
     unsaved_objects = []
     for package in packages:
         if package_data := vulnerabilities_by_purl.get(package.package_url):
-            if affected_by := package_data.get("affected_by_vulnerabilities", []):
+            affected_by = package_data.get("affected_by_vulnerabilities", [])
+
+            if ignore_set and affected_by:
+                affected_by = filter_vulnerabilities(affected_by, ignore_set)
+
+            if affected_by:
                 package.affected_by_vulnerabilities = affected_by
                 unsaved_objects.append(package)
 

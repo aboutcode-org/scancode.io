@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //
-// http://nexb.com and https://github.com/nexB/scancode.io
+// http://nexb.com and https://github.com/aboutcode-org/scancode.io
 // The ScanCode.io software is licensed under the Apache License version 2.0.
 // Data generated with ScanCode.io is provided as-is without warranties.
 // ScanCode is a trademark of nexB Inc.
@@ -18,17 +18,16 @@
 // for any legal advice.
 //
 // ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-// Visit https://github.com/nexB/scancode.io for support and download.
+// Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-const fileInput = document.querySelector('#id_input_files');
+const fileInput = document.querySelector("#id_input_files");
 let selectedFiles = []; // Store selected files
-
 fileInput.onchange = updateFiles;
 
 // Update the list of files to be uploaded in the UI
 function updateFiles() {
   if (fileInput.files.length > 0) {
-    const fileName = document.querySelector('#inputs_file_name');
+    const fileName = document.querySelector("#inputs_file_name");
     fileName.innerHTML = "";
 
     // Update the selectedFiles array
@@ -46,7 +45,7 @@ function updateFiles() {
       <span class="is-flex is-justify-content-space-between is-block" id="file-name-${fileNameWithoutSpaces}">
         <span class="is-block">${file.name}</span>
         <a href="#" onclick="removeFile('${fileNameWithoutSpaces}')" class="model-button" id="file-delete-btn-${fileNameWithoutSpaces}">
-          <i class="fa-solid fa-trash-can mr-2"></i>
+          <i class="fa-solid fa-trash-can"></i>
         </a>
       </span>
       `;
@@ -90,24 +89,25 @@ function dropHandler(event) {
   disableEvent(event);
   const droppedFiles = event.dataTransfer.files;
   const updatedFilesSet = new Set(Array.from(fileInput.files));
-  
+
   for (let file of droppedFiles) {
     updatedFilesSet.add(file);
   }
-  
+
   // Convert the Set back to an array if needed
   const updatedFiles = Array.from(updatedFilesSet);
+
   const dataTransfer = new DataTransfer();
   for (let file of updatedFiles) {
     dataTransfer.items.add(file);
   }
-  
+
   fileInput.files = dataTransfer.files;
   updateFiles();
 }
 
 // Handle drag and drop events
-const inputFilesBox = document.querySelector('#input_files_box');
+const inputFilesBox = document.querySelector("#input_files_box");
 inputFilesBox.addEventListener("dragenter", disableEvent);
 inputFilesBox.addEventListener("dragover", disableEvent);
 inputFilesBox.addEventListener("drop", dropHandler);

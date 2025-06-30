@@ -21,18 +21,23 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import io
+import sys
 import tempfile
 import uuid
 from pathlib import Path
 from unittest import mock
+from unittest import skipIf
 
+from django.db.utils import DataError
 from django.test import TestCase
 
 from scanpipe import pipes
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
+from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import make_resource_directory
@@ -43,7 +48,7 @@ from scanpipe.tests import resource_data1
 
 
 class ScanPipeD2DPipesTest(TestCase):
-    data_location = Path(__file__).parent.parent / "data"
+    data = Path(__file__).parent.parent / "data"
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
@@ -74,6 +79,25 @@ class ScanPipeD2DPipesTest(TestCase):
         from_files, to_files = d2d.get_inputs(self.project1)
         self.assertEqual(2, len(from_files))
         self.assertEqual(2, len(to_files))
+
+        _, input_location = tempfile.mkstemp(prefix="")
+        self.project1.copy_input_from(input_location)
+        url_with_fragment = "https://download.url#from"
+        input_source1 = self.project1.add_input_source(
+            download_url=url_with_fragment, filename=Path(input_location).name
+        )
+        _, input_location = tempfile.mkstemp(prefix="")
+        self.project1.copy_input_from(input_location)
+        url_with_fragment = "https://download.url#to"
+        input_source2 = self.project1.add_input_source(
+            download_url=url_with_fragment, filename=Path(input_location).name
+        )
+
+        from_files, to_files = d2d.get_inputs(self.project1)
+        self.assertEqual(3, len(from_files))
+        self.assertEqual(3, len(to_files))
+        self.assertIn(input_source1.path, from_files)
+        self.assertIn(input_source2.path, to_files)
 
     def test_scanpipe_pipes_d2d_get_extracted_path(self):
         path = "not/an/extracted/path/"
@@ -198,7 +222,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
         expected = (
-            "Matching 1 directory from to/ in PurlDB" "1 directory matched in PurlDB"
+            "Matching 1 directory from to/ in PurlDB1 directory matched in PurlDB"
         )
         self.assertEqual(expected, buffer.getvalue())
 
@@ -341,7 +365,7 @@ class ScanPipeD2DPipesTest(TestCase):
         buffer = io.StringIO()
         d2d.map_java_to_class(self.project1, logger=buffer.write)
 
-        expected = "Mapping 3 .class resources to .java"
+        expected = "Mapping 3 .class resources to 2 .java"
         self.assertIn(expected, buffer.getvalue())
 
         self.assertEqual(2, self.project1.codebaserelations.count())
@@ -366,7 +390,7 @@ class ScanPipeD2DPipesTest(TestCase):
         make_resource_file(self.project1, path="to/Abstract.class")
         buffer = io.StringIO()
         d2d.map_java_to_class(self.project1, logger=buffer.write)
-        expected = "Mapping 1 .class resources to .java" "No .java resources to map."
+        expected = "No .java resources to map."
         self.assertIn(expected, buffer.getvalue())
 
     def test_scanpipe_pipes_d2d_map_jar_to_source(self):
@@ -511,9 +535,9 @@ class ScanPipeD2DPipesTest(TestCase):
 
     def test_scanpipe_pipes_d2d_find_java_packages(self):
         input_locations = [
-            self.data_location / "d2d" / "find_java_packages" / "Foo.java",
-            self.data_location / "d2d" / "find_java_packages" / "Baz.java",
-            self.data_location / "d2d" / "find_java_packages" / "Baz.class",
+            self.data / "d2d" / "find_java_packages" / "Foo.java",
+            self.data / "d2d" / "find_java_packages" / "Baz.java",
+            self.data / "d2d" / "find_java_packages" / "Baz.class",
         ]
 
         from_dir = self.project1.codebase_path / "from"
@@ -557,12 +581,12 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         resource_files = [
-            self.data_location / "d2d-javascript" / "to" / "main.js.map",
-            self.data_location / "d2d-javascript" / "to" / "main.js",
+            self.data / "d2d-javascript" / "to" / "main.js.map",
+            self.data / "d2d-javascript" / "to" / "main.js",
         ]
         copy_inputs(resource_files, to_dir)
 
-        from_input_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        from_input_location = self.data / "d2d-javascript" / "from" / "main.js"
         from_dir = (
             self.project1.codebase_path
             / "from/project.tar.zst/modules/apps/adaptive-media/"
@@ -603,14 +627,12 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         resource_files = [
-            self.data_location / "d2d-javascript" / "to" / "unmain.js.map",
-            self.data_location / "d2d-javascript" / "to" / "unmain.js",
+            self.data / "d2d-javascript" / "to" / "unmain.js.map",
+            self.data / "d2d-javascript" / "to" / "unmain.js",
         ]
         copy_inputs(resource_files, to_dir)
 
-        from_input_location = (
-            self.data_location / "d2d-javascript" / "from" / "unmain.js"
-        )
+        from_input_location = self.data / "d2d-javascript" / "from" / "unmain.js"
         from_dir = (
             self.project1.codebase_path
             / "from/project.tar.zst/modules/apps/adaptive-media/"
@@ -645,7 +667,7 @@ class ScanPipeD2DPipesTest(TestCase):
     @mock.patch("scanpipe.pipes.purldb.match_resources")
     @mock.patch("scanpipe.pipes.purldb.request_get")
     def test_scanpipe_pipes_d2d_match_js_purldb(self, mock_match_resource, mock_get):
-        to_location = self.data_location / "d2d-javascript" / "to" / "unmain.js.map"
+        to_location = self.data / "d2d-javascript" / "to" / "unmain.js.map"
         to_dir = (
             self.project1.codebase_path
             / "to/project.tar.zst/modules/apps/adaptive-media/"
@@ -696,8 +718,8 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertNotEqual(package_data["uuid"], package.uuid)
 
     def test_scanpipe_pipes_d2d_map_javascript_post_purldb_match(self):
-        to_map = self.data_location / "d2d-javascript" / "to" / "main.js.map"
-        to_mini = self.data_location / "d2d-javascript" / "to" / "main.js"
+        to_map = self.data / "d2d-javascript" / "to" / "main.js.map"
+        to_mini = self.data / "d2d-javascript" / "to" / "main.js"
         to_dir = (
             self.project1.codebase_path
             / "to/project.tar.zst/modules/apps/adaptive-media/"
@@ -750,12 +772,12 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         resource_files = [
-            self.data_location / "d2d-javascript" / "to" / "main.js.map",
-            self.data_location / "d2d-javascript" / "to" / "main.js",
+            self.data / "d2d-javascript" / "to" / "main.js.map",
+            self.data / "d2d-javascript" / "to" / "main.js",
         ]
         copy_inputs(resource_files, to_dir)
 
-        from_input_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        from_input_location = self.data / "d2d-javascript" / "from" / "main.js"
         from_dir = (
             self.project1.codebase_path
             / "from/project.tar.zst/modules/apps/adaptive-media/"
@@ -794,12 +816,12 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir1.mkdir(parents=True)
         to_resource_files1 = [
-            self.data_location / "d2d-javascript" / "to" / "main.js.map",
-            self.data_location / "d2d-javascript" / "to" / "main.js",
+            self.data / "d2d-javascript" / "to" / "main.js.map",
+            self.data / "d2d-javascript" / "to" / "main.js",
         ]
         copy_inputs(to_resource_files1, to_dir1)
 
-        to_resource_file3 = self.data_location / "d2d-javascript" / "to" / "unmain.js"
+        to_resource_file3 = self.data / "d2d-javascript" / "to" / "unmain.js"
         to_dir3 = (
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
             "intelligent robotics platform.lpkg-extract/"
@@ -809,7 +831,7 @@ class ScanPipeD2DPipesTest(TestCase):
         to_dir3.mkdir(parents=True)
         copy_input(to_resource_file3, to_dir3)
 
-        from_input_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        from_input_location = self.data / "d2d-javascript" / "from" / "main.js"
         from_dir1 = (
             self.project1.codebase_path
             / "from/project.tar.zst/modules/apps/adaptive-media/"
@@ -914,7 +936,7 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
             "resources/node_modules/foo-bar"
         )
-        to_input_location = self.data_location / "d2d-javascript/to/package.json"
+        to_input_location = self.data / "d2d-javascript/to/package.json"
         to_dir.mkdir(parents=True)
         copy_input(to_input_location, to_dir)
 
@@ -1015,7 +1037,7 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
             "resources/node_modules/foo-bar"
         )
-        to_input_location = self.data_location / "d2d/find_java_packages/Foo.java"
+        to_input_location = self.data / "d2d/find_java_packages/Foo.java"
         to_dir.mkdir(parents=True)
         copy_input(to_input_location, to_dir)
 
@@ -1050,8 +1072,8 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         to_resource_files = [
-            self.data_location / "d2d/find_java_packages/Baz.java",
-            self.data_location / "d2d/about_files/expected.json",
+            self.data / "d2d/find_java_packages/Baz.java",
+            self.data / "d2d/about_files/expected.json",
         ]
         copy_inputs(to_resource_files, to_dir)
 
@@ -1089,7 +1111,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(flag.IGNORED_MEDIA_FILE, media_file.status)
 
     def test_flag_undeployed_resources(self):
-        from_input_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        from_input_location = self.data / "d2d-javascript" / "from" / "main.js"
         from_dir = (
             self.project1.codebase_path
             / "from/project.tar.zst/modules/apps/adaptive-media/"
@@ -1113,7 +1135,7 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
             "resources/node_modules/foo-bar"
         )
-        to_input_location = self.data_location / "d2d/find_java_packages/Foo.java"
+        to_input_location = self.data / "d2d/find_java_packages/Foo.java"
         to_dir.mkdir(parents=True)
         copy_input(to_input_location, to_dir)
 
@@ -1144,10 +1166,10 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         from_dir.mkdir(parents=True)
         from_resource_files = [
-            self.data_location / "d2d/find_java_packages/Foo.java",
-            self.data_location / "d2d/find_java_packages/Baz.java",
-            self.data_location / "d2d/about_files/expected.json",
-            self.data_location / "codebase/a.txt",
+            self.data / "d2d/find_java_packages/Foo.java",
+            self.data / "d2d/find_java_packages/Baz.java",
+            self.data / "d2d/about_files/expected.json",
+            self.data / "codebase/a.txt",
         ]
         copy_inputs(from_resource_files, from_dir)
         pipes.collect_and_create_codebase_resources(self.project1)
@@ -1207,10 +1229,10 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         to_resource_files = [
-            self.data_location / "d2d/legal/project.LICENSE",
-            self.data_location / "d2d/legal/license_mit.md",
-            self.data_location / "d2d/legal/project_notice.txt",
-            self.data_location / "codebase/a.txt",
+            self.data / "d2d/legal/project.LICENSE",
+            self.data / "d2d/legal/license_mit.md",
+            self.data / "d2d/legal/project_notice.txt",
+            self.data / "codebase/a.txt",
         ]
         copy_inputs(to_resource_files, to_dir)
         pipes.collect_and_create_codebase_resources(self.project1)
@@ -1230,8 +1252,8 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         to_resource_files = [
-            self.data_location / "d2d/non_whitespace_file.txt",
-            self.data_location / "d2d/whitespace_file.txt",
+            self.data / "d2d/non_whitespace_file.txt",
+            self.data / "d2d/whitespace_file.txt",
         ]
         copy_inputs(to_resource_files, to_dir)
         pipes.collect_and_create_codebase_resources(self.project1)
@@ -1258,9 +1280,129 @@ class ScanPipeD2DPipesTest(TestCase):
             flag.IGNORED_WHITESPACE_FILE, non_whitespace_resource.status
         )
 
+    def test_scanpipe_pipes_create_about_file_indexes(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d/about_files/to-with-jar.zip",
+            self.data / "d2d/about_files/from-with-about-file.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        from_about_files = (
+            self.project1.codebaseresources.files()
+            .from_codebase()
+            .filter(extension=".ABOUT")
+        )
+        about_file_indexes = d2d.AboutFileIndexes.create_indexes(
+            project=self.project1,
+            from_about_files=from_about_files,
+        )
+
+        about_path = "from/flume-ng-node-1.9.0-sources.ABOUT"
+        about_notice_path = "from/flume-ng-node-1.9.0-sources.NOTICE"
+
+        about_notice_file = self.project1.codebaseresources.get(path=about_notice_path)
+
+        self.assertIn(
+            about_path, list(about_file_indexes.about_resources_by_path.keys())
+        )
+        about_regex = d2d.convert_glob_to_django_regex(
+            glob_pattern="*flume-ng-node-*.jar*"
+        )
+        self.assertEqual(
+            about_file_indexes.regex_by_about_path.get(about_path), about_regex
+        )
+        self.assertEqual(
+            about_file_indexes.about_pkgdata_by_path.get(about_path).get("name"),
+            "log4j",
+        )
+        self.assertIn(
+            about_notice_file, about_file_indexes.get_about_file_companions(about_path)
+        )
+        to_resource = self.project1.codebaseresources.get(
+            path=(
+                "to/flume-ng-node-1.9.0.jar-extract/org/apache/"
+                "flume/node/AbstractZooKeeperConfigurationProvider.class"
+            )
+        )
+        self.assertEqual(
+            about_file_indexes.get_matched_about_path(to_resource), about_path
+        )
+
+    def test_scanpipe_pipes_map_d2d_using_about(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d/about_files/to-with-jar.zip",
+            self.data / "d2d/about_files/from-with-about-file.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        from_about_files = (
+            self.project1.codebaseresources.files()
+            .from_codebase()
+            .filter(extension=".ABOUT")
+        )
+        about_file_indexes = d2d.AboutFileIndexes.create_indexes(
+            project=self.project1,
+            from_about_files=from_about_files,
+        )
+
+        to_resources = self.project1.codebaseresources.to_codebase()
+        about_file_indexes.map_deployed_to_devel_using_about(
+            to_resources=to_resources,
+        )
+
+        about_path = "from/flume-ng-node-1.9.0-sources.ABOUT"
+        to_resource = self.project1.codebaseresources.get(
+            path=(
+                "to/flume-ng-node-1.9.0.jar-extract/org/apache/"
+                "flume/node/AbstractZooKeeperConfigurationProvider.class"
+            )
+        )
+        self.assertIn(
+            to_resource,
+            about_file_indexes.mapped_resources_by_aboutpath.get(about_path),
+        )
+
+        about_file_indexes.create_about_packages_relations(self.project1)
+
     def test_scanpipe_pipes_d2d_match_purldb_resources_post_process(self):
-        to_map = self.data_location / "d2d-javascript" / "to" / "main.js.map"
-        to_mini = self.data_location / "d2d-javascript" / "to" / "main.js"
+        to_map = self.data / "d2d-javascript" / "to" / "main.js.map"
+        to_mini = self.data / "d2d-javascript" / "to" / "main.js"
         to_dir = (
             self.project1.codebase_path
             / "to/project.tar.zst/modules/apps/adaptive-media/"
@@ -1312,7 +1454,7 @@ class ScanPipeD2DPipesTest(TestCase):
             logger=buffer.write,
         )
         expected = (
-            "Refining matching for 1 " f"{flag.MATCHED_TO_PURLDB_RESOURCE} archives."
+            f"Refining matching for 1 {flag.MATCHED_TO_PURLDB_RESOURCE} archives."
         )
         self.assertIn(expected, buffer.getvalue())
 
@@ -1321,3 +1463,294 @@ class ScanPipeD2DPipesTest(TestCase):
 
         self.assertEqual(2, package1_resource_count)
         self.assertEqual(0, package2_resource_count)
+
+    def test_scanpipe_pipes_d2d_map_elfs(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-elfs/to-data.zip",
+            self.data / "d2d-elfs/from-data.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_elfs_with_dwarf_paths(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            1,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="dwarf_included_paths"
+            ).count(),
+        )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_go_paths(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-go/to-data.zip",
+            self.data / "d2d-go/from-data.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_go_paths(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            1,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="go_file_paths"
+            ).count(),
+        )
+        self.assertEqual(
+            1,
+            CodebaseResource.objects.filter(
+                project=self.project1, status="requires-review"
+            ).count(),
+        )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_rust_symbols(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-rust/to-trustier-binary-linux.tar.gz",
+            self.data / "d2d-rust/from-trustier-source.tar.gz",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_rust_binaries_with_symbols(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            2,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="rust_symbols"
+            ).count(),
+        )
+        self.assertEqual(
+            0,
+            CodebaseResource.objects.filter(
+                project=self.project1, status="requires-review"
+            ).count(),
+        )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_elf_symbols(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-elfs/to-brotli-d2d.zip",
+            self.data / "d2d-elfs/from-brotli-d2d.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_elfs_binaries_with_symbols(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            7,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="elf_symbols"
+            ).count(),
+        )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_macho_symbols(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-macho/from-lumen.zip",
+            self.data / "d2d-macho/to-lumen.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_macho_binaries_with_symbols(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            9,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="macho_symbols"
+            ).count(),
+        )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_winpe_symbols(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-winpe/to-translucent.zip",
+            self.data / "d2d-winpe/from-translucent.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_winpe_binaries_with_symbols(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            4,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="winpe_symbols"
+            ).count(),
+        )
+
+    @mock.patch("scanpipe.pipes.purldb.match_resources")
+    def test_scanpipe_pipes_d2d_match_purldb_resource_no_package_data(
+        self, mock_match_resource
+    ):
+        to_1 = make_resource_file(
+            self.project1,
+            "to/notice.NOTICE",
+            sha1="4bd631df28995c332bf69d9d4f0f74d7ee089598",
+        )
+        resources_by_sha1 = {to_1.sha1: [to_1]}
+
+        resource_data = resource_data1.copy()
+        resource_data["package"] = "example.com/package-instance"
+        mock_match_resource.return_value = [resource_data]
+
+        resources_by_sha1, matched_count, sha1_count = d2d.match_sha1s_to_purldb(
+            project=self.project1,
+            resources_by_sha1=resources_by_sha1,
+            matcher_func=d2d.match_purldb_resource,
+            package_data_by_purldb_urls={},
+        )
+        self.assertFalse(resources_by_sha1)
+        self.assertEqual(0, matched_count)
+        self.assertEqual(1, sha1_count)
+
+        package_count = self.project1.discoveredpackages.count()
+        self.assertEqual(0, package_count)
+
+    def test_scanpipe_pipes_d2d_match_purldb_resources_post_process_with_special_char(
+        self,
+    ):
+        to_map = self.data / "d2d-javascript" / "to" / "main.js.map"
+
+        to_dir = self.project1.codebase_path / "to/lib/Matplot++/nodesoup.lib-extract"
+        to_dir.mkdir(parents=True)
+        copy_inputs([to_map], to_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        to_resources = self.project1.codebaseresources.filter(
+            path__startswith=("to/lib/Matplot++/nodesoup.lib-extract/main.js")
+        )
+
+        dummy_package_data1 = package_data1.copy()
+        dummy_package_data1["uuid"] = uuid.uuid4()
+        d2d.create_package_from_purldb_data(
+            self.project1,
+            to_resources,
+            dummy_package_data1,
+            flag.MATCHED_TO_PURLDB_RESOURCE,
+        )
+
+        buffer = io.StringIO()
+        try:
+            d2d.match_purldb_resources_post_process(
+                self.project1,
+                logger=buffer.write,
+            )
+        except DataError:
+            self.fail("DataError was raised, but it should not occur.")
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_javascript_symbols(self):
+        to_dir = self.project1.codebase_path / "to/project.tar.zst-extract/"
+        to_resource_file = (
+            self.data / "d2d-javascript/symbols/cesium/to_chunk-CNPP6TQ2.js"
+        )
+        to_dir.mkdir(parents=True)
+        copy_input(to_resource_file, to_dir)
+
+        from_input_location = (
+            self.data / "d2d-javascript/symbols/cesium/from_EllipseGeometryLibrary.js"
+        )
+        from_dir = self.project1.codebase_path / "from/project.zip/"
+        from_dir.mkdir(parents=True)
+        copy_input(from_input_location, from_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        buffer = io.StringIO()
+        d2d.map_javascript_symbols(self.project1, logger=buffer.write)
+        expected = (
+            "Mapping 1 JavaScript resources using symbols against 1 from/ codebase."
+        )
+        self.assertIn(expected, buffer.getvalue())
+
+        self.assertEqual(1, self.project1.codebaserelations.count())
+        self.assertEqual(
+            1,
+            self.project1.codebaserelations.filter(
+                map_type="javascript_symbols"
+            ).count(),
+        )

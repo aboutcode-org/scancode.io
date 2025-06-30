@@ -1,21 +1,43 @@
-<article class="panel is-info">
-  <p class="panel-heading py-2 is-size-6">
+<article class="panel is-dark">
+  <p class="panel-heading">
     Pipelines
   </p>
   {% for run in pipeline_runs %}
-    <a class="panel-block modal-button is-justify-content-space-between" data-target="run-detail-modal" data-uuid="{{ run.uuid }}" aria-haspopup="true">
-      <span class="mr-1">{{ run.pipeline_name }}</span>
-      {% include "scanpipe/includes/run_status_tag.html" with run=run display_current_step=True only %}
-    </a>
+    <div class="panel-block is-justify-content-space-between">
+      <div>
+        <a class="modal-button is-black-link" data-target="pipeline-help-modal" data-pipeline-name="{{ run.pipeline_name }}" aria-haspopup="true">
+          {{ run.pipeline_name }}
+          <i class="fa-regular fa-circle-question"></i>
+        </a>
+        {% if run.status == run.Status.SUCCESS and run.results_url %}
+          <div class="dropdown is-hoverable">
+            <div class="dropdown-trigger">
+              <a href="{{ run.results_url }}" class="ml-1">
+                <i class="fa-regular fa-rectangle-list"></i>
+              </a>
+            </div>
+            <div class="dropdown-menu">
+              <div class="dropdown-content">
+                <div class="dropdown-item">
+                  View pipeline results
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+      <a class="modal-button" data-target="run-detail-modal" data-uuid="{{ run.uuid }}" aria-haspopup="true">
+        {% include "scanpipe/includes/run_status_tag.html" with run=run display_current_step=True only %}
+      </a>
+    </div>
   {% endfor %}
   <div class="panel-block">
     {% if project.is_archived %}
       <button class="button is-link is-outlined is-fullwidth" disabled>Add pipeline</button>
     {% else %}
-      <button class="button is-link is-outlined is-fullwidth modal-button" data-target="add-pipeline-modal" aria-haspopup="true">
+      <button class="button is-link {% if pipeline_runs %}is-outlined{% endif %} is-fullwidth modal-button" data-target="add-pipeline-modal" aria-haspopup="true">
         Add pipeline
       </button>
-      {% include "scanpipe/modals/add_pipeline_modal.html" %}
       {% if project.can_start_pipelines %}
         <a class="button is-success is-fullwidth ml-2 execute-pipeline-link" href="{% url 'project_execute_pipelines' project.slug %}">
           <span class="icon width-1">
@@ -26,4 +48,6 @@
       {% endif %}
     {% endif %}
   </div>
+  {% include "scanpipe/modals/pipeline_help_modal.html" %}
+  {% include "scanpipe/modals/add_pipeline_modal.html" %}
 </article>

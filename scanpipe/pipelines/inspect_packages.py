@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,35 +18,27 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+from aboutcode.pipeline import optional_step
 from scanpipe.pipelines.scan_codebase import ScanCodebase
-from scanpipe.pipes import resolve
-from scanpipe.pipes import update_or_create_package
+from scanpipe.pipes import scancode
 
 
 class InspectPackages(ScanCodebase):
     """
-    Inspect a codebase manifest files and resolve their associated packages.
+    Inspect a codebase for packages and pre-resolved dependencies.
 
-    Supports resolved packages for:
-    - Python: using nexB/python-inspector, supports requirements.txt and
-      setup.py manifests as input
+    This pipeline inspects a codebase for application packages
+    and their dependencies using package manifests and dependency
+    lockfiles. It does not resolve dependencies, it does instead
+    collect already pre-resolved dependencies from lockfiles, and
+    direct dependencies (possibly not resolved) as found in
+    package manifests' dependency sections.
 
-    Supports:
-    - BOM: SPDX document, CycloneDX BOM, AboutCode ABOUT file
-    - Python: requirements.txt, setup.py, setup.cfg, Pipfile.lock
-    - JavaScript: yarn.lock lockfile, npm package-lock.json lockfile
-    - Java: Java JAR MANIFEST.MF, Gradle build script
-    - Ruby: RubyGems gemspec manifest, RubyGems Bundler Gemfile.lock
-    - Rust: Rust Cargo.lock dependencies lockfile, Rust Cargo.toml package manifest
-    - PHP: PHP composer lockfile, PHP composer manifest
-    - NuGet: nuspec package manifest
-    - Dart: pubspec manifest, pubspec lockfile
-    - OS: FreeBSD compact package manifest, Debian installed packages database
-
-    Full list available at https://scancode-toolkit.readthedocs.io/en/
-    doc-update-licenses/reference/available_package_parsers.html
+    See documentation for the list of supported package manifests and
+    dependency lockfiles:
+    https://scancode-toolkit.readthedocs.io/en/stable/reference/available_package_parsers.html
     """
 
     @classmethod
@@ -55,46 +47,29 @@ class InspectPackages(ScanCodebase):
             cls.copy_inputs_to_codebase_directory,
             cls.extract_archives,
             cls.collect_and_create_codebase_resources,
+            cls.flag_empty_files,
             cls.flag_ignored_resources,
-            cls.get_manifest_inputs,
-            cls.get_packages_from_manifest,
-            cls.create_resolved_packages,
+            cls.scan_for_application_packages,
+            cls.resolve_dependencies,
         )
 
-    def get_manifest_inputs(self):
-        """Locate all the manifest files from the project's input/ directory."""
-        self.manifest_resources = resolve.get_manifest_resources(self.project)
+    def scan_for_application_packages(self):
+        """
+        Scan resources for package information to add DiscoveredPackage
+        and DiscoveredDependency objects from detected package data.
+        """
+        scancode.scan_for_application_packages(
+            project=self.project,
+            assemble=True,
+            package_only=True,
+            progress_logger=self.log,
+        )
 
-    def get_packages_from_manifest(self):
-        """Get packages data from manifest files."""
-        self.resolved_packages = []
-
-        if not self.manifest_resources.exists():
-            self.project.add_warning(
-                description="No manifests found for resolving packages",
-                model="get_packages_from_manifest",
-            )
-            return
-
-        for resource in self.manifest_resources:
-            if packages := resolve.resolve_packages(resource.location):
-                self.resolved_packages.extend(packages)
-            else:
-                self.project.add_error(
-                    description="No packages could be resolved for",
-                    model="get_packages_from_manifest",
-                    details={"path": resource.path},
-                )
-
-    def create_resolved_packages(self):
-        """Create the resolved packages and their dependencies in the database."""
-        for package_data in self.resolved_packages:
-            package_data = resolve.set_license_expression(package_data)
-            dependencies = package_data.pop("dependencies", [])
-            update_or_create_package(self.project, package_data)
-
-            for dependency_data in dependencies:
-                resolved_package = dependency_data.get("resolved_package")
-                if resolved_package:
-                    resolved_package.pop("dependencies", [])
-                    update_or_create_package(self.project, resolved_package)
+    @optional_step("StaticResolver")
+    def resolve_dependencies(self):
+        """
+        Create packages and dependency relationships from
+        lockfiles or manifests containing pre-resolved
+        dependencies.
+        """
+        scancode.resolve_dependencies(project=self.project)

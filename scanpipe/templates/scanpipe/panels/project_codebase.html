@@ -1,10 +1,24 @@
-<nav id="codebase-navigation" class="panel is-info">
-  <p class="panel-heading py-2 is-size-6">
+<nav id="codebase-navigation" class="panel is-dark">
+  <p class="panel-heading">
     Codebase
+    {% if current_dir and current_dir != "." %}
+      <span class="tag ml-2">
+        {% for dir_name, full_path in codebase_breadcrumbs.items %}
+          {% if not forloop.last %}
+            <a href="#" hx-target="#codebase-navigation" hx-swap="outerHTML" hx-get="{{ project_details_url }}codebase/?current_dir={{ full_path }}">
+              {{ dir_name }}
+            </a>
+            <span class="mr-1">/</span>
+          {% else %}
+            {{ dir_name }}/
+          {% endif %}
+        {% endfor %}
+      </span>
+    {% endif %}
   </p>
   {% for node in codebase_tree %}
     {% if node.is_dir %}
-       <a class="panel-block" href="#" hx-target="#codebase-navigation" hx-swap="outerHTML" hx-get="{{ project.get_absolute_url }}codebase/?current_dir={{ node.location }}">
+       <a class="panel-block" href="#" hx-target="#codebase-navigation" hx-swap="outerHTML" hx-get="{{ project_details_url }}codebase/?current_dir={{ node.location }}">
          <span class="panel-icon"><i class="fa-solid fa-folder"></i></span>
          {{ node.name }}
       </a>

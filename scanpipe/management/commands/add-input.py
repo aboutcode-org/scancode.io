@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from django.core.management import CommandError
 
@@ -32,7 +32,7 @@ class Command(AddInputCommandMixin, ProjectCommand):
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
-        inputs_files = options["inputs_files"]
+        input_files = options["input_files"]
         input_urls = options["input_urls"]
         copy_from = options["copy_codebase"]
 
@@ -41,14 +41,15 @@ class Command(AddInputCommandMixin, ProjectCommand):
                 "Cannot add inputs once a pipeline has started to execute on a project."
             )
 
-        if not (inputs_files or input_urls or copy_from):
+        if not (input_files or input_urls or copy_from):
             raise CommandError(
                 "Provide inputs with the --input-file, --input-url, or --copy-codebase"
             )
 
-        if inputs_files:
-            self.validate_input_files(inputs_files)
-            self.handle_input_files(inputs_files)
+        if input_files:
+            input_files_data = self.extract_tag_from_input_files(input_files)
+            self.validate_input_files(input_files=input_files_data.keys())
+            self.handle_input_files(input_files_data)
 
         if input_urls:
             self.handle_input_urls(input_urls)

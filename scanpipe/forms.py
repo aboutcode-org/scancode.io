@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,17 +18,24 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from django import forms
 from django.apps import apps
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
 
+from packageurl import PackageURL
 from taggit.forms import TagField
 from taggit.forms import TagWidget
 
 from scanpipe.models import Project
-from scanpipe.pipes.fetch import check_urls_availability
+from scanpipe.models import Run
+from scanpipe.models import WebhookSubscription
+from scanpipe.pipelines import convert_markdown_to_html
+from scanpipe.pipes import fetch
+from scanpipe.policies import load_policies_yaml
+from scanpipe.policies import validate_policies
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -44,7 +51,7 @@ class MultipleFileField(forms.FileField):
 
     def clean(self, data, initial=None):
         single_file_clean = super().clean
-        if isinstance(data, (list, tuple)):
+        if isinstance(data, list | tuple):
             result = [single_file_clean(entry, initial) for entry in data]
         else:
             result = single_file_clean(data, initial)
@@ -57,16 +64,17 @@ class InputsBaseForm(forms.Form):
         label="Download URLs",
         required=False,
         help_text=(
-            "Provide one or more URLs to download, one per line. "
-            "Files are fetched at the beginning of the pipeline run execution."
+            "Enter one or more download URLs, one per line. "
+            "Files will be fetched when the pipeline starts."
         ),
         widget=forms.Textarea(
             attrs={
                 "class": "textarea is-dynamic",
-                "rows": 2,
+                "rows": 3,
                 "placeholder": (
                     "https://domain.com/archive.zip\n"
-                    "docker://docker-reference (e.g.: docker://postgres:13)"
+                    "docker://docker-reference (e.g.: docker://postgres:13)\n"
+                    "pkg://type/name@version"
                 ),
             },
         ),
@@ -74,6 +82,23 @@ class InputsBaseForm(forms.Form):
 
     class Media:
         js = ("add-inputs.js",)
+
+    @staticmethod
+    def validate_scheme(input_urls):
+        """
+        Raise a validation error if some of the `input_urls` have a scheme that is not
+        supported.
+        """
+        errors = []
+
+        for url in input_urls:
+            try:
+                fetch.get_fetcher(url)
+            except ValueError as e:
+                errors.append(str(e))
+
+        if errors:
+            raise ValidationError("\n".join(errors))
 
     def clean_input_urls(self):
         """
@@ -83,8 +108,9 @@ class InputsBaseForm(forms.Form):
         input_urls_str = self.cleaned_data.get("input_urls", "")
         input_urls = input_urls_str.split()
 
-        errors = check_urls_availability(input_urls)
-        if errors:
+        self.validate_scheme(input_urls)
+
+        if errors := fetch.check_urls_availability(input_urls):
             raise ValidationError("Could not fetch:\n" + "\n".join(errors))
 
         return input_urls
@@ -99,6 +125,16 @@ class InputsBaseForm(forms.Form):
             project.add_input_source(download_url=url)
 
 
+class CheckboxChoiceField(forms.MultipleChoiceField):
+    widget = forms.CheckboxSelectMultiple
+
+
+class SelectedGroupsCheckboxChoiceField(CheckboxChoiceField):
+    def valid_value(self, value):
+        """Accept all values."""
+        return True
+
+
 class PipelineBaseForm(forms.Form):
     pipeline = forms.ChoiceField(
         choices=scanpipe_app.get_pipeline_choices(),
@@ -109,12 +145,14 @@ class PipelineBaseForm(forms.Form):
         initial=True,
         required=False,
     )
+    selected_groups = SelectedGroupsCheckboxChoiceField(required=False)
 
     def handle_pipeline(self, project):
         pipeline = self.cleaned_data["pipeline"]
         execute_now = self.cleaned_data["execute_now"]
+        selected_groups = self.cleaned_data.get("selected_groups", [])
         if pipeline:
-            project.add_pipeline(pipeline, execute_now)
+            project.add_pipeline(pipeline, execute_now, selected_groups)
 
 
 class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
@@ -126,6 +164,7 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
             "input_urls",
             "pipeline",
             "execute_now",
+            "selected_groups",
         ]
 
     def __init__(self, *args, **kwargs):
@@ -157,10 +196,7 @@ class AddInputsForm(InputsBaseForm, forms.Form):
 
 class AddPipelineForm(PipelineBaseForm):
     pipeline = forms.ChoiceField(
-        choices=[
-            (name, pipeline_class.get_summary())
-            for name, pipeline_class in scanpipe_app.pipelines.items()
-        ],
+        choices=scanpipe_app.get_pipeline_choices(),
         widget=forms.RadioSelect(),
         required=True,
     )
@@ -183,7 +219,43 @@ class AddLabelsForm(forms.Form):
         return project
 
 
-class ArchiveProjectForm(forms.Form):
+class EditInputSourceTagForm(forms.Form):
+    input_source_uuid = forms.CharField(
+        max_length=50,
+        widget=forms.widgets.HiddenInput,
+        required=True,
+    )
+    tag = forms.CharField(
+        widget=forms.TextInput(attrs={"class": "input"}),
+    )
+
+    def save(self, project):
+        input_source_uuid = self.cleaned_data.get("input_source_uuid")
+        try:
+            input_source = project.inputsources.get(uuid=input_source_uuid)
+        except (ValidationError, ObjectDoesNotExist):
+            return
+
+        input_source.update(tag=self.cleaned_data.get("tag", ""))
+        return input_source
+
+
+class BaseProjectActionForm(forms.Form):
+    select_across = forms.BooleanField(
+        label="",
+        required=False,
+        initial=0,
+        help_text="All project matching current search and filters will be included.",
+    )
+    url_query = forms.CharField(
+        widget=forms.HiddenInput,
+        required=False,
+        help_text="Stores the current URL filters.",
+    )
+
+
+class ProjectArchiveForm(BaseProjectActionForm):
+    prefix = "archive"
     remove_input = forms.BooleanField(
         label="Remove inputs",
         initial=True,
@@ -198,6 +270,74 @@ class ArchiveProjectForm(forms.Form):
         label="Remove outputs",
         initial=False,
         required=False,
+    )
+
+    def get_action_kwargs(self):
+        return {
+            "remove_input": self.cleaned_data["remove_input"],
+            "remove_codebase": self.cleaned_data["remove_codebase"],
+            "remove_output": self.cleaned_data["remove_output"],
+        }
+
+
+class ProjectResetForm(BaseProjectActionForm):
+    prefix = "reset"
+    keep_input = forms.BooleanField(
+        label="Keep inputs",
+        initial=True,
+        required=False,
+    )
+    restore_pipelines = forms.BooleanField(
+        label="Restore existing pipelines",
+        initial=False,
+        required=False,
+    )
+    execute_now = forms.BooleanField(
+        label="Execute restored pipeline(s) now",
+        initial=False,
+        required=False,
+    )
+
+    def get_action_kwargs(self):
+        return {
+            "keep_input": self.cleaned_data["keep_input"],
+            "restore_pipelines": self.cleaned_data["restore_pipelines"],
+            "execute_now": self.cleaned_data["execute_now"],
+        }
+
+
+class ProjectOutputDownloadForm(BaseProjectActionForm):
+    prefix = "download"
+    output_format = forms.ChoiceField(
+        label="Choose the output format to include in the ZIP file",
+        choices=[
+            ("json", "JSON"),
+            ("xlsx", "XLSX"),
+            ("spdx", "SPDX"),
+            ("cyclonedx", "CycloneDX"),
+            ("attribution", "Attribution"),
+        ],
+        required=True,
+        initial="json",
+        widget=forms.RadioSelect,
+    )
+
+
+class ProjectReportForm(BaseProjectActionForm):
+    prefix = "report"
+    model_name = forms.ChoiceField(
+        label="Choose the object type to include in the XLSX file",
+        choices=[
+            ("package", "Packages"),
+            ("dependency", "Dependencies"),
+            ("resource", "Resources"),
+            ("relation", "Relations"),
+            ("message", "Messages"),
+            ("todo", "TODOs"),
+        ],
+        required=True,
+        initial="package",
+        widget=forms.RadioSelect,
     )
 
 
@@ -227,48 +367,208 @@ class ListTextarea(forms.CharField):
         return value
 
 
+class KeyValueListField(forms.CharField):
+    """
+    A Django form field that displays as a textarea and converts each line of
+    "key:value" input into a list of dictionaries with customizable keys.
+
+    Each line of the textarea input is split into key-value pairs,
+    removing leading/trailing whitespace and empty lines. The resulting list of
+    dictionaries is then stored as the field value.
+    """
+
+    widget = forms.Textarea
+
+    def __init__(self, *args, key_name="key", value_name="value", **kwargs):
+        """Initialize the KeyValueListField with custom key and value names."""
+        self.key_name = key_name
+        self.value_name = value_name
+        super().__init__(*args, **kwargs)
+
+    def to_python(self, value):
+        """
+        Split the textarea input into lines, convert each line to a dictionary,
+        and remove empty lines.
+        """
+        if not value:
+            return None
+
+        items = []
+        for line in value.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split(":", 1)
+            if len(parts) != 2:
+                raise ValidationError(
+                    f"Invalid input line: '{line}'. "
+                    f"Each line must contain exactly one ':' character."
+                )
+            key, value = parts
+            key = key.strip()
+            value = value.strip()
+            if not key or not value:
+                raise ValidationError(
+                    f"Invalid input line: '{line}'. "
+                    f"Both key and value must be non-empty."
+                )
+            items.append({self.key_name: key, self.value_name: value})
+
+        return items
+
+    def prepare_value(self, value):
+        """
+        Join the list of dictionaries into a string with newlines,
+        using the "key:value" format.
+        """
+        if value is not None and isinstance(value, list):
+            value = "\n".join(
+                f"{item[self.key_name]}:{item[self.value_name]}" for item in value
+            )
+        return value
+
+
+ignored_patterns_help = """
+Provide one or more path patterns to be ignored, one per line.
+
+Each pattern should follow the syntax of Unix shell-style wildcards:
+- Use ``*`` to match multiple characters.
+- Use ``?`` to match a single character.
+
+Here are some examples:
+- To ignore all files with a ".tmp" extension, use: ``*.tmp``
+- To ignore all files in a "tests" directory, use: ``tests/*``
+- To ignore specific files or directories, provide their exact names or paths, such as:
+  ``example/file_to_ignore.txt`` or ``folder_to_ignore/*``
+
+You can also use regular expressions for more complex matching.
+Remember that these patterns will be applied recursively to all files and directories
+within the project.
+Be cautious when specifying patterns to avoid unintended exclusions.
+"""
+
+ignored_dependency_scopes_help = """
+Specify certain dependency scopes to be ignored for a given package type.
+
+This allows you to exclude dependencies from being created or resolved based on their
+scope using the `package_type:scope` syntax, **one per line**.
+For example: `npm:devDependencies`
+"""
+
+
+ignored_vulnerabilities_help = """
+Specify certain vulnerabilities to be ignored using VCID, CVE, or any aliases.
+"""
+
+
 class ProjectSettingsForm(forms.ModelForm):
     settings_fields = [
-        "extract_recursively",
         "ignored_patterns",
-        "scancode_license_score",
+        "ignored_dependency_scopes",
+        "ignored_vulnerabilities",
+        "policies",
         "attribution_template",
+        "scan_max_file_size",
+        "product_name",
+        "product_version",
     ]
-    extract_recursively = forms.BooleanField(
-        label="Extract recursively",
-        required=False,
-        initial=True,
-        help_text="Extract nested archives-in-archives recursively",
-        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
-    )
     ignored_patterns = ListTextarea(
         label="Ignored patterns",
         required=False,
-        help_text="Provide one or more path patterns to be ignored, one per line.",
+        help_text=convert_markdown_to_html(ignored_patterns_help.strip()),
         widget=forms.Textarea(
             attrs={
                 "class": "textarea is-dynamic",
                 "rows": 3,
-                "placeholder": "*.xml\ntests/*\n*docs/*.rst",
+                "placeholder": "*.tmp\ntests/*\n*docs/*.rst",
             },
         ),
     )
-    scancode_license_score = forms.IntegerField(
-        label="License score",
-        min_value=0,
-        max_value=100,
+    ignored_dependency_scopes = KeyValueListField(
+        label="Ignored dependency scopes",
+        required=False,
+        help_text=convert_markdown_to_html(ignored_dependency_scopes_help.strip()),
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea is-dynamic",
+                "rows": 2,
+                "placeholder": "npm:devDependencies\npypi:tests",
+            },
+        ),
+        key_name="package_type",
+        value_name="scope",
+    )
+    ignored_vulnerabilities = ListTextarea(
+        label="Ignored vulnerabilities",
+        required=False,
+        help_text=convert_markdown_to_html(ignored_vulnerabilities_help.strip()),
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea is-dynamic",
+                "rows": 2,
+                "placeholder": "VCID-q4q6-yfng-aaag\nCVE-2024-27351",
+            },
+        ),
+    )
+    policies = forms.CharField(
+        label="License policies",
         required=False,
         help_text=(
-            "Do not return license matches with a score lower than this score. "
-            "A number between 0 and 100."
+            "Refer to the documentation for syntax details: "
+            "https://scancodeio.readthedocs.io/en/latest/tutorial_license_policies.html"
         ),
-        widget=forms.NumberInput(attrs={"class": "input"}),
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea is-dynamic",
+                "rows": 3,
+                "placeholder": (
+                    "license_policies:\n"
+                    "-   license_key: gpl-2.0\n"
+                    "    compliance_alert: error"
+                ),
+            }
+        ),
     )
     attribution_template = forms.CharField(
         label="Attribution template",
         required=False,
-        help_text="Custom attribution template.",
+        help_text=(
+            "Customize the attribution template to personalize the generated "
+            "attribution for your needs."
+            "\nThe default template can be found at "
+            "https://raw.githubusercontent.com/nexB/scancode.io/main/scanpipe/"
+            "templates/scanpipe/attribution.html"
+            "\nFeel free to modify its content according to your preferences and paste "
+            "the entire HTML code into this field."
+        ),
         widget=forms.Textarea(attrs={"class": "textarea is-dynamic", "rows": 3}),
+    )
+    scan_max_file_size = forms.IntegerField(
+        label="Max file size to scan",
+        required=False,
+        help_text=(
+            "Maximum file size in bytes which should be skipped from scanning."
+            "File size is in bytes. Example: 5 MB is 5242880 bytes."
+        ),
+        widget=forms.NumberInput(attrs={"class": "input"}),
+    )
+    product_name = forms.CharField(
+        label="Product name",
+        required=False,
+        help_text=(
+            "The product name of this project, as specified within the DejaCode "
+            "application."
+        ),
+        widget=forms.TextInput(attrs={"class": "input"}),
+    )
+    product_version = forms.CharField(
+        label="Product version",
+        required=False,
+        help_text=(
+            "The product version of this project, as specified within the DejaCode "
+            "application."
+        ),
+        widget=forms.TextInput(attrs={"class": "input"}),
     )
 
     class Meta:
@@ -276,11 +576,30 @@ class ProjectSettingsForm(forms.ModelForm):
         fields = [
             "name",
             "notes",
+            "purl",
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "input"}),
             "notes": forms.Textarea(attrs={"rows": 3, "class": "textarea is-dynamic"}),
+            "purl": forms.TextInput(
+                attrs={
+                    "class": "input",
+                    "placeholder": "pkg:npm/lodash@4.7.21",
+                }
+            ),
         }
+
+    def clean_purl(self):
+        """Validate the Project PURL."""
+        purl = self.cleaned_data.get("purl")
+
+        if purl:
+            try:
+                PackageURL.from_string(purl)
+            except ValueError:
+                raise forms.ValidationError("PURL must be a valid PackageURL")
+
+        return purl
 
     def __init__(self, *args, **kwargs):
         """Load initial values from Project ``settings`` field."""
@@ -304,6 +623,12 @@ class ProjectSettingsForm(forms.ModelForm):
         }
         project.settings.update(config)
         project.save(update_fields=["settings"])
+
+    def clean_policies(self):
+        if policies := self.cleaned_data.get("policies"):
+            policies_dict = load_policies_yaml(policies)
+            validate_policies(policies_dict)
+        return policies
 
 
 class ProjectCloneForm(forms.Form):
@@ -352,3 +677,51 @@ class ProjectCloneForm(forms.Form):
 
     def save(self, *args, **kwargs):
         return self.project.clone(**self.cleaned_data)
+
+
+class PipelineRunStepSelectionForm(forms.ModelForm):
+    selected_steps = CheckboxChoiceField(required=False)
+
+    class Meta:
+        model = Run
+        fields = [
+            "selected_steps",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        if not kwargs.get("instance"):
+            raise ValueError("An Run object is required to instantiate this form.")
+
+        super().__init__(*args, **kwargs)
+        pipeline_class = self.instance.pipeline_class
+        choices = self.get_step_choices(pipeline_class)
+        self.fields["selected_steps"].choices = choices
+
+        # All step checkboxes are selected by default unless already defined on the run
+        if not self.instance.selected_steps:
+            self.initial["selected_steps"] = [choice[0] for choice in choices]
+
+    @staticmethod
+    def get_step_choices(pipeline_class):
+        """Return a `choices` list of tuple suitable for a Django ChoiceField."""
+        return [(step.__name__, step.__name__) for step in pipeline_class.get_steps()]
+
+
+class WebhookSubscriptionForm(forms.ModelForm):
+    class Meta:
+        model = WebhookSubscription
+        fields = [
+            "target_url",
+            "trigger_on_each_run",
+            "include_summary",
+            "include_results",
+            "is_active",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        target_url_field = self.fields["target_url"]
+        target_url_field.widget.attrs["class"] = "input"
+
+    def save(self, project):
+        return project.add_webhook_subscription(**self.cleaned_data)

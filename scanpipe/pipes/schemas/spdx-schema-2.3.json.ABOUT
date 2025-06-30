@@ -1,0 +1,15 @@
+about_resource: spdx-schema-2.3.json
+name: spdx-spec
+version: 2.3
+download_url: https://github.com/spdx/spdx-spec/raw/development/v2.3.1/schemas/spdx-schema.json
+description: The Software Package Data Exchange® (SPDX®) specification is a standard format
+  for communicating the components, licenses and copyrights associated with software packages.
+homepage_url: https://spdx.org
+package_url: pkg:github/spdx/spdx-spec@2.3.1?version_prefix=v#schemas/spdx-schema.json
+license_expression: cc-by-3.0
+copyright: Copyright (c) SPDX project contributors
+attribute: yes
+track_changes: yes
+licenses:
+  - key: cc-by-3.0
+    name: Creative Commons Attribution License 3.0

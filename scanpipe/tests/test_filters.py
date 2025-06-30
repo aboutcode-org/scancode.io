@@ -95,6 +95,11 @@ class ScanPipeFilterTest(TestCase):
         filterset = ProjectFilterSet(data={"label": "label2"})
         self.assertEqual(0, len(filterset.qs))
 
+        filterset = ProjectFilterSet(data={"search": "label1"})
+        self.assertEqual([self.project1], list(filterset.qs))
+        filterset = ProjectFilterSet(data={"search": "lab"})
+        self.assertEqual([self.project1], list(filterset.qs))
+
     def test_scanpipe_filters_filter_queryset_empty_values(self):
         resource1 = CodebaseResource.objects.create(
             project=self.project1,
@@ -130,6 +135,30 @@ class ScanPipeFilterTest(TestCase):
         self.assertEqual([resource1], list(filterset.qs))
 
         data = {"copyrights": FilterSetUtilsMixin.empty_value}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([resource2], list(filterset.qs))
+
+    def test_scanpipe_filters_resource_filterset_tag(self):
+        resource1 = CodebaseResource.objects.create(
+            project=self.project1,
+            path="r1",
+            tag="tag1",
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=self.project1,
+            path="r2",
+            tag="tag2",
+        )
+
+        data = {"tag": ""}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([resource1, resource2], list(filterset.qs))
+
+        data = {"tag": "tag1"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([resource1], list(filterset.qs))
+
+        data = {"tag": "tag2"}
         filterset = ResourceFilterSet(data=data)
         self.assertEqual([resource2], list(filterset.qs))
 
@@ -220,11 +249,11 @@ class ScanPipeFilterTest(TestCase):
         d1 = DiscoveredDependency.create_from_data(self.project1, dependency_data1)
         d2 = DiscoveredDependency.create_from_data(self.project1, dependency_data2)
 
-        filterset = DependencyFilterSet(data={"is_resolved": ""})
+        filterset = DependencyFilterSet(data={"is_pinned": ""})
         self.assertEqual(2, len(filterset.qs))
-        filterset = DependencyFilterSet(data={"is_resolved": True})
+        filterset = DependencyFilterSet(data={"is_pinned": True})
         self.assertEqual([d2], list(filterset.qs))
-        filterset = DependencyFilterSet(data={"is_resolved": False})
+        filterset = DependencyFilterSet(data={"is_pinned": False})
         self.assertEqual([d1], list(filterset.qs))
 
         filterset = DependencyFilterSet(data={"type": ""})
@@ -252,7 +281,7 @@ class ScanPipeFilterTest(TestCase):
         inputs = {
             "LICENSE": "(AND: ('name__icontains', 'LICENSE'))",
             "two words": (
-                "(AND: ('name__icontains', 'two'), ('name__icontains', 'words'))"
+                "(OR: ('name__icontains', 'two'), ('name__icontains', 'words'))"
             ),
             "'two words'": "(AND: ('name__icontains', 'two words'))",
             "na me:LICENSE": (
@@ -282,7 +311,7 @@ class ScanPipeFilterTest(TestCase):
         }
 
         for query_string, expected in inputs.items():
-            lookups = parse_query_string_to_lookups(query_string, "icontains", "name")
+            lookups = parse_query_string_to_lookups(query_string, "icontains", ["name"])
             self.assertEqual(expected, str(lookups))
 
     def test_scanpipe_filters_filter_advanced_search_query_string(self):
@@ -319,4 +348,13 @@ class ScanPipeFilterTest(TestCase):
 
         data = {"search": "path^:dir"}
         filterset = ResourceFilterSet(data=data)
+        self.assertEqual(2, len(filterset.qs))
+
+        data = {"search": "'"}  # No closing quotation
+        filterset = ResourceFilterSet(data=data)
+        self.assertFalse(filterset.is_valid())
+        expected_errors = {
+            "search": ["The provided search value is invalid: No closing quotation"]
+        }
+        self.assertEqual(expected_errors, filterset.errors)
         self.assertEqual(2, len(filterset.qs))

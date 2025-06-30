@@ -16,6 +16,12 @@
   </div>
 
   <div class="container is-fluid mb-3">
+    <a href="{% url 'project_dependency_tree' project.slug %}" class="is-pulled-right">
+      <span class="icon">
+        <i class="fa-solid fa-sitemap"></i>
+      </span>
+      <span>View the dependency tree</span>
+    </a>
     <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
       {% include 'scanpipe/includes/list_view_thead.html' %}
       <tbody>
@@ -33,11 +39,11 @@
             <td>
               <a href="?type={{ dependency.type }}" class="is-black-link">{{ dependency.type }}</a>
             </td>
-            <td>
-              {{ dependency.extracted_requirement }}
-            </td>
             <td class="break-normal">
               <a href="?scope={{ dependency.scope }}" class="is-black-link">{{ dependency.scope }}</a>
+            </td>
+            <td>
+              {{ dependency.extracted_requirement }}
             </td>
             <td>
               <a href="?is_runtime={{ dependency.is_runtime }}" class="is-black-link">{{ dependency.is_runtime }}</a>
@@ -46,12 +52,21 @@
               <a href="?is_optional={{ dependency.is_optional }}" class="is-black-link">{{ dependency.is_optional }}</a>
             </td>
             <td>
-              <a href="?is_resolved={{ dependency.is_resolved }}" class="is-black-link">{{ dependency.is_resolved }}</a>
+              <a href="?is_pinned={{ dependency.is_pinned }}" class="is-black-link">{{ dependency.is_pinned }}</a>
+            </td>
+            <td>
+              <a href="?is_direct={{ dependency.is_direct }}" class="is-black-link">{{ dependency.is_direct }}</a>
             </td>
             <td>
               {% if dependency.for_package %}
                 {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
                 <a href="{% url 'package_detail' project.slug dependency.for_package.uuid %}" title="{{ dependency.for_package.purl }}">{{ dependency.for_package.purl }}</a>
+              {% endif %}
+            </td>
+            <td>
+              {% if dependency.resolved_to_package %}
+                {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+                <a href="{% url 'package_detail' project.slug dependency.resolved_to_package.uuid %}" title="{{ dependency.resolved_to_package.purl }}">{{ dependency.resolved_to_package.purl }}</a>
               {% endif %}
             </td>
             <td>
