@@ -570,6 +570,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "sha1",
             "sha256",
             "sha512",
+            "sha1_git",
             "size",
             "status",
             "tag",

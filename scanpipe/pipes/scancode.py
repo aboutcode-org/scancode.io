@@ -767,7 +767,7 @@ def run_scan(location, output_file, run_scan_args):
     """Scan the `location` content and write the results into an `output_file`."""
     _success, results = scancode_run_scan(
         input=shlex.quote(location),
-        processes=get_max_workers(keep_available=1),
+        processes=get_max_workers(keep_available=2),
         quiet=True,
         verbose=False,
         return_results=True,

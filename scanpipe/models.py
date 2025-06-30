@@ -2748,6 +2748,12 @@ class CodebaseResource(
     is_text = models.BooleanField(default=False)
     is_archive = models.BooleanField(default=False)
     is_media = models.BooleanField(default=False)
+    sha1_git = models.CharField(
+        _("SHA1_git"),
+        max_length=40,
+        blank=True,
+        help_text=_("SHA1 git checksum hex-encoded, as in git genreated checksum."),
+    )
     package_data = models.JSONField(
         default=list,
         blank=True,
