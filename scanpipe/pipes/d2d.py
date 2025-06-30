@@ -54,6 +54,7 @@ from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import convert_glob_to_django_regex
+from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
 from scanpipe.pipes import js
@@ -1463,6 +1464,20 @@ def match_resources_with_no_java_source(project, logger=None):
         )
 
 
+def ignore_unmapped_resources_from_config(project, patterns_to_ignore, logger=None):
+    """Ignore unmapped resources for a project using `patterns_to_ignore`."""
+    ignored_resources_count = flag.flag_ignored_patterns(
+        codebaseresources=project.codebaseresources.to_codebase().no_status(),
+        patterns=patterns_to_ignore,
+        status=flag.IGNORED_FROM_CONFIG,
+    )
+    if logger:
+        logger(
+            f"Ignoring {ignored_resources_count:,d} to/ resources with "
+            "ecosystem specific configurations."
+        )
+
+
 def match_unmapped_resources(project, matched_extensions=None, logger=None):
     """
     Match resources with empty status to PurlDB, if unmatched
@@ -1925,7 +1940,10 @@ def map_rust_binaries_with_symbols(project, logger=None):
     )
 
     # Collect source symbols from rust source files
-    rust_from_resources = from_resources.filter(extension=".rs")
+    rust_config = d2d_config.get_ecosystem_config(ecosystem="Rust")
+    rust_from_resources = from_resources.filter(
+        extension__in=rust_config.source_symbol_extensions
+    )
 
     map_binaries_with_symbols(
         project=project,
@@ -1945,7 +1963,10 @@ def map_elfs_binaries_with_symbols(project, logger=None):
     )
 
     # Collect source symbols from elf related source files
-    elf_from_resources = from_resources.filter(extension__in=[".c", ".cpp", ".h"])
+    elf_config = d2d_config.get_ecosystem_config(ecosystem="Elf")
+    elf_from_resources = from_resources.filter(
+        extension__in=elf_config.source_symbol_extensions
+    )
 
     map_binaries_with_symbols(
         project=project,
@@ -1968,8 +1989,9 @@ def map_macho_binaries_with_symbols(project, logger=None):
     )
 
     # Collect source symbols from macos related source files
+    macos_config = d2d_config.get_ecosystem_config(ecosystem="MacOS")
     mac_from_resources = from_resources.filter(
-        extension__in=[".c", ".cpp", ".h", ".m", ".swift"]
+        extension__in=macos_config.source_symbol_extensions,
     )
 
     map_binaries_with_symbols(
@@ -1990,8 +2012,9 @@ def map_winpe_binaries_with_symbols(project, logger=None):
     )
 
     # Collect source symbols from windows related source files
+    windows_config = d2d_config.get_ecosystem_config(ecosystem="Windows")
     windows_from_resources = from_resources.filter(
-        extension__in=[".c", ".cpp", ".h", ".cs"]
+        extension__in=windows_config.source_symbol_extensions,
     )
 
     map_binaries_with_symbols(
@@ -2057,16 +2080,17 @@ def map_javascript_symbols(project, logger=None):
     """Map deployed JavaScript, TypeScript to its sources using symbols."""
     project_files = project.codebaseresources.files()
 
+    js_config = d2d_config.get_ecosystem_config(ecosystem="JavaScript")
     javascript_to_resources = (
         project_files.to_codebase()
         .has_no_relation()
-        .filter(extension__in=[".ts", ".js"])
+        .filter(extension__in=js_config.source_symbol_extensions)
     )
 
     javascript_from_resources = (
         project_files.from_codebase()
         .exclude(path__contains="/test/")
-        .filter(extension__in=[".ts", ".js"])
+        .filter(extension__in=js_config.source_symbol_extensions)
     )
 
     if not (javascript_from_resources.exists() and javascript_to_resources.exists()):
