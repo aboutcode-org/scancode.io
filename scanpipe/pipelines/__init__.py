@@ -182,6 +182,8 @@ class ProjectPipeline(CommonStepsMixin, BasePipeline):
         self.selected_groups = run_instance.selected_groups
         self.selected_steps = run_instance.selected_steps
 
+        self.ecosystem_config = None
+
     @classmethod
     def get_initial_steps(cls):
         """Add the ``download_inputs`` step as an initial step if enabled."""

@@ -24,15 +24,15 @@ from aboutcode.pipeline import optional_step
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
+from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import input
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
-from scanpipe.pipes.d2d_config import DefaultEcosystemConfig
 
 
-class DeployToDevelop(Pipeline, DefaultEcosystemConfig):
+class DeployToDevelop(Pipeline):
     """
     Establish relationships between two code trees: deployment and development.
 
@@ -133,7 +133,7 @@ class DeployToDevelop(Pipeline, DefaultEcosystemConfig):
 
     def load_ecosystem_config(self):
         """Load ecosystem specific configurations for d2d steps for selected options."""
-        d2d.load_ecosystem_config(pipeline=self, options=self.selected_groups)
+        d2d_config.load_ecosystem_config(pipeline=self, options=self.selected_groups)
 
     @optional_step("Ruby")
     def load_ecosystem_config_ruby(self):
@@ -285,12 +285,12 @@ class DeployToDevelop(Pipeline, DefaultEcosystemConfig):
         d2d.handle_dangling_deployed_legal_files(project=self.project, logger=self.log)
         d2d.ignore_unmapped_resources_from_config(
             project=self.project,
-            patterns_to_ignore=self.deployed_resource_path_exclusions,
+            patterns_to_ignore=self.ecosystem_config.deployed_resource_path_exclusions,
             logger=self.log,
         )
         d2d.match_unmapped_resources(
             project=self.project,
-            matched_extensions=self.purldb_resource_extensions,
+            matched_extensions=self.ecosystem_config.purldb_resource_extensions,
             logger=self.log,
         )
         d2d.flag_undeployed_resources(project=self.project)
@@ -326,5 +326,5 @@ class DeployToDevelop(Pipeline, DefaultEcosystemConfig):
         """Update the status for deployed from files with missing license."""
         d2d.flag_deployed_from_resources_with_missing_license(
             self.project,
-            doc_extensions=self.doc_extensions,
+            doc_extensions=self.ecosystem_config.doc_extensions,
         )

@@ -70,15 +70,6 @@ FROM = "from/"
 TO = "to/"
 
 
-ECOSYSTEM_CONFIGS = [
-    d2d_config.DefaultEcosystemConfig,
-    d2d_config.JavaEcosystemConfig,
-    d2d_config.JavaScriptEcosystemConfig,
-    d2d_config.RubyEcosystemConfig,
-    d2d_config.RustEcosystemConfig,
-    d2d_config.GoEcosystemConfig,
-]
-
 
 def get_inputs(project):
     """
@@ -126,55 +117,6 @@ def get_best_path_matches(to_resource, matches):
             return subpath_matches
 
     return matches
-
-
-def load_ecosystem_config(pipeline, options):
-    """
-    Add ecosystem specific configurations for each ecosystem selected
-    as `options` to the `pipeline`.
-    """
-    configs_by_ecosystem = {
-        ecosystem.ecosystem_option: ecosystem for ecosystem in ECOSYSTEM_CONFIGS
-    }
-
-    # Add default configurations which are common accross ecosystems
-    add_ecosystem_config(
-        pipeline=pipeline,
-        configs_by_ecosystem=configs_by_ecosystem,
-        selected_option="Default",
-    )
-
-    # Add configurations for each selected ecosystem
-    for selected_option in options:
-        if selected_option not in configs_by_ecosystem:
-            continue
-
-        add_ecosystem_config(
-            pipeline=pipeline,
-            configs_by_ecosystem=configs_by_ecosystem,
-            selected_option=selected_option,
-        )
-
-
-def add_ecosystem_config(pipeline, configs_by_ecosystem, selected_option):
-    d2d_pipeline_configs = [
-        "purldb_package_extensions",
-        "purldb_resource_extensions",
-        "deployed_resource_path_exclusions",
-    ]
-
-    ecosystem_config = configs_by_ecosystem.get(selected_option)
-
-    for pipeline_config in d2d_pipeline_configs:
-        config_value = getattr(ecosystem_config, pipeline_config)
-        pipeline_config_value = getattr(pipeline, pipeline_config)
-        if config_value:
-            if not pipeline_config_value:
-                new_config_value = config_value
-            else:
-                new_config_value = pipeline_config_value.extend(config_value)
-
-            setattr(pipeline, pipeline_config, new_config_value)
 
 
 def get_from_files_for_scanning(resources):
