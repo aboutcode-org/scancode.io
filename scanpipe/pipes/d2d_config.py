@@ -21,8 +21,8 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 
-from dataclasses import dataclass, field
-
+from dataclasses import dataclass
+from dataclasses import field
 
 
 @dataclass
@@ -127,10 +127,11 @@ def load_ecosystem_config(pipeline, options):
     as `options` to the `pipeline`. These configurations are used for:
     - which resource/package extensions to match to purldb
     - which source files to get source symbols from
-    - which unmapped paths to ignore in deployed binaries 
+    - which unmapped paths to ignore in deployed binaries
     """
     configs_by_ecosystem = {
-        ecosystem.ecosystem_option: ecosystem for ecosystem in ECOSYSTEM_CONFIGS.values()
+        ecosystem.ecosystem_option: ecosystem
+        for ecosystem in ECOSYSTEM_CONFIGS.values()
     }
 
     # Add default configurations which are common accross ecosystems
@@ -148,11 +149,13 @@ def load_ecosystem_config(pipeline, options):
         )
 
 
-def add_ecosystem_config(pipeline_ecosystem_config, configs_by_ecosystem, selected_option):
+def add_ecosystem_config(
+    pipeline_ecosystem_config, configs_by_ecosystem, selected_option
+):
     """
-    Set the `pipeline_ecosystem_config` values from all the individual ecosystem based configurations
-    defined in `configs_by_ecosystem`, based on pipeline `selected_option` which selects an
-    ecosytem.
+    Set the `pipeline_ecosystem_config` values from all the individual ecosystem
+    based configurations defined in `configs_by_ecosystem`, based on pipeline
+    `selected_option` which selects an ecosytem.
     """
     d2d_pipeline_configs = [
         "purldb_package_extensions",
@@ -172,4 +175,3 @@ def add_ecosystem_config(pipeline_ecosystem_config, configs_by_ecosystem, select
                 new_config_value = pipeline_config_value.extend(config_value)
 
             setattr(pipeline_ecosystem_config, config_name, new_config_value)
-

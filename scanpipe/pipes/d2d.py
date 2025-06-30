@@ -54,7 +54,6 @@ from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import convert_glob_to_django_regex
-from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
 from scanpipe.pipes import js
@@ -68,7 +67,6 @@ from scanpipe.pipes import symbols
 
 FROM = "from/"
 TO = "to/"
-
 
 
 def get_inputs(project):

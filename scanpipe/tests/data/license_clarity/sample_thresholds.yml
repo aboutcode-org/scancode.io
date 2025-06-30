@@ -1,0 +1,4 @@
+license_clarity_thresholds:
+  90: ok
+  70: warning
+  40: error

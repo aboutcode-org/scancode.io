@@ -3150,6 +3150,13 @@ class VulnerabilityQuerySetMixin:
     def vulnerable(self):
         return self.filter(~Q(affected_by_vulnerabilities__in=EMPTY_VALUES))
 
+    def vulnerable_ordered(self):
+        return (
+            self.vulnerable()
+            .only_package_url_fields(extra=["affected_by_vulnerabilities"])
+            .order_by_package_url()
+        )
+
 
 class DiscoveredPackageQuerySet(
     VulnerabilityQuerySetMixin,

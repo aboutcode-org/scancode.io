@@ -497,6 +497,10 @@ Optional arguments:
 - ``--fail-level {ERROR,WARNING,MISSING}`` Compliance alert level that will cause the
   command to exit with a non-zero status. Default is ERROR.
 
+- ``--fail-on-vulnerabilities`` Exit with a non-zero status if known vulnerabilities
+  are detected in discovered packages and dependencies.
+  Requires the ``find_vulnerabilities`` pipeline to be executed beforehand.
+
 `$ scanpipe archive-project --project PROJECT`
 ----------------------------------------------
 
