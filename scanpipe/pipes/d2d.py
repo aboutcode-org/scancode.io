@@ -2259,10 +2259,11 @@ def _map_javascript_strings(to_resource, javascript_from_resources, logger):
 
 def map_python_pyx_to_binaries(project, logger=None):
     """Map Cython source to their compiled binaries in ``project``."""
+    python_config = d2d_config.get_ecosystem_config(ecosystem="Python")
     from_resources = (
         project.codebaseresources.files()
         .from_codebase()
-        .filter(extension__endswith=".pyx")
+        .filter(extension__in=python_config.source_symbol_extensions)
     )
     to_resources = (
         project.codebaseresources.files().to_codebase().has_no_relation().elfs()
