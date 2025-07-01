@@ -4,7 +4,7 @@
 
 - Create a new `release-x.x.x` branch
 - Update the version in:
-  - `setup.cfg` (2 entries)
+  - `pyproject.toml` (2 entries)
   - `scancodeio/__init__.py`
   - `CHANGELOG.rst` (set date)
 - Commit and push this branch
