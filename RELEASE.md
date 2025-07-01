@@ -4,7 +4,7 @@
 
 - Create a new `release-x.x.x` branch
 - Update the version in:
-  - `pyproject.toml` (2 entries)
+  - `pyproject.toml`
   - `scancodeio/__init__.py`
   - `CHANGELOG.rst` (set date)
 - Commit and push this branch
@@ -24,7 +24,7 @@
 ```
 cd scancode.io
 source .venv/bin/activate
-pip install build
+python -m pip install build
 python -m build --sdist --wheel --outdir dist/ .
 ```
 

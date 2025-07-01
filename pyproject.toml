@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -109,8 +109,6 @@ dev = [
   "sphinx-rtd-theme==3.0.2",
   "sphinx-rtd-dark-mode==1.3.0",
   "sphinxcontrib-django==2.5",
-  # Release
-  "bumpver==2024.1130"
 ]
 android_analysis = [
   "android_inspector==0.0.1"
@@ -193,16 +191,3 @@ max-complexity = 10
 "scanpipe/pipes/spdx.py" = ["UP006", "UP035"]
 # Allow complexity in management commands
 "scanpipe/management/commands/*" = ["C901"]
-
-[tool.bumpver]
-version_pattern = "MAJOR.MINOR.PATCH"
-current_version = "35.0.0"
-
-[tool.bumpver.file_patterns]
-"pyproject.toml" = [
-  'version = {version}',
-  'current_version = "{version}"'
-]
-"scancodeio/__init__.py" = [
-  "{version}"
-]
