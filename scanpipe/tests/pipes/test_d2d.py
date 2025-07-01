@@ -36,8 +36,10 @@ from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import d2d
+from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import scancode
+from scanpipe.pipes import symbols
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import make_resource_directory
@@ -1531,6 +1533,51 @@ class ScanPipeD2DPipesTest(TestCase):
             ).count(),
         )
 
+    def test_scanpipe_pipes_d2d_map_ruby(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-ruby/to-sentry-delayed_job-5.22.1.gem",
+            self.data / "d2d-ruby/from-sentry-ruby-5.22.1.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_checksum(
+            project=self.project1, checksum_field="sha1", logger=buffer.write
+        )
+        ruby_config = d2d_config.get_ecosystem_config(ecosystem="Ruby")
+        d2d.ignore_unmapped_resources_from_config(
+            project=self.project1,
+            patterns_to_ignore=ruby_config.deployed_resource_path_exclusions,
+            logger=buffer.write,
+        )
+        d2d.flag_undeployed_resources(project=self.project1)
+        self.assertEqual(
+            39,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="sha1"
+            ).count(),
+        )
+        self.assertEqual(
+            0,
+            CodebaseResource.objects.filter(
+                project=self.project1, status="requires-review"
+            ).count(),
+        )
+
     @skipIf(sys.platform == "darwin", "Test is failing on macOS")
     def test_scanpipe_pipes_d2d_map_rust_symbols(self):
         input_dir = self.project1.input_path
@@ -1752,5 +1799,42 @@ class ScanPipeD2DPipesTest(TestCase):
             1,
             self.project1.codebaserelations.filter(
                 map_type="javascript_symbols"
+            ).count(),
+        )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_javascript_strings(self):
+        to_dir = self.project1.codebase_path / "to/project.tar.zst-extract/"
+        to_resource_file = (
+            self.data / "d2d-javascript/strings/cesium/source-decodeI3S.js"
+        )
+        to_dir.mkdir(parents=True)
+        copy_input(to_resource_file, to_dir)
+
+        from_input_location = (
+            self.data / "d2d-javascript/strings/cesium/deployed-decodeI3S.js"
+        )
+        from_dir = self.project1.codebase_path / "from/project.zip/"
+        from_dir.mkdir(parents=True)
+        copy_input(from_input_location, from_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+        symbols.collect_and_store_tree_sitter_symbols_and_strings(
+            project=self.project1,
+        )
+
+        buffer = io.StringIO()
+        d2d.map_javascript_strings(self.project1, logger=buffer.write)
+        expected = (
+            "Mapping 1 JavaScript resources using string "
+            "literals against 1 from/ resources."
+        )
+        self.assertIn(expected, buffer.getvalue())
+
+        self.assertEqual(1, self.project1.codebaserelations.count())
+        self.assertEqual(
+            1,
+            self.project1.codebaserelations.filter(
+                map_type="javascript_strings",
             ).count(),
         )

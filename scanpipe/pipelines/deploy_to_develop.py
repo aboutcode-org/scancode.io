@@ -21,14 +21,11 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import logging
-<<<<<<< HEAD
-=======
-from pathlib import Path
->>>>>>> ca3a1ac0c0147a6f3f59999a67bf586eab9b8a36
 from aboutcode.pipeline import optional_step
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
+from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import input
 from scanpipe.pipes import matchcode
@@ -72,6 +69,8 @@ class DeployToDevelop(Pipeline):
             cls.flag_empty_files,
             cls.flag_whitespace_files,
             cls.flag_ignored_resources,
+            cls.load_ecosystem_config,
+            cls.map_ruby,
             cls.map_about_files,
             cls.map_checksum,
             cls.match_archives_to_purldb,
@@ -80,6 +79,7 @@ class DeployToDevelop(Pipeline):
             cls.map_jar_to_source,
             cls.map_javascript,
             cls.map_javascript_symbols,
+            cls.map_javascript_strings,
             cls.map_elf,
             cls.map_macho,
             cls.map_winpe,
@@ -101,6 +101,7 @@ class DeployToDevelop(Pipeline):
             cls.flag_deployed_from_resources_with_missing_license,
             cls.create_local_files_packages,
         )
+
 
     purldb_package_extensions = [".jar", ".war", ".zip"]
     purldb_resource_extensions = [
@@ -197,6 +198,15 @@ class DeployToDevelop(Pipeline):
         """Flag whitespace files with size less than or equal to 100 byte as ignored."""
         d2d.flag_whitespace_files(project=self.project)
 
+    def load_ecosystem_config(self):
+        """Load ecosystem specific configurations for d2d steps for selected options."""
+        d2d_config.load_ecosystem_config(pipeline=self, options=self.selected_groups)
+
+    @optional_step("Ruby")
+    def map_ruby(self):
+        """Load Ruby specific configurations for d2d steps."""
+        pass
+
     def map_about_files(self):
         """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
         d2d.map_about_files(project=self.project, logger=self.log)
@@ -213,7 +223,7 @@ class DeployToDevelop(Pipeline):
 
         d2d.match_purldb_resources(
             project=self.project,
-            extensions=self.purldb_package_extensions,
+            extensions=self.matchable_package_extensions,
             matcher_func=d2d.match_purldb_package,
             logger=self.log,
         )
@@ -245,6 +255,11 @@ class DeployToDevelop(Pipeline):
     def map_javascript_symbols(self):
         """Map deployed JavaScript, TypeScript to its sources using symbols."""
         d2d.map_javascript_symbols(project=self.project, logger=self.log)
+
+    @optional_step("JavaScript")
+    def map_javascript_strings(self):
+        """Map deployed JavaScript, TypeScript to its sources using string literals."""
+        d2d.map_javascript_strings(project=self.project, logger=self.log)
 
     @optional_step("Elf")
     def map_elf(self):
@@ -291,7 +306,7 @@ class DeployToDevelop(Pipeline):
 
         d2d.match_purldb_resources(
             project=self.project,
-            extensions=self.purldb_resource_extensions,
+            extensions=self.matchable_resource_extensions,
             matcher_func=d2d.match_purldb_resource,
             logger=self.log,
         )
@@ -329,6 +344,7 @@ class DeployToDevelop(Pipeline):
     def perform_house_keeping_tasks(self):
         """
         On deployed side
+            - Ignore specific files based on ecosystem based configurations.
             - PurlDB match files with ``no-java-source`` and empty status,
                 if no match is found update status to ``requires-review``.
             - Update status for uninteresting files.
@@ -339,9 +355,14 @@ class DeployToDevelop(Pipeline):
         """
         d2d.match_resources_with_no_java_source(project=self.project, logger=self.log)
         d2d.handle_dangling_deployed_legal_files(project=self.project, logger=self.log)
+        d2d.ignore_unmapped_resources_from_config(
+            project=self.project,
+            patterns_to_ignore=self.ecosystem_config.deployed_resource_path_exclusions,
+            logger=self.log,
+        )
         d2d.match_unmapped_resources(
             project=self.project,
-            matched_extensions=self.purldb_resource_extensions,
+            matched_extensions=self.ecosystem_config.matchable_resource_extensions,
             logger=self.log,
         )
         d2d.flag_undeployed_resources(project=self.project)
@@ -377,5 +398,5 @@ class DeployToDevelop(Pipeline):
         """Update the status for deployed from files with missing license."""
         d2d.flag_deployed_from_resources_with_missing_license(
             self.project,
-            doc_extensions=self.doc_extensions,
+            doc_extensions=self.ecosystem_config.doc_extensions,
         )

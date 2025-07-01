@@ -49,6 +49,7 @@ from scanpipe.models import WebhookSubscription
 from scanpipe.pipes import flag
 from scanpipe.pipes import purldb
 from scanpipe.tests import filter_warnings
+from scanpipe.tests import make_dependency
 from scanpipe.tests import make_mock_response
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
@@ -1196,9 +1197,7 @@ class ScanPipeManagementCommandTest(TestCase):
             call_command("check-compliance", *options, stderr=out)
         self.assertEqual(cm.exception.code, 1)
         out_value = out.getvalue().strip()
-        expected = (
-            "1 compliance issues detected on this project.\n[packages]\n > ERROR: 1"
-        )
+        expected = "1 compliance issues detected.\n[packages]\n > ERROR: 1"
         self.assertEqual(expected, out_value)
 
         out = StringIO()
@@ -1208,9 +1207,43 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(cm.exception.code, 1)
         out_value = out.getvalue().strip()
         expected = (
-            "2 compliance issues detected on this project."
+            "2 compliance issues detected."
             "\n[packages]\n > ERROR: 1"
             "\n[resources]\n > WARNING: 1"
+        )
+        self.assertEqual(expected, out_value)
+
+    def test_scanpipe_management_command_check_compliance_vulnerabilities(self):
+        project = make_project(name="my_project")
+        package1 = make_package(project, package_url="pkg:generic/name@1.0")
+
+        out = StringIO()
+        options = ["--project", project.name, "--fail-on-vulnerabilities"]
+        with self.assertRaises(SystemExit) as cm:
+            call_command("check-compliance", *options, stdout=out)
+        self.assertEqual(cm.exception.code, 0)
+        out_value = out.getvalue().strip()
+        self.assertEqual("No vulnerabilities found", out_value)
+
+        vulnerability_data = [{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
+        package1.update(affected_by_vulnerabilities=vulnerability_data)
+        make_dependency(
+            project,
+            dependency_uid="dependency1",
+            affected_by_vulnerabilities=vulnerability_data,
+        )
+        out = StringIO()
+        options = ["--project", project.name, "--fail-on-vulnerabilities"]
+        with self.assertRaises(SystemExit) as cm:
+            call_command("check-compliance", *options, stderr=out)
+        self.assertEqual(cm.exception.code, 1)
+        out_value = out.getvalue().strip()
+        expected = (
+            "2 vulnerable records found:\n"
+            "pkg:generic/name@1.0\n"
+            " > VCID-cah8-awtr-aaad\n"
+            "dependency1\n"
+            " > VCID-cah8-awtr-aaad"
         )
         self.assertEqual(expected, out_value)
 

@@ -1,6 +1,21 @@
 Changelog
 =========
 
+v35.1.0 (unreleased)
+--------------------
+
+- Add a ``--fail-on-vulnerabilities`` option in ``check-compliance`` management command.
+  When this option is enabled, the command will exit with a non-zero status if known
+  vulnerabilities are detected in discovered packages and dependencies.
+  Requires the ``find_vulnerabilities`` pipeline to be executed beforehand.
+  https://github.com/aboutcode-org/scancode.io/pull/1702
+
+- Enable ``--license-references`` scan option in the ``scan_single_package`` pipeline.
+  The ``license_references`` and ``license_rule_references`` attributes will now be
+  available in the scan results, including the details about detected licenses and
+  license rules used during the scan.
+  https://github.com/aboutcode-org/scancode.io/issues/1657
+
 v35.0.0 (2025-06-23)
 --------------------
 
@@ -35,6 +50,11 @@ v35.0.0 (2025-06-23)
 
 - Add "Package Compliance Alert" chart in the Policies section.
   https://github.com/aboutcode-org/scancode.io/pull/1699
+
+- Update univers to v31.0.0, catch ``NotImplementedError`` in
+  ``get_unique_unresolved_purls``, and properly log error in project.
+  https://github.com/aboutcode-org/scancode.io/pull/1700
+  https://github.com/aboutcode-org/scancode.io/pull/1701
 
 v34.11.0 (2025-05-02)
 ---------------------
