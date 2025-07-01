@@ -105,6 +105,9 @@ Optional arguments:
 
 - ``--pipeline PIPELINES`` Pipelines names to add on the project.
 
+.. warning::
+    Pipelines are added and are executed in order.
+
 .. tip::
     Use the "pipeline_name:option1,option2" syntax to select optional steps:
 
@@ -137,8 +140,8 @@ Optional arguments:
   of running in the current thread.
   Applies only when ``--execute`` is provided.
 
-.. warning::
-    Pipelines are added and are executed in order.
+- ``--no-global-webhook`` Skip the creation of the global webhook. This option is
+  only useful if a global webhook is defined in the settings.
 
 .. _cli_batch_create:
 
@@ -195,6 +198,9 @@ Optional arguments:
 - ``--async`` Add the pipeline run to the tasks queue for execution by a worker instead
   of running in the current thread.
   Applies only when ``--execute`` is provided.
+
+- ``--create-global-webhook`` Create the global webhook for each project, if enabled in
+  the settings. If not provided, the global webhook subscriptions are not created.
 
 Example: Processing Multiple Docker Images
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -491,6 +497,10 @@ Optional arguments:
 - ``--fail-level {ERROR,WARNING,MISSING}`` Compliance alert level that will cause the
   command to exit with a non-zero status. Default is ERROR.
 
+- ``--fail-on-vulnerabilities`` Exit with a non-zero status if known vulnerabilities
+  are detected in discovered packages and dependencies.
+  Requires the ``find_vulnerabilities`` pipeline to be executed beforehand.
+
 `$ scanpipe archive-project --project PROJECT`
 ----------------------------------------------
 
@@ -542,6 +552,14 @@ Optional arguments:
   For example, to delete all projects created more than one week ago::
 
     scanpipe flush-projects --retain-days 7
+
+- ``--dry-run`` Do not delete any projects; just print the ones that would be flushed.
+
+- ``--label LABELS`` Filter projects by the provided label.
+  Multiple labels can be provided by using this argument multiple times.
+
+- ``--pipeline PIPELINES`` Filter projects by the provided pipeline name.
+  Multiple pipeline name can be provided by using this argument multiple times.
 
 - ``--no-input`` Does not prompt the user for input of any kind.
 

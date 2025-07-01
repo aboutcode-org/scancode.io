@@ -81,6 +81,7 @@ from scanpipe.tests import dependency_data2
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import make_dependency
 from scanpipe.tests import make_message
+from scanpipe.tests import make_mock_response
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_directory
@@ -513,6 +514,16 @@ class ScanPipeModelsTest(TestCase):
         input_source = self.project1.add_input_source(download_url=url_with_fragment)
         self.assertEqual("tag_value", input_source.tag)
 
+    def test_scanpipe_project_model_add_input_source_tag_from_fragment(self):
+        download_url = (
+            "https://download.url/amqp-2.6.1-py2.py3-none-any.whl"
+            "#sha256=aa7f313fb887c91f15474c1229907a04dac0b8135822d6603437803424c0aa59"
+        )
+        source = self.project1.add_input_source(download_url=download_url)
+        self.assertEqual(
+            "sha256=aa7f313fb887c91f15474c1229907a04dac0b813582", source.tag
+        )
+
     def test_scanpipe_project_model_add_downloads(self):
         file_location = self.data / "aboutcode" / "notice.NOTICE"
         copy_input(file_location, self.project1.tmp_path)
@@ -871,7 +882,12 @@ class ScanPipeModelsTest(TestCase):
             project.save(is_clone=True)
             mock_setup_webhook.assert_not_called()
 
-        # Case 3: Global webhook is disabled (Webhook should NOT be called)
+            # Case 3: Skip global webhook (Webhook should NOT be called)
+            project = Project(name="Project with skip")
+            project.save(skip_global_webhook=True)
+            mock_setup_webhook.assert_not_called()
+
+        # Case 4: Global webhook is disabled (Webhook should NOT be called)
         with override_settings(SCANCODEIO_GLOBAL_WEBHOOK=None):
             project = Project(name="No Webhook Project")
             project.save()
@@ -1461,9 +1477,7 @@ class ScanPipeModelsTest(TestCase):
     @mock.patch("requests.sessions.Session.get")
     def test_scanpipe_input_source_model_fetch(self, mock_get):
         download_url = "https://download.url/file.zip"
-        mock_get.return_value = mock.Mock(
-            content=b"\x00", headers={}, status_code=200, url=download_url
-        )
+        mock_get.return_value = make_mock_response(url=download_url)
 
         input_source = self.project1.add_input_source(download_url=download_url)
         destination = input_source.fetch()
@@ -2042,7 +2056,7 @@ class ScanPipeModelsTest(TestCase):
             path="asgiref-3.3.0.whl-extract/asgiref/compatibility.py"
         )
         expected_parent_path = "asgiref-3.3.0.whl-extract/asgiref"
-        self.assertEqual(expected_parent_path, asgiref_resource.parent_path())
+        self.assertEqual(expected_parent_path, asgiref_resource.parent_directory())
         self.assertTrue(asgiref_resource.has_parent())
         expected_parent = self.project_asgiref.codebaseresources.get(
             path="asgiref-3.3.0.whl-extract/asgiref"
@@ -2230,6 +2244,17 @@ class ScanPipeModelsTest(TestCase):
         payload = WebhookSubscription.get_slack_payload(run1)
         self.assertDictEqual(expected_payload, payload)
 
+        run1.set_task_ended(exitcode=1, output="Exception")
+        self.assertEqual(Run.Status.FAILURE, run1.status)
+        payload = WebhookSubscription.get_slack_payload(run1)
+        payload_blocks = payload["attachments"][0]["blocks"]
+        self.assertEqual(2, len(payload_blocks))
+        expected_task_output_block = {
+            "text": {"text": "```Exception```", "type": "mrkdwn"},
+            "type": "section",
+        }
+        self.assertEqual(expected_task_output_block, payload_blocks[1])
+
     def test_scanpipe_discovered_package_model_extract_purl_data(self):
         package_data = {}
         expected = {
@@ -2416,6 +2441,11 @@ class ScanPipeModelsTest(TestCase):
         # Reset the index value
         scanpipe_app.license_policies_index = None
 
+    def test_scanpipe_discovered_package_model_spdx_id(self):
+        package1 = make_package(self.project1, "pkg:type/a")
+        expected = f"SPDXRef-scancodeio-discoveredpackage-{package1.uuid}"
+        self.assertEqual(expected, package1.spdx_id)
+
     def test_scanpipe_model_create_user_creates_auth_token(self):
         basic_user = User.objects.create_user(username="basic_user")
         self.assertTrue(basic_user.auth_token.key)
@@ -2479,13 +2509,18 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual([], list(c.declared_dependencies.all()))
         self.assertEqual([b_c], list(c.resolved_from_dependencies.all()))
 
-    def test_scanpipe_discovered_dependency_model_is_vulnerable_property(self):
+    def test_scanpipe_discovered_package_model_is_vulnerable_property(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
         self.assertFalse(package.is_vulnerable)
         package.update(
             affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
         )
         self.assertTrue(package.is_vulnerable)
+
+    def test_scanpipe_discovered_dependency_model_spdx_id(self):
+        dependency1 = make_dependency(self.project1)
+        expected = f"SPDXRef-scancodeio-discovereddependency-{dependency1.uuid}"
+        self.assertEqual(expected, dependency1.spdx_id)
 
     def test_scanpipe_package_model_integrity_with_toolkit_package_model(self):
         scanpipe_only_fields = [

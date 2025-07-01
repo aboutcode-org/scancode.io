@@ -1,6 +1,6 @@
 <form method="post" action="{% url 'project_settings' project.slug %}">{% csrf_token %}
-  <div class="panel">
-    <p id="general" class="panel-heading py-2 is-size-6">General</p>
+  <div class="panel is-dark">
+    <p id="general" class="panel-heading">General</p>
     <div class="panel-block is-block px-4">
       <div class="field">
         <label class="label" for="{{ form.name.id_for_label }}">
@@ -43,8 +43,8 @@
     </div>
   </div>
 
-  <div class="panel">
-    <p id="webhooks" class="panel-heading py-2 is-size-6">Webhooks</p>
+  <div class="panel is-dark">
+    <p id="webhooks" class="panel-heading">Webhooks</p>
     <div class="panel-block is-block px-4">
       <table class="table mb-1">
         <thead>
@@ -96,8 +96,8 @@
     </div>
   </div>
 
-  <div class="panel">
-    <p id="ignored" class="panel-heading py-2 is-size-6">Ignored</p>
+  <div class="panel is-dark">
+    <p id="ignored" class="panel-heading">Ignored</p>
     <div class="panel-block is-block px-4">
       <div class="field">
         <label class="label" for="{{ form.ignored_patterns.id_for_label }}">
@@ -149,8 +149,8 @@
     </div>
   </div>
 
-  <div class="panel">
-    <p id="policies" class="panel-heading py-2 is-size-6">Policies</p>
+  <div class="panel is-dark">
+    <p id="policies" class="panel-heading">Policies</p>
     <div class="panel-block is-block px-4">
       <div>
         {% if project.policies_enabled %}
@@ -173,8 +173,8 @@
     </div>
   </div>
 
-  <div class="panel">
-    <p id="dejacode" class="panel-heading py-2 is-size-6">DejaCode</p>
+  <div class="panel is-dark">
+    <p id="dejacode" class="panel-heading">DejaCode</p>
     <div class="panel-block is-block px-4">
       <div class="field">
         <label class="label" for="{{ form.product_name.id_for_label }}">
@@ -197,8 +197,8 @@
     </div>
   </div>
 
-  <div class="panel">
-    <p id="attribution" class="panel-heading py-2 is-size-6">Attribution</p>
+  <div class="panel is-dark">
+    <p id="attribution" class="panel-heading">Attribution</p>
     <div class="panel-block is-block px-4">
       <div class="field">
         <label class="label" for="{{ form.attribution_template.id_for_label }}">

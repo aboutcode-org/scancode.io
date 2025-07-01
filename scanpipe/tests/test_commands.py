@@ -48,6 +48,9 @@ from scanpipe.models import Run
 from scanpipe.models import WebhookSubscription
 from scanpipe.pipes import flag
 from scanpipe.pipes import purldb
+from scanpipe.tests import filter_warnings
+from scanpipe.tests import make_dependency
+from scanpipe.tests import make_mock_response
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
@@ -199,6 +202,22 @@ class ScanPipeManagementCommandTest(TestCase):
             "Project other_project created with work directory", out.getvalue()
         )
 
+    @override_settings(SCANCODEIO_GLOBAL_WEBHOOK={"target_url": "https://webhook.url"})
+    @mock.patch.object(Project, "setup_global_webhook")
+    def test_scanpipe_management_command_create_project_no_global_webhook(
+        self, mock_setup_webhook
+    ):
+        out = StringIO()
+        options = ["--no-global-webhook"]
+        call_command("create-project", "my_project", *options, stdout=out)
+        self.assertIn("Project my_project created", out.getvalue())
+        mock_setup_webhook.assert_not_called()
+
+        options = []
+        call_command("create-project", "my_project_v2", *options, stdout=out)
+        self.assertIn("Project my_project_v2 created", out.getvalue())
+        mock_setup_webhook.assert_called()
+
     def test_scanpipe_management_command_batch_create(self):
         expected = "You must provide either --input-directory or --input-list as input."
         with self.assertRaisesMessage(CommandError, expected):
@@ -277,10 +296,32 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual("", input_source3.tag)
         self.assertFalse(input_source3.exists())
 
+    @override_settings(SCANCODEIO_GLOBAL_WEBHOOK={"target_url": "https://webhook.url"})
+    @mock.patch.object(Project, "setup_global_webhook")
+    def test_scanpipe_management_command_batch_create_global_webhook(
+        self, mock_setup_webhook
+    ):
+        input_directory = self.data / "commands" / "batch-create-directory"
+        options = ["--input-directory", str(input_directory)]
+        out = StringIO()
+        call_command("batch-create", *options, stdout=out)
+        self.assertIn("2 projects created.", out.getvalue())
+        mock_setup_webhook.assert_not_called()
+
+        options += [
+            "--create-global-webhook",
+            "--project-name-suffix",
+            "with-webhook",
+        ]
+        out = StringIO()
+        call_command("batch-create", *options, stdout=out)
+        self.assertIn("2 projects created.", out.getvalue())
+        mock_setup_webhook.assert_called()
+
     def test_scanpipe_management_command_add_input_file(self):
         out = StringIO()
 
-        project = Project.objects.create(name="my_project")
+        project = make_project(name="my_project")
         parent_path = Path(__file__).parent
         options = [
             "--input-file",
@@ -307,7 +348,7 @@ class ScanPipeManagementCommandTest(TestCase):
             call_command("add-input", *options, stdout=out)
 
     def test_scanpipe_management_command_add_input_url(self):
-        project = Project.objects.create(name="my_project")
+        project = make_project(name="my_project")
         options = [
             "--input-url",
             "https://example.com/archive.zip",
@@ -329,7 +370,7 @@ class ScanPipeManagementCommandTest(TestCase):
     def test_scanpipe_management_command_add_input_copy_codebase(self):
         out = StringIO()
 
-        project = Project.objects.create(name="my_project")
+        project = make_project(name="my_project")
 
         options = ["--copy-codebase", "non-existing", "--project", project.name]
         expected = "non-existing not found"
@@ -352,10 +393,11 @@ class ScanPipeManagementCommandTest(TestCase):
             expected, sorted([path.name for path in project.codebase_path.iterdir()])
         )
 
+    @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_management_command_add_pipeline(self):
         out = StringIO()
 
-        project = Project.objects.create(name="my_project")
+        project = make_project(name="my_project")
 
         pipelines = [
             self.pipeline_name,
@@ -392,7 +434,7 @@ class ScanPipeManagementCommandTest(TestCase):
     def test_scanpipe_management_command_add_webhook(self):
         out = StringIO()
 
-        project = Project.objects.create(name="my_project")
+        project = make_project(name="my_project")
 
         options = ["https://example.com/webhook"]
         expected = "the following arguments are required: --project"
@@ -447,7 +489,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "analyze_root_filesystem_or_vm_image",
         ]
 
-        project = Project.objects.create(name="my_project")
+        project = make_project(name="my_project")
         for pipeline_name in pipeline_names:
             project.add_pipeline(pipeline_name)
 
@@ -474,7 +516,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(expected, out.getvalue())
 
     def test_scanpipe_management_command_execute(self):
-        project = Project.objects.create(name="my_project")
+        project = make_project(name="my_project")
         options = ["--project", project.name]
 
         out = StringIO()
@@ -518,7 +560,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual("", run3.task_output)
 
     def test_scanpipe_management_command_execute_project_function(self):
-        project = Project.objects.create(name="my_project")
+        project = make_project(name="my_project")
 
         expected = "No pipelines to run on project my_project"
         with self.assertRaisesMessage(CommandError, expected):
@@ -545,7 +587,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIsNone(returned_value)
 
     def test_scanpipe_management_command_status(self):
-        project = Project.objects.create(name="my_project")
+        project = make_project(name="my_project")
         run = project.add_pipeline(self.pipeline_name)
 
         options = ["--project", project.name, "--no-color"]
@@ -618,9 +660,9 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("(addon)", output)
 
     def test_scanpipe_management_command_list_project(self):
-        project1 = Project.objects.create(name="project1")
-        project2 = Project.objects.create(name="project2")
-        project3 = Project.objects.create(name="archived", is_archived=True)
+        project1 = make_project(name="project1")
+        project2 = make_project(name="project2")
+        project3 = make_project(name="archived", is_archived=True)
 
         options = []
         out = StringIO()
@@ -647,7 +689,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn(project3.name, output)
 
     def test_scanpipe_management_command_output(self):
-        project = Project.objects.create(name="my_project")
+        project = make_project(name="my_project")
         make_package(project, package_url="pkg:generic/name@1.0")
 
         out = StringIO()
@@ -715,7 +757,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn('"specVersion": "1.5",', out_value)
 
     def test_scanpipe_management_command_delete_project(self):
-        project = Project.objects.create(name="my_project")
+        project = make_project(name="my_project")
         work_path = project.work_path
         self.assertTrue(work_path.exists())
 
@@ -731,7 +773,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertFalse(work_path.exists())
 
     def test_scanpipe_management_command_archive_project(self):
-        project = Project.objects.create(name="my_project")
+        project = make_project(name="my_project")
         (project.input_path / "input_file").touch()
         (project.codebase_path / "codebase_file").touch()
         self.assertEqual(1, len(Project.get_root_content(project.input_path)))
@@ -758,7 +800,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(0, len(Project.get_root_content(project.codebase_path)))
 
     def test_scanpipe_management_command_reset_project(self):
-        project = Project.objects.create(name="my_project")
+        project = make_project(name="my_project")
         project.add_pipeline("analyze_docker_image")
         CodebaseResource.objects.create(project=project, path="filename.ext")
         DiscoveredPackage.objects.create(project=project)
@@ -794,8 +836,8 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(0, len(Project.get_root_content(project.codebase_path)))
 
     def test_scanpipe_management_command_flush_projects(self):
-        project1 = Project.objects.create(name="project1")
-        project2 = Project.objects.create(name="project2")
+        project1 = make_project("project1")
+        project2 = make_project("project2")
         ten_days_ago = timezone.now() - datetime.timedelta(days=10)
         project2.update(created_date=ten_days_ago)
 
@@ -807,12 +849,56 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(expected, out_value)
         self.assertEqual(project1, Project.objects.get())
 
-        Project.objects.create(name="project2")
+        make_project("project2")
+        out = StringIO()
+        options = ["--no-color", "--no-input", "--dry-run"]
+        call_command("flush-projects", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        expected = "2 projects would be deleted:\n- project2\n- project1"
+        self.assertEqual(expected, out_value)
+
         out = StringIO()
         options = ["--no-color", "--no-input"]
         call_command("flush-projects", *options, stdout=out)
         out_value = out.getvalue().strip()
         expected = "2 projects and their related data have been removed."
+        self.assertEqual(expected, out_value)
+
+    def test_scanpipe_management_command_flush_projects_filters(self):
+        label1 = "label1"
+        label2 = "label2"
+        make_project("project1", labels=[label1])
+        make_project("project2", labels=[label1, label2])
+        make_project("project3", pipelines=["scan_single_package"])
+
+        base_options = ["--no-color", "--no-input", "--dry-run"]
+
+        out = StringIO()
+        options = base_options + ["--label", label1]
+        call_command("flush-projects", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        expected = "2 projects would be deleted:\n- project2\n- project1"
+        self.assertEqual(expected, out_value)
+
+        out = StringIO()
+        options = base_options + ["--label", label2]
+        call_command("flush-projects", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        expected = "1 projects would be deleted:\n- project2"
+        self.assertEqual(expected, out_value)
+
+        out = StringIO()
+        options = base_options + ["--label", label1, "--label", label2]
+        call_command("flush-projects", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        expected = "2 projects would be deleted:\n- project2\n- project1"
+        self.assertEqual(expected, out_value)
+
+        out = StringIO()
+        options = base_options + ["--pipeline", "scan_single_package"]
+        call_command("flush-projects", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        expected = "1 projects would be deleted:\n- project3"
         self.assertEqual(expected, out_value)
 
     def test_scanpipe_management_command_create_user(self):
@@ -925,12 +1011,7 @@ class ScanPipeManagementCommandTest(TestCase):
         mock_get_latest_output.return_value = (
             self.data / "scancode" / "is-npm-1.0.0_summary.json"
         )
-        mock_download_get.return_value = mock.Mock(
-            content=b"\x00",
-            headers={},
-            status_code=200,
-            url=download_url,
-        )
+        mock_download_get.return_value = make_mock_response(url=download_url)
 
         self.assertFalse(WebhookSubscription.objects.exists())
 
@@ -978,12 +1059,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "status": f"updated scannable_uri {scannable_uri_uuid} "
             "scan_status to 'failed'"
         }
-        mock_download_get.return_value = mock.Mock(
-            content=b"\x00",
-            headers={},
-            status_code=200,
-            url=download_url,
-        )
+        mock_download_get.return_value = make_mock_response(url=download_url)
 
         options = [
             "--max-loops",
@@ -1037,18 +1113,8 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
 
         mock_download_get.side_effect = [
-            mock.Mock(
-                content=b"\x00",
-                headers={},
-                status_code=200,
-                url=download_url1,
-            ),
-            mock.Mock(
-                content=b"\x00",
-                headers={},
-                status_code=200,
-                url=download_url2,
-            ),
+            make_mock_response(url=download_url1),
+            make_mock_response(url=download_url2),
         ]
 
         mock_request_post.side_effect = [
@@ -1104,7 +1170,7 @@ class ScanPipeManagementCommandTest(TestCase):
         )
 
     def test_scanpipe_management_command_check_compliance(self):
-        project = Project.objects.create(name="my_project")
+        project = make_project(name="my_project")
 
         out = StringIO()
         options = ["--project", project.name]
@@ -1131,9 +1197,7 @@ class ScanPipeManagementCommandTest(TestCase):
             call_command("check-compliance", *options, stderr=out)
         self.assertEqual(cm.exception.code, 1)
         out_value = out.getvalue().strip()
-        expected = (
-            "1 compliance issues detected on this project.\n[packages]\n > ERROR: 1"
-        )
+        expected = "1 compliance issues detected.\n[packages]\n > ERROR: 1"
         self.assertEqual(expected, out_value)
 
         out = StringIO()
@@ -1143,16 +1207,49 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(cm.exception.code, 1)
         out_value = out.getvalue().strip()
         expected = (
-            "2 compliance issues detected on this project."
+            "2 compliance issues detected."
             "\n[packages]\n > ERROR: 1"
             "\n[resources]\n > WARNING: 1"
         )
         self.assertEqual(expected, out_value)
 
+    def test_scanpipe_management_command_check_compliance_vulnerabilities(self):
+        project = make_project(name="my_project")
+        package1 = make_package(project, package_url="pkg:generic/name@1.0")
+
+        out = StringIO()
+        options = ["--project", project.name, "--fail-on-vulnerabilities"]
+        with self.assertRaises(SystemExit) as cm:
+            call_command("check-compliance", *options, stdout=out)
+        self.assertEqual(cm.exception.code, 0)
+        out_value = out.getvalue().strip()
+        self.assertEqual("No vulnerabilities found", out_value)
+
+        vulnerability_data = [{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
+        package1.update(affected_by_vulnerabilities=vulnerability_data)
+        make_dependency(
+            project,
+            dependency_uid="dependency1",
+            affected_by_vulnerabilities=vulnerability_data,
+        )
+        out = StringIO()
+        options = ["--project", project.name, "--fail-on-vulnerabilities"]
+        with self.assertRaises(SystemExit) as cm:
+            call_command("check-compliance", *options, stderr=out)
+        self.assertEqual(cm.exception.code, 1)
+        out_value = out.getvalue().strip()
+        expected = (
+            "2 vulnerable records found:\n"
+            "pkg:generic/name@1.0\n"
+            " > VCID-cah8-awtr-aaad\n"
+            "dependency1\n"
+            " > VCID-cah8-awtr-aaad"
+        )
+        self.assertEqual(expected, out_value)
+
     def test_scanpipe_management_command_report(self):
-        project1 = make_project("project1")
         label1 = "label1"
-        project1.labels.add(label1)
+        project1 = make_project("project1", labels=[label1])
         make_resource_file(project1, path="file.ext", status=flag.REQUIRES_REVIEW)
         make_project("project2")
 
@@ -1222,6 +1319,7 @@ class ScanPipeManagementCommandMixinTest(TestCase):
         )
         self.assertEqual(notes, project.notes)
 
+    @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_management_command_mixin_create_project_pipelines(self):
         expected = "non-existing is not a valid pipeline"
         with self.assertRaisesMessage(CommandError, expected):
@@ -1288,3 +1386,19 @@ class ScanPipeManagementCommandMixinTest(TestCase):
                     execute=True,
                     run_async=True,
                 )
+
+    @override_settings(SCANCODEIO_GLOBAL_WEBHOOK={"target_url": "https://webhook.url"})
+    @mock.patch.object(Project, "setup_global_webhook")
+    def test_scanpipe_management_command_mixin_create_project_no_global_webhook(
+        self, mock_setup_webhook
+    ):
+        project = self.create_project_command.create_project(
+            name="no global webhook",
+            create_global_webhook=False,
+        )
+        self.assertTrue(project.pk)
+        mock_setup_webhook.assert_not_called()
+
+        project = self.create_project_command.create_project(name="with global webhook")
+        self.assertTrue(project.pk)
+        mock_setup_webhook.assert_called()

@@ -1,0 +1,39 @@
+name: Generate SBOMS
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"
+
+env:
+  INPUTS_PATH: scancode-inputs
+
+jobs:
+  generate-sboms:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Ensure INPUTS_PATH directory exists
+        run: mkdir -p "${{ env.INPUTS_PATH }}"
+
+      - name: Build the Docker image from local Dockerfile
+        run: docker build -t local-image .
+
+      - name: Run pip freeze inside the built Docker container
+        run: docker run --rm local-image pip freeze --all --exclude scancodeio > "${{ env.INPUTS_PATH }}/requirements.txt"
+
+      - name: Collect all .ABOUT files in the scancodeio/ directory
+        run: |
+          mkdir -p "${{ env.INPUTS_PATH }}/about-files"
+          find scancodeio/ -type f -name "*.ABOUT" -exec cp {} "${{ env.INPUTS_PATH }}/about-files/" \;
+
+      - name: Resolve the dependencies using ScanCode-action
+        uses: aboutcode-org/scancode-action@main
+        with:
+          pipelines: "resolve_dependencies:DynamicResolver"
+          inputs-path: ${{ env.INPUTS_PATH }}
+          scancodeio-repo-branch: main

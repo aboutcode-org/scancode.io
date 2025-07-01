@@ -26,6 +26,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
+from datetime import timezone
 from pathlib import Path
 from typing import List  # Python 3.8 compatibility
 
@@ -125,7 +126,7 @@ class CreationInfo:
     Format: YYYY-MM-DDThh:mm:ssZ
     """
     created: str = field(
-        default_factory=lambda: datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds")
     )
 
     def as_dict(self):

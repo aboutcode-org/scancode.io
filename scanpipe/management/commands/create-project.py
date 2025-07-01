@@ -39,24 +39,15 @@ class Command(
 
     def handle(self, *args, **options):
         self.verbosity = options["verbosity"]
-        name = options["name"]
-        pipelines = options["pipelines"]
-        input_files = options["input_files"]
-        input_urls = options["input_urls"]
-        copy_from = options["copy_codebase"]
-        notes = options["notes"]
-        labels = options["labels"]
-        execute = options["execute"]
-        run_async = options["async"]
-
         self.create_project(
-            name=name,
-            pipelines=pipelines,
-            input_files=input_files,
-            input_urls=input_urls,
-            copy_from=copy_from,
-            notes=notes,
-            labels=labels,
-            execute=execute,
-            run_async=run_async,
+            name=options["name"],
+            pipelines=options["pipelines"],
+            input_files=options["input_files"],
+            input_urls=options["input_urls"],
+            copy_from=options["copy_codebase"],
+            notes=options["notes"],
+            labels=options["labels"],
+            execute=options["execute"],
+            run_async=options["async"],
+            create_global_webhook=not options["no_global_webhook"],
         )

@@ -224,10 +224,14 @@ class JSONResultsGenerator:
         return json.dumps(data, indent=2, cls=DjangoJSONEncoder)
 
     def get_headers(self, project):
+        from scanpipe.api.serializers import ProjectMessageSerializer
         from scanpipe.api.serializers import RunSerializer
 
         runs = project.runs.all()
         runs = RunSerializer(runs, many=True, exclude_fields=("url", "project"))
+
+        messages = project.projectmessages.all()
+        messages = ProjectMessageSerializer(messages, many=True)
 
         other_tools = [f"pkg:pypi/scancode-toolkit@{scancode_toolkit_version}"]
 
@@ -242,6 +246,7 @@ class JSONResultsGenerator:
             "settings": project.settings,
             "input_sources": project.get_inputs_with_source(),
             "runs": runs.data,
+            "messages": messages.data,
             "extra_data": project.extra_data,
         }
         yield self.encode(headers)
@@ -366,9 +371,11 @@ def add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     """
     worksheet = workbook.add_worksheet(worksheet_name)
     worksheet.set_default_row(height=14)
+    worksheet.freeze_panes(1, 0)  # Freeze the header row
+    cell_format = workbook.add_format({"font_size": 10})
 
     header = list(fields) + ["xlsx_errors"]
-    worksheet.write_row(row=0, col=0, data=header)
+    worksheet.write_row(row=0, col=0, data=header, cell_format=cell_format)
 
     errors_count = 0
     errors_col_index = len(fields) - 1  # rows and cols are zero-indexed
@@ -391,12 +398,22 @@ def add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
                 row_errors.append(error)
 
             if value:
-                worksheet.write_string(row_index, col_index, str(value))
+                worksheet.write_string(
+                    row=row_index,
+                    col=col_index,
+                    string=str(value),
+                    cell_format=cell_format,
+                )
 
         if row_errors:
             errors_count += len(row_errors)
             row_errors = "\n".join(row_errors)
-            worksheet.write_string(row_index, errors_col_index, row_errors)
+            worksheet.write_string(
+                row=row_index,
+                col=errors_col_index,
+                string=row_errors,
+                cell_format=cell_format,
+            )
 
     return errors_count
 
@@ -550,21 +567,11 @@ def to_xlsx(project):
 
 
 def add_vulnerabilities_sheet(workbook, project):
-    vulnerable_packages_queryset = (
-        DiscoveredPackage.objects.project(project)
-        .vulnerable()
-        .only_package_url_fields(extra=["affected_by_vulnerabilities"])
-        .order_by_package_url()
-    )
-    vulnerable_dependencies_queryset = (
-        DiscoveredDependency.objects.project(project)
-        .vulnerable()
-        .only_package_url_fields(extra=["affected_by_vulnerabilities"])
-        .order_by_package_url()
-    )
+    vulnerable_packages = project.discoveredpackages.vulnerable_ordered()
+    vulnerable_dependencies = project.discovereddependencies.vulnerable_ordered()
     vulnerable_querysets = [
-        vulnerable_packages_queryset,
-        vulnerable_dependencies_queryset,
+        vulnerable_packages,
+        vulnerable_dependencies,
     ]
 
     vulnerability_fields = [
