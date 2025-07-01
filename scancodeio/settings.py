@@ -375,7 +375,7 @@ MEDIA_ROOT = os.path.join(str(ROOT_DIR), "media")
 
 # Package storage settings
 
-ENABLE_PACKAGE_STORAGE = env.bool("ENABLE_PACKAGE_STORAGE", default=False)
+ENABLE_LOCAL_PACKAGE_STORAGE = env.bool("ENABLE_LOCAL_PACKAGE_STORAGE", default=False)
 
 # Third-party apps
 
