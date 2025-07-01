@@ -483,6 +483,7 @@ MAP_TYPE_CHOICES = (
     ("about_file", "about file"),
     ("java_to_class", "java to class"),
     ("jar_to_source", "jar to source"),
+    ("javascript_strings", "js strings"),
     ("javascript_symbols", "js symbols"),
     ("js_compiled", "js compiled"),
     ("js_colocation", "js colocation"),
