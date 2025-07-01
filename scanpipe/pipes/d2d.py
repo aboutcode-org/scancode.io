@@ -55,6 +55,7 @@ from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import convert_glob_to_django_regex
+from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
 from scanpipe.pipes import js
@@ -63,6 +64,7 @@ from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
 from scanpipe.pipes import resolve
 from scanpipe.pipes import scancode
+from scanpipe.pipes import stringmap
 from scanpipe.pipes import symbolmap
 from scanpipe.pipes import symbols
 
@@ -1464,6 +1466,20 @@ def match_resources_with_no_java_source(project, logger=None):
         )
 
 
+def ignore_unmapped_resources_from_config(project, patterns_to_ignore, logger=None):
+    """Ignore unmapped resources for a project using `patterns_to_ignore`."""
+    ignored_resources_count = flag.flag_ignored_patterns(
+        codebaseresources=project.codebaseresources.to_codebase().no_status(),
+        patterns=patterns_to_ignore,
+        status=flag.IGNORED_FROM_CONFIG,
+    )
+    if logger:
+        logger(
+            f"Ignoring {ignored_resources_count:,d} to/ resources with "
+            "ecosystem specific configurations."
+        )
+
+
 def match_unmapped_resources(project, matched_extensions=None, logger=None):
     """
     Match resources with empty status to PurlDB, if unmatched
@@ -1926,7 +1942,10 @@ def map_rust_binaries_with_symbols(project, logger=None):
     )
 
     # Collect source symbols from rust source files
-    rust_from_resources = from_resources.filter(extension=".rs")
+    rust_config = d2d_config.get_ecosystem_config(ecosystem="Rust")
+    rust_from_resources = from_resources.filter(
+        extension__in=rust_config.source_symbol_extensions
+    )
 
     map_binaries_with_symbols(
         project=project,
@@ -1946,7 +1965,10 @@ def map_elfs_binaries_with_symbols(project, logger=None):
     )
 
     # Collect source symbols from elf related source files
-    elf_from_resources = from_resources.filter(extension__in=[".c", ".cpp", ".h"])
+    elf_config = d2d_config.get_ecosystem_config(ecosystem="Elf")
+    elf_from_resources = from_resources.filter(
+        extension__in=elf_config.source_symbol_extensions
+    )
 
     map_binaries_with_symbols(
         project=project,
@@ -1969,8 +1991,9 @@ def map_macho_binaries_with_symbols(project, logger=None):
     )
 
     # Collect source symbols from macos related source files
+    macos_config = d2d_config.get_ecosystem_config(ecosystem="MacOS")
     mac_from_resources = from_resources.filter(
-        extension__in=[".c", ".cpp", ".h", ".m", ".swift"]
+        extension__in=macos_config.source_symbol_extensions,
     )
 
     map_binaries_with_symbols(
@@ -1991,8 +2014,9 @@ def map_winpe_binaries_with_symbols(project, logger=None):
     )
 
     # Collect source symbols from windows related source files
+    windows_config = d2d_config.get_ecosystem_config(ecosystem="Windows")
     windows_from_resources = from_resources.filter(
-        extension__in=[".c", ".cpp", ".h", ".cs"]
+        extension__in=windows_config.source_symbol_extensions,
     )
 
     map_binaries_with_symbols(
@@ -2058,16 +2082,17 @@ def map_javascript_symbols(project, logger=None):
     """Map deployed JavaScript, TypeScript to its sources using symbols."""
     project_files = project.codebaseresources.files()
 
+    js_config = d2d_config.get_ecosystem_config(ecosystem="JavaScript")
     javascript_to_resources = (
         project_files.to_codebase()
         .has_no_relation()
-        .filter(extension__in=[".ts", ".js"])
+        .filter(extension__in=js_config.source_symbol_extensions)
     )
 
     javascript_from_resources = (
         project_files.from_codebase()
         .exclude(path__contains="/test/")
-        .filter(extension__in=[".ts", ".js"])
+        .filter(extension__in=js_config.source_symbol_extensions)
     )
 
     if not (javascript_from_resources.exists() and javascript_to_resources.exists()):
@@ -2143,6 +2168,89 @@ def _map_javascript_symbols(to_resource, javascript_from_resources, logger):
             to_resource=to_resource,
             map_type="javascript_symbols",
             extra_data={"jsd_similarity_score": similarity},
+        )
+        to_resource.update(status=flag.MAPPED)
+        return 1
+    return 0
+
+
+def map_javascript_strings(project, logger=None):
+    """Map deployed JavaScript, TypeScript to its sources using string literals."""
+    project_files = project.codebaseresources.files()
+
+    javascript_to_resources = (
+        project_files.to_codebase()
+        .has_no_relation()
+        .filter(extension__in=[".ts", ".js"])
+        .exclude(extra_data={})
+    )
+
+    javascript_from_resources = (
+        project_files.from_codebase()
+        .exclude(path__contains="/test/")
+        .filter(extension__in=[".ts", ".js"])
+        .exclude(extra_data={})
+    )
+
+    if not (javascript_from_resources.exists() and javascript_to_resources.exists()):
+        return
+
+    javascript_from_resources_count = javascript_from_resources.count()
+    javascript_to_resources_count = javascript_to_resources.count()
+    if logger:
+        logger(
+            f"Mapping {javascript_to_resources_count:,d} JavaScript resources"
+            f" using string literals against {javascript_from_resources_count:,d}"
+            " from/ resources."
+        )
+
+    resource_iterator = javascript_to_resources.iterator(chunk_size=2000)
+    progress = LoopProgress(javascript_to_resources_count, logger)
+
+    resource_mapped = 0
+    for to_resource in progress.iter(resource_iterator):
+        resource_mapped += _map_javascript_strings(
+            to_resource, javascript_from_resources, logger
+        )
+    if logger:
+        logger(f"{resource_mapped:,d} resource mapped using strings")
+
+
+def _map_javascript_strings(to_resource, javascript_from_resources, logger):
+    """
+    Map a deployed JavaScript resource to its source using string literals and
+    return 1 if match is found otherwise return 0.
+    """
+    ignoreable_string_threshold = 5
+    to_strings = to_resource.extra_data.get("source_strings")
+    to_strings_set = set(to_strings)
+
+    if not to_strings or len(to_strings_set) < ignoreable_string_threshold:
+        return 0
+
+    best_matching_score = 0
+    best_match = None
+    for source_js in javascript_from_resources:
+        from_strings = source_js.extra_data.get("source_strings")
+        from_strings_set = set(from_strings)
+        if not from_strings or len(from_strings_set) < ignoreable_string_threshold:
+            continue
+
+        is_match, similarity = stringmap.match_source_strings_to_deployed(
+            source_strings=from_strings,
+            deployed_strings=to_strings,
+        )
+
+        if is_match and similarity > best_matching_score:
+            best_matching_score = similarity
+            best_match = source_js
+
+    if best_match:
+        pipes.make_relation(
+            from_resource=best_match,
+            to_resource=to_resource,
+            map_type="javascript_strings",
+            extra_data={"js_string_map_score": similarity},
         )
         to_resource.update(status=flag.MAPPED)
         return 1

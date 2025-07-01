@@ -10,6 +10,12 @@ v35.1.0 (unreleased)
   Requires the ``find_vulnerabilities`` pipeline to be executed beforehand.
   https://github.com/aboutcode-org/scancode.io/pull/1702
 
+- Enable ``--license-references`` scan option in the ``scan_single_package`` pipeline.
+  The ``license_references`` and ``license_rule_references`` attributes will now be
+  available in the scan results, including the details about detected licenses and
+  license rules used during the scan.
+  https://github.com/aboutcode-org/scancode.io/issues/1657
+
 - Add a new step to the ``DeployToDevelop`` pipeline, ``match_python``, to match
   Cython source files (.pyx) to their compiled binaries.
   https://github.com/aboutcode-org/scancode.io/pull/1703
