@@ -16,7 +16,7 @@ v35.1.0 (unreleased)
   license rules used during the scan.
   https://github.com/aboutcode-org/scancode.io/issues/1657
 
-- Add a new step to the ``DeployToDevelop`` pipeline, ``match_python``, to match
+- Add a new step to the ``DeployToDevelop`` pipeline, ``map_python``, to match
   Cython source files (.pyx) to their compiled binaries.
   https://github.com/aboutcode-org/scancode.io/pull/1703
 

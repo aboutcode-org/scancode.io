@@ -47,7 +47,6 @@ from extractcode import EXTRACT_SUFFIX
 from go_inspector.plugin import collect_and_parse_symbols
 from packagedcode.npm import NpmPackageJsonHandler
 from rust_inspector.binary import collect_and_parse_rust_symbols
-from source_inspector.symbols_tree_sitter import get_tree_and_language_info
 from summarycode.classify import LEGAL_STARTS_ENDS
 
 from aboutcode.pipeline import LoopProgress
@@ -2259,6 +2258,8 @@ def _map_javascript_strings(to_resource, javascript_from_resources, logger):
 
 def map_python_pyx_to_binaries(project, logger=None):
     """Map Cython source to their compiled binaries in ``project``."""
+    from source_inspector.symbols_tree_sitter import get_tree_and_language_info
+
     python_config = d2d_config.get_ecosystem_config(ecosystem="Python")
     from_resources = (
         project.codebaseresources.files()
@@ -2278,7 +2279,7 @@ def map_python_pyx_to_binaries(project, logger=None):
             logger(f"Error parsing binary symbols at: {resource.location_path!r} {e!r}")
 
     for resource in from_resources:
-        # open Cython source file, create AST, parse it for function definitions
+        # Open Cython source file, create AST, parse it for function definitions
         # and save them in a list
         tree, _ = get_tree_and_language_info(resource.location)
         function_definitions = [

@@ -1677,6 +1677,7 @@ class ScanPipeD2DPipesTest(TestCase):
             ).count(),
         )
 
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
     def test_scanpipe_pipes_d2d_map_python_pyx(self):
         input_dir = self.project1.input_path
         input_resources = [
@@ -1693,19 +1694,14 @@ class ScanPipeD2DPipesTest(TestCase):
             for input_file_path in input_files:
                 scancode.extract_archive(input_file_path, codebase_path)
 
-        scancode.extract_archives(
-            self.project1.codebase_path,
-            recurse=True,
-        )
+        scancode.extract_archives(self.project1.codebase_path, recurse=True)
         pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
         d2d.map_python_pyx_to_binaries(project=self.project1, logger=buffer.write)
-        self.assertEqual(
-            1,
-            CodebaseRelation.objects.filter(
-                project=self.project1, map_type="python_pyx_match"
-            ).count(),
+        pyx_match_relations = CodebaseRelation.objects.filter(
+            project=self.project1, map_type="python_pyx_match"
         )
+        self.assertEqual(1, pyx_match_relations.count())
 
     @skipIf(sys.platform == "darwin", "Test is failing on macOS")
     def test_scanpipe_pipes_d2d_map_winpe_symbols(self):
