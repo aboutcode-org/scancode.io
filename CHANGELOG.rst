@@ -1,11 +1,17 @@
 Changelog
 =========
 
-v35.1.0 (unreleased)
+v35.1.0 (2025-07-02)
 --------------------
 
 - Replace the ``setup.py``/``setup.cfg`` by ``pyproject.toml`` file.
   https://github.com/aboutcode-org/scancode.io/issues/1608
+
+- Update scancode-toolkit to v32.4.0. See CHANGELOG for updates:
+  https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.4.0
+  Adds a new ``git_sha1`` attribute to the ``CodebaseResource`` model as this
+  is now computed and returned from the ``scancode-toolkit`` ``--info`` plugin.
+  https://github.com/aboutcode-org/scancode.io/pull/1708
 
 - Add a ``--fail-on-vulnerabilities`` option in ``check-compliance`` management command.
   When this option is enabled, the command will exit with a non-zero status if known
@@ -22,12 +28,6 @@ v35.1.0 (unreleased)
 - Add a new step to the ``DeployToDevelop`` pipeline, ``map_python``, to match
   Cython source files (.pyx) to their compiled binaries.
   https://github.com/aboutcode-org/scancode.io/pull/1703
-
-- Update scancode-toolkit to v32.4.0. See CHANGELOG for updates:
-  https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.4.0
-  Adds a new ``git_sha1`` attribute to the ``CodebaseResource`` model as this
-  is now computed and returned from the ``scancode-toolkit`` ``--info`` plugin.
-  https://github.com/aboutcode-org/scancode.io/pull/1708
 
 v35.0.0 (2025-06-23)
 --------------------
