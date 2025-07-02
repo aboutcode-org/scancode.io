@@ -28,6 +28,7 @@ from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import scancode
 from scanpipe.pipes.fetch import store_package_archive
 from scanpipe.pipes.input import copy_inputs
+from scanpipe.pipes.input import is_archive
 
 logger = logging.getLogger(__name__)
 
@@ -71,11 +72,8 @@ class ScanCodebase(Pipeline):
         stored_files = []
         package_files = [
             resource.path
-            for resource in self.project.codebaseresources.filter(
-                extension__in=[
-                    ".whl", ".tar.gz", ".zip", ".deb", ".rpm", ".apk", ".nupkg", ".msi",
-                    ".exe"]
-            )
+            for resource in self.project.codebaseresources.all()
+            if is_archive(resource.path)
         ]
 
         for package_path in package_files:

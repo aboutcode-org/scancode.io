@@ -21,6 +21,8 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import logging
+from pathlib import Path
+
 from aboutcode.pipeline import optional_step
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
@@ -32,6 +34,7 @@ from scanpipe.pipes import matchcode
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
 from scanpipe.pipes.fetch import store_package_archive
+from scanpipe.pipes.input import is_archive
 
 logger = logging.getLogger(__name__)
 
@@ -142,9 +145,8 @@ class DeployToDevelop(Pipeline):
         stored_files = []
         package_files = [
             resource.path
-            for resource in self.project.codebaseresources.filter(
-                extension__in=self.purldb_package_extensions
-            )
+            for resource in self.project.codebaseresources.all()
+            if is_archive(resource.path)
         ]
 
         for package_path in package_files:

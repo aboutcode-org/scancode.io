@@ -21,16 +21,15 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import logging
-<<<<<<< HEAD
-=======
 from pathlib import Path
->>>>>>> ca3a1ac0c0147a6f3f59999a67bf586eab9b8a36
-from aboutcode.pipeline import optional_step
+
 from aboutcode.pipeline import group
+from aboutcode.pipeline import optional_step
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import resolve
 from scanpipe.pipes import scancode
 from scanpipe.pipes.fetch import store_package_archive
+from scanpipe.pipes.input import is_archive
 
 logger = logging.getLogger(__name__)
 class ResolveDependencies(ScanCodebase):
@@ -119,11 +118,8 @@ class ResolveDependencies(ScanCodebase):
         stored_files = []
         package_files = [
             resource.path
-            for resource in self.project.codebaseresources.filter(
-                extension__in=[
-                    ".whl", ".tar.gz", ".zip", ".deb", ".rpm", ".apk", ".nupkg"
-                    ]
-            )
+            for resource in self.project.codebaseresources.all()
+            if is_archive(resource.path)
         ]
 
         for package_path in package_files:

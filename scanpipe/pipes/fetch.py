@@ -28,6 +28,7 @@ import os
 import re
 import subprocess
 import tempfile
+from cgi import parse_header_parameters
 from collections import namedtuple
 from pathlib import Path
 from urllib.parse import unquote
@@ -41,8 +42,6 @@ import requests
 from commoncode import command
 from commoncode.hash import multi_checksums
 from commoncode.text import python_safe_name
-from packageurl import PackageURL
-from packageurl.contrib import purl2url
 from plugincode.location_provider import get_location
 from requests import auth as request_auth
 
@@ -363,10 +362,6 @@ def fetch_git_repo(url, to=None):
     )
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> ca3a1ac0c0147a6f3f59999a67bf586eab9b8a36
 def store_package_archive(project, url=None, file_path=None):
     """
     Store a package in PackageArchive and link it to DownloadedPackage.
@@ -441,10 +436,6 @@ def store_package_archive(project, url=None, file_path=None):
         return None
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> ca3a1ac0c0147a6f3f59999a67bf586eab9b8a36
 SCHEME_TO_FETCHER_MAPPING = {
     "http": fetch_http,
     "https": fetch_http,
@@ -461,7 +452,7 @@ def get_fetcher(url):
         return fetch_git_repo
 
     if url.startswith("pkg:"):
-        return fetch_package_url
+        return fetch_url
 
     # Not using `urlparse(url).scheme` for the scheme as it converts to lower case.
     scheme = url.split("://")[0]

@@ -21,13 +21,9 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import logging
-<<<<<<< HEAD
-from scanpipe.pipelines.analyze_root_filesystem import RootFS
-=======
 from pathlib import Path
 
-from scanpipe.pipelines import RootFS
->>>>>>> ca3a1ac0c0147a6f3f59999a67bf586eab9b8a36
+from scanpipe.pipelines.analyze_root_filesystem import RootFS
 from scanpipe.pipes import docker
 from scanpipe.pipes import rootfs
 from scanpipe.pipes.fetch import store_package_archive

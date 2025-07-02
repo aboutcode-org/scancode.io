@@ -30,6 +30,7 @@ from scanpipe.pipes import flag
 from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
 from scanpipe.pipes.fetch import store_package_archive
+from scanpipe.pipes.input import is_archive
 
 
 class RootFS(Pipeline):
@@ -110,9 +111,8 @@ class RootFS(Pipeline):
 
         package_files = [
             resource.path
-            for resource in self.project.codebaseresources.filter(
-                extension__in=[".deb", ".apk"]
-            )
+            for resource in self.project.codebaseresources.all()
+            if is_archive(resource.path)
         ]
         for package_path in package_files:
             if not Path(package_path).exists():
