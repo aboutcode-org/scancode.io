@@ -2,16 +2,16 @@
   "headers": [
     {
       "tool_name": "scancode-toolkit",
-      "tool_version": "v34.8.2-2-gdde1fc5b",
+      "tool_version": "32.4.0",
       "options": {
         "--info": true,
         "--package": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "start_timestamp": "2024-10-30T103759.040160",
-      "end_timestamp": "2024-10-30T103759.204940",
-      "output_format_version": "4.0.0",
-      "duration": 0.1647934913635254,
+      "start_timestamp": "2025-06-30T195757.062637",
+      "end_timestamp": "2025-06-30T195757.374873",
+      "output_format_version": "4.1.0",
+      "duration": 0.31224966049194336,
       "message": null,
       "errors": [],
       "warnings": [],
@@ -19,11 +19,11 @@
         "system_environment": {
           "operating_system": "linux",
           "cpu_architecture": "64",
-          "platform": "Linux-5.15.0-124-generic-x86_64-with-glibc2.35",
-          "platform_version": "#134-Ubuntu SMP Fri Sep 27 20:20:17 UTC 2024",
-          "python_version": "3.10.12 (main, Sep 11 2024, 15:47:36) [GCC 11.4.0]"
+          "platform": "Linux-5.15.0-141-generic-x86_64-with-glibc2.35",
+          "platform_version": "#151-Ubuntu SMP Sun May 18 21:35:19 UTC 2025",
+          "python_version": "3.10.12 (main, May 27 2025, 17:12:29) [GCC 11.4.0]"
         },
-        "spdx_license_list_version": "3.25",
+        "spdx_license_list_version": "3.26",
         "files_count": 3
       }
     }
@@ -91,7 +91,7 @@
       "repository_homepage_url": "https://www.npmjs.com/package/test",
       "repository_download_url": "https://registry.npmjs.org/test/-/test-0.1.0.tgz",
       "api_data_url": "https://registry.npmjs.org/test/0.1.0",
-      "package_uid": "pkg:npm/test@0.1.0?uuid=ac80a119-4b74-40cd-93e4-679195145723",
+      "package_uid": "pkg:npm/test@0.1.0?uuid=46bc67bc-2555-4267-847b-97bb17199aa3",
       "datafile_paths": [
         "package_assembly_codebase.tar.gz-extract/test/get_package_resources/package.json"
       ],
@@ -114,6 +114,7 @@
       "sha1": null,
       "md5": null,
       "sha256": null,
+      "sha1_git": null,
       "mime_type": null,
       "file_type": null,
       "programming_language": null,
@@ -141,6 +142,7 @@
       "sha1": null,
       "md5": null,
       "sha256": null,
+      "sha1_git": null,
       "mime_type": null,
       "file_type": null,
       "programming_language": null,
@@ -168,6 +170,7 @@
       "sha1": null,
       "md5": null,
       "sha256": null,
+      "sha1_git": null,
       "mime_type": null,
       "file_type": null,
       "programming_language": null,
@@ -195,6 +198,7 @@
       "sha1": "d8d1136ce3c69ea3662f55d3da246ed5013a696e",
       "md5": "b4da04c192e6366bc56087fcf9c634b7",
       "sha256": "386f5dfcc92eef62a974d8c2338e59c7d744fb5422ff5b1c63c7c2a5bbb8816b",
+      "sha1_git": "03f92338feac700d265b75c4fe479f1980517324",
       "mime_type": "application/json",
       "file_type": "JSON data",
       "programming_language": null,
@@ -274,7 +278,7 @@
         }
       ],
       "for_packages": [
-        "pkg:npm/test@0.1.0?uuid=ac80a119-4b74-40cd-93e4-679195145723"
+        "pkg:npm/test@0.1.0?uuid=46bc67bc-2555-4267-847b-97bb17199aa3"
       ],
       "files_count": 0,
       "dirs_count": 0,
@@ -292,6 +296,7 @@
       "sha1": null,
       "md5": null,
       "sha256": null,
+      "sha1_git": null,
       "mime_type": "inode/x-empty",
       "file_type": "empty",
       "programming_language": null,
@@ -303,7 +308,7 @@
       "is_script": false,
       "package_data": [],
       "for_packages": [
-        "pkg:npm/test@0.1.0?uuid=ac80a119-4b74-40cd-93e4-679195145723"
+        "pkg:npm/test@0.1.0?uuid=46bc67bc-2555-4267-847b-97bb17199aa3"
       ],
       "files_count": 0,
       "dirs_count": 0,
@@ -321,6 +326,7 @@
       "sha1": null,
       "md5": null,
       "sha256": null,
+      "sha1_git": null,
       "mime_type": null,
       "file_type": null,
       "programming_language": null,
@@ -348,6 +354,7 @@
       "sha1": null,
       "md5": null,
       "sha256": null,
+      "sha1_git": null,
       "mime_type": "inode/x-empty",
       "file_type": "empty",
       "programming_language": null,
