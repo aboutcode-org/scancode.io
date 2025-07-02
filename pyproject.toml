@@ -56,7 +56,7 @@ dependencies = [
   # Docker
   "container-inspector==33.0.0",
   # ScanCode-toolkit
-  "scancode-toolkit[packages]==32.3.3",
+  "scancode-toolkit[packages]==32.4.0",
   "extractcode[full]==31.0.0",
   "commoncode==32.3.0",
   "Beautifulsoup4[chardet]==4.13.4",
@@ -69,7 +69,7 @@ dependencies = [
   "rust-inspector==0.1.0",
   "binary-inspector==0.1.2",
   "python-inspector==0.14.0",
-  "source-inspector==0.6.1; sys_platform != 'darwin' and platform_machine != 'arm64'",
+  "source-inspector==0.7.0; sys_platform != 'darwin' and platform_machine != 'arm64'",
   "aboutcode-toolkit==11.1.1",
   # Utilities
   "XlsxWriter==3.2.5",

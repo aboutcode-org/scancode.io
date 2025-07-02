@@ -131,6 +131,10 @@ ECOSYSTEM_CONFIGS = {
         ecosystem_option="Windows",
         source_symbol_extensions=[".c", ".cpp", ".h", ".cs"],
     ),
+    "Python": EcosystemConfig(
+        ecosystem_option="Python",
+        source_symbol_extensions=[".pyx", ".pxd"],
+    ),
 }
 
 

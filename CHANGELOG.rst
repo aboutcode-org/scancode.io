@@ -19,6 +19,16 @@ v35.1.0 (unreleased)
   license rules used during the scan.
   https://github.com/aboutcode-org/scancode.io/issues/1657
 
+- Add a new step to the ``DeployToDevelop`` pipeline, ``map_python``, to match
+  Cython source files (.pyx) to their compiled binaries.
+  https://github.com/aboutcode-org/scancode.io/pull/1703
+
+- Update scancode-toolkit to v32.4.0. See CHANGELOG for updates:
+  https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.4.0
+  Adds a new ``git_sha1`` attribute to the ``CodebaseResource`` model as this
+  is now computed and returned from the ``scancode-toolkit`` ``--info`` plugin.
+  https://github.com/aboutcode-org/scancode.io/pull/1708
+
 v35.0.0 (2025-06-23)
 --------------------
 

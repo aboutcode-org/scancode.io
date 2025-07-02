@@ -1678,6 +1678,32 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
     @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_python_pyx(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-python/to-intbitset.whl",
+            self.data / "d2d-python/from-intbitset.tar.gz",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(self.project1.codebase_path, recurse=True)
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_python_pyx_to_binaries(project=self.project1, logger=buffer.write)
+        pyx_match_relations = CodebaseRelation.objects.filter(
+            project=self.project1, map_type="python_pyx_match"
+        )
+        self.assertEqual(1, pyx_match_relations.count())
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
     def test_scanpipe_pipes_d2d_map_winpe_symbols(self):
         input_dir = self.project1.input_path
         input_resources = [

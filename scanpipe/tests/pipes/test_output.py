@@ -301,6 +301,7 @@ class ScanPipeOutputPipesTest(TestCase):
             "sha1",
             "sha256",
             "sha512",
+            "sha1_git",
             "is_binary",
             "is_text",
             "is_archive",
@@ -337,7 +338,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
         project = Project.objects.get(name="asgiref")
         package = project.discoveredpackages.get(
-            uuid="b5035991-5b4b-40be-b68b-1c9c528078cd"
+            uuid="80e083f1-7d05-432e-96f8-e6dfd9e494f0"
         )
 
         package.other_license_expression_spdx = "Apache-2.0 AND LicenseRef-test"
