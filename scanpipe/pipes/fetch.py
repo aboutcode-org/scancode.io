@@ -28,8 +28,8 @@ import os
 import re
 import subprocess
 import tempfile
-from email.message import Message
 from collections import namedtuple
+from email.message import Message
 from pathlib import Path
 from urllib.parse import unquote
 from urllib.parse import urlparse
