@@ -533,7 +533,7 @@ File content
 This displays the content of a ``project`` file resource provided using the
 ``?path=<resource_path>`` argument.
 
-``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/file_content/?path=setup.py``
+``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/file_content/?path=filename.ext``
 
 .. code-block:: json
 

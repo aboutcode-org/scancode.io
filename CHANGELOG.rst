@@ -4,6 +4,9 @@ Changelog
 v35.1.0 (unreleased)
 --------------------
 
+- Replace the ``setup.py``/``setup.cfg`` by ``pyproject.toml`` file.
+  https://github.com/aboutcode-org/scancode.io/issues/1608
+
 - Add a ``--fail-on-vulnerabilities`` option in ``check-compliance`` management command.
   When this option is enabled, the command will exit with a non-zero status if known
   vulnerabilities are detected in discovered packages and dependencies.
