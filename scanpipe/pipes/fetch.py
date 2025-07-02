@@ -28,6 +28,7 @@ import os
 import re
 import subprocess
 import tempfile
+import cgi
 from cgi import parse_header
 from collections import namedtuple
 from pathlib import Path
