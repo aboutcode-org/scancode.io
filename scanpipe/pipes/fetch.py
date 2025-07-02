@@ -28,7 +28,7 @@ import os
 import re
 import subprocess
 import tempfile
-from cgi import parse_header
+from email.message import Message
 from collections import namedtuple
 from pathlib import Path
 from urllib.parse import unquote
@@ -130,7 +130,9 @@ def fetch_http(uri, to=None):
         raise requests.RequestException
 
     content_disposition = response.headers.get("content-disposition", "")
-    _, params = parse_header(content_disposition)
+    msg = Message()
+    msg['Content-Disposition'] = content_disposition
+    params = dict(msg.get_params(header='content-disposition'))
     filename = params.get("filename")
     if not filename:
         # Using `response.url` in place of provided `Scan.uri` since the former
