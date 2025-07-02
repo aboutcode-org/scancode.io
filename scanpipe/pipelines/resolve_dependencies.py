@@ -32,6 +32,8 @@ from scanpipe.pipes.fetch import store_package_archive
 from scanpipe.pipes.input import is_archive
 
 logger = logging.getLogger(__name__)
+
+
 class ResolveDependencies(ScanCodebase):
     """
     Resolve dependencies from package manifests and lockfiles.
@@ -55,7 +57,7 @@ class ResolveDependencies(ScanCodebase):
             cls.get_manifest_inputs,
             cls.store_manifest_files,
             cls.scan_for_application_packages,
-             cls.store_package_archives,
+            cls.store_package_archives,
             cls.create_packages_and_dependencies,
             cls.get_packages_from_manifest,
             cls.create_resolved_packages,
@@ -68,8 +70,10 @@ class ResolveDependencies(ScanCodebase):
     def store_manifest_files(self):
         """Store manifest files locally if enabled."""
         if not self.project.use_local_storage:
-            logger.info(f"Local storage is disabled for project: {self.project.name}."
-                         "Skipping file storage.")
+            logger.info(
+                f"Local storage is disabled for project: {self.project.name}."
+                "Skipping file storage."
+            )
             return []
 
         logger.info(f"Storing manifest files for project: {self.project.name}")
@@ -93,7 +97,6 @@ class ResolveDependencies(ScanCodebase):
 
         return stored_files
 
-
     @group("StaticResolver")
     def scan_for_application_packages(self):
         """
@@ -110,8 +113,10 @@ class ResolveDependencies(ScanCodebase):
     def store_package_archives(self):
         """Store package archives locally if enabled."""
         if not self.project.use_local_storage:
-            logger.info(f"Local storage is disabled for project: {self.project.name}."
-                         "Skipping package storage.")
+            logger.info(
+                f"Local storage is disabled for project: {self.project.name}."
+                "Skipping package storage."
+            )
             return []
 
         logger.info(f"Storing package archives for project: {self.project.name}")

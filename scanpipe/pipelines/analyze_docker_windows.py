@@ -31,6 +31,8 @@ from scanpipe.pipes.fetch import store_package_archive
 from scanpipe.pipes.input import is_archive
 
 logger = logging.getLogger(__name__)
+
+
 class DockerWindows(Docker):
     """Analyze Windows Docker images."""
 
@@ -59,8 +61,10 @@ class DockerWindows(Docker):
     def store_package_archives(self):
         """Store identified package archives for Windows images."""
         if not self.project.use_local_storage:
-            logger.info(f"Local storage is disabled for project: {self.project.name}."
-                         "Skipping package storage.")
+            logger.info(
+                f"Local storage is disabled for project: {self.project.name}."
+                "Skipping package storage."
+            )
             return []
 
         logger.info(f"Storing package archives for project: {self.project.name}")

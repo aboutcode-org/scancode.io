@@ -89,29 +89,31 @@ class Docker(RootFS):
     def store_package_archives(self):
         """Store identified package archives."""
         if not self.project.use_local_storage:
-           logger.info(f"Local storage is disabled for project: {self.project.name}."
-                        "Skipping package storage.")
-           return []
+            logger.info(
+                f"Local storage is disabled for project: {self.project.name}."
+                "Skipping package storage."
+            )
+            return []
 
         logger.info(
-           f"Storing package archives for project: {self.project.name},"
-             "files: {self.package_files}"
+            f"Storing package archives for project: {self.project.name},"
+            "files: {self.package_files}"
         )
         stored_files = []
         for package_path in self.package_files:
             if not Path(package_path).exists():
-               logger.error(f"Invalid or missing package path: {package_path}")
-               continue
+                logger.error(f"Invalid or missing package path: {package_path}")
+                continue
             package_path_str = str(package_path)
             logger.info(f"Storing package archive: {package_path_str}")
             try:
                 result = store_package_archive(
-                  self.project, url=None, file_path=package_path_str
+                    self.project, url=None, file_path=package_path_str
                 )
                 logger.info(f"Stored package archive {package_path_str}: {result}")
                 stored_files.append(result)
             except Exception as e:
-                   logger.error(f"Failed to store {package_path_str}: {e}")
+                logger.error(f"Failed to store {package_path_str}: {e}")
         return stored_files
 
     def collect_and_create_system_packages(self):

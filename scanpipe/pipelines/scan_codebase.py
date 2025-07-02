@@ -32,6 +32,7 @@ from scanpipe.pipes.input import is_archive
 
 logger = logging.getLogger(__name__)
 
+
 class ScanCodebase(Pipeline):
     """
     Scan a codebase for application packages, licenses, and copyrights.
@@ -64,8 +65,10 @@ class ScanCodebase(Pipeline):
     def store_package_archives(self):
         """Store package archives locally if enabled."""
         if not self.project.use_local_storage:
-            logger.info(f"Local storage is disabled for project: {self.project.name}."
-                         "Skipping package storage.")
+            logger.info(
+                f"Local storage is disabled for project: {self.project.name}."
+                "Skipping package storage."
+            )
             return []
 
         logger.info(f"Storing package archives for project: {self.project.name}")

@@ -38,6 +38,7 @@ from scanpipe.pipes.input import is_archive
 
 logger = logging.getLogger(__name__)
 
+
 class DeployToDevelop(Pipeline):
     """
     Establish relationships between two code trees: deployment and development.
@@ -105,7 +106,6 @@ class DeployToDevelop(Pipeline):
             cls.create_local_files_packages,
         )
 
-
     purldb_package_extensions = [".jar", ".war", ".zip"]
     purldb_resource_extensions = [
         ".map",
@@ -138,7 +138,8 @@ class DeployToDevelop(Pipeline):
         if not self.project.use_local_storage:
             logger.info(
                 f"Local storage is disabled for project: {self.project.name}."
-                  "Skipping package storage.")
+                "Skipping package storage."
+            )
             return []
 
         logger.info(f"Storing package archives for project: {self.project.name}")

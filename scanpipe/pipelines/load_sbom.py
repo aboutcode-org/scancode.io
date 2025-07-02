@@ -29,6 +29,7 @@ from scanpipe.pipes.fetch import store_package_archive
 
 logger = logging.getLogger(__name__)
 
+
 class LoadSBOM(ScanCodebase):
     """
     Load package data from one or more SBOMs.
@@ -62,8 +63,10 @@ class LoadSBOM(ScanCodebase):
     def store_sbom_files(self):
         """Store SBOM files locally if enabled."""
         if not self.project.use_local_storage:
-            logger.info(f"Local storage is disabled for project: {self.project.name}."
-                         "Skipping file storage.")
+            logger.info(
+                f"Local storage is disabled for project: {self.project.name}."
+                "Skipping file storage."
+            )
             return []
 
         logger.info(f"Storing SBOM files for project: {self.project.name}")

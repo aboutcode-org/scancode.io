@@ -92,9 +92,11 @@ class ScanSinglePackage(Pipeline):
         downloaded packages.
         """
         if not self.project.use_local_storage:
-           self.log(f"Local storage is disabled for project: {self.project.name}."
-                     "Skipping package storage.")
-           return []
+            self.log(
+                f"Local storage is disabled for project: {self.project.name}."
+                "Skipping package storage."
+            )
+            return []
         logger.info(
             f"Starting store_package for project: {self.project},"
             "input: {self.input_path}"

@@ -29,6 +29,7 @@ from scanpipe.pipes.fetch import store_package_archive
 
 logger = logging.getLogger(__name__)
 
+
 class LoadInventory(Pipeline):
     """
     Load JSON/XLSX inventory files generated with ScanCode-toolkit or ScanCode.io.
@@ -56,8 +57,10 @@ class LoadInventory(Pipeline):
     def store_inventory_files(self):
         """Store input inventory files locally if enabled."""
         if not self.project.use_local_storage:
-            logger.info(f"Local storage is disabled for project: {self.project.name}."
-                         "Skipping file storage.")
+            logger.info(
+                f"Local storage is disabled for project: {self.project.name}."
+                "Skipping file storage."
+            )
             return []
 
         logger.info(f"Storing inventory files for project: {self.project.name}")

@@ -99,9 +99,11 @@ class RootFS(Pipeline):
         them for detected system packages if configured to do so.
         """
         if not self.project.use_local_storage:
-           self.log(f"Local storage is disabled for project: {self.project.name}."
-                    "Skipping package storage.")
-           return []
+            self.log(
+                f"Local storage is disabled for project: {self.project.name}."
+                "Skipping package storage."
+            )
+            return []
         if not self.env.get("STORE_DOWNLOADED_PACKAGES", True):
             self.log("Package storage skipped: STORE_DOWNLOADED_PACKAGES is disabled")
             return

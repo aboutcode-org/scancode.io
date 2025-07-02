@@ -28,7 +28,7 @@ import os
 import re
 import subprocess
 import tempfile
-from cgi import parse_header_parameters
+from cgi import parse_header
 from collections import namedtuple
 from pathlib import Path
 from urllib.parse import unquote
@@ -130,7 +130,7 @@ def fetch_http(uri, to=None):
         raise requests.RequestException
 
     content_disposition = response.headers.get("content-disposition", "")
-    _, params = parse_header_parameters(content_disposition)
+    _, params = parse_header(content_disposition)
     filename = params.get("filename")
     if not filename:
         # Using `response.url` in place of provided `Scan.uri` since the former
@@ -472,21 +472,18 @@ def fetch_url(url, project=None):
     logger.info(f'Fetching "{url}" using {fetcher.__name__}')
     downloaded = fetcher(url)
     if (
-    project
-    and getattr(settings, "ENABLE_PACKAGE_STORAGE", False)
-    and project.use_local_storage
+        project
+        and getattr(settings, "ENABLE_PACKAGE_STORAGE", False)
+        and project.use_local_storage
     ):
-      logger.info(
-        f"Storing package for project: {project.name} with url={url}"
-        )
-      store_package_archive(project, url, downloaded.path)
+        logger.info(f"Storing package for project: {project.name} with url={url}")
+        store_package_archive(project, url, downloaded.path)
     elif project and not project.use_local_storage:
         logger.info(
-          f"Skipping package storage for project: {project.name} "
-          "(local storage disabled)"
+            f"Skipping package storage for project: {project.name} "
+            "(local storage disabled)"
         )
     return downloaded
-
 
 
 def fetch_urls(urls, project=None):

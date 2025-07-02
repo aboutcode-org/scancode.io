@@ -598,10 +598,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         ),
     )
 
-
     labels = TaggableManager(through=UUIDTaggedItem)
-    use_local_storage = models.BooleanField(default=False,
-                         help_text="Store packages locally if enabled.")
+    use_local_storage = models.BooleanField(
+        default=False, help_text="Store packages locally if enabled."
+    )
     objects = ProjectQuerySet.as_manager()
 
     class Meta:

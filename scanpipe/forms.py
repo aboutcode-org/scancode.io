@@ -180,8 +180,9 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
         self.fields["pipeline"].choices = pipeline_choices
 
         self.fields["use_local_storage"].label = "Store packages locally"
-        self.fields["use_local_storage"].help_text = "If checked, " \
-        "packages will be stored on the local filesystem."
+        self.fields["use_local_storage"].help_text = (
+            "If checked, " "packages will be stored on the local filesystem."
+        )
         self.fields["use_local_storage"].widget.attrs.update({"class": "checkbox"})
 
     def clean_name(self):

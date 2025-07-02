@@ -28,6 +28,7 @@ from scanpipe.pipes import scancode
 
 logger = logging.getLogger(__name__)
 
+
 class InspectPackages(ScanCodebase):
     """
     Inspect a codebase for packages and pre-resolved dependencies.
@@ -68,7 +69,6 @@ class InspectPackages(ScanCodebase):
             package_only=True,
             progress_logger=self.log,
         )
-
 
     @group("StaticResolver")
     def resolve_dependencies(self):
