@@ -15,7 +15,7 @@
         "--summary": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "output_format_version": "4.0.0",
+      "output_format_version": "4.1.0",
       "message": null,
       "errors": [],
       "warnings": [],
@@ -26,7 +26,7 @@
     }
   ],
   "summary": {
-    "declared_license_expression": "lgpl-3.0 OR mpl-2.0",
+    "declared_license_expression": "lgpl-3.0 AND mpl-2.0",
     "license_clarity_score": {
       "score": 0,
       "declared_license": false,
@@ -83,36 +83,58 @@
       "vcs_url": "git+https://github.com/LibrePDF/OpenPDF",
       "copyright": null,
       "holder": null,
-      "declared_license_expression": "mpl-2.0 OR lgpl-3.0",
-      "declared_license_expression_spdx": "MPL-2.0 OR LGPL-3.0-only",
+      "declared_license_expression": "lgpl-3.0 AND mpl-2.0",
+      "declared_license_expression_spdx": "LGPL-3.0-only AND MPL-2.0",
       "license_detections": [
         {
-          "license_expression": "mpl-2.0 OR lgpl-3.0",
-          "license_expression_spdx": "MPL-2.0 OR LGPL-3.0-only",
+          "license_expression": "lgpl-3.0",
+          "license_expression_spdx": "LGPL-3.0-only",
           "matches": [
             {
-              "license_expression": "mpl-2.0 OR lgpl-3.0",
-              "license_expression_spdx": "MPL-2.0 OR LGPL-3.0-only",
+              "license_expression": "lgpl-3.0",
+              "license_expression_spdx": "LGPL-3.0-only",
               "from_file": "codebase/openpdf-parent-1.3.11.pom.xml",
               "start_line": 1,
-              "end_line": 4,
+              "end_line": 2,
               "matcher": "1-hash",
               "score": 100.0,
-              "matched_length": 33,
+              "matched_length": 18,
               "match_coverage": 100.0,
               "rule_relevance": 100,
-              "rule_identifier": "mpl-2.0_or_lgpl-3.0_5.RULE",
-              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_or_lgpl-3.0_5.RULE",
-              "matched_text": "- name: GNU General Lesser Public License (LGPL) version 3.0\n  url: http://www.gnu.org/licenses/lgpl.html\n- name: Mozilla Public License Version 2.0\n  url: http://www.mozilla.org/MPL/2.0/"
+              "rule_identifier": "lgpl-3.0_321.RULE",
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-3.0_321.RULE",
+              "matched_text": "name: GNU General Lesser Public License (LGPL) version 3.0\nurl: http://www.gnu.org/licenses/lgpl.html"
             }
           ],
-          "identifier": "mpl_2_0_or_lgpl_3_0-a9aa482b-e2ed-6dfc-05b1-ddb52881b339"
+          "identifier": "lgpl_3_0-2721bf50-8a99-c98b-f086-118786e9d9b7"
+        },
+        {
+          "license_expression": "mpl-2.0",
+          "license_expression_spdx": "MPL-2.0",
+          "matches": [
+            {
+              "license_expression": "mpl-2.0",
+              "license_expression_spdx": "MPL-2.0",
+              "from_file": "codebase/openpdf-parent-1.3.11.pom.xml",
+              "start_line": 1,
+              "end_line": 2,
+              "matcher": "1-hash",
+              "score": 100.0,
+              "matched_length": 15,
+              "match_coverage": 100.0,
+              "rule_relevance": 100,
+              "rule_identifier": "mpl-2.0_140.RULE",
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_140.RULE",
+              "matched_text": "name: Mozilla Public License Version 2.0\nurl: http://www.mozilla.org/MPL/2.0/"
+            }
+          ],
+          "identifier": "mpl_2_0-ede8f51f-2d21-3c64-b12f-b9cbaafaef1e"
         }
       ],
       "other_license_expression": null,
       "other_license_expression_spdx": null,
       "other_license_detections": [],
-      "extracted_license_statement": "- name: GNU General Lesser Public License (LGPL) version 3.0\n  url: http://www.gnu.org/licenses/lgpl.html\n- name: Mozilla Public License Version 2.0\n  url: http://www.mozilla.org/MPL/2.0/\n",
+      "extracted_license_statement": "- license:\n    name: GNU General Lesser Public License (LGPL) version 3.0\n    url: http://www.gnu.org/licenses/lgpl.html\n- license:\n    name: Mozilla Public License Version 2.0\n    url: http://www.mozilla.org/MPL/2.0/\n",
       "notice_text": null,
       "source_packages": [
         "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?classifier=sources"
@@ -287,6 +309,52 @@
   ],
   "license_detections": [
     {
+      "identifier": "lgpl_3_0-2721bf50-8a99-c98b-f086-118786e9d9b7",
+      "license_expression": "lgpl-3.0",
+      "license_expression_spdx": "LGPL-3.0-only",
+      "detection_count": 1,
+      "reference_matches": [
+        {
+          "license_expression": "lgpl-3.0",
+          "license_expression_spdx": "LGPL-3.0-only",
+          "from_file": "codebase/openpdf-parent-1.3.11.pom.xml",
+          "start_line": 1,
+          "end_line": 2,
+          "matcher": "1-hash",
+          "score": 100.0,
+          "matched_length": 18,
+          "match_coverage": 100.0,
+          "rule_relevance": 100,
+          "rule_identifier": "lgpl-3.0_321.RULE",
+          "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-3.0_321.RULE",
+          "matched_text": "name: GNU General Lesser Public License (LGPL) version 3.0\nurl: http://www.gnu.org/licenses/lgpl.html"
+        }
+      ]
+    },
+    {
+      "identifier": "mpl_2_0-ede8f51f-2d21-3c64-b12f-b9cbaafaef1e",
+      "license_expression": "mpl-2.0",
+      "license_expression_spdx": "MPL-2.0",
+      "detection_count": 1,
+      "reference_matches": [
+        {
+          "license_expression": "mpl-2.0",
+          "license_expression_spdx": "MPL-2.0",
+          "from_file": "codebase/openpdf-parent-1.3.11.pom.xml",
+          "start_line": 1,
+          "end_line": 2,
+          "matcher": "1-hash",
+          "score": 100.0,
+          "matched_length": 15,
+          "match_coverage": 100.0,
+          "rule_relevance": 100,
+          "rule_identifier": "mpl-2.0_140.RULE",
+          "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_140.RULE",
+          "matched_text": "name: Mozilla Public License Version 2.0\nurl: http://www.mozilla.org/MPL/2.0/"
+        }
+      ]
+    },
+    {
       "identifier": "mpl_2_0_or_lgpl_3_0-7b07902d-2b7f-9c7e-aa21-3ae2142743ba",
       "license_expression": "mpl-2.0 OR lgpl-3.0",
       "license_expression_spdx": "MPL-2.0 OR LGPL-3.0-only",
@@ -306,29 +374,6 @@
           "rule_identifier": "mpl-2.0_or_lgpl-3.0_1.RULE",
           "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_or_lgpl-3.0_1.RULE",
           "matched_text": "    <licenses>\n        <license>\n            <name>GNU General Lesser Public License (LGPL) version 3.0</name>\n            <url>http://www.gnu.org/licenses/lgpl.html</url>\n            <distribution>repo</distribution>\n        </license>\n        <license>\n            <name>Mozilla Public License Version 2.0</name>\n            <url>http://www.mozilla.org/MPL/2.0/</url>\n            <distribution>repo</distribution>\n        </license>\n    </licenses>"
-        }
-      ]
-    },
-    {
-      "identifier": "mpl_2_0_or_lgpl_3_0-a9aa482b-e2ed-6dfc-05b1-ddb52881b339",
-      "license_expression": "mpl-2.0 OR lgpl-3.0",
-      "license_expression_spdx": "MPL-2.0 OR LGPL-3.0-only",
-      "detection_count": 1,
-      "reference_matches": [
-        {
-          "license_expression": "mpl-2.0 OR lgpl-3.0",
-          "license_expression_spdx": "MPL-2.0 OR LGPL-3.0-only",
-          "from_file": "codebase/openpdf-parent-1.3.11.pom.xml",
-          "start_line": 1,
-          "end_line": 4,
-          "matcher": "1-hash",
-          "score": 100.0,
-          "matched_length": 33,
-          "match_coverage": 100.0,
-          "rule_relevance": 100,
-          "rule_identifier": "mpl-2.0_or_lgpl-3.0_5.RULE",
-          "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_or_lgpl-3.0_5.RULE",
-          "matched_text": "- name: GNU General Lesser Public License (LGPL) version 3.0\n  url: http://www.gnu.org/licenses/lgpl.html\n- name: Mozilla Public License Version 2.0\n  url: http://www.mozilla.org/MPL/2.0/"
         }
       ]
     }
@@ -429,6 +474,66 @@
   ],
   "license_rule_references": [
     {
+      "license_expression": "lgpl-3.0",
+      "identifier": "lgpl-3.0_321.RULE",
+      "language": "en",
+      "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-3.0_321.RULE",
+      "is_license_text": false,
+      "is_license_notice": false,
+      "is_license_reference": false,
+      "is_license_tag": true,
+      "is_license_intro": false,
+      "is_license_clue": false,
+      "is_required_phrase": false,
+      "skip_for_required_phrase_generation": false,
+      "is_continuous": false,
+      "is_builtin": true,
+      "is_from_license": false,
+      "is_synthetic": false,
+      "length": 18,
+      "relevance": 100,
+      "minimum_coverage": 50,
+      "referenced_filenames": [],
+      "ignorable_copyrights": [],
+      "ignorable_holders": [],
+      "ignorable_authors": [],
+      "ignorable_urls": [
+        "http://www.gnu.org/licenses/lgpl.html"
+      ],
+      "ignorable_emails": [],
+      "text": "- name: GNU General Lesser Public License (LGPL) version 3.0\nurl: http://www.gnu.org/licenses/lgpl.html"
+    },
+    {
+      "license_expression": "mpl-2.0",
+      "identifier": "mpl-2.0_140.RULE",
+      "language": "en",
+      "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_140.RULE",
+      "is_license_text": false,
+      "is_license_notice": false,
+      "is_license_reference": false,
+      "is_license_tag": true,
+      "is_license_intro": false,
+      "is_license_clue": false,
+      "is_required_phrase": false,
+      "skip_for_required_phrase_generation": false,
+      "is_continuous": false,
+      "is_builtin": true,
+      "is_from_license": false,
+      "is_synthetic": false,
+      "length": 15,
+      "relevance": 100,
+      "minimum_coverage": 50,
+      "referenced_filenames": [],
+      "ignorable_copyrights": [],
+      "ignorable_holders": [],
+      "ignorable_authors": [],
+      "ignorable_urls": [
+        "http://www.mozilla.org/MPL/2.0/"
+      ],
+      "ignorable_emails": [],
+      "text": "- name: {{Mozilla Public License Version 2.0}}\nurl: http://www.mozilla.org/MPL/2.0/"
+    },
+    {
       "license_expression": "mpl-2.0 OR lgpl-3.0",
       "identifier": "mpl-2.0_or_lgpl-3.0_1.RULE",
       "language": "en",
@@ -439,6 +544,8 @@
       "is_license_tag": true,
       "is_license_intro": false,
       "is_license_clue": false,
+      "is_required_phrase": false,
+      "skip_for_required_phrase_generation": false,
       "is_continuous": false,
       "is_builtin": true,
       "is_from_license": false,
@@ -456,35 +563,6 @@
       ],
       "ignorable_emails": [],
       "text": "<licenses>\n    <license>\n        <name>GNU General Lesser Public License (LGPL) version 3.0</name>\n        <url>http://www.gnu.org/licenses/lgpl.html</url>\n        <distribution>repo</distribution>\n    </license>\n    <license>\n        <name>Mozilla Public License Version 2.0</name>\n        <url>http://www.mozilla.org/MPL/2.0/</url>\n        <distribution>repo</distribution>\n    </license>\n</licenses>"
-    },
-    {
-      "license_expression": "mpl-2.0 OR lgpl-3.0",
-      "identifier": "mpl-2.0_or_lgpl-3.0_5.RULE",
-      "language": "en",
-      "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_or_lgpl-3.0_5.RULE",
-      "is_license_text": false,
-      "is_license_notice": false,
-      "is_license_reference": false,
-      "is_license_tag": true,
-      "is_license_intro": false,
-      "is_license_clue": false,
-      "is_continuous": false,
-      "is_builtin": true,
-      "is_from_license": false,
-      "is_synthetic": false,
-      "length": 33,
-      "relevance": 100,
-      "minimum_coverage": 0,
-      "referenced_filenames": [],
-      "ignorable_copyrights": [],
-      "ignorable_holders": [],
-      "ignorable_authors": [],
-      "ignorable_urls": [
-        "http://www.gnu.org/licenses/lgpl.html",
-        "http://www.mozilla.org/MPL/2.0/"
-      ],
-      "ignorable_emails": [],
-      "text": "name: {{GNU General Lesser Public License (LGPL) version 3.0}}\nurl: http://www.gnu.org/licenses/lgpl.html\nname: {{Mozilla Public License Version 2.0}}\nurl: http://www.mozilla.org/MPL/2.0/"
     }
   ],
   "files": [
@@ -497,21 +575,23 @@
       "sha1": null,
       "md5": null,
       "sha256": null,
+      "sha1_git": null,
       "programming_language": null,
       "is_binary": false,
       "is_text": false,
       "is_archive": false,
       "is_media": false,
       "is_source": false,
-      "package_data": [],
-      "for_packages": [
-        "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "is_legal": false,
       "is_manifest": false,
       "is_readme": false,
       "is_top_level": true,
       "is_key_file": false,
+      "is_community": false,
+      "package_data": [],
+      "for_packages": [
+        "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "detected_license_expression": null,
       "detected_license_expression_spdx": null,
       "license_detections": [],
@@ -535,12 +615,19 @@
       "sha1": "41e2f6a5b09f09c4fce485afeed7a343113dddce",
       "md5": "73b12e96d197ec2a2a8358a69986c569",
       "sha256": "bc9734e1119c7bcbf4079123225444fe6250a33ee7402d03d048d6cc3a8e1a2c",
+      "sha1_git": "f7ce57a0869214506148a3ea3281aa8ef8a581be",
       "programming_language": null,
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
       "is_media": false,
       "is_source": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "is_community": false,
       "package_data": [
         {
           "type": "maven",
@@ -572,36 +659,58 @@
           "vcs_url": "git+https://github.com/LibrePDF/OpenPDF",
           "copyright": null,
           "holder": null,
-          "declared_license_expression": "mpl-2.0 OR lgpl-3.0",
-          "declared_license_expression_spdx": "MPL-2.0 OR LGPL-3.0-only",
+          "declared_license_expression": "lgpl-3.0 AND mpl-2.0",
+          "declared_license_expression_spdx": "LGPL-3.0-only AND MPL-2.0",
           "license_detections": [
             {
-              "license_expression": "mpl-2.0 OR lgpl-3.0",
-              "license_expression_spdx": "MPL-2.0 OR LGPL-3.0-only",
+              "license_expression": "lgpl-3.0",
+              "license_expression_spdx": "LGPL-3.0-only",
               "matches": [
                 {
-                  "license_expression": "mpl-2.0 OR lgpl-3.0",
-                  "license_expression_spdx": "MPL-2.0 OR LGPL-3.0-only",
+                  "license_expression": "lgpl-3.0",
+                  "license_expression_spdx": "LGPL-3.0-only",
                   "from_file": "codebase/openpdf-parent-1.3.11.pom.xml",
                   "start_line": 1,
-                  "end_line": 4,
+                  "end_line": 2,
                   "matcher": "1-hash",
                   "score": 100.0,
-                  "matched_length": 33,
+                  "matched_length": 18,
                   "match_coverage": 100.0,
                   "rule_relevance": 100,
-                  "rule_identifier": "mpl-2.0_or_lgpl-3.0_5.RULE",
-                  "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_or_lgpl-3.0_5.RULE",
-                  "matched_text": "- name: GNU General Lesser Public License (LGPL) version 3.0\n  url: http://www.gnu.org/licenses/lgpl.html\n- name: Mozilla Public License Version 2.0\n  url: http://www.mozilla.org/MPL/2.0/"
+                  "rule_identifier": "lgpl-3.0_321.RULE",
+                  "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-3.0_321.RULE",
+                  "matched_text": "name: GNU General Lesser Public License (LGPL) version 3.0\nurl: http://www.gnu.org/licenses/lgpl.html"
                 }
               ],
-              "identifier": "mpl_2_0_or_lgpl_3_0-a9aa482b-e2ed-6dfc-05b1-ddb52881b339"
+              "identifier": "lgpl_3_0-2721bf50-8a99-c98b-f086-118786e9d9b7"
+            },
+            {
+              "license_expression": "mpl-2.0",
+              "license_expression_spdx": "MPL-2.0",
+              "matches": [
+                {
+                  "license_expression": "mpl-2.0",
+                  "license_expression_spdx": "MPL-2.0",
+                  "from_file": "codebase/openpdf-parent-1.3.11.pom.xml",
+                  "start_line": 1,
+                  "end_line": 2,
+                  "matcher": "1-hash",
+                  "score": 100.0,
+                  "matched_length": 15,
+                  "match_coverage": 100.0,
+                  "rule_relevance": 100,
+                  "rule_identifier": "mpl-2.0_140.RULE",
+                  "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_140.RULE",
+                  "matched_text": "name: Mozilla Public License Version 2.0\nurl: http://www.mozilla.org/MPL/2.0/"
+                }
+              ],
+              "identifier": "mpl_2_0-ede8f51f-2d21-3c64-b12f-b9cbaafaef1e"
             }
           ],
           "other_license_expression": null,
           "other_license_expression_spdx": null,
           "other_license_detections": [],
-          "extracted_license_statement": "- name: GNU General Lesser Public License (LGPL) version 3.0\n  url: http://www.gnu.org/licenses/lgpl.html\n- name: Mozilla Public License Version 2.0\n  url: http://www.mozilla.org/MPL/2.0/\n",
+          "extracted_license_statement": "- license:\n    name: GNU General Lesser Public License (LGPL) version 3.0\n    url: http://www.gnu.org/licenses/lgpl.html\n- license:\n    name: Mozilla Public License Version 2.0\n    url: http://www.mozilla.org/MPL/2.0/\n",
           "notice_text": null,
           "source_packages": [
             "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?classifier=sources"
@@ -732,11 +841,6 @@
       "for_packages": [
         "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": false,
-      "is_top_level": false,
-      "is_key_file": false,
       "detected_license_expression": "mpl-2.0 OR lgpl-3.0",
       "detected_license_expression_spdx": "MPL-2.0 OR LGPL-3.0-only",
       "license_detections": [

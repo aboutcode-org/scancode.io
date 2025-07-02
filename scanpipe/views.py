@@ -1913,6 +1913,7 @@ class CodebaseResourceDetailsView(
                 {"field_name": "sha1", "label": "SHA1"},
                 {"field_name": "sha256", "label": "SHA256"},
                 {"field_name": "sha512", "label": "SHA512"},
+                {"field_name": "sha1_git", "label": "SHA1_git"},
                 "is_binary",
                 "is_text",
                 "is_archive",

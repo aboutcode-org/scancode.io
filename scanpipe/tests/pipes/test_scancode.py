@@ -159,6 +159,7 @@ class ScanPipeScancodePipesTest(TestCase):
             "sha1": "4bd631df28995c332bf69d9d4f0f74d7ee089598",
             "md5": "90cd416fd24df31f608249b77bae80f1",
             "sha256": sha256,
+            "sha1_git": "1f72cf031889492f93c055fd29c4a3083025c6cf",
             "mime_type": "text/plain",
             "file_type": "ASCII text",
         }
@@ -242,7 +243,10 @@ class ScanPipeScancodePipesTest(TestCase):
         scancode.save_scan_file_results(codebase_resource2, scan_results, scan_errors)
         codebase_resource2.refresh_from_db()
         self.assertEqual("scanned", codebase_resource2.status)
-        expected = "apache-2.0 AND warranty-disclaimer"
+        expected = (
+            "apache-2.0 AND (apache-2.0 AND scancode-acknowledgment)"
+            " AND warranty-disclaimer"
+        )
         self.assertEqual(expected, codebase_resource2.detected_license_expression)
 
     def test_scanpipe_pipes_scancode_scan_file_and_save_results_timeout_error(self):

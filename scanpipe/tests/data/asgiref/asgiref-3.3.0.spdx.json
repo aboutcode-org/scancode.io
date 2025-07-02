@@ -3,7 +3,7 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "scancodeio_asgiref",
-  "documentNamespace": "https://scancode.io/spdxdocs/24c1b665-7fb2-4e0c-8785-cba72fb35df0",
+  "documentNamespace": "https://scancode.io/spdxdocs/1cdd3f3a-eea9-4c9c-b78e-9fa6bcde9cfd",
   "creationInfo": {
     "created": "2000-01-01T01:02:03Z",
     "creators": [
@@ -14,7 +14,7 @@
   "packages": [
     {
       "name": "asgiref",
-      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-101147dd-f8a7-4ea3-87a1-01b9b0af5d4f",
+      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-b4e16c8a-f564-4379-9de9-ea2aaba08d94",
       "downloadLocation": "NOASSERTION",
       "licenseConcluded": "BSD-3-Clause",
       "copyrightText": "NOASSERTION",
@@ -33,7 +33,7 @@
     },
     {
       "name": "asgiref",
-      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-b5035991-5b4b-40be-b68b-1c9c528078cd",
+      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-80e083f1-7d05-432e-96f8-e6dfd9e494f0",
       "downloadLocation": "NOASSERTION",
       "licenseConcluded": "BSD-3-Clause",
       "copyrightText": "NOASSERTION",
@@ -52,7 +52,7 @@
     },
     {
       "name": "pytest",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-13818fb7-6094-4868-97ca-384a8fc8d16d",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-05f9bf8f-4da8-488e-9f48-6e183c4b813b",
       "downloadLocation": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
       "copyrightText": "NOASSERTION",
@@ -68,7 +68,7 @@
     },
     {
       "name": "pytest",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-2f1d3742-0553-4c4f-8731-1ffbbc13827d",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-43988fc2-bc0e-4c81-b083-7c5f21a7be50",
       "downloadLocation": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
       "copyrightText": "NOASSERTION",
@@ -84,7 +84,7 @@
     },
     {
       "name": "pytest-asyncio",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-fd5a81e5-0739-406e-9189-7b8a3644ef0d",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-ea25292c-05af-4982-9596-866c5de9d8cd",
       "downloadLocation": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
       "copyrightText": "NOASSERTION",
@@ -100,7 +100,7 @@
     },
     {
       "name": "pytest-asyncio",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-e175db55-d0f3-4224-b6d4-2b0ad553b865",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-a0b6b6e7-5e75-4b69-9742-b04fe8a594a3",
       "downloadLocation": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
       "copyrightText": "NOASSERTION",
@@ -116,33 +116,33 @@
     }
   ],
   "documentDescribes": [
-    "SPDXRef-scancodeio-discoveredpackage-101147dd-f8a7-4ea3-87a1-01b9b0af5d4f",
-    "SPDXRef-scancodeio-discoveredpackage-b5035991-5b4b-40be-b68b-1c9c528078cd",
-    "SPDXRef-scancodeio-discovereddependency-13818fb7-6094-4868-97ca-384a8fc8d16d",
-    "SPDXRef-scancodeio-discovereddependency-2f1d3742-0553-4c4f-8731-1ffbbc13827d",
-    "SPDXRef-scancodeio-discovereddependency-fd5a81e5-0739-406e-9189-7b8a3644ef0d",
-    "SPDXRef-scancodeio-discovereddependency-e175db55-d0f3-4224-b6d4-2b0ad553b865"
+    "SPDXRef-scancodeio-discoveredpackage-b4e16c8a-f564-4379-9de9-ea2aaba08d94",
+    "SPDXRef-scancodeio-discoveredpackage-80e083f1-7d05-432e-96f8-e6dfd9e494f0",
+    "SPDXRef-scancodeio-discovereddependency-05f9bf8f-4da8-488e-9f48-6e183c4b813b",
+    "SPDXRef-scancodeio-discovereddependency-43988fc2-bc0e-4c81-b083-7c5f21a7be50",
+    "SPDXRef-scancodeio-discovereddependency-ea25292c-05af-4982-9596-866c5de9d8cd",
+    "SPDXRef-scancodeio-discovereddependency-a0b6b6e7-5e75-4b69-9742-b04fe8a594a3"
   ],
   "files": [],
   "relationships": [
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-13818fb7-6094-4868-97ca-384a8fc8d16d",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-101147dd-f8a7-4ea3-87a1-01b9b0af5d4f",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-05f9bf8f-4da8-488e-9f48-6e183c4b813b",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-b4e16c8a-f564-4379-9de9-ea2aaba08d94",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-2f1d3742-0553-4c4f-8731-1ffbbc13827d",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-b5035991-5b4b-40be-b68b-1c9c528078cd",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-43988fc2-bc0e-4c81-b083-7c5f21a7be50",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-80e083f1-7d05-432e-96f8-e6dfd9e494f0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-fd5a81e5-0739-406e-9189-7b8a3644ef0d",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-101147dd-f8a7-4ea3-87a1-01b9b0af5d4f",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-ea25292c-05af-4982-9596-866c5de9d8cd",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-b4e16c8a-f564-4379-9de9-ea2aaba08d94",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-e175db55-d0f3-4224-b6d4-2b0ad553b865",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-b5035991-5b4b-40be-b68b-1c9c528078cd",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-a0b6b6e7-5e75-4b69-9742-b04fe8a594a3",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-80e083f1-7d05-432e-96f8-e6dfd9e494f0",
       "relationshipType": "DEPENDENCY_OF"
     }
   ],

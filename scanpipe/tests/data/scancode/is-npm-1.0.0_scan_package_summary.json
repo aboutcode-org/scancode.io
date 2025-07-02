@@ -58,22 +58,12 @@
       "type": "file",
       "name": "readme.md",
       "status": "application-package",
+      "for_packages": [
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "tag": "",
       "extension": ".md",
-      "md5": "a743e0abf08c28a37ecc4bef4dc02f8c",
-      "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
-      "sha256": "e98b263545fe62a00c73b57412cbdbcd0792e013a76f9c88342623ab5e8467c1",
-      "sha512": "",
       "programming_language": "",
-      "is_binary": false,
-      "is_text": true,
-      "is_archive": false,
-      "is_media": false,
-      "is_legal": false,
-      "is_manifest": false,
-      "is_readme": true,
-      "is_top_level": true,
-      "is_key_file": true,
       "detected_license_expression": "mit",
       "detected_license_expression_spdx": "MIT",
       "license_detections": [
@@ -118,9 +108,6 @@
       ],
       "authors": [],
       "package_data": [],
-      "for_packages": [
-        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "emails": [],
       "urls": [
         {
@@ -144,6 +131,20 @@
           "start_line": 30
         }
       ],
+      "md5": "a743e0abf08c28a37ecc4bef4dc02f8c",
+      "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
+      "sha256": "e98b263545fe62a00c73b57412cbdbcd0792e013a76f9c88342623ab5e8467c1",
+      "sha512": "",
+      "sha1_git": "84833ec65b3bdcd042388a16b7533cc51ea6f83d",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": true,
+      "is_top_level": true,
+      "is_key_file": true,
       "extra_data": {},
       "content": "# is-npm [![Build Status](https://travis-ci.org/sindresorhus/is-npm.svg?branch=master)](https://travis-ci.org/sindresorhus/is-npm)\n\n> Check if your code is running as an [npm script](https://www.npmjs.org/doc/misc/npm-scripts.html)\n\n\n## Install\n\n```sh\n$ npm install --save is-npm\n```\n\n\n## Usage\n\n```js\nvar isNpm = require('is-npm');\nconsole.log(isNpm);\n```\n\n```sh\n$ node foo.js\n#=> false\n$ npm run foo\n#=> true\n```\n\n\n## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)\n"
     }
