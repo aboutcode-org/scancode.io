@@ -164,6 +164,7 @@ select = [
     "D",  # pydocstyle
     "F",  # Pyflakes
     "UP", # pyupgrade
+    "DJ", # flake8-django
     "S",  # flake8-bandit
     "I",  # isort
     "C9", # McCabe complexity
