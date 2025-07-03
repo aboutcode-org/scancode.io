@@ -168,7 +168,8 @@ select = [
     "S",  # flake8-bandit
     "I",  # isort
     "C9", # McCabe complexity
-    "FIX",# flake8-fixme
+    "FIX", # flake8-fix
+    "FURB", # refurb
 ]
 ignore = ["D1", "D203", "D205", "D212", "D400", "D415"]
 

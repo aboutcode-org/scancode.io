@@ -380,9 +380,7 @@ class Package:
         if not date_str:
             return
 
-        if date_str.endswith("Z"):
-            date_str = date_str[:-1]
-
+        date_str = date_str.removesuffix("Z")
         as_datetime = datetime.fromisoformat(date_str)
         return as_datetime.isoformat(timespec="seconds") + "Z"
 

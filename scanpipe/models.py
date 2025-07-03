@@ -1184,8 +1184,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         file_path = Path(self.input_path / filename)
 
         with open(file_path, "wb+") as f:
-            for chunk in file_object.chunks():
-                f.write(chunk)
+            f.writelines(file_object.chunks())
 
     def copy_input_from(self, input_location):
         """

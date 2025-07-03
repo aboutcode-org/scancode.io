@@ -156,8 +156,7 @@ def add_scan_result(project, repo, package_scan_file, logger=None):
     write_to.parent.mkdir(parents=True, exist_ok=True)
     results_generator = JSONResultsGenerator(project)
     with open(write_to, encoding="utf-8", mode="w") as file:
-        for chunk in results_generator:
-            file.write(chunk)
+        file.writelines(results_generator)
 
     return relative_scan_file_path
 
