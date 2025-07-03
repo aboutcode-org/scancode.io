@@ -105,6 +105,11 @@ def get_project_compliance_alerts(project, fail_level="error"):
         .only(*PACKAGE_URL_FIELDS, "compliance_alert")
         .order_by(*PACKAGE_URL_FIELDS)
     )
+    licenses_qs = (
+        project.discoveredlicenses.compliance_issues(severity=fail_level)
+        .only("identifier", "compliance_alert")
+        .order_by("identifier")
+    )
     resource_qs = (
         project.codebaseresources.compliance_issues(severity=fail_level)
         .only("path", "compliance_alert")
@@ -113,6 +118,7 @@ def get_project_compliance_alerts(project, fail_level="error"):
 
     queryset_mapping = {
         "packages": package_qs,
+        "license_detections": licenses_qs,
         "resources": resource_qs,
     }
 
