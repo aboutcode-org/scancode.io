@@ -29,6 +29,7 @@ from django.core.validators import EMPTY_VALUES
 from django.db import models
 from django.db.models import Q
 from django.db.models.fields import BLANK_CHOICE_DASH
+from django.utils.functional import cached_property
 from django.utils.http import urlencode
 from django.utils.translation import gettext as _
 
@@ -220,6 +221,10 @@ class FilterSetUtilsMixin:
             for value in self.data.getlist(field_name)
         ]
 
+    @cached_property
+    def filters_breadcrumb(self):
+        return self.get_filters_breadcrumb()
+
     @classmethod
     def verbose_name_plural(cls):
         return cls.Meta.model._meta.verbose_name_plural
@@ -246,15 +251,19 @@ class FilterSetUtilsMixin:
         `empty_value` to any filters.
         """
         for name, value in self.form.cleaned_data.items():
-            field_name = self.filters[name].field_name
-            if value == self.empty_value:
+            filter_field = self.filters[name]
+            field_name = filter_field.field_name
+
+            if isinstance(filter_field, QuerySearchFilter):
+                queryset = filter_field.filter(queryset, value)
+            elif value == self.empty_value:
                 queryset = queryset.filter(**{f"{field_name}__in": EMPTY_VALUES})
             elif value == self.any_value:
                 queryset = queryset.filter(~Q(**{f"{field_name}__in": EMPTY_VALUES}))
             elif value == self.other_value and hasattr(queryset, "less_common"):
                 return queryset.less_common(name)
             else:
-                queryset = self.filters[name].filter(queryset, value)
+                queryset = filter_field.filter(queryset, value)
 
         return queryset
 
@@ -267,7 +276,7 @@ class FilterSetUtilsMixin:
         return super().filter_for_lookup(field, lookup_type)
 
 
-def parse_query_string_to_lookups(query_string, default_lookup_expr, default_field):
+def parse_query_string_to_lookups(query_string, default_lookup_expr, search_fields):
     """Parse a query string and convert it into queryset lookups using Q objects."""
     lookups = Q()
     terms = shlex.split(query_string)
@@ -296,11 +305,14 @@ def parse_query_string_to_lookups(query_string, default_lookup_expr, default_fie
                 field_name = field_name[1:]
                 negated = True
 
+            lookups &= Q(
+                **{f"{field_name}__{lookup_expr}": search_value}, _negated=negated
+            )
+
         else:
             search_value = term
-            field_name = default_field
-
-        lookups &= Q(**{f"{field_name}__{lookup_expr}": search_value}, _negated=negated)
+            for field_name in search_fields:
+                lookups |= Q(**{f"{field_name}__{lookup_expr}": search_value})
 
     return lookups
 
@@ -324,6 +336,10 @@ class QuerySearchFilter(django_filters.CharFilter):
 
     field_class = QuerySearchField
 
+    def __init__(self, search_fields=None, lookup_expr="icontains", *args, **kwargs):
+        super().__init__(lookup_expr=lookup_expr, *args, **kwargs)
+        self.search_fields = search_fields or []
+
     def filter(self, qs, value):
         if not value:
             return qs
@@ -331,11 +347,11 @@ class QuerySearchFilter(django_filters.CharFilter):
         lookups = parse_query_string_to_lookups(
             query_string=value,
             default_lookup_expr=self.lookup_expr,
-            default_field=self.field_name,
+            search_fields=self.search_fields,
         )
 
         try:
-            return qs.filter(lookups)
+            return qs.filter(lookups).distinct()
         except FieldError:
             return qs.none()
 
@@ -348,7 +364,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     ]
 
     search = QuerySearchFilter(
-        label="Search", field_name="name", lookup_expr="icontains"
+        label="Search", search_fields=["name", "labels__name"], lookup_expr="icontains"
     )
     sort = django_filters.OrderingFilter(
         label="Sort",
@@ -413,8 +429,10 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         if not data or data.get("is_archived", "") == "":
             self.queryset = self.queryset.filter(is_archived=False)
 
-        active_count = Project.objects.filter(is_archived=False).count()
-        archived_count = Project.objects.filter(is_archived=True).count()
+        counts = Project.objects.get_active_archived_counts()
+        active_count = counts["active_count"]
+        archived_count = counts["archived_count"]
+
         self.filters["is_archived"].extra["widget"] = BulmaLinkWidget(
             choices=[
                 ("", f'<i class="fa-solid fa-seedling"></i> {active_count} Active'),
@@ -466,6 +484,8 @@ MAP_TYPE_CHOICES = (
     ("about_file", "about file"),
     ("java_to_class", "java to class"),
     ("jar_to_source", "jar to source"),
+    ("javascript_strings", "js strings"),
+    ("javascript_symbols", "js symbols"),
     ("js_compiled", "js compiled"),
     ("js_colocation", "js colocation"),
     ("js_path", "js path"),
@@ -509,7 +529,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
     search = QuerySearchFilter(
         label="Search",
-        field_name="path",
+        search_fields=["path"],
         lookup_expr="icontains",
     )
     sort = django_filters.OrderingFilter(
@@ -553,6 +573,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "sha1",
             "sha256",
             "sha512",
+            "sha1_git",
             "size",
             "status",
             "tag",
@@ -617,15 +638,7 @@ class DiscoveredPackageSearchFilter(QuerySearchFilter):
         if value.startswith("pkg:"):
             return qs.for_package_url(value)
 
-        if ":" in value:
-            return super().filter(qs, value)
-
-        search_fields = ["type", "namespace", "name", "version"]
-        lookups = Q()
-        for field_names in search_fields:
-            lookups |= Q(**{f"{field_names}__{self.lookup_expr}": value})
-
-        return qs.filter(lookups)
+        return super().filter(qs, value)
 
 
 class DiscoveredLicenseSearchFilter(QuerySearchFilter):
@@ -677,7 +690,9 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     ]
 
     search = DiscoveredPackageSearchFilter(
-        label="Search", field_name="name", lookup_expr="icontains"
+        label="Search",
+        search_fields=["type", "namespace", "name", "version"],
+        lookup_expr="icontains",
     )
     sort = GroupOrderingFilter(
         label="Sort",
@@ -761,7 +776,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     ]
 
     search = QuerySearchFilter(
-        label="Search", field_name="name", lookup_expr="icontains"
+        label="Search", search_fields=["name"], lookup_expr="icontains"
     )
     sort = GroupOrderingFilter(
         label="Sort",
@@ -856,7 +871,7 @@ class LicenseFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
 class ProjectMessageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = QuerySearchFilter(
-        label="Search", field_name="description", lookup_expr="icontains"
+        label="Search", search_fields=["description"], lookup_expr="icontains"
     )
     sort = django_filters.OrderingFilter(
         label="Sort",
@@ -908,7 +923,7 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
     search = QuerySearchFilter(
         label="Search",
-        field_name="to_resource__path",
+        search_fields=["to_resource__path"],
         lookup_expr="icontains",
     )
     sort = django_filters.OrderingFilter(

@@ -1,0 +1,37 @@
+<div class="modal" id="modal-webhook-delete">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Delete webhook, are you sure?</p>
+      <button class="delete" aria-label="close"></button>
+    </header>
+    <section class="modal-card-body">
+      <div class="notification is-danger has-text-weight-semibold">
+        This action cannot be undone.
+      </div>
+      <p class="mb-2">
+        This will delete the webhook from the project.
+      </p>
+      <p class="mb-5">
+        Are you sure you want to do this?
+      </p>
+    </section>
+    <form method="post" id="form-webhook-delete">{% csrf_token %}
+      <footer class="modal-card-foot is-justify-content-flex-end">
+        <div class="buttons">
+          <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
+          <button class="button is-danger is-no-close" type="submit">Yes, Delete Webhook</button>
+        </div>
+      </footer>
+    </form>
+  </div>
+</div>
+<script>
+  document.addEventListener("openModal", function(event) {
+    const modal_id = event.detail.modal;
+    if (modal_id !== "modal-webhook-delete") return;
+
+    const $form = document.getElementById("form-webhook-delete");
+    $form.action = event.detail.$button.dataset.url;
+  });
+</script>

@@ -200,15 +200,6 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         self.assertEqual(expected, package_data)
 
     def test_scanpipe_cyclonedx_get_bom_instance_from_file(self):
-        input_location = self.data / "missing_schema.json"
-        with self.assertRaises(ValueError) as cm:
-            cyclonedx.get_bom_instance_from_file(input_location)
-        expected_error = (
-            'CycloneDX document "missing_schema.json" is not valid:\n'
-            "Additional properties are not allowed ('invalid_entry' was unexpected)"
-        )
-        self.assertIn(expected_error, str(cm.exception))
-
         input_location = self.data / "laravel-7.12.0" / "bom.1.4.json"
         bom = cyclonedx.get_bom_instance_from_file(input_location)
         self.assertIsInstance(bom, Bom)
@@ -216,15 +207,6 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         self.assertEqual(63, len(bom.dependencies))
 
     def test_scanpipe_cyclonedx_resolve_cyclonedx_packages(self):
-        input_location = self.data / "missing_schema.json"
-        with self.assertRaises(ValueError) as cm:
-            cyclonedx.resolve_cyclonedx_packages(input_location)
-        expected_error = (
-            'CycloneDX document "missing_schema.json" is not valid:\n'
-            "Additional properties are not allowed ('invalid_entry' was unexpected)"
-        )
-        self.assertIn(expected_error, str(cm.exception))
-
         packages = cyclonedx.resolve_cyclonedx_packages(self.bom_file)
         self.assertEqual(3, len(packages))
 

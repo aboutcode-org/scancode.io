@@ -28,13 +28,14 @@ import textwrap
 from pathlib import Path
 from urllib.parse import urljoin
 
+from django.conf import settings
+
 import requests
 from git import Repo
 from packageurl import PackageURL
 
 from aboutcode import hashid
 from scancodeio import VERSION
-from scancodeio import settings
 from scanpipe.pipes.output import JSONResultsGenerator
 
 logger = logging.getLogger(__name__)
@@ -73,7 +74,7 @@ def get_package_repository(project_purl, logger=None):
     """Return the Git repository URL and scan path for a given package."""
     project_package_url = PackageURL.from_string(project_purl)
 
-    git_account_url = f'{settings.FEDERATEDCODE_GIT_ACCOUNT_URL.rstrip("/")}/'
+    git_account_url = f"{settings.FEDERATEDCODE_GIT_ACCOUNT_URL}/"
     package_base_dir = hashid.get_package_base_dir(purl=project_purl)
     package_repo_name = package_base_dir.parts[0]
 

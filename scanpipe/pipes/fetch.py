@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-import cgi
 import json
 import logging
 import os
@@ -33,18 +32,32 @@ from urllib.parse import unquote
 from urllib.parse import urlparse
 
 from django.conf import settings
+from django.utils.http import parse_header_parameters
 
 import git
 import requests
 from commoncode import command
 from commoncode.hash import multi_checksums
 from commoncode.text import python_safe_name
+from packageurl import PackageURL
+from packageurl.contrib import purl2url
 from plugincode.location_provider import get_location
 from requests import auth as request_auth
 
 logger = logging.getLogger("scanpipe.pipes")
 
 Download = namedtuple("Download", "uri directory filename path size sha1 md5")
+
+# Time (in seconds) to wait for the server to send data before giving up.
+# The ``REQUEST_CONNECTION_TIMEOUT`` defines:
+# - Connect timeout: The maximum time to wait for the client to establish a connection
+#   to the server.
+# - Read timeout: The maximum time to wait for a server response once the connection
+#   is established.
+# Notes: Use caution when lowering this value, as some servers
+# (e.g., https://cdn.kernel.org/) may take longer to respond to HTTP requests under
+# certain conditions.
+HTTP_REQUEST_TIMEOUT = 30
 
 
 def run_command_safely(command_args):
@@ -107,13 +120,13 @@ def fetch_http(uri, to=None):
     path.
     """
     request_session = get_request_session(uri)
-    response = request_session.get(uri, timeout=5)
+    response = request_session.get(uri, timeout=HTTP_REQUEST_TIMEOUT)
 
     if response.status_code != 200:
         raise requests.RequestException
 
     content_disposition = response.headers.get("content-disposition", "")
-    _, params = cgi.parse_header(content_disposition)
+    _, params = parse_header_parameters(content_disposition)
     filename = params.get("filename")
     if not filename:
         # Using `response.url` in place of provided `Scan.uri` since the former
@@ -345,6 +358,17 @@ def fetch_git_repo(url, to=None):
     )
 
 
+def fetch_package_url(url):
+    # Ensure the provided Package URL is valid, or raise a ValueError.
+    PackageURL.from_string(url)
+
+    # Resolve a Download URL using purl2url.
+    if download_url := purl2url.get_download_url(url):
+        return fetch_http(download_url)
+
+    raise ValueError(f"Could not resolve a download URL for {url}.")
+
+
 SCHEME_TO_FETCHER_MAPPING = {
     "http": fetch_http,
     "https": fetch_http,
@@ -359,6 +383,9 @@ def get_fetcher(url):
 
     if url.rstrip("/").endswith(".git"):
         return fetch_git_repo
+
+    if url.startswith("pkg:"):
+        return fetch_package_url
 
     # Not using `urlparse(url).scheme` for the scheme as it converts to lower case.
     scheme = url.split("://")[0]
@@ -416,7 +443,7 @@ def check_urls_availability(urls):
 
         request_session = get_request_session(url)
         try:
-            response = request_session.head(url, timeout=5)
+            response = request_session.head(url, timeout=HTTP_REQUEST_TIMEOUT)
             response.raise_for_status()
         except requests.exceptions.RequestException:
             errors.append(url)

@@ -20,7 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 LABEL org.opencontainers.image.source="https://github.com/aboutcode-org/scancode.io"
 LABEL org.opencontainers.image.description="ScanCode.io"
@@ -87,7 +87,7 @@ RUN mkdir -p /var/$APP_NAME/static/ \
  && mkdir -p /var/$APP_NAME/workspace/
 
 # Install the dependencies before the codebase COPY for proper Docker layer caching
-COPY --chown=$APP_USER:$APP_USER setup.cfg setup.py $APP_DIR/
+COPY --chown=$APP_USER:$APP_USER pyproject.toml $APP_DIR/
 RUN pip install --no-cache-dir .
 
 # Copy the codebase and set the proper permissions for the APP_USER

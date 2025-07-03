@@ -30,7 +30,7 @@ def load_policies_yaml(policies_yaml):
     try:
         return saneyaml.load(policies_yaml)
     except saneyaml.YAMLError as e:
-        raise ValidationError(f"Policies format error: {e}")
+        raise ValidationError(f"Policies file format error: {e}")
 
 
 def load_policies_file(policies_file, validate=True):

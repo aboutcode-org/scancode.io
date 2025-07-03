@@ -31,7 +31,7 @@ from timeit import default_timer as timer
 
 module_logger = logging.getLogger(__name__)
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 
 class PipelineDefinition:
@@ -97,7 +97,7 @@ class PipelineDefinition:
                 "doc": getdoc(step),
                 "groups": getattr(step, "groups", []),
             }
-            for step in cls.get_steps()
+            for step in cls.get_steps(groups=cls.get_available_groups())
         ]
 
     @classmethod

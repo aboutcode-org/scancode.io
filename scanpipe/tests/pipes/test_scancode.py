@@ -42,6 +42,7 @@ from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import collect_and_create_codebase_resources
+from scanpipe.pipes import flag
 from scanpipe.pipes import input
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
@@ -158,6 +159,7 @@ class ScanPipeScancodePipesTest(TestCase):
             "sha1": "4bd631df28995c332bf69d9d4f0f74d7ee089598",
             "md5": "90cd416fd24df31f608249b77bae80f1",
             "sha256": sha256,
+            "sha1_git": "1f72cf031889492f93c055fd29c4a3083025c6cf",
             "mime_type": "text/plain",
             "file_type": "ASCII text",
         }
@@ -241,7 +243,10 @@ class ScanPipeScancodePipesTest(TestCase):
         scancode.save_scan_file_results(codebase_resource2, scan_results, scan_errors)
         codebase_resource2.refresh_from_db()
         self.assertEqual("scanned", codebase_resource2.status)
-        expected = "apache-2.0 AND warranty-disclaimer"
+        expected = (
+            "apache-2.0 AND (apache-2.0 AND scancode-acknowledgment)"
+            " AND warranty-disclaimer"
+        )
         self.assertEqual(expected, codebase_resource2.detected_license_expression)
 
     def test_scanpipe_pipes_scancode_scan_file_and_save_results_timeout_error(self):
@@ -445,6 +450,22 @@ class ScanPipeScancodePipesTest(TestCase):
             run_scan_kwargs = mock_run_scan.call_args.kwargs
             self.assertEqual(expected_processes, run_scan_kwargs.get("processes"))
 
+    def test_scanpipe_max_file_size_works(self):
+        with override_settings(SCANCODEIO_SCAN_MAX_FILE_SIZE=10000):
+            project1 = Project.objects.create(name="Analysis")
+            input_location = self.data / "d2d-rust" / "to-trustier-binary-linux.tar.gz"
+            project1.copy_input_from(input_location)
+
+            run = project1.add_pipeline("scan_codebase")
+            pipeline = run.make_pipeline_instance()
+
+            exitcode, out = pipeline.execute()
+            self.assertEqual(0, exitcode, msg=out)
+            resource1 = project1.codebaseresources.get(
+                path="to-trustier-binary-linux.tar.gz-extract/trustier"
+            )
+            self.assertEqual(resource1.status, flag.IGNORED_BY_MAX_FILE_SIZE)
+
     def test_scanpipe_pipes_scancode_make_results_summary(self, regen=FIXTURES_REGEN):
         # Ensure the policies index is empty to avoid any side effect on results
         scanpipe_app.license_policies_index = None
@@ -478,6 +499,30 @@ class ScanPipeScancodePipesTest(TestCase):
 
         self.assertJSONEqual(expected_location.read_text(), summary)
 
+    def test_scanpipe_pipes_scancode_assemble_package_function(self):
+        project = Project.objects.create(name="Analysis")
+        filename = "package_assembly_codebase.json"
+        project_scan_location = self.data / "scancode" / filename
+        input.load_inventory_from_toolkit_scan(project, project_scan_location)
+        project.discoveredpackages.all().delete()
+
+        processed_paths = set()
+        resource = project.codebaseresources.get(name="package.json")
+
+        # This assembly should not trigger that many queries.
+        with self.assertNumQueries(18):
+            scancode.assemble_package(resource, project, processed_paths)
+
+        self.assertEqual(1, project.discoveredpackages.count())
+        package = project.discoveredpackages.get()
+        self.assertEqual("pkg:npm/test@0.1.0", package.package_url)
+        associated_resources = [r.path for r in package.codebase_resources.all()]
+        expected_resources = [
+            "test/get_package_resources/package.json",
+            "test/get_package_resources/this-should-be-returned",
+        ]
+        self.assertEqual(sorted(expected_resources), sorted(associated_resources))
+
     def test_scanpipe_pipes_scancode_assemble_packages(self):
         project = Project.objects.create(name="Analysis")
         filename = "package_assembly_codebase.json"
@@ -487,10 +532,10 @@ class ScanPipeScancodePipesTest(TestCase):
         project.discoveredpackages.all().delete()
         self.assertEqual(0, project.discoveredpackages.count())
 
-        scancode.assemble_packages(project)
+        scancode.assemble_packages(project, progress_logger=lambda: None)
         self.assertEqual(1, project.discoveredpackages.count())
 
-        package = project.discoveredpackages.all()[0]
+        package = project.discoveredpackages.get()
         self.assertEqual("pkg:npm/test@0.1.0", package.package_url)
 
         associated_resources = [r.path for r in package.codebase_resources.all()]

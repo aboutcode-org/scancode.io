@@ -110,6 +110,11 @@ SPDX
 .. automodule:: scanpipe.pipes.spdx
     :members:
 
+Symbolmap
+---------
+.. automodule:: scanpipe.pipes.symbolmap
+    :members:
+
 Symbols
 -------
 .. automodule:: scanpipe.pipes.symbols

@@ -22,7 +22,9 @@
 
 import os
 import uuid
+import warnings
 from datetime import datetime
+from functools import wraps
 from unittest import mock
 
 from django.apps import apps
@@ -31,6 +33,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.models import ProjectMessage
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.download_inputs import DownloadInput
 from scanpipe.tests.pipelines.profile_step import ProfileStep
@@ -47,44 +50,113 @@ FIXTURES_REGEN = os.environ.get("SCANCODEIO_TEST_FIXTURES_REGEN", False)
 mocked_now = mock.Mock(now=lambda: datetime(2010, 10, 10, 10, 10, 10))
 
 
-def make_project(name=None, **extra):
-    name = name or str(uuid.uuid4())[:8]
-    return Project.objects.create(name=name, **extra)
+def filter_warnings(action, category, module=None):
+    """Apply a warning filter to a function."""
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            original_filters = warnings.filters[:]
+            try:
+                warnings.filterwarnings(action, category=category, module=module)
+                return func(*args, **kwargs)
+            finally:
+                warnings.filters = original_filters
+
+        return wrapper
+
+    return decorator
 
 
-def make_resource_file(project, path, **extra):
+def make_string(length):
+    return str(uuid.uuid4())[:length]
+
+
+def make_project(name=None, **data):
+    """
+    Create and return a Project instance.
+    Labels can be provided using the labels=["labels1", "labels2"] argument.
+    """
+    name = name or make_string(8)
+    pipelines = data.pop("pipelines", [])
+    labels = data.pop("labels", [])
+
+    project = Project.objects.create(name=name, **data)
+
+    for pipeline in pipelines:
+        project.add_pipeline(pipeline)
+
+    if labels:
+        project.labels.add(*labels)
+
+    return project
+
+
+def make_resource(project, path, **data):
     return CodebaseResource.objects.create(
         project=project,
         path=path,
         name=path.split("/")[-1],
+        tag=path.split("/")[0],
+        **data,
+    )
+
+
+def make_resource_file(project, path=None, **data):
+    if path is None:  # Empty string is allowed as path
+        path = make_string(5)
+
+    return make_resource(
+        project=project,
+        path=path,
         extension="." + path.split(".")[-1],
         type=CodebaseResource.Type.FILE,
         is_text=True,
-        tag=path.split("/")[0],
-        **extra,
+        **data,
     )
 
 
-def make_resource_directory(project, path, **extra):
-    return CodebaseResource.objects.create(
+def make_resource_directory(project, path, **data):
+    return make_resource(
         project=project,
         path=path,
-        name=path.split("/")[-1],
         type=CodebaseResource.Type.DIRECTORY,
-        tag=path.split("/")[0],
-        **extra,
+        **data,
     )
 
 
-def make_package(project, package_url, **extra):
-    package = DiscoveredPackage(project=project, **extra)
+def make_package(project, package_url, **data):
+    package = DiscoveredPackage(project=project, **data)
     package.set_package_url(package_url)
     package.save()
     return package
 
 
-def make_dependency(project, **extra):
-    return DiscoveredDependency.objects.create(project=project, **extra)
+def make_dependency(project, **data):
+    return DiscoveredDependency.objects.create(project=project, **data)
+
+
+def make_message(project, **data):
+    if "model" not in data:
+        data["model"] = make_string(8)
+
+    if "severity" not in data:
+        data["severity"] = ProjectMessage.Severity.ERROR
+
+    return ProjectMessage.objects.create(
+        project=project,
+        **data,
+    )
+
+
+def make_mock_response(url, content=b"\x00", status_code=200, headers=None):
+    """Return a mock HTTP response object for testing purposes."""
+    response = mock.Mock()
+    response.url = url
+    response.content = content
+    response.status_code = status_code
+    response.headers = headers or {}
+    return response
 
 
 resource_data1 = {

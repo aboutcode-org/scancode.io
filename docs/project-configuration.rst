@@ -54,6 +54,7 @@ Content of a ``scancode-config.yml`` file:
     ignored_patterns:
      - '*.tmp'
      - 'tests/*'
+    scan_max_file_size: 5242880
     ignored_dependency_scopes:
      - package_type: npm
        scope: devDependencies
@@ -85,6 +86,23 @@ product_version
 ^^^^^^^^^^^^^^^
 
 The product version of this project, as specified within the DejaCode application.
+
+scan_max_file_size
+^^^^^^^^^^^^^^^^^^
+
+Maximum file size allowed for a file to be scanned when scanning a codebase.
+
+The value unit is bytes and is defined as an integer, see the following
+example of setting this at 5 MB::
+
+    scan_max_file_size=5242880
+
+Default is ``None``, in which case all files will be scanned.
+
+.. note::
+    This is the same as the scancodeio setting ``SCANCODEIO_SCAN_MAX_FILE_SIZE``
+    set using the .env file, and the project setting ``scan_max_file_size`` takes
+    precedence over the scancodeio setting ``SCANCODEIO_SCAN_MAX_FILE_SIZE``.
 
 ignored_patterns
 ^^^^^^^^^^^^^^^^

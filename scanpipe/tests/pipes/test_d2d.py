@@ -28,6 +28,7 @@ from pathlib import Path
 from unittest import mock
 from unittest import skipIf
 
+from django.db.utils import DataError
 from django.test import TestCase
 
 from scanpipe import pipes
@@ -35,8 +36,10 @@ from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import d2d
+from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import scancode
+from scanpipe.pipes import symbols
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import make_resource_directory
@@ -221,7 +224,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
         expected = (
-            "Matching 1 directory from to/ in PurlDB" "1 directory matched in PurlDB"
+            "Matching 1 directory from to/ in PurlDB1 directory matched in PurlDB"
         )
         self.assertEqual(expected, buffer.getvalue())
 
@@ -364,7 +367,7 @@ class ScanPipeD2DPipesTest(TestCase):
         buffer = io.StringIO()
         d2d.map_java_to_class(self.project1, logger=buffer.write)
 
-        expected = "Mapping 3 .class resources to .java"
+        expected = "Mapping 3 .class resources to 2 .java"
         self.assertIn(expected, buffer.getvalue())
 
         self.assertEqual(2, self.project1.codebaserelations.count())
@@ -389,7 +392,7 @@ class ScanPipeD2DPipesTest(TestCase):
         make_resource_file(self.project1, path="to/Abstract.class")
         buffer = io.StringIO()
         d2d.map_java_to_class(self.project1, logger=buffer.write)
-        expected = "Mapping 1 .class resources to .java" "No .java resources to map."
+        expected = "No .java resources to map."
         self.assertIn(expected, buffer.getvalue())
 
     def test_scanpipe_pipes_d2d_map_jar_to_source(self):
@@ -1453,7 +1456,7 @@ class ScanPipeD2DPipesTest(TestCase):
             logger=buffer.write,
         )
         expected = (
-            "Refining matching for 1 " f"{flag.MATCHED_TO_PURLDB_RESOURCE} archives."
+            f"Refining matching for 1 {flag.MATCHED_TO_PURLDB_RESOURCE} archives."
         )
         self.assertIn(expected, buffer.getvalue())
 
@@ -1485,7 +1488,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
-        d2d.map_elfs(project=self.project1, logger=buffer.write)
+        d2d.map_elfs_with_dwarf_paths(project=self.project1, logger=buffer.write)
         self.assertEqual(
             1,
             CodebaseRelation.objects.filter(
@@ -1527,5 +1530,337 @@ class ScanPipeD2DPipesTest(TestCase):
             1,
             CodebaseResource.objects.filter(
                 project=self.project1, status="requires-review"
+            ).count(),
+        )
+
+    def test_scanpipe_pipes_d2d_map_ruby(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-ruby/to-sentry-delayed_job-5.22.1.gem",
+            self.data / "d2d-ruby/from-sentry-ruby-5.22.1.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_checksum(
+            project=self.project1, checksum_field="sha1", logger=buffer.write
+        )
+        ruby_config = d2d_config.get_ecosystem_config(ecosystem="Ruby")
+        d2d.ignore_unmapped_resources_from_config(
+            project=self.project1,
+            patterns_to_ignore=ruby_config.deployed_resource_path_exclusions,
+            logger=buffer.write,
+        )
+        d2d.flag_undeployed_resources(project=self.project1)
+        self.assertEqual(
+            39,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="sha1"
+            ).count(),
+        )
+        self.assertEqual(
+            0,
+            CodebaseResource.objects.filter(
+                project=self.project1, status="requires-review"
+            ).count(),
+        )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_rust_symbols(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-rust/to-trustier-binary-linux.tar.gz",
+            self.data / "d2d-rust/from-trustier-source.tar.gz",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_rust_binaries_with_symbols(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            2,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="rust_symbols"
+            ).count(),
+        )
+        self.assertEqual(
+            0,
+            CodebaseResource.objects.filter(
+                project=self.project1, status="requires-review"
+            ).count(),
+        )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_elf_symbols(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-elfs/to-brotli-d2d.zip",
+            self.data / "d2d-elfs/from-brotli-d2d.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_elfs_binaries_with_symbols(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            7,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="elf_symbols"
+            ).count(),
+        )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_macho_symbols(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-macho/from-lumen.zip",
+            self.data / "d2d-macho/to-lumen.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_macho_binaries_with_symbols(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            9,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="macho_symbols"
+            ).count(),
+        )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_python_pyx(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-python/to-intbitset.whl",
+            self.data / "d2d-python/from-intbitset.tar.gz",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(self.project1.codebase_path, recurse=True)
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_python_pyx_to_binaries(project=self.project1, logger=buffer.write)
+        pyx_match_relations = CodebaseRelation.objects.filter(
+            project=self.project1, map_type="python_pyx_match"
+        )
+        self.assertEqual(1, pyx_match_relations.count())
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_winpe_symbols(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-winpe/to-translucent.zip",
+            self.data / "d2d-winpe/from-translucent.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_winpe_binaries_with_symbols(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            4,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="winpe_symbols"
+            ).count(),
+        )
+
+    @mock.patch("scanpipe.pipes.purldb.match_resources")
+    def test_scanpipe_pipes_d2d_match_purldb_resource_no_package_data(
+        self, mock_match_resource
+    ):
+        to_1 = make_resource_file(
+            self.project1,
+            "to/notice.NOTICE",
+            sha1="4bd631df28995c332bf69d9d4f0f74d7ee089598",
+        )
+        resources_by_sha1 = {to_1.sha1: [to_1]}
+
+        resource_data = resource_data1.copy()
+        resource_data["package"] = "example.com/package-instance"
+        mock_match_resource.return_value = [resource_data]
+
+        resources_by_sha1, matched_count, sha1_count = d2d.match_sha1s_to_purldb(
+            project=self.project1,
+            resources_by_sha1=resources_by_sha1,
+            matcher_func=d2d.match_purldb_resource,
+            package_data_by_purldb_urls={},
+        )
+        self.assertFalse(resources_by_sha1)
+        self.assertEqual(0, matched_count)
+        self.assertEqual(1, sha1_count)
+
+        package_count = self.project1.discoveredpackages.count()
+        self.assertEqual(0, package_count)
+
+    def test_scanpipe_pipes_d2d_match_purldb_resources_post_process_with_special_char(
+        self,
+    ):
+        to_map = self.data / "d2d-javascript" / "to" / "main.js.map"
+
+        to_dir = self.project1.codebase_path / "to/lib/Matplot++/nodesoup.lib-extract"
+        to_dir.mkdir(parents=True)
+        copy_inputs([to_map], to_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        to_resources = self.project1.codebaseresources.filter(
+            path__startswith=("to/lib/Matplot++/nodesoup.lib-extract/main.js")
+        )
+
+        dummy_package_data1 = package_data1.copy()
+        dummy_package_data1["uuid"] = uuid.uuid4()
+        d2d.create_package_from_purldb_data(
+            self.project1,
+            to_resources,
+            dummy_package_data1,
+            flag.MATCHED_TO_PURLDB_RESOURCE,
+        )
+
+        buffer = io.StringIO()
+        try:
+            d2d.match_purldb_resources_post_process(
+                self.project1,
+                logger=buffer.write,
+            )
+        except DataError:
+            self.fail("DataError was raised, but it should not occur.")
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_javascript_symbols(self):
+        to_dir = self.project1.codebase_path / "to/project.tar.zst-extract/"
+        to_resource_file = (
+            self.data / "d2d-javascript/symbols/cesium/to_chunk-CNPP6TQ2.js"
+        )
+        to_dir.mkdir(parents=True)
+        copy_input(to_resource_file, to_dir)
+
+        from_input_location = (
+            self.data / "d2d-javascript/symbols/cesium/from_EllipseGeometryLibrary.js"
+        )
+        from_dir = self.project1.codebase_path / "from/project.zip/"
+        from_dir.mkdir(parents=True)
+        copy_input(from_input_location, from_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        buffer = io.StringIO()
+        d2d.map_javascript_symbols(self.project1, logger=buffer.write)
+        expected = (
+            "Mapping 1 JavaScript resources using symbols against 1 from/ codebase."
+        )
+        self.assertIn(expected, buffer.getvalue())
+
+        self.assertEqual(1, self.project1.codebaserelations.count())
+        self.assertEqual(
+            1,
+            self.project1.codebaserelations.filter(
+                map_type="javascript_symbols"
+            ).count(),
+        )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_javascript_strings(self):
+        to_dir = self.project1.codebase_path / "to/project.tar.zst-extract/"
+        to_resource_file = (
+            self.data / "d2d-javascript/strings/cesium/source-decodeI3S.js"
+        )
+        to_dir.mkdir(parents=True)
+        copy_input(to_resource_file, to_dir)
+
+        from_input_location = (
+            self.data / "d2d-javascript/strings/cesium/deployed-decodeI3S.js"
+        )
+        from_dir = self.project1.codebase_path / "from/project.zip/"
+        from_dir.mkdir(parents=True)
+        copy_input(from_input_location, from_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+        symbols.collect_and_store_tree_sitter_symbols_and_strings(
+            project=self.project1,
+        )
+
+        buffer = io.StringIO()
+        d2d.map_javascript_strings(self.project1, logger=buffer.write)
+        expected = (
+            "Mapping 1 JavaScript resources using string "
+            "literals against 1 from/ resources."
+        )
+        self.assertIn(expected, buffer.getvalue())
+
+        self.assertEqual(1, self.project1.codebaserelations.count())
+        self.assertEqual(
+            1,
+            self.project1.codebaserelations.filter(
+                map_type="javascript_strings",
             ).count(),
         )

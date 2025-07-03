@@ -32,6 +32,7 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+import openpyxl
 from rest_framework import status
 from rest_framework.exceptions import ErrorDetail
 from rest_framework.test import APIClient
@@ -51,9 +52,12 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
+from scanpipe.models import WebhookSubscription
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.output import JSONResultsGenerator
 from scanpipe.tests import dependency_data1
+from scanpipe.tests import filter_warnings
+from scanpipe.tests import make_message
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
@@ -67,7 +71,7 @@ class ScanPipeAPITest(TransactionTestCase):
     data = Path(__file__).parent / "data"
 
     def setUp(self):
-        self.project1 = Project.objects.create(name="Analysis")
+        self.project1 = make_project(name="Analysis")
         self.resource1 = CodebaseResource.objects.create(
             project=self.project1,
             path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
@@ -101,8 +105,8 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertContains(response, self.project1_detail_url)
 
     def test_scanpipe_api_project_list(self):
-        Project.objects.create(name="2")
-        Project.objects.create(name="3")
+        make_project(name="2")
+        make_project(name="3")
 
         with self.assertNumQueries(8):
             response = self.csrf_client.get(self.project_list_url)
@@ -119,8 +123,8 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertNotContains(response, "dependency_count")
 
     def test_scanpipe_api_project_list_filters(self):
-        project2 = Project.objects.create(name="pro2ject", is_archived=True)
-        project3 = Project.objects.create(name="3project", is_archived=True)
+        project2 = make_project(name="pro2ject", is_archived=True)
+        project3 = make_project(name="3project", is_archived=True)
 
         response = self.csrf_client.get(self.project_list_url)
         self.assertEqual(3, response.data["count"])
@@ -171,6 +175,15 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertNotContains(response, project3.uuid)
 
         data = {"is_archived": True}
+        response = self.csrf_client.get(self.project_list_url, data=data)
+        self.assertEqual(2, response.data["count"])
+        self.assertNotContains(response, self.project1.uuid)
+        self.assertContains(response, project2.uuid)
+        self.assertContains(response, project3.uuid)
+
+        project2.labels.add("label1")
+        project3.labels.add("label1")
+        data = {"label": "label1"}
         response = self.csrf_client.get(self.project_list_url, data=data)
         self.assertEqual(2, response.data["count"])
         self.assertNotContains(response, self.project1.uuid)
@@ -460,6 +473,7 @@ class ScanPipeAPITest(TransactionTestCase):
         }
         self.assertEqual(expected, response.data)
 
+    @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_api_project_create_pipeline_old_name_compatibility(self):
         data = {
             "name": "Single string",
@@ -489,13 +503,13 @@ class ScanPipeAPITest(TransactionTestCase):
     def test_scanpipe_api_project_create_labels(self):
         data = {
             "name": "Project1",
-            "labels": ["label1", "label2"],
+            "labels": ["label2", "label1"],
         }
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
-        self.assertEqual(data["labels"], sorted(response.data["labels"]))
+        self.assertEqual(sorted(data["labels"]), response.data["labels"])
         project = Project.objects.get(name=data["name"])
-        self.assertEqual(data["labels"], sorted(project.labels.names()))
+        self.assertEqual(sorted(data["labels"]), list(project.labels.names()))
 
     def test_scanpipe_api_project_create_pipeline_groups(self):
         data = {
@@ -658,6 +672,47 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = ["name", "summary", "description", "steps", "available_groups"]
         self.assertEqual(expected, list(response.data[0].keys()))
 
+    def test_scanpipe_api_project_action_report(self):
+        url = reverse("project-report")
+
+        response = self.csrf_client.get(url)
+        self.assertEqual(400, response.status_code)
+        expected = (
+            "Specifies the model to include in the XLSX report. Using: ?model=MODEL"
+        )
+        self.assertEqual(expected, response.data["error"])
+
+        data = {"model": "bad value"}
+        response = self.csrf_client.get(url, data=data)
+        self.assertEqual(400, response.status_code)
+        expected = "bad value is not on of the valid choices"
+        self.assertEqual(expected, response.data["error"])
+
+        make_package(self.project1, package_url="pkg:generic/p1")
+        project2 = make_project()
+        project2.labels.add("label1")
+        package2 = make_package(project2, package_url="pkg:generic/p2")
+
+        data = {
+            "model": "package",
+            "label": "label1",
+        }
+        response = self.csrf_client.get(url, data=data)
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(response.filename.startswith("scancodeio-report-"))
+        self.assertTrue(response.filename.endswith(".xlsx"))
+
+        output_file = io.BytesIO(b"".join(response.streaming_content))
+        workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
+        self.assertEqual(["PACKAGES"], workbook.get_sheet_names())
+
+        todos_sheet = workbook.get_sheet_by_name("PACKAGES")
+        rows = list(todos_sheet.values)
+        self.assertEqual(2, len(rows))
+        self.assertEqual("project", rows[0][0])  # header row
+        self.assertEqual(project2.name, rows[1][0])
+        self.assertEqual(package2.package_url, rows[1][1])
+
     def test_scanpipe_api_project_action_resources(self):
         url = reverse("project-resources", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
@@ -795,13 +850,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
     def test_scanpipe_api_project_action_messages(self):
         url = reverse("project-messages", args=[self.project1.uuid])
-        ProjectMessage.objects.create(
-            project=self.project1,
-            severity=ProjectMessage.Severity.ERROR,
-            description="Error",
-            model="ModelName",
-            details={},
-        )
+        make_message(self.project1, description="Error")
 
         response = self.csrf_client.get(url)
         self.assertEqual(1, response.data["count"])
@@ -812,7 +861,6 @@ class ScanPipeAPITest(TransactionTestCase):
         message = response.data["results"][0]
         self.assertEqual("error", message["severity"])
         self.assertEqual("Error", message["description"])
-        self.assertEqual("ModelName", message["model"])
         self.assertEqual({}, message["details"])
 
     def test_scanpipe_api_project_action_file_content(self):
@@ -933,13 +981,14 @@ class ScanPipeAPITest(TransactionTestCase):
         run = self.project1.runs.get()
         self.assertEqual(data["pipeline"], run.pipeline_name)
 
-        project2 = Project.objects.create(name="Analysis 2")
+        project2 = make_project(name="Analysis 2")
         url = reverse("project-add-pipeline", args=[project2.uuid])
         data["execute_now"] = True
         response = self.csrf_client.post(url, data=data)
         self.assertEqual({"status": "Pipeline added."}, response.data)
         mock_execute_pipeline_task.assert_called_once()
 
+    @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_api_project_action_add_pipeline_old_name_compatibility(self):
         url = reverse("project-add-pipeline", args=[self.project1.uuid])
         data = {
@@ -997,6 +1046,42 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = "Cannot add inputs once a pipeline has started to execute."
         self.assertEqual(expected, response.data.get("status"))
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+    def test_scanpipe_api_project_action_add_webhook(self):
+        url = reverse("project-add-webhook", args=[self.project1.uuid])
+
+        # Test missing target_url
+        response = self.csrf_client.post(url, data={})
+        self.assertEqual(
+            {"target_url": ["This field is required."]},
+            response.data,
+        )
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+        # Test invalid URL
+        data = {"target_url": "invalid-url"}
+        response = self.csrf_client.post(url, data=data)
+        self.assertIn("target_url", response.data)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+        # Test valid webhook creation
+        data = {
+            "target_url": "https://example.com/webhook",
+            "trigger_on_each_run": True,
+            "include_summary": True,
+            "include_results": False,
+            "is_active": True,
+        }
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual({"status": "Webhook added."}, response.data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+
+        webhook = WebhookSubscription.objects.get(project=self.project1)
+        self.assertEqual(webhook.target_url, data["target_url"])
+        self.assertTrue(webhook.trigger_on_each_run)
+        self.assertTrue(webhook.include_summary)
+        self.assertFalse(webhook.include_results)
+        self.assertTrue(webhook.is_active)
 
     def test_scanpipe_api_run_detail(self):
         run1 = self.project1.add_pipeline("analyze_docker_image")
@@ -1185,7 +1270,7 @@ class ScanPipeAPITest(TransactionTestCase):
     def test_scanpipe_api_serializer_get_serializer_fields(self):
         self.assertEqual(49, len(get_serializer_fields(DiscoveredPackage)))
         self.assertEqual(14, len(get_serializer_fields(DiscoveredDependency)))
-        self.assertEqual(37, len(get_serializer_fields(CodebaseResource)))
+        self.assertEqual(38, len(get_serializer_fields(CodebaseResource)))
         self.assertEqual(5, len(get_serializer_fields(CodebaseRelation)))
         self.assertEqual(7, len(get_serializer_fields(ProjectMessage)))
 
