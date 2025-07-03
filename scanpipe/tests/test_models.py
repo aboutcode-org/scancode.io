@@ -1576,6 +1576,14 @@ class ScanPipeModelsTest(TestCase):
         resource.update(detected_license_expression=license_expression)
         self.assertEqual("error", resource.compliance_alert)
 
+        license_expression = "LicenseRef-scancode-unknown-license-reference"
+        resource.update(detected_license_expression=license_expression)
+        self.assertEqual("error", resource.compliance_alert)
+
+        license_expression = "OFL-1.1 AND apache-2.0"
+        resource.update(detected_license_expression=license_expression)
+        self.assertEqual("warning", resource.compliance_alert)
+
         # Reset the index value
         scanpipe_app.license_policies_index = None
 

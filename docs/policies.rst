@@ -20,23 +20,39 @@ structure similar to the following:
       - license_key: mit
         label: Approved License
         compliance_alert: ''
+
       - license_key: mpl-2.0
         label: Restricted License
         compliance_alert: warning
+
       - license_key: gpl-3.0
         label: Prohibited License
         compliance_alert: error
 
-- In the example above, licenses are referenced by the ``license_key``,
-  such as `mit` and `gpl-3.0`, which represent the ScanCode license keys used to
-  match against licenses detected in scan results.
-- Each policy is defined with a ``label`` and a ``compliance_alert``.
-  You can customize the labels as desired.
-- The ``compliance_alert`` field accepts three values:
+      - license_key: OFL-1.1
+        compliance_alert: warning
 
-   - ``''`` (empty string)
-   - ``warning``
-   - ``error``
+      - license_key: LicenseRef-scancode-public-domain
+        compliance_alert: ''
+
+      - license_key: LicenseRef-scancode-unknown-license-reference
+        compliance_alert: error
+
+- In the example above, licenses are referenced using the ``license_key`` field.
+  These keys can be either **ScanCode license identifiers** (e.g., "mit", "gpl-3.0"),
+  or **SPDX license identifiers** (e.g., "OFL-1.1",
+  "LicenseRef-scancode-public-domain").
+  These values are used to match against the licenses detected in scan results.
+
+- Each policy entry includes a ``label`` and a ``compliance_alert`` field.
+  The ``label`` is a customizable description used for display or reporting purposes.
+
+- The ``compliance_alert`` field determines the severity level for a license and
+  supports the following values:
+
+  - ``''`` (empty string) — No action needed; the license is approved.
+  - ``warning`` — Use with caution; the license may have some restrictions.
+  - ``error`` — The license is prohibited or incompatible with your policy.
 
 App Policies
 ------------

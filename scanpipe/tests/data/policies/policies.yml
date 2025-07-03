@@ -1,10 +1,23 @@
 license_policies:
--   license_key: apache-2.0
+  # AboutCode license keys
+  - license_key: apache-2.0
     label: Approved License
     compliance_alert: ''
--   license_key: mpl-2.0
+
+  - license_key: mpl-2.0
     label: Restricted License
     compliance_alert: warning
--   license_key: gpl-3.0
+
+  - license_key: gpl-3.0
     label: Prohibited License
+    compliance_alert: error
+
+  # SPDX license keys
+  - license_key: OFL-1.1
+    compliance_alert: warning
+
+  - license_key: LicenseRef-scancode-public-domain
+    compliance_alert: ok
+
+  - license_key: LicenseRef-scancode-unknown-license-reference
     compliance_alert: error
