@@ -74,13 +74,10 @@ class Command(ProjectCommand):
             len(issues) for model in alerts.values() for issues in model.values()
         )
 
-        extra_data = self.project.extra_data or {}
-        clarity_alert = extra_data.get("clarity_compliance_alert")
+        clarity_alert = self.get_clarity_compliance_alert()
+        has_clarity_issue = clarity_alert not in (None, "ok")
 
-        # Count clarity issue only if alert is not 'ok' or None
-        clarity_issue_count = 1 if clarity_alert and clarity_alert != "ok" else 0
-
-        total_issues = count + clarity_issue_count
+        total_issues = count + (1 if has_clarity_issue else 0)
 
         if total_issues and self.verbosity > 0:
             self.stderr.write(f"{total_issues} compliance issues detected.")
@@ -91,11 +88,19 @@ class Command(ProjectCommand):
                     if self.verbosity > 1:
                         self.stderr.write("   " + "\n   ".join(entries))
 
-            if clarity_issue_count:
+            if has_clarity_issue:
                 self.stderr.write("[License Clarity Compliance]")
                 self.stderr.write(f" > Alert Level: {clarity_alert}")
 
         return total_issues > 0
+
+    def get_clarity_compliance_alert(self):
+        """
+        Return the clarity compliance alert value for the project,
+        or None if not set.
+        """
+        extra_data = self.project.extra_data or {}
+        return extra_data.get("clarity_compliance_alert")
 
     def check_vulnerabilities(self):
         packages = self.project.discoveredpackages.vulnerable_ordered()
