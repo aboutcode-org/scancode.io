@@ -493,6 +493,29 @@ Data:
         }
     }
 
+.. _rest_api_clarity_compliance:
+
+Clarity Compliance
+^^^^^^^^^^^^^^^^^^
+
+This action returns the **clarity compliance alert** for a project.
+
+The clarity compliance alert is a single value (``ok``, ``warning``, or ``error``) that summarizes
+the project's **license clarity status**, based on the thresholds defined in the ``policies.yml`` file.
+
+``GET /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/clarity_compliance/``
+
+Data:
+    - ``clarity_compliance_alert``: The overall clarity compliance alert for the project.
+
+      Possible values: ``ok``, ``warning``, ``error``.
+
+.. code-block:: json
+
+    {
+        "clarity_compliance_alert": "warning"
+    }
+
 Reset
 ^^^^^
 

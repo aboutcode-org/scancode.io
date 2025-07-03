@@ -38,6 +38,43 @@ structure similar to the following:
    - ``warning``
    - ``error``
 
+Creating Clarity Thresholds Files
+---------------------------------
+
+A valid clarity thresholds file is required to **enable clarity compliance features**.
+
+The clarity thresholds file, by default named ``policies.yml``, is a **YAML file** with a
+structure similar to the following:
+
+.. code-block:: yaml
+
+    license_clarity_thresholds:
+      91: ok
+      80: warning
+      0: error
+
+- In the example above, the keys ``91``, ``80``, and ``0`` are integer threshold values
+  representing **minimum clarity scores**.
+- The values ``error``, ``warning``, and ``ok`` are the **compliance alert levels** that
+  will be triggered if the project's license clarity score meets or exceeds the
+  corresponding threshold.
+- The thresholds must be listed in **strictly descending order**.
+
+How it works:
+
+- If the clarity score is **91 or above**, the alert is **``ok``**.
+- If the clarity score is **80 to 90**, the alert is **``warning``**.
+- If the clarity score is **below 80**, the alert is **``error``**.
+
+You can adjust the threshold values and alert levels to match your organization's
+compliance requirements.
+
+Accepted values for the alert level:
+
+- ``ok``
+- ``warning``
+- ``error``
+
 App Policies
 ------------
 
@@ -99,7 +136,7 @@ REST API
 --------
 
 For more details on retrieving compliance data through the REST API, see the
-:ref:`rest_api_compliance` section.
+:ref:`rest_api_compliance` section and :ref:`rest_api_clarity_compliance` section 
 
 Command Line Interface
 ----------------------
