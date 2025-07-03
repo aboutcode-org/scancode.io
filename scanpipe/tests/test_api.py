@@ -706,7 +706,7 @@ class ScanPipeAPITest(TransactionTestCase):
         workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
         self.assertEqual(["PACKAGES"], workbook.sheetnames)
 
-        todos_sheet = workbook.get_sheet_by_name("PACKAGES")
+        todos_sheet = workbook["PACKAGES"]
         rows = list(todos_sheet.values)
         self.assertEqual(2, len(rows))
         self.assertEqual("project", rows[0][0])  # header row
