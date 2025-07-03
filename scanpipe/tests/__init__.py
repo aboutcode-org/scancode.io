@@ -333,26 +333,51 @@ license_policies = [
         "label": "Prohibited License",
         "compliance_alert": "error",
     },
+    {
+        "license_key": "OFL-1.1",
+        "compliance_alert": "warning",
+    },
+    {
+        "license_key": "LicenseRef-scancode-public-domain",
+        "compliance_alert": "ok",
+    },
+    {
+        "license_key": "LicenseRef-scancode-unknown-license-reference",
+        "compliance_alert": "error",
+    },
 ]
+
 
 global_policies = {
     "license_policies": license_policies,
 }
 
 license_policies_index = {
-    "gpl-3.0": {
-        "compliance_alert": "error",
-        "label": "Prohibited License",
-        "license_key": "gpl-3.0",
-    },
     "apache-2.0": {
-        "compliance_alert": "",
-        "label": "Approved License",
         "license_key": "apache-2.0",
+        "label": "Approved License",
+        "compliance_alert": "",
     },
     "mpl-2.0": {
-        "compliance_alert": "warning",
-        "label": "Restricted License",
         "license_key": "mpl-2.0",
+        "label": "Restricted License",
+        "compliance_alert": "warning",
+    },
+    "gpl-3.0": {
+        "license_key": "gpl-3.0",
+        "label": "Prohibited License",
+        "compliance_alert": "error",
+    },
+    "OFL-1.1": {
+        "license_key": "OFL-1.1",
+        "compliance_alert": "warning",
+    },
+    "LicenseRef-scancode-public-domain": {
+        "license_key": "LicenseRef-scancode-public-domain",
+        "compliance_alert": "ok",
+    },
+    "LicenseRef-scancode-unknown-license-reference": {
+        "license_key": "LicenseRef-scancode-unknown-license-reference",
+        "compliance_alert": "error",
     },
 }

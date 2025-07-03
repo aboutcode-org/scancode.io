@@ -2502,6 +2502,7 @@ class ComplianceAlertMixin(models.Model):
     """
 
     license_expression_field = None
+    license_expression_spdx_field = None
 
     class Compliance(models.TextChoices):
         OK = "ok"
@@ -2579,30 +2580,29 @@ class ComplianceAlertMixin(models.Model):
         Chooses the most severe compliance_alert found among licenses.
         """
         license_expression = getattr(self, self.license_expression_field, "")
-        if not license_expression:
+        policy_index = self.policy_index
+        if not license_expression or not policy_index:
             return ""
 
-        policy_index = self.policy_index
-        if not policy_index:
-            return
-
         licensing = get_licensing()
-        parsed = licensing.parse(license_expression, simple=True)
-        license_keys = licensing.license_keys(parsed)
+        parsed_symbols = licensing.parse(license_expression, simple=True).symbols
 
-        alerts = []
-        for license_key in license_keys:
-            if policy := policy_index.get(license_key):
-                alerts.append(policy.get("compliance_alert") or self.Compliance.OK)
-            else:
-                alerts.append(self.Compliance.MISSING)
+        alerts = [
+            self.get_alert_for_symbol(policy_index, symbol) for symbol in parsed_symbols
+        ]
+        most_severe_alert = max(alerts, key=self.COMPLIANCE_SEVERITY_MAP.get)
+        return most_severe_alert or self.Compliance.OK
 
-        if not alerts:
-            return self.Compliance.OK
+    def get_alert_for_symbol(self, policy_index, symbol):
+        """Retrieve the compliance alert for a given license symbol."""
+        license_key = symbol.key
+        spdx_key = getattr(symbol.wrapped, "spdx_license_key", None)
 
-        # Return the most severe alert based on the defined severity
-        severity = self.COMPLIANCE_SEVERITY_MAP.get
-        return max(alerts, key=severity)
+        policy = policy_index.get(license_key) or policy_index.get(spdx_key)
+        if policy:
+            return policy.get("compliance_alert") or self.Compliance.OK
+
+        return self.Compliance.MISSING
 
 
 class FileClassifierFieldsModelMixin(models.Model):

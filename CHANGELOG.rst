@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v35.2.0 (unreleased)
+--------------------
+
+- Add support for SPDX license identifiers as ``license_key`` in license policies
+  ``policies.yml`` file.
+  https://github.com/aboutcode-org/scancode.io/issues/1348
+
 v35.1.0 (2025-07-02)
 --------------------
 
