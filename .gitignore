@@ -51,6 +51,7 @@ local
 *.rdb
 *.aof
 .vscode
+.ipynb_checkpoints
 
 # This is only created when packaging for external redistribution
 /thirdparty/

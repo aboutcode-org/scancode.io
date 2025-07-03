@@ -202,7 +202,7 @@ How can I trigger a pipeline scan from a CI/CD, such as Jenkins, TeamCity or Azu
 You can refer to the :ref:`automation` to automate your projects management.
 
 Also, A new GitHub action is available at
-`scancode-action repository <https://github.com/nexB/scancode-action>`_
+`scancode-action repository <https://github.com/aboutcode-org/scancode-action>`_
 to run ScanCode.io pipelines from your GitHub Workflows.
 
 How can I get notified about my project progression?

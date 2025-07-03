@@ -28,7 +28,7 @@ from pathlib import Path
 
 import git
 
-VERSION = "34.10.1"
+VERSION = "35.1.0"
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = PROJECT_DIR.parent
@@ -87,6 +87,7 @@ __version__ = get_version(VERSION)
 # Turn off the warnings for the following modules.
 warnings.filterwarnings("ignore", module="extractcode")
 warnings.filterwarnings("ignore", module="typecode")
+warnings.filterwarnings("ignore", module="clamd")
 
 
 def command_line():

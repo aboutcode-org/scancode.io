@@ -1,3 +1,156 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scancodeio"
+version = "35.1.0"
+description = "Automate software composition analysis pipelines"
+readme = "README.rst"
+requires-python = ">=3.10,<3.14"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE", "scan.NOTICE"]
+authors = [
+    { name = "nexB Inc.", email = "info@aboutcode.org" }
+]
+keywords = [
+    "open source", "scan", "license", "package", "dependency",
+    "copyright", "filetype", "author", "extract", "licensing",
+    "scancode", "scanpipe", "docker", "rootfs", "vm",
+    "virtual machine", "pipeline", "code analysis", "container"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Legal Industry",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Utilities"
+]
+dependencies = [
+  "importlib-metadata==8.7.0",
+  "setuptools==80.9.0",
+  # Django related
+  "Django==5.1.11",
+  "django-environ==0.12.0",
+  "django-crispy-forms==2.4",
+  "crispy-bootstrap3==2024.1",
+  "django-filter==25.1",
+  "djangorestframework==3.16.0",
+  "django-taggit==6.1.0",
+  # Database
+  "psycopg[binary]==3.2.9",
+  # wait_for_database Django management command
+  "django-probes==1.7.0",
+  # Task queue
+  "rq==2.4.0",
+  "django-rq==3.0.1",
+  "redis==6.2.0",
+  # WSGI server
+  "gunicorn==23.0.0",
+  # Docker
+  "container-inspector==33.0.0",
+  # ScanCode-toolkit
+  "scancode-toolkit[packages]==32.4.0",
+  "extractcode[full]==31.0.0",
+  "commoncode==32.3.0",
+  "Beautifulsoup4[chardet]==4.13.4",
+  "packageurl-python==0.17.1",
+  # FetchCode
+  "fetchcode-container==1.2.3.210512; sys_platform == 'linux'",
+  # Inspectors
+  "elf-inspector==0.0.3",
+  "go-inspector==0.5.0",
+  "rust-inspector==0.1.0",
+  "binary-inspector==0.1.2",
+  "python-inspector==0.14.0",
+  "source-inspector==0.7.0; sys_platform != 'darwin' and platform_machine != 'arm64'",
+  "aboutcode-toolkit==11.1.1",
+  # Utilities
+  "XlsxWriter==3.2.5",
+  "openpyxl==3.1.5",
+  "requests==2.32.4",
+  "GitPython==3.1.44",
+  # Profiling
+  "pyinstrument==5.0.2",
+  # CycloneDX
+  "cyclonedx-python-lib==10.2.0",
+  "jsonschema==4.24.0",
+  # MatchCode-toolkit
+  "matchcode-toolkit==7.2.2",
+  # Univers
+  "univers==31.0.0",
+  # Markdown
+  "markdown-it-py==3.0.0",
+  "bleach==6.2.0",
+  # Antivirus
+  "clamd==1.0.2",
+  # FederatedCode
+  "aboutcode.hashid==0.2.0",
+  # AboutCode pipeline
+  "aboutcode.pipeline==0.2.1",
+  "scipy==1.15.3"
+]
+
+[project.optional-dependencies]
+dev = [
+  # Validation
+  "ruff==0.12.0",
+  "doc8==2.0.0",
+  # Debug
+  "django-debug-toolbar==5.2.0",
+  # Documentation
+  "Sphinx==8.1.3",
+  "sphinx-rtd-theme==3.0.2",
+  "sphinx-rtd-dark-mode==1.3.0",
+  "sphinxcontrib-django==2.5",
+]
+android_analysis = [
+  "android_inspector==0.0.1"
+]
+
+[project.urls]
+Homepage = "https://github.com/aboutcode-org/scancode.io"
+Documentation = "https://scancodeio.readthedocs.io/"
+Repository = "https://github.com/aboutcode-org/scancode.io.git"
+Issues = "https://github.com/aboutcode-org/scancode.io/issues"
+Changelog = "https://github.com/aboutcode-org/scancode.io/blob/main/CHANGELOG.rst"
+
+[project.scripts]
+scanpipe = "scancodeio:command_line"
+run = "scancodeio:combined_run"
+
+[project.entry-points."scancodeio_pipelines"]
+analyze_docker_image = "scanpipe.pipelines.analyze_docker:Docker"
+analyze_root_filesystem_or_vm_image = "scanpipe.pipelines.analyze_root_filesystem:RootFS"
+analyze_windows_docker_image = "scanpipe.pipelines.analyze_docker_windows:DockerWindows"
+collect_strings_gettext = "scanpipe.pipelines.collect_strings_gettext:CollectStringsGettext"
+collect_symbols_ctags = "scanpipe.pipelines.collect_symbols_ctags:CollectSymbolsCtags"
+collect_symbols_pygments = "scanpipe.pipelines.collect_symbols_pygments:CollectSymbolsPygments"
+collect_symbols_tree_sitter = "scanpipe.pipelines.collect_symbols_tree_sitter:CollectSymbolsTreeSitter"
+enrich_with_purldb = "scanpipe.pipelines.enrich_with_purldb:EnrichWithPurlDB"
+find_vulnerabilities = "scanpipe.pipelines.find_vulnerabilities:FindVulnerabilities"
+inspect_elf_binaries = "scanpipe.pipelines.inspect_elf_binaries:InspectELFBinaries"
+inspect_packages = "scanpipe.pipelines.inspect_packages:InspectPackages"
+load_inventory = "scanpipe.pipelines.load_inventory:LoadInventory"
+load_sbom = "scanpipe.pipelines.load_sbom:LoadSBOM"
+map_deploy_to_develop = "scanpipe.pipelines.deploy_to_develop:DeployToDevelop"
+match_to_matchcode = "scanpipe.pipelines.match_to_matchcode:MatchToMatchCode"
+populate_purldb = "scanpipe.pipelines.populate_purldb:PopulatePurlDB"
+publish_to_federatedcode = "scanpipe.pipelines.publish_to_federatedcode:PublishToFederatedCode"
+resolve_dependencies = "scanpipe.pipelines.resolve_dependencies:ResolveDependencies"
+scan_codebase = "scanpipe.pipelines.scan_codebase:ScanCodebase"
+scan_for_virus = "scanpipe.pipelines.scan_for_virus:ScanForVirus"
+scan_single_package = "scanpipe.pipelines.scan_single_package:ScanSinglePackage"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
 [tool.ruff]
 line-length = 88
 extend-exclude = ["migrations", "var"]
@@ -35,3 +188,6 @@ max-complexity = 10
 [tool.ruff.lint.per-file-ignores]
 # Allow the usage of assert in the test_spdx file.
 "**/test_spdx.py*" = ["S101"]
+"scanpipe/pipes/spdx.py" = ["UP006", "UP035"]
+# Allow complexity in management commands
+"scanpipe/management/commands/*" = ["C901"]

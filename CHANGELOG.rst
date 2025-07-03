@@ -1,12 +1,91 @@
 Changelog
 =========
 
-v34.10.2 (unreleased)
+v35.1.0 (2025-07-02)
+--------------------
+
+- Replace the ``setup.py``/``setup.cfg`` by ``pyproject.toml`` file.
+  https://github.com/aboutcode-org/scancode.io/issues/1608
+
+- Update scancode-toolkit to v32.4.0. See CHANGELOG for updates:
+  https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.4.0
+  Adds a new ``git_sha1`` attribute to the ``CodebaseResource`` model as this
+  is now computed and returned from the ``scancode-toolkit`` ``--info`` plugin.
+  https://github.com/aboutcode-org/scancode.io/pull/1708
+
+- Add a ``--fail-on-vulnerabilities`` option in ``check-compliance`` management command.
+  When this option is enabled, the command will exit with a non-zero status if known
+  vulnerabilities are detected in discovered packages and dependencies.
+  Requires the ``find_vulnerabilities`` pipeline to be executed beforehand.
+  https://github.com/aboutcode-org/scancode.io/pull/1702
+
+- Enable ``--license-references`` scan option in the ``scan_single_package`` pipeline.
+  The ``license_references`` and ``license_rule_references`` attributes will now be
+  available in the scan results, including the details about detected licenses and
+  license rules used during the scan.
+  https://github.com/aboutcode-org/scancode.io/issues/1657
+
+- Add a new step to the ``DeployToDevelop`` pipeline, ``map_python``, to match
+  Cython source files (.pyx) to their compiled binaries.
+  https://github.com/aboutcode-org/scancode.io/pull/1703
+
+v35.0.0 (2025-06-23)
+--------------------
+
+- Add support for Python 3.13.
+  Upgrade the base image in Dockerfile to ``python:3.13-slim``.
+  https://github.com/aboutcode-org/scancode.io/pull/1469/files
+
+- Display matched snippets details in "Resource viewer", including the package,
+  resource, and similarity values.
+  https://github.com/aboutcode-org/scancode.io/issues/1688
+
+- Add filtering by label and pipeline in the ``flush-projects`` management command.
+  Also, a new ``--dry-run`` option is available to test the filters before applying
+  the deletion.
+  https://github.com/aboutcode-org/scancode.io/pull/1690
+
+- Add support for using Package URL (purl) as project input.
+  This implementation is based on ``purl2url.get_download_url``.
+  https://github.com/aboutcode-org/scancode.io/issues/1383
+
+- Raise a ``MatchCodeIOException`` when the response from the MatchCode.io service is
+  not valid in ``send_project_json_to_matchcode``.
+  This generally means an issue on the MatchCode.io server side.
+  https://github.com/aboutcode-org/scancode.io/issues/1665
+
+- Upgrade Bulma CSS and Ace JS libraries to latest versions.
+  Refine the CSS for the Resource viewer.
+  https://github.com/aboutcode-org/scancode.io/pull/1692
+
+- Add "(No value detected)" for Copyright and Holder charts.
+  https://github.com/aboutcode-org/scancode.io/issues/1697
+
+- Add "Package Compliance Alert" chart in the Policies section.
+  https://github.com/aboutcode-org/scancode.io/pull/1699
+
+- Update univers to v31.0.0, catch ``NotImplementedError`` in
+  ``get_unique_unresolved_purls``, and properly log error in project.
+  https://github.com/aboutcode-org/scancode.io/pull/1700
+  https://github.com/aboutcode-org/scancode.io/pull/1701
+
+v34.11.0 (2025-05-02)
 ---------------------
 
 - Add a ``UUID`` field on the DiscoveredDependency model.
   Use the UUID for the DiscoveredDependency spdx_id for better SPDX compatibility.
   https://github.com/aboutcode-org/scancode.io/issues/1651
+
+- Add MatchCode-specific functions to compute fingerprints from stemmed code
+  files. Update CodebaseResource file content view to display snippet matches,
+  if available, when the codebase has been sent for matching to MatchCode.
+  https://github.com/aboutcode-org/scancode.io/pull/1656
+
+- Add the ability to export filtered QuerySet of a FilterView into the JSON format.
+  https://github.com/aboutcode-org/scancode.io/pull/1572
+
+- Include ``ProjectMessage`` records in the JSON output ``headers`` section.
+  https://github.com/aboutcode-org/scancode.io/issues/1659
 
 v34.10.1 (2025-03-26)
 ---------------------

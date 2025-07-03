@@ -21,6 +21,8 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from collections import Counter
+from dataclasses import dataclass
+from dataclasses import field
 
 from scipy.spatial.distance import jensenshannon
 
@@ -38,15 +40,63 @@ each of them and match them to the symbols obtained from the source
 MATCHING_RATIO_RUST = 0.5
 SMALL_FILE_SYMBOLS_THRESHOLD = 20
 MATCHING_RATIO_RUST_SMALL_FILE = 0.4
-
+MATCHING_RATIO_ELF = 0.05
+MATCHING_RATIO_MACHO = 0.15
+MATCHING_RATIO_WINPE = 0.15
 MATCHING_RATIO_JAVASCRIPT = 0.7
 SMALL_FILE_SYMBOLS_THRESHOLD_JAVASCRIPT = 30
 MATCHING_RATIO_JAVASCRIPT_SMALL_FILE = 0.5
 JAVASCRIPT_DECOMPOSED_SYMBOLS_THRESHOLD = 0.5
+STATS_FIELDS = [
+    "matched_symbols",
+    "unmatched_symbols",
+    "matched_symbols_ratio",
+    "matched_symbols_unique_ratio",
+    "source_symbols_count",
+    "matched_symbols_count",
+]
+
+
+@dataclass
+class SymbolsMatchResult:
+    """
+    Statistics and debug information for each attempted matching
+    between a binary and a source file using extracted symbols.
+    Contains CodebaseRelation and other data to create the codebase
+    realtions optionally if matching with symbols is successful.
+    """
+
+    from_resource: str
+    is_matched: bool
+    relation_key: tuple | None = None
+    codebase_relation: CodebaseRelation | None = None
+    matched_symbols: list = field(default_factory=list)
+    unmatched_symbols: list = field(default_factory=list)
+    matched_symbols_ratio: int = 0
+    matched_symbols_unique_ratio: int = 0
+    source_symbols_count: int = 0
+    matched_symbols_count: int = 0
+
+    def update_stats_from_mapping(self, data):
+        for stats_field in STATS_FIELDS:
+            value = data.get(stats_field)
+            if value:
+                setattr(self, stats_field, value)
+
+    def get_stats_mapping(self):
+        mapping = {}
+        for stats_field in STATS_FIELDS:
+            value = getattr(self, stats_field)
+            if isinstance(value, list):
+                value = sorted(value)
+
+            mapping[stats_field] = value
+
+        return mapping
 
 
 def map_resources_with_symbols(
-    to_resource, from_resources, binary_symbols, map_type, logger=None
+    project, to_resource, from_resources, binary_symbols, map_type, logger=None
 ):
     """
     Map paths found in the ``to_resource`` extra_data to paths of the ``from_resources``
@@ -57,35 +107,46 @@ def map_resources_with_symbols(
 
     # Accumulate unique relation objects for bulk creation
     relations_to_create = {}
+    unmapped_source_files_with_stats = {}
 
     # These are of type string
-    paths_not_mapped = to_resource.extra_data[f"{map_type}_not_mapped"] = []
-    for item in match_source_paths_to_binary(
+    paths_not_mapped = to_resource.extra_data[f"{map_type}_paths_not_mapped"] = []
+    for result in match_source_paths_to_binary(
         to_resource=to_resource,
         from_resources=from_resources,
         binary_symbols=binary_symbols,
         map_type=map_type,
         logger=logger,
     ):
-        if isinstance(item, str):
-            paths_not_mapped.append(item)
+        stats = result.get_stats_mapping()
+        result.from_resource.extra_data["match_stats"] = stats
+        if not result.is_matched:
+            paths_not_mapped.append(result.from_resource.path)
+            unmapped_source_files_with_stats[result.from_resource.path] = stats
         else:
-            rel_key, relation = item
-            if rel_key not in relations_to_create:
-                relations_to_create[rel_key] = relation
+            if result.relation_key not in relations_to_create:
+                relations_to_create[result.relation_key] = result.codebase_relation
+
+        result.from_resource.save()
 
     # If there are any non-test files in the rust source files which
     # are not mapped, we mark the binary as REQUIRES_REVIEW
-    has_non_test_unmapped_files = any(
+    has_undeployed_unmapped_files = any(
         [True for path in paths_not_mapped if "/tests/" not in path]
     )
-    if paths_not_mapped and has_non_test_unmapped_files:
+    if paths_not_mapped and has_undeployed_unmapped_files:
         to_resource.update(status=flag.REQUIRES_REVIEW)
-        if logger:
-            logger(
-                f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT mapped for: "
-                f"{to_resource.path!r}"
-            )
+        warning_message = (
+            f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT mapped for: "
+            f"{to_resource.path!r}"
+        )
+        project.add_warning(
+            description=warning_message,
+            model="map_resources_with_symbols",
+            details=unmapped_source_files_with_stats,
+        )
+
+    to_resource.save()
 
     if relations_to_create:
         rels = CodebaseRelation.objects.bulk_create(relations_to_create.values())
@@ -100,7 +161,7 @@ def map_resources_with_symbols(
         logger(f"No mappings using {map_type} for: {to_resource.path!r}")
 
 
-def match_source_symbols_to_binary(source_symbols, binary_symbols):
+def match_source_symbols_to_binary(source_symbols, binary_symbols, map_type):
     binary_symbols_set = set(binary_symbols)
     source_symbols_set = set(source_symbols)
     source_symbols_count = len(source_symbols)
@@ -108,32 +169,64 @@ def match_source_symbols_to_binary(source_symbols, binary_symbols):
 
     source_symbols_counter = Counter(source_symbols)
 
-    common_symbols = source_symbols_set.intersection(binary_symbols_set)
-    common_symbols_count = sum(
-        [source_symbols_counter.get(symbol) for symbol in common_symbols]
+    matched_symbols = source_symbols_set.intersection(binary_symbols_set)
+    unmatched_symbols = source_symbols_set.difference(matched_symbols)
+
+    matched_symbols_count = sum(
+        [source_symbols_counter.get(symbol) for symbol in matched_symbols]
     )
-    common_symbols_ratio = common_symbols_count / source_symbols_count
-    common_symbols_unique_count = len(common_symbols)
-    common_symbols_unique_ratio = (
-        common_symbols_unique_count / source_symbols_unique_count
+    matched_symbols_ratio = matched_symbols_count / source_symbols_count
+    matched_symbols_unique_count = len(matched_symbols)
+    matched_symbols_unique_ratio = (
+        matched_symbols_unique_count / source_symbols_unique_count
     )
     stats = {
-        "common_symbols_unique_ratio": common_symbols_unique_ratio,
-        "common_symbols_ratio": common_symbols_ratio,
+        "matched_symbols_unique_ratio": f"{matched_symbols_unique_ratio:.2f}",
+        "matched_symbols_ratio": f"{matched_symbols_ratio:.2f}",
+        "source_symbols_count": f"{source_symbols_count:.2f}",
+        "matched_symbols_count": f"{matched_symbols_count:.2f}",
+        "matched_symbols": list(matched_symbols),
+        "unmatched_symbols": list(unmatched_symbols),
     }
 
-    if (
-        common_symbols_ratio > MATCHING_RATIO_RUST
-        or common_symbols_unique_ratio > MATCHING_RATIO_RUST
-    ):
-        return True, stats
-    elif source_symbols_count > SMALL_FILE_SYMBOLS_THRESHOLD and (
-        common_symbols_ratio > MATCHING_RATIO_RUST_SMALL_FILE
-        or common_symbols_unique_ratio > MATCHING_RATIO_RUST_SMALL_FILE
-    ):
-        return True, stats
-    else:
-        return False, stats
+    if map_type == "rust_symbols":
+        if (
+            matched_symbols_ratio > MATCHING_RATIO_RUST
+            or matched_symbols_unique_ratio > MATCHING_RATIO_RUST
+        ):
+            return True, stats
+        elif source_symbols_count > SMALL_FILE_SYMBOLS_THRESHOLD and (
+            matched_symbols_ratio > MATCHING_RATIO_RUST_SMALL_FILE
+            or matched_symbols_unique_ratio > MATCHING_RATIO_RUST_SMALL_FILE
+        ):
+            return True, stats
+        else:
+            return False, stats
+
+    elif map_type == "elf_symbols":
+        if (
+            matched_symbols_ratio > MATCHING_RATIO_ELF
+            or matched_symbols_unique_ratio > MATCHING_RATIO_ELF
+        ):
+            return True, stats
+        else:
+            return False, stats
+    elif map_type == "macho_symbols":
+        if (
+            matched_symbols_ratio > MATCHING_RATIO_MACHO
+            or matched_symbols_unique_ratio > MATCHING_RATIO_MACHO
+        ):
+            return True, stats
+        else:
+            return False, stats
+    elif map_type == "winpe_symbols":
+        if (
+            matched_symbols_ratio > MATCHING_RATIO_WINPE
+            or matched_symbols_unique_ratio > MATCHING_RATIO_WINPE
+        ):
+            return True, stats
+        else:
+            return False, stats
 
 
 def match_source_paths_to_binary(
@@ -147,28 +240,35 @@ def match_source_paths_to_binary(
     progress = LoopProgress(from_resources.count(), logger)
 
     for resource in progress.iter(resource_iterator):
+        symbol_match_result = SymbolsMatchResult(
+            from_resource=resource,
+            is_matched=False,
+        )
         source_symbols = resource.extra_data.get("source_symbols")
         if not source_symbols:
-            yield resource.path
+            yield symbol_match_result
             continue
 
         is_source_matched, match_stats = match_source_symbols_to_binary(
             source_symbols=source_symbols,
             binary_symbols=binary_symbols,
+            map_type=map_type,
         )
+        symbol_match_result.update_stats_from_mapping(data=match_stats)
         if not is_source_matched:
-            yield resource.path
+            yield symbol_match_result
             continue
 
-        rel_key = (resource.path, to_resource.path, map_type)
-        relation = CodebaseRelation(
+        symbol_match_result.is_matched = True
+        symbol_match_result.relation_key = (resource.path, to_resource.path, map_type)
+        symbol_match_result.codebase_relation = CodebaseRelation(
             project=resource.project,
             from_resource=resource,
             to_resource=to_resource,
             map_type=map_type,
             extra_data=match_stats,
         )
-        yield rel_key, relation
+        yield symbol_match_result
 
 
 def is_decomposed_javascript(symbols):

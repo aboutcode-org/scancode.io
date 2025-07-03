@@ -176,6 +176,8 @@ class ScanPipeOutputPipesTest(TestCase):
         fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
+        make_message(project, model="resource", description="Error1")
+        make_message(project, model="package", description="Error2")
 
         output_file = output.to_json(project=project)
         self.assertIn(output_file.name, project.output_root)
@@ -190,6 +192,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual(18, len(results["files"]))
         self.assertEqual(2, len(results["packages"]))
         self.assertEqual(4, len(results["dependencies"]))
+        self.assertEqual(2, len(results["headers"][0]["messages"]))
 
         self.assertEqual("scanpipe", results["headers"][0]["tool_name"])
         expected = [f"pkg:pypi/scancode-toolkit@{scancode_toolkit_version}"]
@@ -199,7 +202,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
         # Make sure the output can be generated even if the work_directory was wiped
         shutil.rmtree(project.work_directory)
-        with self.assertNumQueries(9):
+        with self.assertNumQueries(10):
             output_file = output.to_json(project=project)
         self.assertIn(output_file.name, project.output_root)
 
@@ -298,6 +301,7 @@ class ScanPipeOutputPipesTest(TestCase):
             "sha1",
             "sha256",
             "sha512",
+            "sha1_git",
             "is_binary",
             "is_text",
             "is_archive",
@@ -334,7 +338,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
         project = Project.objects.get(name="asgiref")
         package = project.discoveredpackages.get(
-            uuid="b5035991-5b4b-40be-b68b-1c9c528078cd"
+            uuid="80e083f1-7d05-432e-96f8-e6dfd9e494f0"
         )
 
         package.other_license_expression_spdx = "Apache-2.0 AND LicenseRef-test"

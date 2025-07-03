@@ -65,7 +65,9 @@ class ScanPipeSymbolmapPipesTest(TestCase):
             "Ok",
         ]
         is_source_matched, _stats = symbolmap.match_source_symbols_to_binary(
-            rust_test_file_symbols, self.get_binary_symbols()
+            rust_test_file_symbols,
+            self.get_binary_symbols(),
+            map_type="rust_symbols",
         )
         self.assertFalse(is_source_matched)
 
@@ -128,7 +130,9 @@ class ScanPipeSymbolmapPipesTest(TestCase):
             "write",
         ]
         is_source_matched, _stats = symbolmap.match_source_symbols_to_binary(
-            rust_main_file_symbols, self.get_binary_symbols()
+            rust_main_file_symbols,
+            self.get_binary_symbols(),
+            map_type="rust_symbols",
         )
         self.assertTrue(is_source_matched)
 
@@ -174,6 +178,7 @@ class ScanPipeSymbolmapPipesTest(TestCase):
             project=project1, path="binary"
         )
         symbolmap.map_resources_with_symbols(
+            project=project1,
             to_resource=binary_resource,
             from_resources=CodebaseResource.objects.all().filter(path__endswith=".rs"),
             binary_symbols=["test_symbol1", "test_symbol2"],

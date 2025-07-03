@@ -425,28 +425,30 @@ if not SCANCODEIO_REQUIRE_AUTHENTICATION:
 
 # VulnerableCode integration
 
-VULNERABLECODE_URL = env.str("VULNERABLECODE_URL", default="")
+VULNERABLECODE_URL = env.str("VULNERABLECODE_URL", default="").rstrip("/")
 VULNERABLECODE_USER = env.str("VULNERABLECODE_USER", default="")
 VULNERABLECODE_PASSWORD = env.str("VULNERABLECODE_PASSWORD", default="")
 VULNERABLECODE_API_KEY = env.str("VULNERABLECODE_API_KEY", default="")
 
 # PurlDB integration
 
-PURLDB_URL = env.str("PURLDB_URL", default="")
+PURLDB_URL = env.str("PURLDB_URL", default="").rstrip("/")
 PURLDB_USER = env.str("PURLDB_USER", default="")
 PURLDB_PASSWORD = env.str("PURLDB_PASSWORD", default="")
 PURLDB_API_KEY = env.str("PURLDB_API_KEY", default="")
 
 # MatchCode.io integration
 
-MATCHCODEIO_URL = env.str("MATCHCODEIO_URL", default="")
+MATCHCODEIO_URL = env.str("MATCHCODEIO_URL", default="").rstrip("/")
 MATCHCODEIO_USER = env.str("MATCHCODEIO_USER", default="")
 MATCHCODEIO_PASSWORD = env.str("MATCHCODEIO_PASSWORD", default="")
 MATCHCODEIO_API_KEY = env.str("MATCHCODEIO_API_KEY", default="")
 
 # FederatedCode integration
 
-FEDERATEDCODE_GIT_ACCOUNT_URL = env.str("FEDERATEDCODE_GIT_ACCOUNT_URL", default="")
+FEDERATEDCODE_GIT_ACCOUNT_URL = env.str(
+    "FEDERATEDCODE_GIT_ACCOUNT_URL", default=""
+).rstrip("/")
 FEDERATEDCODE_GIT_SERVICE_TOKEN = env.str("FEDERATEDCODE_GIT_SERVICE_TOKEN", default="")
 FEDERATEDCODE_GIT_SERVICE_NAME = env.str("FEDERATEDCODE_GIT_SERVICE_NAME", default="")
 FEDERATEDCODE_GIT_SERVICE_EMAIL = env.str("FEDERATEDCODE_GIT_SERVICE_EMAIL", default="")
