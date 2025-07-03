@@ -39,6 +39,7 @@ from django.core.files import File
 
 import git
 import requests
+import scanpipe
 from commoncode import command
 from commoncode.hash import multi_checksums
 from commoncode.text import python_safe_name
@@ -47,6 +48,7 @@ from requests import auth as request_auth
 
 from scanpipe.models import DownloadedPackage
 from scanpipe.models import PackageArchive
+from io import BytesIO  
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -364,7 +366,7 @@ def fetch_git_repo(url, to=None):
     )
 
 
-def store_package_archive(project, url=None, file_path=None):
+def store_package_archive(project, url=None, file_path=None, pipeline_name=None):
     """
     Store a package in PackageArchive and link it to DownloadedPackage.
 
@@ -387,39 +389,55 @@ def store_package_archive(project, url=None, file_path=None):
         logger.info("Package storage disabled (ENABLE_PACKAGE_STORAGE=False)")
         return None
 
-    if not file_path:
-        input_files = project.input_files.all()
-        if not input_files:
-            logger.info("No input files found for project")
-            return None
-        file_path = input_files[0].path
-        logger.info(f"Using first input file: {file_path}")
-
-    file_path = str(file_path)
-    logger.info(f"Processing file: {file_path}")
-
-    try:
-        with open(file_path, "rb") as f:
-            checksum = hashlib.sha256(f.read()).hexdigest()
-        logger.info(f"Calculated SHA256: {checksum}")
-    except FileNotFoundError as e:
-        logger.error(f"File not found: {file_path}, error: {e}")
+    if not file_path and not url:
+        logger.error("Either file_path or url must be provided")
         return None
+    
+    if url:
+        existing = DownloadedPackage.objects.filter(project=project, url=url).first()
+        if existing and not should_rescan(existing, pipeline_name):
+            logger.info(f"Using existing package: {existing.package_archive.package_file.name}")
+            return existing
+
+    if file_path:
+       file_path = str(file_path)
+       if not Path(file_path).exists():
+            logger.error(f"File not found: {file_path}")
+            return None
+       with open(file_path, "rb") as f:
+            content = f.read()
+       filename = os.path.basename(file_path)
+    else:
+        try:
+            response = requests.get(url, stream=True)
+            response.raise_for_status()
+            content = response.content
+            filename = os.path.basename(url.split("?")[0])
+        except requests.RequestException as e:
+            logger.error(f"Failed to download {url}: {e}")
+            return None
+        
+    checksum = hashlib.sha256(content).hexdigest()
+    logger.info(f"Calculated SHA256: {checksum}")
+
+    existing_archive = PackageArchive.objects.filter(checksum_sha256=checksum).first()
+    if existing_archive:
+        existing = DownloadedPackage.objects.filter(
+            project=project, package_archive=existing_archive
+        ).first()
+        if existing and not should_rescan(existing, pipeline_name):
+            logger.info(f"Using existing package: {existing_archive.package_file.name}")
+            return existing
 
     try:
-        archive, created = PackageArchive.objects.get_or_create(
+        archive = PackageArchive(
             checksum_sha256=checksum,
-            defaults={
-                "storage_path": file_path,
-                "package_file": File(
-                    open(file_path, "rb"), name=os.path.basename(file_path)
-                ),
-            },
+            size=len(content),
         )
-        logger.info(
-            f"PackageArchive {'created' if created else 'retrieved'}:"
-            "{archive.checksum_sha256}"
-        )
+        with open(file_path, "rb") if file_path else BytesIO(content) as f:
+            archive.package_file.save(filename, File(f), save=False)
+        archive.save()
+        logger.info(f"Created PackageArchive: {archive.checksum_sha256}")
     except Exception as e:
         logger.error(f"Error creating PackageArchive: {e}")
         return None
@@ -428,8 +446,10 @@ def store_package_archive(project, url=None, file_path=None):
         dp = DownloadedPackage.objects.create(
             project=project,
             url=url or "",
-            filename=os.path.basename(file_path),
+            filename=filename,
             package_archive=archive,
+            scancode_version=scanpipe.__version__,
+            pipeline_name=pipeline_name or "",
         )
         logger.info(f"DownloadedPackage created: {dp.url}, {dp.filename}")
         return dp
@@ -437,6 +457,12 @@ def store_package_archive(project, url=None, file_path=None):
         logger.error(f"Error creating DownloadedPackage: {e}")
         return None
 
+def should_rescan(package, pipeline_name):
+    """Check if rescanning is needed based on ScanCode version or pipeline."""
+    current_version = scanpipe.__version__
+    return package.scancode_version != current_version or (
+        pipeline_name and package.pipeline_name != pipeline_name
+    )
 
 SCHEME_TO_FETCHER_MAPPING = {
     "http": fetch_http,

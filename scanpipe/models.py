@@ -4427,9 +4427,7 @@ class PackageArchive(UUIDPKModel):
     )
 
     class Meta:
-        indexes = [
-            models.Index(fields=["checksum_sha256"], name="checksum_idx"),
-        ]
+       pass
 
     def __str__(self):
         return f"Archive {self.checksum_sha256[:8]} at {
@@ -4478,6 +4476,16 @@ class DownloadedPackage(UUIDPKModel):
         on_delete=models.CASCADE,
         help_text=_("The stored archive file associated with this package."),
     )
+    scancode_version = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text=_("ScanCode version used for scanning."),
+    )
+    pipeline_name = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text=_("Pipeline used to process the package."),
+    )
 
     class Meta:
         indexes = [
@@ -4489,8 +4497,12 @@ class DownloadedPackage(UUIDPKModel):
                 condition=Q(url__gt=""),
                 name="%(app_label)s_%(class)s_unique_url_project",
             ),
+            models.UniqueConstraint(
+                fields=["project", "package_archive"],
+                name="%(app_label)s_%(class)s_unique_project_archive",
+            ),
         ]
-
+        
     def __str__(self):
         return f"{self.filename} for project {self.project.name}"
 
