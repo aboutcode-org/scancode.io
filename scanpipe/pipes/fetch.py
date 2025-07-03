@@ -131,8 +131,8 @@ def fetch_http(uri, to=None):
 
     content_disposition = response.headers.get("content-disposition", "")
     msg = Message()
-    msg['Content-Disposition'] = content_disposition
-    params = dict(msg.get_params(header='content-disposition'))
+    msg["Content-Disposition"] = content_disposition
+    params = dict(msg.get_params(header="content-disposition"))
     filename = params.get("filename")
     if not filename:
         # Using `response.url` in place of provided `Scan.uri` since the former
