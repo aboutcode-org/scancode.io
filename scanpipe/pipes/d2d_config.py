@@ -154,6 +154,9 @@ def load_ecosystem_config(pipeline, options):
     # Add default configurations which are common accross ecosystems
     pipeline.ecosystem_config = ECOSYSTEM_CONFIGS.get("Default")
 
+    if not options:
+        return
+
     # Add configurations for each selected ecosystem
     for selected_option in options:
         if selected_option not in ECOSYSTEM_CONFIGS:
@@ -184,6 +187,5 @@ def add_ecosystem_config(pipeline_ecosystem_config, ecosystem_config):
             if not pipeline_config_value:
                 new_config_value = config_value
             else:
-                new_config_value = pipeline_config_value.extend(config_value)
-
+                new_config_value = config_value + pipeline_config_value
             setattr(pipeline_ecosystem_config, config_name, new_config_value)
