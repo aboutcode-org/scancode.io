@@ -704,7 +704,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         output_file = io.BytesIO(b"".join(response.streaming_content))
         workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
-        self.assertEqual(["PACKAGES"], workbook.get_sheet_names())
+        self.assertEqual(["PACKAGES"], workbook.sheetnames)
 
         todos_sheet = workbook.get_sheet_by_name("PACKAGES")
         rows = list(todos_sheet.values)

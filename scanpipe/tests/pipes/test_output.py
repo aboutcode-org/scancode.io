@@ -234,7 +234,7 @@ class ScanPipeOutputPipesTest(TestCase):
             "MESSAGES",
             "TODOS",
         ]
-        self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
+        self.assertEqual(expected_sheet_names, workbook.sheetnames)
 
     def test_scanpipe_pipes_outputs_get_xlsx_report(self):
         project_qs = None
@@ -259,7 +259,7 @@ class ScanPipeOutputPipesTest(TestCase):
         expected_sheet_names = [
             "PACKAGES",
         ]
-        self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
+        self.assertEqual(expected_sheet_names, workbook.sheetnames)
 
         model_short_name = "todo"
         output_file = output.get_xlsx_report(project_qs, model_short_name)
@@ -267,7 +267,7 @@ class ScanPipeOutputPipesTest(TestCase):
         expected_sheet_names = [
             "TODOS",
         ]
-        self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
+        self.assertEqual(expected_sheet_names, workbook.sheetnames)
 
     def test_scanpipe_pipes_outputs_get_xlsx_fields_order(self):
         output_file = output.to_xlsx(project=make_project())

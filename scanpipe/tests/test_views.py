@@ -237,7 +237,7 @@ class ScanPipeViewsTest(TestCase):
 
         output_file = io.BytesIO(b"".join(response.streaming_content))
         workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
-        self.assertEqual(["TODOS"], workbook.get_sheet_names())
+        self.assertEqual(["TODOS"], workbook.sheetnames)
 
     def test_scanpipe_views_project_action_reset_view(self):
         url = reverse("project_action")
