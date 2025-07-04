@@ -431,6 +431,9 @@ class ExtraDataFieldMixin(models.Model):
         help_text=_("Optional mapping of extra data key/values."),
     )
 
+    class Meta:
+        abstract = True
+
     def update_extra_data(self, data):
         """Update the `extra_data` field with the provided `data` dict."""
         if not isinstance(data, dict):
@@ -438,9 +441,6 @@ class ExtraDataFieldMixin(models.Model):
 
         self.extra_data.update(data)
         self.save(update_fields=["extra_data"])
-
-    class Meta:
-        abstract = True
 
 
 class UpdateMixin:
@@ -634,6 +634,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         global_webhook = settings.SCANCODEIO_GLOBAL_WEBHOOK
         if global_webhook and is_new and not is_clone and not skip_global_webhook:
             self.setup_global_webhook()
+
+    def get_absolute_url(self):
+        """Return this project's details URL."""
+        return reverse("project_detail", args=[self.slug])
 
     def setup_global_webhook(self):
         """
@@ -1180,8 +1184,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         file_path = Path(self.input_path / filename)
 
         with open(file_path, "wb+") as f:
-            for chunk in file_object.chunks():
-                f.write(chunk)
+            f.writelines(file_object.chunks())
 
     def copy_input_from(self, input_location):
         """
@@ -1427,10 +1430,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             exception,
             object_instance,
         )
-
-    def get_absolute_url(self):
-        """Return this project's details URL."""
-        return reverse("project_detail", args=[self.slug])
 
     @cached_property
     def resource_count(self):
@@ -2533,21 +2532,6 @@ class ComplianceAlertMixin(models.Model):
     class Meta:
         abstract = True
 
-    @classmethod
-    def from_db(cls, db, field_names, values):
-        """
-        Store the ``license_expression_field`` on loading this instance from the
-        database value.
-        The cached value is then used to detect changes on `save()`.
-        """
-        new = super().from_db(db, field_names, values)
-
-        if cls.license_expression_field in field_names:
-            field_index = field_names.index(cls.license_expression_field)
-            new._loaded_license_expression = values[field_index]
-
-        return new
-
     def save(self, codebase=None, *args, **kwargs):
         """
         Injects policies, if the feature is enabled, when the
@@ -2565,6 +2549,21 @@ class ComplianceAlertMixin(models.Model):
                     kwargs["update_fields"].append("compliance_alert")
 
         super().save(*args, **kwargs)
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        """
+        Store the ``license_expression_field`` on loading this instance from the
+        database value.
+        The cached value is then used to detect changes on `save()`.
+        """
+        new = super().from_db(db, field_names, values)
+
+        if cls.license_expression_field in field_names:
+            field_index = field_names.index(cls.license_expression_field)
+            new._loaded_license_expression = values[field_index]
+
+        return new
 
     @property
     def policy_index(self):
@@ -2790,6 +2789,9 @@ class CodebaseResource(
     def __str__(self):
         return self.path
 
+    def get_absolute_url(self):
+        return reverse("resource_detail", args=[self.project.slug, self.path])
+
     @property
     def location_path(self):
         """Return the location of the resource as a Path instance."""
@@ -2948,9 +2950,6 @@ class CodebaseResource(
         if "-extract" in path:
             archive_path, _, _ = self.path.rpartition("-extract")
             return self.project.get_resource(archive_path)
-
-    def get_absolute_url(self):
-        return reverse("resource_detail", args=[self.project.slug, self.path])
 
     def get_raw_url(self):
         """Return the URL to access the RAW content of the resource."""
@@ -3143,13 +3142,13 @@ class VulnerabilityMixin(models.Model):
 
     affected_by_vulnerabilities = models.JSONField(blank=True, default=list)
 
+    class Meta:
+        abstract = True
+
     @property
     def is_vulnerable(self):
         """Returns True if this instance is affected by vulnerabilities."""
         return bool(self.affected_by_vulnerabilities)
-
-    class Meta:
-        abstract = True
 
 
 class VulnerabilityQuerySetMixin:
