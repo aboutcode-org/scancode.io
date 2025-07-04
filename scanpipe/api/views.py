@@ -481,6 +481,22 @@ class ProjectViewSet(
         compliance_alerts = get_project_compliance_alerts(project, fail_level)
         return Response({"compliance_alerts": compliance_alerts})
 
+    @action(detail=True, methods=["get"])
+    def clarity_compliance(self, request, *args, **kwargs):
+        """
+        Retrieve the clarity compliance alert for a project.
+
+        This endpoint returns the clarity compliance alert stored in the
+        project's extra_data.
+
+        Example:
+          GET /api/projects/{project_id}/clarity_compliance/
+
+        """
+        project = self.get_object()
+        clarity_alert = (project.extra_data or {}).get("clarity_compliance_alert")
+        return Response({"clarity_compliance_alert": clarity_alert})
+
 
 class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """Add actions to the Run viewset."""

@@ -1213,6 +1213,48 @@ class ScanPipeManagementCommandTest(TestCase):
         )
         self.assertEqual(expected, out_value)
 
+    def test_scanpipe_management_command_check_clarity_compliance_only(self):
+        project = make_project(name="my_project_clarity")
+
+        project.extra_data = {"clarity_compliance_alert": "error"}
+        project.save(update_fields=["extra_data"])
+
+        out = StringIO()
+        options = ["--project", project.name]
+        with self.assertRaises(SystemExit) as cm:
+            call_command("check-compliance", *options, stderr=out)
+        self.assertEqual(cm.exception.code, 1)
+        out_value = out.getvalue().strip()
+        expected = (
+            "1 compliance issues detected."
+            "\n[License Clarity Compliance]\n > Alert Level: error"
+        )
+        self.assertEqual(expected, out_value)
+
+    def test_scanpipe_management_command_check_both_compliance_and_clarity(self):
+        project = make_project(name="my_project_both")
+
+        make_package(
+            project,
+            package_url="pkg:generic/name@1.0",
+            compliance_alert=CodebaseResource.Compliance.ERROR,
+        )
+        project.extra_data = {"clarity_compliance_alert": "warning"}
+        project.save(update_fields=["extra_data"])
+
+        out = StringIO()
+        options = ["--project", project.name, "--fail-level", "WARNING"]
+        with self.assertRaises(SystemExit) as cm:
+            call_command("check-compliance", *options, stderr=out)
+        self.assertEqual(cm.exception.code, 1)
+        out_value = out.getvalue().strip()
+        expected = (
+            "2 compliance issues detected."
+            "\n[packages]\n > ERROR: 1"
+            "\n[License Clarity Compliance]\n > Alert Level: warning"
+        )
+        self.assertEqual(expected, out_value)
+
     def test_scanpipe_management_command_check_compliance_vulnerabilities(self):
         project = make_project(name="my_project")
         package1 = make_package(project, package_url="pkg:generic/name@1.0")

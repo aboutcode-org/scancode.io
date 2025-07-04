@@ -83,6 +83,51 @@ detected license, and computed at the codebase resource level, for example:
       "[...]": "[...]"
     }
 
+License Clarity Thresholds and Compliance
+-----------------------------------------
+
+ScanCode.io also supports **license clarity thresholds**, allowing you to enforce
+minimum standards for license detection quality in your codebase. This is managed
+through the ``license_clarity_thresholds`` section in your ``policies.yml`` file.
+
+Defining Clarity Thresholds
+---------------------------
+
+Add a ``license_clarity_thresholds`` section to your ``policies.yml`` file, for example:
+
+.. code-block:: yaml
+
+    license_clarity_thresholds:
+      91: ok
+      80: warning
+      0: error
+
+
+Clarity Compliance in Results
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When you run a pipeline with clarity thresholds defined in your ``policies.yml``,
+the computed clarity compliance alert is included in the project's ``extra_data`` field.
+
+For example:
+
+.. code-block:: json
+
+    "extra_data": {
+      "md5": "d23df4a4",
+      "sha1": "3e9b61cc98c",
+      "size": 3095,
+      "sha256": "abacfc8bcee59067",
+      "sha512": "208f6a83c83a4c770b3c0",
+      "filename": "cuckoo_filter-1.0.6.tar.gz",
+      "sha1_git": "3fdb0f82ad59",
+      "clarity_compliance_alert": "error"
+    }
+
+The ``clarity_compliance_alert`` value (e.g., ``"error"``, ``"warning"``, or ``"ok"``)
+is computed automatically based on the thresholds you configured and reflects the
+overall license clarity status of the scanned codebase.
+
 Run the ``check-compliance`` command
 ------------------------------------
 
@@ -95,7 +140,7 @@ in the project:
 
 .. code-block:: bash
 
-    4 compliance issues detected on this project.
+    5 compliance issues detected on this project.
     [packages]
      > ERROR: 3
        pkg:pypi/cuckoo-filter@.
@@ -104,6 +149,8 @@ in the project:
     [resources]
      > ERROR: 1
        cuckoo_filter-1.0.6.tar.gz-extract/cuckoo_filter-1.0.6/README.md
+    [License Clarity Compliance]
+     > Alert Level: error
 
 .. tip::
     In case of compliance alerts, the command returns a non-zero exit code which
