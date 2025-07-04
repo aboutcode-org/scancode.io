@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+
+import hashlib
 import json
 import logging
 import os
@@ -27,22 +29,26 @@ import re
 import subprocess
 import tempfile
 from collections import namedtuple
+from email.message import Message
 from pathlib import Path
 from urllib.parse import unquote
 from urllib.parse import urlparse
 
 from django.conf import settings
-from django.utils.http import parse_header_parameters
+from django.core.files import File
 
 import git
 import requests
+import scanpipe
 from commoncode import command
 from commoncode.hash import multi_checksums
 from commoncode.text import python_safe_name
-from packageurl import PackageURL
-from packageurl.contrib import purl2url
 from plugincode.location_provider import get_location
 from requests import auth as request_auth
+
+from scanpipe.models import DownloadedPackage
+from scanpipe.models import PackageArchive
+from io import BytesIO  
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -126,7 +132,9 @@ def fetch_http(uri, to=None):
         raise requests.RequestException
 
     content_disposition = response.headers.get("content-disposition", "")
-    _, params = parse_header_parameters(content_disposition)
+    msg = Message()
+    msg["Content-Disposition"] = content_disposition
+    params = dict(msg.get_params(header="content-disposition"))
     filename = params.get("filename")
     if not filename:
         # Using `response.url` in place of provided `Scan.uri` since the former
@@ -358,16 +366,103 @@ def fetch_git_repo(url, to=None):
     )
 
 
-def fetch_package_url(url):
-    # Ensure the provided Package URL is valid, or raise a ValueError.
-    PackageURL.from_string(url)
+def store_package_archive(project, url=None, file_path=None, pipeline_name=None):
+    """
+    Store a package in PackageArchive and link it to DownloadedPackage.
 
-    # Resolve a Download URL using purl2url.
-    if download_url := purl2url.get_download_url(url):
-        return fetch_http(download_url)
+    Args:
+        project: The ScanCode.io Project instance.
+        url (str, optional): The URL from which the package was downloaded.
+        file_path (str or Path, optional): Path to the package file.
 
-    raise ValueError(f"Could not resolve a download URL for {url}.")
+    Returns:
+        DownloadedPackage: The created DownloadedPackage instance, or
+        None if storage is disabled or an error occurs.
 
+    """
+    logger.info(
+        f"store_package_archive called with project: {project}, url: {url},"
+        "file_path: {file_path}"
+    )
+
+    if not getattr(settings, "ENABLE_PACKAGE_STORAGE", False):
+        logger.info("Package storage disabled (ENABLE_PACKAGE_STORAGE=False)")
+        return None
+
+    if not file_path and not url:
+        logger.error("Either file_path or url must be provided")
+        return None
+    
+    if url:
+        existing = DownloadedPackage.objects.filter(project=project, url=url).first()
+        if existing and not should_rescan(existing, pipeline_name):
+            logger.info(f"Using existing package: {existing.package_archive.package_file.name}")
+            return existing
+
+    if file_path:
+       file_path = str(file_path)
+       if not Path(file_path).exists():
+            logger.error(f"File not found: {file_path}")
+            return None
+       with open(file_path, "rb") as f:
+            content = f.read()
+       filename = os.path.basename(file_path)
+    else:
+        try:
+            response = requests.get(url, stream=True)
+            response.raise_for_status()
+            content = response.content
+            filename = os.path.basename(url.split("?")[0])
+        except requests.RequestException as e:
+            logger.error(f"Failed to download {url}: {e}")
+            return None
+        
+    checksum = hashlib.sha256(content).hexdigest()
+    logger.info(f"Calculated SHA256: {checksum}")
+
+    existing_archive = PackageArchive.objects.filter(checksum_sha256=checksum).first()
+    if existing_archive:
+        existing = DownloadedPackage.objects.filter(
+            project=project, package_archive=existing_archive
+        ).first()
+        if existing and not should_rescan(existing, pipeline_name):
+            logger.info(f"Using existing package: {existing_archive.package_file.name}")
+            return existing
+
+    try:
+        archive = PackageArchive(
+            checksum_sha256=checksum,
+            size=len(content),
+        )
+        with open(file_path, "rb") if file_path else BytesIO(content) as f:
+            archive.package_file.save(filename, File(f), save=False)
+        archive.save()
+        logger.info(f"Created PackageArchive: {archive.checksum_sha256}")
+    except Exception as e:
+        logger.error(f"Error creating PackageArchive: {e}")
+        return None
+
+    try:
+        dp = DownloadedPackage.objects.create(
+            project=project,
+            url=url or "",
+            filename=filename,
+            package_archive=archive,
+            scancode_version=scanpipe.__version__,
+            pipeline_name=pipeline_name or "",
+        )
+        logger.info(f"DownloadedPackage created: {dp.url}, {dp.filename}")
+        return dp
+    except Exception as e:
+        logger.error(f"Error creating DownloadedPackage: {e}")
+        return None
+
+def should_rescan(package, pipeline_name):
+    """Check if rescanning is needed based on ScanCode version or pipeline."""
+    current_version = scanpipe.__version__
+    return package.scancode_version != current_version or (
+        pipeline_name and package.pipeline_name != pipeline_name
+    )
 
 SCHEME_TO_FETCHER_MAPPING = {
     "http": fetch_http,
@@ -385,7 +480,7 @@ def get_fetcher(url):
         return fetch_git_repo
 
     if url.startswith("pkg:"):
-        return fetch_package_url
+        return fetch_url
 
     # Not using `urlparse(url).scheme` for the scheme as it converts to lower case.
     scheme = url.split("://")[0]
@@ -399,15 +494,27 @@ def get_fetcher(url):
     raise ValueError(error_msg)
 
 
-def fetch_url(url):
+def fetch_url(url, project=None):
     """Fetch provided `url` and returns the result as a `Download` object."""
     fetcher = get_fetcher(url)
     logger.info(f'Fetching "{url}" using {fetcher.__name__}')
     downloaded = fetcher(url)
+    if (
+        project
+        and getattr(settings, "ENABLE_PACKAGE_STORAGE", False)
+        and project.use_local_storage
+    ):
+        logger.info(f"Storing package for project: {project.name} with url={url}")
+        store_package_archive(project, url, downloaded.path)
+    elif project and not project.use_local_storage:
+        logger.info(
+            f"Skipping package storage for project: {project.name} "
+            "(local storage disabled)"
+        )
     return downloaded
 
 
-def fetch_urls(urls):
+def fetch_urls(urls, project=None):
     """
     Fetch provided `urls` list.
     The `urls` can also be provided as a string containing one URL per line.

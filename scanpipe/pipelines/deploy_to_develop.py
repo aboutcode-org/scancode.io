@@ -20,6 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import logging
+from pathlib import Path
+
 from aboutcode.pipeline import optional_step
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
@@ -30,6 +33,10 @@ from scanpipe.pipes import input
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
+from scanpipe.pipes.fetch import store_package_archive
+from scanpipe.pipes.input import is_archive
+
+logger = logging.getLogger(__name__)
 
 
 class DeployToDevelop(Pipeline):
@@ -61,6 +68,7 @@ class DeployToDevelop(Pipeline):
             cls.extract_inputs_to_codebase_directory,
             cls.extract_archives,
             cls.collect_and_create_codebase_resources,
+            cls.store_package_archives,
             cls.fingerprint_codebase_directories,
             cls.flag_empty_files,
             cls.flag_whitespace_files,
@@ -98,6 +106,67 @@ class DeployToDevelop(Pipeline):
             cls.flag_deployed_from_resources_with_missing_license,
             cls.create_local_files_packages,
         )
+
+    purldb_package_extensions = [".jar", ".war", ".zip"]
+    purldb_resource_extensions = [
+        ".map",
+        ".js",
+        ".mjs",
+        ".ts",
+        ".d.ts",
+        ".jsx",
+        ".tsx",
+        ".css",
+        ".scss",
+        ".less",
+        ".sass",
+        ".soy",
+        ".class",
+    ]
+    doc_extensions = [
+        ".pdf",
+        ".doc",
+        ".docx",
+        ".ppt",
+        ".pptx",
+        ".tex",
+        ".odt",
+        ".odp",
+    ]
+
+    def store_package_archives(self):
+        """Store package archives locally if enabled."""
+        if not self.project.use_local_storage:
+            logger.info(
+                f"Local storage is disabled for project: {self.project.name}."
+                "Skipping package storage."
+            )
+            return []
+
+        logger.info(f"Storing package archives for project: {self.project.name}")
+        stored_files = []
+        package_files = [
+            resource.path
+            for resource in self.project.codebaseresources.all()
+            if is_archive(resource.path)
+        ]
+
+        for package_path in package_files:
+            if not Path(package_path).exists():
+                logger.error(f"Invalid or missing package path: {package_path}")
+                continue
+            package_path_str = str(package_path)
+            logger.info(f"Storing package archive: {package_path_str}")
+            try:
+                result = store_package_archive(
+                    self.project, url=None, file_path=package_path_str
+                )
+                logger.info(f"Stored package archive {package_path_str}: {result}")
+                stored_files.append(result)
+            except Exception as e:
+                logger.error(f"Failed to store {package_path_str}: {e}")
+
+        return stored_files
 
     def get_inputs(self):
         """Locate the ``from`` and ``to`` input files."""
