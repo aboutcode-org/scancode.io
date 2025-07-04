@@ -1521,14 +1521,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         return {}
 
     @cached_property
-    def policy_index(self):
+    def license_policy_index(self):
         """Return the cached license policy index for this project instance."""
         return self.get_license_policy_index()
 
     @property
-    def policies_enabled(self):
-        """Return True if the policies are enabled for this project."""
-        return bool(self.policy_index)
+    def license_policies_enabled(self):
+        """Return True if the license policies are available for this project."""
+        return bool(self.license_policy_index)
 
 
 class GroupingQuerySetMixin:
@@ -2543,7 +2543,7 @@ class ComplianceAlertMixin(models.Model):
         ``codebase`` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
-        if self.policies_enabled:
+        if self.license_policies_enabled:
             loaded_license_expression = getattr(self, "_loaded_license_expression", "")
             license_expression = getattr(self, self.license_expression_field, "")
             if license_expression != loaded_license_expression:
@@ -2569,12 +2569,12 @@ class ComplianceAlertMixin(models.Model):
         return new
 
     @property
-    def policy_index(self):
-        return self.project.policy_index
+    def license_policy_index(self):
+        return self.project.license_policy_index
 
     @cached_property
-    def policies_enabled(self):
-        return self.project.policies_enabled
+    def license_policies_enabled(self):
+        return self.project.license_policies_enabled
 
     def compute_compliance_alert(self):
         """
@@ -2582,15 +2582,16 @@ class ComplianceAlertMixin(models.Model):
         Chooses the most severe compliance_alert found among licenses.
         """
         license_expression = getattr(self, self.license_expression_field, "")
-        policy_index = self.policy_index
-        if not license_expression or not policy_index:
+        license_policy_index = self.license_policy_index
+        if not license_expression or not license_policy_index:
             return ""
 
         licensing = get_licensing()
         parsed_symbols = licensing.parse(license_expression, simple=True).symbols
 
         alerts = [
-            self.get_alert_for_symbol(policy_index, symbol) for symbol in parsed_symbols
+            self.get_alert_for_symbol(license_policy_index, symbol)
+            for symbol in parsed_symbols
         ]
         most_severe_alert = max(alerts, key=self.COMPLIANCE_SEVERITY_MAP.get)
         return most_severe_alert or self.Compliance.OK

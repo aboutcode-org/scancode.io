@@ -129,7 +129,7 @@ class ScanPipePoliciesTest(TestCase):
         expected = "codebase/include_policies_file.zip-extract/policies.yml"
         project_policies_file = project1.get_input_policies_file()
         self.assertTrue(str(project_policies_file).endswith(expected))
-        self.assertTrue(project1.policies_enabled)
+        self.assertTrue(project1.license_policies_enabled)
         expected_index = {
             "apache-2.0": {"license_key": "apache-2.0", "compliance_alert": ""},
             "gpl-2.0": {"license_key": "gpl-2.0", "compliance_alert": "error"},
