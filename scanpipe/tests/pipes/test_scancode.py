@@ -467,8 +467,8 @@ class ScanPipeScancodePipesTest(TestCase):
             self.assertEqual(resource1.status, flag.IGNORED_BY_MAX_FILE_SIZE)
 
     def test_scanpipe_pipes_scancode_make_results_summary(self, regen=FIXTURES_REGEN):
-        # Ensure the policies index is empty to avoid any side effect on results
-        scanpipe_app.license_policies_index = None
+        # Ensure the policies are empty to avoid any side effect on results
+        scanpipe_app.policies = None
         # Run the scan_single_package pipeline to have a proper DB and local files setup
         pipeline_name = "scan_single_package"
         project1 = Project.objects.create(name="Analysis")

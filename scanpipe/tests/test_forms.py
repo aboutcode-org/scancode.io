@@ -230,7 +230,7 @@ class ScanPipeFormsTest(TestCase):
         self.assertTrue(form.is_valid())
         project = form.save()
         self.assertEqual(policies_as_yaml.strip(), project.settings["policies"])
-        self.assertEqual(license_policies_index, project.get_policy_index())
+        self.assertEqual(license_policies_index, project.get_license_policy_index())
 
     def test_scanpipe_forms_project_settings_form_purl(self):
         data_invalid_purl = {
