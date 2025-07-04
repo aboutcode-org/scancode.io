@@ -665,6 +665,9 @@ class ScanPipeAPITest(TransactionTestCase):
             "application/octet-stream",
         ]
         self.assertIn(response["Content-Type"], expected)
+        # Forces Django to finish the response and close the file
+        # to prevent a "ResourceWarning: unclosed file"
+        self.assertTrue(response.getvalue().startswith(b"PK"))
 
     def test_scanpipe_api_project_action_pipelines(self):
         url = reverse("project-pipelines")
