@@ -98,10 +98,12 @@ class ScanPipePoliciesTest(TestCase):
         pipeline = run.make_pipeline_instance()
 
         # Capture the real method's return value
-        real_get_policy_index = project1.get_policy_index
+        real_get_license_policy_index = project1.get_license_policy_index
 
-        with mock.patch("scanpipe.models.Project.get_policy_index") as mock_get_index:
-            mock_get_index.side_effect = real_get_policy_index
+        with mock.patch(
+            "scanpipe.models.Project.get_license_policy_index"
+        ) as mock_get_index:
+            mock_get_index.side_effect = real_get_license_policy_index
             exitcode, out = pipeline.execute()
         mock_get_index.assert_called_once()
 
@@ -132,7 +134,7 @@ class ScanPipePoliciesTest(TestCase):
             "apache-2.0": {"license_key": "apache-2.0", "compliance_alert": ""},
             "gpl-2.0": {"license_key": "gpl-2.0", "compliance_alert": "error"},
         }
-        self.assertEqual(expected_index, project1.get_policy_index())
+        self.assertEqual(expected_index, project1.get_license_policy_index())
 
     def test_scanpipe_policies_through_scancode_config_file(self):
         project1 = make_project()

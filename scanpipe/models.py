@@ -1495,32 +1495,35 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         return self.resource_count == 1
 
-    def get_policy_index(self):
+    def get_policies_dict(self):
         """
-        Return the policy index for this project instance.
+        Load and return the policies from the following locations in that order:
 
-        The policies are loaded from the following locations in that order:
-        1. the project local settings
-        2. the "policies.yml" file in the project input/ directory
-        3. the global app settings license policies
+        1. project local settings (stored in the database)
+        2. "policies.yml" file in the project ``input/`` directory
+        3. global app settings policies, from SCANCODEIO_POLICIES_FILE setting
         """
         if policies_from_settings := self.get_env("policies"):
             policies_dict = policies_from_settings
             if isinstance(policies_from_settings, str):
                 policies_dict = policies.load_policies_yaml(policies_from_settings)
-            return policies.make_license_policy_index(policies_dict)
+            return policies_dict
 
-        elif policies_file := self.get_input_policies_file():
-            policies_dict = policies.load_policies_file(policies_file)
-            return policies.make_license_policy_index(policies_dict)
+        elif project_input_policies_file := self.get_input_policies_file():
+            return policies.load_policies_file(project_input_policies_file)
 
-        else:
-            return scanpipe_app.license_policies_index
+        return scanpipe_app.policies
+
+    def get_license_policy_index(self):
+        """Return the policy license index for this project instance."""
+        if policies_dict := self.get_policies_dict():
+            return policies.make_license_policy_index(policies_dict)
+        return {}
 
     @cached_property
     def policy_index(self):
-        """Return the cached policy index for this project instance."""
-        return self.get_policy_index()
+        """Return the cached license policy index for this project instance."""
+        return self.get_license_policy_index()
 
     @property
     def policies_enabled(self):

@@ -23,6 +23,7 @@
 import uuid
 from pathlib import Path
 from unittest import mock
+from unittest.mock import patch
 
 from django.apps import apps
 from django.core.exceptions import ImproperlyConfigured
@@ -33,7 +34,7 @@ from django.utils import timezone
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.tests import filter_warnings
-from scanpipe.tests import license_policies_index
+from scanpipe.tests import global_policies
 from scanpipe.tests.pipelines.register_from_file import RegisterFromFile
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -43,26 +44,23 @@ class ScanPipeAppsTest(TestCase):
     data = Path(__file__).parent / "data"
     pipelines_location = Path(__file__).parent / "pipelines"
 
-    def test_scanpipe_apps_set_policies(self):
-        scanpipe_app.license_policies_index = {}
-        policies_files = None
-        with override_settings(SCANCODEIO_POLICIES_FILE=policies_files):
+    @patch.object(scanpipe_app, "policies", new_callable=dict)
+    def test_scanpipe_apps_set_policies(self, mock_policies):
+        # Case 1: No file set
+        with override_settings(SCANCODEIO_POLICIES_FILE=None):
             scanpipe_app.set_policies()
-            self.assertEqual({}, scanpipe_app.license_policies_index)
+            self.assertEqual({}, scanpipe_app.policies)
 
-        scanpipe_app.license_policies_index = {}
-        policies_files = "not_existing"
-        with override_settings(SCANCODEIO_POLICIES_FILE=policies_files):
+        # Case 2: Non-existing file
+        with override_settings(SCANCODEIO_POLICIES_FILE="not_existing"):
             scanpipe_app.set_policies()
-            self.assertEqual({}, scanpipe_app.license_policies_index)
+            self.assertEqual({}, scanpipe_app.policies)
 
-        scanpipe_app.license_policies_index = {}
+        # Case 3: Valid file
         policies_files = self.data / "policies" / "policies.yml"
         with override_settings(SCANCODEIO_POLICIES_FILE=str(policies_files)):
             scanpipe_app.set_policies()
-            self.assertEqual(
-                license_policies_index, scanpipe_app.license_policies_index
-            )
+            self.assertEqual(global_policies, scanpipe_app.policies)
 
     def test_scanpipe_apps_register_pipeline_from_file(self):
         path = self.pipelines_location / "do_nothing.py"
