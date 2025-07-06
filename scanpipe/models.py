@@ -4408,7 +4408,7 @@ class DiscoveredPackageScore(UUIDPKModel, PackageScoreMixin):
 
     discovered_package = models.ForeignKey(
         DiscoveredPackage,
-        related_name="discovered_packages_score",
+        related_name="scores",
         help_text=_("The package for which the score is given"),
         on_delete=models.CASCADE,
         editable=False,
@@ -4449,7 +4449,6 @@ class DiscoveredPackageScore(UUIDPKModel, PackageScoreMixin):
         return None
 
     @classmethod
-    @transaction.atomic()
     def create_from_scorecard_data(
         cls, discovered_package, scorecard_data, scoring_tool=None
     ):
@@ -4490,9 +4489,9 @@ class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
     DiscoveredPackageScore.
     """
 
-    for_package_score = models.ForeignKey(
+    package_score = models.ForeignKey(
         DiscoveredPackageScore,
-        related_name="discovered_packages_score_checks",
+        related_name="checks",
         help_text=_("The checks for which the score is given"),
         on_delete=models.CASCADE,
         editable=False,

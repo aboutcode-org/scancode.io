@@ -33,6 +33,7 @@ from scanpipe.pipes import codebase
 from scanpipe.pipes import input
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
+from scorecode.ossf_scorecard import fetch_scorecard
 
 
 class RegenTestData(TestCase):
@@ -154,29 +155,22 @@ class RegenTestData(TestCase):
 
     def test_regenerate_scorecard_data(self):
         """
-        Regenerate and save scorecard data by directly calling the OSSF Scorecard
-        API
+        Regenerate and save scorecard data by calling the OSSF Scorecard API.
         """
         scorecard_data_file = self.data / "scorecode" / "scorecard_response.json"
         platform, org, repo = "github.com", "nexB", "scancode-toolkit"
 
-        OSSF_SCORECARD_API_URL = "https://api.securityscorecards.dev"
-
-        url = f"{OSSF_SCORECARD_API_URL}/projects/{platform}/{org}/{repo}"
-
         try:
-            # Fetch the scorecard data from the API
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-            scorecard_data = response.json()
-
-            scorecard_data_file.parent.mkdir(parents=True, exist_ok=True)
-
-            scorecard_data_file.write_text(json.dumps(scorecard_data, indent=2))
-
-            print(f"Scorecard data successfully saved to {scorecard_data_file}")
-
+            scorecard_data = fetch_scorecard(platform, org, repo)
         except requests.exceptions.Timeout:
-            print("The request timed out.")
+            print("The request to the OSSF Scorecard API timed out.")
+            return
         except requests.exceptions.RequestException as e:
             print(f"Error fetching scorecard data: {e}")
+            return
+
+        scorecard_data_file.parent.mkdir(parents=True, exist_ok=True)
+        scorecard_data_file.write_text(
+            json.dumps(scorecard_data.to_dict(), indent=2)
+        )
+        print(f"Scorecard data successfully saved to {scorecard_data_file}")

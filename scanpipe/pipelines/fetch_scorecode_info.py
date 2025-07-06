@@ -29,7 +29,7 @@ from scanpipe.pipelines import Pipeline
 
 class FetchScoreCodeInfo(Pipeline):
     """
-    Fetch ScoreCode information for packages and dependencies.
+    Fetch ScoreCode information for packages.
 
     This pipeline retrieves ScoreCode data for each package in the project
     and stores it in the corresponding package instances.
@@ -41,21 +41,19 @@ class FetchScoreCodeInfo(Pipeline):
     @classmethod
     def steps(cls):
         return (
-            cls.check_ScoreCode_service_availability,
-            cls.fetch_packages_ScoreCode_info,
+            cls.check_scoreCode_service_availability,
+            cls.fetch_packages_scoreCode_info,
         )
 
-    def check_ScoreCode_service_availability(self):
+    def check_scoreCode_service_availability(self):
         """Check if the ScoreCode service is configured and available."""
         if not ossf_scorecard.is_available():
             raise Exception("ScoreCode service is not available.")
 
-    def fetch_packages_ScoreCode_info(self):
+    def fetch_packages_scoreCode_info(self):
         """Fetch ScoreCode information for each of the project's discovered packages."""
         for package in self.project.discoveredpackages.all():
-            scorecard_data = ossf_scorecard.fetch_scorecard_info(
-                package=package, logger=None
-            )
+            scorecard_data = ossf_scorecard.fetch_scorecard_info(package=package)
 
             if scorecard_data:
                 DiscoveredPackageScore.create_from_package_and_scorecard(
