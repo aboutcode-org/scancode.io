@@ -932,7 +932,7 @@ def make_results_summary(project, scan_results_location):
     Extract selected sections of the Scan results, such as the `summary`
     `license_clarity_score`, and `license_matches` related data.
     The `key_files` are also collected and injected in the `summary` output.
-    Additionally, store clarity_compliance_alert in project's extra_data.
+    Additionally, store license_clarity_compliance_alert in project's extra_data.
     """
     import json
 
@@ -973,7 +973,7 @@ def make_results_summary(project, scan_results_location):
         clarity_policy = get_project_clarity_thresholds(project)
         if clarity_policy:
             alert = clarity_policy.get_alert_for_score(clarity_score)
-            summary["clarity_compliance_alert"] = alert
+            summary["license_clarity_compliance_alert"] = alert
 
-            project.update_extra_data({"clarity_compliance_alert": alert})
+            project.update_extra_data({"license_clarity_compliance_alert": alert})
     return summary

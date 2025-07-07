@@ -103,11 +103,11 @@ Add a ``license_clarity_thresholds`` section to your ``policies.yml`` file, for 
       0: error
 
 
-Clarity Compliance in Results
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+License Clarity Compliance in Results
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When you run a pipeline with clarity thresholds defined in your ``policies.yml``,
-the computed clarity compliance alert is included in the project's ``extra_data`` field.
+the computed license clarity compliance alert is included in the project's ``extra_data`` field.
 
 For example:
 
@@ -121,10 +121,10 @@ For example:
       "sha512": "208f6a83c83a4c770b3c0",
       "filename": "cuckoo_filter-1.0.6.tar.gz",
       "sha1_git": "3fdb0f82ad59",
-      "clarity_compliance_alert": "error"
+      "license_clarity_compliance_alert": "error"
     }
 
-The ``clarity_compliance_alert`` value (e.g., ``"error"``, ``"warning"``, or ``"ok"``)
+The ``license_clarity_compliance_alert`` value (e.g., ``"error"``, ``"warning"``, or ``"ok"``)
 is computed automatically based on the thresholds you configured and reflects the
 overall license clarity status of the scanned codebase.
 
@@ -149,8 +149,8 @@ in the project:
     [resources]
      > ERROR: 1
        cuckoo_filter-1.0.6.tar.gz-extract/cuckoo_filter-1.0.6/README.md
-    [License Clarity]
-     > Alert Level: error
+    [license clarity]
+     > Alert Level: ERROR
 
 .. tip::
     In case of compliance alerts, the command returns a non-zero exit code which

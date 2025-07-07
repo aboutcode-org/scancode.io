@@ -1216,7 +1216,7 @@ class ScanPipeManagementCommandTest(TestCase):
     def test_scanpipe_management_command_check_clarity_compliance_only(self):
         project = make_project(name="my_project_clarity")
 
-        project.extra_data = {"clarity_compliance_alert": "error"}
+        project.extra_data = {"license_clarity_compliance_alert": "error"}
         project.save(update_fields=["extra_data"])
 
         out = StringIO()
@@ -1226,7 +1226,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(cm.exception.code, 1)
         out_value = out.getvalue().strip()
         expected = (
-            "1 compliance issues detected.\n[License Clarity]\n > Alert Level: error"
+            "1 compliance issues detected.\n[license clarity]\n > Alert Level: ERROR"
         )
         self.assertEqual(expected, out_value)
 
@@ -1238,7 +1238,7 @@ class ScanPipeManagementCommandTest(TestCase):
             package_url="pkg:generic/name@1.0",
             compliance_alert=CodebaseResource.Compliance.ERROR,
         )
-        project.extra_data = {"clarity_compliance_alert": "warning"}
+        project.extra_data = {"license_clarity_compliance_alert": "warning"}
         project.save(update_fields=["extra_data"])
 
         out = StringIO()
@@ -1250,7 +1250,7 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = (
             "2 compliance issues detected."
             "\n[packages]\n > ERROR: 1"
-            "\n[License Clarity]\n > Alert Level: warning"
+            "\n[license clarity]\n > Alert Level: WARNING"
         )
         self.assertEqual(expected, out_value)
 

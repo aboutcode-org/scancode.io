@@ -57,7 +57,7 @@ structure similar to the following:
 Creating Clarity Thresholds Files
 ---------------------------------
 
-A valid clarity thresholds file is required to **enable clarity compliance features**.
+A valid clarity thresholds file is required to **enable license clarity compliance features**.
 
 The clarity thresholds file, by default named ``policies.yml``, is a **YAML file** with a
 structure similar to the following:

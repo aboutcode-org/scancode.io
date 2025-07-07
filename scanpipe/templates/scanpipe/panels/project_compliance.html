@@ -1,5 +1,5 @@
 {% load humanize %}
-{% if compliance_alerts or clarity_compliance_alert %}
+{% if compliance_alerts or license_clarity_compliance_alert %}
   <div class="column is-half">
     <nav id="compliance-panel" class="panel is-dark">
       <p class="panel-heading">
@@ -19,17 +19,17 @@
           {% endfor %}
         </div>
       {% endfor %}
-      {% if clarity_compliance_alert %}
+      {% if license_clarity_compliance_alert %}
         <div class="panel-block">
           <span class="pr-1">
             License clarity
           </span>
           <span class="tag is-rounded ml-1
-            {% if clarity_compliance_alert == 'error' %}is-danger
-            {% elif clarity_compliance_alert == 'warning' %}is-warning
-            {% elif clarity_compliance_alert == 'ok' %}is-success
+            {% if license_clarity_compliance_alert == 'error' %}is-danger
+            {% elif license_clarity_compliance_alert == 'warning' %}is-warning
+            {% elif license_clarity_compliance_alert == 'ok' %}is-success
             {% else %}is-light{% endif %}">
-            {{ clarity_compliance_alert|title }}
+            {{ license_clarity_compliance_alert|title }}
           </span>
         </div>
       {% endif %}

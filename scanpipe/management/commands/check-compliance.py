@@ -74,7 +74,7 @@ class Command(ProjectCommand):
             len(issues) for model in alerts.values() for issues in model.values()
         )
 
-        clarity_alert = self.project.get_clarity_compliance_alert()
+        clarity_alert = self.project.get_license_clarity_compliance_alert()
         has_clarity_issue = clarity_alert not in (None, "ok")
 
         total_issues = count + (1 if has_clarity_issue else 0)
@@ -89,8 +89,8 @@ class Command(ProjectCommand):
                         self.stderr.write("   " + "\n   ".join(entries))
 
             if has_clarity_issue:
-                self.stderr.write("[License Clarity]")
-                self.stderr.write(f" > Alert Level: {clarity_alert}")
+                self.stderr.write("[license clarity]")
+                self.stderr.write(f" > Alert Level: {clarity_alert.upper()}")
 
         return total_issues > 0
 

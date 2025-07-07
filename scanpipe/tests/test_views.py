@@ -1003,7 +1003,7 @@ class ScanPipeViewsTest(TestCase):
             compliance_alert=DiscoveredPackage.Compliance.ERROR,
         )
 
-        self.project1.extra_data = {"clarity_compliance_alert": "warning"}
+        self.project1.extra_data = {"license_clarity_compliance_alert": "warning"}
         self.project1.save(update_fields=["extra_data"])
 
         mock_license_policies_enabled.return_value = False

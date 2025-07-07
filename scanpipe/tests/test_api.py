@@ -1252,6 +1252,24 @@ class ScanPipeAPITest(TransactionTestCase):
         }
         self.assertDictEqual(expected, response.data)
 
+    def test_scanpipe_api_project_action_license_clarity_compliance(self):
+        project = make_project()
+        url = reverse("project-clarity-compliance", args=[project.uuid])
+
+        response = self.csrf_client.get(url)
+        expected = {"license_clarity_compliance_alert": None}
+        self.assertEqual(expected, response.data)
+
+        project.update_extra_data({"license_clarity_compliance_alert": "ok"})
+        response = self.csrf_client.get(url)
+        expected = {"license_clarity_compliance_alert": "ok"}
+        self.assertEqual(expected, response.data)
+
+        project.update_extra_data({"license_clarity_compliance_alert": "error"})
+        response = self.csrf_client.get(url)
+        expected = {"license_clarity_compliance_alert": "error"}
+        self.assertEqual(expected, response.data)
+
     def test_scanpipe_api_serializer_get_model_serializer(self):
         self.assertEqual(
             DiscoveredPackageSerializer, get_model_serializer(DiscoveredPackage)

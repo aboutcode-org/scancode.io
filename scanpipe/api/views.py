@@ -484,18 +484,18 @@ class ProjectViewSet(
     @action(detail=True, methods=["get"])
     def clarity_compliance(self, request, *args, **kwargs):
         """
-        Retrieve the clarity compliance alert for a project.
+        Retrieve the license clarity compliance alert for a project.
 
-        This endpoint returns the clarity compliance alert stored in the
+        This endpoint returns the license clarity compliance alert stored in the
         project's extra_data.
 
         Example:
-          GET /api/projects/{project_id}/clarity_compliance/
+          GET /api/projects/{project_id}/license_clarity_compliance/
 
         """
         project = self.get_object()
-        clarity_alert = project.get_clarity_compliance_alert()
-        return Response({"clarity_compliance_alert": clarity_alert})
+        clarity_alert = project.get_license_clarity_compliance_alert()
+        return Response({"license_clarity_compliance_alert": clarity_alert})
 
 
 class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):

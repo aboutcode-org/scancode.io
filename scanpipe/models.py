@@ -1514,13 +1514,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         return scanpipe_app.policies
 
-    def get_clarity_compliance_alert(self):
+    def get_license_clarity_compliance_alert(self):
         """
-        Return the clarity compliance alert value for the project,
+        Return the license clarity compliance alert value for the project,
         or None if not set.
         """
         extra_data = self.extra_data or {}
-        return extra_data.get("clarity_compliance_alert")
+        return extra_data.get("license_clarity_compliance_alert")
 
     def get_license_policy_index(self):
         """Return the policy license index for this project instance."""

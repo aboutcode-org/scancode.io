@@ -1211,7 +1211,9 @@ class ProjectCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
         context["compliance_alerts"] = compliance_alerts
 
         extra_data = project.extra_data or {}
-        context["clarity_compliance_alert"] = extra_data.get("clarity_compliance_alert")
+        context["license_clarity_compliance_alert"] = extra_data.get(
+            "license_clarity_compliance_alert"
+        )
 
         return context
 
