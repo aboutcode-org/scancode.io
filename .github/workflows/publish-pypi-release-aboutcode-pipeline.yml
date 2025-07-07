@@ -3,8 +3,8 @@ name: Build aboutcode.pipeline Python distributions and publish on PyPI
 on:
   workflow_dispatch:
   push:
-   tags:
-     - "aboutcode.pipeline/*"
+    tags:
+      - "aboutcode.pipeline/*"
 
 jobs:
   build-and-publish:
