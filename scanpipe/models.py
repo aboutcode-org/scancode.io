@@ -46,6 +46,7 @@ from django.db import models
 from django.db import transaction
 from django.db.models import Case
 from django.db.models import Count
+from django.db.models import Exists
 from django.db.models import IntegerField
 from django.db.models import OuterRef
 from django.db.models import Prefetch
@@ -2424,6 +2425,18 @@ class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuery
 
     def executable_binaries(self):
         return self.union(self.win_exes(), self.macho_binaries(), self.elfs())
+
+    def with_children(self, project):
+        """
+        Annotate the QuerySet with has_children field based on whether
+        each resource has any children (subdirectories/files).
+        """
+        subdirs = CodebaseResource.objects.filter(
+            project=project,
+            parent_path=OuterRef("path"),
+        )
+
+        return self.annotate(has_children=Exists(subdirs))
 
 
 class ScanFieldsModelMixin(models.Model):
