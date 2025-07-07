@@ -1,4 +1,4 @@
-name: Run unit tests
+name: Test CI
 
 on: [push, pull_request]
 
@@ -10,6 +10,8 @@ env:
 
 jobs:
   build:
+    runs-on: ubuntu-22.04
+
     services:
       postgres:
         image: postgres:13
@@ -29,10 +31,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        os: [ubuntu-24.04, macos-15]
         python-version: ["3.10", "3.11", "3.12", "3.13"]
-
-    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout code
@@ -43,20 +42,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies (Linux)
-        if: runner.os == 'Linux'
+      - name: Install universal ctags and xgettext
         run: |
           sudo apt-get update
           sudo apt-get install -y universal-ctags gettext
 
-      - name: Install dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install postgresql@13
-          pg_ctl -D /opt/homebrew/var/postgresql@13 start
-          createdb $POSTGRES_DB
-
-      - name: Install Python dependencies
+      - name: Install dependencies
         run: make dev envfile
 
       - name: Validate code format
