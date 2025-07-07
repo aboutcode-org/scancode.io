@@ -665,6 +665,9 @@ class ScanPipeAPITest(TransactionTestCase):
             "application/octet-stream",
         ]
         self.assertIn(response["Content-Type"], expected)
+        # Forces Django to finish the response and close the file
+        # to prevent a "ResourceWarning: unclosed file"
+        self.assertTrue(response.getvalue().startswith(b"PK"))
 
     def test_scanpipe_api_project_action_pipelines(self):
         url = reverse("project-pipelines")
@@ -704,9 +707,9 @@ class ScanPipeAPITest(TransactionTestCase):
 
         output_file = io.BytesIO(b"".join(response.streaming_content))
         workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
-        self.assertEqual(["PACKAGES"], workbook.get_sheet_names())
+        self.assertEqual(["PACKAGES"], workbook.sheetnames)
 
-        todos_sheet = workbook.get_sheet_by_name("PACKAGES")
+        todos_sheet = workbook["PACKAGES"]
         rows = list(todos_sheet.values)
         self.assertEqual(2, len(rows))
         self.assertEqual("project", rows[0][0])  # header row

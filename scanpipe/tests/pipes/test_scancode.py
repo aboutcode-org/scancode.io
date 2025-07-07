@@ -79,11 +79,7 @@ class ScanPipeScancodePipesTest(TestCase):
         errors = scancode.extract_archive(input_location, target)
 
         error_message = "gzip decompression failed"
-        if sys.platform == "darwin":
-            error_message += " (zlib returned error -3, msg invalid code lengths set)"
-
-        expected = {input_location: [error_message]}
-        self.assertEqual(expected, errors)
+        self.assertIn(error_message, errors[str(input_location)][0])
 
     def test_scanpipe_pipes_scancode_extract_archives(self):
         tempdir = Path(tempfile.mkdtemp())
@@ -113,11 +109,7 @@ class ScanPipeScancodePipesTest(TestCase):
         errors = scancode.extract_archives(tempdir)
 
         error_message = "gzip decompression failed"
-        if sys.platform == "darwin":
-            error_message += " (zlib returned error -3, msg invalid code lengths set)"
-
-        expected = {str(target): [error_message]}
-        self.assertEqual(expected, errors)
+        self.assertIn(error_message, errors[str(target)][0])
 
     @skipIf(sys.platform != "linux", "QCOW2 extraction is not available on macOS.")
     def test_scanpipe_pipes_scancode_extract_archive_vmimage_qcow2(self):
@@ -467,8 +459,8 @@ class ScanPipeScancodePipesTest(TestCase):
             self.assertEqual(resource1.status, flag.IGNORED_BY_MAX_FILE_SIZE)
 
     def test_scanpipe_pipes_scancode_make_results_summary(self, regen=FIXTURES_REGEN):
-        # Ensure the policies index is empty to avoid any side effect on results
-        scanpipe_app.license_policies_index = None
+        # Ensure the policies are empty to avoid any side effect on results
+        scanpipe_app.policies = None
         # Run the scan_single_package pipeline to have a proper DB and local files setup
         pipeline_name = "scan_single_package"
         project1 = Project.objects.create(name="Analysis")
