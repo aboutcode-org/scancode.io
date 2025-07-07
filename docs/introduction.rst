@@ -91,8 +91,8 @@ The **Django framework** is leveraged for many aspects of ScanCode.io:
 
 .. note::
     Multiple applications from the Django eco-system are also included,
-    see the `setup.cfg <https://github.com/aboutcode-org/scancode.io/blob/main/setup.cfg>`_ file
-    for an exhaustive list of dependencies.
+    see the `pyproject.toml <https://github.com/aboutcode-org/scancode.io/blob/main/pyproject.toml>`_
+    file for an exhaustive list of dependencies.
 
 The second essential part of ScanCode.io is the **ScanCode Toolkit**, which is used
 for archives extraction and as the scanning engine.

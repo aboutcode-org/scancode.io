@@ -87,7 +87,7 @@ RUN mkdir -p /var/$APP_NAME/static/ \
  && mkdir -p /var/$APP_NAME/workspace/
 
 # Install the dependencies before the codebase COPY for proper Docker layer caching
-COPY --chown=$APP_USER:$APP_USER setup.cfg setup.py $APP_DIR/
+COPY --chown=$APP_USER:$APP_USER pyproject.toml $APP_DIR/
 RUN pip install --no-cache-dir .
 
 # Copy the codebase and set the proper permissions for the APP_USER

@@ -431,6 +431,9 @@ class ExtraDataFieldMixin(models.Model):
         help_text=_("Optional mapping of extra data key/values."),
     )
 
+    class Meta:
+        abstract = True
+
     def update_extra_data(self, data):
         """Update the `extra_data` field with the provided `data` dict."""
         if not isinstance(data, dict):
@@ -438,9 +441,6 @@ class ExtraDataFieldMixin(models.Model):
 
         self.extra_data.update(data)
         self.save(update_fields=["extra_data"])
-
-    class Meta:
-        abstract = True
 
 
 class UpdateMixin:
@@ -634,6 +634,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         global_webhook = settings.SCANCODEIO_GLOBAL_WEBHOOK
         if global_webhook and is_new and not is_clone and not skip_global_webhook:
             self.setup_global_webhook()
+
+    def get_absolute_url(self):
+        """Return this project's details URL."""
+        return reverse("project_detail", args=[self.slug])
 
     def setup_global_webhook(self):
         """
@@ -1180,8 +1184,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         file_path = Path(self.input_path / filename)
 
         with open(file_path, "wb+") as f:
-            for chunk in file_object.chunks():
-                f.write(chunk)
+            f.writelines(file_object.chunks())
 
     def copy_input_from(self, input_location):
         """
@@ -1428,10 +1431,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             object_instance,
         )
 
-    def get_absolute_url(self):
-        """Return this project's details URL."""
-        return reverse("project_detail", args=[self.slug])
-
     @cached_property
     def resource_count(self):
         """Return the number of resources related to this project."""
@@ -1496,37 +1495,40 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         return self.resource_count == 1
 
-    def get_policy_index(self):
+    def get_policies_dict(self):
         """
-        Return the policy index for this project instance.
+        Load and return the policies from the following locations in that order:
 
-        The policies are loaded from the following locations in that order:
-        1. the project local settings
-        2. the "policies.yml" file in the project input/ directory
-        3. the global app settings license policies
+        1. project local settings (stored in the database)
+        2. "policies.yml" file in the project ``input/`` directory
+        3. global app settings policies, from SCANCODEIO_POLICIES_FILE setting
         """
         if policies_from_settings := self.get_env("policies"):
             policies_dict = policies_from_settings
             if isinstance(policies_from_settings, str):
                 policies_dict = policies.load_policies_yaml(policies_from_settings)
-            return policies.make_license_policy_index(policies_dict)
+            return policies_dict
 
-        elif policies_file := self.get_input_policies_file():
-            policies_dict = policies.load_policies_file(policies_file)
-            return policies.make_license_policy_index(policies_dict)
+        elif project_input_policies_file := self.get_input_policies_file():
+            return policies.load_policies_file(project_input_policies_file)
 
-        else:
-            return scanpipe_app.license_policies_index
+        return scanpipe_app.policies
+
+    def get_license_policy_index(self):
+        """Return the policy license index for this project instance."""
+        if policies_dict := self.get_policies_dict():
+            return policies.make_license_policy_index(policies_dict)
+        return {}
 
     @cached_property
-    def policy_index(self):
-        """Return the cached policy index for this project instance."""
-        return self.get_policy_index()
+    def license_policy_index(self):
+        """Return the cached license policy index for this project instance."""
+        return self.get_license_policy_index()
 
     @property
-    def policies_enabled(self):
-        """Return True if the policies are enabled for this project."""
-        return bool(self.policy_index)
+    def license_policies_enabled(self):
+        """Return True if the license policies are available for this project."""
+        return bool(self.license_policy_index)
 
 
 class GroupingQuerySetMixin:
@@ -2502,6 +2504,7 @@ class ComplianceAlertMixin(models.Model):
     """
 
     license_expression_field = None
+    license_expression_spdx_field = None
 
     class Compliance(models.TextChoices):
         OK = "ok"
@@ -2532,6 +2535,24 @@ class ComplianceAlertMixin(models.Model):
     class Meta:
         abstract = True
 
+    def save(self, codebase=None, *args, **kwargs):
+        """
+        Injects policies, if the feature is enabled, when the
+        ``license_expression_field`` field value has changed.
+
+        ``codebase`` is not used in this context but required for compatibility
+        with the commoncode.resource.Codebase class API.
+        """
+        if self.license_policies_enabled:
+            loaded_license_expression = getattr(self, "_loaded_license_expression", "")
+            license_expression = getattr(self, self.license_expression_field, "")
+            if license_expression != loaded_license_expression:
+                self.compliance_alert = self.compute_compliance_alert()
+                if "update_fields" in kwargs:
+                    kwargs["update_fields"].append("compliance_alert")
+
+        super().save(*args, **kwargs)
+
     @classmethod
     def from_db(cls, db, field_names, values):
         """
@@ -2547,31 +2568,13 @@ class ComplianceAlertMixin(models.Model):
 
         return new
 
-    def save(self, codebase=None, *args, **kwargs):
-        """
-        Injects policies, if the feature is enabled, when the
-        ``license_expression_field`` field value has changed.
-
-        ``codebase`` is not used in this context but required for compatibility
-        with the commoncode.resource.Codebase class API.
-        """
-        if self.policies_enabled:
-            loaded_license_expression = getattr(self, "_loaded_license_expression", "")
-            license_expression = getattr(self, self.license_expression_field, "")
-            if license_expression != loaded_license_expression:
-                self.compliance_alert = self.compute_compliance_alert()
-                if "update_fields" in kwargs:
-                    kwargs["update_fields"].append("compliance_alert")
-
-        super().save(*args, **kwargs)
-
     @property
-    def policy_index(self):
-        return self.project.policy_index
+    def license_policy_index(self):
+        return self.project.license_policy_index
 
     @cached_property
-    def policies_enabled(self):
-        return self.project.policies_enabled
+    def license_policies_enabled(self):
+        return self.project.license_policies_enabled
 
     def compute_compliance_alert(self):
         """
@@ -2579,30 +2582,30 @@ class ComplianceAlertMixin(models.Model):
         Chooses the most severe compliance_alert found among licenses.
         """
         license_expression = getattr(self, self.license_expression_field, "")
-        if not license_expression:
+        license_policy_index = self.license_policy_index
+        if not license_expression or not license_policy_index:
             return ""
 
-        policy_index = self.policy_index
-        if not policy_index:
-            return
-
         licensing = get_licensing()
-        parsed = licensing.parse(license_expression, simple=True)
-        license_keys = licensing.license_keys(parsed)
+        parsed_symbols = licensing.parse(license_expression, simple=True).symbols
 
-        alerts = []
-        for license_key in license_keys:
-            if policy := policy_index.get(license_key):
-                alerts.append(policy.get("compliance_alert") or self.Compliance.OK)
-            else:
-                alerts.append(self.Compliance.MISSING)
+        alerts = [
+            self.get_alert_for_symbol(license_policy_index, symbol)
+            for symbol in parsed_symbols
+        ]
+        most_severe_alert = max(alerts, key=self.COMPLIANCE_SEVERITY_MAP.get)
+        return most_severe_alert or self.Compliance.OK
 
-        if not alerts:
-            return self.Compliance.OK
+    def get_alert_for_symbol(self, policy_index, symbol):
+        """Retrieve the compliance alert for a given license symbol."""
+        license_key = symbol.key
+        spdx_key = getattr(symbol.wrapped, "spdx_license_key", None)
 
-        # Return the most severe alert based on the defined severity
-        severity = self.COMPLIANCE_SEVERITY_MAP.get
-        return max(alerts, key=severity)
+        policy = policy_index.get(license_key) or policy_index.get(spdx_key)
+        if policy:
+            return policy.get("compliance_alert") or self.Compliance.OK
+
+        return self.Compliance.MISSING
 
 
 class FileClassifierFieldsModelMixin(models.Model):
@@ -2748,6 +2751,12 @@ class CodebaseResource(
     is_text = models.BooleanField(default=False)
     is_archive = models.BooleanField(default=False)
     is_media = models.BooleanField(default=False)
+    sha1_git = models.CharField(
+        _("SHA1_git"),
+        max_length=40,
+        blank=True,
+        help_text=_("SHA1 checksum generated by Git, hex-encoded."),
+    )
     package_data = models.JSONField(
         default=list,
         blank=True,
@@ -2783,6 +2792,9 @@ class CodebaseResource(
 
     def __str__(self):
         return self.path
+
+    def get_absolute_url(self):
+        return reverse("resource_detail", args=[self.project.slug, self.path])
 
     @property
     def location_path(self):
@@ -2942,9 +2954,6 @@ class CodebaseResource(
         if "-extract" in path:
             archive_path, _, _ = self.path.rpartition("-extract")
             return self.project.get_resource(archive_path)
-
-    def get_absolute_url(self):
-        return reverse("resource_detail", args=[self.project.slug, self.path])
 
     def get_raw_url(self):
         """Return the URL to access the RAW content of the resource."""
@@ -3137,13 +3146,13 @@ class VulnerabilityMixin(models.Model):
 
     affected_by_vulnerabilities = models.JSONField(blank=True, default=list)
 
+    class Meta:
+        abstract = True
+
     @property
     def is_vulnerable(self):
         """Returns True if this instance is affected by vulnerabilities."""
         return bool(self.affected_by_vulnerabilities)
-
-    class Meta:
-        abstract = True
 
 
 class VulnerabilityQuerySetMixin:

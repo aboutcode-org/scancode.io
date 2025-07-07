@@ -46,6 +46,7 @@ IGNORED_NOT_INTERESTING = "ignored-not-interesting"
 IGNORED_DEFAULT_IGNORES = "ignored-default-ignores"
 IGNORED_DATA_FILE_NO_CLUES = "ignored-data-file-no-clues"
 IGNORED_DOC_FILE = "ignored-doc-file"
+IGNORED_FROM_CONFIG = "ignored-from-config"
 IGNORED_BY_MAX_FILE_SIZE = "ignored-by-max-file-size"
 
 COMPLIANCE_LICENSES = "compliance-licenses"
@@ -94,15 +95,15 @@ def flag_ignored_directories(project):
     return qs.update(status=IGNORED_DIRECTORY)
 
 
-def flag_ignored_patterns(project, patterns):
+def flag_ignored_patterns(codebaseresources, patterns, status=IGNORED_PATTERN):
     """Flag codebase resource as ``ignored`` status from list of ``patterns``."""
     if isinstance(patterns, str):
         patterns = patterns.splitlines()
 
     update_count = 0
     for pattern in patterns:
-        qs = project.codebaseresources.no_status().path_pattern(pattern)
-        update_count += qs.update(status=IGNORED_PATTERN)
+        qs = codebaseresources.path_pattern(pattern)
+        update_count += qs.update(status=status)
 
     return update_count
 

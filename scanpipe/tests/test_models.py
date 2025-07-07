@@ -75,6 +75,7 @@ from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import dependency_data2
+from scanpipe.tests import global_policies
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import make_dependency
 from scanpipe.tests import make_message
@@ -697,13 +698,33 @@ class ScanPipeModelsTest(TestCase):
         policies_file_location = str(self.project1.get_input_policies_file())
         self.assertTrue(policies_file_location.endswith("input/policies.yml"))
 
-    def test_scanpipe_project_model_get_policy_index(self):
-        scanpipe_app.license_policies_index = None
-        self.assertFalse(self.project1.policies_enabled)
+    @patch.object(scanpipe_app, "policies", new=global_policies)
+    def test_scanpipe_project_model_get_policies_dict(self):
+        self.assertEqual(scanpipe_app.policies, self.project1.get_policies_dict())
 
-        policies_from_app_settings = {"from": "scanpipe_app"}
-        scanpipe_app.license_policies_index = policies_from_app_settings
-        self.assertEqual(policies_from_app_settings, self.project1.get_policy_index())
+        policies_from_input_dir = {"license_policies": [{"license_key": "input_dir"}]}
+        policies_file = self.project1.input_path / "policies.yml"
+        policies_file.touch()
+        policies_as_yaml = saneyaml.dump(policies_from_input_dir)
+        policies_file.write_text(policies_as_yaml)
+        self.assertEqual(policies_from_input_dir, self.project1.get_policies_dict())
+        # Refresh the instance to bypass the cached_property cache.
+        self.project1 = Project.objects.get(uuid=self.project1.uuid)
+        self.assertTrue(self.project1.license_policies_enabled)
+
+        policies_from_project_env = {
+            "license_policies": [{"license_key": "project_env"}]
+        }
+        config = {"policies": policies_from_project_env}
+        self.project1.settings = config
+        self.project1.save()
+        self.assertEqual(policies_from_project_env, self.project1.get_policies_dict())
+
+    @patch.object(scanpipe_app, "policies", new=global_policies)
+    def test_scanpipe_project_model_get_license_policy_index(self):
+        self.assertEqual(
+            license_policies_index, self.project1.get_license_policy_index()
+        )
 
         policies_from_input_dir = {"license_policies": [{"license_key": "input_dir"}]}
         policies_file = self.project1.input_path / "policies.yml"
@@ -711,10 +732,12 @@ class ScanPipeModelsTest(TestCase):
         policies_as_yaml = saneyaml.dump(policies_from_input_dir)
         policies_file.write_text(policies_as_yaml)
         expected_index_from_input = {"input_dir": {"license_key": "input_dir"}}
-        self.assertEqual(expected_index_from_input, self.project1.get_policy_index())
+        self.assertEqual(
+            expected_index_from_input, self.project1.get_license_policy_index()
+        )
         # Refresh the instance to bypass the cached_property cache.
         self.project1 = Project.objects.get(uuid=self.project1.uuid)
-        self.assertTrue(self.project1.policies_enabled)
+        self.assertTrue(self.project1.license_policies_enabled)
 
         policies_from_project_env = {
             "license_policies": [{"license_key": "project_env"}]
@@ -723,10 +746,26 @@ class ScanPipeModelsTest(TestCase):
         self.project1.settings = config
         self.project1.save()
         expected_index_from_env = {"project_env": {"license_key": "project_env"}}
-        self.assertEqual(expected_index_from_env, self.project1.get_policy_index())
+        self.assertEqual(
+            expected_index_from_env, self.project1.get_license_policy_index()
+        )
 
-        # Reset the index value
-        scanpipe_app.license_policies_index = None
+    def test_scanpipe_models_license_policies_enabled(self):
+        resource1 = make_resource_file(self.project1, path="example")
+        package1 = make_package(self.project1, "pkg:type/a")
+
+        self.assertFalse(self.project1.license_policies_enabled)
+        self.assertFalse(resource1.license_policies_enabled)
+        self.assertFalse(package1.license_policies_enabled)
+
+        with patch.object(scanpipe_app, "policies", new=global_policies):
+            # Refresh the instance to bypass the cached_property cache.
+            self.project1 = Project.objects.get(uuid=self.project1.uuid)
+            resource1 = self.project1.codebaseresources.get()
+            package1 = self.project1.discoveredpackages.get()
+            self.assertTrue(self.project1.license_policies_enabled)
+            self.assertTrue(resource1.license_policies_enabled)
+            self.assertTrue(package1.license_policies_enabled)
 
     def test_scanpipe_project_get_settings_as_yml(self):
         self.assertEqual("{}\n", self.project1.get_settings_as_yml())
@@ -1547,28 +1586,31 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(extracted_dir_resource, archive_resource.extracted_to())
         self.assertEqual(archive_resource, extracted_dir_resource.extracted_from())
 
+    @patch.object(scanpipe_app, "policies", new=global_policies)
     def test_scanpipe_codebase_resource_model_compliance_alert(self):
-        scanpipe_app.license_policies_index = license_policies_index
+        project_license_policies_index = self.project1.license_policy_index
+        self.assertEqual(license_policies_index, project_license_policies_index)
+
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
         self.assertEqual("", resource.compliance_alert)
 
         license_expression = "bsd-new"
-        self.assertNotIn(license_expression, scanpipe_app.license_policies_index)
+        self.assertNotIn(license_expression, project_license_policies_index)
         resource.update(detected_license_expression=license_expression)
         self.assertEqual("missing", resource.compliance_alert)
 
         license_expression = "apache-2.0"
-        self.assertIn(license_expression, scanpipe_app.license_policies_index)
+        self.assertIn(license_expression, project_license_policies_index)
         resource.update(detected_license_expression=license_expression)
         self.assertEqual("ok", resource.compliance_alert)
 
         license_expression = "mpl-2.0"
-        self.assertIn(license_expression, scanpipe_app.license_policies_index)
+        self.assertIn(license_expression, project_license_policies_index)
         resource.update(detected_license_expression=license_expression)
         self.assertEqual("warning", resource.compliance_alert)
 
         license_expression = "gpl-3.0"
-        self.assertIn(license_expression, scanpipe_app.license_policies_index)
+        self.assertIn(license_expression, project_license_policies_index)
         resource.update(detected_license_expression=license_expression)
         self.assertEqual("error", resource.compliance_alert)
 
@@ -1576,11 +1618,16 @@ class ScanPipeModelsTest(TestCase):
         resource.update(detected_license_expression=license_expression)
         self.assertEqual("error", resource.compliance_alert)
 
-        # Reset the index value
-        scanpipe_app.license_policies_index = None
+        license_expression = "LicenseRef-scancode-unknown-license-reference"
+        resource.update(detected_license_expression=license_expression)
+        self.assertEqual("error", resource.compliance_alert)
 
+        license_expression = "OFL-1.1 AND apache-2.0"
+        resource.update(detected_license_expression=license_expression)
+        self.assertEqual("warning", resource.compliance_alert)
+
+    @patch.object(scanpipe_app, "policies", new=global_policies)
     def test_scanpipe_codebase_resource_model_compliance_alert_update_fields(self):
-        scanpipe_app.license_policies_index = license_policies_index
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
         self.assertEqual("", resource.compliance_alert)
 
@@ -1589,9 +1636,6 @@ class ScanPipeModelsTest(TestCase):
         resource.save(update_fields=["detected_license_expression"])
         resource.refresh_from_db()
         self.assertEqual("ok", resource.compliance_alert)
-
-        # Reset the index value
-        scanpipe_app.license_policies_index = None
 
     def test_scanpipe_scan_fields_model_mixin_methods(self):
         expected = [
@@ -2414,29 +2458,26 @@ class ScanPipeModelsTest(TestCase):
             cyclonedx_component.evidence.licenses[0].value,
         )
 
+    @patch.object(scanpipe_app, "policies", new=global_policies)
     def test_scanpipe_discovered_package_model_compliance_alert(self):
-        scanpipe_app.license_policies_index = license_policies_index
         package_data = package_data1.copy()
         package_data["declared_license_expression"] = ""
         package = DiscoveredPackage.create_from_data(self.project1, package_data)
         self.assertEqual("", package.compliance_alert)
 
         license_expression = "bsd-new"
-        self.assertNotIn(license_expression, scanpipe_app.license_policies_index)
+        self.assertNotIn(license_expression, self.project1.license_policy_index)
         package.update(declared_license_expression=license_expression)
         self.assertEqual("missing", package.compliance_alert)
 
         license_expression = "apache-2.0"
-        self.assertIn(license_expression, scanpipe_app.license_policies_index)
+        self.assertIn(license_expression, self.project1.license_policy_index)
         package.update(declared_license_expression=license_expression)
         self.assertEqual("ok", package.compliance_alert)
 
         license_expression = "apache-2.0 AND mpl-2.0 OR gpl-3.0"
         package.update(declared_license_expression=license_expression)
         self.assertEqual("error", package.compliance_alert)
-
-        # Reset the index value
-        scanpipe_app.license_policies_index = None
 
     def test_scanpipe_discovered_package_model_spdx_id(self):
         package1 = make_package(self.project1, "pkg:type/a")

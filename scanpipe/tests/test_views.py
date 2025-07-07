@@ -237,7 +237,7 @@ class ScanPipeViewsTest(TestCase):
 
         output_file = io.BytesIO(b"".join(response.streaming_content))
         workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
-        self.assertEqual(["TODOS"], workbook.get_sheet_names())
+        self.assertEqual(["TODOS"], workbook.sheetnames)
 
     def test_scanpipe_views_project_action_reset_view(self):
         url = reverse("project_action")
@@ -618,9 +618,11 @@ class ScanPipeViewsTest(TestCase):
         expected = ["Dir", "Zdir", "a", "z", "a.txt", "z.txt"]
         self.assertEqual(expected, [path.name for path in codebase_root])
 
-    @mock.patch.object(Project, "policies_enabled", new_callable=mock.PropertyMock)
+    @mock.patch.object(
+        Project, "license_policies_enabled", new_callable=mock.PropertyMock
+    )
     def test_scanpipe_views_project_details_compliance_panel_availability(
-        self, mock_policies_enabled
+        self, mock_license_policies_enabled
     ):
         url = self.project1.get_absolute_url()
         make_package(
@@ -630,11 +632,11 @@ class ScanPipeViewsTest(TestCase):
         )
 
         expected_url = reverse("project_compliance_panel", args=[self.project1.slug])
-        mock_policies_enabled.return_value = False
+        mock_license_policies_enabled.return_value = False
         response = self.client.get(url)
         self.assertNotContains(response, expected_url)
 
-        mock_policies_enabled.return_value = True
+        mock_license_policies_enabled.return_value = True
         response = self.client.get(url)
         self.assertContains(response, expected_url)
 
@@ -988,8 +990,12 @@ class ScanPipeViewsTest(TestCase):
         )
         self.assertContains(response, expected_input2)
 
-    @mock.patch.object(Project, "policies_enabled", new_callable=mock.PropertyMock)
-    def test_scanpipe_views_project_compliance_panel_view(self, mock_policies_enabled):
+    @mock.patch.object(
+        Project, "license_policies_enabled", new_callable=mock.PropertyMock
+    )
+    def test_scanpipe_views_project_compliance_panel_view(
+        self, mock_license_policies_enabled
+    ):
         url = reverse("project_compliance_panel", args=[self.project1.slug])
         make_package(
             self.project1,
@@ -1000,11 +1006,11 @@ class ScanPipeViewsTest(TestCase):
         self.project1.extra_data = {"clarity_compliance_alert": "warning"}
         self.project1.save(update_fields=["extra_data"])
 
-        mock_policies_enabled.return_value = False
+        mock_license_policies_enabled.return_value = False
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
 
-        mock_policies_enabled.return_value = True
+        mock_license_policies_enabled.return_value = True
         response = self.client.get(url)
         self.assertContains(response, "Compliance alerts")
         self.assertContains(response, "1 Error")
@@ -1560,6 +1566,7 @@ class ScanPipeViewsTest(TestCase):
             "sha1",
             "sha256",
             "sha512",
+            "sha1_git",
             "is_binary",
             "is_text",
             "is_archive",
