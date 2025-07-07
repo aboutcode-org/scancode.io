@@ -2,6 +2,9 @@ name: Run unit tests on Docker container
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-24.04
