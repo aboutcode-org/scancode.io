@@ -2704,7 +2704,6 @@ class CodebaseResource(
 
     parent_path = models.CharField(
         max_length=2000,
-        null=True,
         blank=True,
         help_text=_(
             "The path of the resource's parent directory. "
