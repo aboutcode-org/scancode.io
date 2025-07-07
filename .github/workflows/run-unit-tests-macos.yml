@@ -29,13 +29,21 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Start Postgres container
-        run: |
-          docker run -d --name test-postgres -e POSTGRES_USER=scancodeio -e POSTGRES_PASSWORD=scancodeio -e POSTGRES_DB=scancodeio -p 5432:5432 postgres:13
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: ikalnytskyi/action-setup-postgres@v7
+        id: postgres
+        with:
+          postgres-version: "13"
+          database: ${{ env.POSTGRES_DB }}
+          username: ${{ env.POSTGRES_USER }}
+          password: ${{ env.POSTGRES_PASSWORD }}
+          port: 5432
 
-      - name: Wait for Postgres to be ready
-        run: |
-          until pg_isready -h localhost -p 5432; do sleep 1; done
+      - run: psql ${{ steps.postgres.outputs.connection-uri }} -c "SELECT 1"
+      - run: psql service=${{ steps.postgres.outputs.service-name }} -c "SELECT 1"
+      - run: psql -c "SELECT 1"
+        env:
+          PGSERVICE: ${{ steps.postgres.outputs.service-name }}
 
       - name: Install Python dependencies
         run: make dev envfile
