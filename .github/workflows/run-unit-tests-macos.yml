@@ -33,7 +33,7 @@ jobs:
         uses: ikalnytskyi/action-setup-postgres@v7
         id: postgres
         with:
-          postgres-version: "13"
+          postgres-version: "14"  # 13 is not supported.
           database: ${{ env.POSTGRES_DB }}
           username: ${{ env.POSTGRES_USER }}
           password: ${{ env.POSTGRES_PASSWORD }}
