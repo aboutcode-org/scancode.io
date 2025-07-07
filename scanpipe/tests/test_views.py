@@ -1635,7 +1635,7 @@ class ScanPipeViewsTest(TestCase):
         make_resource_file(self.project1, path="child1.txt")
         make_resource_file(self.project1, path="dir1")
 
-        url = reverse("file_tree", kwargs={"slug": self.project1.slug})
+        url = reverse("codebase_resource_tree", kwargs={"slug": self.project1.slug})
         response = self.client.get(url)
         children = response.context[-1]["children"]
 
@@ -1650,7 +1650,7 @@ class ScanPipeViewsTest(TestCase):
         make_resource_file(self.project1, path="parent/dir1")
         make_resource_file(self.project1, path="parent/dir1/child2.txt")
 
-        url = reverse("file_tree", kwargs={"slug": self.project1.slug})
+        url = reverse("codebase_resource_tree", kwargs={"slug": self.project1.slug})
         response = self.client.get(url + "?path=parent&tree=true")
         children = response.context["children"]
 
