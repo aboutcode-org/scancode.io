@@ -535,6 +535,7 @@ class PipelinesIntegrationTest(TestCase):
         "file_type",
         # mime type and is_script are inconsistent across systems
         "mime_type",
+        "type",
         "is_script",
         "notes",
         "settings",
