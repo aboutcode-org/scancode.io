@@ -1,4 +1,4 @@
-name: Test on Docker CI
+name: Run unit tests on Docker container
 
 on: [push, pull_request]
 

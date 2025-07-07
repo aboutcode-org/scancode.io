@@ -1,4 +1,4 @@
-name: Publish Docker image on GHCR
+name: Publish Docker image on GitHub Container Registry
 # https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions
 
 on:
