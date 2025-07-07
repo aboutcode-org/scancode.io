@@ -2,8 +2,8 @@
   {% for node in children %}
     <li class="mb-1">
       {% if node.is_dir %}
-        <div class="tree-node is-flex is-align-items-center has-text-weight-semibold is-clickable px-1" data-folder{% if node.has_children %} data-target="{{ node.path|slugify }}" data-url="{% url 'file_tree' slug=project.slug %}?path={{ node.path }}"{% endif %}>
-          <span class="icon is-small chevron mr-1" data-chevron{% if not node.has_children %} style="visibility: hidden;"{% endif %}>
+        <div class="tree-node is-flex is-align-items-center has-text-weight-semibold is-clickable px-1" data-folder{% if node.has_children %} data-target="{{ node.path|slugify }}" data-url="{% url 'codebase_resource_tree' slug=project.slug %}?path={{ node.path }}"{% endif %}>
+          <span class="icon is-small chevron mr-1{% if not node.has_children %} is-invisible{% endif %}" data-chevron>
             <i class="fas fa-chevron-right"></i>
           </span>
           <span class="is-flex is-align-items-center folder-meta">
@@ -14,12 +14,12 @@
           </span>
         </div>
         {% if node.has_children %}
-          <div id="dir-{{ node.path|slugify }}" class="ml-4 hidden" data-loaded="false"></div>
+          <div id="dir-{{ node.path|slugify }}" class="ml-4 is-hidden" data-loaded="false"></div>
         {% endif %}
       {% else %}
         <div class="is-flex is-align-items-center ml-5 is-clickable">
           <span class="icon is-small mr-1">
-            <i class="fas fa-file"></i>
+            <i class="far fa-file"></i>
           </span>
           <span>{{ node.name }}</span>
         </div>

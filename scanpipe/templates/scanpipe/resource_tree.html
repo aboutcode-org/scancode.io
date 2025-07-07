@@ -4,9 +4,6 @@
 
 {% block extrahead %}
   <style>
-    .hidden {
-      display: none;
-    }
     .chevron {
       transition: transform 0.2s ease;
       display: inline-block;
@@ -29,8 +26,8 @@
 
 <div class="columns is-gapless is-mobile" style="height: 80vh; margin: 0;">
   <div class="column is-one-third p-4" style="border-right: 1px solid #ccc; overflow-y: auto;">
-    <div id="file-tree">
-      {% include "scanpipe/panels/file_tree_panel.html" with children=children path=path %}
+    <div id="resource-tree">
+      {% include "scanpipe/panels/codebase_tree_panel.html" with children=children path=path %}
     </div>
   </div>
   <div class="column p-4" style="overflow-y: auto;">
@@ -52,9 +49,9 @@
         const target = document.getElementById("dir-" + targetId);
 
         if (target.dataset.loaded === "true") {
-          target.classList.toggle("hidden");
+          target.classList.toggle("is-hidden");
         } else {
-          target.classList.remove("hidden");
+          target.classList.remove("is-hidden");
           const response = await fetch(url + "&tree=true");
           target.innerHTML = await response.text();
           target.dataset.loaded = "true";
