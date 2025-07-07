@@ -334,6 +334,14 @@ license_policies = [
         "compliance_alert": "error",
     },
     {
+        "license_key": "gpl-2.0-plus",
+        "compliance_alert": "warning",
+    },
+    {
+        "license_key": "font-exception-gpl",
+        "compliance_alert": "warning",
+    },
+    {
         "license_key": "OFL-1.1",
         "compliance_alert": "warning",
     },
@@ -367,6 +375,14 @@ license_policies_index = {
         "license_key": "gpl-3.0",
         "label": "Prohibited License",
         "compliance_alert": "error",
+    },
+    "gpl-2.0-plus": {
+        "license_key": "gpl-2.0-plus",
+        "compliance_alert": "warning",
+    },
+    "font-exception-gpl": {
+        "license_key": "font-exception-gpl",
+        "compliance_alert": "warning",
     },
     "OFL-1.1": {
         "license_key": "OFL-1.1",

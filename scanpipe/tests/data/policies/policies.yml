@@ -12,6 +12,13 @@ license_policies:
     label: Prohibited License
     compliance_alert: error
 
+  - license_key: gpl-2.0-plus
+    compliance_alert: warning
+
+  # AboutCode license execption key
+  - license_key: font-exception-gpl
+    compliance_alert: warning
+
   # SPDX license keys
   - license_key: OFL-1.1
     compliance_alert: warning

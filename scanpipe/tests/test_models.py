@@ -1601,6 +1601,14 @@ class ScanPipeModelsTest(TestCase):
         # Reset the index value
         scanpipe_app.license_policies_index = None
 
+    def test_scanpipe_can_compute_compliance_alert_for_license_exceptions(self):
+        scanpipe_app.license_policies_index = license_policies_index
+        resource = CodebaseResource.objects.create(project=self.project1, path="file")
+        license_expression = "gpl-2.0-plus WITH font-exception-gpl"
+        resource.update(detected_license_expression=license_expression)
+        resource.compute_compliance_alert()
+        self.assertEqual("warning", resource.compliance_alert)
+
     def test_scanpipe_scan_fields_model_mixin_methods(self):
         expected = [
             "detected_license_expression",

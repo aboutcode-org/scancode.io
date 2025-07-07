@@ -2585,7 +2585,7 @@ class ComplianceAlertMixin(models.Model):
             return ""
 
         licensing = get_licensing()
-        parsed_symbols = licensing.parse(license_expression, simple=True).symbols
+        parsed_symbols = licensing.license_symbols(license_expression, simple=True)
 
         alerts = [
             self.get_alert_for_symbol(policy_index, symbol) for symbol in parsed_symbols
