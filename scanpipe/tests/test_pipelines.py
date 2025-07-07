@@ -966,6 +966,7 @@ class PipelinesIntegrationTest(TestCase):
         )
         self.assertPipelineResultEqual(expected_file, result_file)
 
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_resolved_dependencies_cocoapods(self):
         pipeline_name = "resolve_dependencies"
         project1 = make_project()
