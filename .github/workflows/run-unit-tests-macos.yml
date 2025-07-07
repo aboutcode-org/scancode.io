@@ -7,6 +7,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 env:
   POSTGRES_DB: scancodeio
   POSTGRES_USER: scancodeio
@@ -38,12 +41,6 @@ jobs:
           username: ${{ env.POSTGRES_USER }}
           password: ${{ env.POSTGRES_PASSWORD }}
           port: 5432
-
-      - run: psql ${{ steps.postgres.outputs.connection-uri }} -c "SELECT 1"
-      - run: psql service=${{ steps.postgres.outputs.service-name }} -c "SELECT 1"
-      - run: psql -c "SELECT 1"
-        env:
-          PGSERVICE: ${{ steps.postgres.outputs.service-name }}
 
       - name: Install Python dependencies
         run: make dev envfile
