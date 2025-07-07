@@ -975,9 +975,5 @@ def make_results_summary(project, scan_results_location):
             alert = clarity_policy.get_alert_for_score(clarity_score)
             summary["clarity_compliance_alert"] = alert
 
-            extra_data = project.extra_data or {}
-            extra_data["clarity_compliance_alert"] = alert
-            project.extra_data = extra_data
-            project.save(update_fields=["extra_data"])
-
+            project.update_extra_data({"clarity_compliance_alert": alert})
     return summary

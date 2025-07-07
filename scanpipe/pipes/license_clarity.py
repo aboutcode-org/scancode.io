@@ -41,7 +41,6 @@ license_clarity_thresholds:
 
 from pathlib import Path
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 
 import saneyaml
@@ -168,23 +167,18 @@ def load_clarity_thresholds_from_file(file_path):
 
 def get_project_clarity_thresholds(project):
     """
-    Get clarity thresholds for a project, checking multiple sources.
+    Get clarity thresholds for a project using the unified policy loading logic.
 
     Returns:
         ClarityThresholdsPolicy or None: Policy object if thresholds are configured
 
     """
-    if hasattr(project, "get_input_policies_file"):
-        policies_file = project.get_input_policies_file()
-        if policies_file:
-            policy = load_clarity_thresholds_from_file(policies_file)
-            if policy:
-                return policy
+    policies_dict = project.get_policies_dict()
+    if not policies_dict:
+        return None
 
-    global_policies_file = getattr(settings, "SCANCODEIO_POLICIES_FILE", None)
-    if global_policies_file:
-        policy = load_clarity_thresholds_from_file(global_policies_file)
-        if policy:
-            return policy
+    clarity_thresholds = policies_dict.get("license_clarity_thresholds")
+    if not clarity_thresholds:
+        return None
 
-    return None
+    return ClarityThresholdsPolicy(clarity_thresholds)

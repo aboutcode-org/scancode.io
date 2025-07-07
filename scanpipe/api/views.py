@@ -494,7 +494,7 @@ class ProjectViewSet(
 
         """
         project = self.get_object()
-        clarity_alert = (project.extra_data or {}).get("clarity_compliance_alert")
+        clarity_alert = project.get_clarity_compliance_alert()
         return Response({"clarity_compliance_alert": clarity_alert})
 
 

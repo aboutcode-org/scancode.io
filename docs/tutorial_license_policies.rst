@@ -149,7 +149,7 @@ in the project:
     [resources]
      > ERROR: 1
        cuckoo_filter-1.0.6.tar.gz-extract/cuckoo_filter-1.0.6/README.md
-    [License Clarity Compliance]
+    [License Clarity]
      > Alert Level: error
 
 .. tip::

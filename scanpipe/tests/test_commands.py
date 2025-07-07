@@ -1226,8 +1226,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(cm.exception.code, 1)
         out_value = out.getvalue().strip()
         expected = (
-            "1 compliance issues detected."
-            "\n[License Clarity Compliance]\n > Alert Level: error"
+            "1 compliance issues detected.\n[License Clarity]\n > Alert Level: error"
         )
         self.assertEqual(expected, out_value)
 
@@ -1251,7 +1250,7 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = (
             "2 compliance issues detected."
             "\n[packages]\n > ERROR: 1"
-            "\n[License Clarity Compliance]\n > Alert Level: warning"
+            "\n[License Clarity]\n > Alert Level: warning"
         )
         self.assertEqual(expected, out_value)
 
