@@ -15,7 +15,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-push-image:
+  build-and-publish-image:
     runs-on: ubuntu-24.04
 
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
