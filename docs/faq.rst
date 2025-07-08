@@ -22,12 +22,17 @@ you may use the Docker image to run pipelines as a single command:
 .. code-block:: bash
 
   docker run --rm \
-    -v "$(pwd)":/codedrop \
     ghcr.io/aboutcode-org/scancode.io:latest \
-    sh -c "run scan_codebase /codedrop" \
+    -v "$(pwd)":/codedrop \
+    run scan_codebase /codedrop \
     > results.json
 
 Refer to the :ref:`cli_run` section for more about this approach.
+
+.. tip::
+    Prefer a one-liner? Use this to scan your current directory::
+
+        curl -sSL https://raw.githubusercontent.com/aboutcode-org/scancode.io/main/etc/scripts/run-scan.sh | bash
 
 .. _faq_which_pipeline:
 
