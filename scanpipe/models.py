@@ -4427,7 +4427,7 @@ class PackageArchive(UUIDPKModel):
     )
 
     class Meta:
-       pass
+        pass
 
     def __str__(self):
         return f"Archive {self.checksum_sha256[:8]} at {
@@ -4502,7 +4502,7 @@ class DownloadedPackage(UUIDPKModel):
                 name="%(app_label)s_%(class)s_unique_project_archive",
             ),
         ]
-        
+
     def __str__(self):
         return f"{self.filename} for project {self.project.name}"
 
