@@ -22,9 +22,9 @@ you may use the Docker image to run pipelines as a single command:
 .. code-block:: bash
 
   docker run --rm \
-    -v "$(pwd)":/codedrop \
     ghcr.io/aboutcode-org/scancode.io:latest \
-    sh -c "run scan_codebase /codedrop" \
+    -v "$(pwd)":/codedrop \
+    run scan_codebase /codedrop \
     > results.json
 
 Refer to the :ref:`cli_run` section for more about this approach.
