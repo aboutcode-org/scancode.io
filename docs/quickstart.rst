@@ -15,8 +15,8 @@ The **fastest way** to get started and **scan a codebase** —
     Visit the `Docker documentation <https://docs.docker.com/get-docker/>`_ to install
     it for your platform.
 
-To run the :ref:`pipeline_scan_codebase` pipeline on a local directory
-with a single command:
+To run the :ref:`pipeline_scan_codebase` pipeline on a **local directory**
+with a **single command**:
 
 .. code-block:: bash
 
@@ -47,9 +47,9 @@ Let's unpack what each part of the command does:
 
 The result? A **full scan of your local directory — no setup, one command!**
 
-See the :ref:`$ run <cli_run>` section for more details on this command.
+See the :ref:`RUN command <cli_run>` section for more details on this command.
 
-.. tip::
+.. note::
     Not sure which pipeline to use? Check out :ref:`faq_which_pipeline`.
 
 Next Step: Local Installation

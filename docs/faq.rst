@@ -29,6 +29,11 @@ you may use the Docker image to run pipelines as a single command:
 
 Refer to the :ref:`cli_run` section for more about this approach.
 
+.. tip::
+    Prefer a one-liner? Use this to scan your current directory::
+
+        curl -sSL https://raw.githubusercontent.com/aboutcode-org/scancode.io/main/etc/scripts/run-scan.sh | bash
+
 .. _faq_which_pipeline:
 
 Which pipeline should I use?
