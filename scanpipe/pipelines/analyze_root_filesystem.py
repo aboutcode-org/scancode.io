@@ -146,7 +146,7 @@ class RootFS(Pipeline):
                     dest_path.parent.mkdir(exist_ok=True)
                     with open(dest_path, "wb") as f:
                         for chunk in response.iter_content(1024):
-                            f.write(chunk)
+                            f.writelines(chunk)
                     result = store_package_archive(
                         self.project, url=apk_url, file_path=str(dest_path)
                     )

@@ -4430,9 +4430,10 @@ class PackageArchive(UUIDPKModel):
         pass
 
     def __str__(self):
-        return f"Archive {self.checksum_sha256[:8]} at {
-            self.storage_path or self.package_file.name
-        }"
+        return (
+            f"Archive {self.checksum_sha256[:8]} at "
+            f" {self.storage_path or self.package_file.name}"
+        )
 
 
 class DownloadedPackage(UUIDPKModel):
