@@ -2742,7 +2742,6 @@ class CodebaseResource(
 
     parent_path = models.CharField(
         max_length=2000,
-        null=True,
         blank=True,
         help_text=_(
             "The path of the resource's parent directory. "
@@ -2859,7 +2858,7 @@ class CodebaseResource(
 
     def save(self, *args, **kwargs):
         if self.path and not self.parent_path:
-            self.parent_path = self.parent_directory()
+            self.parent_path = self.parent_directory() or ""
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):

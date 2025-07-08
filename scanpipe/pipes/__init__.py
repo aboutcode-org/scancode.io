@@ -75,7 +75,7 @@ def make_codebase_resource(project, location, save=True, **extra_fields):
     parent_path = str(relative_path.parent)
 
     if parent_path == ".":
-        parent_path = None
+        parent_path = ""
 
     try:
         resource_data = scancode.get_resource_info(location=str(location))
