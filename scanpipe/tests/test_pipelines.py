@@ -879,7 +879,7 @@ class PipelinesIntegrationTest(TestCase):
 
         expected_top_level_paths = ["is-npm-1.0.0.tgz", "is-npm-1.0.0.tgz-extract"]
 
-        top_level_resources = project1.codebaseresources.filter(parent_path=None)
+        top_level_resources = project1.codebaseresources.filter(parent_path="")
         top_level_paths = [resource.path for resource in top_level_resources]
 
         self.assertListEqual(top_level_paths, expected_top_level_paths)
@@ -905,7 +905,7 @@ class PipelinesIntegrationTest(TestCase):
             "is-npm-1.0.0.tgz-extract/package/readme.md",
         ]
 
-        top_level_resources = project1.codebaseresources.filter(parent_path=None)
+        top_level_resources = project1.codebaseresources.filter(parent_path="")
         top_level_paths = [resource.path for resource in top_level_resources]
 
         self.assertListEqual(top_level_paths, expected_top_level_paths)
