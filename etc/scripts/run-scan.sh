@@ -8,36 +8,52 @@
 # ScanCode is a trademark of nexB Inc.
 
 # Usage:
-# Scan current directory with default pipeline 'scan_codebase':
-# ./run-scan.sh
+#   Default scan of current directory using 'scan_codebase':
+#     ./run-scan.sh
 #
-# Scan a specific directory with a custom pipeline:
-# ./run-scan.sh /path/to/scan/dir scan_single_package
+#   Run pipelines on current directory:
+#     ./run-scan.sh scan_codebase find_vulnerabilities
 #
-# Scan a specific directory with multiple pipelines:
-# ./run-scan.sh /path/to/scan/dir "scan_codebase find_vulnerabilities"
+#   Run pipelines on a specific directory:
+#     ./run-scan.sh scan_codebase /path/to/scan/dir
+#
+#   Run multiple pipelines on a specific directory (directory must come last):
+#     ./run-scan.sh scan_codebase find_vulnerabilities /my/codebase
+#
+#   Scan a directory using default pipeline:
+#     ./run-scan.sh /path/to/codebase
 
 set -e
 
-# Use first argument as scan directory or default to current directory
-SCAN_DIR="${1:-$(pwd)}"
-# Use second argument as pipeline name or default to 'scan_codebase'
-PIPELINE="${2:-scan_codebase}"
-SCIO_DOCKER_IMAGE="ghcr.io/aboutcode-org/scancode.io:latest"
-RESULTS_LOCATION="results.json"
-ABS_RESULTS_PATH="$(pwd)/$RESULTS_LOCATION"
+readonly SCIO_DOCKER_IMAGE="ghcr.io/aboutcode-org/scancode.io:latest"
+readonly RESULTS_LOCATION="results.json"
 
-# Run the pipeline
+# Default values
+SCAN_DIR="$(pwd)"
+PIPELINES=()
+
+# Check if last argument is a directory
+LAST_ARG="${!#}"
+if [ -d "$LAST_ARG" ]; then
+  SCAN_DIR="$LAST_ARG"
+  PIPELINES=("${@:1:$#-1}")  # All args except last
+else
+  PIPELINES=("$@")
+fi
+
+# Default pipeline if none specified
+if [ "${#PIPELINES[@]}" -eq 0 ]; then
+  PIPELINES=("scan_codebase")
+fi
+
+# Run the scan
 docker run --rm \
   -v "$SCAN_DIR":/codebase \
   "$SCIO_DOCKER_IMAGE" \
-  run $PIPELINE /codebase \
+  run "${PIPELINES[@]}" /codebase \
   > "$RESULTS_LOCATION"
 
-# Check if docker run succeeded
-if [ $? -eq 0 ]; then
-  echo "✅ Scan complete using pipeline '$PIPELINE'. Results saved to $ABS_RESULTS_PATH"
-else
-  echo "❌ Scan failed. Please check the error messages above."
-  exit 1
-fi
+ABS_RESULTS_PATH="$(pwd)/$RESULTS_LOCATION"
+
+echo "✅ Scan complete using pipeline(s): ${PIPELINES[*]}"
+echo "💾 Results saved to: $ABS_RESULTS_PATH"
