@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scanpipe', '0072_discovereddependency_uuid_unique'),
+        ('scanpipe', '0073_add_sha1_git_checksum'),
     ]
 
     operations = [
