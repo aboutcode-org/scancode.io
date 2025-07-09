@@ -21,9 +21,11 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import io
+import json
 import sys
 import tempfile
 import uuid
+from dataclasses import asdict
 from pathlib import Path
 from unittest import mock
 from unittest import skipIf
@@ -1864,3 +1866,21 @@ class ScanPipeD2DPipesTest(TestCase):
                 map_type="javascript_strings",
             ).count(),
         )
+
+    def test_scanpipe_d2d_load_ecosystem_config(self):
+        pipeline_name = "map_deploy_to_develop"
+        selected_groups = ["Ruby", "Java", "JavaScript"]
+
+        run = self.project1.add_pipeline(
+            pipeline_name=pipeline_name, selected_groups=selected_groups
+        )
+        pipeline = run.make_pipeline_instance()
+        d2d_config.load_ecosystem_config(pipeline=pipeline, options=selected_groups)
+
+        expected_ecosystem_config = (
+            self.data / "d2d" / "config" / "ecosystem_config.json"
+        )
+        with open(expected_ecosystem_config) as f:
+            expected_extra_data = json.load(f)
+
+        self.assertEqual(expected_extra_data, asdict(pipeline.ecosystem_config))
