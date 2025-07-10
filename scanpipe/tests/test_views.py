@@ -1339,6 +1339,7 @@ class ScanPipeViewsTest(TestCase):
                                     "compliance_alert": "",
                                     "has_compliance_issue": False,
                                     "is_vulnerable": False,
+                                    "children": [],
                                 }
                             ],
                         }
@@ -1350,6 +1351,7 @@ class ScanPipeViewsTest(TestCase):
                     "compliance_alert": "",
                     "has_compliance_issue": False,
                     "is_vulnerable": False,
+                    "children": [],
                 },
             ],
         }

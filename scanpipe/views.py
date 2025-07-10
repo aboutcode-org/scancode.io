@@ -2546,7 +2546,13 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
         return context
 
     def get_dependency_tree(self, project):
-        root_packages = project.discoveredpackages.root_packages().order_by("name")
+        root_packages = (
+            project.discoveredpackages.root_packages()
+            .order_by("name")
+            .only_package_url_fields(
+                extra=["project_id", "compliance_alert", "affected_by_vulnerabilities"]
+            )
+        )
         project_children = [self.get_node(package) for package in root_packages]
 
         # Dependencies with no assigned `for_packages`.
@@ -2554,26 +2560,17 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
         for dependency in project_dependencies:
             project_children.append({"name": dependency.package_url})
 
-        project_tree = {
+        dependency_tree = {
             "name": project.name,
             "children": project_children,
         }
-
-        return project_tree
+        return dependency_tree
 
     def get_node(self, package):
-        node = {
-            "name": str(package),
-            "url": package.get_absolute_url(),
-            "compliance_alert": package.compliance_alert,
-            "has_compliance_issue": package.has_compliance_issue,
-            "is_vulnerable": package.is_vulnerable,
-        }
-
         # Resolved dependencies
         children = [
             self.get_node(child_package)
-            for child_package in package.children_packages.all()
+            for child_package in package.children_packages.all().order_by("name")
         ]
 
         # Un-resolved dependencies
@@ -2586,7 +2583,12 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
                 }
             )
 
-        if children:
-            node["children"] = children
-
+        node = {
+            "name": str(package),
+            "url": package.get_absolute_url(),
+            "compliance_alert": package.compliance_alert,
+            "has_compliance_issue": package.has_compliance_issue,
+            "is_vulnerable": package.is_vulnerable,
+            "children": children,
+        }
         return node
