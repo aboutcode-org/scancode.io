@@ -20,6 +20,7 @@ v35.2.0 (unreleased)
 
 - Enhance the dependency tree view in a more dynamic rendering.
   Vulnerabilities and compliance alert are displayed along the dependency entries.
+  https://github.com/aboutcode-org/scancode.io/pull/1742
 
 v35.1.0 (2025-07-02)
 --------------------
