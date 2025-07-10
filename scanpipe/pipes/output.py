@@ -692,7 +692,7 @@ def to_spdx(project, include_files=False):
             license_expressions.append(license_expression)
 
     for dependency in discovereddependency_qs:
-        packages_as_spdx.append(dependency.as_spdx())
+        packages_as_spdx.append(dependency.as_spdx_package())
         if dependency.for_package:
             relationships.append(
                 spdx.Relationship(
