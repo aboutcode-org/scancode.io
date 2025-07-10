@@ -18,6 +18,9 @@ v35.2.0 (unreleased)
   ``policies.yml`` file.
   https://github.com/aboutcode-org/scancode.io/issues/1348
 
+- Enhance the dependency tree view in a more dynamic rendering.
+  Vulnerabilities and compliance alert are displayed along the dependency entries.
+
 v35.1.0 (2025-07-02)
 --------------------
 

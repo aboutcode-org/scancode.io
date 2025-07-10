@@ -2175,6 +2175,7 @@ class DiscoveredPackageDetailsView(
                     "field_name": "other_license_expression_spdx",
                     "label": "Other license expression (SPDX)",
                 },
+                "compliance_alert",
                 "extracted_license_statement",
                 "copyright",
                 "holder",
@@ -2537,19 +2538,21 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
         try:
-            dependency_tree = self.get_dependency_tree(project=self.object)
+            context["dependency_tree"] = self.get_dependency_tree(project=self.object)
         except RecursionError:
             context["recursion_error"] = True
-            return context
 
-        context["dependency_tree"] = dependency_tree
         return context
 
     def get_dependency_tree(self, project):
         root_packages = project.discoveredpackages.root_packages().order_by("name")
         project_children = [self.get_node(package) for package in root_packages]
+
+        # Dependencies with no assigned `for_packages`.
+        project_dependencies = project.discovereddependencies.project_dependencies()
+        for dependency in project_dependencies:
+            project_children.append({"name": dependency.package_url})
 
         project_tree = {
             "name": project.name,
@@ -2559,11 +2562,31 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
         return project_tree
 
     def get_node(self, package):
-        node = {"name": str(package)}
+        node = {
+            "name": str(package),
+            "url": package.get_absolute_url(),
+            "compliance_alert": package.compliance_alert,
+            "has_compliance_issue": package.has_compliance_issue,
+            "is_vulnerable": package.is_vulnerable,
+        }
+
+        # Resolved dependencies
         children = [
             self.get_node(child_package)
             for child_package in package.children_packages.all()
         ]
+
+        # Un-resolved dependencies
+        unresolved_dependencies = package.declared_dependencies.unresolved()
+        for dependency in unresolved_dependencies:
+            children.append(
+                {
+                    "name": dependency.package_url,
+                    "is_vulnerable": dependency.is_vulnerable,
+                }
+            )
+
         if children:
             node["children"] = children
+
         return node
