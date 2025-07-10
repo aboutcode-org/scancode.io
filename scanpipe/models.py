@@ -2569,6 +2569,13 @@ class ComplianceAlertMixin(models.Model):
         return new
 
     @property
+    def has_compliance_issue(self):
+        """Return True if the compliance status is not OK or not set."""
+        if not self.compliance_alert or self.compliance_alert == self.Compliance.OK:
+            return False
+        return True
+
+    @property
     def license_policy_index(self):
         return self.project.license_policy_index
 

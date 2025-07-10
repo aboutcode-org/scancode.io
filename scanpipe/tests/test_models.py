@@ -2703,19 +2703,13 @@ class ScanPipeModelsTest(TestCase):
 
     def test_scanpipe_model_codebase_resource_compliance_alert_queryset_mixin(self):
         severities = CodebaseResource.Compliance
-        make_resource_file(self.project1, path="none")
-        make_resource_file(self.project1, path="ok", compliance_alert=severities.OK)
-        warning = make_resource_file(
-            self.project1, path="warning", compliance_alert=severities.WARNING
-        )
-        error = make_resource_file(
-            self.project1, path="error", compliance_alert=severities.ERROR
-        )
-        missing = make_resource_file(
-            self.project1, path="missing", compliance_alert=severities.MISSING
-        )
+        make_resource_file(self.project1)
+        make_resource_file(self.project1, compliance_alert=severities.OK)
+        warning = make_resource_file(self.project1, compliance_alert=severities.WARNING)
+        error = make_resource_file(self.project1, compliance_alert=severities.ERROR)
+        missing = make_resource_file(self.project1, compliance_alert=severities.MISSING)
 
-        qs = CodebaseResource.objects.order_by("path")
+        qs = CodebaseResource.objects.order_by("compliance_alert")
         self.assertQuerySetEqual(qs.compliance_issues(severities.ERROR), [error])
         self.assertQuerySetEqual(
             qs.compliance_issues(severities.WARNING), [error, warning]
@@ -2723,6 +2717,23 @@ class ScanPipeModelsTest(TestCase):
         self.assertQuerySetEqual(
             qs.compliance_issues(severities.MISSING), [error, missing, warning]
         )
+
+    def test_scanpipe_model_codebase_resource_has_compliance_issue(self):
+        severities = CodebaseResource.Compliance
+        none = make_resource_file(self.project1)
+        self.assertFalse(none.has_compliance_issue)
+
+        ok = make_resource_file(self.project1, compliance_alert=severities.OK)
+        self.assertFalse(ok.has_compliance_issue)
+
+        warning = make_resource_file(self.project1, compliance_alert=severities.WARNING)
+        self.assertTrue(warning.has_compliance_issue)
+
+        error = make_resource_file(self.project1, compliance_alert=severities.ERROR)
+        self.assertTrue(error.has_compliance_issue)
+
+        missing = make_resource_file(self.project1, compliance_alert=severities.MISSING)
+        self.assertTrue(missing.has_compliance_issue)
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):

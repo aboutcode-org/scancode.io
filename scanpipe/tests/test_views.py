@@ -1297,14 +1297,16 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(xss_url)
         self.assertEqual(response.status_code, 404)
 
-    def test_scanpipe_views_project_dependency_tree(self):
+    @mock.patch("scanpipe.models.DiscoveredPackage.get_absolute_url")
+    def test_scanpipe_views_project_dependency_tree(self, mock_get_url):
+        mock_get_url.return_value = "mocked-url"
         url = reverse("project_dependency_tree", args=[self.project1.slug])
         response = self.client.get(url)
         expected_tree = {"name": "Analysis", "children": []}
         self.assertEqual(expected_tree, response.context["dependency_tree"])
 
         project = Project.objects.create(name="project")
-        a = make_package(project, "pkg:type/a")
+        a = make_package(project, "pkg:type/a", compliance_alert="error")
         b = make_package(project, "pkg:type/b")
         c = make_package(project, "pkg:type/c")
         make_package(project, "pkg:type/z")
@@ -1319,15 +1321,41 @@ class ScanPipeViewsTest(TestCase):
             "children": [
                 {
                     "name": "pkg:type/a",
+                    "url": "mocked-url",
+                    "compliance_alert": "error",
+                    "has_compliance_issue": True,
+                    "is_vulnerable": False,
                     "children": [
-                        {"name": "pkg:type/b", "children": [{"name": "pkg:type/c"}]}
+                        {
+                            "name": "pkg:type/b",
+                            "url": "mocked-url",
+                            "compliance_alert": "",
+                            "has_compliance_issue": False,
+                            "is_vulnerable": False,
+                            "children": [
+                                {
+                                    "name": "pkg:type/c",
+                                    "url": "mocked-url",
+                                    "compliance_alert": "",
+                                    "has_compliance_issue": False,
+                                    "is_vulnerable": False,
+                                    "children": [],
+                                }
+                            ],
+                        }
                     ],
                 },
-                {"name": "pkg:type/z"},
+                {
+                    "name": "pkg:type/z",
+                    "url": "mocked-url",
+                    "compliance_alert": "",
+                    "has_compliance_issue": False,
+                    "is_vulnerable": False,
+                    "children": [],
+                },
             ],
         }
         self.assertEqual(expected_tree, response.context["dependency_tree"])
-        self.assertContains(response, '<script id="dependency_tree"')
 
         # Adding a circular reference such as: Project -> A -> B -> C -> B -> C -> ...
         make_dependency(project, for_package=c, resolved_to_package=b)
