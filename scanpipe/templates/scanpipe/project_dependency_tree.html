@@ -4,7 +4,7 @@
 {% block title %}ScanCode.io: {{ project.name }} - Dependency tree{% endblock %}
 
 {% block extrahead %}
-<link rel="stylesheet" href="{% static 'tree-views/tree.css' %}" crossorigin="anonymous">
+<link rel="stylesheet" href="{% static 'iamkate-tree-views/tree.css' %}" crossorigin="anonymous">
 <style>
   .tree {
     line-height: 1.8rem;
@@ -15,7 +15,7 @@
   }
   .tree summary::before{
     background-color: rgb(72, 199, 142);
-    background-image: url('{% static "tree-views/expand-collapse.svg" %}');
+    background-image: url('{% static "iamkate-tree-views/expand-collapse.svg" %}');
   }
 </style>
 {% endblock %}
@@ -42,25 +42,25 @@
       {% endif %}
 
       <div class="mb-4">
-        <button id="collapseAll" class="button is-outlined is-small">
+        <button id="collapseAll" class="button is-small">
           <span>Collapse All</span>
           <span class="icon is-small">
             <i class="fas fa-minus"></i>
           </span>
         </button>
-        <button id="expendAll" class="button is-outlined is-small">
+        <button id="expendAll" class="button is-small">
           <span>Expend All</span>
           <span class="icon is-small">
             <i class="fas fa-plus"></i>
           </span>
         </button>
-        <button id="showVulnerableOnlyButton" class="button is-outlined is-small">
+        <button id="showVulnerableOnlyButton" class="button is-small">
           <span>Show Vulnerable only</span>
           <span class="icon is-small">
             <i class="fa-solid fa-bug"></i>
           </span>
         </button>
-        <button id="showComplianceAlertOnlyButton" class="button is-outlined is-small">
+        <button id="showComplianceAlertOnlyButton" class="button is-small">
           <span>Show Compliance Alert only</span>
           <span class="icon is-small ">
             <i class="fa-solid fa-scale-balanced"></i>
@@ -74,7 +74,7 @@
             <summary class="has-text-weight-semibold">
               {{ dependency_tree.name }}
             </summary>
-            {% include 'scanpipe/tree/children.html' with children=dependency_tree.children %}
+            {% include 'scanpipe/tree/dependency_children.html' with children=dependency_tree.children %}
           </details>
         </li>
       </ul>
@@ -84,74 +84,74 @@
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const treeContainer = document.getElementById('tree');
-  const collapseAllButton = document.getElementById('collapseAll');
-  const expendAllButton = document.getElementById('expendAll');
+  document.addEventListener('DOMContentLoaded', () => {
+    const treeContainer = document.getElementById('tree');
+    const collapseAllButton = document.getElementById('collapseAll');
+    const expendAllButton = document.getElementById('expendAll');
 
-  function collapseAllDetails() {
-    document.querySelectorAll('details').forEach(details => {
-      details.removeAttribute('open');
-    });
-    showAllListItems();
-  }
-
-  function expendAllDetails() {
-    document.querySelectorAll('details').forEach(details => {
-      details.setAttribute('open', ''); // Adding 'open' attribute to open the details
-    });
-    showAllListItems();
-  }
-
-  collapseAllButton.addEventListener('click', collapseAllDetails);
-  expendAllButton.addEventListener('click', expendAllDetails);
-
-  // Following function are use to limit the display to specific elements.
-
-  function expandAncestors(detailsElement) {
-    let parent = detailsElement.parentElement.closest('details');
-    while (parent) {
-      parent.setAttribute('open', '');
-      parent.parentElement.style.display = '';
-      parent = parent.parentElement.closest('details');
+    function collapseAllDetails() {
+      document.querySelectorAll('details').forEach(details => {
+        details.removeAttribute('open');
+      });
+      showAllListItems();
     }
-  }
 
-  function showAllListItems() {
-    const listItems = treeContainer.querySelectorAll('li');
-    listItems.forEach(item => {
-        item.style.display = '';
-    });
-  }
+    function expendAllDetails() {
+      document.querySelectorAll('details').forEach(details => {
+        details.setAttribute('open', ''); // Adding 'open' attribute to open the details
+      });
+      showAllListItems();
+    }
 
-  function hideAllListItems() {
-    const listItems = treeContainer.querySelectorAll('li');
-    listItems.forEach(item => {
-        item.style.display = 'none';
-    });
-  }
+    collapseAllButton.addEventListener('click', collapseAllDetails);
+    expendAllButton.addEventListener('click', expendAllDetails);
 
-  function handleItems(attribute, value) {
-    collapseAllDetails();
-    hideAllListItems();
+    // Following function are use to limit the display to specific elements.
 
-    const items = document.querySelectorAll(`li[${attribute}="${value}"]`);
-    items.forEach(item => {
-        item.style.display = 'block';
-        expandAncestors(item);
-    });
-  }
+    function expandAncestors(detailsElement) {
+      let parent = detailsElement.parentElement.closest('details');
+      while (parent) {
+        parent.setAttribute('open', '');
+        parent.parentElement.style.display = '';
+        parent = parent.parentElement.closest('details');
+      }
+    }
 
-  function handleVulnerableItems() {
-    handleItems('data-is-vulnerable', 'true');
-  }
+    function showAllListItems() {
+      const listItems = treeContainer.querySelectorAll('li');
+      listItems.forEach(item => {
+          item.style.display = '';
+      });
+    }
 
-  function handleComplianceAlertItems() {
-    handleItems('data-compliance-alert', 'true');
-  }
+    function hideAllListItems() {
+      const listItems = treeContainer.querySelectorAll('li');
+      listItems.forEach(item => {
+          item.style.display = 'none';
+      });
+    }
 
-  showVulnerableOnlyButton.addEventListener('click', handleVulnerableItems);
-  showComplianceAlertOnlyButton.addEventListener('click', handleComplianceAlertItems);
-});
+    function handleItems(attribute, value) {
+      collapseAllDetails();
+      hideAllListItems();
+
+      const items = document.querySelectorAll(`li[${attribute}="${value}"]`);
+      items.forEach(item => {
+          item.style.display = 'block';
+          expandAncestors(item);
+      });
+    }
+
+    function handleVulnerableItems() {
+      handleItems('data-is-vulnerable', 'true');
+    }
+
+    function handleComplianceAlertItems() {
+      handleItems('data-compliance-alert', 'true');
+    }
+
+    showVulnerableOnlyButton.addEventListener('click', handleVulnerableItems);
+    showComplianceAlertOnlyButton.addEventListener('click', handleComplianceAlertItems);
+  });
 </script>
 {% endblock %}

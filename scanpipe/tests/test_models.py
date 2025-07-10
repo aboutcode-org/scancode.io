@@ -2050,10 +2050,10 @@ class ScanPipeModelsTest(TestCase):
         unresolved_dependency = make_dependency(project, dependency_uid="unresolved")
 
         self.assertFalse(a_to_b.is_project_dependency)
-        self.assertTrue(a_to_b.is_for_package)
+        self.assertTrue(a_to_b.is_package_dependency)
         self.assertTrue(a_to_b.is_resolved_to_package)
         self.assertTrue(unresolved_dependency.is_project_dependency)
-        self.assertFalse(unresolved_dependency.is_for_package)
+        self.assertFalse(unresolved_dependency.is_package_dependency)
         self.assertFalse(unresolved_dependency.is_resolved_to_package)
 
         project_packages_qs = project.discoveredpackages.order_by("name")
@@ -2703,19 +2703,13 @@ class ScanPipeModelsTest(TestCase):
 
     def test_scanpipe_model_codebase_resource_compliance_alert_queryset_mixin(self):
         severities = CodebaseResource.Compliance
-        make_resource_file(self.project1, path="none")
-        make_resource_file(self.project1, path="ok", compliance_alert=severities.OK)
-        warning = make_resource_file(
-            self.project1, path="warning", compliance_alert=severities.WARNING
-        )
-        error = make_resource_file(
-            self.project1, path="error", compliance_alert=severities.ERROR
-        )
-        missing = make_resource_file(
-            self.project1, path="missing", compliance_alert=severities.MISSING
-        )
+        make_resource_file(self.project1)
+        make_resource_file(self.project1, compliance_alert=severities.OK)
+        warning = make_resource_file(self.project1, compliance_alert=severities.WARNING)
+        error = make_resource_file(self.project1, compliance_alert=severities.ERROR)
+        missing = make_resource_file(self.project1, compliance_alert=severities.MISSING)
 
-        qs = CodebaseResource.objects.order_by("path")
+        qs = CodebaseResource.objects.order_by("compliance_alert")
         self.assertQuerySetEqual(qs.compliance_issues(severities.ERROR), [error])
         self.assertQuerySetEqual(
             qs.compliance_issues(severities.WARNING), [error, warning]
@@ -2723,6 +2717,23 @@ class ScanPipeModelsTest(TestCase):
         self.assertQuerySetEqual(
             qs.compliance_issues(severities.MISSING), [error, missing, warning]
         )
+
+    def test_scanpipe_model_codebase_resource_has_compliance_issue(self):
+        severities = CodebaseResource.Compliance
+        none = make_resource_file(self.project1)
+        self.assertFalse(none.has_compliance_issue)
+
+        ok = make_resource_file(self.project1, compliance_alert=severities.OK)
+        self.assertFalse(ok.has_compliance_issue)
+
+        warning = make_resource_file(self.project1, compliance_alert=severities.WARNING)
+        self.assertTrue(warning.has_compliance_issue)
+
+        error = make_resource_file(self.project1, compliance_alert=severities.ERROR)
+        self.assertTrue(error.has_compliance_issue)
+
+        missing = make_resource_file(self.project1, compliance_alert=severities.MISSING)
+        self.assertTrue(missing.has_compliance_issue)
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
@@ -3004,7 +3015,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         )
         self.assertEqual("pypi_sdist_pkginfo", dependency.datasource_id)
         self.assertFalse(dependency.is_project_dependency)
-        self.assertTrue(dependency.is_for_package)
+        self.assertTrue(dependency.is_package_dependency)
         self.assertFalse(dependency.is_resolved_to_package)
 
         # Resolved project dependency, resolved_to_package provided as arg
@@ -3012,7 +3023,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             project1, dependency_data={}, resolved_to_package=package1
         )
         self.assertTrue(dependency2.is_project_dependency)
-        self.assertFalse(dependency2.is_for_package)
+        self.assertFalse(dependency2.is_package_dependency)
         self.assertTrue(dependency2.is_resolved_to_package)
 
     def test_scanpipe_discovered_package_model_unique_package_uid_in_project(self):

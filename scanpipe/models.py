@@ -2569,6 +2569,13 @@ class ComplianceAlertMixin(models.Model):
         return new
 
     @property
+    def has_compliance_issue(self):
+        """Return True if the compliance status is not OK or not set."""
+        if not self.compliance_alert or self.compliance_alert == self.Compliance.OK:
+            return False
+        return True
+
+    @property
     def license_policy_index(self):
         return self.project.license_policy_index
 
@@ -3831,12 +3838,23 @@ class DiscoveredDependency(
 
     This class manages dependencies with the following considerations:
 
-    1. A dependency can be associated with a Package via the "for_package" field.
-       In this case, it is termed a "Package's dependency". If there is no such
-       association, the dependency is considered a "Project's dependency".
+    1. A dependency can be associated with a Package via the ``for_package`` field.
+       In this case, it is termed a "Package's dependency".
+       If there is no such association, the dependency is considered a
+       "Project's dependency".
 
-    2. A dependency can also be linked to a Package through the "resolved_to_package"
+    2. A dependency can also be linked to a Package through the ``resolved_to_package``
        field. When this link exists, the dependency is considered "resolved".
+
+    3. Dependencies can be either direct or transitive:
+       - A **direct dependency** is explicitly declared in a package manifest or
+         lockfile.
+       - A **transitive dependency** is not declared directly, but is required by one
+         of the project's direct dependencies.
+
+    Understanding the distinction between direct and transitive dependencies is
+    important for analyzing dependency trees, resolving version conflicts, and
+    assessing potential security risks.
     """
 
     # Overrides the `project` field to set the proper `related_name`.
@@ -3989,14 +4007,20 @@ class DiscoveredDependency(
 
     @property
     def is_project_dependency(self):
+        """
+        Return True if the dependency is directly associated with the project
+        (not tied to a specific package).
+        """
         return not bool(self.for_package_id)
 
     @property
-    def is_for_package(self):
+    def is_package_dependency(self):
+        """Return True if the dependency is explicitly associated with a package."""
         return bool(self.for_package_id)
 
     @property
     def is_resolved_to_package(self):
+        """Return True if the dependency is resolved to a package."""
         return bool(self.resolved_to_package_id)
 
     @classmethod
@@ -4014,11 +4038,13 @@ class DiscoveredDependency(
         Create and returns a DiscoveredDependency for a `project` from the
         `dependency_data`.
 
-        The `for_package` and `resolved_to_package` FK can be provided as args or
-        in the dependency_data providing the `for_package_uid` and
+        The `for_package` and `resolved_to_package` FKs can be provided as args,
+        or in the `dependency_data` using the `for_package_uid` and
         `resolve_to_package_uid`.
-        Note that a dependency without a `for_package` FK is a project dependency and
-        a dependency without a `resolve_to_package` is unresolved.
+
+        Note that a dependency:
+         - without a `for_package` FK is a "Project's dependency"
+         - without a `resolve_to_package` is "unresolved".
 
         If `strip_datafile_path_root` is True, then `create_from_data()` will
         strip the root path segment from the `datafile_path` of
