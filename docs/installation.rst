@@ -182,6 +182,10 @@ and scripts on your local machine::
 A tarball ``scancodeio-offline-package-VERSION.tar`` will be
 created in the :guilabel:`dist/` directory.
 
+.. note::
+    The offline package includes all necessary Docker images: postgres, redis, 
+    scancodeio-web, scancodeio-worker, nginx, and clamav/clamav.
+
 Install on an offline server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

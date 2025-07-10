@@ -15,7 +15,7 @@ services:
       - redis_data:/data
 
   web:
-    image: scancodeio_web
+    image: scancodeio-web
     command: sh -c "
         ./manage.py migrate &&
         ./manage.py collectstatic --no-input --verbosity 0 --clear &&
@@ -32,8 +32,12 @@ services:
       - db
 
   worker:
-    image: scancodeio_worker
-    command: wait-for-it web:8000 -- ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker --queue-class scancodeio.worker.ScanCodeIOQueue --verbosity 2
+    image: scancodeio-worker
+    # Ensure that potential db migrations run first by waiting until "web" is up
+    command: wait-for-it --strict --timeout=120 web:8000 -- sh -c "
+        ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker
+                             --queue-class scancodeio.worker.ScanCodeIOQueue
+                             --verbosity 1"
     env_file:
       - docker.env
     volumes:
@@ -42,7 +46,7 @@ services:
     depends_on:
       - redis
       - db
-      - web # Ensure that potential db migrations run first
+      - web
 
   nginx:
     image: nginx
@@ -55,8 +59,16 @@ services:
     depends_on:
       - web
 
+  clamav:
+    image: clamav/clamav
+    volumes:
+      - clamav_data:/var/lib/clamav
+      - workspace:/var/scancodeio/workspace/
+    restart: always
+
 volumes:
   db_data:
   redis_data:
+  clamav_data:
   static:
   workspace:
