@@ -20,10 +20,18 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import logging
+from pathlib import Path
+
+from aboutcode.pipeline import group
 from aboutcode.pipeline import optional_step
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import resolve
 from scanpipe.pipes import scancode
+from scanpipe.pipes.fetch import store_package_archive
+from scanpipe.pipes.input import is_archive
+
+logger = logging.getLogger(__name__)
 
 
 class ResolveDependencies(ScanCodebase):
@@ -47,7 +55,9 @@ class ResolveDependencies(ScanCodebase):
             cls.collect_and_create_codebase_resources,
             cls.flag_ignored_resources,
             cls.get_manifest_inputs,
+            cls.store_manifest_files,
             cls.scan_for_application_packages,
+            cls.store_package_archives,
             cls.create_packages_and_dependencies,
             cls.get_packages_from_manifest,
             cls.create_resolved_packages,
@@ -57,7 +67,37 @@ class ResolveDependencies(ScanCodebase):
         """Locate package manifest files with a supported package resolver."""
         self.manifest_resources = resolve.get_manifest_resources(self.project)
 
-    @optional_step("StaticResolver")
+    def store_manifest_files(self):
+        """Store manifest files locally if enabled."""
+        if not self.project.use_local_storage:
+            logger.info(
+                f"Local storage is disabled for project: {self.project.name}."
+                "Skipping file storage."
+            )
+            return []
+
+        logger.info(f"Storing manifest files for project: {self.project.name}")
+        stored_files = []
+
+        for resource in self.manifest_resources:
+            resource_path = resource.path
+            if not Path(resource_path).exists():
+                logger.error(f"Invalid or missing file path: {resource_path}")
+                continue
+            resource_path_str = str(resource_path)
+            logger.info(f"Storing manifest file: {resource_path_str}")
+            try:
+                result = store_package_archive(
+                    self.project, url=None, file_path=resource_path_str
+                )
+                logger.info(f"Stored manifest file {resource_path_str}: {result}")
+                stored_files.append(result)
+            except Exception as e:
+                logger.error(f"Failed to store {resource_path_str}: {e}")
+
+        return stored_files
+
+    @group("StaticResolver")
     def scan_for_application_packages(self):
         """
         Scan and assemble application packages from package manifests
@@ -70,7 +110,41 @@ class ResolveDependencies(ScanCodebase):
             progress_logger=self.log,
         )
 
-    @optional_step("StaticResolver")
+    def store_package_archives(self):
+        """Store package archives locally if enabled."""
+        if not self.project.use_local_storage:
+            logger.info(
+                f"Local storage is disabled for project: {self.project.name}."
+                "Skipping package storage."
+            )
+            return []
+
+        logger.info(f"Storing package archives for project: {self.project.name}")
+        stored_files = []
+        package_files = [
+            resource.path
+            for resource in self.project.codebaseresources.all()
+            if is_archive(resource.path)
+        ]
+
+        for package_path in package_files:
+            if not Path(package_path).exists():
+                logger.error(f"Invalid or missing package path: {package_path}")
+                continue
+            package_path_str = str(package_path)
+            logger.info(f"Storing package archive: {package_path_str}")
+            try:
+                result = store_package_archive(
+                    self.project, url=None, file_path=package_path_str
+                )
+                logger.info(f"Stored package archive {package_path_str}: {result}")
+                stored_files.append(result)
+            except Exception as e:
+                logger.error(f"Failed to store {package_path_str}: {e}")
+
+        return stored_files
+
+    @group("StaticResolver")
     def create_packages_and_dependencies(self):
         """
         Create the statically resolved packages and their dependencies
