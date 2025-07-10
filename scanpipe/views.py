@@ -808,9 +808,9 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         pipeline_runs = project.runs.all()
         self.check_run_scancode_version(pipeline_runs)
 
-        policies_enabled = False
+        license_policies_enabled = False
         try:
-            policies_enabled = project.policies_enabled
+            license_policies_enabled = project.license_policies_enabled
         except ValidationError as e:
             messages.error(self.request, str(e))
 
@@ -830,7 +830,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "pipeline_runs": pipeline_runs,
                 "codebase_root": codebase_root,
                 "file_filter": self.request.GET.get("file-filter", "all"),
-                "policies_enabled": policies_enabled,
+                "license_policies_enabled": license_policies_enabled,
             }
         )
 
@@ -1201,7 +1201,7 @@ class ProjectCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
         context = super().get_context_data(**kwargs)
         project = self.object
 
-        if not project.policies_enabled:
+        if not project.license_policies_enabled:
             raise Http404
 
         compliance_alerts = compliance.get_project_compliance_alerts(

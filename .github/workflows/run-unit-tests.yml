@@ -1,6 +1,14 @@
-name: Test CI
+name: Run unit tests
 
-on: [push, pull_request]
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
 
 env:
   POSTGRES_DB: scancodeio
@@ -9,8 +17,8 @@ env:
   POSTGRES_INITDB_ARGS: --encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
 
 jobs:
-  build:
-    runs-on: ubuntu-22.04
+  run-unit-tests:
+    runs-on: ubuntu-24.04
 
     services:
       postgres:

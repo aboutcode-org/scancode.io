@@ -541,7 +541,7 @@ def to_xlsx(project):
     exclude_fields = XLSX_EXCLUDE_FIELDS.copy()
     output_file = project.get_output_file_path("results", "xlsx")
 
-    if not project.policies_enabled:
+    if not project.license_policies_enabled:
         exclude_fields.append("compliance_alert")
 
     model_names = [

@@ -25,7 +25,7 @@ def compute_package_declared_license_expression_spdx(apps, schema_editor):
     ).only("declared_license_expression")
 
     object_count = queryset.count()
-    logger.info(f"Compute declared_license_expression_spdx for {object_count:,} packages.")
+    logger.debug(f"Compute declared_license_expression_spdx for {object_count:,} packages.")
 
     chunk_size = 2000
     iterator = queryset.iterator(chunk_size=chunk_size)
@@ -37,9 +37,9 @@ def compute_package_declared_license_expression_spdx(apps, schema_editor):
             unsaved_objects.append(package)
 
         if not (index % chunk_size) and unsaved_objects:
-            logger.info(f"  {index:,} / {object_count:,} computed")
+            logger.debug(f"  {index:,} / {object_count:,} computed")
 
-    logger.info("Updating DB objects...")
+    logger.debug("Updating DB objects...")
     DiscoveredPackage.objects.bulk_update(
         objs=unsaved_objects,
         fields=["declared_license_expression_spdx"],
@@ -65,7 +65,7 @@ def compute_resource_detected_license_expression(apps, schema_editor):
     )
 
     object_count = queryset.count()
-    logger.info(f"Compute detected_license_expression for {object_count:,} resources.")
+    logger.debug(f"Compute detected_license_expression for {object_count:,} resources.")
 
     chunk_size = 2000
     iterator = queryset.iterator(chunk_size=chunk_size)
@@ -92,9 +92,9 @@ def compute_resource_detected_license_expression(apps, schema_editor):
         unsaved_objects.append(resource)
 
         if not (index % chunk_size) and unsaved_objects:
-            logger.info(f"  {index:,} / {object_count:,} computed")
+            logger.debug(f"  {index:,} / {object_count:,} computed")
 
-    logger.info("Updating DB objects...")
+    logger.debug("Updating DB objects...")
     CodebaseResource.objects.bulk_update(
         objs=unsaved_objects,
         fields=[
@@ -168,7 +168,7 @@ def compute_resource_license_detections(apps, schema_editor):
     queryset = CodebaseResource.objects.filter(~Q(licenses=[])).only("licenses")
 
     object_count = queryset.count()
-    logger.info(f"Compute license_detections for {object_count:,} resources.")
+    logger.debug(f"Compute license_detections for {object_count:,} resources.")
 
     chunk_size = 2000
     iterator = queryset.iterator(chunk_size=chunk_size)
@@ -180,9 +180,9 @@ def compute_resource_license_detections(apps, schema_editor):
         unsaved_objects.append(resource)
 
         if not (index % chunk_size):
-            logger.info(f"  {index:,} / {object_count:,} computed")
+            logger.debug(f"  {index:,} / {object_count:,} computed")
 
-    logger.info("Updating DB objects...")
+    logger.debug("Updating DB objects...")
     # Keeping the batch_size small as the `license_detections` content is often large,
     # and it may raise `django.db.utils.OperationalError: out of memory`
     CodebaseResource.objects.bulk_update(

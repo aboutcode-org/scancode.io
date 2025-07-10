@@ -1,19 +1,22 @@
-ScanCode.io documentation
+ScanCode.io Documentation
 =========================
 
-Welcome to the very start of your ScanCode.io journey! In this documentation
-you’ll find information on:
+Welcome! This is your starting point for everything ScanCode.io.
 
-- An overview of ScanCode.io and ScanPipe
-- Installation instructions
-- Tutorials to get you started
-- Reference documentation about the ScanPipe concepts, Pipelines, Pipes and more
-- How to make technical contributions to the project and the community
+In this documentation, you’ll find:
+
+- A **QuickStart guide** to run your first scan
+- An **overview** of what ScanCode.io is and what it can do
+- **Installation instructions** for full access
+- Step-by-step **tutorials** to dive deeper
+- In-depth **reference docs** on concepts, pipelines, configuration, and APIs
+- Guides on how to **contribute** to the project and community
 
 .. toctree::
     :maxdepth: 2
     :caption: Getting Started
 
+    quickstart
     introduction
     installation
     user-interface
@@ -23,7 +26,7 @@ you’ll find information on:
 
 .. toctree::
     :maxdepth: 2
-    :caption: Tutorial
+    :caption: Tutorials
 
     tutorial_web_ui_analyze_docker_image
     tutorial_web_ui_review_scan_results
@@ -37,7 +40,7 @@ you’ll find information on:
 
 .. toctree::
     :maxdepth: 2
-    :caption: Reference Documentation
+    :caption: Reference
 
     scanpipe-concepts
     built-in-pipelines

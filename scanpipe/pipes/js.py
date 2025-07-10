@@ -69,7 +69,7 @@ def is_source_mapping_in_minified(resource, map_file_name):
     lines = resource.file_content.split("\n")
     total_lines = len(lines)
     # Get the last 5 lines.
-    tail = 5 if total_lines > 5 else total_lines
+    tail = min(total_lines, 5)
     return any(source_mapping in line for line in reversed(lines[-tail:]))
 
 
