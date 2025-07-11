@@ -22,7 +22,9 @@ If you want to contribute to ScanCode.io, start with our
 Demo the ScanCode.io app in GitHub Codespaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new/aboutcode-org/scancode.io?hide_repo_select=true&ref=codespace-dev-container&devcontainer_path=.devcontainer%2Fdevcontainer.json)
+.. image:: https://github.com/codespaces/badge.svg
+   :target: https://github.com/codespaces/new/aboutcode-org/scancode.io?hide_repo_select=true&ref=codespace-dev-container&devcontainer_path=.devcontainer%2Fdevcontainer.json
+   :alt: Open in GitHub Codespaces
 
 CI/CD with GitHub Workflow Action
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
