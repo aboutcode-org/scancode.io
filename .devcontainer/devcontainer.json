@@ -1,7 +1,11 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 {
 	"name": "ScanCode.io",
-    "dockerComposeFile": "docker-compose.yml",
+    // Use the latest released prebuilt image of ScanCode.io
+    "dockerComposeFile": [
+      "../docker-compose.yml",
+      "../docker-compose.release.yml"
+    ],
     "service": "web",
 //    "workspaceFolder": "/workspace",
     "settings": {},

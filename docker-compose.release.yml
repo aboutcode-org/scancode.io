@@ -1,0 +1,20 @@
+# ======================================================================================
+# docker-compose.release.yml
+#
+# Overrides the default build-based configuration to use the latest released
+# prebuilt image of ScanCode.io from GitHub Container Registry.
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.release.yml up
+#
+# This is useful for production or testing without building the Docker image locally.
+# ======================================================================================
+
+services:
+  web:
+    image: ghcr.io/aboutcode-org/scancode.io:latest
+    build: null
+
+  worker:
+    image: ghcr.io/aboutcode-org/scancode.io:latest
+    build: null
