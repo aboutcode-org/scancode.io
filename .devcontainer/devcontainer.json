@@ -2,7 +2,7 @@
 {
 	"name": "ScanCode.io",
     "dockerComposeFile": "docker-compose.yml",
-    "service": "scancodeio",
-    "workspaceFolder": "/workspace",
+    "service": "web",
+//    "workspaceFolder": "/workspace",
     "settings": {},
 }
