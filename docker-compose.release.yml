@@ -13,8 +13,8 @@
 services:
   web:
     image: ghcr.io/aboutcode-org/scancode.io:latest
-    build: null
+    build: ""
 
   worker:
     image: ghcr.io/aboutcode-org/scancode.io:latest
-    build: null
+    build: ""
