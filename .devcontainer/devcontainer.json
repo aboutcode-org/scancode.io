@@ -3,10 +3,10 @@
 	"name": "ScanCode.io",
     // Use the latest released prebuilt image of ScanCode.io
     "dockerComposeFile": [
+      "../docker-compose.release.yml",
       "../docker-compose.yml",
-      "../docker-compose.release.yml"
     ],
     "service": "web",
-//    "workspaceFolder": "/workspace",
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
     "settings": {},
 }
