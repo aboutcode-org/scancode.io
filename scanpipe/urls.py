@@ -242,4 +242,10 @@ urlpatterns = [
         name="license_list",
     ),
     path("monitor/", include("django_rq.urls")),
+    path(
+        "project/<slug:slug>/", views.ProjectDetailView.as_view(), name="project_detail"
+    ),
+    path("license/", views.LicenseListView.as_view(), name="license_list"),
+    path("monitor/", include("django_rq.urls")),
+    path("api/", include("scanpipe.api.urls")),
 ]
