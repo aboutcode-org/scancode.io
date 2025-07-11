@@ -1209,6 +1209,12 @@ class ProjectCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
             fail_level="missing",
         )
         context["compliance_alerts"] = compliance_alerts
+
+        extra_data = project.extra_data or {}
+        context["license_clarity_compliance_alert"] = extra_data.get(
+            "license_clarity_compliance_alert"
+        )
+
         return context
 
 
