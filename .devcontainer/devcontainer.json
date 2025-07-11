@@ -1,0 +1,8 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+{
+	"name": "ScanCode.io",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "scancodeio",
+    "workspaceFolder": "/workspace",
+    "settings": {},
+}

@@ -19,6 +19,14 @@ please ask them in `Discussions <https://github.com/aboutcode-org/scancode.io/di
 If you want to contribute to ScanCode.io, start with our
 `Contributing <https://scancodeio.readthedocs.io/en/latest/contributing.html>`_ page.
 
+Demo the ScanCode.io app in GitHub Codespaces
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[![Open in Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new/aboutcode-org/scancode.io?hide_repo_select=true&ref=codespace-dev-container&devcontainer_path=.devcontainer%2Fdevcontainer.json)
+
+CI/CD with GitHub Workflow Action
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 A new GitHub action is now available at
 `scancode-action <https://github.com/aboutcode-org/scancode-action>`_
 to run ScanCode.io pipelines from your GitHub Workflows.
