@@ -1637,8 +1637,8 @@ class ScanPipeViewsTest(TestCase):
 
         url = reverse("codebase_resource_tree", kwargs={"slug": self.project1.slug})
         response = self.client.get(url)
-        children = response.context[-1]["children"]
-
+        children = response.context["children"]
+        print(response.context)
         child1 = children[0]
         dir1 = children[1]
 
