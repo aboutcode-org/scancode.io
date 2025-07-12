@@ -1,8 +1,38 @@
 Changelog
 =========
 
-v35.1.0 (unreleased)
+v35.2.0 (unreleased)
 --------------------
+
+- Refactor policies implementation to support more than licenses.
+  The entire ``policies`` data is now stored on the ``ScanPipeConfig`` in place of the
+  ``license_policy_index``.
+  Also, a new method ``get_policies_dict`` methods is now available on the ``Project``
+  model to easily retrieve all the policies data as a dictionary.
+  Renamed for clarity:
+  * ``policy_index`` to ``license_policy_index``
+  * ``policies_enabled`` to ``license_policies_enabled``
+  https://github.com/aboutcode-org/scancode.io/pull/1718
+
+- Add support for SPDX license identifiers as ``license_key`` in license policies
+  ``policies.yml`` file.
+  https://github.com/aboutcode-org/scancode.io/issues/1348
+
+- Enhance the dependency tree view in a more dynamic rendering.
+  Vulnerabilities and compliance alert are displayed along the dependency entries.
+  https://github.com/aboutcode-org/scancode.io/pull/1742
+
+v35.1.0 (2025-07-02)
+--------------------
+
+- Replace the ``setup.py``/``setup.cfg`` by ``pyproject.toml`` file.
+  https://github.com/aboutcode-org/scancode.io/issues/1608
+
+- Update scancode-toolkit to v32.4.0. See CHANGELOG for updates:
+  https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.4.0
+  Adds a new ``git_sha1`` attribute to the ``CodebaseResource`` model as this
+  is now computed and returned from the ``scancode-toolkit`` ``--info`` plugin.
+  https://github.com/aboutcode-org/scancode.io/pull/1708
 
 - Add a ``--fail-on-vulnerabilities`` option in ``check-compliance`` management command.
   When this option is enabled, the command will exit with a non-zero status if known
@@ -15,6 +45,10 @@ v35.1.0 (unreleased)
   available in the scan results, including the details about detected licenses and
   license rules used during the scan.
   https://github.com/aboutcode-org/scancode.io/issues/1657
+
+- Add a new step to the ``DeployToDevelop`` pipeline, ``map_python``, to match
+  Cython source files (.pyx) to their compiled binaries.
+  https://github.com/aboutcode-org/scancode.io/pull/1703
 
 v35.0.0 (2025-06-23)
 --------------------

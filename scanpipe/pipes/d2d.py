@@ -63,6 +63,7 @@ from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
 from scanpipe.pipes import resolve
 from scanpipe.pipes import scancode
+from scanpipe.pipes import stringmap
 from scanpipe.pipes import symbolmap
 from scanpipe.pipes import symbols
 
@@ -2170,3 +2171,138 @@ def _map_javascript_symbols(to_resource, javascript_from_resources, logger):
         to_resource.update(status=flag.MAPPED)
         return 1
     return 0
+
+
+def map_javascript_strings(project, logger=None):
+    """Map deployed JavaScript, TypeScript to its sources using string literals."""
+    project_files = project.codebaseresources.files()
+
+    javascript_to_resources = (
+        project_files.to_codebase()
+        .has_no_relation()
+        .filter(extension__in=[".ts", ".js"])
+        .exclude(extra_data={})
+    )
+
+    javascript_from_resources = (
+        project_files.from_codebase()
+        .exclude(path__contains="/test/")
+        .filter(extension__in=[".ts", ".js"])
+        .exclude(extra_data={})
+    )
+
+    if not (javascript_from_resources.exists() and javascript_to_resources.exists()):
+        return
+
+    javascript_from_resources_count = javascript_from_resources.count()
+    javascript_to_resources_count = javascript_to_resources.count()
+    if logger:
+        logger(
+            f"Mapping {javascript_to_resources_count:,d} JavaScript resources"
+            f" using string literals against {javascript_from_resources_count:,d}"
+            " from/ resources."
+        )
+
+    resource_iterator = javascript_to_resources.iterator(chunk_size=2000)
+    progress = LoopProgress(javascript_to_resources_count, logger)
+
+    resource_mapped = 0
+    for to_resource in progress.iter(resource_iterator):
+        resource_mapped += _map_javascript_strings(
+            to_resource, javascript_from_resources, logger
+        )
+    if logger:
+        logger(f"{resource_mapped:,d} resource mapped using strings")
+
+
+def _map_javascript_strings(to_resource, javascript_from_resources, logger):
+    """
+    Map a deployed JavaScript resource to its source using string literals and
+    return 1 if match is found otherwise return 0.
+    """
+    ignoreable_string_threshold = 5
+    to_strings = to_resource.extra_data.get("source_strings")
+    to_strings_set = set(to_strings)
+
+    if not to_strings or len(to_strings_set) < ignoreable_string_threshold:
+        return 0
+
+    best_matching_score = 0
+    best_match = None
+    for source_js in javascript_from_resources:
+        from_strings = source_js.extra_data.get("source_strings")
+        from_strings_set = set(from_strings)
+        if not from_strings or len(from_strings_set) < ignoreable_string_threshold:
+            continue
+
+        is_match, similarity = stringmap.match_source_strings_to_deployed(
+            source_strings=from_strings,
+            deployed_strings=to_strings,
+        )
+
+        if is_match and similarity > best_matching_score:
+            best_matching_score = similarity
+            best_match = source_js
+
+    if best_match:
+        pipes.make_relation(
+            from_resource=best_match,
+            to_resource=to_resource,
+            map_type="javascript_strings",
+            extra_data={"js_string_map_score": similarity},
+        )
+        to_resource.update(status=flag.MAPPED)
+        return 1
+    return 0
+
+
+def map_python_pyx_to_binaries(project, logger=None):
+    """Map Cython source to their compiled binaries in ``project``."""
+    from source_inspector.symbols_tree_sitter import get_tree_and_language_info
+
+    python_config = d2d_config.get_ecosystem_config(ecosystem="Python")
+    from_resources = (
+        project.codebaseresources.files()
+        .from_codebase()
+        .filter(extension__in=python_config.source_symbol_extensions)
+    )
+    to_resources = (
+        project.codebaseresources.files().to_codebase().has_no_relation().elfs()
+    )
+
+    # Collect binary symbols from binaries
+    for resource in to_resources:
+        try:
+            binary_symbols = collect_and_parse_elf_symbols(resource.location)
+            resource.update_extra_data(binary_symbols)
+        except Exception as e:
+            logger(f"Error parsing binary symbols at: {resource.location_path!r} {e!r}")
+
+    for resource in from_resources:
+        # Open Cython source file, create AST, parse it for function definitions
+        # and save them in a list
+        tree, _ = get_tree_and_language_info(resource.location)
+        function_definitions = [
+            node
+            for node in tree.root_node.children
+            if node.type == "function_definition"
+        ]
+        identifiers = []
+        for node in function_definitions:
+            for child in node.children:
+                if child.type == "identifier":
+                    identifiers.append(child.text.decode())
+
+        # Find matching to/ resource by checking to see which to/ resource's
+        # extra_data field contains function definitions found from Cython
+        # source files
+        identifiers_qs = Q()
+        for identifier in identifiers:
+            identifiers_qs |= Q(extra_data__icontains=identifier)
+        matching_elfs = to_resources.filter(identifiers_qs)
+        for matching_elf in matching_elfs:
+            pipes.make_relation(
+                from_resource=resource,
+                to_resource=matching_elf,
+                map_type="python_pyx_match",
+            )

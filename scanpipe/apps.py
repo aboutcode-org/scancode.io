@@ -39,7 +39,6 @@ from django.utils.translation import gettext_lazy as _
 from licensedcode.models import load_licenses
 
 from scanpipe.policies import load_policies_file
-from scanpipe.policies import make_license_policy_index
 
 try:
     from importlib import metadata as importlib_metadata
@@ -61,7 +60,7 @@ class ScanPipeConfig(AppConfig):
 
         # Mapping of registered pipeline names to pipeline classes.
         self._pipelines = {}
-        self.license_policies_index = {}
+        self.policies = {}
 
         workspace_location = settings.SCANCODEIO_WORKSPACE_LOCATION
         self.workspace_path = Path(workspace_location).expanduser().resolve()
@@ -226,7 +225,7 @@ class ScanPipeConfig(AppConfig):
 
     def set_policies(self):
         """
-        Compute and sets the `license_policies` on the app instance.
+        Set the global app policies on the app instance.
 
         If the policies file is available but not formatted properly or doesn't
         include the proper content, we want to raise an exception while the app
@@ -240,7 +239,7 @@ class ScanPipeConfig(AppConfig):
         if policies_file.exists():
             policies = load_policies_file(policies_file)
             logger.debug(style.SUCCESS(f"Loaded policies from {policies_file}"))
-            self.license_policies_index = make_license_policy_index(policies)
+            self.policies = policies
         else:
             logger.debug(style.WARNING("Policies file not found."))
 

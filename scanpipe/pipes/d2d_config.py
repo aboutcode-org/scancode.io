@@ -131,6 +131,10 @@ ECOSYSTEM_CONFIGS = {
         ecosystem_option="Windows",
         source_symbol_extensions=[".c", ".cpp", ".h", ".cs"],
     ),
+    "Python": EcosystemConfig(
+        ecosystem_option="Python",
+        source_symbol_extensions=[".pyx", ".pxd"],
+    ),
 }
 
 
@@ -180,6 +184,5 @@ def add_ecosystem_config(pipeline_ecosystem_config, ecosystem_config):
             if not pipeline_config_value:
                 new_config_value = config_value
             else:
-                new_config_value = pipeline_config_value.extend(config_value)
-
+                new_config_value = config_value + pipeline_config_value
             setattr(pipeline_ecosystem_config, config_name, new_config_value)

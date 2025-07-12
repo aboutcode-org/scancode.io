@@ -75,11 +75,13 @@ class DeployToDevelop(Pipeline):
             cls.map_jar_to_source,
             cls.map_javascript,
             cls.map_javascript_symbols,
+            cls.map_javascript_strings,
             cls.map_elf,
             cls.map_macho,
             cls.map_winpe,
             cls.map_go,
             cls.map_rust,
+            cls.map_python,
             cls.match_directories_to_purldb,
             cls.match_resources_to_purldb,
             cls.map_javascript_post_purldb_match,
@@ -156,7 +158,7 @@ class DeployToDevelop(Pipeline):
 
         d2d.match_purldb_resources(
             project=self.project,
-            extensions=self.matchable_package_extensions,
+            extensions=self.ecosystem_config.matchable_package_extensions,
             matcher_func=d2d.match_purldb_package,
             logger=self.log,
         )
@@ -189,6 +191,11 @@ class DeployToDevelop(Pipeline):
         """Map deployed JavaScript, TypeScript to its sources using symbols."""
         d2d.map_javascript_symbols(project=self.project, logger=self.log)
 
+    @optional_step("JavaScript")
+    def map_javascript_strings(self):
+        """Map deployed JavaScript, TypeScript to its sources using string literals."""
+        d2d.map_javascript_strings(project=self.project, logger=self.log)
+
     @optional_step("Elf")
     def map_elf(self):
         """Map ELF binaries to their sources using dwarf paths and symbols."""
@@ -215,6 +222,14 @@ class DeployToDevelop(Pipeline):
         """Map Rust binaries to their sources using symbols."""
         d2d.map_rust_binaries_with_symbols(project=self.project, logger=self.log)
 
+    @optional_step("Python")
+    def map_python(self):
+        """
+        Map binaries from Python packages to their sources using dwarf paths and
+        symbols.
+        """
+        d2d.map_python_pyx_to_binaries(project=self.project, logger=self.log)
+
     def match_directories_to_purldb(self):
         """Match selected directories in PurlDB."""
         if not purldb.is_available():
@@ -234,7 +249,7 @@ class DeployToDevelop(Pipeline):
 
         d2d.match_purldb_resources(
             project=self.project,
-            extensions=self.matchable_resource_extensions,
+            extensions=self.ecosystem_config.matchable_resource_extensions,
             matcher_func=d2d.match_purldb_resource,
             logger=self.log,
         )

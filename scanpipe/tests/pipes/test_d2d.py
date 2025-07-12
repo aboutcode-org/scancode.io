@@ -21,9 +21,11 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import io
+import json
 import sys
 import tempfile
 import uuid
+from dataclasses import asdict
 from pathlib import Path
 from unittest import mock
 from unittest import skipIf
@@ -39,6 +41,7 @@ from scanpipe.pipes import d2d
 from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import scancode
+from scanpipe.pipes import symbols
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import make_resource_directory
@@ -1677,6 +1680,32 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
     @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_python_pyx(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-python/to-intbitset.whl",
+            self.data / "d2d-python/from-intbitset.tar.gz",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(self.project1.codebase_path, recurse=True)
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.map_python_pyx_to_binaries(project=self.project1, logger=buffer.write)
+        pyx_match_relations = CodebaseRelation.objects.filter(
+            project=self.project1, map_type="python_pyx_match"
+        )
+        self.assertEqual(1, pyx_match_relations.count())
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
     def test_scanpipe_pipes_d2d_map_winpe_symbols(self):
         input_dir = self.project1.input_path
         input_resources = [
@@ -1800,3 +1829,58 @@ class ScanPipeD2DPipesTest(TestCase):
                 map_type="javascript_symbols"
             ).count(),
         )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_javascript_strings(self):
+        to_dir = self.project1.codebase_path / "to/project.tar.zst-extract/"
+        to_resource_file = (
+            self.data / "d2d-javascript/strings/cesium/source-decodeI3S.js"
+        )
+        to_dir.mkdir(parents=True)
+        copy_input(to_resource_file, to_dir)
+
+        from_input_location = (
+            self.data / "d2d-javascript/strings/cesium/deployed-decodeI3S.js"
+        )
+        from_dir = self.project1.codebase_path / "from/project.zip/"
+        from_dir.mkdir(parents=True)
+        copy_input(from_input_location, from_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+        symbols.collect_and_store_tree_sitter_symbols_and_strings(
+            project=self.project1,
+        )
+
+        buffer = io.StringIO()
+        d2d.map_javascript_strings(self.project1, logger=buffer.write)
+        expected = (
+            "Mapping 1 JavaScript resources using string "
+            "literals against 1 from/ resources."
+        )
+        self.assertIn(expected, buffer.getvalue())
+
+        self.assertEqual(1, self.project1.codebaserelations.count())
+        self.assertEqual(
+            1,
+            self.project1.codebaserelations.filter(
+                map_type="javascript_strings",
+            ).count(),
+        )
+
+    def test_scanpipe_d2d_load_ecosystem_config(self):
+        pipeline_name = "map_deploy_to_develop"
+        selected_groups = ["Ruby", "Java", "JavaScript"]
+
+        run = self.project1.add_pipeline(
+            pipeline_name=pipeline_name, selected_groups=selected_groups
+        )
+        pipeline = run.make_pipeline_instance()
+        d2d_config.load_ecosystem_config(pipeline=pipeline, options=selected_groups)
+
+        expected_ecosystem_config = (
+            self.data / "d2d" / "config" / "ecosystem_config.json"
+        )
+        with open(expected_ecosystem_config) as f:
+            expected_extra_data = json.load(f)
+
+        self.assertEqual(expected_extra_data, asdict(pipeline.ecosystem_config))
