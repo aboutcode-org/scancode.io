@@ -2764,7 +2764,7 @@ class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
     def get(self, request, *args, **kwargs):
         slug = self.kwargs.get("slug")
         project = get_object_or_404(Project, slug=slug)
-        path = request.GET.get("path", None)
+        path = request.GET.get("path", "")
 
         base_qs = (
             CodebaseResource.objects.filter(project=project, parent_path=path)
