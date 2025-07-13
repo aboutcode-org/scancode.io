@@ -29,7 +29,6 @@ import uuid
 from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
-from datetime import datetime
 from itertools import groupby
 from operator import itemgetter
 from pathlib import Path
@@ -4486,30 +4485,8 @@ class DiscoveredPackageScore(UUIDPKModel, PackageScoreMixin):
         return self.score or str(self.uuid)
 
     @classmethod
-    def parse_score_date(cls, date_str, formats=None):
-        """
-        Parse a date string into a timezone-aware datetime object,
-        or return None if parsing fails.
-        """
-        if not formats:
-            formats = ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%SZ"]
-
-        if date_str:
-            for fmt in formats:
-                try:
-                    naive_datetime = datetime.strptime(date_str, fmt)
-                    return timezone.make_aware(
-                        naive_datetime, timezone.get_current_timezone()
-                    )
-                except ValueError:
-                    continue
-
-        # Return None if date_str is None or parsing fails
-        return None
-
-    @classmethod
     def create_from_scorecard_data(
-        cls, discovered_package, scorecard_data, scoring_tool=None
+        cls, discovered_package, scorecard_data, scoring_tool="ossf-scorecard"
     ):
         """Create ScoreCard object from scorecard data and discovered package"""
         final_data = {
@@ -4576,5 +4553,5 @@ class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
             check_score=check.check_score,
             reason=check.reason or "",
             details=check.details or [],
-            for_package_score=package_score,
+            package_score=package_score,
         )
