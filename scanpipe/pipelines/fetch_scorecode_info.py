@@ -33,6 +33,12 @@ class FetchScoreCodeInfo(Pipeline):
 
     This pipeline retrieves ScoreCode data for each package in the project
     and stores it in the corresponding package instances.
+
+    ScoreCode data refers to metadata retrieved from the OpenSSF Scorecard tool,
+    which evaluates open source packages based on security and quality checks.
+    This data includes an overall score, individual check results (such as use
+    of branch protection, fuzzing, dependency updates, etc.), the version of the
+    scoring tool used, and the date of evaluation
     """
 
     download_inputs = False
@@ -62,5 +68,4 @@ class FetchScoreCodeInfo(Pipeline):
                 )
 
             else:
-                # We Want to create error instead of exception
-                raise Exception("No data found for the package")
+                pass

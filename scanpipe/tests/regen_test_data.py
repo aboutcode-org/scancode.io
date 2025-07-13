@@ -27,13 +27,13 @@ from django.core.management import call_command
 from django.test import TestCase
 
 import requests
+from scorecode.ossf_scorecard import fetch_scorecard
 
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
 from scanpipe.pipes import input
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
-from scorecode.ossf_scorecard import fetch_scorecard
 
 
 class RegenTestData(TestCase):
@@ -154,9 +154,7 @@ class RegenTestData(TestCase):
         )
 
     def test_regenerate_scorecard_data(self):
-        """
-        Regenerate and save scorecard data by calling the OSSF Scorecard API.
-        """
+        """Regenerate and save scorecard data by calling the OSSF Scorecard API."""
         scorecard_data_file = self.data / "scorecode" / "scorecard_response.json"
         platform, org, repo = "github.com", "nexB", "scancode-toolkit"
 
@@ -170,7 +168,5 @@ class RegenTestData(TestCase):
             return
 
         scorecard_data_file.parent.mkdir(parents=True, exist_ok=True)
-        scorecard_data_file.write_text(
-            json.dumps(scorecard_data.to_dict(), indent=2)
-        )
+        scorecard_data_file.write_text(json.dumps(scorecard_data.to_dict(), indent=2))
         print(f"Scorecard data successfully saved to {scorecard_data_file}")

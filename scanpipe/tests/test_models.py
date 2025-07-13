@@ -2612,6 +2612,7 @@ class ScanPipeModelsTest(TestCase):
             "children_packages",
             "discovered_packages_score",
             "notes",
+            "scores",
         ]
 
         package_data_only_field = ["datasource_id", "dependencies"]
@@ -2721,7 +2722,7 @@ class ScanPipeModelsTest(TestCase):
         )
         self.assertGreaterEqual(float(package_score.score), -1)
 
-        checks = package_score.discovered_packages_score_checks.all()
+        checks = package_score.checks.all()
         self.assertGreaterEqual(checks.count(), 1)
 
         for check in checks:
@@ -2753,7 +2754,7 @@ class ScanPipeModelsTest(TestCase):
         )
         self.assertIsNotNone(package_score.score_date)
 
-        actual_checks = package_score.discovered_packages_score_checks.all()
+        actual_checks = package_score.checks.all()
         expected_checks = {check["name"]: check for check in scorecard_data["checks"]}
 
         self.assertEqual(
@@ -2818,23 +2819,23 @@ class ScanPipeModelsTest(TestCase):
             package=package, scorecard_data=scorecard_obj
         )
 
-        # Step 4: Retrieve the first check that was automatically created
+        # Step 1: Retrieve the first check that was automatically created
         check_data = scorecard_data["checks"][0]  # Extract first check
         scorecard_check = ScorecardCheck.objects.get(
-            for_package_score=package_score, check_name=check_data["name"]
+            package_score=package_score, check_name=check_data["name"]
         )
 
-        # Step 5: Assertions to validate correct object creation
+        # Step 2: Assertions to validate correct object creation
         self.assertIsNotNone(scorecard_check)
-        self.assertEqual(scorecard_check.for_package_score, package_score)
+        self.assertEqual(scorecard_check.package_score, package_score)
         self.assertEqual(scorecard_check.check_name, check_data["name"])
         self.assertEqual(scorecard_check.check_score, str(check_data["score"]))
         self.assertEqual(scorecard_check.reason, check_data["reason"])
         self.assertEqual(scorecard_check.details, check_data["details"] or [])
 
-        # Step 6: Ensure the number of checks matches the scorecard data
+        # Step 3: Ensure the number of checks matches the scorecard data
         self.assertEqual(
-            package_score.discovered_packages_score_checks.count(),
+            package_score.checks.count(),
             len(scorecard_data["checks"]),
         )
 

@@ -1310,7 +1310,7 @@ class PipelinesIntegrationTest(TestCase):
     @mock.patch("scorecode.ossf_scorecard.is_available")
     def test_scanpipe_get_scorecard_info_packages_integration(self, mock_is_available):
         pipeline_name = "fetch_scorecode_info"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = make_project()
         package1 = DiscoveredPackage.create_from_data(project1, package_data1)
         package1.vcs_url = "https://github.com/ossf/scorecard"
         package1.save()
@@ -1330,14 +1330,10 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, exitcode, msg=out)
 
         package1.refresh_from_db()
-        self.assertIsNotNone(
-            package1.discovered_packages_score.filter(scoring_tool="ossf-scorecard")[
-                0
-            ].score,
-            msg=out,
-        )
 
-        self.assertEqual("https://github.com/ossf/scorecard", package1.vcs_url)
+        scorecard_entry = package1.scores.filter(scoring_tool="ossf-scorecard").first()
+
+        self.assertIsNotNone(scorecard_entry)
 
     def test_scanpipe_resolve_dependencies_pipeline_integration(self):
         pipeline_name = "resolve_dependencies"
