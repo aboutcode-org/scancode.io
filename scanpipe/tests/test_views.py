@@ -151,6 +151,17 @@ class ScanPipeViewsTest(TestCase):
         expected = '<input type="hidden" name="status" value="failed">'
         self.assertContains(response, expected, html=True)
 
+    def test_scanpipe_views_project_list_filter_by_status_distinct_results(self):
+        url = reverse("project_list")
+        pipeline1 = self.project1.add_pipeline(pipeline_name="scan_codebase")
+        pipeline1.set_task_stopped()
+        pipeline2 = self.project1.add_pipeline(pipeline_name="scan_codebase")
+        pipeline2.set_task_stopped()
+
+        data = {"status": "failed"}
+        response = self.client.get(url, data=data)
+        self.assertEqual(1, len(response.context["object_list"]))
+
     @mock.patch("scanpipe.views.ProjectListView.get_paginate_by")
     def test_scanpipe_views_project_list_filters_exclude_page(self, mock_paginate_by):
         url = reverse("project_list")
@@ -174,13 +185,22 @@ class ScanPipeViewsTest(TestCase):
         url = reverse("project_list")
         response = self.client.get(url)
 
-        expected = '<input type="hidden" name="url_query" value="">'
-        self.assertContains(response, expected, html=True)
+        expected_html_names = [
+            "url_query",
+            "download-url_query",
+            "report-url_query",
+            "archive-url_query",
+            "reset-url_query",
+        ]
+        for html_name in expected_html_names:
+            expected = f'<input type="hidden" name="{html_name}" value="">'
+            self.assertContains(response, expected, html=True)
 
         url_query = "name=search_value"
         response = self.client.get(url + "?" + url_query)
-        expected = f'<input type="hidden" name="url_query" value="{url_query}">'
-        self.assertContains(response, expected, html=True)
+        for html_name in expected_html_names:
+            expected = f'<input type="hidden" name="{html_name}" value="{url_query}">'
+            self.assertContains(response, expected, html=True)
 
     @mock.patch("scanpipe.views.ProjectListView.get_paginate_by")
     def test_scanpipe_views_project_list_modal_forms_include_show_on_all_checked(
