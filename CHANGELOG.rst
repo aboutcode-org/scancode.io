@@ -90,7 +90,6 @@ v35.0.0 (2025-06-23)
   https://github.com/aboutcode-org/scancode.io/pull/1700
   https://github.com/aboutcode-org/scancode.io/pull/1701
 
->>>>>>> main
 v34.11.0 (2025-05-02)
 ---------------------
 
