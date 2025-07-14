@@ -916,6 +916,8 @@ def create_codebase_resources(project, scanned_codebase):
             # includes the "root". The `get_path` method is used instead.
             if field.name == "path":
                 continue
+            if field.name == "parent_path":
+                continue
             value = getattr(scanned_resource, field.name, None)
             if value is not None:
                 resource_data[field.name] = value
@@ -923,6 +925,11 @@ def create_codebase_resources(project, scanned_codebase):
         resource_type = "FILE" if scanned_resource.is_file else "DIRECTORY"
         resource_data["type"] = CodebaseResource.Type[resource_type]
         resource_path = scanned_resource.get_path(strip_root=True)
+
+        parent_path = str(Path(resource_path).parent)
+        if parent_path == ".":
+            parent_path = ""
+        resource_data["parent_path"] = parent_path
 
         codebase_resource, _ = CodebaseResource.objects.get_or_create(
             project=project,

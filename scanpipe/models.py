@@ -2745,7 +2745,7 @@ class CodebaseResource(
         blank=True,
         help_text=_(
             "The path of the resource's parent directory. "
-            "Set to None for top-level (root) resources. "
+            "Set to empty string for top-level (root) resources. "
             "Used to efficiently retrieve a directory's contents."
         ),
     )
