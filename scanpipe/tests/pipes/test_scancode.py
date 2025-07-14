@@ -731,13 +731,13 @@ class ScanPipeScancodePipesTest(TestCase):
         run = project1.add_pipeline("scan_single_package")
         pipeline = run.make_pipeline_instance()
         exitcode, out = pipeline.execute()
-        
+
         self.assertEqual(0, exitcode, msg=out)
         self.assertEqual(4, project1.codebaseresources.count())
 
         root = project1.codebaseresources.get(path="package")
         self.assertEqual("", root.parent_path)
         self.assertNotEqual("codebase", root.parent_path)
-        
+
         file1 = project1.codebaseresources.get(path="package/index.js")
         self.assertEqual("package", file1.parent_path)
