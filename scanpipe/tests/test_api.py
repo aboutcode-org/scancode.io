@@ -56,6 +56,7 @@ from scanpipe.models import WebhookSubscription
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.output import JSONResultsGenerator
 from scanpipe.tests import dependency_data1
+from scanpipe.tests import filter_warnings
 from scanpipe.tests import make_message
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
@@ -472,6 +473,7 @@ class ScanPipeAPITest(TransactionTestCase):
         }
         self.assertEqual(expected, response.data)
 
+    @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_api_project_create_pipeline_old_name_compatibility(self):
         data = {
             "name": "Single string",
@@ -663,6 +665,9 @@ class ScanPipeAPITest(TransactionTestCase):
             "application/octet-stream",
         ]
         self.assertIn(response["Content-Type"], expected)
+        # Forces Django to finish the response and close the file
+        # to prevent a "ResourceWarning: unclosed file"
+        self.assertTrue(response.getvalue().startswith(b"PK"))
 
     def test_scanpipe_api_project_action_pipelines(self):
         url = reverse("project-pipelines")
@@ -702,9 +707,9 @@ class ScanPipeAPITest(TransactionTestCase):
 
         output_file = io.BytesIO(b"".join(response.streaming_content))
         workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
-        self.assertEqual(["PACKAGES"], workbook.get_sheet_names())
+        self.assertEqual(["PACKAGES"], workbook.sheetnames)
 
-        todos_sheet = workbook.get_sheet_by_name("PACKAGES")
+        todos_sheet = workbook["PACKAGES"]
         rows = list(todos_sheet.values)
         self.assertEqual(2, len(rows))
         self.assertEqual("project", rows[0][0])  # header row
@@ -986,6 +991,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual({"status": "Pipeline added."}, response.data)
         mock_execute_pipeline_task.assert_called_once()
 
+    @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_api_project_action_add_pipeline_old_name_compatibility(self):
         url = reverse("project-add-pipeline", args=[self.project1.uuid])
         data = {
@@ -1267,7 +1273,7 @@ class ScanPipeAPITest(TransactionTestCase):
     def test_scanpipe_api_serializer_get_serializer_fields(self):
         self.assertEqual(49, len(get_serializer_fields(DiscoveredPackage)))
         self.assertEqual(14, len(get_serializer_fields(DiscoveredDependency)))
-        self.assertEqual(37, len(get_serializer_fields(CodebaseResource)))
+        self.assertEqual(38, len(get_serializer_fields(CodebaseResource)))
         self.assertEqual(5, len(get_serializer_fields(CodebaseRelation)))
         self.assertEqual(7, len(get_serializer_fields(ProjectMessage)))
 

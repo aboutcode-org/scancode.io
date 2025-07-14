@@ -64,16 +64,17 @@ class InputsBaseForm(forms.Form):
         label="Download URLs",
         required=False,
         help_text=(
-            "Provide one or more URLs to download, one per line. "
-            "Files are fetched at the beginning of the pipeline run execution."
+            "Enter one or more download URLs, one per line. "
+            "Files will be fetched when the pipeline starts."
         ),
         widget=forms.Textarea(
             attrs={
                 "class": "textarea is-dynamic",
-                "rows": 2,
+                "rows": 3,
                 "placeholder": (
                     "https://domain.com/archive.zip\n"
-                    "docker://docker-reference (e.g.: docker://postgres:13)"
+                    "docker://docker-reference (e.g.: docker://postgres:13)\n"
+                    "pkg://type/name@version"
                 ),
             },
         ),

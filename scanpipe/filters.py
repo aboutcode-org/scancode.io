@@ -446,7 +446,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         """Filter by Run status using the `RunQuerySet` methods."""
         run_queryset_method = value
         run_queryset = getattr(Run.objects, run_queryset_method)()
-        return queryset.filter(runs__in=run_queryset)
+        return queryset.filter(runs__in=run_queryset).distinct()
 
 
 class JSONContainsFilter(django_filters.CharFilter):
@@ -483,6 +483,7 @@ MAP_TYPE_CHOICES = (
     ("about_file", "about file"),
     ("java_to_class", "java to class"),
     ("jar_to_source", "jar to source"),
+    ("javascript_strings", "js strings"),
     ("javascript_symbols", "js symbols"),
     ("js_compiled", "js compiled"),
     ("js_colocation", "js colocation"),
@@ -570,6 +571,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "sha1",
             "sha256",
             "sha512",
+            "sha1_git",
             "size",
             "status",
             "tag",

@@ -38,7 +38,10 @@ from django.db.models.expressions import Subquery
 from django.db.models.functions import Concat
 from django.template.defaultfilters import pluralize
 
+from binary_inspector.binary import collect_and_parse_macho_symbols
+from binary_inspector.binary import collect_and_parse_winpe_symbols
 from commoncode.paths import common_prefix
+from elf_inspector.binary import collect_and_parse_elf_symbols
 from elf_inspector.dwarf import get_dwarf_paths
 from extractcode import EXTRACT_SUFFIX
 from go_inspector.plugin import collect_and_parse_symbols
@@ -51,6 +54,7 @@ from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import convert_glob_to_django_regex
+from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
 from scanpipe.pipes import js
@@ -59,6 +63,7 @@ from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
 from scanpipe.pipes import resolve
 from scanpipe.pipes import scancode
+from scanpipe.pipes import stringmap
 from scanpipe.pipes import symbolmap
 from scanpipe.pipes import symbols
 
@@ -1460,6 +1465,20 @@ def match_resources_with_no_java_source(project, logger=None):
         )
 
 
+def ignore_unmapped_resources_from_config(project, patterns_to_ignore, logger=None):
+    """Ignore unmapped resources for a project using `patterns_to_ignore`."""
+    ignored_resources_count = flag.flag_ignored_patterns(
+        codebaseresources=project.codebaseresources.to_codebase().no_status(),
+        patterns=patterns_to_ignore,
+        status=flag.IGNORED_FROM_CONFIG,
+    )
+    if logger:
+        logger(
+            f"Ignoring {ignored_resources_count:,d} to/ resources with "
+            "ecosystem specific configurations."
+        )
+
+
 def match_unmapped_resources(project, matched_extensions=None, logger=None):
     """
     Match resources with empty status to PurlDB, if unmatched
@@ -1708,11 +1727,11 @@ def map_paths_resource(
                     relations_to_create[rel_key] = relation
         if paths_not_mapped:
             to_resource.status = flag.REQUIRES_REVIEW
-            to_resource.save()
             logger(
                 f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT mapped for: "
                 f"{to_resource.path!r}"
             )
+        to_resource.save()
 
     if relations_to_create:
         rels = CodebaseRelation.objects.bulk_create(relations_to_create.values())
@@ -1795,7 +1814,7 @@ def is_invalid_match(match, matched_path_length):
     return matched_path_length == 1 and len(match.resource_ids) != 1
 
 
-def map_elfs(project, logger=None):
+def map_elfs_with_dwarf_paths(project, logger=None):
     """Map ELF binaries to their sources in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
     to_resources = (
@@ -1911,10 +1930,10 @@ def map_go_paths(project, logger=None):
         )
 
 
-def map_rust_paths(project, logger=None):
-    """Map Rust binaries to their source in ``project``."""
+def map_rust_binaries_with_symbols(project, logger=None):
+    """Map Rust binaries to their source using symbols in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
-    to_resources = (
+    to_binaries = (
         project.codebaseresources.files()
         .to_codebase()
         .has_no_relation()
@@ -1922,31 +1941,126 @@ def map_rust_paths(project, logger=None):
     )
 
     # Collect source symbols from rust source files
-    rust_from_resources = from_resources.filter(extension=".rs")
+    rust_config = d2d_config.get_ecosystem_config(ecosystem="Rust")
+    rust_from_resources = from_resources.filter(
+        extension__in=rust_config.source_symbol_extensions
+    )
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=rust_from_resources,
+        to_resources=to_binaries,
+        binary_symbols_func=collect_and_parse_rust_symbols,
+        map_type="rust_symbols",
+        logger=logger,
+    )
+
+
+def map_elfs_binaries_with_symbols(project, logger=None):
+    """Map Elf binaries to their source using symbols in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    elf_binaries = (
+        project.codebaseresources.files().to_codebase().has_no_relation().elfs()
+    )
+
+    # Collect source symbols from elf related source files
+    elf_config = d2d_config.get_ecosystem_config(ecosystem="Elf")
+    elf_from_resources = from_resources.filter(
+        extension__in=elf_config.source_symbol_extensions
+    )
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=elf_from_resources,
+        to_resources=elf_binaries,
+        binary_symbols_func=collect_and_parse_elf_symbols,
+        map_type="elf_symbols",
+        logger=logger,
+    )
+
+
+def map_macho_binaries_with_symbols(project, logger=None):
+    """Map macho binaries to their source using symbols in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    macho_binaries = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .has_no_relation()
+        .macho_binaries()
+    )
+
+    # Collect source symbols from macos related source files
+    macos_config = d2d_config.get_ecosystem_config(ecosystem="MacOS")
+    mac_from_resources = from_resources.filter(
+        extension__in=macos_config.source_symbol_extensions,
+    )
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=mac_from_resources,
+        to_resources=macho_binaries,
+        binary_symbols_func=collect_and_parse_macho_symbols,
+        map_type="macho_symbols",
+        logger=logger,
+    )
+
+
+def map_winpe_binaries_with_symbols(project, logger=None):
+    """Map winpe binaries to their source using symbols in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    winexe_binaries = (
+        project.codebaseresources.files().to_codebase().has_no_relation().win_exes()
+    )
+
+    # Collect source symbols from windows related source files
+    windows_config = d2d_config.get_ecosystem_config(ecosystem="Windows")
+    windows_from_resources = from_resources.filter(
+        extension__in=windows_config.source_symbol_extensions,
+    )
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=windows_from_resources,
+        to_resources=winexe_binaries,
+        binary_symbols_func=collect_and_parse_winpe_symbols,
+        map_type="winpe_symbols",
+        logger=logger,
+    )
+
+
+def map_binaries_with_symbols(
+    project,
+    from_resources,
+    to_resources,
+    binary_symbols_func,
+    map_type,
+    logger=None,
+):
+    """Map Binaries to their source using symbols in ``project``."""
     symbols.collect_and_store_tree_sitter_symbols_and_strings(
         project=project,
         logger=logger,
-        project_files=rust_from_resources,
+        project_files=from_resources,
     )
 
     # Collect binary symbols from rust binaries
     for resource in to_resources:
         try:
-            binary_symbols = collect_and_parse_rust_symbols(resource.location_path)
+            binary_symbols = binary_symbols_func(resource.location)
             resource.update_extra_data(binary_symbols)
         except Exception as e:
-            logger(f"Can not parse {resource.location_path!r} {e!r}")
+            logger(f"Error parsing binary symbols at: {resource.location_path!r} {e!r}")
 
     if logger:
         logger(
             f"Mapping {to_resources.count():,d} to/ resources using symbols "
-            f"with {rust_from_resources.count():,d} from/ resources."
+            f"with {from_resources.count():,d} from/ resources."
         )
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
     progress = LoopProgress(to_resources.count(), logger)
     for to_resource in progress.iter(resource_iterator):
-        binary_symbols = to_resource.extra_data.get("rust_symbols")
+        binary_symbols = to_resource.extra_data.get(map_type)
         if not binary_symbols:
             continue
 
@@ -1954,10 +2068,11 @@ def map_rust_paths(project, logger=None):
             logger(f"Mapping source files to binary at {to_resource.path}")
 
         symbolmap.map_resources_with_symbols(
+            project=project,
             to_resource=to_resource,
-            from_resources=rust_from_resources,
+            from_resources=from_resources,
             binary_symbols=binary_symbols,
-            map_type="rust_symbols",
+            map_type=map_type,
             logger=logger,
         )
 
@@ -1966,16 +2081,17 @@ def map_javascript_symbols(project, logger=None):
     """Map deployed JavaScript, TypeScript to its sources using symbols."""
     project_files = project.codebaseresources.files()
 
+    js_config = d2d_config.get_ecosystem_config(ecosystem="JavaScript")
     javascript_to_resources = (
         project_files.to_codebase()
         .has_no_relation()
-        .filter(extension__in=[".ts", ".js"])
+        .filter(extension__in=js_config.source_symbol_extensions)
     )
 
     javascript_from_resources = (
         project_files.from_codebase()
         .exclude(path__contains="/test/")
-        .filter(extension__in=[".ts", ".js"])
+        .filter(extension__in=js_config.source_symbol_extensions)
     )
 
     if not (javascript_from_resources.exists() and javascript_to_resources.exists()):
@@ -2055,3 +2171,138 @@ def _map_javascript_symbols(to_resource, javascript_from_resources, logger):
         to_resource.update(status=flag.MAPPED)
         return 1
     return 0
+
+
+def map_javascript_strings(project, logger=None):
+    """Map deployed JavaScript, TypeScript to its sources using string literals."""
+    project_files = project.codebaseresources.files()
+
+    javascript_to_resources = (
+        project_files.to_codebase()
+        .has_no_relation()
+        .filter(extension__in=[".ts", ".js"])
+        .exclude(extra_data={})
+    )
+
+    javascript_from_resources = (
+        project_files.from_codebase()
+        .exclude(path__contains="/test/")
+        .filter(extension__in=[".ts", ".js"])
+        .exclude(extra_data={})
+    )
+
+    if not (javascript_from_resources.exists() and javascript_to_resources.exists()):
+        return
+
+    javascript_from_resources_count = javascript_from_resources.count()
+    javascript_to_resources_count = javascript_to_resources.count()
+    if logger:
+        logger(
+            f"Mapping {javascript_to_resources_count:,d} JavaScript resources"
+            f" using string literals against {javascript_from_resources_count:,d}"
+            " from/ resources."
+        )
+
+    resource_iterator = javascript_to_resources.iterator(chunk_size=2000)
+    progress = LoopProgress(javascript_to_resources_count, logger)
+
+    resource_mapped = 0
+    for to_resource in progress.iter(resource_iterator):
+        resource_mapped += _map_javascript_strings(
+            to_resource, javascript_from_resources, logger
+        )
+    if logger:
+        logger(f"{resource_mapped:,d} resource mapped using strings")
+
+
+def _map_javascript_strings(to_resource, javascript_from_resources, logger):
+    """
+    Map a deployed JavaScript resource to its source using string literals and
+    return 1 if match is found otherwise return 0.
+    """
+    ignoreable_string_threshold = 5
+    to_strings = to_resource.extra_data.get("source_strings")
+    to_strings_set = set(to_strings)
+
+    if not to_strings or len(to_strings_set) < ignoreable_string_threshold:
+        return 0
+
+    best_matching_score = 0
+    best_match = None
+    for source_js in javascript_from_resources:
+        from_strings = source_js.extra_data.get("source_strings")
+        from_strings_set = set(from_strings)
+        if not from_strings or len(from_strings_set) < ignoreable_string_threshold:
+            continue
+
+        is_match, similarity = stringmap.match_source_strings_to_deployed(
+            source_strings=from_strings,
+            deployed_strings=to_strings,
+        )
+
+        if is_match and similarity > best_matching_score:
+            best_matching_score = similarity
+            best_match = source_js
+
+    if best_match:
+        pipes.make_relation(
+            from_resource=best_match,
+            to_resource=to_resource,
+            map_type="javascript_strings",
+            extra_data={"js_string_map_score": similarity},
+        )
+        to_resource.update(status=flag.MAPPED)
+        return 1
+    return 0
+
+
+def map_python_pyx_to_binaries(project, logger=None):
+    """Map Cython source to their compiled binaries in ``project``."""
+    from source_inspector.symbols_tree_sitter import get_tree_and_language_info
+
+    python_config = d2d_config.get_ecosystem_config(ecosystem="Python")
+    from_resources = (
+        project.codebaseresources.files()
+        .from_codebase()
+        .filter(extension__in=python_config.source_symbol_extensions)
+    )
+    to_resources = (
+        project.codebaseresources.files().to_codebase().has_no_relation().elfs()
+    )
+
+    # Collect binary symbols from binaries
+    for resource in to_resources:
+        try:
+            binary_symbols = collect_and_parse_elf_symbols(resource.location)
+            resource.update_extra_data(binary_symbols)
+        except Exception as e:
+            logger(f"Error parsing binary symbols at: {resource.location_path!r} {e!r}")
+
+    for resource in from_resources:
+        # Open Cython source file, create AST, parse it for function definitions
+        # and save them in a list
+        tree, _ = get_tree_and_language_info(resource.location)
+        function_definitions = [
+            node
+            for node in tree.root_node.children
+            if node.type == "function_definition"
+        ]
+        identifiers = []
+        for node in function_definitions:
+            for child in node.children:
+                if child.type == "identifier":
+                    identifiers.append(child.text.decode())
+
+        # Find matching to/ resource by checking to see which to/ resource's
+        # extra_data field contains function definitions found from Cython
+        # source files
+        identifiers_qs = Q()
+        for identifier in identifiers:
+            identifiers_qs |= Q(extra_data__icontains=identifier)
+        matching_elfs = to_resources.filter(identifiers_qs)
+        for matching_elf in matching_elfs:
+            pipes.make_relation(
+                from_resource=resource,
+                to_resource=matching_elf,
+                map_type="python_pyx_match",
+            )

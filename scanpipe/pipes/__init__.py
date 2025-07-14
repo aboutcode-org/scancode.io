@@ -166,8 +166,7 @@ def _clean_package_data(package_data):
     package_data = package_data.copy()
     if release_date := package_data.get("release_date"):
         if type(release_date) is str:
-            if release_date.endswith("Z"):
-                release_date = release_date[:-1]
+            release_date = release_date.removesuffix("Z")
             package_data["release_date"] = datetime.fromisoformat(release_date).date()
 
     # Strip leading "codebase/" to make path compatible with
@@ -326,7 +325,6 @@ def get_dependencies(project, dependency_data):
     Given a `dependency_data` mapping, get a list of DiscoveredDependency objects
     for that `project` with similar dependency data.
     """
-    dependency = None
     dependency_uid = dependency_data.get("dependency_uid")
     extracted_requirement = dependency_data.get("extracted_requirement") or ""
 

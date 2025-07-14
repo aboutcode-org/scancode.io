@@ -111,7 +111,6 @@ class RootFS(Pipeline):
         Match files with "not-yet-analyzed" status to files already belonging to
         application packages.
         """
-        # TODO: do it one rootfs at a time e.g. for rfs in self.root_filesystems:
         rootfs.match_not_analyzed(
             self.project,
             reference_status=flag.APPLICATION_PACKAGE,

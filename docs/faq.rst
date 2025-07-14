@@ -24,10 +24,15 @@ you may use the Docker image to run pipelines as a single command:
   docker run --rm \
     -v "$(pwd)":/codedrop \
     ghcr.io/aboutcode-org/scancode.io:latest \
-    sh -c "run scan_codebase /codedrop" \
+    run scan_codebase /codedrop \
     > results.json
 
 Refer to the :ref:`cli_run` section for more about this approach.
+
+.. tip::
+    Prefer a one-liner? Use this to scan your current directory::
+
+        curl -sSL https://raw.githubusercontent.com/aboutcode-org/scancode.io/main/etc/scripts/run-scan.sh | bash
 
 .. _faq_which_pipeline:
 
@@ -202,7 +207,7 @@ How can I trigger a pipeline scan from a CI/CD, such as Jenkins, TeamCity or Azu
 You can refer to the :ref:`automation` to automate your projects management.
 
 Also, A new GitHub action is available at
-`scancode-action repository <https://github.com/nexB/scancode-action>`_
+`scancode-action repository <https://github.com/aboutcode-org/scancode-action>`_
 to run ScanCode.io pipelines from your GitHub Workflows.
 
 How can I get notified about my project progression?

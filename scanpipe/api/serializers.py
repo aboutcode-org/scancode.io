@@ -369,6 +369,7 @@ class CodebaseResourceSerializer(serializers.ModelSerializer):
             "sha1",
             "sha256",
             "sha512",
+            "sha1_git",
             "is_binary",
             "is_text",
             "is_archive",

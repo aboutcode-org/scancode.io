@@ -808,9 +808,9 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         pipeline_runs = project.runs.all()
         self.check_run_scancode_version(pipeline_runs)
 
-        policies_enabled = False
+        license_policies_enabled = False
         try:
-            policies_enabled = project.policies_enabled
+            license_policies_enabled = project.license_policies_enabled
         except ValidationError as e:
             messages.error(self.request, str(e))
 
@@ -830,7 +830,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "pipeline_runs": pipeline_runs,
                 "codebase_root": codebase_root,
                 "file_filter": self.request.GET.get("file-filter", "all"),
-                "policies_enabled": policies_enabled,
+                "license_policies_enabled": license_policies_enabled,
             }
         )
 
@@ -1013,7 +1013,7 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
             },
             "package": {
                 "queryset": project.discoveredpackages,
-                "fields": ["type", "declared_license_expression"],
+                "fields": ["type", "declared_license_expression", "compliance_alert"],
             },
             "dependency": {
                 "queryset": project.discovereddependencies,
@@ -1029,10 +1029,9 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
             for field_name in fields:
                 if field_name in ["holders", "copyrights"]:
                     field_values = (
-                        data.get(field_name[:-1])
+                        data.get(field_name[:-1]) if isinstance(data, dict) else ""
                         for entry in qs_values
-                        for data in entry.get(field_name, [])
-                        if isinstance(data, dict)
+                        for data in (entry.get(field_name, []) or [""])
                     )
                 else:
                     field_values = (entry[field_name] for entry in qs_values)
@@ -1202,7 +1201,7 @@ class ProjectCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
         context = super().get_context_data(**kwargs)
         project = self.object
 
-        if not project.policies_enabled:
+        if not project.license_policies_enabled:
             raise Http404
 
         compliance_alerts = compliance.get_project_compliance_alerts(
@@ -1352,14 +1351,12 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
         An instance of BaseProjectActionForm can be provided as the ``action_form``
         argument for the support of ``select_across``.
         """
-        if action_form:
-            select_across = action_form.cleaned_data.get("select_across")
+        if action_form and action_form.cleaned_data.get("select_across"):
             # url_query may be empty for a "select everything"
             url_query = action_form.cleaned_data.get("url_query", "")
-            if select_across:
-                project_filterset = ProjectFilterSet(data=QueryDict(url_query))
-                if project_filterset.is_valid():
-                    return project_filterset.qs
+            project_filterset = ProjectFilterSet(data=QueryDict(url_query))
+            if project_filterset.is_valid():
+                return project_filterset.qs
 
         if selected_project_ids:
             return Project.objects.filter(uuid__in=selected_project_ids)
@@ -1914,6 +1911,7 @@ class CodebaseResourceDetailsView(
                 {"field_name": "sha1", "label": "SHA1"},
                 {"field_name": "sha256", "label": "SHA256"},
                 {"field_name": "sha512", "label": "SHA512"},
+                {"field_name": "sha1_git", "label": "SHA1_git"},
                 "is_binary",
                 "is_text",
                 "is_archive",
@@ -2006,24 +2004,33 @@ class CodebaseResourceDetailsView(
 
     @staticmethod
     def get_matched_snippet_annotations(resource):
-        # convert qspan from list of ints to Spans
-        matched_snippet_annotations = []
         matched_snippets = resource.extra_data.get("matched_snippets")
-        if matched_snippets:
-            line_by_pos = resource.extra_data.get("line_by_pos")
-            for matched_snippet in matched_snippets:
-                match_detections = matched_snippet["match_detections"]
-                qspan = Span(match_detections)
-                for span in qspan.subspans():
-                    # line_by_pos is stored as JSON and keys in JSON are always
-                    # strings
-                    matched_snippet_annotations.append(
-                        {
-                            "start_line": line_by_pos[str(span.start)],
-                            "end_line": line_by_pos[str(span.end)],
-                        }
-                    )
-        return matched_snippet_annotations
+        line_by_pos = resource.extra_data.get("line_by_pos")
+        if not matched_snippets:
+            return []
+
+        snippet_annotations = []
+        for snippet in matched_snippets:
+            package = snippet.get("package", "")
+            resource = snippet.get("resource", "")
+            similarity = snippet.get("similarity", 0)
+            text = (
+                f"package: {package}\nresource: {resource}\nsimilarity: {similarity}\n"
+            )
+
+            # convert qspan from list of ints to Spans
+            qspan = Span(snippet["match_detections"])
+            for span in qspan.subspans():
+                # line_by_pos is stored as JSON and keys in JSON are always strings
+                snippet_annotations.append(
+                    {
+                        "start_line": line_by_pos[str(span.start)],
+                        "end_line": line_by_pos[str(span.end)],
+                        "text": text,
+                    }
+                )
+
+        return snippet_annotations
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2166,6 +2173,7 @@ class DiscoveredPackageDetailsView(
                     "field_name": "other_license_expression_spdx",
                     "label": "Other license expression (SPDX)",
                 },
+                "compliance_alert",
                 "extracted_license_statement",
                 "copyright",
                 "holder",
@@ -2528,33 +2536,57 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
         try:
-            dependency_tree = self.get_dependency_tree(project=self.object)
+            context["dependency_tree"] = self.get_dependency_tree(project=self.object)
         except RecursionError:
             context["recursion_error"] = True
-            return context
 
-        context["dependency_tree"] = dependency_tree
         return context
 
     def get_dependency_tree(self, project):
-        root_packages = project.discoveredpackages.root_packages().order_by("name")
+        root_packages = (
+            project.discoveredpackages.root_packages()
+            .order_by("name")
+            .only_package_url_fields(
+                extra=["project_id", "compliance_alert", "affected_by_vulnerabilities"]
+            )
+        )
         project_children = [self.get_node(package) for package in root_packages]
 
-        project_tree = {
+        # Dependencies with no assigned `for_packages`.
+        project_dependencies = project.discovereddependencies.project_dependencies()
+        for dependency in project_dependencies:
+            project_children.append({"name": dependency.package_url})
+
+        dependency_tree = {
             "name": project.name,
             "children": project_children,
         }
-
-        return project_tree
+        return dependency_tree
 
     def get_node(self, package):
-        node = {"name": str(package)}
+        # Resolved dependencies
         children = [
             self.get_node(child_package)
-            for child_package in package.children_packages.all()
+            for child_package in package.children_packages.all().order_by("name")
         ]
-        if children:
-            node["children"] = children
+
+        # Un-resolved dependencies
+        unresolved_dependencies = package.declared_dependencies.unresolved()
+        for dependency in unresolved_dependencies:
+            children.append(
+                {
+                    "name": dependency.package_url,
+                    "is_vulnerable": dependency.is_vulnerable,
+                }
+            )
+
+        node = {
+            "name": str(package),
+            "url": package.get_absolute_url(),
+            "compliance_alert": package.compliance_alert,
+            "has_compliance_issue": package.has_compliance_issue,
+            "is_vulnerable": package.is_vulnerable,
+            "children": children,
+        }
         return node

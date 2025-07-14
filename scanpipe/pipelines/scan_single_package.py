@@ -61,6 +61,7 @@ class ScanSinglePackage(Pipeline):
         "info": True,
         "license": True,
         "license_text": True,
+        "license_references": True,
         "package": True,
         "url": True,
         "classify": True,

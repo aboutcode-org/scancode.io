@@ -11,7 +11,7 @@
         </div>
       </div>
       <div class="field">
-        <label class="label" for="{{ form.name.id_for_label }}">
+        <label class="label" for="{{ form.purl.id_for_label }}">
           PURL
         </label>
         <div class="control">
@@ -153,7 +153,7 @@
     <p id="policies" class="panel-heading">Policies</p>
     <div class="panel-block is-block px-4">
       <div>
-        {% if project.policies_enabled %}
+        {% if project.license_policies_enabled %}
           <i class="fa-solid fa-check"></i>
           Policies are <strong>enabled</strong> for this project.
         {% else %}

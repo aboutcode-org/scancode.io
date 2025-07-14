@@ -86,6 +86,15 @@ class MatchCodePipesTest(TestCase):
         self.assertEqual(expected_match_url, match_url)
         self.assertEqual(expected_run_url, run_url)
 
+    @mock.patch("scanpipe.pipes.matchcode.request_post")
+    def test_scanpipe_pipes_matchcode_send_project_json_to_matchcode_failed_request(
+        self, mock_request_post
+    ):
+        mock_request_post.return_value = None
+        with self.assertRaises(matchcode.MatchCodeIOException) as context:
+            matchcode.send_project_json_to_matchcode(self.project1)
+        self.assertEqual("Invalid response from MatchCode.io", str(context.exception))
+
     @mock.patch("scanpipe.pipes.matchcode.request_get")
     @mock.patch("scanpipe.pipes.matchcode.is_available")
     def test_scanpipe_pipes_matchcode_get_run_url_status(
@@ -168,7 +177,7 @@ class MatchCodePipesTest(TestCase):
                 "log": "failure message",
             },
         ]
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(matchcode.MatchCodeIOException) as context:
             matchcode.poll_run_url_status(run_url, sleep=0)
         self.assertTrue("failure message" in str(context.exception))
 
@@ -197,7 +206,7 @@ class MatchCodePipesTest(TestCase):
                 "log": "stop message",
             },
         ]
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(matchcode.MatchCodeIOException) as context:
             matchcode.poll_run_url_status(run_url, sleep=0)
         self.assertTrue("stop message" in str(context.exception))
 
@@ -226,7 +235,7 @@ class MatchCodePipesTest(TestCase):
                 "log": "stale message",
             },
         ]
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(matchcode.MatchCodeIOException) as context:
             matchcode.poll_run_url_status(run_url, sleep=0)
         self.assertTrue("stale message" in str(context.exception))
 

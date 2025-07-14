@@ -63,7 +63,6 @@ envfile:
 	@if test -f ${ENV_FILE}; then echo ".env file exists already"; exit 1; fi
 	@mkdir -p $(shell dirname ${ENV_FILE}) && touch ${ENV_FILE}
 	@echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
-	@echo COMPOSE_PROJECT_NAME=\"scancodeio\" >> ${ENV_FILE}
 
 doc8:
 	@echo "-> Run doc8 validation"
@@ -144,10 +143,6 @@ docs:
 	rm -rf docs/_build/
 	@${ACTIVATE} sphinx-build docs/ docs/_build/
 
-bump:
-	@echo "-> Bump the version"
-	@${ACTIVATE} bumpver update --no-fetch --patch
-
 docker-images:
 	@echo "-> Build Docker services"
 	docker compose build
@@ -164,4 +159,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run run-docker-dev test fasttest docs bump docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run run-docker-dev test fasttest docs docker-images offline-package
