@@ -151,6 +151,17 @@ class ScanPipeViewsTest(TestCase):
         expected = '<input type="hidden" name="status" value="failed">'
         self.assertContains(response, expected, html=True)
 
+    def test_scanpipe_views_project_list_filter_by_status_distinct_results(self):
+        url = reverse("project_list")
+        pipeline1 = self.project1.add_pipeline(pipeline_name="scan_codebase")
+        pipeline1.set_task_stopped()
+        pipeline2 = self.project1.add_pipeline(pipeline_name="scan_codebase")
+        pipeline2.set_task_stopped()
+
+        data = {"status": "failed"}
+        response = self.client.get(url, data=data)
+        self.assertEqual(1, len(response.context["object_list"]))
+
     @mock.patch("scanpipe.views.ProjectListView.get_paginate_by")
     def test_scanpipe_views_project_list_filters_exclude_page(self, mock_paginate_by):
         url = reverse("project_list")
