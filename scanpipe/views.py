@@ -1351,14 +1351,12 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
         An instance of BaseProjectActionForm can be provided as the ``action_form``
         argument for the support of ``select_across``.
         """
-        if action_form:
-            select_across = action_form.cleaned_data.get("select_across")
+        if action_form and action_form.cleaned_data.get("select_across"):
             # url_query may be empty for a "select everything"
             url_query = action_form.cleaned_data.get("url_query", "")
-            if select_across:
-                project_filterset = ProjectFilterSet(data=QueryDict(url_query))
-                if project_filterset.is_valid():
-                    return project_filterset.qs
+            project_filterset = ProjectFilterSet(data=QueryDict(url_query))
+            if project_filterset.is_valid():
+                return project_filterset.qs
 
         if selected_project_ids:
             return Project.objects.filter(uuid__in=selected_project_ids)

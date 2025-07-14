@@ -174,13 +174,22 @@ class ScanPipeViewsTest(TestCase):
         url = reverse("project_list")
         response = self.client.get(url)
 
-        expected = '<input type="hidden" name="url_query" value="">'
-        self.assertContains(response, expected, html=True)
+        expected_html_names = [
+            "url_query",
+            "download-url_query",
+            "report-url_query",
+            "archive-url_query",
+            "reset-url_query",
+        ]
+        for html_name in expected_html_names:
+            expected = f'<input type="hidden" name="{html_name}" value="">'
+            self.assertContains(response, expected, html=True)
 
         url_query = "name=search_value"
         response = self.client.get(url + "?" + url_query)
-        expected = f'<input type="hidden" name="url_query" value="{url_query}">'
-        self.assertContains(response, expected, html=True)
+        for html_name in expected_html_names:
+            expected = f'<input type="hidden" name="{html_name}" value="{url_query}">'
+            self.assertContains(response, expected, html=True)
 
     @mock.patch("scanpipe.views.ProjectListView.get_paginate_by")
     def test_scanpipe_views_project_list_modal_forms_include_show_on_all_checked(
