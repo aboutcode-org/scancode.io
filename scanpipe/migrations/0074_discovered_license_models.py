@@ -96,6 +96,13 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
+                    "is_license_clue",
+                    models.BooleanField(
+                        default=False,
+                        help_text='True if this is not a proper license detection which should be considered in the license_expression for the parent resource/package. A license match is considered as a clue if it could be a possiblefalse positives or the matched rule is tagged as a clue explicitly.',
+                    ),
+                ),
+                (
                     "project",
                     models.ForeignKey(
                         editable=False,

@@ -328,6 +328,7 @@ def update_or_create_license_detection(
     resource_path=None,
     from_package=False,
     count_detection=True,
+    is_license_clue=False,
 ):
     """
     Get, update or create a DiscoveredLicense object then return it.
@@ -339,7 +340,11 @@ def update_or_create_license_detection(
     already. `from_package` is True if the license detection was in a
     `extracted_license_statement` from a package metadata.
     """
+    if is_license_clue:
+        detection_data = scancode.get_detection_data_from_clue(detection_data)
+
     detection_identifier = detection_data["identifier"]
+    detection_data["is_license_clue"] = is_license_clue
 
     license_detection = project.discoveredlicenses.get_or_none(
         identifier=detection_identifier,
@@ -355,10 +360,10 @@ def update_or_create_license_detection(
         )
 
     if not license_detection:
+        detection_data["resource_path"] = resource_path
         project.add_error(
             model="update_or_create_license_detection",
             details=detection_data,
-            resource=resource_path,
         )
         return
 

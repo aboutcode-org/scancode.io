@@ -15,13 +15,25 @@
         </a>
       {% endfor %}
       {% if total_counts.all %}
-      <a class="panel-block is-align-items-flex-start break-word is-flex is-align-items-center" href="{{ project_licenses_url }}" target="_blank">
+      <a class="panel-block is-align-items-flex-start break-word is-flex is-align-items-center" href="{{ project_licenses_url }}?is_license_clue=False" target="_blank">
         See all license detections
         <span class="tag is-rounded ml-1">{{ total_counts.all|intcomma }}</span>
         {% if total_counts.with_compliance_error %}
         <span class="has-text-danger is-size-6 ml-2">
           <i class="fa-solid fa-scale-balanced fa-sm"></i>
           {{ total_counts.with_compliance_error|intcomma }}
+        </span>
+        {% endif %}
+      </a>
+      {% endif %}
+      {% if license_clues %}
+      <a class="panel-block is-align-items-flex-start break-word is-flex is-align-items-center" href="{{ project_licenses_url }}?is_license_clue=True" target="_blank">
+        See all license clues
+        <span class="tag is-rounded ml-1">{{ clue_counts.all|intcomma }}</span>
+        {% if clue_counts.with_compliance_error %}
+        <span class="has-text-danger is-size-6 ml-2">
+          <i class="fa-solid fa-scale-balanced fa-sm"></i>
+          {{ clue_counts.with_compliance_error|intcomma }}
         </span>
         {% endif %}
       </a>

@@ -39,7 +39,10 @@ from django.db.models import Q
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
 from extractcode import api as extractcode_api
+from licensedcode.detection import DetectionCategory
 from licensedcode.detection import FileRegion
+from licensedcode.detection import LicenseDetectionFromResult
+from licensedcode.detection import LicenseMatchFromResult
 from packagedcode import get_package_handler
 from packagedcode import models as packagedcode_models
 from scancode import Scanner
@@ -488,6 +491,14 @@ def collect_and_create_license_detections(project):
                 resource_path=resource.path,
             )
 
+        for clue_data in resource.license_clues:
+            pipes.update_or_create_license_detection(
+                project=project,
+                detection_data=clue_data,
+                resource_path=resource.path,
+                is_license_clue=True,
+            )
+
     for resource in project.codebaseresources.has_package_data():
         for package_mapping in resource.package_data:
             package_data = packagedcode_models.PackageData.from_dict(
@@ -509,6 +520,28 @@ def collect_and_create_license_detections(project):
                     resource_path=resource.path,
                     from_package=True,
                 )
+
+
+def get_detection_data_from_clue(clue_data):
+    """
+    From a LicenseMatch mapping, create a LicenseDetection mapping by
+    populating the identifier and license_expression fields.
+    """
+    license_match = LicenseMatchFromResult.from_dict(clue_data)
+    license_detection = LicenseDetectionFromResult.from_matches(
+        matches=[license_match],
+        analysis=DetectionCategory.LICENSE_CLUES.value,
+    )
+    license_detection.license_expression = license_match.rule.license_expression
+    license_detection.license_expression_spdx = (
+        license_match.rule.spdx_license_expression()
+    )
+    license_detection.identifier = license_detection.identifier_with_expression
+    return license_detection.to_dict(
+        include_text=True,
+        license_diagnostics=True,
+        license_text_diagnostics=True,
+    )
 
 
 def get_file_region(detection_data, resource_path):
@@ -908,6 +941,16 @@ def create_codebase_resources(project, scanned_codebase):
                 count_detection=False,
             )
             logger.debug(f"Add {codebase_resource} to {detection_identifier}")
+
+        license_clues = getattr(scanned_resource, "license_clues", [])
+        for clue_data in license_clues:
+            pipes.update_or_create_license_detection(
+                project=project,
+                detection_data=clue_data,
+                resource_path=resource_path,
+                is_license_clue=True,
+            )
+            logger.debug(f"Add license clue at {codebase_resource}")
 
         packages = getattr(scanned_resource, "package_data", [])
         for package_data in packages:

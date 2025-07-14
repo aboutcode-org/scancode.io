@@ -856,6 +856,7 @@ class LicenseFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     compliance_alert = django_filters.ChoiceFilter(
         choices=[(EMPTY_VAR, "None")] + CodebaseResource.Compliance.choices,
     )
+    is_license_clue = StrictBooleanFilter()
 
     class Meta:
         model = DiscoveredLicense
@@ -866,6 +867,7 @@ class LicenseFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "license_expression",
             "license_expression_spdx",
             "compliance_alert",
+            "is_license_clue",
         ]
 
 

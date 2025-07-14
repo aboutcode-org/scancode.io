@@ -2321,10 +2321,10 @@ class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuery
         return self.filter(~Q(type=self.model.Type.SYMLINK))
 
     def has_license_detections(self):
-        return self.filter(~Q(license_detections=[]))
+        return self.filter(~Q(license_detections=[]) | ~Q(license_clues=[]))
 
     def has_no_license_detections(self):
-        return self.filter(license_detections=[])
+        return self.filter(Q(license_detections=[]) & Q(license_clues=[]))
 
     def has_package_data(self):
         return self.filter(~Q(package_data=[]))
@@ -4217,6 +4217,16 @@ class DiscoveredLicense(
     # If this license was discovered in a extracted license statement
     # this is True, and False if this was discovered in a file.
     from_package = None
+
+    is_license_clue = models.BooleanField(
+        default=False,
+        help_text=_(
+            "True if this is not a proper license detection which should be "
+            "considered in the license_expression for the parent resource/package. "
+            "A license match is considered as a clue if it could be a possible"
+            "false positives or the matched rule is tagged as a clue explicitly."
+        ),
+    )
 
     detection_count = models.BigIntegerField(
         blank=True,

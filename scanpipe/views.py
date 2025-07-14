@@ -1107,8 +1107,11 @@ class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.Detai
 
     @staticmethod
     def get_license_detection_summary(project, limit=10):
+        proper_license_detections = project.discoveredlicenses.filter(
+            is_license_clue=False,
+        )
         license_counter = count_group_by(
-            project.discoveredlicenses, "license_expression"
+            proper_license_detections, "license_expression"
         )
 
         if list(license_counter.keys()) == [""]:
@@ -1126,7 +1129,7 @@ class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.Detai
         expressions_with_compliance_alert = []
         for license_expression in top_licenses.keys():
             has_compliance_alert = (
-                project.discoveredlicenses.filter(license_expression=license_expression)
+                proper_license_detections.filter(license_expression=license_expression)
                 .has_compliance_alert()
                 .exists()
             )
@@ -1135,21 +1138,39 @@ class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.Detai
 
         total_counts = {
             "with_compliance_error": (
-                project.discoveredlicenses.has_compliance_alert().count()
+                proper_license_detections.has_compliance_alert().count()
             ),
-            "all": project.discoveredlicenses.count(),
+            "all": proper_license_detections.count(),
         }
 
-        return top_licenses, expressions_with_compliance_alert, total_counts
+        license_clues = project.discoveredlicenses.filter(
+            is_license_clue=True,
+        )
+        clue_counts = {}
+        if license_clues.exists():
+            clue_counts = {
+                "with_compliance_error": (license_clues.has_compliance_alert().count()),
+                "all": license_clues.count(),
+            }
+
+        return (
+            top_licenses,
+            expressions_with_compliance_alert,
+            total_counts,
+            license_clues,
+            clue_counts,
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        summary, expressions, counts = self.get_license_detection_summary(
-            project=self.object
+        summary, expressions, counts, clues, clue_counts = (
+            self.get_license_detection_summary(project=self.object)
         )
         context["license_detection_summary"] = summary
         context["expressions_with_compliance_alert"] = expressions
         context["total_counts"] = counts
+        context["license_clues"] = clues
+        context["clue_counts"] = clue_counts
         context["project_licenses_url"] = reverse(
             "project_licenses", args=[self.object.slug]
         )
@@ -1850,6 +1871,7 @@ class DiscoveredLicenseListView(
             "filter_fieldname": "license_expression_spdx",
         },
         "detection_count",
+        "is_license_clue",
         {
             "field_name": "compliance_alert",
             "filter_fieldname": "compliance_alert",

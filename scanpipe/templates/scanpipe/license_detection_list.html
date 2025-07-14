@@ -39,6 +39,9 @@
             <td>
               {{ license_detection.detection_count }}
             </td>
+            <td>
+              {{ license_detection.is_license_clue }}
+            </td>
             {% if display_compliance_alert %}
               <td>
                 <a href="?compliance_alert={{ license_detection.compliance_alert }}" class="is-black-link">
