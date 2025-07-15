@@ -2426,17 +2426,16 @@ class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuery
     def executable_binaries(self):
         return self.union(self.win_exes(), self.macho_binaries(), self.elfs())
 
-    def with_children(self, project):
+    def with_has_children(self):
         """
         Annotate the QuerySet with has_children field based on whether
         each resource has any children (subdirectories/files).
         """
-        subdirs = CodebaseResource.objects.filter(
-            project=project,
+        children_qs = CodebaseResource.objects.filter(
             parent_path=OuterRef("path"),
         )
 
-        return self.annotate(has_children=Exists(subdirs))
+        return self.annotate(has_children=Exists(children_qs))
 
 
 class ScanFieldsModelMixin(models.Model):

@@ -3214,6 +3214,31 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertTrue(package3.package_uid)
         self.assertNotEqual(package.package_uid, package3.package_uid)
 
+    def test_scanpipe_codebase_resource_queryset_with_has_children(self):
+        project1 = make_project("Analysis")
+
+        CodebaseResource.objects.create(
+            project=project1,
+            type=CodebaseResource.Type.DIRECTORY,
+            path="parent",
+        )
+        CodebaseResource.objects.create(
+            project=project1,
+            type=CodebaseResource.Type.FILE,
+            path="parent/child.txt",
+        )
+        CodebaseResource.objects.create(
+            project=project1,
+            type=CodebaseResource.Type.DIRECTORY,
+            path="empty",
+        )
+
+        qs = CodebaseResource.objects.filter(project=project1).with_has_children()
+        results = {r.path: r.has_children for r in qs}
+        self.assertTrue(results["parent"])
+        self.assertFalse(results["parent/child.txt"])
+        self.assertFalse(results["empty"])
+
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_codebase_resource_create_and_add_package_warnings(self):
         project1 = make_project("Analysis")

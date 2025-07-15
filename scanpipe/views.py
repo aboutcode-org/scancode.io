@@ -2766,13 +2766,12 @@ class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
         project = get_object_or_404(Project, slug=slug)
         path = request.GET.get("path", "")
 
-        base_qs = (
-            CodebaseResource.objects.filter(project=project, parent_path=path)
+        children = (
+            project.codebaseresources.filter(parent_path=path)
+            .with_has_children()
             .only("path", "name", "type")
             .order_by("path")
         )
-
-        children = base_qs.with_children(project)
 
         context = {
             "project": project,
@@ -2780,6 +2779,6 @@ class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
             "children": children,
         }
 
-        if request.GET.get("tree") == "true":
+        if request.GET.get("tree_panel") == "true":
             return render(request, "scanpipe/panels/codebase_tree_panel.html", context)
         return render(request, self.template_name, context)
