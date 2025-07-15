@@ -21,6 +21,7 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipes import flag
 from scanpipe.pipes import matchcode
 
 
@@ -45,6 +46,7 @@ class MatchToMatchCode(Pipeline):
 
     download_inputs = False
     is_addon = True
+    results_url = "/project/{slug}/resources/?status=" + flag.MATCHED_TO_PURLDB_PACKAGE
 
     @classmethod
     def steps(cls):
