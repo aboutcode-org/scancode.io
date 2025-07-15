@@ -52,7 +52,7 @@
           target.classList.toggle("is-hidden");
         } else {
           target.classList.remove("is-hidden");
-          const response = await fetch(url + "&tree=true");
+          const response = await fetch(url + "&tree_panel=true");
           target.innerHTML = await response.text();
           target.dataset.loaded = "true";
           htmx.process(target);
