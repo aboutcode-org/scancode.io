@@ -1280,8 +1280,8 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn(f"Report generated at {output_file}", out.getvalue())
 
         workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
-        self.assertEqual(["TODOS"], workbook.get_sheet_names())
-        todos_sheet = workbook.get_sheet_by_name("TODOS")
+        self.assertEqual(["TODOS"], workbook.sheetnames)
+        todos_sheet = workbook["TODOS"]
         header = list(todos_sheet.values)[0]
 
         self.assertNotIn("extra_data", header)

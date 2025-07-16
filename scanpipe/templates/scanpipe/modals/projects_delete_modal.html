@@ -22,7 +22,7 @@
       </p>
     </section>
     <form action="{% url 'project_action' %}" method="post" id="delete-projects-form">{% csrf_token %}
-      <input type="hidden" name="{{ action_form.url_query.name }}" value="{{ request.GET.urlencode }}">
+      <input type="hidden" name="{{ action_form.url_query.html_name }}" value="{{ request.GET.urlencode }}">
       <input type="hidden" name="action" value="delete">
       <footer class="modal-card-foot is-justify-content-flex-end">
         <div class="buttons">

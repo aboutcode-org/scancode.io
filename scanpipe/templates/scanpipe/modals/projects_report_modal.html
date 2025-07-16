@@ -19,7 +19,7 @@
             <hr>
             <div class="field include-all-field">
               <label class="checkbox" for="{{ report_form.select_across.id_for_label }}">
-                <input type="checkbox" name="{{ report_form.select_across.name }}" id="{{ report_form.select_across.id_for_label }}">
+                <input type="checkbox" name="{{ report_form.select_across.html_name }}" id="{{ report_form.select_across.id_for_label }}">
                 Include all {{ paginator.count|intcomma }} projects
               </label>
               <p class="help">{{ report_form.select_across.help_text }}</p>
@@ -27,7 +27,7 @@
           </div>
         {% endif %}
       </section>
-      <input type="hidden" name="{{ report_form.url_query.name }}" value="{{ request.GET.urlencode }}">
+      <input type="hidden" name="{{ report_form.url_query.html_name }}" value="{{ request.GET.urlencode }}">
       <input type="hidden" name="action" value="report">
       <footer class="modal-card-foot is-justify-content-flex-end">
         <div class="buttons">

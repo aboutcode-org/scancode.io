@@ -541,7 +541,7 @@ def to_xlsx(project):
     exclude_fields = XLSX_EXCLUDE_FIELDS.copy()
     output_file = project.get_output_file_path("results", "xlsx")
 
-    if not project.policies_enabled:
+    if not project.license_policies_enabled:
         exclude_fields.append("compliance_alert")
 
     model_names = [
@@ -692,7 +692,7 @@ def to_spdx(project, include_files=False):
             license_expressions.append(license_expression)
 
     for dependency in discovereddependency_qs:
-        packages_as_spdx.append(dependency.as_spdx())
+        packages_as_spdx.append(dependency.as_spdx_package())
         if dependency.for_package:
             relationships.append(
                 spdx.Relationship(

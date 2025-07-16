@@ -447,7 +447,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         """Filter by Run status using the `RunQuerySet` methods."""
         run_queryset_method = value
         run_queryset = getattr(Run.objects, run_queryset_method)()
-        return queryset.filter(runs__in=run_queryset)
+        return queryset.filter(runs__in=run_queryset).distinct()
 
 
 class JSONContainsFilter(django_filters.CharFilter):

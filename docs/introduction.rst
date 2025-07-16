@@ -105,8 +105,3 @@ images, containers, root filesystems, and virtual machine images.
     As a common practice, ScanCode.io releases usually follow ScanCode Toolkit releases
     to ensure the latest improvements of the scanning engines are included in the
     latest release of ScanCode.io.
-
-
-.. Some of this documentation is borrowed from the metaflow documentation and is also
-   under Apache-2.0
-.. Copyright (c) Netflix

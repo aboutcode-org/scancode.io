@@ -182,6 +182,10 @@ and scripts on your local machine::
 A tarball ``scancodeio-offline-package-VERSION.tar`` will be
 created in the :guilabel:`dist/` directory.
 
+.. note::
+    The offline package includes all necessary Docker images: postgres, redis,
+    scancodeio-web, scancodeio-worker, nginx, and clamav/clamav.
+
 Install on an offline server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -221,8 +225,8 @@ And visit the web UI at: http://localhost/project/
 
 .. _local_development_installation:
 
-Local development installation
-------------------------------
+Local development
+-----------------
 
 Supported Platforms
 ^^^^^^^^^^^^^^^^^^^
@@ -247,7 +251,7 @@ Before you install ScanCode.io, make sure you have the following prerequisites:
 
  * **Python: versions 3.10 to 3.13** found at https://www.python.org/downloads/
  * **Git**: most recent release available at https://git-scm.com/
- * **PostgreSQL**: release 11 or later found at https://www.postgresql.org/ or
+ * **PostgreSQL**: release 13 or later found at https://www.postgresql.org/ or
    https://postgresapp.com/ on macOS
 
 .. _system_dependencies:

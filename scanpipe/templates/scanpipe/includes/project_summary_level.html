@@ -50,6 +50,11 @@
               {{ project.vulnerable_dependency_count|intcomma }}
             </a>
           {% endif %}
+          <a href="{% url 'project_dependency_tree' project.slug %}" class="ml-2">
+            <span class="icon">
+              <i class="fa-solid fa-sitemap is-size-6"></i>
+            </span>
+          </a>
         {% else %}
           <span>0</span>
         {% endif %}

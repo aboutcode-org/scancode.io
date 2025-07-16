@@ -117,7 +117,7 @@
         <div hx-get="{% url 'project_license_detection_summary' project.slug %}" hx-trigger="load" hx-swap="outerHTML"></div>
       </div>
 
-      {% if policies_enabled %}
+      {% if license_policies_enabled %}
         <div class="columns">
           <div hx-get="{% url 'project_compliance_panel' project.slug %}" hx-trigger="load" hx-swap="outerHTML"></div>
         </div>

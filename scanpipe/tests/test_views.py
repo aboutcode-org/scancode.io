@@ -151,6 +151,17 @@ class ScanPipeViewsTest(TestCase):
         expected = '<input type="hidden" name="status" value="failed">'
         self.assertContains(response, expected, html=True)
 
+    def test_scanpipe_views_project_list_filter_by_status_distinct_results(self):
+        url = reverse("project_list")
+        pipeline1 = self.project1.add_pipeline(pipeline_name="scan_codebase")
+        pipeline1.set_task_stopped()
+        pipeline2 = self.project1.add_pipeline(pipeline_name="scan_codebase")
+        pipeline2.set_task_stopped()
+
+        data = {"status": "failed"}
+        response = self.client.get(url, data=data)
+        self.assertEqual(1, len(response.context["object_list"]))
+
     @mock.patch("scanpipe.views.ProjectListView.get_paginate_by")
     def test_scanpipe_views_project_list_filters_exclude_page(self, mock_paginate_by):
         url = reverse("project_list")
@@ -174,13 +185,22 @@ class ScanPipeViewsTest(TestCase):
         url = reverse("project_list")
         response = self.client.get(url)
 
-        expected = '<input type="hidden" name="url_query" value="">'
-        self.assertContains(response, expected, html=True)
+        expected_html_names = [
+            "url_query",
+            "download-url_query",
+            "report-url_query",
+            "archive-url_query",
+            "reset-url_query",
+        ]
+        for html_name in expected_html_names:
+            expected = f'<input type="hidden" name="{html_name}" value="">'
+            self.assertContains(response, expected, html=True)
 
         url_query = "name=search_value"
         response = self.client.get(url + "?" + url_query)
-        expected = f'<input type="hidden" name="url_query" value="{url_query}">'
-        self.assertContains(response, expected, html=True)
+        for html_name in expected_html_names:
+            expected = f'<input type="hidden" name="{html_name}" value="{url_query}">'
+            self.assertContains(response, expected, html=True)
 
     @mock.patch("scanpipe.views.ProjectListView.get_paginate_by")
     def test_scanpipe_views_project_list_modal_forms_include_show_on_all_checked(
@@ -237,7 +257,7 @@ class ScanPipeViewsTest(TestCase):
 
         output_file = io.BytesIO(b"".join(response.streaming_content))
         workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
-        self.assertEqual(["TODOS"], workbook.get_sheet_names())
+        self.assertEqual(["TODOS"], workbook.sheetnames)
 
     def test_scanpipe_views_project_action_reset_view(self):
         url = reverse("project_action")
@@ -619,9 +639,11 @@ class ScanPipeViewsTest(TestCase):
         expected = ["Dir", "Zdir", "a", "z", "a.txt", "z.txt"]
         self.assertEqual(expected, [path.name for path in codebase_root])
 
-    @mock.patch.object(Project, "policies_enabled", new_callable=mock.PropertyMock)
+    @mock.patch.object(
+        Project, "license_policies_enabled", new_callable=mock.PropertyMock
+    )
     def test_scanpipe_views_project_details_compliance_panel_availability(
-        self, mock_policies_enabled
+        self, mock_license_policies_enabled
     ):
         url = self.project1.get_absolute_url()
         make_package(
@@ -631,11 +653,11 @@ class ScanPipeViewsTest(TestCase):
         )
 
         expected_url = reverse("project_compliance_panel", args=[self.project1.slug])
-        mock_policies_enabled.return_value = False
+        mock_license_policies_enabled.return_value = False
         response = self.client.get(url)
         self.assertNotContains(response, expected_url)
 
-        mock_policies_enabled.return_value = True
+        mock_license_policies_enabled.return_value = True
         response = self.client.get(url)
         self.assertContains(response, expected_url)
 
@@ -989,8 +1011,12 @@ class ScanPipeViewsTest(TestCase):
         )
         self.assertContains(response, expected_input2)
 
-    @mock.patch.object(Project, "policies_enabled", new_callable=mock.PropertyMock)
-    def test_scanpipe_views_project_compliance_panel_view(self, mock_policies_enabled):
+    @mock.patch.object(
+        Project, "license_policies_enabled", new_callable=mock.PropertyMock
+    )
+    def test_scanpipe_views_project_compliance_panel_view(
+        self, mock_license_policies_enabled
+    ):
         url = reverse("project_compliance_panel", args=[self.project1.slug])
         make_package(
             self.project1,
@@ -998,11 +1024,11 @@ class ScanPipeViewsTest(TestCase):
             compliance_alert=DiscoveredPackage.Compliance.ERROR,
         )
 
-        mock_policies_enabled.return_value = False
+        mock_license_policies_enabled.return_value = False
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
 
-        mock_policies_enabled.return_value = True
+        mock_license_policies_enabled.return_value = True
         response = self.client.get(url)
         self.assertContains(response, "Compliance alerts")
         self.assertContains(response, "1 Error")
@@ -1292,14 +1318,16 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(xss_url)
         self.assertEqual(response.status_code, 404)
 
-    def test_scanpipe_views_project_dependency_tree(self):
+    @mock.patch("scanpipe.models.DiscoveredPackage.get_absolute_url")
+    def test_scanpipe_views_project_dependency_tree(self, mock_get_url):
+        mock_get_url.return_value = "mocked-url"
         url = reverse("project_dependency_tree", args=[self.project1.slug])
         response = self.client.get(url)
         expected_tree = {"name": "Analysis", "children": []}
         self.assertEqual(expected_tree, response.context["dependency_tree"])
 
         project = Project.objects.create(name="project")
-        a = make_package(project, "pkg:type/a")
+        a = make_package(project, "pkg:type/a", compliance_alert="error")
         b = make_package(project, "pkg:type/b")
         c = make_package(project, "pkg:type/c")
         make_package(project, "pkg:type/z")
@@ -1314,15 +1342,41 @@ class ScanPipeViewsTest(TestCase):
             "children": [
                 {
                     "name": "pkg:type/a",
+                    "url": "mocked-url",
+                    "compliance_alert": "error",
+                    "has_compliance_issue": True,
+                    "is_vulnerable": False,
                     "children": [
-                        {"name": "pkg:type/b", "children": [{"name": "pkg:type/c"}]}
+                        {
+                            "name": "pkg:type/b",
+                            "url": "mocked-url",
+                            "compliance_alert": "",
+                            "has_compliance_issue": False,
+                            "is_vulnerable": False,
+                            "children": [
+                                {
+                                    "name": "pkg:type/c",
+                                    "url": "mocked-url",
+                                    "compliance_alert": "",
+                                    "has_compliance_issue": False,
+                                    "is_vulnerable": False,
+                                    "children": [],
+                                }
+                            ],
+                        }
                     ],
                 },
-                {"name": "pkg:type/z"},
+                {
+                    "name": "pkg:type/z",
+                    "url": "mocked-url",
+                    "compliance_alert": "",
+                    "has_compliance_issue": False,
+                    "is_vulnerable": False,
+                    "children": [],
+                },
             ],
         }
         self.assertEqual(expected_tree, response.context["dependency_tree"])
-        self.assertContains(response, '<script id="dependency_tree"')
 
         # Adding a circular reference such as: Project -> A -> B -> C -> B -> C -> ...
         make_dependency(project, for_package=c, resolved_to_package=b)

@@ -1,6 +1,27 @@
 Changelog
 =========
 
+v35.2.0 (unreleased)
+--------------------
+
+- Refactor policies implementation to support more than licenses.
+  The entire ``policies`` data is now stored on the ``ScanPipeConfig`` in place of the
+  ``license_policy_index``.
+  Also, a new method ``get_policies_dict`` methods is now available on the ``Project``
+  model to easily retrieve all the policies data as a dictionary.
+  Renamed for clarity:
+  * ``policy_index`` to ``license_policy_index``
+  * ``policies_enabled`` to ``license_policies_enabled``
+  https://github.com/aboutcode-org/scancode.io/pull/1718
+
+- Add support for SPDX license identifiers as ``license_key`` in license policies
+  ``policies.yml`` file.
+  https://github.com/aboutcode-org/scancode.io/issues/1348
+
+- Enhance the dependency tree view in a more dynamic rendering.
+  Vulnerabilities and compliance alert are displayed along the dependency entries.
+  https://github.com/aboutcode-org/scancode.io/pull/1742
+
 v35.1.0 (2025-07-02)
 --------------------
 
