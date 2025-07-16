@@ -329,6 +329,7 @@ def update_or_create_license_detection(
     from_package=False,
     count_detection=True,
     is_license_clue=False,
+    check_todo=False,
 ):
     """
     Get, update or create a DiscoveredLicense object then return it.
@@ -355,8 +356,9 @@ def update_or_create_license_detection(
         license_detection.update_from_data(detection_data)
     else:
         license_detection = DiscoveredLicense.create_from_data(
-            project,
-            detection_data,
+            project=project,
+            detection_data=detection_data,
+            from_package=from_package,
         )
 
     if not license_detection:
@@ -377,7 +379,9 @@ def update_or_create_license_detection(
             count_detection=count_detection,
         )
 
-    license_detection.from_package = from_package
+    if check_todo:
+        scancode.check_license_detection_for_issues(license_detection)
+
     return license_detection
 
 
@@ -397,6 +401,23 @@ def _clean_license_detection_data(detection_data):
 
     detection_data["matches"] = updated_matches
     return detection_data
+
+
+def update_license_detection_with_issue(project, todo_issue):
+    detection_data = todo_issue.get("detection")
+    if "identifier" not in detection_data:
+        return
+
+    detection_identifier = detection_data.get("identifier")
+    license_detection = project.discoveredlicenses.get_or_none(
+        identifier=detection_identifier,
+    )
+    if license_detection:
+        review_comments = todo_issue.get("review_comments").values()
+        license_detection.update(
+            needs_review=True,
+            review_comments=list(review_comments),
+        )
 
 
 def get_dependencies(project, dependency_data):

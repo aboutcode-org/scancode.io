@@ -2647,7 +2647,7 @@ class ScanPipeModelsTest(TestCase):
             self.project1, path="missing", compliance_alert=severities.MISSING
         )
 
-        qs = CodebaseResource.objects.order_by("path")
+        qs = self.project1.codebaseresources.order_by("path")
         self.assertQuerySetEqual(qs.compliance_issues(severities.ERROR), [error])
         self.assertQuerySetEqual(
             qs.compliance_issues(severities.WARNING), [error, warning]

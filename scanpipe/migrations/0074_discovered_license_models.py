@@ -103,12 +103,35 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
+                    "from_package",
+                    models.BooleanField(
+                        default=False,
+                        help_text='True if this was discovered in a extracted license statement and False if this was discovered in a file.',
+                    ),
+                ),
+                (
+                    "needs_review",
+                    models.BooleanField(
+                        default=False,
+                        help_text='True if this was license detection needs to be reviewed as there might be a license detection issue.',
+                    ),
+                ),
+                (
                     "project",
                     models.ForeignKey(
                         editable=False,
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="%(class)ss",
                         to="scanpipe.project",
+                    ),
+                ),
+                (
+                    "review_comments",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text='A list of review comments for license detection issues which needs review. These descriptive comments are based on ambigous detection types and could also offers helpful suggestions on how to review/report these detection issues.',
+                        verbose_name='Review Comments',
                     ),
                 ),
             ],
@@ -129,6 +152,18 @@ class Migration(migrations.Migration):
                     models.Index(
                         fields=["detection_count"],
                         name="scanpipe_di_detecti_d87ff1_idx",
+                    ),
+                    models.Index(
+                        fields=['is_license_clue'],
+                        name='scanpipe_di_is_lice_f4922a_idx'
+                    ),
+                    models.Index(
+                        fields=['from_package'],
+                        name='scanpipe_di_from_pa_6485b2_idx'
+                    ),
+                    models.Index(
+                        fields=['needs_review'],
+                        name='scanpipe_di_needs_r_5cff82_idx'
                     ),
                 ],
             },

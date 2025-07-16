@@ -72,6 +72,24 @@
         </tbody>
     </table>
     {% endif %}
+    {% if tab_data.fields.review_comments.value %}
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+        <thead>
+          <tr>
+            <th>Review Comments</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for comment in tab_data.fields.review_comments.value %}
+          <tr>
+              <td class="break-all">
+                  {{ comment }}
+              </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
     <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
         <thead>
           <tr>

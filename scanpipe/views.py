@@ -360,6 +360,8 @@ class TabSetMixin:
             "emails",
             "datafile_paths",
             "datasource_ids",
+            "detection_log",
+            "review_comments",
         ]
 
         if isinstance(field_value, list | dict):
@@ -1140,6 +1142,7 @@ class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.Detai
             "with_compliance_error": (
                 proper_license_detections.has_compliance_alert().count()
             ),
+            "needs_review": proper_license_detections.needs_review().count(),
             "all": proper_license_detections.count(),
         }
 
@@ -1150,6 +1153,7 @@ class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.Detai
         if license_clues.exists():
             clue_counts = {
                 "with_compliance_error": (license_clues.has_compliance_alert().count()),
+                "needs_review": license_clues.needs_review().count(),
                 "all": license_clues.count(),
             }
 
@@ -1872,6 +1876,7 @@ class DiscoveredLicenseListView(
         },
         "detection_count",
         "is_license_clue",
+        "needs_review",
         {
             "field_name": "compliance_alert",
             "filter_fieldname": "compliance_alert",
@@ -2483,7 +2488,7 @@ class DiscoveredLicenseDetailsView(
             "icon_class": "fa-solid fa-info-circle",
         },
         "detection": {
-            "fields": ["matches", "detection_log", "file_regions"],
+            "fields": ["matches", "detection_log", "review_comments", "file_regions"],
             "icon_class": "fa-solid fa-search",
             "template": "scanpipe/tabset/tab_license_detections.html",
         },

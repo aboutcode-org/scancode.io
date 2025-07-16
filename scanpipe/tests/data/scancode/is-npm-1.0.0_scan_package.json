@@ -8,11 +8,14 @@
         "--info": true,
         "--license": true,
         "--license-text": true,
+        "--license-diagnostics": true,
+        "--license-text-diagnostics": true,
         "--license-references": true,
         "--package": true,
         "--url": true,
         "--classify": true,
-        "--summary": true
+        "--summary": true,
+        "--todo": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
       "output_format_version": "4.1.0",
@@ -52,6 +55,7 @@
     ],
     "other_languages": []
   },
+  "todo": [],
   "packages": [
     {
       "type": "npm",
@@ -165,6 +169,7 @@
       "license_expression": "mit",
       "license_expression_spdx": "MIT",
       "detection_count": 2,
+      "detection_log": [],
       "reference_matches": [
         {
           "license_expression": "mit",
@@ -179,7 +184,8 @@
           "rule_relevance": 100,
           "rule_identifier": "mit_30.RULE",
           "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mit_30.RULE",
-          "matched_text": "  \"license\": \"MIT\","
+          "matched_text": "  \"license\": \"MIT\",",
+          "matched_text_diagnostics": "license\": \"MIT\","
         }
       ]
     },
@@ -188,6 +194,7 @@
       "license_expression": "mit",
       "license_expression_spdx": "MIT",
       "detection_count": 1,
+      "detection_log": [],
       "reference_matches": [
         {
           "license_expression": "mit",
@@ -327,6 +334,7 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
+      "for_todo": [],
       "is_legal": false,
       "is_manifest": false,
       "is_readme": false,
@@ -365,6 +373,7 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
+      "for_todo": [],
       "is_legal": false,
       "is_manifest": false,
       "is_readme": false,
@@ -403,6 +412,7 @@
       "is_archive": false,
       "is_media": false,
       "is_source": true,
+      "for_todo": [],
       "is_legal": false,
       "is_manifest": false,
       "is_readme": false,
@@ -443,6 +453,7 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
+      "for_todo": [],
       "is_legal": false,
       "is_manifest": false,
       "is_readme": false,
@@ -570,9 +581,11 @@
               "rule_relevance": 100,
               "rule_identifier": "mit_30.RULE",
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mit_30.RULE",
-              "matched_text": "  \"license\": \"MIT\","
+              "matched_text": "  \"license\": \"MIT\",",
+              "matched_text_diagnostics": "license\": \"MIT\","
             }
           ],
+          "detection_log": [],
           "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee"
         }
       ],
@@ -621,6 +634,7 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
+      "for_todo": [],
       "is_legal": false,
       "is_manifest": false,
       "is_readme": true,
@@ -651,9 +665,11 @@
               "rule_relevance": 100,
               "rule_identifier": "mit_30.RULE",
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mit_30.RULE",
-              "matched_text": "## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)"
+              "matched_text": "## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)",
+              "matched_text_diagnostics": "License\n\nMIT \u00a9 ["
             }
           ],
+          "detection_log": [],
           "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee"
         }
       ],

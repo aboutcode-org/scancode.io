@@ -4146,6 +4146,12 @@ class DiscoveredLicenseQuerySet(
     ComplianceAlertQuerySetMixin,
     ProjectRelatedQuerySet,
 ):
+    def needs_review(self):
+        return self.filter(needs_review=True)
+
+    def does_not_need_review(self):
+        return self.filter(needs_review=False)
+
     def order_by_count_and_expression(self):
         """Order by detection count and license expression (identifer) fields."""
         return self.order_by("-detection_count", "identifier")
@@ -4214,9 +4220,13 @@ class DiscoveredLicense(
 
     license_expression_field = "license_expression"
 
-    # If this license was discovered in a extracted license statement
-    # this is True, and False if this was discovered in a file.
-    from_package = None
+    from_package = models.BooleanField(
+        default=False,
+        help_text=_(
+            "True if this was discovered in a extracted license statement "
+            "and False if this was discovered in a file."
+        ),
+    )
 
     is_license_clue = models.BooleanField(
         default=False,
@@ -4246,6 +4256,26 @@ class DiscoveredLicense(
         ),
     )
 
+    needs_review = models.BooleanField(
+        default=False,
+        help_text=_(
+            "True if this was license detection needs to be reviewed "
+            "as there might be a license detection issue."
+        ),
+    )
+
+    review_comments = models.JSONField(
+        _("Review Comments"),
+        default=list,
+        blank=True,
+        help_text=_(
+            "A list of review comments for license detection issues which "
+            "needs review. These descriptive comments are based on ambigous "
+            "detection types and could also offers helpful suggestions on "
+            "how to review/report these detection issues."
+        ),
+    )
+
     objects = DiscoveredLicenseQuerySet.as_manager()
 
     class Meta:
@@ -4255,6 +4285,9 @@ class DiscoveredLicense(
             models.Index(fields=["license_expression"]),
             models.Index(fields=["license_expression_spdx"]),
             models.Index(fields=["detection_count"]),
+            models.Index(fields=["is_license_clue"]),
+            models.Index(fields=["from_package"]),
+            models.Index(fields=["needs_review"]),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -4268,7 +4301,7 @@ class DiscoveredLicense(
         return self.identifier
 
     @classmethod
-    def create_from_data(cls, project, detection_data):
+    def create_from_data(cls, project, detection_data, from_package=False):
         """
         Create and returns a DiscoveredLicense for a `project` from the
         `detection_data`. If one of the values of the required fields is not
@@ -4302,7 +4335,9 @@ class DiscoveredLicense(
             if field_name in cls.model_fields() and value not in EMPTY_VALUES
         }
 
-        discovered_license = cls(project=project, **cleaned_data)
+        discovered_license = cls(
+            project=project, from_package=from_package, **cleaned_data
+        )
         # Using save_error=False to not capture potential errors at this level but
         # rather in the CodebaseResource.create_and_add_license_data method so
         # resource data can be injected in the ProjectMessage record.

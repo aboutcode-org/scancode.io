@@ -108,6 +108,7 @@ def load_inventory_from_toolkit_scan(project, input_location):
     scancode.create_discovered_dependencies(
         project, scanned_codebase, strip_datafile_path_root=True
     )
+    scancode.load_todo_issues(project, scanned_codebase)
 
 
 def load_inventory_from_scanpipe(project, scan_data, extra_data_prefix=None):

@@ -43,12 +43,16 @@ from licensedcode.detection import DetectionCategory
 from licensedcode.detection import FileRegion
 from licensedcode.detection import LicenseDetectionFromResult
 from licensedcode.detection import LicenseMatchFromResult
+from licensedcode.detection import UniqueDetection
+from licensedcode.detection import get_ambiguous_license_detections_by_type
 from packagedcode import get_package_handler
 from packagedcode import models as packagedcode_models
 from scancode import Scanner
 from scancode import api as scancode_api
 from scancode import cli as scancode_cli
 from scancode.cli import run_scan as scancode_run_scan
+from summarycode.todo import ReviewComments
+from summarycode.todo import get_review_comments
 
 from aboutcode.pipeline import LoopProgress
 from scanpipe import pipes
@@ -489,6 +493,7 @@ def collect_and_create_license_detections(project):
                 project=project,
                 detection_data=detection_data,
                 resource_path=resource.path,
+                check_todo=True,
             )
 
         for clue_data in resource.license_clues:
@@ -497,6 +502,7 @@ def collect_and_create_license_detections(project):
                 detection_data=clue_data,
                 resource_path=resource.path,
                 is_license_clue=True,
+                check_todo=True,
             )
 
     for resource in project.codebaseresources.has_package_data():
@@ -511,6 +517,7 @@ def collect_and_create_license_detections(project):
                     detection_data=detection,
                     resource_path=resource.path,
                     from_package=True,
+                    check_todo=True,
                 )
 
             for detection in package_data.other_license_detections:
@@ -519,6 +526,7 @@ def collect_and_create_license_detections(project):
                     detection_data=detection,
                     resource_path=resource.path,
                     from_package=True,
+                    check_todo=True,
                 )
 
 
@@ -1020,6 +1028,54 @@ def create_discovered_licenses(project, scanned_codebase):
     if hasattr(scanned_codebase.attributes, "license_detections"):
         for detection_data in scanned_codebase.attributes.license_detections:
             pipes.update_or_create_license_detection(project, detection_data)
+
+
+def load_todo_issues(project, scanned_codebase):
+    if hasattr(scanned_codebase.attributes, "todo"):
+        for todo_issue in scanned_codebase.attributes.todo:
+            pipes.update_license_detection_with_issue(project, todo_issue)
+
+    license_clues = project.discoveredlicenses.filter(
+        is_license_clue=True,
+    )
+    license_clues.update(
+        needs_review=True,
+        review_comments=[ReviewComments.LICENSE_CLUES.value],
+    )
+
+
+def check_license_detection_for_issues(discovered_license):
+    file_regions = [
+        FileRegion(
+            path=file_region.get("path"),
+            start_line=file_region.get("start_line"),
+            end_line=file_region.get("end_line"),
+        )
+        for file_region in discovered_license.file_regions
+    ]
+    matches = [
+        LicenseMatchFromResult.from_dict(license_match)
+        for license_match in discovered_license.matches
+    ]
+    unique_detection = UniqueDetection(
+        identifier=discovered_license.identifier,
+        license_expression=discovered_license.license_expression,
+        license_expression_spdx=discovered_license.license_expression_spdx,
+        detection_count=discovered_license.detection_count,
+        detection_log=discovered_license.detection_log,
+        matches=matches,
+        file_regions=file_regions,
+    )
+    detections_by_issue_type = get_ambiguous_license_detections_by_type(
+        unique_license_detections=[unique_detection],
+    )
+    if detections_by_issue_type:
+        issue_type = next(iter(detections_by_issue_type))
+        review_comments = get_review_comments(detection_log=[issue_type])
+        discovered_license.update(
+            needs_review=True,
+            review_comments=list(review_comments.values()),
+        )
 
 
 def set_codebase_resource_for_package(codebase_resource, discovered_package):

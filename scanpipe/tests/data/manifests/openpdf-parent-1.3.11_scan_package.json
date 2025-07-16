@@ -8,11 +8,14 @@
         "--info": true,
         "--license": true,
         "--license-text": true,
+        "--license-diagnostics": true,
+        "--license-text-diagnostics": true,
         "--license-references": true,
         "--package": true,
         "--url": true,
         "--classify": true,
-        "--summary": true
+        "--summary": true,
+        "--todo": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
       "output_format_version": "4.1.0",
@@ -52,6 +55,7 @@
     ],
     "other_languages": []
   },
+  "todo": [],
   "packages": [
     {
       "type": "maven",
@@ -313,6 +317,7 @@
       "license_expression": "lgpl-3.0",
       "license_expression_spdx": "LGPL-3.0-only",
       "detection_count": 1,
+      "detection_log": [],
       "reference_matches": [
         {
           "license_expression": "lgpl-3.0",
@@ -336,6 +341,7 @@
       "license_expression": "mpl-2.0",
       "license_expression_spdx": "MPL-2.0",
       "detection_count": 1,
+      "detection_log": [],
       "reference_matches": [
         {
           "license_expression": "mpl-2.0",
@@ -359,6 +365,7 @@
       "license_expression": "mpl-2.0 OR lgpl-3.0",
       "license_expression_spdx": "MPL-2.0 OR LGPL-3.0-only",
       "detection_count": 1,
+      "detection_log": [],
       "reference_matches": [
         {
           "license_expression": "mpl-2.0 OR lgpl-3.0",
@@ -373,7 +380,8 @@
           "rule_relevance": 95,
           "rule_identifier": "mpl-2.0_or_lgpl-3.0_1.RULE",
           "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_or_lgpl-3.0_1.RULE",
-          "matched_text": "    <licenses>\n        <license>\n            <name>GNU General Lesser Public License (LGPL) version 3.0</name>\n            <url>http://www.gnu.org/licenses/lgpl.html</url>\n            <distribution>repo</distribution>\n        </license>\n        <license>\n            <name>Mozilla Public License Version 2.0</name>\n            <url>http://www.mozilla.org/MPL/2.0/</url>\n            <distribution>repo</distribution>\n        </license>\n    </licenses>"
+          "matched_text": "    <licenses>\n        <license>\n            <name>GNU General Lesser Public License (LGPL) version 3.0</name>\n            <url>http://www.gnu.org/licenses/lgpl.html</url>\n            <distribution>repo</distribution>\n        </license>\n        <license>\n            <name>Mozilla Public License Version 2.0</name>\n            <url>http://www.mozilla.org/MPL/2.0/</url>\n            <distribution>repo</distribution>\n        </license>\n    </licenses>",
+          "matched_text_diagnostics": "licenses>\n        <license>\n            <name>GNU General Lesser Public License (LGPL) version 3.0</name>\n            <url>http://www.gnu.org/licenses/lgpl.html</url>\n            <distribution>repo</distribution>\n        </license>\n        <license>\n            <name>Mozilla Public License Version 2.0</name>\n            <url>http://www.mozilla.org/MPL/2.0/</url>\n            <distribution>repo</distribution>\n        </license>\n    </licenses>"
         }
       ]
     }
@@ -582,6 +590,7 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
+      "for_todo": [],
       "is_legal": false,
       "is_manifest": false,
       "is_readme": false,
@@ -622,6 +631,7 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
+      "for_todo": [],
       "is_legal": false,
       "is_manifest": false,
       "is_readme": false,
@@ -861,9 +871,11 @@
               "rule_relevance": 95,
               "rule_identifier": "mpl-2.0_or_lgpl-3.0_1.RULE",
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_or_lgpl-3.0_1.RULE",
-              "matched_text": "    <licenses>\n        <license>\n            <name>GNU General Lesser Public License (LGPL) version 3.0</name>\n            <url>http://www.gnu.org/licenses/lgpl.html</url>\n            <distribution>repo</distribution>\n        </license>\n        <license>\n            <name>Mozilla Public License Version 2.0</name>\n            <url>http://www.mozilla.org/MPL/2.0/</url>\n            <distribution>repo</distribution>\n        </license>\n    </licenses>"
+              "matched_text": "    <licenses>\n        <license>\n            <name>GNU General Lesser Public License (LGPL) version 3.0</name>\n            <url>http://www.gnu.org/licenses/lgpl.html</url>\n            <distribution>repo</distribution>\n        </license>\n        <license>\n            <name>Mozilla Public License Version 2.0</name>\n            <url>http://www.mozilla.org/MPL/2.0/</url>\n            <distribution>repo</distribution>\n        </license>\n    </licenses>",
+              "matched_text_diagnostics": "licenses>\n        <license>\n            <name>GNU General Lesser Public License (LGPL) version 3.0</name>\n            <url>http://www.gnu.org/licenses/lgpl.html</url>\n            <distribution>repo</distribution>\n        </license>\n        <license>\n            <name>Mozilla Public License Version 2.0</name>\n            <url>http://www.mozilla.org/MPL/2.0/</url>\n            <distribution>repo</distribution>\n        </license>\n    </licenses>"
             }
           ],
+          "detection_log": [],
           "identifier": "mpl_2_0_or_lgpl_3_0-7b07902d-2b7f-9c7e-aa21-3ae2142743ba"
         }
       ],

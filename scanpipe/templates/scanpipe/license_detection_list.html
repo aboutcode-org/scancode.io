@@ -24,6 +24,11 @@
             <td style="min-width: 300px;" title="{{ license_detection.identifier }}">
               {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
               <a href="{% url 'license_detail' project.slug license_detection.identifier %}">{{ license_detection.identifier }}</a>
+              {% if license_detection.needs_review %}
+                <a href="{% url 'license_detail' project.slug license_detection.identifier %}#detection">
+                  <i class="fa-solid fa-magnifying-glass fa-sm has-text-danger" title="License Detection Issues"></i>
+                </a>
+              {% endif %}
               {% if license_detection.has_compliance_alert %}
                 <a href="{% url 'license_detail' project.slug license_detection.identifier %}#detection">
                   <i class="fa-solid fa-scale-balanced fa-sm has-text-danger" title="License Compliance Alerts"></i>
@@ -41,6 +46,9 @@
             </td>
             <td>
               {{ license_detection.is_license_clue }}
+            </td>
+            <td>
+              {{ license_detection.needs_review }}
             </td>
             {% if display_compliance_alert %}
               <td>

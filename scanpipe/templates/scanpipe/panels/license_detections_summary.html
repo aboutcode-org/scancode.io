@@ -18,6 +18,12 @@
       <a class="panel-block is-align-items-flex-start break-word is-flex is-align-items-center" href="{{ project_licenses_url }}?is_license_clue=False" target="_blank">
         See all license detections
         <span class="tag is-rounded ml-1">{{ total_counts.all|intcomma }}</span>
+        {% if total_counts.needs_review %}
+        <span class="has-text-danger is-size-6 ml-2">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          {{ total_counts.needs_review|intcomma }}
+        </span>
+        {% endif %}
         {% if total_counts.with_compliance_error %}
         <span class="has-text-danger is-size-6 ml-2">
           <i class="fa-solid fa-scale-balanced fa-sm"></i>
@@ -30,6 +36,12 @@
       <a class="panel-block is-align-items-flex-start break-word is-flex is-align-items-center" href="{{ project_licenses_url }}?is_license_clue=True" target="_blank">
         See all license clues
         <span class="tag is-rounded ml-1">{{ clue_counts.all|intcomma }}</span>
+        {% if clue_counts.needs_review %}
+        <span class="has-text-danger is-size-6 ml-2">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          {{ clue_counts.needs_review|intcomma }}
+        </span>
+        {% endif %}
         {% if clue_counts.with_compliance_error %}
         <span class="has-text-danger is-size-6 ml-2">
           <i class="fa-solid fa-scale-balanced fa-sm"></i>
