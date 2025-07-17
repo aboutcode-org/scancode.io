@@ -61,11 +61,14 @@ class ScanSinglePackage(Pipeline):
         "info": True,
         "license": True,
         "license_text": True,
+        "license_diagnostics": True,
+        "license_text_diagnostics": True,
         "license_references": True,
         "package": True,
         "url": True,
         "classify": True,
         "summary": True,
+        "todo": True,
     }
 
     def get_package_input(self):

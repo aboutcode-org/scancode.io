@@ -179,6 +179,7 @@ class ScanPipeModelsTest(TestCase):
             "scanpipe.CodebaseRelation": 0,
             "scanpipe.CodebaseResource": 1,
             "scanpipe.DiscoveredDependency": 0,
+            "scanpipe.DiscoveredLicense": 0,
             "scanpipe.DiscoveredPackage": 1,
             "scanpipe.DiscoveredPackage_codebase_resources": 1,
             "scanpipe.InputSource": 0,
@@ -2704,12 +2705,18 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_model_codebase_resource_compliance_alert_queryset_mixin(self):
         severities = CodebaseResource.Compliance
         make_resource_file(self.project1)
-        make_resource_file(self.project1, compliance_alert=severities.OK)
-        warning = make_resource_file(self.project1, compliance_alert=severities.WARNING)
-        error = make_resource_file(self.project1, compliance_alert=severities.ERROR)
-        missing = make_resource_file(self.project1, compliance_alert=severities.MISSING)
+        make_resource_file(self.project1, path="ok", compliance_alert=severities.OK)
+        warning = make_resource_file(
+            self.project1, path="warning", compliance_alert=severities.WARNING
+        )
+        error = make_resource_file(
+            self.project1, path="error", compliance_alert=severities.ERROR
+        )
+        missing = make_resource_file(
+            self.project1, path="missing", compliance_alert=severities.MISSING
+        )
 
-        qs = CodebaseResource.objects.order_by("compliance_alert")
+        qs = self.project1.codebaseresources.order_by("path")
         self.assertQuerySetEqual(qs.compliance_issues(severities.ERROR), [error])
         self.assertQuerySetEqual(
             qs.compliance_issues(severities.WARNING), [error, warning]

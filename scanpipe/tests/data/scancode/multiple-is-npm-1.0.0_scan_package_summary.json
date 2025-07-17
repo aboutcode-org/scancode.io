@@ -106,10 +106,12 @@
               "rule_relevance": 100,
               "rule_identifier": "mit_30.RULE",
               "license_expression": "mit",
-              "license_expression_spdx": "MIT"
+              "license_expression_spdx": "MIT",
+              "matched_text_diagnostics": "License\n\nMIT \u00a9 ["
             }
           ],
           "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
+          "detection_log": [],
           "license_expression": "mit",
           "license_expression_spdx": "MIT"
         }

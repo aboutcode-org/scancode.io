@@ -611,16 +611,17 @@ class ScanPipeViewsTest(TestCase):
 
         scan_summary = self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
         scan_summary_json = json.loads(scan_summary.read_text())
-        scan_summary_data = get_scan_summary_data(scan_summary_json)
+        scan_summary_data = get_scan_summary_data(self.project1, scan_summary_json)
 
-        self.assertEqual(6, len(scan_summary_data))
+        self.assertEqual(7, len(scan_summary_data))
         expected = [
-            "Declared license",
-            "Declared holder",
-            "Primary language",
-            "Other licenses",
-            "Other holders",
-            "Other languages",
+            "declared_license_expression",
+            "declared_holder",
+            "primary_language",
+            "other_license_expressions",
+            "other_holders",
+            "other_languages",
+            "key_file_licenses",
         ]
         self.assertEqual(expected, list(scan_summary_data.keys()))
 
@@ -1075,8 +1076,10 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, 'id="tab-others"')
         self.assertContains(response, 'data-target="tab-viewer"')
         self.assertContains(response, 'id="tab-viewer"')
-        self.assertNotContains(response, 'data-target="tab-detection"')
-        self.assertNotContains(response, 'id="tab-detection"')
+        self.assertNotContains(response, 'data-target="tab-terms"')
+        self.assertNotContains(response, 'id="tab-terms"')
+        self.assertNotContains(response, 'data-target="tab-resource-detection"')
+        self.assertNotContains(response, 'id="tab-resource-detection"')
         self.assertNotContains(response, 'data-target="tab-packages"')
         self.assertNotContains(response, 'id="tab-packages"')
         self.assertNotContains(response, 'data-target="tab-relations"')
@@ -1094,10 +1097,8 @@ class ScanPipeViewsTest(TestCase):
             map_type="path",
         )
         response = self.client.get(resource1.get_absolute_url())
-        self.assertContains(response, 'data-target="tab-detection"')
-        self.assertContains(response, 'id="tab-detection"')
-        self.assertContains(response, 'data-target="tab-packages"')
-        self.assertContains(response, 'id="tab-packages"')
+        self.assertContains(response, 'data-target="tab-terms"')
+        self.assertContains(response, 'id="tab-terms"')
         self.assertContains(response, 'data-target="tab-relations"')
         self.assertContains(response, 'id="tab-relations"')
         self.assertContains(response, 'data-target="tab-extra_data"')
@@ -1155,7 +1156,7 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(8):
             self.client.get(url)
 
-        with self.assertNumQueries(7):
+        with self.assertNumQueries(8):
             self.client.get(resource1.get_absolute_url())
 
     def test_scanpipe_views_discovered_package_views(self):
