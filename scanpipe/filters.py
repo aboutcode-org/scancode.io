@@ -493,6 +493,10 @@ MAP_TYPE_CHOICES = (
     ("dwarf_included_paths", "dwarf_included_paths"),
     ("dwarf_compiled_paths", "dwarf_compiled_paths"),
     ("go_file_paths", "go_file_paths"),
+    ("elf_symbols", "Elf Symbols"),
+    ("macho_symbols", "Mach0 Symbols"),
+    ("winpe_symbols", "WinPE Symbols"),
+    ("rust_symbols", "Rust Symbols"),
 )
 
 
