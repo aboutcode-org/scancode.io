@@ -2732,7 +2732,7 @@ class ScanPipeModelsTest(TestCase):
             # Check if score is "-1" or a numeric string within range 0-10
             self.assertTrue(
                 (score == "-1") or (score.isdigit() and 0 <= int(score) <= 10),
-                "Score must be '-1' or a number between 0 and 10"
+                "Score must be '-1' or a number between 0 and 10",
             )
 
     def test_scanpipe_create_from_scorecard_data(self):
