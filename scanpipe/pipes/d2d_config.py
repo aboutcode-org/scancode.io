@@ -129,7 +129,16 @@ ECOSYSTEM_CONFIGS = {
     ),
     "MacOS": EcosystemConfig(
         ecosystem_option="MacOS",
-        source_symbol_extensions=[".c", ".cpp", ".h", ".m", ".swift"],
+        source_symbol_extensions=[
+            ".c",
+            ".cpp",
+            ".h",
+            ".m",
+            ".swift",
+            ".go",
+            ".ts",
+            ".tsx",
+        ],
     ),
     "Windows": EcosystemConfig(
         ecosystem_option="Windows",
