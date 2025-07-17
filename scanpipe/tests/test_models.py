@@ -2727,10 +2727,13 @@ class ScanPipeModelsTest(TestCase):
 
         for check in checks:
             self.assertIsInstance(check.check_name, str)
-            if check.check_score == "-1":
-                self.assertEqual(check.check_score, "-1")
-            else:
-                self.assertRegex(check.check_score, r"^\d+(\.\d+)?$")
+
+            score = check.check_score
+            # Check if score is "-1" or a numeric string within range 0-10
+            self.assertTrue(
+                (score == "-1") or (score.isdigit() and 0 <= int(score) <= 10),
+                "Score must be '-1' or a number between 0 and 10"
+            )
 
     def test_scanpipe_create_from_scorecard_data(self):
         """Test that create_from_scorecard_data successfully creates a package score."""
