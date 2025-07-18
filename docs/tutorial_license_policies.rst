@@ -150,7 +150,7 @@ in the project:
      > ERROR: 1
        cuckoo_filter-1.0.6.tar.gz-extract/cuckoo_filter-1.0.6/README.md
     [license clarity]
-     > Alert Level: ERROR
+     > ERROR
 
 .. tip::
     In case of compliance alerts, the command returns a non-zero exit code which

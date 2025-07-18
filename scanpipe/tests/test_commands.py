@@ -1225,9 +1225,7 @@ class ScanPipeManagementCommandTest(TestCase):
             call_command("check-compliance", *options, stderr=out)
         self.assertEqual(cm.exception.code, 1)
         out_value = out.getvalue().strip()
-        expected = (
-            "1 compliance issues detected.\n[license clarity]\n > Alert Level: ERROR"
-        )
+        expected = "1 compliance issues detected.\n[license clarity]\n > ERROR"
         self.assertEqual(expected, out_value)
 
     def test_scanpipe_management_command_check_both_compliance_and_clarity(self):
@@ -1250,7 +1248,7 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = (
             "2 compliance issues detected."
             "\n[packages]\n > ERROR: 1"
-            "\n[license clarity]\n > Alert Level: WARNING"
+            "\n[license clarity]\n > WARNING"
         )
         self.assertEqual(expected, out_value)
 

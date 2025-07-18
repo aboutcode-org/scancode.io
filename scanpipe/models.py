@@ -1519,8 +1519,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Return the license clarity compliance alert value for the project,
         or None if not set.
         """
-        extra_data = self.extra_data or {}
-        return extra_data.get("license_clarity_compliance_alert")
+        return self.extra_data.get("license_clarity_compliance_alert")
 
     def get_license_policy_index(self):
         """Return the policy license index for this project instance."""

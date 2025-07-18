@@ -493,7 +493,7 @@ Data:
         }
     }
 
-.. _rest_api_clarity_compliance:
+.. _rest_api_license_clarity_compliance:
 
 License Clarity Compliance
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

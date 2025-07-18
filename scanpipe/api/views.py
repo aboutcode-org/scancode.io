@@ -482,7 +482,7 @@ class ProjectViewSet(
         return Response({"compliance_alerts": compliance_alerts})
 
     @action(detail=True, methods=["get"])
-    def clarity_compliance(self, request, *args, **kwargs):
+    def license_clarity_compliance(self, request, *args, **kwargs):
         """
         Retrieve the license clarity compliance alert for a project.
 

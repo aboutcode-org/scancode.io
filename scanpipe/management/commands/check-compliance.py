@@ -90,7 +90,7 @@ class Command(ProjectCommand):
 
             if has_clarity_issue:
                 self.stderr.write("[license clarity]")
-                self.stderr.write(f" > Alert Level: {clarity_alert.upper()}")
+                self.stderr.write(f" > {clarity_alert.upper()}")
 
         return total_issues > 0
 

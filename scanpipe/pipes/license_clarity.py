@@ -156,7 +156,7 @@ def load_clarity_thresholds_from_file(file_path):
     file_path = Path(file_path)
 
     if not file_path.exists():
-        return None
+        return
 
     try:
         yaml_content = file_path.read_text(encoding="utf-8")
@@ -175,10 +175,10 @@ def get_project_clarity_thresholds(project):
     """
     policies_dict = project.get_policies_dict()
     if not policies_dict:
-        return None
+        return
 
     clarity_thresholds = policies_dict.get("license_clarity_thresholds")
     if not clarity_thresholds:
-        return None
+        return
 
     return ClarityThresholdsPolicy(clarity_thresholds)
