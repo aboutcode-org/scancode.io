@@ -1,0 +1,67 @@
+{% extends "scanpipe/base.html" %}
+{% load static humanize %}
+{% block title %}ScanCode.io: {{ project.name }} - Resource Tree{% endblock %}
+
+{% block extrahead %}
+  <style>
+    .chevron {
+      transition: transform 0.2s ease;
+      display: inline-block;
+    }
+    .chevron.rotated {
+      transform: rotate(90deg);
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Resource Tree" %}
+      </div>
+    </section>
+  </div>
+
+<div class="columns is-gapless is-mobile" style="height: 80vh; margin: 0;">
+  <div class="column is-one-third p-4" style="border-right: 1px solid #ccc; overflow-y: auto;">
+    <div id="resource-tree">
+      {% include "scanpipe/panels/codebase_tree_panel.html" with children=children path=path %}
+    </div>
+  </div>
+  <div class="column p-4" style="overflow-y: auto;">
+    <div id="right-pane">
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    document.addEventListener("click", async function (e) {
+      const chevron = e.target.closest("[data-chevron]");
+      if (chevron) {
+        const folderNode = chevron.closest("[data-folder]");
+        const targetId = folderNode.dataset.target;
+        const url = folderNode.dataset.url;
+        const icon = chevron.querySelector("i");
+        const target = document.getElementById("dir-" + targetId);
+
+        if (target.dataset.loaded === "true") {
+          target.classList.toggle("is-hidden");
+        } else {
+          target.classList.remove("is-hidden");
+          const response = await fetch(url + "&tree_panel=true");
+          target.innerHTML = await response.text();
+          target.dataset.loaded = "true";
+          htmx.process(target);
+        }
+
+        chevron.classList.toggle("rotated");
+        e.stopPropagation();
+        return;
+      }
+    });
+  </script>
+{% endblock %}
