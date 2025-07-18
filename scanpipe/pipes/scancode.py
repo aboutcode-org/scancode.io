@@ -60,6 +60,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import flag
+from scanpipe.pipes.license_clarity import get_project_clarity_thresholds
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -1134,7 +1135,10 @@ def make_results_summary(project, scan_results_location):
     Extract selected sections of the Scan results, such as the `summary`
     `license_clarity_score`, and `license_matches` related data.
     The `key_files` are also collected and injected in the `summary` output.
+    Additionally, store license_clarity_compliance_alert in project's extra_data.
     """
+    import json
+
     from scanpipe.api.serializers import CodebaseResourceSerializer
     from scanpipe.api.serializers import DiscoveredPackageSerializer
 
@@ -1167,4 +1171,12 @@ def make_results_summary(project, scan_results_location):
         DiscoveredPackageSerializer(package).data for package in key_files_packages_qs
     ]
 
+    clarity_score = summary.get("license_clarity_score", {}).get("score")
+    if clarity_score is not None:
+        clarity_policy = get_project_clarity_thresholds(project)
+        if clarity_policy:
+            alert = clarity_policy.get_alert_for_score(clarity_score)
+            summary["license_clarity_compliance_alert"] = alert
+
+            project.update_extra_data({"license_clarity_compliance_alert": alert})
     return summary

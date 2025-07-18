@@ -156,10 +156,29 @@ def load_clarity_thresholds_from_file(file_path):
     file_path = Path(file_path)
 
     if not file_path.exists():
-        return None
+        return
 
     try:
         yaml_content = file_path.read_text(encoding="utf-8")
         return load_clarity_thresholds_from_yaml(yaml_content)
     except (OSError, UnicodeDecodeError) as e:
         raise ValidationError(f"Error reading file {file_path}: {e}")
+
+
+def get_project_clarity_thresholds(project):
+    """
+    Get clarity thresholds for a project using the unified policy loading logic.
+
+    Returns:
+        ClarityThresholdsPolicy or None: Policy object if thresholds are configured
+
+    """
+    policies_dict = project.get_policies_dict()
+    if not policies_dict:
+        return
+
+    clarity_thresholds = policies_dict.get("license_clarity_thresholds")
+    if not clarity_thresholds:
+        return
+
+    return ClarityThresholdsPolicy(clarity_thresholds)

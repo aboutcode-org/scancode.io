@@ -1274,6 +1274,11 @@ class ProjectCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
             fail_level="missing",
         )
         context["compliance_alerts"] = compliance_alerts
+
+        context["license_clarity_compliance_alert"] = (
+            project.get_license_clarity_compliance_alert()
+        )
+
         return context
 
 

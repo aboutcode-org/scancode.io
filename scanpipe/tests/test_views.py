@@ -1024,6 +1024,9 @@ class ScanPipeViewsTest(TestCase):
             compliance_alert=DiscoveredPackage.Compliance.ERROR,
         )
 
+        self.project1.extra_data = {"license_clarity_compliance_alert": "warning"}
+        self.project1.save(update_fields=["extra_data"])
+
         mock_license_policies_enabled.return_value = False
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
@@ -1032,6 +1035,8 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertContains(response, "Compliance alerts")
         self.assertContains(response, "1 Error")
+        self.assertContains(response, "License clarity")
+        self.assertContains(response, "Warning")
         expected = f"/project/{self.project1.slug}/packages/?compliance_alert=error"
         self.assertContains(response, expected)
 

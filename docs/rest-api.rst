@@ -493,6 +493,31 @@ Data:
         }
     }
 
+.. _rest_api_license_clarity_compliance:
+
+License Clarity Compliance
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This action returns the **license clarity compliance alert** for a project.
+
+The license clarity compliance alert is a single value (``ok``, ``warning``, or ``error``)
+that summarizes the project's **license clarity status**, based on the thresholds defined in
+the ``policies.yml`` file.
+
+``GET /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/license_clarity_compliance/``
+
+Data:
+    - ``license_clarity_compliance_alert``: The overall license clarity compliance alert
+      for the project.
+
+      Possible values: ``ok``, ``warning``, ``error``.
+
+.. code-block:: json
+
+    {
+        "license_clarity_compliance_alert": "warning"
+    }
+
 Reset
 ^^^^^
 
