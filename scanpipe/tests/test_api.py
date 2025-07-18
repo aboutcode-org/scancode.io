@@ -1254,7 +1254,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
     def test_scanpipe_api_project_action_license_clarity_compliance(self):
         project = make_project()
-        url = reverse("project-clarity-compliance", args=[project.uuid])
+        url = reverse("project-license-clarity-compliance", args=[project.uuid])
 
         response = self.csrf_client.get(url)
         expected = {"license_clarity_compliance_alert": None}
