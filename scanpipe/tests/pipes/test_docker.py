@@ -90,7 +90,7 @@ class ScanPipeDockerPipesTest(TestCase):
         resource1.refresh_from_db()
         resource2.refresh_from_db()
         self.assertEqual("", resource1.status)
-        self.assertEqual("ignored-whiteout", resource2.status)
+        self.assertEqual("white-out", resource2.status)
 
     def test_pipes_docker_extract_image_from_tarball_with_broken_symlinks(
         self,

@@ -268,13 +268,13 @@ def scan_image_for_system_packages(project, image):
 
 def flag_whiteout_codebase_resources(project):
     """
-    Tag overlayfs/AUFS whiteout special files CodebaseResource as "ignored-whiteout".
+    Tag overlayfs/AUFS whiteout special files CodebaseResource as "white-out".
     See https://github.com/opencontainers/image-spec/blob/master/layer.md#whiteouts
     for details.
     """
     whiteout_prefix = ".wh."
     qs = project.codebaseresources.no_status()
-    qs.filter(name__startswith=whiteout_prefix).update(status=flag.IGNORED_WHITEOUT)
+    qs.filter(name__startswith=whiteout_prefix).update(status=flag.WHITE_OUT)
 
 
 layer_fields = [
