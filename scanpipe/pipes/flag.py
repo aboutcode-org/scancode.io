@@ -36,6 +36,8 @@ NOT_ANALYZED = "not-analyzed"
 
 RESOURCE_READ_ERROR = "resource-read-error"
 
+WHITE_OUT = "white-out"
+
 IGNORED_WHITEOUT = "ignored-whiteout"
 IGNORED_EMPTY_FILE = "ignored-empty-file"
 IGNORED_WHITESPACE_FILE = "ignored-whitespace-file"
