@@ -3217,27 +3217,20 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
     def test_scanpipe_codebase_resource_queryset_with_has_children(self):
         project1 = make_project("Analysis")
 
-        CodebaseResource.objects.create(
-            project=project1,
-            type=CodebaseResource.Type.DIRECTORY,
-            path="parent",
-        )
-        CodebaseResource.objects.create(
-            project=project1,
-            type=CodebaseResource.Type.FILE,
-            path="parent/child.txt",
-        )
-        CodebaseResource.objects.create(
-            project=project1,
-            type=CodebaseResource.Type.DIRECTORY,
-            path="empty",
-        )
+        make_resource_directory(project1, "parent")
+        make_resource_file(project1, "parent/child.txt")
+        make_resource_directory(project1, "empty")
 
         qs = CodebaseResource.objects.filter(project=project1).with_has_children()
-        results = {r.path: r.has_children for r in qs}
-        self.assertTrue(results["parent"])
-        self.assertFalse(results["parent/child.txt"])
-        self.assertFalse(results["empty"])
+        
+        resource1 = qs.get(path="parent")
+        self.assertTrue(resource1.has_children)
+        
+        resource2 = qs.get(path="parent/child.txt")
+        self.assertFalse(resource2.has_children)
+        
+        resource3 = qs.get(path="empty")
+        self.assertFalse(resource3.has_children)
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_codebase_resource_create_and_add_package_warnings(self):
