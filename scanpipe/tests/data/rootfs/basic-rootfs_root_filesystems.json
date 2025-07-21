@@ -372,7 +372,7 @@
       "is_legal": false,
       "is_manifest": false,
       "is_readme": false,
-      "is_top_level": true,
+      "is_top_level": false,
       "is_key_file": false,
       "extra_data": {}
     },
