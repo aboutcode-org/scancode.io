@@ -3222,13 +3222,13 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         make_resource_directory(project1, "empty")
 
         qs = CodebaseResource.objects.filter(project=project1).with_has_children()
-        
+
         resource1 = qs.get(path="parent")
         self.assertTrue(resource1.has_children)
-        
+
         resource2 = qs.get(path="parent/child.txt")
         self.assertFalse(resource2.has_children)
-        
+
         resource3 = qs.get(path="empty")
         self.assertFalse(resource3.has_children)
 
