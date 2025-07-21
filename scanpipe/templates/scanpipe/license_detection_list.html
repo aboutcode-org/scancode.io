@@ -26,12 +26,12 @@
               <a href="{% url 'license_detail' project.slug license_detection.identifier %}">{{ license_detection.identifier }}</a>
               {% if license_detection.needs_review %}
                 <a href="{% url 'license_detail' project.slug license_detection.identifier %}#detection">
-                  <i class="fa-solid fa-magnifying-glass fa-sm has-text-danger" title="License Detection Issues"></i>
+                  <i class="fa-solid fa-magnifying-glass fa-sm has-text-danger" title="License detection issue: needs review"></i>
                 </a>
               {% endif %}
               {% if license_detection.has_compliance_alert %}
                 <a href="{% url 'license_detail' project.slug license_detection.identifier %}#detection">
-                  <i class="fa-solid fa-scale-balanced fa-sm has-text-danger" title="License Compliance Alerts"></i>
+                  <i class="fa-solid fa-scale-balanced fa-sm has-text-danger" title="License Compliance Alert"></i>
                 </a>
               {% endif %}
             </td>
@@ -50,13 +50,13 @@
             <td>
               {{ license_detection.needs_review }}
             </td>
-            {% if display_compliance_alert %}
-              <td>
-                <a href="?compliance_alert={{ license_detection.compliance_alert }}" class="is-black-link">
-                  {{ license_detection.compliance_alert }}
-                </a>
-              </td>
+            <td>
+              {% if display_compliance_alert %}
+              <a href="?compliance_alert={{ license_detection.compliance_alert }}" class="is-black-link">
+                {{ license_detection.compliance_alert }}
+              </a>
               {% endif %}
+            </td>
           </tr>
         {% empty %}
           <tr>

@@ -840,6 +840,8 @@ class LicenseFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "compliance_alert",
         "license_expression",
         "license_expression_spdx",
+        "is_license_clue",
+        "needs_review",
     ]
 
     search = DiscoveredLicenseSearchFilter(
@@ -853,6 +855,8 @@ class LicenseFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "license_expression",
             "license_expression_spdx",
             "compliance_alert",
+            "is_license_clue",
+            "needs_review",
         ],
     )
     license_expression = django_filters.AllValuesFilter()

@@ -1,16 +1,32 @@
 {% load humanize %}
 {% if license_detection_summary %}
-  <div class="column is-half">
+<div class="column is-half">
+<article id="license-detection-summary-panel" class="panel is-info">
+  <div class="panel-heading is-flex is-justify-content-space-between">
+    Unique license detections
+    {% include "scanpipe/dropdowns/help_dropdown_tooltip.html" with content="All unique license detections in the codebase identified by matched license text and other license match characteristics. Also contains other license clues." only %}
+  </div>
+  <div class="panel is-info">
     <nav class="panel is-info">
-      <p class="panel-heading py-2 is-size-6">
-        Unique license detections
-      </p>
       {% for license_expression, count in license_detection_summary.items %}
-        <a class="panel-block is-align-items-flex-start break-word  is-flex is-align-items-center" href="{{ project_licenses_url }}?license_expression={{ license_expression|default:'_EMPTY_' }}" target="_blank">
+        <a class="panel-block is-align-items-flex-start break-word is-flex is-align-items-center" href="{{ project_licenses_url }}?license_expression={{ license_expression|default:'_EMPTY_' }}" target="_blank">
           {{ license_expression|default:'<i>No licenses</i>' }}
           <span class="tag is-rounded ml-1">{{ count|intcomma }}</span>
+          {% if license_expression in issue_count_by_expression %}
+            <span class="has-text-danger is-size-6 ml-2 is-flex is-flex-direction-row" title="License detection issue: needs review">
+              <span class="ml-1"><i class="fa-solid fa-magnifying-glass"></i></span>
+              {% for expression, count in issue_count_by_expression.items %}
+                {% if license_expression is expression %}
+                  <span class="ml-1">{{ count|intcomma }}</span>
+                {% endif %}
+              {% endfor %}
+            </span>
+          {% endif %}
           {% if license_expression in expressions_with_compliance_alert %}
-            &nbsp; <span class="fa-solid fa-scale-balanced has-text-danger" title="License Compliance Alerts"></span>
+            <span class="has-text-danger is-size-6 is-flex is-flex-direction-row" title="License Compliance Alert">
+              <span class="ml-1"><i class="fa-solid fa-scale-balanced"></i></span>
+              <span class="ml-1">{{ count|intcomma }}</span>
+            </span>
           {% endif %}
         </a>
       {% endfor %}
@@ -19,13 +35,13 @@
         See all license detections
         <span class="tag is-rounded ml-1">{{ total_counts.all|intcomma }}</span>
         {% if total_counts.needs_review %}
-        <span class="has-text-danger is-size-6 ml-2">
+        <span class="has-text-danger is-size-6 ml-2" title="License detection issue: needs review">
           <i class="fa-solid fa-magnifying-glass"></i>
           {{ total_counts.needs_review|intcomma }}
         </span>
         {% endif %}
         {% if total_counts.with_compliance_error %}
-        <span class="has-text-danger is-size-6 ml-2">
+        <span class="has-text-danger is-size-6 ml-2" title="License Compliance Alert">
           <i class="fa-solid fa-scale-balanced fa-sm"></i>
           {{ total_counts.with_compliance_error|intcomma }}
         </span>
@@ -37,13 +53,13 @@
         See all license clues
         <span class="tag is-rounded ml-1">{{ clue_counts.all|intcomma }}</span>
         {% if clue_counts.needs_review %}
-        <span class="has-text-danger is-size-6 ml-2">
+        <span class="has-text-danger is-size-6 ml-2" title="License detection issue: needs review">
           <i class="fa-solid fa-magnifying-glass"></i>
           {{ clue_counts.needs_review|intcomma }}
         </span>
         {% endif %}
         {% if clue_counts.with_compliance_error %}
-        <span class="has-text-danger is-size-6 ml-2">
+        <span class="has-text-danger is-size-6 ml-2" title="License Compliance Alert">
           <i class="fa-solid fa-scale-balanced fa-sm"></i>
           {{ clue_counts.with_compliance_error|intcomma }}
         </span>
@@ -52,4 +68,6 @@
       {% endif %}
     </nav>
   </div>
+</article>
+</div>
 {% endif %}
