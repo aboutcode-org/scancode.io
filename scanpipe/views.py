@@ -1129,14 +1129,19 @@ class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.Detai
 
         # Also get count for detections with
         expressions_with_compliance_alert = []
+        issue_count_by_expression = {}
         for license_expression in top_licenses.keys():
-            has_compliance_alert = (
-                proper_license_detections.filter(license_expression=license_expression)
-                .has_compliance_alert()
-                .exists()
+            detections_for_expression = proper_license_detections.filter(
+                license_expression=license_expression
             )
+            has_compliance_alert = (
+                detections_for_expression.has_compliance_alert().exists()
+            )
+            issue_count = detections_for_expression.needs_review().count()
             if has_compliance_alert:
                 expressions_with_compliance_alert.append(license_expression)
+            if issue_count > 0:
+                issue_count_by_expression[license_expression] = issue_count
 
         total_counts = {
             "with_compliance_error": (
@@ -1160,6 +1165,7 @@ class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.Detai
         return (
             top_licenses,
             expressions_with_compliance_alert,
+            issue_count_by_expression,
             total_counts,
             license_clues,
             clue_counts,
@@ -1167,11 +1173,12 @@ class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.Detai
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        summary, expressions, counts, clues, clue_counts = (
+        summary, expressions, issues, counts, clues, clue_counts = (
             self.get_license_detection_summary(project=self.object)
         )
         context["license_detection_summary"] = summary
         context["expressions_with_compliance_alert"] = expressions
+        context["issue_count_by_expression"] = issues
         context["total_counts"] = counts
         context["license_clues"] = clues
         context["clue_counts"] = clue_counts
@@ -1901,7 +1908,9 @@ class DiscoveredLicenseListView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["display_compliance_alert"] = self.get_project().policies_enabled
+        context["display_compliance_alert"] = (
+            self.get_project().license_policies_enabled
+        )
         return context
 
 

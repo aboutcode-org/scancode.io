@@ -2544,7 +2544,6 @@ class ComplianceAlertMixin(models.Model):
     """
 
     license_expression_field = None
-    license_expression_spdx_field = None
 
     class Compliance(models.TextChoices):
         OK = "ok"
