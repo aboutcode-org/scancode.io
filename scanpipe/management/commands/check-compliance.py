@@ -74,8 +74,13 @@ class Command(ProjectCommand):
             len(issues) for model in alerts.values() for issues in model.values()
         )
 
-        if count and self.verbosity > 0:
-            self.stderr.write(f"{count} compliance issues detected.")
+        clarity_alert = self.project.get_license_clarity_compliance_alert()
+        has_clarity_issue = clarity_alert not in (None, "ok")
+
+        total_issues = count + (1 if has_clarity_issue else 0)
+
+        if total_issues and self.verbosity > 0:
+            self.stderr.write(f"{total_issues} compliance issues detected.")
             for label, model in alerts.items():
                 self.stderr.write(f"[{label}]")
                 for severity, entries in model.items():
@@ -83,7 +88,11 @@ class Command(ProjectCommand):
                     if self.verbosity > 1:
                         self.stderr.write("   " + "\n   ".join(entries))
 
-        return count > 0
+            if has_clarity_issue:
+                self.stderr.write("[license clarity]")
+                self.stderr.write(f" > {clarity_alert.upper()}")
+
+        return total_issues > 0
 
     def check_vulnerabilities(self):
         packages = self.project.discoveredpackages.vulnerable_ordered()
