@@ -48,7 +48,7 @@ dependencies = [
   # wait_for_database Django management command
   "django-probes==1.7.0",
   # Task queue
-  "rq==2.4.0",
+  "rq==2.4.1",
   "django-rq==3.0.1",
   "redis==6.2.0",
   # WSGI server
@@ -68,7 +68,7 @@ dependencies = [
   "go-inspector==0.5.0",
   "rust-inspector==0.1.0",
   "binary-inspector==0.1.2",
-  "python-inspector==0.14.0",
+  "python-inspector==0.14.2",
   "source-inspector==0.7.0; sys_platform != 'darwin' and platform_machine != 'arm64'",
   "aboutcode-toolkit==11.1.1",
   # Utilities
@@ -77,7 +77,7 @@ dependencies = [
   "requests==2.32.4",
   "GitPython==3.1.44",
   # Profiling
-  "pyinstrument==5.0.2",
+  "pyinstrument==5.0.3",
   # CycloneDX
   "cyclonedx-python-lib==10.2.0",
   "jsonschema==4.24.0",
@@ -94,18 +94,18 @@ dependencies = [
   "aboutcode.hashid==0.2.0",
   # AboutCode pipeline
   "aboutcode.pipeline==0.2.1",
-  "scipy==1.15.3"
+  "scipy==1.16.0"
 ]
 
 [project.optional-dependencies]
 dev = [
   # Validation
-  "ruff==0.12.0",
+  "ruff==0.12.4",
   "doc8==2.0.0",
   # Debug
   "django-debug-toolbar==5.2.0",
   # Documentation
-  "Sphinx==8.1.3",
+  "Sphinx==8.2.3",
   "sphinx-rtd-theme==3.0.2",
   "sphinx-rtd-dark-mode==1.3.0",
   "sphinxcontrib-django==2.5",
