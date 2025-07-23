@@ -900,6 +900,84 @@ def get_virtual_codebase(project, input_location):
     return VirtualCodebase(input_location, temp_dir=str(temp_path), max_in_memory=0)
 
 
+def create_codebase_resource(project, scanned_resource):
+    """Create a CodebaseResource entry from ScanCode scanned data."""
+    resource_data = {}
+
+    for field in CodebaseResource._meta.fields:
+        # Do not include the path as provided by the scanned_resource since it
+        # includes the "root". The `get_path` method is used instead.
+        if field.name in ["path", "parent_path"]:
+            continue
+        value = getattr(scanned_resource, field.name, None)
+        if value is not None:
+            resource_data[field.name] = value
+
+    resource_type = "FILE" if scanned_resource.is_file else "DIRECTORY"
+    resource_data["type"] = CodebaseResource.Type[resource_type]
+    resource_path = scanned_resource.get_path(strip_root=True)
+
+    parent_path = str(Path(resource_path).parent)
+    if parent_path == ".":
+        parent_path = ""
+    resource_data["parent_path"] = parent_path
+
+    codebase_resource, _ = CodebaseResource.objects.get_or_create(
+        project=project,
+        path=resource_path,
+        defaults=resource_data,
+    )
+
+    # Handle package assignments
+    for_packages = getattr(scanned_resource, "for_packages", [])
+    for package_uid in for_packages:
+        logger.debug(f"Assign {package_uid} to {codebase_resource}")
+        package = project.discoveredpackages.get(package_uid=package_uid)
+        set_codebase_resource_for_package(
+            codebase_resource=codebase_resource,
+            discovered_package=package,
+        )
+
+    # Handle license detections
+    license_detections = getattr(scanned_resource, "license_detections", [])
+    for detection_data in license_detections:
+        detection_identifier = detection_data.get("identifier")
+        pipes.update_or_create_license_detection(
+            project=project,
+            detection_data=detection_data,
+            resource_path=resource_path,
+            count_detection=False,
+        )
+        logger.debug(f"Add {codebase_resource} to {detection_identifier}")
+
+    # Handle license clues
+    license_clues = getattr(scanned_resource, "license_clues", [])
+    for clue_data in license_clues:
+        pipes.update_or_create_license_detection(
+            project=project,
+            detection_data=clue_data,
+            resource_path=resource_path,
+            is_license_clue=True,
+        )
+        logger.debug(f"Add license clue at {codebase_resource}")
+
+    # Handle package data
+    packages = getattr(scanned_resource, "package_data", [])
+    for package_data in packages:
+        license_detections = package_data.get("license_detections", [])
+        license_detections.extend(package_data.get("other_license_detections", []))
+        for detection_data in license_detections:
+            detection_identifier = detection_data.get("identifier")
+            pipes.update_or_create_license_detection(
+                project=project,
+                detection_data=detection_data,
+                resource_path=resource_path,
+                count_detection=False,
+                from_package=True,
+            )
+            logger.debug(f"Add {codebase_resource} to {detection_identifier}")
+
+
 def create_codebase_resources(project, scanned_codebase):
     """
     Save the resources of a ScanCode `scanned_codebase` scancode.resource.Codebase
@@ -909,78 +987,7 @@ def create_codebase_resources(project, scanned_codebase):
     skipped.
     """
     for scanned_resource in scanned_codebase.walk(skip_root=True):
-        resource_data = {}
-
-        for field in CodebaseResource._meta.fields:
-            # Do not include the path as provided by the scanned_resource since it
-            # includes the "root". The `get_path` method is used instead.
-            if field.name == "path":
-                continue
-            if field.name == "parent_path":
-                continue
-            value = getattr(scanned_resource, field.name, None)
-            if value is not None:
-                resource_data[field.name] = value
-
-        resource_type = "FILE" if scanned_resource.is_file else "DIRECTORY"
-        resource_data["type"] = CodebaseResource.Type[resource_type]
-        resource_path = scanned_resource.get_path(strip_root=True)
-
-        parent_path = str(Path(resource_path).parent)
-        if parent_path == ".":
-            parent_path = ""
-        resource_data["parent_path"] = parent_path
-
-        codebase_resource, _ = CodebaseResource.objects.get_or_create(
-            project=project,
-            path=resource_path,
-            defaults=resource_data,
-        )
-
-        for_packages = getattr(scanned_resource, "for_packages", [])
-        for package_uid in for_packages:
-            logger.debug(f"Assign {package_uid} to {codebase_resource}")
-            package = project.discoveredpackages.get(package_uid=package_uid)
-            set_codebase_resource_for_package(
-                codebase_resource=codebase_resource,
-                discovered_package=package,
-            )
-
-        license_detections = getattr(scanned_resource, "license_detections", [])
-        for detection_data in license_detections:
-            detection_identifier = detection_data.get("identifier")
-            pipes.update_or_create_license_detection(
-                project=project,
-                detection_data=detection_data,
-                resource_path=resource_path,
-                count_detection=False,
-            )
-            logger.debug(f"Add {codebase_resource} to {detection_identifier}")
-
-        license_clues = getattr(scanned_resource, "license_clues", [])
-        for clue_data in license_clues:
-            pipes.update_or_create_license_detection(
-                project=project,
-                detection_data=clue_data,
-                resource_path=resource_path,
-                is_license_clue=True,
-            )
-            logger.debug(f"Add license clue at {codebase_resource}")
-
-        packages = getattr(scanned_resource, "package_data", [])
-        for package_data in packages:
-            license_detections = package_data.get("license_detections", [])
-            license_detections.extend(package_data.get("other_license_detections", []))
-            for detection_data in license_detections:
-                detection_identifier = detection_data.get("identifier")
-                pipes.update_or_create_license_detection(
-                    project=project,
-                    detection_data=detection_data,
-                    resource_path=resource_path,
-                    count_detection=False,
-                    from_package=True,
-                )
-                logger.debug(f"Add {codebase_resource} to {detection_identifier}")
+        create_codebase_resource(project, scanned_resource)
 
 
 def create_discovered_packages(project, scanned_codebase):
