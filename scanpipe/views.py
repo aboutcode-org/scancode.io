@@ -2756,3 +2756,29 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
             "children": children,
         }
         return node
+
+
+class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
+    template_name = "scanpipe/resource_tree.html"
+
+    def get(self, request, *args, **kwargs):
+        slug = self.kwargs.get("slug")
+        project = get_object_or_404(Project, slug=slug)
+        path = request.GET.get("path", "")
+
+        children = (
+            project.codebaseresources.filter(parent_path=path)
+            .with_has_children()
+            .only("path", "name", "type")
+            .order_by("path")
+        )
+
+        context = {
+            "project": project,
+            "path": path,
+            "children": children,
+        }
+
+        if request.GET.get("tree_panel") == "true":
+            return render(request, "scanpipe/panels/codebase_tree_panel.html", context)
+        return render(request, self.template_name, context)

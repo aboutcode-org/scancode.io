@@ -46,6 +46,7 @@ from django.db import models
 from django.db import transaction
 from django.db.models import Case
 from django.db.models import Count
+from django.db.models import Exists
 from django.db.models import IntegerField
 from django.db.models import OuterRef
 from django.db.models import Prefetch
@@ -229,7 +230,7 @@ class AbstractTaskFieldsModel(models.Model):
         Note that projects with queued or running pipeline runs cannot be deleted.
         See the `_raise_if_run_in_progress` method.
         The following if statements should not be triggered unless the `.delete()`
-        method is directly call from an instance of this class.
+        method is directly call from a instance of this class.
         """
         with suppress(redis.exceptions.ConnectionError, AttributeError):
             if self.status == self.Status.RUNNING:
@@ -2423,6 +2424,17 @@ class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuery
     def executable_binaries(self):
         return self.union(self.win_exes(), self.macho_binaries(), self.elfs())
 
+    def with_has_children(self):
+        """
+        Annotate the QuerySet with has_children field based on whether
+        each resource has any children (subdirectories/files).
+        """
+        children_qs = CodebaseResource.objects.filter(
+            parent_path=OuterRef("path"),
+        )
+
+        return self.annotate(has_children=Exists(children_qs))
+
 
 class ScanFieldsModelMixin(models.Model):
     """Fields returned by the ScanCode-toolkit scans."""
@@ -2745,6 +2757,17 @@ class CodebaseResource(
             'Eg.: "/usr/bin/bash" for a path of "tarball-extract/rootfs/usr/bin/bash"'
         ),
     )
+
+    parent_path = models.CharField(
+        max_length=2000,
+        blank=True,
+        help_text=_(
+            "The path of the resource's parent directory. "
+            "Set to None for top-level (root) resources. "
+            "Used to efficiently retrieve a directory's contents."
+        ),
+    )
+
     status = models.CharField(
         blank=True,
         max_length=50,
@@ -2838,6 +2861,7 @@ class CodebaseResource(
             models.Index(fields=["compliance_alert"]),
             models.Index(fields=["is_binary"]),
             models.Index(fields=["is_text"]),
+            models.Index(fields=["project", "parent_path"]),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -2849,6 +2873,11 @@ class CodebaseResource(
 
     def __str__(self):
         return self.path
+
+    def save(self, *args, **kwargs):
+        if self.path and not self.parent_path:
+            self.parent_path = self.parent_directory() or ""
+        super().save(*args, **kwargs)
 
     def get_absolute_url(self):
         return reverse("resource_detail", args=[self.project.slug, self.path])
@@ -2920,7 +2949,8 @@ class CodebaseResource(
 
     def parent_directory(self):
         """Return the parent path for this CodebaseResource or None."""
-        return parent_directory(self.path, with_trail=False)
+        parent_path = parent_directory(str(self.path), with_trail=False)
+        return parent_path or None
 
     def has_parent(self):
         """
