@@ -72,6 +72,10 @@ def make_codebase_resource(project, location, save=True, **extra_fields):
     from scanpipe.pipes import flag
 
     relative_path = Path(location).relative_to(project.codebase_path)
+    parent_path = str(relative_path.parent)
+    if parent_path == ".":
+        parent_path = ""
+
     try:
         resource_data = scancode.get_resource_info(location=str(location))
     except OSError as error:
@@ -92,6 +96,7 @@ def make_codebase_resource(project, location, save=True, **extra_fields):
     codebase_resource = CodebaseResource(
         project=project,
         path=relative_path,
+        parent_path=parent_path,
         **resource_data,
     )
 
