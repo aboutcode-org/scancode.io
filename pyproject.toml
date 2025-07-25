@@ -68,14 +68,14 @@ dependencies = [
   "go-inspector==0.5.0",
   "rust-inspector==0.1.0",
   "binary-inspector==0.1.2",
-  "python-inspector==0.14.2",
+  "python-inspector==0.14.3",
   "source-inspector==0.7.0; sys_platform != 'darwin' and platform_machine != 'arm64'",
   "aboutcode-toolkit==11.1.1",
   # Utilities
   "XlsxWriter==3.2.5",
   "openpyxl==3.1.5",
   "requests==2.32.4",
-  "GitPython==3.1.44",
+  "GitPython==3.1.45",
   # Profiling
   "pyinstrument==5.0.3",
   # CycloneDX
@@ -100,7 +100,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   # Validation
-  "ruff==0.12.4",
+  "ruff==0.12.5",
   "doc8==2.0.0",
   # Debug
   "django-debug-toolbar==5.2.0",
