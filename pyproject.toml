@@ -94,7 +94,7 @@ dependencies = [
   "aboutcode.hashid==0.2.0",
   # AboutCode pipeline
   "aboutcode.pipeline==0.2.1",
-  "scipy==1.16.0"
+  "scipy==1.15.3"
 ]
 
 [project.optional-dependencies]
