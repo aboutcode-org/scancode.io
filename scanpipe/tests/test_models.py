@@ -2738,7 +2738,7 @@ class ScanPipeModelsTest(TestCase):
             package=package, scorecard_data=scorecard_obj
         )
 
-        self.assertIsNotNone(package_score)
+        self.assertEqual("4.2", package_score.score)
         self.assertEqual(
             package_score.scoring_tool, DiscoveredPackageScore.ScoringTool.OSSF
         )
@@ -2771,7 +2771,7 @@ class ScanPipeModelsTest(TestCase):
             scoring_tool="ossf-scorecard",
         )
 
-        self.assertIsNotNone(package_score)
+        self.assertEqual("4.2", package_score.score)
         self.assertEqual(package_score.discovered_package, package)
         self.assertEqual(package_score.score, scorecard_obj.score)
         self.assertEqual(

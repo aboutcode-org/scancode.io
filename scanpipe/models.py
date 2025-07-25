@@ -3934,9 +3934,9 @@ class DiscoveredDependency(
 
     3. Dependencies can be either direct or transitive:
        - A **direct dependency** is explicitly declared in a package manifest or
-         lockfile.
+       lockfile.
        - A **transitive dependency** is not declared directly, but is required by one
-         of the project's direct dependencies.
+       of the project's direct dependencies.
 
     Understanding the distinction between direct and transitive dependencies is
     important for analyzing dependency trees, resolving version conflicts, and

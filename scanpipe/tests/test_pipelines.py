@@ -1363,7 +1363,7 @@ class PipelinesIntegrationTest(TestCase):
 
     @mock.patch("scorecode.ossf_scorecard.is_available")
     def test_scanpipe_get_scorecard_info_packages_integration(self, mock_is_available):
-        pipeline_name = "fetch_scorecode_info"
+        pipeline_name = "fetch_scores"
         project1 = make_project()
         package1 = DiscoveredPackage.create_from_data(project1, package_data1)
         package1.vcs_url = "https://github.com/ossf/scorecard"

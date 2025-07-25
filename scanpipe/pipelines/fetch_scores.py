@@ -27,7 +27,7 @@ from scanpipe.models import DiscoveredPackageScore
 from scanpipe.pipelines import Pipeline
 
 
-class FetchScoreCodeInfo(Pipeline):
+class FetchScores(Pipeline):
     """
     Fetch ScoreCode information for packages.
 
@@ -47,16 +47,16 @@ class FetchScoreCodeInfo(Pipeline):
     @classmethod
     def steps(cls):
         return (
-            cls.check_scoreCode_service_availability,
-            cls.fetch_packages_scoreCode_info,
+            cls.check_scorecode_service_availability,
+            cls.fetch_packages_scorecode_info,
         )
 
-    def check_scoreCode_service_availability(self):
+    def check_scorecode_service_availability(self):
         """Check if the ScoreCode service is configured and available."""
         if not ossf_scorecard.is_available():
             raise Exception("ScoreCode service is not available.")
 
-    def fetch_packages_scoreCode_info(self):
+    def fetch_packages_scorecode_info(self):
         """Fetch ScoreCode information for each of the project's discovered packages."""
         for package in self.project.discoveredpackages.all():
             scorecard_data = ossf_scorecard.fetch_scorecard_info(package=package)
@@ -66,6 +66,3 @@ class FetchScoreCodeInfo(Pipeline):
                     scorecard_data=scorecard_data,
                     package=package,
                 )
-
-            else:
-                pass
