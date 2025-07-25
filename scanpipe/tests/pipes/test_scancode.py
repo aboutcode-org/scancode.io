@@ -723,3 +723,21 @@ class ScanPipeScancodePipesTest(TestCase):
         resolved_dep = project1.discovereddependencies.get(name="bluebird")
         self.assertEqual(resolved_dep, dep_2)
         self.assertEqual(resolved_dep.resolved_to_package, pkg_1)
+
+    def test_scanpipe_pipes_scancode_scan_single_package_correct_parent_path(self):
+        project1 = Project.objects.create(name="Analysis")
+        input_location = self.data / "scancode" / "is-npm-1.0.0.tgz"
+        project1.copy_input_from(input_location)
+        run = project1.add_pipeline("scan_single_package")
+        pipeline = run.make_pipeline_instance()
+        exitcode, out = pipeline.execute()
+
+        self.assertEqual(0, exitcode, msg=out)
+        self.assertEqual(4, project1.codebaseresources.count())
+
+        root = project1.codebaseresources.get(path="package")
+        self.assertEqual("", root.parent_path)
+        self.assertNotEqual("codebase", root.parent_path)
+
+        file1 = project1.codebaseresources.get(path="package/index.js")
+        self.assertEqual("package", file1.parent_path)

@@ -2745,6 +2745,17 @@ class CodebaseResource(
             'Eg.: "/usr/bin/bash" for a path of "tarball-extract/rootfs/usr/bin/bash"'
         ),
     )
+
+    parent_path = models.CharField(
+        max_length=2000,
+        blank=True,
+        help_text=_(
+            "The path of the resource's parent directory. "
+            "Set to empty string for top-level (root) resources. "
+            "Used to efficiently retrieve a directory's contents."
+        ),
+    )
+
     status = models.CharField(
         blank=True,
         max_length=50,
@@ -2838,6 +2849,7 @@ class CodebaseResource(
             models.Index(fields=["compliance_alert"]),
             models.Index(fields=["is_binary"]),
             models.Index(fields=["is_text"]),
+            models.Index(fields=["project", "parent_path"]),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -2849,6 +2861,11 @@ class CodebaseResource(
 
     def __str__(self):
         return self.path
+
+    def save(self, *args, **kwargs):
+        if self.path and not self.parent_path:
+            self.parent_path = self.parent_directory() or ""
+        super().save(*args, **kwargs)
 
     def get_absolute_url(self):
         return reverse("resource_detail", args=[self.project.slug, self.path])
@@ -2920,7 +2937,8 @@ class CodebaseResource(
 
     def parent_directory(self):
         """Return the parent path for this CodebaseResource or None."""
-        return parent_directory(self.path, with_trail=False)
+        parent_path = parent_directory(str(self.path), with_trail=False)
+        return parent_path or None
 
     def has_parent(self):
         """
