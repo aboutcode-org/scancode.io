@@ -2864,7 +2864,7 @@ class CodebaseResource(
 
     def save(self, *args, **kwargs):
         if self.path and not self.parent_path:
-            self.parent_path = self.parent_directory() or ""
+            self.parent_path = self.compute_parent_directory() or ""
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
@@ -2935,17 +2935,21 @@ class CodebaseResource(
 
         return part_and_subpath
 
-    def parent_directory(self):
+    def compute_parent_directory(self):
         """Return the parent path for this CodebaseResource or None."""
-        parent_path = parent_directory(str(self.path), with_trail=False)
-        return parent_path or None
+        if parent_path := parent_directory(str(self.path), with_trail=False):
+            return parent_path
 
     def has_parent(self):
         """
         Return True if this CodebaseResource has a parent CodebaseResource or
         False otherwise.
         """
-        parent_path = self.parent_directory()
+        if self.parent_path:
+            return True
+
+        # Support for resources created before the parent_path was stored as a field.
+        parent_path = self.compute_parent_directory()
         if not parent_path:
             return False
         if self.project.codebaseresources.filter(path=parent_path).exists():
@@ -2960,7 +2964,13 @@ class CodebaseResource(
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
-        parent_path = self.parent_directory()
+        if self.parent_path:
+            parent_path = self.parent_path
+
+        # Support for resources created before the parent_path was stored as a field.
+        else:
+            parent_path = self.compute_parent_directory()
+
         return parent_path and self.project.codebaseresources.get(path=parent_path)
 
     def siblings(self, codebase=None):

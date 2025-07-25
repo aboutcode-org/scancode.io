@@ -1638,6 +1638,25 @@ class ScanPipeModelsTest(TestCase):
         resource.refresh_from_db()
         self.assertEqual("ok", resource.compliance_alert)
 
+    def test_scanpipe_codebase_resource_model_parent_path_set_during_save(self):
+        resource = self.project1.codebaseresources.create(path="")
+        self.assertEqual("", resource.parent_path)
+
+        resource = self.project1.codebaseresources.create(path=".")
+        self.assertEqual("", resource.parent_path)
+
+        resource = self.project1.codebaseresources.create(path="file")
+        self.assertEqual("", resource.parent_path)
+
+        resource = self.project1.codebaseresources.create(path="dir/")
+        self.assertEqual("", resource.parent_path)
+
+        resource = self.project1.codebaseresources.create(path="dir1/dir2/")
+        self.assertEqual("dir1", resource.parent_path)
+
+        resource = self.project1.codebaseresources.create(path="dir1/dir2/file")
+        self.assertEqual("dir1/dir2", resource.parent_path)
+
     @patch.object(scanpipe_app, "policies", new=global_policies)
     def test_scanpipe_can_compute_compliance_alert_for_license_exceptions(self):
         scanpipe_app.license_policies_index = license_policies_index
@@ -1645,16 +1664,6 @@ class ScanPipeModelsTest(TestCase):
         license_expression = "gpl-2.0-plus WITH font-exception-gpl"
         resource.update(detected_license_expression=license_expression)
         self.assertEqual("warning", resource.compute_compliance_alert())
-
-    def test_scanpipe_codebase_root_parent_path(self):
-        resource1 = self.project1.codebaseresources.create(path="file")
-
-        self.assertEqual("", resource1.parent_path)
-
-    def test_scanpipe_codebase_regular_parent_path(self):
-        resource2 = self.project1.codebaseresources.create(path="dir1/dir2/file")
-
-        self.assertEqual("dir1/dir2", resource2.parent_path)
 
     def test_scanpipe_scan_fields_model_mixin_methods(self):
         expected = [
@@ -2136,7 +2145,9 @@ class ScanPipeModelsTest(TestCase):
             path="asgiref-3.3.0.whl-extract/asgiref/compatibility.py"
         )
         expected_parent_path = "asgiref-3.3.0.whl-extract/asgiref"
-        self.assertEqual(expected_parent_path, asgiref_resource.parent_directory())
+        self.assertEqual(
+            expected_parent_path, asgiref_resource.compute_parent_directory()
+        )
         self.assertTrue(asgiref_resource.has_parent())
         expected_parent = self.project_asgiref.codebaseresources.get(
             path="asgiref-3.3.0.whl-extract/asgiref"

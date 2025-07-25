@@ -73,7 +73,6 @@ def make_codebase_resource(project, location, save=True, **extra_fields):
 
     relative_path = Path(location).relative_to(project.codebase_path)
     parent_path = str(relative_path.parent)
-
     if parent_path == ".":
         parent_path = ""
 
