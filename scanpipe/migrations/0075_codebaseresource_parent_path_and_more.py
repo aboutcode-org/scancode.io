@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='codebaseresource',
             name='parent_path',
-            field=models.CharField(blank=True, help_text='The path of the resource\'s parent directory. Set to None for top-level (root) resources. Used to efficiently retrieve a directory\'s contents.', max_length=2000),
+            field=models.CharField(blank=True, help_text="The path of the resource's parent directory. Set to empty string for top-level (root) resources. Used to efficiently retrieve a directory's contents.", max_length=2000),
         ),
         migrations.AddIndex(
             model_name='codebaseresource',
