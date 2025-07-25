@@ -22,6 +22,11 @@ v35.2.0 (unreleased)
   Vulnerabilities and compliance alert are displayed along the dependency entries.
   https://github.com/aboutcode-org/scancode.io/pull/1742
 
+- Add new ``fetch_scores`` pipeline.
+  This pipeline retrieves ScoreCode data for each discovered package in the project
+  and stores it in the corresponding package instances.
+  https://github.com/aboutcode-org/scancode.io/pull/1294
+
 v35.1.0 (2025-07-02)
 --------------------
 

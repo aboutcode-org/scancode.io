@@ -88,6 +88,8 @@ from rq.command import send_stop_job_command
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
 from rq.job import JobStatus
+from scorecode.contrib.django.models import PackageScoreMixin
+from scorecode.contrib.django.models import ScorecardChecksMixin
 from taggit.managers import TaggableManager
 from taggit.models import GenericUUIDTaggedItemBase
 from taggit.models import TaggedItemBase
@@ -3932,9 +3934,9 @@ class DiscoveredDependency(
 
     3. Dependencies can be either direct or transitive:
        - A **direct dependency** is explicitly declared in a package manifest or
-         lockfile.
+       lockfile.
        - A **transitive dependency** is not declared directly, but is required by one
-         of the project's direct dependencies.
+       of the project's direct dependencies.
 
     Understanding the distinction between direct and transitive dependencies is
     important for analyzing dependency trees, resolving version conflicts, and
@@ -4760,3 +4762,99 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
     """Create an API key token on user creation, using the signal system."""
     if created:
         Token.objects.create(user_id=instance.pk)
+
+
+class DiscoveredPackageScore(UUIDPKModel, PackageScoreMixin):
+    """Represents a security or quality score for a DiscoveredPackage."""
+
+    discovered_package = models.ForeignKey(
+        DiscoveredPackage,
+        related_name="scores",
+        help_text=_("The package for which the score is given"),
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+
+    class Meta:
+        verbose_name = "discovered package score"
+        verbose_name_plural = "discovered package scores"
+        ordering = ["-score"]
+        indexes = [
+            models.Index(fields=["score"]),
+            models.Index(fields=["scoring_tool_version"]),
+        ]
+
+    def __str__(self):
+        return self.score or str(self.uuid)
+
+    @classmethod
+    def create_from_scorecard_data(
+        cls, discovered_package, scorecard_data, scoring_tool="ossf-scorecard"
+    ):
+        """Create ScoreCard object from scorecard data and discovered package"""
+        final_data = {
+            "score": scorecard_data.score,
+            "scoring_tool_version": scorecard_data.scoring_tool_version,
+            "scoring_tool_documentation_url": (
+                scorecard_data.scoring_tool_documentation_url
+            ),
+            "score_date": cls.parse_score_date(scorecard_data.score_date),
+        }
+
+        scorecard_object = cls.objects.create(
+            **final_data,
+            discovered_package=discovered_package,
+            scoring_tool=scoring_tool,
+        )
+
+        for check in scorecard_data.checks:
+            ScorecardCheck.create_from_data(package_score=scorecard_object, check=check)
+
+        return scorecard_object
+
+    @classmethod
+    def create_from_package_and_scorecard(cls, scorecard_data, package):
+        score_object = cls.create_from_scorecard_data(
+            discovered_package=package,
+            scorecard_data=scorecard_data,
+            scoring_tool="ossf-scorecard",
+        )
+        return score_object
+
+
+class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
+    """
+    Represents an individual check within a Scorecard evaluation for a
+    DiscoveredPackageScore.
+    """
+
+    package_score = models.ForeignKey(
+        DiscoveredPackageScore,
+        related_name="checks",
+        help_text=_("The checks for which the score is given"),
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+
+    class Meta:
+        verbose_name = "scorecard check"
+        verbose_name_plural = "scorecard checks"
+        ordering = ["-check_score"]
+        indexes = [
+            models.Index(fields=["check_score"]),
+            models.Index(fields=["check_name"]),
+        ]
+
+    def __str__(self):
+        return self.check_score or str(self.uuid)
+
+    @classmethod
+    def create_from_data(cls, package_score, check):
+        """Create a ScorecardCheck instance from provided data."""
+        return cls.objects.create(
+            check_name=check.check_name,
+            check_score=check.check_score,
+            reason=check.reason or "",
+            details=check.details or [],
+            package_score=package_score,
+        )

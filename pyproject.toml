@@ -94,7 +94,10 @@ dependencies = [
   "aboutcode.hashid==0.2.0",
   # AboutCode pipeline
   "aboutcode.pipeline==0.2.1",
-  "scipy==1.15.3"
+  "scipy==1.15.3",
+  # ScoreCode
+  "scorecode==0.0.4",
+
 ]
 
 [project.optional-dependencies]
@@ -134,6 +137,7 @@ collect_symbols_ctags = "scanpipe.pipelines.collect_symbols_ctags:CollectSymbols
 collect_symbols_pygments = "scanpipe.pipelines.collect_symbols_pygments:CollectSymbolsPygments"
 collect_symbols_tree_sitter = "scanpipe.pipelines.collect_symbols_tree_sitter:CollectSymbolsTreeSitter"
 enrich_with_purldb = "scanpipe.pipelines.enrich_with_purldb:EnrichWithPurlDB"
+fetch_scores = "scanpipe.pipelines.fetch_scores:FetchScores"
 find_vulnerabilities = "scanpipe.pipelines.find_vulnerabilities:FindVulnerabilities"
 inspect_elf_binaries = "scanpipe.pipelines.inspect_elf_binaries:InspectELFBinaries"
 inspect_packages = "scanpipe.pipelines.inspect_packages:InspectPackages"

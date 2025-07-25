@@ -152,7 +152,8 @@ REST API
 --------
 
 For more details on retrieving compliance data through the REST API, see the
-:ref:`rest_api_compliance` section and :ref:`rest_api_clarity_compliance` section.
+:ref:`rest_api_compliance` section and :ref:`rest_api_license_clarity_compliance`
+section.
 
 Command Line Interface
 ----------------------

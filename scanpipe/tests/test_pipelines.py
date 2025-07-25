@@ -36,6 +36,7 @@ from django.test import tag
 
 from packageurl import PackageURL
 from scancode.cli_test_utils import purl_with_fake_uuid
+from scorecode.models import PackageScore
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
@@ -1360,6 +1361,44 @@ class PipelinesIntegrationTest(TestCase):
         package1.refresh_from_db()
         expected = vulnerability_data[0]["affected_by_vulnerabilities"]
         self.assertEqual(expected, package1.affected_by_vulnerabilities)
+
+    @mock.patch("scorecode.ossf_scorecard.is_available")
+    def test_scanpipe_fetch_scores_pipeline_integration(self, mock_is_available):
+        pipeline_name = "fetch_scores"
+        project1 = make_project()
+        package1 = DiscoveredPackage.create_from_data(project1, package_data1)
+        package1.vcs_url = "https://github.com/ossf/scorecard"
+        package1.save()
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        mock_is_available.return_value = False
+        exitcode, out = pipeline.execute()
+        self.assertEqual(1, exitcode, msg=out)
+        self.assertIn("ScoreCode service is not available.", out)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        mock_is_available.return_value = True
+
+        package_score_data = {
+            "scoring_tool": "ossf_scorecard",
+            "scoring_tool_version": "v5.2.1",
+            "score": "9.7",
+            "scoring_tool_documentation_url": "https://github.com/[trunc...]",
+            "score_date": "2025-07-24T18:50:16Z",
+        }
+        with mock.patch("scorecode.ossf_scorecard.fetch_scorecard") as fetch:
+            fetch.return_value = PackageScore(**package_score_data)
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        package1.refresh_from_db()
+        scorecard_entry = package1.scores.filter(scoring_tool="ossf-scorecard").first()
+        self.assertIsNotNone(scorecard_entry)
+        self.assertEqual("ossf-scorecard", scorecard_entry.scoring_tool)
+        self.assertEqual("v5.2.1", scorecard_entry.scoring_tool_version)
+        self.assertEqual("9.7", scorecard_entry.score)
 
     def test_scanpipe_resolve_dependencies_pipeline_integration(self):
         pipeline_name = "resolve_dependencies"
