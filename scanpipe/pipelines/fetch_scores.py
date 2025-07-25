@@ -59,9 +59,7 @@ class FetchScores(Pipeline):
     def fetch_packages_scorecode_info(self):
         """Fetch ScoreCode information for each of the project's discovered packages."""
         for package in self.project.discoveredpackages.all():
-            scorecard_data = ossf_scorecard.fetch_scorecard_info(package=package)
-
-            if scorecard_data:
+            if scorecard_data := ossf_scorecard.fetch_scorecard_info(package=package):
                 DiscoveredPackageScore.create_from_package_and_scorecard(
                     scorecard_data=scorecard_data,
                     package=package,

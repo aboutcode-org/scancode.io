@@ -161,12 +161,9 @@ class RegenTestData(TestCase):
         try:
             scorecard_data = fetch_scorecard(platform, org, repo)
         except requests.exceptions.Timeout:
-            print("The request to the OSSF Scorecard API timed out.")
-            return
+            raise RuntimeError("The request to the OSSF Scorecard API timed out.")
         except requests.exceptions.RequestException as e:
-            print(f"Error fetching scorecard data: {e}")
-            return
+            raise RuntimeError(f"Error fetching scorecard data: {e}")
 
         scorecard_data_file.parent.mkdir(parents=True, exist_ok=True)
         scorecard_data_file.write_text(json.dumps(scorecard_data.to_dict(), indent=2))
-        print(f"Scorecard data successfully saved to {scorecard_data_file}")
