@@ -182,6 +182,7 @@ class ScanPipeModelsTest(TestCase):
             "scanpipe.CodebaseRelation": 0,
             "scanpipe.CodebaseResource": 1,
             "scanpipe.DiscoveredDependency": 0,
+            "scanpipe.DiscoveredLicense": 0,
             "scanpipe.DiscoveredPackage": 1,
             "scanpipe.DiscoveredPackage_codebase_resources": 1,
             "scanpipe.InputSource": 0,
@@ -1640,6 +1641,25 @@ class ScanPipeModelsTest(TestCase):
         resource.refresh_from_db()
         self.assertEqual("ok", resource.compliance_alert)
 
+    def test_scanpipe_codebase_resource_model_parent_path_set_during_save(self):
+        resource = self.project1.codebaseresources.create(path="")
+        self.assertEqual("", resource.parent_path)
+
+        resource = self.project1.codebaseresources.create(path=".")
+        self.assertEqual("", resource.parent_path)
+
+        resource = self.project1.codebaseresources.create(path="file")
+        self.assertEqual("", resource.parent_path)
+
+        resource = self.project1.codebaseresources.create(path="dir/")
+        self.assertEqual("", resource.parent_path)
+
+        resource = self.project1.codebaseresources.create(path="dir1/dir2/")
+        self.assertEqual("dir1", resource.parent_path)
+
+        resource = self.project1.codebaseresources.create(path="dir1/dir2/file")
+        self.assertEqual("dir1/dir2", resource.parent_path)
+
     @patch.object(scanpipe_app, "policies", new=global_policies)
     def test_scanpipe_can_compute_compliance_alert_for_license_exceptions(self):
         scanpipe_app.license_policies_index = license_policies_index
@@ -2128,7 +2148,9 @@ class ScanPipeModelsTest(TestCase):
             path="asgiref-3.3.0.whl-extract/asgiref/compatibility.py"
         )
         expected_parent_path = "asgiref-3.3.0.whl-extract/asgiref"
-        self.assertEqual(expected_parent_path, asgiref_resource.parent_directory())
+        self.assertEqual(
+            expected_parent_path, asgiref_resource.compute_parent_directory()
+        )
         self.assertTrue(asgiref_resource.has_parent())
         expected_parent = self.project_asgiref.codebaseresources.get(
             path="asgiref-3.3.0.whl-extract/asgiref"
@@ -2845,12 +2867,18 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_model_codebase_resource_compliance_alert_queryset_mixin(self):
         severities = CodebaseResource.Compliance
         make_resource_file(self.project1)
-        make_resource_file(self.project1, compliance_alert=severities.OK)
-        warning = make_resource_file(self.project1, compliance_alert=severities.WARNING)
-        error = make_resource_file(self.project1, compliance_alert=severities.ERROR)
-        missing = make_resource_file(self.project1, compliance_alert=severities.MISSING)
+        make_resource_file(self.project1, path="ok", compliance_alert=severities.OK)
+        warning = make_resource_file(
+            self.project1, path="warning", compliance_alert=severities.WARNING
+        )
+        error = make_resource_file(
+            self.project1, path="error", compliance_alert=severities.ERROR
+        )
+        missing = make_resource_file(
+            self.project1, path="missing", compliance_alert=severities.MISSING
+        )
 
-        qs = CodebaseResource.objects.order_by("compliance_alert")
+        qs = self.project1.codebaseresources.order_by("path")
         self.assertQuerySetEqual(qs.compliance_issues(severities.ERROR), [error])
         self.assertQuerySetEqual(
             qs.compliance_issues(severities.WARNING), [error, warning]

@@ -117,7 +117,11 @@ ECOSYSTEM_CONFIGS = {
         ecosystem_option="Ruby",
         matchable_package_extensions=[".gem"],
         matchable_resource_extensions=[".rb"],
-        deployed_resource_path_exclusions=["*checksums.yaml.gz*", "*metadata.gz*"],
+        deployed_resource_path_exclusions=[
+            "*checksums.yaml.gz*",
+            "*metadata.gz*",
+            "*data.tar.gz.sig",
+        ],
     ),
     "Elf": EcosystemConfig(
         ecosystem_option="Elf",

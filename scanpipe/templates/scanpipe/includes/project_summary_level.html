@@ -19,6 +19,12 @@
               {{ project.vulnerable_package_count|intcomma }}
             </a>
           {% endif %}
+          {% if project.package_compliance_alert_count %}
+            <a href="{% url 'project_packages' project.slug %}?compliance_alert=error" class="has-text-danger is-size-5 ml-2">
+              {{ project.package_compliance_alert_count|intcomma }}
+              <i class="fa-solid fa-scale-balanced is-size-6"></i>
+            </a>
+          {% endif %}
         {% else %}
           <span class="has-text-grey">0</span>
         {% endif %}
@@ -50,12 +56,31 @@
             </span>
           </a>
         {% else %}
+          <span>0</span>
+        {% endif %}
+      </p>
+    </div>
+  </div>
+  <div class="level-item has-text-centered">
+    <div>
+      <p class="heading"><a href="{% url 'project_resources' project.slug %}">Resources</a></p>
+      <p class="title is-flex is-align-items-center is-justify-content-center">
+        {% if project.resource_count %}
+          <a href="{{ project_resources_url }}">
+            {{ project.resource_count|intcomma }}
+          </a>
+          {% if project.resource_compliance_alert_count %}
+            <a href="{% url 'project_resources' project.slug %}?compliance_alert=error" class="has-text-danger is-size-5 ml-2">
+              {{ project.resource_compliance_alert_count|intcomma }}
+              <i class="fa-solid fa-scale-balanced is-size-6"></i>
+            </a>
+          {% endif %}
+        {% else %}
           <span class="has-text-grey">0</span>
         {% endif %}
       </p>
     </div>
   </div>
-  {% include "scanpipe/includes/project_summary_level_item.html" with label="Resources" count=project.resource_count url=project_resources_url only %}
   {% if project.relation_count %}
     {% url 'project_relations' project.slug as project_relations_url %}
     {% include "scanpipe/includes/project_summary_level_item.html" with label="Relations" count=project.relation_count url=project_relations_url only %}

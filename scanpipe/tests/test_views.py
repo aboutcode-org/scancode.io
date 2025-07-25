@@ -151,6 +151,17 @@ class ScanPipeViewsTest(TestCase):
         expected = '<input type="hidden" name="status" value="failed">'
         self.assertContains(response, expected, html=True)
 
+    def test_scanpipe_views_project_list_filter_by_status_distinct_results(self):
+        url = reverse("project_list")
+        pipeline1 = self.project1.add_pipeline(pipeline_name="scan_codebase")
+        pipeline1.set_task_stopped()
+        pipeline2 = self.project1.add_pipeline(pipeline_name="scan_codebase")
+        pipeline2.set_task_stopped()
+
+        data = {"status": "failed"}
+        response = self.client.get(url, data=data)
+        self.assertEqual(1, len(response.context["object_list"]))
+
     @mock.patch("scanpipe.views.ProjectListView.get_paginate_by")
     def test_scanpipe_views_project_list_filters_exclude_page(self, mock_paginate_by):
         url = reverse("project_list")
@@ -174,13 +185,22 @@ class ScanPipeViewsTest(TestCase):
         url = reverse("project_list")
         response = self.client.get(url)
 
-        expected = '<input type="hidden" name="url_query" value="">'
-        self.assertContains(response, expected, html=True)
+        expected_html_names = [
+            "url_query",
+            "download-url_query",
+            "report-url_query",
+            "archive-url_query",
+            "reset-url_query",
+        ]
+        for html_name in expected_html_names:
+            expected = f'<input type="hidden" name="{html_name}" value="">'
+            self.assertContains(response, expected, html=True)
 
         url_query = "name=search_value"
         response = self.client.get(url + "?" + url_query)
-        expected = f'<input type="hidden" name="url_query" value="{url_query}">'
-        self.assertContains(response, expected, html=True)
+        for html_name in expected_html_names:
+            expected = f'<input type="hidden" name="{html_name}" value="{url_query}">'
+            self.assertContains(response, expected, html=True)
 
     @mock.patch("scanpipe.views.ProjectListView.get_paginate_by")
     def test_scanpipe_views_project_list_modal_forms_include_show_on_all_checked(
@@ -591,16 +611,17 @@ class ScanPipeViewsTest(TestCase):
 
         scan_summary = self.data / "scancode" / "is-npm-1.0.0_scan_package_summary.json"
         scan_summary_json = json.loads(scan_summary.read_text())
-        scan_summary_data = get_scan_summary_data(scan_summary_json)
+        scan_summary_data = get_scan_summary_data(self.project1, scan_summary_json)
 
-        self.assertEqual(6, len(scan_summary_data))
+        self.assertEqual(7, len(scan_summary_data))
         expected = [
-            "Declared license",
-            "Declared holder",
-            "Primary language",
-            "Other licenses",
-            "Other holders",
-            "Other languages",
+            "declared_license_expression",
+            "declared_holder",
+            "primary_language",
+            "other_license_expressions",
+            "other_holders",
+            "other_languages",
+            "key_file_licenses",
         ]
         self.assertEqual(expected, list(scan_summary_data.keys()))
 
@@ -1003,6 +1024,9 @@ class ScanPipeViewsTest(TestCase):
             compliance_alert=DiscoveredPackage.Compliance.ERROR,
         )
 
+        self.project1.extra_data = {"license_clarity_compliance_alert": "warning"}
+        self.project1.save(update_fields=["extra_data"])
+
         mock_license_policies_enabled.return_value = False
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
@@ -1011,6 +1035,8 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertContains(response, "Compliance alerts")
         self.assertContains(response, "1 Error")
+        self.assertContains(response, "License clarity")
+        self.assertContains(response, "Warning")
         expected = f"/project/{self.project1.slug}/packages/?compliance_alert=error"
         self.assertContains(response, expected)
 
@@ -1055,8 +1081,10 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, 'id="tab-others"')
         self.assertContains(response, 'data-target="tab-viewer"')
         self.assertContains(response, 'id="tab-viewer"')
-        self.assertNotContains(response, 'data-target="tab-detection"')
-        self.assertNotContains(response, 'id="tab-detection"')
+        self.assertNotContains(response, 'data-target="tab-terms"')
+        self.assertNotContains(response, 'id="tab-terms"')
+        self.assertNotContains(response, 'data-target="tab-resource-detection"')
+        self.assertNotContains(response, 'id="tab-resource-detection"')
         self.assertNotContains(response, 'data-target="tab-packages"')
         self.assertNotContains(response, 'id="tab-packages"')
         self.assertNotContains(response, 'data-target="tab-relations"')
@@ -1074,10 +1102,8 @@ class ScanPipeViewsTest(TestCase):
             map_type="path",
         )
         response = self.client.get(resource1.get_absolute_url())
-        self.assertContains(response, 'data-target="tab-detection"')
-        self.assertContains(response, 'id="tab-detection"')
-        self.assertContains(response, 'data-target="tab-packages"')
-        self.assertContains(response, 'id="tab-packages"')
+        self.assertContains(response, 'data-target="tab-terms"')
+        self.assertContains(response, 'id="tab-terms"')
         self.assertContains(response, 'data-target="tab-relations"')
         self.assertContains(response, 'id="tab-relations"')
         self.assertContains(response, 'data-target="tab-extra_data"')
@@ -1135,7 +1161,7 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(8):
             self.client.get(url)
 
-        with self.assertNumQueries(7):
+        with self.assertNumQueries(8):
             self.client.get(resource1.get_absolute_url())
 
     def test_scanpipe_views_discovered_package_views(self):
