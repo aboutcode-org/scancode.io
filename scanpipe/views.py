@@ -2769,7 +2769,7 @@ class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
         children = (
             project.codebaseresources.filter(parent_path=path)
             .with_has_children()
-            .only("path", "name", "type")
+            .only("id", "project_id", "path", "name", "type")
             .order_by("path")
         )
 
@@ -2782,3 +2782,61 @@ class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
         if request.GET.get("tree_panel") == "true":
             return render(request, "scanpipe/panels/codebase_tree_panel.html", context)
         return render(request, self.template_name, context)
+
+
+class CodebaseResourceTableView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    generic.ListView,
+):
+    model = CodebaseResource
+    template_name = "scanpipe/panels/resource_table_panel.html"
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("resource", 100)
+    context_object_name = "resources"
+
+    def get_queryset(self):
+        path = self.request.GET.get("path", "")
+
+        qs = super().get_queryset().filter(path=path)
+        if qs.exists() and not qs.first().is_dir:
+            return qs.only(
+                "path",
+                "status",
+                "type",
+                "size",
+                "name",
+                "extension",
+                "programming_language",
+                "mime_type",
+                "tag",
+                "detected_license_expression",
+                "compliance_alert",
+                "package_data",
+            ).prefetch_related("discovered_packages")
+
+        return (
+            super()
+            .get_queryset()
+            .filter(parent_path=path)
+            .only(
+                "path",
+                "status",
+                "type",
+                "size",
+                "name",
+                "extension",
+                "programming_language",
+                "mime_type",
+                "tag",
+                "detected_license_expression",
+                "compliance_alert",
+                "package_data",
+            )
+            .prefetch_related("discovered_packages")
+            .order_by("path")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["path"] = self.request.GET.get("path", "")
+        return context

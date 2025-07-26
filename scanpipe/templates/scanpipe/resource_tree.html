@@ -24,14 +24,15 @@
     </section>
   </div>
 
-<div class="columns is-gapless is-mobile" style="height: 80vh; margin: 0;">
-  <div class="column is-one-third p-4" style="border-right: 1px solid #ccc; overflow-y: auto;">
-    <div id="resource-tree">
+<div class="columns is-gapless is-mobile" style="height: calc(100vh - 140px); margin: 0;">
+  <div class="column is-one-third" style="border-right: 1px solid #ccc; overflow-y: auto; overflow-x: hidden;">
+    <div id="resource-tree" class="p-4">
       {% include "scanpipe/panels/codebase_tree_panel.html" with children=children path=path %}
     </div>
   </div>
-  <div class="column p-4" style="overflow-y: auto;">
-    <div id="right-pane">
+  <div class="column" style="overflow-y: auto; overflow-x: hidden;">
+    <div id="right-pane" class="p-4">
+      {% include "scanpipe/panels/resource_table_panel.html" %}
     </div>
   </div>
 </div>
@@ -62,6 +63,8 @@
         e.stopPropagation();
         return;
       }
+
     });
+
   </script>
 {% endblock %}
