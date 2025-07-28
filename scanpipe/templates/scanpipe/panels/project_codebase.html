@@ -1,6 +1,7 @@
 <nav id="codebase-navigation" class="panel is-dark">
   <p class="panel-heading">
     Codebase
+    <a href="{% url 'codebase_resource_tree' project.slug %}" class="ml-2">Click to go to the Tree View</a>
     {% if current_dir and current_dir != "." %}
       <span class="tag ml-2">
         {% for dir_name, full_path in codebase_breadcrumbs.items %}

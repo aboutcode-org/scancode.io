@@ -58,22 +58,16 @@
               {{ resource.detected_license_expression }}
             </td>
             <td>
-              {% if resource.compliance_alert %}
-                <span class="tag is-warning is-small">{{ resource.compliance_alert }}</span>
-              {% endif %}
+              {{ resource.compliance_alert }}
             </td>
             <td>
               {% if resource.discovered_packages.all %}
-                <div class="tags">
-                  {% for package in resource.discovered_packages.all|slice:":3" %}
-                    <span class="tag is-small">
-                      <a href="{% url 'project_packages' project.slug %}?purl={{ package.package_url }}">{{ package }}</a>
-                    </span>
-                  {% endfor %}
-                  {% if resource.discovered_packages.all|length > 3 %}
-                    <span class="tag is-small">+{{ resource.discovered_packages.all|length|add:"-3" }} more</span>
-                  {% endif %}
-                </div>
+                {% for package in resource.discovered_packages.all|slice:":3" %}
+                  <a href="{% url 'project_packages' project.slug %}?purl={{ package.package_url }}">{{ package }}</a>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+                {% if resource.discovered_packages.all|length > 3 %}
+                  +{{ resource.discovered_packages.all|length|add:"-3" }} more
+                {% endif %}
               {% endif %}
             </td>
           </tr>
