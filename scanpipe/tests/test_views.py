@@ -54,6 +54,7 @@ from scanpipe.tests import dependency_data2
 from scanpipe.tests import make_dependency
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
+from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 from scanpipe.tests import package_data2
@@ -1661,3 +1662,101 @@ class ScanPipeViewsTest(TestCase):
 
         self.assertFalse(child1.has_children)
         self.assertTrue(dir1.has_children)
+
+    def test_scanpipe_views_codebase_resource_table_view_with_path_directory(self):
+        make_resource_directory(self.project1, path="parent")
+        make_resource_file(self.project1, path="parent/child1.txt")
+        make_resource_file(self.project1, path="parent/child2.py")
+
+        url = reverse("codebase_resource_table", kwargs={"slug": self.project1.slug})
+        response = self.client.get(url + "?path=parent")
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("parent", response.context["path"])
+        resources = list(response.context["resources"])
+        self.assertEqual(2, len(resources))
+
+        resource_paths = [r.path for r in resources]
+        self.assertEqual(["parent/child1.txt", "parent/child2.py"], resource_paths)
+
+    def test_scanpipe_views_codebase_resource_table_view_with_path_file(self):
+        make_resource_file(self.project1, path="specific_file.txt")
+
+        url = reverse("codebase_resource_table", kwargs={"slug": self.project1.slug})
+        response = self.client.get(url + "?path=specific_file.txt")
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("specific_file.txt", response.context["path"])
+        resources = list(response.context["resources"])
+        self.assertEqual(1, len(resources))
+        self.assertEqual("specific_file.txt", resources[0].path)
+
+    def test_scanpipe_views_codebase_resource_table_view_empty_directory(self):
+        make_resource_directory(self.project1, path="empty_dir")
+
+        url = reverse("codebase_resource_table", kwargs={"slug": self.project1.slug})
+        response = self.client.get(url + "?path=empty_dir")
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("empty_dir", response.context["path"])
+        resources = list(response.context["resources"])
+        self.assertEqual(0, len(resources))
+
+    def test_scanpipe_views_codebase_resource_table_view_with_packages(self):
+        resource1 = make_resource_file(self.project1, path="file_with_package.txt")
+        package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        package1.add_resources([resource1])
+
+        url = reverse("codebase_resource_table", kwargs={"slug": self.project1.slug})
+        response = self.client.get(url + "?path=file_with_package.txt")
+
+        self.assertEqual(200, response.status_code)
+        resources = list(response.context["resources"])
+        self.assertEqual(1, len(resources))
+
+        resource = resources[0]
+        self.assertTrue(resource.discovered_packages.exists())
+
+    @mock.patch("scanpipe.views.CodebaseResourceTableView.paginate_by", 2)
+    def test_scanpipe_views_codebase_resource_table_view_pagination(self):
+        make_resource_directory(self.project1, path="parent")
+        make_resource_file(self.project1, path="parent/file1.txt", parent_path="parent")
+        make_resource_file(self.project1, path="parent/file2.txt", parent_path="parent")
+        make_resource_file(self.project1, path="parent/file3.txt", parent_path="parent")
+
+        url = reverse("codebase_resource_table", kwargs={"slug": self.project1.slug})
+
+        response = self.client.get(url + "?path=parent")
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(response.context["is_paginated"])
+        self.assertEqual(1, response.context["page_obj"].number)
+        self.assertTrue(response.context["page_obj"].has_next())
+        self.assertFalse(response.context["page_obj"].has_previous())
+
+        response = self.client.get(url + "?path=parent&page=2")
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, response.context["page_obj"].number)
+        self.assertFalse(response.context["page_obj"].has_next())
+        self.assertTrue(response.context["page_obj"].has_previous())
+
+    def test_scanpipe_views_codebase_resource_table_view_field_selection(self):
+        resource = make_resource_file(
+            self.project1,
+            path="test_file.py",
+            programming_language="Python",
+            mime_type="text/x-python",
+            detected_license_expression="MIT",
+        )
+
+        url = reverse("codebase_resource_table", kwargs={"slug": self.project1.slug})
+        response = self.client.get(url + "?path=test_file.py")
+
+        self.assertEqual(200, response.status_code)
+        resources = list(response.context["resources"])
+        self.assertEqual(1, len(resources))
+
+        resource = resources[0]
+        self.assertEqual("test_file.py", resource.path)
+        self.assertEqual("Python", resource.programming_language)
+        self.assertEqual("text/x-python", resource.mime_type)
+        self.assertEqual("MIT", resource.detected_license_expression)
