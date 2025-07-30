@@ -60,7 +60,7 @@ dependencies = [
   "extractcode[full]==31.0.0",
   "commoncode==32.3.0",
   "Beautifulsoup4[chardet]==4.13.4",
-  "packageurl-python==0.17.1",
+  "packageurl-python==0.17.2",
   # Workaround issue https://github.com/aboutcode-org/scancode.io/issues/1795
   "fingerprints==1.2.3",
   "normality==2.6.1",
