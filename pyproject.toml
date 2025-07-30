@@ -60,7 +60,7 @@ dependencies = [
   "extractcode[full]==31.0.0",
   "commoncode==32.3.0",
   "Beautifulsoup4[chardet]==4.13.4",
-  "packageurl-python==0.17.1",
+  "packageurl-python==0.17.2",
   # FetchCode
   "fetchcode-container==1.2.3.210512; sys_platform == 'linux'",
   # Inspectors
