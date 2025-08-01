@@ -25,69 +25,69 @@ from pathlib import Path
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
-from scanpipe.pipes.compliance_thresholds import ClarityThresholdsPolicy
+from scanpipe.pipes.compliance_thresholds import LicenseClarityThresholdsPolicy
 from scanpipe.pipes.compliance_thresholds import ScorecardThresholdsPolicy
 from scanpipe.pipes.compliance_thresholds import load_thresholds_from_file
 from scanpipe.pipes.compliance_thresholds import load_thresholds_from_yaml
 
 
-class ClarityThresholdsPolicyTest(TestCase):
-    """Test ClarityThresholdsPolicy class functionality."""
+class LicenseClarityThresholdsPolicyTest(TestCase):
+    """Test LicenseClarityThresholdsPolicy class functionality."""
 
     data = Path(__file__).parent.parent / "data"
 
     def test_valid_thresholds_initialization(self):
         thresholds = {80: "ok", 50: "warning", 20: "error"}
-        policy = ClarityThresholdsPolicy(thresholds)
+        policy = LicenseClarityThresholdsPolicy(thresholds)
         self.assertEqual(policy.thresholds, thresholds)
 
     def test_string_keys_converted_to_integers(self):
         thresholds = {"80": "ok", "50": "warning"}
-        policy = ClarityThresholdsPolicy(thresholds)
+        policy = LicenseClarityThresholdsPolicy(thresholds)
         expected = {80: "ok", 50: "warning"}
         self.assertEqual(policy.thresholds, expected)
 
     def test_invalid_threshold_key_raises_error(self):
         with self.assertRaises(ValidationError) as cm:
-            ClarityThresholdsPolicy({"invalid": "ok"})
+            LicenseClarityThresholdsPolicy({"invalid": "ok"})
         self.assertIn("must be integers", str(cm.exception))
 
     def test_invalid_alert_value_raises_error(self):
         with self.assertRaises(ValidationError) as cm:
-            ClarityThresholdsPolicy({80: "invalid"})
+            LicenseClarityThresholdsPolicy({80: "invalid"})
         self.assertIn("must be one of 'ok', 'warning', 'error'", str(cm.exception))
 
     def test_non_dict_input_raises_error(self):
         with self.assertRaises(ValidationError) as cm:
-            ClarityThresholdsPolicy([80, 50])
+            LicenseClarityThresholdsPolicy([80, 50])
         self.assertIn("must be a dictionary", str(cm.exception))
 
     def test_duplicate_threshold_keys_raise_error(self):
         with self.assertRaises(ValidationError) as cm:
-            ClarityThresholdsPolicy({80: "ok", "80": "warning"})
+            LicenseClarityThresholdsPolicy({80: "ok", "80": "warning"})
         self.assertIn("Duplicate threshold key", str(cm.exception))
 
     def test_overlapping_thresholds_wrong_order(self):
         with self.assertRaises(ValidationError) as cm:
-            ClarityThresholdsPolicy({70: "ok", 80: "warning"})
+            LicenseClarityThresholdsPolicy({70: "ok", 80: "warning"})
         self.assertIn("Thresholds must be strictly descending", str(cm.exception))
 
     def test_float_threshold_keys(self):
         thresholds = {80.5: "ok", 50.9: "warning"}
-        policy = ClarityThresholdsPolicy(thresholds)
+        policy = LicenseClarityThresholdsPolicy(thresholds)
         expected = {80: "ok", 50: "warning"}
         self.assertEqual(policy.thresholds, expected)
 
     def test_negative_threshold_values(self):
         thresholds = {50: "ok", 0: "warning", -10: "error"}
-        policy = ClarityThresholdsPolicy(thresholds)
+        policy = LicenseClarityThresholdsPolicy(thresholds)
         self.assertEqual(policy.get_alert_for_score(60), "ok")
         self.assertEqual(policy.get_alert_for_score(25), "warning")
         self.assertEqual(policy.get_alert_for_score(-5), "error")
         self.assertEqual(policy.get_alert_for_score(-20), "error")
 
     def test_empty_thresholds_dict(self):
-        policy = ClarityThresholdsPolicy({})
+        policy = LicenseClarityThresholdsPolicy({})
         self.assertEqual(policy.get_alert_for_score(100), "error")
         self.assertEqual(policy.get_alert_for_score(50), "error")
         self.assertEqual(policy.get_alert_for_score(0), "error")
@@ -95,7 +95,7 @@ class ClarityThresholdsPolicyTest(TestCase):
 
     def test_very_high_threshold_values(self):
         thresholds = {150: "ok", 100: "warning"}
-        policy = ClarityThresholdsPolicy(thresholds)
+        policy = LicenseClarityThresholdsPolicy(thresholds)
         self.assertEqual(policy.get_alert_for_score(100), "warning")
         self.assertEqual(policy.get_alert_for_score(90), "error")
         self.assertEqual(policy.get_alert_for_score(50), "error")
@@ -108,7 +108,7 @@ license_clarity_thresholds:
   90: ok
   30: warning
 """
-        policy = load_thresholds_from_yaml(yaml_content, ClarityThresholdsPolicy)
+        policy = load_thresholds_from_yaml(yaml_content, LicenseClarityThresholdsPolicy)
         self.assertEqual(policy.get_alert_for_score(95), "ok")
         self.assertEqual(policy.get_alert_for_score(60), "warning")
         self.assertEqual(policy.get_alert_for_score(20), "error")
@@ -118,7 +118,7 @@ license_clarity_thresholds:
 license_clarity_thresholds:
   80: ok
 """
-        policy = load_thresholds_from_yaml(yaml_content, ClarityThresholdsPolicy)
+        policy = load_thresholds_from_yaml(yaml_content, LicenseClarityThresholdsPolicy)
         self.assertEqual(policy.get_alert_for_score(90), "ok")
         self.assertEqual(policy.get_alert_for_score(79), "error")
 
@@ -128,7 +128,7 @@ license_clarity_thresholds:
   80: great
 """
         with self.assertRaises(ValidationError):
-            load_thresholds_from_yaml(yaml_content, ClarityThresholdsPolicy)
+            load_thresholds_from_yaml(yaml_content, LicenseClarityThresholdsPolicy)
 
     def test_yaml_string_invalid_key(self):
         yaml_content = """
@@ -136,7 +136,7 @@ license_clarity_thresholds:
   eighty: ok
 """
         with self.assertRaises(ValidationError):
-            load_thresholds_from_yaml(yaml_content, ClarityThresholdsPolicy)
+            load_thresholds_from_yaml(yaml_content, LicenseClarityThresholdsPolicy)
 
     def test_yaml_string_missing_key(self):
         yaml_content = """
@@ -144,18 +144,18 @@ license_policies:
   - license_key: mit
 """
         with self.assertRaises(ValidationError):
-            load_thresholds_from_yaml(yaml_content, ClarityThresholdsPolicy)
+            load_thresholds_from_yaml(yaml_content, LicenseClarityThresholdsPolicy)
 
     def test_yaml_string_invalid_yaml(self):
         yaml_content = "license_clarity_thresholds: [80, 50"
         with self.assertRaises(ValidationError):
-            load_thresholds_from_yaml(yaml_content, ClarityThresholdsPolicy)
+            load_thresholds_from_yaml(yaml_content, LicenseClarityThresholdsPolicy)
 
     def test_load_from_existing_file(self):
         test_file = (
             self.data / "compliance-thresholds" / "clarity_sample_thresholds.yml"
         )
-        policy = load_thresholds_from_file(test_file, ClarityThresholdsPolicy)
+        policy = load_thresholds_from_file(test_file, LicenseClarityThresholdsPolicy)
         self.assertIsNotNone(policy)
         self.assertEqual(policy.get_alert_for_score(95), "ok")
         self.assertEqual(policy.get_alert_for_score(75), "warning")
@@ -163,7 +163,7 @@ license_policies:
 
     def test_load_from_nonexistent_file(self):
         policy = load_thresholds_from_file(
-            "/nonexistent/file.yml", ClarityThresholdsPolicy
+            "/nonexistent/file.yml", LicenseClarityThresholdsPolicy
         )
         self.assertIsNone(policy)
 
