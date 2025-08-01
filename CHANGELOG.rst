@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v35.2.0 (unreleased)
+v35.2.0 (2025-08-01)
 --------------------
 
 - Refactor policies implementation to support more than licenses.
