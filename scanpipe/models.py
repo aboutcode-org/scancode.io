@@ -46,6 +46,7 @@ from django.db import models
 from django.db import transaction
 from django.db.models import Case
 from django.db.models import Count
+from django.db.models import Exists
 from django.db.models import IntegerField
 from django.db.models import OuterRef
 from django.db.models import Prefetch
@@ -231,7 +232,7 @@ class AbstractTaskFieldsModel(models.Model):
         Note that projects with queued or running pipeline runs cannot be deleted.
         See the `_raise_if_run_in_progress` method.
         The following if statements should not be triggered unless the `.delete()`
-        method is directly call from an instance of this class.
+        method is directly call from a instance of this class.
         """
         with suppress(redis.exceptions.ConnectionError, AttributeError):
             if self.status == self.Status.RUNNING:
@@ -2424,6 +2425,17 @@ class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuery
 
     def executable_binaries(self):
         return self.union(self.win_exes(), self.macho_binaries(), self.elfs())
+
+    def with_has_children(self):
+        """
+        Annotate the QuerySet with has_children field based on whether
+        each resource has any children (subdirectories/files).
+        """
+        children_qs = CodebaseResource.objects.filter(
+            parent_path=OuterRef("path"),
+        )
+
+        return self.annotate(has_children=Exists(children_qs))
 
 
 class ScanFieldsModelMixin(models.Model):
