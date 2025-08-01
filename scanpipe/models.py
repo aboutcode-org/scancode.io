@@ -1553,6 +1553,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         return self.extra_data.get("license_clarity_compliance_alert")
 
+    def get_scorecard_compliance_alert(self):
+        """
+        Return the scorecard compliance alert value for the project,
+        or None if not set.
+        """
+        return self.extra_data.get("scorecard_compliance_alert")
+
     def get_license_policy_index(self):
         """Return the policy license index for this project instance."""
         if policies_dict := self.get_policies_dict():
