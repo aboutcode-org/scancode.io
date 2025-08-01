@@ -58,6 +58,7 @@ class FetchScores(Pipeline):
             raise Exception("ScoreCode service is not available.")
 
     def fetch_packages_scorecode_info(self):
+        """Fetch ScoreCode information for each of the project's discovered packages."""
         scorecard_policy = get_project_scorecard_thresholds(self.project)
         worst_alert = None
 
