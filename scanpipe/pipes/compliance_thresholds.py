@@ -92,7 +92,9 @@ class BaseThresholdsPolicy:
             try:
                 threshold = self.THRESHOLD_TYPE(key)
             except (ValueError, TypeError):
-                type_name = "integers" if self.THRESHOLD_TYPE == int else "numbers"
+                type_name = (
+                    "integers" if issubclass(self.THRESHOLD_TYPE, int) else "numbers"
+                )
                 raise ValidationError(f"Threshold keys must be {type_name}, got: {key}")
 
             if threshold in seen:
@@ -101,7 +103,8 @@ class BaseThresholdsPolicy:
 
             if value not in ["ok", "warning", "error"]:
                 raise ValidationError(
-                    f"Compliance alert must be one of 'ok', 'warning', 'error', got: {value}"
+                    f"Compliance alert must be one of 'ok', 'warning', 'error', "
+                    f"got: {value}"
                 )
             validated[threshold] = value
 
@@ -138,7 +141,7 @@ class ScorecardThresholdsPolicy(BaseThresholdsPolicy):
 
 
 def load_thresholds_from_yaml(yaml_content, policy_class):
-    """Generic function to load thresholds from YAML."""
+    """Load thresholds from YAML."""
     data = load_yaml_content(yaml_content)
 
     if not isinstance(data, dict):
@@ -153,7 +156,7 @@ def load_thresholds_from_yaml(yaml_content, policy_class):
 
 
 def load_thresholds_from_file(file_path, policy_class):
-    """Generic function to load thresholds from file."""
+    """Load thresholds from file."""
     file_path = Path(file_path)
     if not file_path.exists():
         return

@@ -33,7 +33,7 @@ from scanpipe.pipes.compliance_thresholds import load_thresholds_from_yaml
 
 class ClarityThresholdsPolicyTest(TestCase):
     """Test ClarityThresholdsPolicy class functionality."""
-    
+
     data = Path(__file__).parent.parent / "data"
 
     def test_valid_thresholds_initialization(self):
@@ -152,7 +152,9 @@ license_policies:
             load_thresholds_from_yaml(yaml_content, ClarityThresholdsPolicy)
 
     def test_load_from_existing_file(self):
-        test_file = self.data / "compliance-thresholds" / "clarity_sample_thresholds.yml"
+        test_file = (
+            self.data / "compliance-thresholds" / "clarity_sample_thresholds.yml"
+        )
         policy = load_thresholds_from_file(test_file, ClarityThresholdsPolicy)
         self.assertIsNotNone(policy)
         self.assertEqual(policy.get_alert_for_score(95), "ok")
@@ -160,13 +162,15 @@ license_policies:
         self.assertEqual(policy.get_alert_for_score(50), "error")
 
     def test_load_from_nonexistent_file(self):
-        policy = load_thresholds_from_file("/nonexistent/file.yml", ClarityThresholdsPolicy)
+        policy = load_thresholds_from_file(
+            "/nonexistent/file.yml", ClarityThresholdsPolicy
+        )
         self.assertIsNone(policy)
 
 
 class ScorecardThresholdsPolicyTest(TestCase):
     """Test ScorecardThresholdsPolicy class functionality."""
-    
+
     data = Path(__file__).parent.parent / "data"
 
     def test_valid_thresholds_initialization(self):
@@ -286,7 +290,9 @@ license_policies:
             load_thresholds_from_yaml(yaml_content, ScorecardThresholdsPolicy)
 
     def test_load_from_existing_file(self):
-        test_file = self.data / "compliance-thresholds" / "scorecard_sample_thresholds.yml"
+        test_file = (
+            self.data / "compliance-thresholds" / "scorecard_sample_thresholds.yml"
+        )
         policy = load_thresholds_from_file(test_file, ScorecardThresholdsPolicy)
         self.assertIsNotNone(policy)
         self.assertEqual(policy.get_alert_for_score(9.5), "ok")
@@ -294,6 +300,7 @@ license_policies:
         self.assertEqual(policy.get_alert_for_score(5.0), "error")
 
     def test_load_from_nonexistent_file(self):
-        policy = load_thresholds_from_file("/nonexistent/file.yml", ScorecardThresholdsPolicy)
+        policy = load_thresholds_from_file(
+            "/nonexistent/file.yml", ScorecardThresholdsPolicy
+        )
         self.assertIsNone(policy)
-
