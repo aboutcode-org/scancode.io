@@ -1270,6 +1270,24 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"license_clarity_compliance_alert": "error"}
         self.assertEqual(expected, response.data)
 
+    def test_scanpipe_api_project_action_scorecard_compliance(self):
+        project = make_project()
+        url = reverse("project-scorecard-compliance", args=[project.uuid])
+
+        response = self.csrf_client.get(url)
+        expected = {"scorecard_compliance_alert": None}
+        self.assertEqual(expected, response.data)
+
+        project.update_extra_data({"scorecard_compliance_alert": "ok"})
+        response = self.csrf_client.get(url)
+        expected = {"scorecard_compliance_alert": "ok"}
+        self.assertEqual(expected, response.data)
+
+        project.update_extra_data({"scorecard_compliance_alert": "error"})
+        response = self.csrf_client.get(url)
+        expected = {"scorecard_compliance_alert": "error"}
+        self.assertEqual(expected, response.data)
+        
     def test_scanpipe_api_serializer_get_model_serializer(self):
         self.assertEqual(
             DiscoveredPackageSerializer, get_model_serializer(DiscoveredPackage)

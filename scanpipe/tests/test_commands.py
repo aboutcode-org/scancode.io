@@ -1252,6 +1252,49 @@ class ScanPipeManagementCommandTest(TestCase):
         )
         self.assertEqual(expected, out_value)
 
+    def test_scanpipe_management_command_check_scorecard_compliance_only(self):
+        project = make_project(name="my_project_scorecard")
+
+        project.extra_data = {"scorecard_compliance_alert": "error"}
+        project.save(update_fields=["extra_data"])
+
+        out = StringIO()
+        options = ["--project", project.name]
+        with self.assertRaises(SystemExit) as cm:
+            call_command("check-compliance", options, stderr=out)
+        self.assertEqual(cm.exception.code, 1)
+        out_value = out.getvalue().strip()
+        expected = "1 compliance issues detected.\n[scorecard compliance]\n > ERROR"
+        self.assertEqual(expected, out_value)
+
+    def test_scanpipe_management_command_check_all_compliance_types(self):
+        project = make_project(name="my_project_all")
+
+        make_package(
+            project,
+            package_url="pkg:generic/name@1.0",
+            compliance_alert=CodebaseResource.Compliance.ERROR,
+        )
+        project.extra_data = {
+            "license_clarity_compliance_alert": "warning",
+            "scorecard_compliance_alert": "error",
+        }
+        project.save(update_fields=["extra_data"])
+
+        out = StringIO()
+        options = ["--project", project.name, "--fail-level", "WARNING"]
+        with self.assertRaises(SystemExit) as cm:
+            call_command("check-compliance",options, stderr=out)
+        self.assertEqual(cm.exception.code, 1)
+        out_value = out.getvalue().strip()
+        expected = (
+            "3 compliance issues detected."
+            "\n[packages]\n > ERROR: 1"
+            "\n[license clarity]\n > WARNING"
+            "\n[scorecard compliance]\n > ERROR"
+        )
+        self.assertEqual(expected, out_value)
+        
     def test_scanpipe_management_command_check_compliance_vulnerabilities(self):
         project = make_project(name="my_project")
         package1 = make_package(project, package_url="pkg:generic/name@1.0")
