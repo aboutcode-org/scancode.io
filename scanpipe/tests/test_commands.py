@@ -1284,7 +1284,7 @@ class ScanPipeManagementCommandTest(TestCase):
         out = StringIO()
         options = ["--project", project.name, "--fail-level", "WARNING"]
         with self.assertRaises(SystemExit) as cm:
-            call_command("check-compliance",options, stderr=out)
+            call_command("check-compliance", options, stderr=out)
         self.assertEqual(cm.exception.code, 1)
         out_value = out.getvalue().strip()
         expected = (
@@ -1294,7 +1294,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "\n[scorecard compliance]\n > ERROR"
         )
         self.assertEqual(expected, out_value)
-        
+
     def test_scanpipe_management_command_check_compliance_vulnerabilities(self):
         project = make_project(name="my_project")
         package1 = make_package(project, package_url="pkg:generic/name@1.0")

@@ -27,6 +27,7 @@ from scanpipe.models import DiscoveredPackageScore
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes.compliance_thresholds import get_project_scorecard_thresholds
 
+
 class FetchScores(Pipeline):
     """
     Fetch ScoreCode information for packages.

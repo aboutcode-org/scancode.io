@@ -513,6 +513,7 @@ class ProjectViewSet(
         scorecard_alert = project.get_scorecard_compliance_alert()
         return Response({"scorecard_compliance_alert": scorecard_alert})
 
+
 class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """Add actions to the Run viewset."""
 

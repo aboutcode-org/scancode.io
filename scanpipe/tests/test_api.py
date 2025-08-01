@@ -1287,7 +1287,7 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.get(url)
         expected = {"scorecard_compliance_alert": "error"}
         self.assertEqual(expected, response.data)
-        
+
     def test_scanpipe_api_serializer_get_model_serializer(self):
         self.assertEqual(
             DiscoveredPackageSerializer, get_model_serializer(DiscoveredPackage)
