@@ -60,7 +60,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import flag
-from scanpipe.pipes.license_clarity import get_project_clarity_thresholds
+from scanpipe.pipes.compliance_thresholds import get_project_clarity_thresholds
 
 logger = logging.getLogger("scanpipe.pipes")
 
