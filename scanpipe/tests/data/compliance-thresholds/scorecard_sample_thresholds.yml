@@ -1,0 +1,4 @@
+scorecard_score_thresholds:
+  9: ok       
+  7: warning 
+  0: error      
