@@ -128,7 +128,7 @@ class BaseThresholdsPolicy:
 
 
 # Specific implementations
-class ClarityThresholdsPolicy(BaseThresholdsPolicy):
+class LicenseClarityThresholdsPolicy(BaseThresholdsPolicy):
     YAML_KEY = "license_clarity_thresholds"
     THRESHOLD_TYPE = int
     POLICY_NAME = "license clarity thresholds"
@@ -177,7 +177,7 @@ def get_project_clarity_thresholds(project):
     if not clarity_thresholds:
         return
 
-    return ClarityThresholdsPolicy(clarity_thresholds)
+    return LicenseClarityThresholdsPolicy(clarity_thresholds)
 
 
 def get_project_scorecard_thresholds(project):
