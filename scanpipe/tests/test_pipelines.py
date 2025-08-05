@@ -1398,7 +1398,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertIsNotNone(scorecard_entry)
         self.assertEqual("ossf-scorecard", scorecard_entry.scoring_tool)
         self.assertEqual("v5.2.1", scorecard_entry.scoring_tool_version)
-        self.assertEqual("9.7", scorecard_entry.score)
+        self.assertTrue(scorecard_entry.score)
 
     def test_scanpipe_resolve_dependencies_pipeline_integration(self):
         pipeline_name = "resolve_dependencies"

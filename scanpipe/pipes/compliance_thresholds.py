@@ -21,22 +21,40 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 """
-License Clarity Thresholds Management
+Thresholds Management for License Clarity and Scorecard Compliance
 
 This module provides an independent mechanism to read, validate, and evaluate
-license clarity score thresholds from policy files. Unlike license policies
-which are applied during scan processing, clarity thresholds are evaluated
-post-scan during summary generation.
+both license clarity and OpenSSF Scorecard score thresholds from policy files.
+Unlike license and security policies which are applied during scan processing,
+these thresholds are evaluated post-scan during summary generation and compliance
+assessment.
 
-The clarity thresholds system uses a simple key-value mapping where:
-- Keys are integer threshold values (minimum scores)
+The thresholds system uses simple key-value mappings where:
+- Keys are numeric threshold values (minimum scores)
 - Values are compliance alert levels ('ok', 'warning', 'error')
+
+License Clarity Thresholds:
+- Keys: integer threshold values (minimum clarity scores, 0-100 scale)
+- Represents license information completeness percentage
+
+Scorecard Compliance Thresholds:
+- Keys: numeric threshold values (minimum scorecard scores, 0-10.0 scale)
+- Represents OpenSSF security assessment (higher score = better security)
 
 Example policies.yml structure:
 
 license_clarity_thresholds:
-  80: ok # Scores >= 80 get 'ok' alert
+  80: ok      # Scores >= 80 get 'ok' alert
   50: warning # Scores 50-79 get 'warning' alert
+  0: error    # Scores below 50 get 'error' alert
+
+scorecard_score_thresholds:
+  9.0: ok       # Scores >= 9.0 get 'ok' alert
+  7.0: warning  # Scores 7.0-8.9 get 'warning' alert
+  0: error      # Scores below 7.0 get 'error' alert
+
+Both threshold types follow the same evaluation logic but are tailored to their
+specific scoring systems and use cases.
 """
 
 from pathlib import Path
@@ -54,58 +72,53 @@ def load_yaml_content(yaml_content):
         raise ValidationError(f"Policies file format error: {e}")
 
 
-class ClarityThresholdsPolicy:
-    """
-    Manages clarity score thresholds and compliance evaluation.
+class BaseThresholdsPolicy:
+    """Base class for managing score thresholds and compliance evaluation."""
 
-    This class reads clarity thresholds from a dictionary, validates them
-    against threshold configurations and determines compliance alerts based on
-    clarity scores.
-    """
+    YAML_KEY = None
+    THRESHOLD_TYPE = float
+    POLICY_NAME = "thresholds"
 
     def __init__(self, threshold_dict):
-        """Initialize with validated threshold dictionary."""
         self.thresholds = self.validate_thresholds(threshold_dict)
 
-    @staticmethod
-    def validate_thresholds(threshold_dict):
+    def validate_thresholds(self, threshold_dict):
         if not isinstance(threshold_dict, dict):
-            raise ValidationError(
-                "The `license_clarity_thresholds` must be a dictionary"
-            )
+            raise ValidationError(f"The `{self.YAML_KEY}` must be a dictionary")
+
         validated = {}
         seen = set()
         for key, value in threshold_dict.items():
             try:
-                threshold = int(key)
+                threshold = self.THRESHOLD_TYPE(key)
             except (ValueError, TypeError):
-                raise ValidationError(f"Threshold keys must be integers, got: {key}")
+                type_name = (
+                    "integers" if issubclass(self.THRESHOLD_TYPE, int) else "numbers"
+                )
+                raise ValidationError(f"Threshold keys must be {type_name}, got: {key}")
+
             if threshold in seen:
                 raise ValidationError(f"Duplicate threshold key: {threshold}")
             seen.add(threshold)
+
             if value not in ["ok", "warning", "error"]:
                 raise ValidationError(
                     f"Compliance alert must be one of 'ok', 'warning', 'error', "
                     f"got: {value}"
                 )
             validated[threshold] = value
+
         sorted_keys = sorted(validated.keys(), reverse=True)
         if list(validated.keys()) != sorted_keys:
             raise ValidationError("Thresholds must be strictly descending")
+
         return validated
 
     def get_alert_for_score(self, score):
-        """
-        Determine compliance alert level for a given clarity score
-
-        Returns:
-            str: Compliance alert level ('ok', 'warning', 'error')
-
-        """
+        """Determine compliance alert level for a given score."""
         if score is None:
             return "error"
 
-        # Find the highest threshold that the score meets or exceeds
         applicable_thresholds = [t for t in self.thresholds if score >= t]
         if not applicable_thresholds:
             return "error"
@@ -113,66 +126,49 @@ class ClarityThresholdsPolicy:
         max_threshold = max(applicable_thresholds)
         return self.thresholds[max_threshold]
 
-    def get_thresholds_summary(self):
-        """
-        Get a summary of configured thresholds for reporting
 
-        Returns:
-            dict: Summary of thresholds and their alert levels
-
-        """
-        return dict(sorted(self.thresholds.items(), reverse=True))
+# Specific implementations
+class LicenseClarityThresholdsPolicy(BaseThresholdsPolicy):
+    YAML_KEY = "license_clarity_thresholds"
+    THRESHOLD_TYPE = int
+    POLICY_NAME = "license clarity thresholds"
 
 
-def load_clarity_thresholds_from_yaml(yaml_content):
-    """
-    Load clarity thresholds from YAML content.
+class ScorecardThresholdsPolicy(BaseThresholdsPolicy):
+    YAML_KEY = "scorecard_score_thresholds"
+    THRESHOLD_TYPE = float
+    POLICY_NAME = "scorecard score thresholds"
 
-    Returns:
-        ClarityThresholdsPolicy: Configured policy object
 
-    """
+def load_thresholds_from_yaml(yaml_content, policy_class):
+    """Load thresholds from YAML."""
     data = load_yaml_content(yaml_content)
 
     if not isinstance(data, dict):
         raise ValidationError("YAML content must be a dictionary.")
 
-    if "license_clarity_thresholds" not in data:
+    if policy_class.YAML_KEY not in data:
         raise ValidationError(
-            "Missing 'license_clarity_thresholds' key in policies file."
+            f"Missing '{policy_class.YAML_KEY}' key in policies file."
         )
 
-    return ClarityThresholdsPolicy(data["license_clarity_thresholds"])
+    return policy_class(data[policy_class.YAML_KEY])
 
 
-def load_clarity_thresholds_from_file(file_path):
-    """
-    Load clarity thresholds from a YAML file.
-
-    Returns:
-        ClarityThresholdsPolicy: Configured policy object or None if file not found
-
-    """
+def load_thresholds_from_file(file_path, policy_class):
+    """Load thresholds from file."""
     file_path = Path(file_path)
-
     if not file_path.exists():
         return
 
     try:
         yaml_content = file_path.read_text(encoding="utf-8")
-        return load_clarity_thresholds_from_yaml(yaml_content)
+        return load_thresholds_from_yaml(yaml_content, policy_class)
     except (OSError, UnicodeDecodeError) as e:
         raise ValidationError(f"Error reading file {file_path}: {e}")
 
 
 def get_project_clarity_thresholds(project):
-    """
-    Get clarity thresholds for a project using the unified policy loading logic.
-
-    Returns:
-        ClarityThresholdsPolicy or None: Policy object if thresholds are configured
-
-    """
     policies_dict = project.get_policies_dict()
     if not policies_dict:
         return
@@ -181,4 +177,16 @@ def get_project_clarity_thresholds(project):
     if not clarity_thresholds:
         return
 
-    return ClarityThresholdsPolicy(clarity_thresholds)
+    return LicenseClarityThresholdsPolicy(clarity_thresholds)
+
+
+def get_project_scorecard_thresholds(project):
+    policies_dict = project.get_policies_dict()
+    if not policies_dict:
+        return
+
+    scorecard_thresholds = policies_dict.get("scorecard_score_thresholds")
+    if not scorecard_thresholds:
+        return
+
+    return ScorecardThresholdsPolicy(scorecard_thresholds)
