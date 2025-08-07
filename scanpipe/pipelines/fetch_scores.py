@@ -25,7 +25,7 @@ from scorecode import ossf_scorecard
 
 from scanpipe.models import DiscoveredPackageScore
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipes.compliance_thresholds import get_project_scorecard_thresholds
+from scanpipe.pipes import scorecard_compliance
 
 
 class FetchScores(Pipeline):
@@ -50,6 +50,7 @@ class FetchScores(Pipeline):
         return (
             cls.check_scorecode_service_availability,
             cls.fetch_packages_scorecode_info,
+            cls.evaluate_compliance_alerts,
         )
 
     def check_scorecode_service_availability(self):
@@ -59,9 +60,6 @@ class FetchScores(Pipeline):
 
     def fetch_packages_scorecode_info(self):
         """Fetch ScoreCode information for each of the project's discovered packages."""
-        scorecard_policy = get_project_scorecard_thresholds(self.project)
-        worst_alert = None
-
         for package in self.project.discoveredpackages.all():
             if scorecard_data := ossf_scorecard.fetch_scorecard_info(package=package):
                 DiscoveredPackageScore.create_from_package_and_scorecard(
@@ -69,16 +67,6 @@ class FetchScores(Pipeline):
                     package=package,
                 )
 
-                if scorecard_policy and scorecard_data.score is not None:
-                    try:
-                        score = float(scorecard_data.score)
-                        alert = scorecard_policy.get_alert_for_score(score)
-                    except Exception:
-                        alert = "error"
-
-                    order = {"ok": 0, "warning": 1, "error": 2}
-                    if worst_alert is None or order[alert] > order.get(worst_alert, -1):
-                        worst_alert = alert
-
-        if worst_alert is not None:
-            self.project.update_extra_data({"scorecard_compliance_alert": worst_alert})
+    def evaluate_compliance_alerts(self):
+        """Evaluate scorecard compliance alerts for the project."""
+        scorecard_compliance.evaluate_scorecard_compliance(self.project)
