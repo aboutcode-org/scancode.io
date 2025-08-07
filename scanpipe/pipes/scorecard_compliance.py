@@ -26,14 +26,14 @@ from scanpipe.pipes.compliance_thresholds import get_project_scorecard_threshold
 def evaluate_scorecard_compliance(project):
     """
     Evaluate scorecard compliance for all discovered packages in the project.
-    
+
     This function checks OpenSSF Scorecard scores against project-defined
     thresholds and determines the worst compliance alert level across all packages.
     Updates the project's extra_data with the overall compliance status.
     """
     scorecard_policy = get_project_scorecard_thresholds(project)
     if not scorecard_policy:
-        return 
+        return
 
     worst_alert = None
     packages_with_scores = project.discoveredpackages.filter(
@@ -41,9 +41,11 @@ def evaluate_scorecard_compliance(project):
     ).distinct()
 
     for package in packages_with_scores:
-        latest_score = package.scores.filter(
-            scoring_tool="ossf-scorecard"
-        ).order_by("-score_date").first()
+        latest_score = (
+            package.scores.filter(scoring_tool="ossf-scorecard")
+            .order_by("-score_date")
+            .first()
+        )
 
         if not latest_score or latest_score.score is None:
             continue
