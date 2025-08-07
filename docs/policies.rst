@@ -91,6 +91,43 @@ Accepted values for the alert level:
 - ``warning``
 - ``error``
 
+Creating Scorecard Thresholds Files
+-----------------------------------
+
+A valid scorecard thresholds file is required to **enable OpenSSF Scorecard compliance features**.
+
+The scorecard thresholds file, by default named ``policies.yml``, is a **YAML file** with a
+structure similar to the following:
+
+.. code-block:: yaml
+
+    scorecard_score_thresholds:
+      9.0: ok
+      7.0: warning
+      0: error
+
+- In the example above, the keys ``9.0``, ``7.0``, and ``0`` are numeric threshold values
+  representing **minimum scorecard scores**.
+- The values ``error``, ``warning``, and ``ok`` are the **compliance alert levels** that
+  will be triggered if the project's scorecard score meets or exceeds the
+  corresponding threshold.
+- The thresholds must be listed in **strictly descending order**.
+
+How it works:
+
+- If the scorecard score is **9.0 or above**, the alert is **``ok``**.
+- If the scorecard score is **7.0 to 8.9**, the alert is **``warning``**.
+- If the scorecard score is **below 7.0**, the alert is **``error``**.
+
+You can adjust the threshold values and alert levels to match your organization's
+security compliance requirements.
+
+Accepted values for the alert level:
+
+- ``ok``
+- ``warning``
+- ``error``
+
 App Policies
 ------------
 
