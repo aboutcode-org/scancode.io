@@ -1286,6 +1286,8 @@ class ProjectCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
             project.get_license_clarity_compliance_alert()
         )
 
+        context["scorecard_compliance_alert"] = project.get_scorecard_compliance_alert()
+
         return context
 
 

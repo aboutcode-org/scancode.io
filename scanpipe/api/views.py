@@ -497,6 +497,22 @@ class ProjectViewSet(
         clarity_alert = project.get_license_clarity_compliance_alert()
         return Response({"license_clarity_compliance_alert": clarity_alert})
 
+    @action(detail=True, methods=["get"])
+    def scorecard_compliance(self, request, *args, **kwargs):
+        """
+        Retrieve the scorecard compliance alert for a project.
+
+        This endpoint returns the scorecard compliance alert stored in the
+        project's extra_data.
+
+        Example:
+        GET /api/projects/{project_id}/scorecard_compliance/
+
+        """
+        project = self.get_object()
+        scorecard_alert = project.get_scorecard_compliance_alert()
+        return Response({"scorecard_compliance_alert": scorecard_alert})
+
 
 class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """Add actions to the Run viewset."""
