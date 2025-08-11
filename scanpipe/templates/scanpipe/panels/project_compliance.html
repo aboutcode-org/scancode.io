@@ -1,5 +1,5 @@
 {% load humanize %}
-{% if compliance_alerts or license_clarity_compliance_alert %}
+{% if compliance_alerts or license_clarity_compliance_alert or scorecard_compliance_alert %}
   <div class="column is-half">
     <nav id="compliance-panel" class="panel is-dark">
       <p class="panel-heading">
@@ -33,6 +33,20 @@
           </span>
         </div>
       {% endif %}
+      {% if scorecard_compliance_alert %}
+          <div class="panel-block">
+            <span class="pr-1">
+              Scorecard compliance
+            </span>
+            <span class="tag is-rounded ml-1
+              {% if scorecard_compliance_alert == 'error' %}is-danger
+              {% elif scorecard_compliance_alert == 'warning' %}is-warning
+              {% elif scorecard_compliance_alert == 'ok' %}is-success
+              {% else %}is-light{% endif %}">
+              {{ scorecard_compliance_alert|title }}
+            </span>
+          </div>
+        {% endif %}
     </nav>
   </div>
 {% endif %}
