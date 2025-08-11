@@ -1,8 +1,9 @@
 Changelog
 =========
 
-v35.2.0 (2025-08-01)
+v35.3.0 (unreleased)
 --------------------
+
 - Enhanced scorecard compliance support with:
   * New ``scorecard_compliance_alert`` in project ``extra_data``.
   * ``/api/projects/{id}/scorecard_compliance/`` API endpoint.
@@ -10,6 +11,9 @@ v35.2.0 (2025-08-01)
   * UI template support for scorecard compliance alert.
   * ``evaluate_scorecard_compliance()`` pipe function for compliance evaluation.
   https://github.com/aboutcode-org/scancode.io/pull/1800
+
+v35.2.0 (2025-08-01)
+--------------------
 
 - Refactor policies implementation to support more than licenses.
   The entire ``policies`` data is now stored on the ``ScanPipeConfig`` in place of the
