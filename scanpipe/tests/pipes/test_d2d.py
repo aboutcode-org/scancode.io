@@ -1603,6 +1603,9 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
+        d2d.extract_binary_symbols(
+            project=self.project1, options=["Rust"], logger=buffer.write
+        )
         d2d.map_rust_binaries_with_symbols(project=self.project1, logger=buffer.write)
         self.assertEqual(
             2,
@@ -1640,6 +1643,9 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
+        d2d.extract_binary_symbols(
+            project=self.project1, options=["Elf"], logger=buffer.write
+        )
         d2d.map_elfs_binaries_with_symbols(project=self.project1, logger=buffer.write)
         self.assertEqual(
             7,
@@ -1671,6 +1677,9 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
+        d2d.extract_binary_symbols(
+            project=self.project1, options=["MacOS"], logger=buffer.write
+        )
         d2d.map_macho_binaries_with_symbols(project=self.project1, logger=buffer.write)
         self.assertEqual(
             9,
@@ -1699,6 +1708,9 @@ class ScanPipeD2DPipesTest(TestCase):
         scancode.extract_archives(self.project1.codebase_path, recurse=True)
         pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
+        d2d.extract_binary_symbols(
+            project=self.project1, options=["Python"], logger=buffer.write
+        )
         d2d.map_python_pyx_to_binaries(project=self.project1, logger=buffer.write)
         pyx_match_relations = CodebaseRelation.objects.filter(
             project=self.project1, map_type="python_pyx_match"
@@ -1728,6 +1740,9 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
+        d2d.extract_binary_symbols(
+            project=self.project1, options=["Windows"], logger=buffer.write
+        )
         d2d.map_winpe_binaries_with_symbols(project=self.project1, logger=buffer.write)
         self.assertEqual(
             4,
