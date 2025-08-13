@@ -1930,6 +1930,53 @@ def map_go_paths(project, logger=None):
         )
 
 
+RUST_BINARY_OPTIONS = ["Rust"]
+ELF_BINARY_OPTIONS = ["Python", "Go", "Elf"]
+MACHO_BINARY_OPTIONS = ["Rust", "Go", "MacOS"]
+WINPE_BINARY_OPTIONS = ["Windows"]
+
+
+def extract_binary_symbols(project, options, logger=None):
+    """
+    Extract binary symbols for all Elf, Mach0 and Winpe binaries
+    found in the ``project`` resources, based on selected
+    ecosystem ``options`` so that these symbols can be mapped to
+    extracted source symbols.
+    """
+    to_resources = project.codebaseresources.files().to_codebase().has_no_relation()
+    if any([option in ELF_BINARY_OPTIONS for option in options]):
+        to_binaries = to_resources.elfs()
+        extract_binary_symbols_from_resources(
+            resources=to_binaries,
+            binary_symbols_func=collect_and_parse_elf_symbols,
+            logger=logger,
+        )
+
+    if any([option in RUST_BINARY_OPTIONS for option in options]):
+        to_binaries = to_resources.executable_binaries()
+        extract_binary_symbols_from_resources(
+            resources=to_binaries,
+            binary_symbols_func=collect_and_parse_rust_symbols,
+            logger=logger,
+        )
+
+    if any([option in MACHO_BINARY_OPTIONS for option in options]):
+        to_binaries = to_resources.macho_binaries()
+        extract_binary_symbols_from_resources(
+            resources=to_binaries,
+            binary_symbols_func=collect_and_parse_macho_symbols,
+            logger=logger,
+        )
+
+    if any([option in WINPE_BINARY_OPTIONS for option in options]):
+        to_binaries = to_resources.win_exes()
+        extract_binary_symbols_from_resources(
+            resources=to_binaries,
+            binary_symbols_func=collect_and_parse_winpe_symbols,
+            logger=logger,
+        )
+
+
 def map_rust_binaries_with_symbols(project, logger=None):
     """Map Rust binaries to their source using symbols in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
@@ -1950,8 +1997,32 @@ def map_rust_binaries_with_symbols(project, logger=None):
         project=project,
         from_resources=rust_from_resources,
         to_resources=to_binaries,
-        binary_symbols_func=collect_and_parse_rust_symbols,
-        map_type="rust_symbols",
+        map_types=["rust_symbols", "elf_symbols", "macho_symbols"],
+        logger=logger,
+    )
+
+
+def map_go_binaries_with_symbols(project, logger=None):
+    """Map Go binaries to their source using symbols in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    to_binaries = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .has_no_relation()
+        .executable_binaries()
+    )
+
+    # Collect source symbols from rust source files
+    go_config = d2d_config.get_ecosystem_config(ecosystem="Go")
+    go_from_resources = from_resources.filter(
+        extension__in=go_config.source_symbol_extensions
+    )
+
+    map_binaries_with_symbols(
+        project=project,
+        from_resources=go_from_resources,
+        to_resources=to_binaries,
+        map_types=["elf_symbols", "macho_symbols"],
         logger=logger,
     )
 
@@ -1973,8 +2044,7 @@ def map_elfs_binaries_with_symbols(project, logger=None):
         project=project,
         from_resources=elf_from_resources,
         to_resources=elf_binaries,
-        binary_symbols_func=collect_and_parse_elf_symbols,
-        map_type="elf_symbols",
+        map_types=["elf_symbols"],
         logger=logger,
     )
 
@@ -1999,8 +2069,7 @@ def map_macho_binaries_with_symbols(project, logger=None):
         project=project,
         from_resources=mac_from_resources,
         to_resources=macho_binaries,
-        binary_symbols_func=collect_and_parse_macho_symbols,
-        map_type="macho_symbols",
+        map_types=["macho_symbols"],
         logger=logger,
     )
 
@@ -2022,18 +2091,29 @@ def map_winpe_binaries_with_symbols(project, logger=None):
         project=project,
         from_resources=windows_from_resources,
         to_resources=winexe_binaries,
-        binary_symbols_func=collect_and_parse_winpe_symbols,
-        map_type="winpe_symbols",
+        map_types=["winpe_symbols"],
         logger=logger,
     )
+
+
+def get_binary_symbols(resource, map_types):
+    """
+    Return the map_type and binary symbols from `resource` for different kind of
+    binary `map_types`.
+    """
+    for map_type in map_types:
+        symbols = resource.extra_data.get(map_type)
+        if symbols:
+            return map_type, symbols
+
+    return None, []
 
 
 def map_binaries_with_symbols(
     project,
     from_resources,
     to_resources,
-    binary_symbols_func,
-    map_type,
+    map_types,
     logger=None,
 ):
     """Map Binaries to their source using symbols in ``project``."""
@@ -2042,14 +2122,6 @@ def map_binaries_with_symbols(
         logger=logger,
         project_files=from_resources,
     )
-
-    # Collect binary symbols from rust binaries
-    for resource in to_resources:
-        try:
-            binary_symbols = binary_symbols_func(resource.location)
-            resource.update_extra_data(binary_symbols)
-        except Exception as e:
-            logger(f"Error parsing binary symbols at: {resource.location_path!r} {e!r}")
 
     if logger:
         logger(
@@ -2060,7 +2132,10 @@ def map_binaries_with_symbols(
     resource_iterator = to_resources.iterator(chunk_size=2000)
     progress = LoopProgress(to_resources.count(), logger)
     for to_resource in progress.iter(resource_iterator):
-        binary_symbols = to_resource.extra_data.get(map_type)
+        map_type, binary_symbols = get_binary_symbols(
+            resource=to_resource,
+            map_types=map_types,
+        )
         if not binary_symbols:
             continue
 
@@ -2075,6 +2150,19 @@ def map_binaries_with_symbols(
             map_type=map_type,
             logger=logger,
         )
+
+
+def extract_binary_symbols_from_resources(resources, binary_symbols_func, logger):
+    """
+    Extract binary symbols from ``resources`` using the ecosystem specific
+    symbol extractor function ``binary_symbols_func``.
+    """
+    for resource in resources:
+        try:
+            binary_symbols = binary_symbols_func(resource.location)
+            resource.update_extra_data(binary_symbols)
+        except Exception as e:
+            logger(f"Error parsing binary symbols at: {resource.location_path!r} {e!r}")
 
 
 def map_javascript_symbols(project, logger=None):
@@ -2269,14 +2357,6 @@ def map_python_pyx_to_binaries(project, logger=None):
     to_resources = (
         project.codebaseresources.files().to_codebase().has_no_relation().elfs()
     )
-
-    # Collect binary symbols from binaries
-    for resource in to_resources:
-        try:
-            binary_symbols = collect_and_parse_elf_symbols(resource.location)
-            resource.update_extra_data(binary_symbols)
-        except Exception as e:
-            logger(f"Error parsing binary symbols at: {resource.location_path!r} {e!r}")
 
     for resource in from_resources:
         # Open Cython source file, create AST, parse it for function definitions
