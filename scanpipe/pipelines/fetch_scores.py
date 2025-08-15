@@ -25,6 +25,7 @@ from scorecode import ossf_scorecard
 
 from scanpipe.models import DiscoveredPackageScore
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipes import scorecard_compliance
 
 
 class FetchScores(Pipeline):
@@ -49,6 +50,7 @@ class FetchScores(Pipeline):
         return (
             cls.check_scorecode_service_availability,
             cls.fetch_packages_scorecode_info,
+            cls.evaluate_compliance_alerts,
         )
 
     def check_scorecode_service_availability(self):
@@ -64,3 +66,7 @@ class FetchScores(Pipeline):
                     scorecard_data=scorecard_data,
                     package=package,
                 )
+
+    def evaluate_compliance_alerts(self):
+        """Evaluate scorecard compliance alerts for the project."""
+        scorecard_compliance.evaluate_scorecard_compliance(self.project)
