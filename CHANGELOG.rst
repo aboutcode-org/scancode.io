@@ -1,6 +1,17 @@
 Changelog
 =========
 
+v35.3.0 (unreleased)
+--------------------
+
+- Enhanced scorecard compliance support with:
+  * New ``scorecard_compliance_alert`` in project ``extra_data``.
+  * ``/api/projects/{id}/scorecard_compliance/`` API endpoint.
+  * Scorecard compliance integration in ``check-compliance`` management command.
+  * UI template support for scorecard compliance alert.
+  * ``evaluate_scorecard_compliance()`` pipe function for compliance evaluation.
+  https://github.com/aboutcode-org/scancode.io/pull/1800
+
 v35.2.0 (2025-08-01)
 --------------------
 

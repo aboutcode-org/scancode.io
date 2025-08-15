@@ -76,6 +76,7 @@ class DeployToDevelop(Pipeline):
             cls.map_javascript,
             cls.map_javascript_symbols,
             cls.map_javascript_strings,
+            cls.get_symbols_from_binaries,
             cls.map_elf,
             cls.map_macho,
             cls.map_winpe,
@@ -197,6 +198,14 @@ class DeployToDevelop(Pipeline):
         """Map deployed JavaScript, TypeScript to its sources using string literals."""
         d2d.map_javascript_strings(project=self.project, logger=self.log)
 
+    def get_symbols_from_binaries(self):
+        """Extract symbols from Elf, Mach0 and windows binaries for mapping."""
+        d2d.extract_binary_symbols(
+            project=self.project,
+            options=self.selected_groups,
+            logger=self.log,
+        )
+
     @optional_step("Elf")
     def map_elf(self):
         """Map ELF binaries to their sources using dwarf paths and symbols."""
@@ -215,8 +224,9 @@ class DeployToDevelop(Pipeline):
 
     @optional_step("Go")
     def map_go(self):
-        """Map Go binaries to their sources using paths."""
+        """Map Go binaries to their sources using paths and symbols."""
         d2d.map_go_paths(project=self.project, logger=self.log)
+        d2d.map_go_binaries_with_symbols(project=self.project, logger=self.log)
 
     @optional_step("Rust")
     def map_rust(self):

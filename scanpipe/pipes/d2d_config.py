@@ -107,6 +107,7 @@ ECOSYSTEM_CONFIGS = {
     "Go": EcosystemConfig(
         ecosystem_option="Go",
         matchable_resource_extensions=[".go"],
+        source_symbol_extensions=[".go"],
     ),
     "Rust": EcosystemConfig(
         ecosystem_option="Rust",

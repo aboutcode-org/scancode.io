@@ -128,6 +128,51 @@ The ``license_clarity_compliance_alert`` value (e.g., ``"error"``, ``"warning"``
 is computed automatically based on the thresholds you configured and reflects the
 overall license clarity status of the scanned codebase.
 
+Scorecard Compliance Thresholds and Alerts
+------------------------------------------
+
+ScanCode.io also supports **OpenSSF Scorecard compliance thresholds**, allowing you to enforce
+minimum security standards for open source packages in your codebase. This is managed
+through the ``scorecard_score_thresholds`` section in your ``policies.yml`` file.
+
+Defining Scorecard Thresholds
+-----------------------------
+
+Add a ``scorecard_score_thresholds`` section to your ``policies.yml`` file, for example:
+
+.. code-block:: yaml
+
+    scorecard_score_thresholds:
+      9.0: ok
+      7.0: warning
+      0: error
+
+Scorecard Compliance in Results
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When you run a the addon pipeline fetch_scores with scorecard thresholds defined in your
+``policies.yml``, the computed scorecard compliance alert is included in the project's
+``extra_data`` field.
+
+For example:
+
+.. code-block:: json
+
+    "extra_data": {
+      "md5": "d23df4a4",
+      "sha1": "3e9b61cc98c",
+      "size": 3095,
+      "sha256": "abacfc8bcee59067",
+      "sha512": "208f6a83c83a4c770b3c0",
+      "filename": "cuckoo_filter-1.0.6.tar.gz",
+      "sha1_git": "3fdb0f82ad59",
+      "scorecard_compliance_alert": "warning"
+    }
+
+The ``scorecard_compliance_alert`` value (e.g., ``"error"``, ``"warning"``, or ``"ok"``)
+is computed automatically based on the thresholds you configured and reflects the
+overall security compliance status of the OpenSSF Scorecard scores for packages in the scanned codebase.
+
 Run the ``check-compliance`` command
 ------------------------------------
 

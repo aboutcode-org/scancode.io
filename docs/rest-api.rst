@@ -518,6 +518,31 @@ Data:
         "license_clarity_compliance_alert": "warning"
     }
 
+.. _rest_api_scorecard_compliance:
+
+Scorecard Compliance
+^^^^^^^^^^^^^^^^^^^^
+
+This action returns the **scorecard compliance alert** for a project.
+
+The scorecard compliance alert is a single value (``ok``, ``warning``, or ``error``)
+that summarizes the project's **OpenSSF Scorecard security compliance status**,
+based on the thresholds defined in the ``policies.yml`` file.
+
+``GET /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/scorecard_compliance/``
+
+Data:
+    - ``scorecard_compliance_alert``: The overall scorecard compliance alert
+      for the project.
+
+      Possible values: ``ok``, ``warning``, ``error``.
+
+.. code-block:: json
+
+    {
+        "scorecard_compliance_alert": "warning"
+    }
+
 Reset
 ^^^^^
 
