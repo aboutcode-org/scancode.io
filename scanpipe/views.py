@@ -450,9 +450,10 @@ class TableColumnsMixin:
                 column_data["sort_direction"] = sort_direction
 
                 query_dict = self.request.GET.copy()
-                query_dict["sort"] = (
-                    f"{'' if sort_direction == '-' else '-'}{sort_name}"
-                )
+                if is_sorted and sort_direction == "":
+                    query_dict["sort"] = f"-{sort_name}"
+                else:
+                    query_dict["sort"] = sort_name
                 column_data["sort_query"] = query_dict.urlencode()
 
             filter_fieldname = column_data.get("filter_fieldname")
@@ -693,6 +694,9 @@ class ProjectListView(
         context["reset_form"] = ProjectResetForm()
         context["outputs_download_form"] = ProjectOutputDownloadForm()
         context["report_form"] = ProjectReportForm()
+        context["request"] = (
+            self.request
+        )  # Ensure request is available in template context
         return context
 
     def get_queryset(self):

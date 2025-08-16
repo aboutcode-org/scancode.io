@@ -522,7 +522,6 @@ class RelationMapTypeFilter(django_filters.ChoiceFilter):
 
 
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-
     detected_license_expression = django_filters.ChoiceFilter(
         label="Detected license expression",
         choices=[

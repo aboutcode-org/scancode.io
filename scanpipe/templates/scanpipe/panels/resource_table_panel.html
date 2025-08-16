@@ -90,10 +90,14 @@
   {% if is_paginated %}
     <nav class="pagination is-centered mt-4" role="navigation">
       {% if page_obj.has_previous %}
-        <a class="pagination-previous" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ path }}&page={{ page_obj.previous_page_number }}" hx-target="#right-pane">Previous</a>
+        <a class="pagination-previous"
+           hx-get="{% url 'codebase_resource_table' project.slug %}?{% for key, value in request.GET.items %}{% if key != 'page' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}"
+           hx-target="#right-pane">Previous</a>
       {% endif %}
       {% if page_obj.has_next %}
-        <a class="pagination-next" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ path }}&page={{ page_obj.next_page_number }}" hx-target="#right-pane">Next page</a>
+        <a class="pagination-next"
+           hx-get="{% url 'codebase_resource_table' project.slug %}?{% for key, value in request.GET.items %}{% if key != 'page' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}"
+           hx-target="#right-pane">Next page</a>
       {% endif %}
       <ul class="pagination-list">
         <li><span class="pagination-ellipsis">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>

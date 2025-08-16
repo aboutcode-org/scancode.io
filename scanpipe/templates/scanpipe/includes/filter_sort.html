@@ -1,13 +1,15 @@
 <a
   class="is-black-link"
-  href="?path={{ path|urlencode }}&sort={% if column.is_sorted and column.sort_direction == '-' %}{{ column.field_name }}{% else %}-{{ column.field_name }}{% endif %}"
   {% if is_htmx %}
+    href="?path={{ path|urlencode }}&sort={% if column.is_sorted and column.sort_direction == '-' %}{{ column.field_name }}{% else %}-{{ column.field_name }}{% endif %}"
     hx-get="{% url 'codebase_resource_table' project.slug %}"
     hx-target="#right-pane"
     hx-push-url="false"
     hx-vals='{"path": "{{ path|escapejs }}", "sort": "{% if column.is_sorted and column.sort_direction == '-' %}{{ column.field_name }}{% else %}-{{ column.field_name }}{% endif %}"}'
     onclick="return false;"
     style="cursor:pointer;"
+  {% else %}
+    href="?{{ column.sort_query }}"
   {% endif %}
 >
   {{ column.label }}
