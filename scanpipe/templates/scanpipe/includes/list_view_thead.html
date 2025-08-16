@@ -10,14 +10,14 @@
         <div class="is-flex is-justify-content-space-between">
           <div>
             {% if column.sort_query %}
-              {% include 'scanpipe/includes/filter_sort.html' with column=column only %}
+              {% include 'scanpipe/includes/filter_sort.html' with column=column is_htmx=False path=path only %}
             {% else %}
               {{ column.label }}
             {% endif %}
           </div>
           {% if column.filter %}
             <div class="ml-1">
-              {% include 'scanpipe/dropdowns/filter_dropdown_choices_field.html' with filter=column.filter is_right=column.filter_is_right only %}
+              {% include 'scanpipe/dropdowns/filter_dropdown_choices_field.html' with filter=column.filter is_right=column.filter_is_right is_htmx=False path=path only %}
             </div>
           {% endif %}
         </div>

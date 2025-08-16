@@ -1,0 +1,180 @@
+{% extends "scanpipe/base.html" %}
+{% load static humanize %}
+{% block title %}ScanCode.io: {{ project.name }} - Resource Tree{% endblock %}
+
+{% block extrahead %}
+  <style>
+    .chevron {
+      transition: transform 0.2s ease;
+      display: inline-block;
+    }
+    .chevron.rotated {
+      transform: rotate(90deg);
+    }
+    
+    .resizable-container {
+      display: flex;
+      height: calc(100vh - 140px);
+      margin: 0;
+    }
+    
+    .left-pane {
+      min-width: 0;
+      max-width: 100%;
+      border-right: 1px solid #ccc;
+      overflow-y: auto;
+      overflow-x: hidden;
+      flex-basis: 33.333%;
+      transition: opacity 0.2s ease;
+    }
+    
+    .left-pane.collapsed {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .resizer {
+      width: 5px;
+      background: #ddd;
+      cursor: col-resize;
+      position: relative;
+      flex-shrink: 0;
+    }
+    
+    .resizer:hover {
+      background: #bbb;
+    }
+    
+    .resizer::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 1px;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 30px;
+      background: #999;
+      border-radius: 2px;
+    }
+    
+    .right-pane {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      min-width: 0;
+      transition: opacity 0.2s ease;
+    }
+    
+    .right-pane.collapsed {
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Resource Tree" %}
+      </div>
+    </section>
+  </div>
+
+<div class="resizable-container">
+  <div class="left-pane" id="left-pane">
+    <div id="resource-tree" class="p-4">
+      {% include "scanpipe/panels/codebase_tree_panel.html" with children=children path=path %}
+    </div>
+  </div>
+  <div class="resizer" id="resizer"></div>
+  <div class="right-pane" id="right-pane">
+    <div class="p-4">
+      {% include "scanpipe/panels/resource_table_panel.html" %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    // Tree functionality
+    document.addEventListener("click", async function (e) {
+      const chevron = e.target.closest("[data-chevron]");
+      if (chevron) {
+        const folderNode = chevron.closest("[data-folder]");
+        const targetId = folderNode.dataset.target;
+        const url = folderNode.dataset.url;
+        const icon = chevron.querySelector("i");
+        const target = document.getElementById("dir-" + targetId);
+
+        if (target.dataset.loaded === "true") {
+          target.classList.toggle("is-hidden");
+        } else {
+          target.classList.remove("is-hidden");
+          const response = await fetch(url + "&tree_panel=true");
+          target.innerHTML = await response.text();
+          target.dataset.loaded = "true";
+          htmx.process(target);
+        }
+
+        chevron.classList.toggle("rotated");
+        e.stopPropagation();
+        return;
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const resizer = document.getElementById('resizer');
+      const leftPane = document.getElementById('left-pane');
+      const rightPane = document.getElementById('right-pane');
+      let isResizing = false;
+
+      resizer.addEventListener('mousedown', function(e) {
+        isResizing = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', function(e) {
+        if (!isResizing) return;
+        
+        const container = document.querySelector('.resizable-container');
+        const containerRect = container.getBoundingClientRect();
+        const newLeftWidth = e.clientX - containerRect.left;
+        const containerWidth = containerRect.width;
+        const resizerWidth = 5;
+        
+        const leftPercent = (newLeftWidth / containerWidth) * 100;
+        const rightPercent = ((containerWidth - newLeftWidth - resizerWidth) / containerWidth) * 100;
+        
+        if (leftPercent <= 2) {
+          leftPane.style.flexBasis = '0%';
+          rightPane.style.flexBasis = '100%';
+          leftPane.classList.add('collapsed');
+          rightPane.classList.remove('collapsed');
+        } else if (rightPercent <= 2) {
+          leftPane.style.flexBasis = '100%';
+          rightPane.style.flexBasis = '0%';
+          leftPane.classList.remove('collapsed');
+          rightPane.classList.add('collapsed');
+        } else {
+          leftPane.style.flexBasis = leftPercent + '%';
+          rightPane.style.flexBasis = rightPercent + '%';
+          leftPane.classList.remove('collapsed');
+          rightPane.classList.remove('collapsed');
+        }
+      });
+
+      document.addEventListener('mouseup', function() {
+        if (isResizing) {
+          isResizing = false;
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+        }
+      });
+    });
+  </script>
+{% endblock %}
