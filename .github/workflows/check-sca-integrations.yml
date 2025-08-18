@@ -11,24 +11,31 @@ permissions:
   contents: read
 
 env:
-    IMAGE_REFERENCE: 'python:3.13.0-slim'
+    IMAGE_REFERENCE: "python:3.13.0-slim"
+
 jobs:
   generate-sbom:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Run Trivy in CycloneDX SBOM mode
         uses: aquasecurity/trivy-action@0.32.0
         with:
-          scan-type: 'image'
+          scan-type: "image"
           image-ref: ${{ env.IMAGE_REFERENCE }}
-          format: 'cyclonedx'
-          output: 'trivy-report.sbom.json'
-          scanners: 'vuln,license'
-          version: 'latest'
+          format: "cyclonedx"
+          output: "trivy-report.sbom.json"
+          scanners: "vuln,license"
+          version: "latest"
 
       - name: Upload Trivy report as a Github artifact
         uses: actions/upload-artifact@v4
         with:
           name: upload-trivy-sbom-report
-          path: '${{ github.workspace }}/trivy-report.sbom.json'
-          retention-days: 20 # 90 is the default
+          path: "${{ github.workspace }}/trivy-report.sbom.json"
+          retention-days: 20
+
+      - name: Load the Trivy report SBOM into ScanCode.io
+        uses: aboutcode-org/scancode-action@main
+        with:
+          pipelines: "load_sbom"
+          inputs-path: "${{ github.workspace }}/trivy-report.sbom.json"
