@@ -7,27 +7,30 @@ on:
     branches:
       - main
 
-
 permissions:
-  contents: write
+  contents: read
+
+env:
+  #  IMAGE_REFERENCE: 'python:3.13-slim'
+  IMAGE_REFERENCE: 'python:3.10.0'
 
 jobs:
   generate-sbom:
     runs-on: ubuntu-latest
     steps:
-      - name: Run Trivy in GitHub SBOM mode and submit results to Dependency Graph
+      - name: Run Trivy in CycloneDX SBOM mode
         uses: aquasecurity/trivy-action@0.32.0
         with:
           scan-type: 'image'
-          image-ref: 'python:3.13-slim'
+          image-ref: ${{ env.IMAGE_REFERENCE }}
           format: 'cyclonedx'
-          output: 'dependency-results.sbom.cdx.json'
+          output: 'trivy-report.sbom.json'
           scanners: 'vuln,license'
           version: 'latest'
 
-      - name: Upload trivy report as a Github artifact
+      - name: Upload Trivy report as a Github artifact
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-sbom-report
-          path: '${{ github.workspace }}/dependency-results.sbom.cdx.json'
+          name: upload-trivy-sbom-report
+          path: '${{ github.workspace }}/trivy-report.sbom.json'
           retention-days: 20 # 90 is the default
