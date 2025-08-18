@@ -36,6 +36,15 @@ jobs:
 
       - name: Load the Trivy report SBOM into ScanCode.io
         uses: aboutcode-org/scancode-action@main
+        id: scancode
         with:
           pipelines: "load_sbom"
-          inputs-path: "${{ github.workspace }}"
+          inputs-path: "${{ github.workspace }}/trivy-report.sbom.json"
+
+      - name: Use project name
+        run: echo "Project is ${{ steps.scancode.outputs.project-name }}"
+
+      - name: Test running scanpipe for checking the loaded content
+        shell: bash
+        run: |
+          scanpipe shell shell --command "from scanpipe.models import DiscoveredPackage; print(DiscoveredPackage.objects.count())"
