@@ -23,6 +23,10 @@
 import os
 import shutil
 from pathlib import Path
+import logging
+from datetime import datetime
+import hashlib
+import requests
 
 from django.core.exceptions import FieldDoesNotExist
 from django.core.validators import EMPTY_VALUES
@@ -32,13 +36,14 @@ import openpyxl
 from typecode.contenttype import get_type
 
 from scanpipe import pipes
-from scanpipe.models import CodebaseRelation
+from scanpipe.models import CodebaseRelation, InputSource
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import scancode
 from scanpipe.pipes.output import mappings_key_by_fieldname
-
+from scanpipe.settings import download_store, ENABLE_DOWNLOAD_ARCHIVING, DOWNLOAD_ARCHIVING_PROVIDER
+logger = logging.getLogger(__name__)
 
 def copy_input(input_location, dest_path):
     """Copy the ``input_location`` (file or directory) to the ``dest_path``."""
@@ -229,3 +234,119 @@ def load_inventory_from_xlsx(project, input_location, extra_data_prefix=None):
         if extra_data_prefix:
             extra_data = {extra_data_prefix: extra_data}
         project.update_extra_data(extra_data)
+
+def add_input_from_url(project, url, filename=None):
+    """
+    Download the file from the provided ``url`` and add it as an InputSource for the
+    specified ``project``. Optionally, specify a ``filename`` for the downloaded file.
+    If archiving is enabled, store the content in the DownloadStore and save metadata.
+    """
+    try:
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        content = response.content
+    except requests.RequestException as e:
+        logger.error(f"Failed to download {url}: {e}")
+        raise
+
+    should_archive = (
+        ENABLE_DOWNLOAD_ARCHIVING == "always" or
+        (ENABLE_DOWNLOAD_ARCHIVING == "per_project" and getattr(project, "archive_downloads", False)) or
+        (ENABLE_DOWNLOAD_ARCHIVING == "per_input" and "archive" in getattr(project, "input_tags", []))
+    )
+
+    filename = filename or url.split("/")[-1]
+    if should_archive and download_store:
+        sha256 = hashlib.sha256(content).hexdigest()
+        existing_download = download_store.get(sha256)
+        if not existing_download:
+            try:
+                download = download_store.put(
+                    content=content,
+                    download_url=url,
+                    download_date=datetime.now().isoformat(),
+                    filename=filename
+                )
+            except Exception as e:
+                logger.error(f"Failed to archive download for {url}: {e}")
+                raise
+        else:
+            download = existing_download
+
+        InputSource.objects.create(
+            project=project,
+            sha256=download.sha256,
+            download_url=download.download_url,
+            filename=download.filename,
+            download_date=download.download_date,
+            is_uploaded=False,
+        )
+    else:
+        input_path = project.input_path / filename
+        try:
+            with open(input_path, 'wb') as f:
+                f.write(content)
+        except Exception as e:
+            logger.error(f"Failed to save {filename} to {input_path}: {e}")
+            raise
+
+        InputSource.objects.create(
+            project=project,
+            filename=filename,
+            download_url=url,
+            is_uploaded=False,
+        )
+
+def add_input_from_upload(project, uploaded_file):
+    """
+    Add an uploaded file as an InputSource for the specified ``project``.
+    If archiving is enabled, store the content in the DownloadStore and save metadata.
+    """
+    content = uploaded_file.read()
+    filename = uploaded_file.name
+
+    should_archive = (
+        ENABLE_DOWNLOAD_ARCHIVING == "always" or
+        (ENABLE_DOWNLOAD_ARCHIVING == "per_project" and getattr(project, "archive_downloads", False)) or
+        (ENABLE_DOWNLOAD_ARCHIVING == "per_input" and "archive" in getattr(project, "input_tags", []))
+    )
+
+    if should_archive and download_store:
+        sha256 = hashlib.sha256(content).hexdigest()
+        existing_download = download_store.get(sha256)
+        if not existing_download:
+            try:
+                download = download_store.put(
+                    content=content,
+                    download_url="",  # No URL for uploads
+                    download_date=datetime.now().isoformat(),
+                    filename=filename
+                )
+            except Exception as e:
+                logger.error(f"Failed to archive upload {filename}: {e}")
+                raise
+        else:
+            download = existing_download
+
+        InputSource.objects.create(
+            project=project,
+            sha256=download.sha256,
+            download_url=download.download_url,
+            filename=download.filename,
+            download_date=download.download_date,
+            is_uploaded=True,
+        )
+    else:
+        input_path = project.input_path / filename
+        try:
+            with open(input_path, 'wb') as f:
+                f.write(content)
+        except Exception as e:
+            logger.error(f"Failed to save {filename} to {input_path}: {e}")
+            raise
+
+        InputSource.objects.create(
+            project=project,
+            filename=filename,
+            is_uploaded=True,
+        )
