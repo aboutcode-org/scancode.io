@@ -31,7 +31,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: upload-trivy-sbom-report
-          path: "${{ github.workspace }}/trivy-report.sbom.json"
+          path: "${{ github.workspace }}/reports/trivy-report.sbom.json"
           retention-days: 20
 
       - name: Load the Trivy report SBOM into ScanCode.io
@@ -39,12 +39,17 @@ jobs:
         id: scancode
         with:
           pipelines: "load_sbom"
-          inputs-path: "${{ github.workspace }}/trivy-report.sbom.json"
+          inputs-path: "${{ github.workspace }}/reports/"
 
       - name: Use project name
-        run: echo "Project is ${{ steps.scancode.outputs.project-name }}"
+        run: echo "Project is ${{ steps.scancode.inputs.project-name }}"
 
       - name: Test running scanpipe for checking the loaded content
         shell: bash
         run: |
-          scanpipe shell shell --command "from scanpipe.models import DiscoveredPackage; print(DiscoveredPackage.objects.count())"
+          scanpipe shell --command "from scanpipe.models import DiscoveredPackage; print(DiscoveredPackage.objects.count())"
+
+      - name: Test running scanpipe for checking the loaded content
+        shell: bash
+        run: |
+          scanpipe status --project ${{ steps.scancode.inputs.project-name }}
