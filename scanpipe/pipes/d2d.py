@@ -2358,6 +2358,29 @@ def map_python_pyx_to_binaries(project, logger=None):
         project.codebaseresources.files().to_codebase().has_no_relation().elfs()
     )
 
+    # 1. Match by file basename
+    basename_qs = Q()
+    for resource in from_resources:
+        basename_qs |= Q(name__startswith=resource.name_without_extension)
+
+    matching_elfs = to_resources.filter(basename_qs)
+    for matching_elf in matching_elfs:
+        pipes.make_relation(
+            from_resource=resource,
+            to_resource=matching_elf,
+            map_type="python_pyx_match",
+        )
+
+    from_resources = (
+        project.codebaseresources.files()
+        .from_codebase()
+        .has_no_relation()
+        .filter(extension__in=python_config.source_symbol_extensions)
+    )
+    to_resources = (
+        project.codebaseresources.files().to_codebase().has_no_relation().elfs()
+    )
+    # 2. match by symbols if no corresponding elf is found
     for resource in from_resources:
         # Open Cython source file, create AST, parse it for function definitions
         # and save them in a list
