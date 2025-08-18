@@ -1617,6 +1617,31 @@ class PipelinesIntegrationTest(TestCase):
         dependency = project1.discovereddependencies.all()[0]
         self.assertEqual("bom.1.4.json", str(dependency.datafile_resource))
 
+    def test_scanpipe_load_sbom_pipeline_cyclonedx_with_vulnerabilities(self):
+        pipeline_name = "load_sbom"
+        project1 = make_project()
+
+        input_location = (
+            self.data / "cyclonedx" / "python-3.13.0-vulnerabilities.cdx.json"
+        )
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        package = project1.discoveredpackages.get()
+        expected = [
+            {
+                "vulnerability_id": "CVE-2005-2541",
+                "summary": "Tar 1.15.1 does not properly warn the user when...",
+            }
+        ]
+        self.assertEqual(expected, package.affected_by_vulnerabilities)
+
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("uuid.uuid4")
     def test_scanpipe_deploy_to_develop_pipeline_integration(

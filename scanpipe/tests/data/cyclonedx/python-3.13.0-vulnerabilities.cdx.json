@@ -1,0 +1,97 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:f9350ed3-ac98-4d15-90ef-62b39dc55d5a",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2025-08-18T05:43:10+00:00",
+    "component": {
+      "bom-ref": "pkg:oci/python@sha256%3A0de818129b26ed8f46fd772f540c80e277b67a28229531a1ba0fdacfaed19bcb?arch=amd64&repository_url=index.docker.io%2Flibrary%2Fpython",
+      "type": "container",
+      "name": "python:3.13.0-slim",
+      "purl": "pkg:oci/python@sha256%3A0de818129b26ed8f46fd772f540c80e277b67a28229531a1ba0fdacfaed19bcb?arch=amd64&repository_url=index.docker.io%2Flibrary%2Fpython"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:deb/debian/tar@1.34%2Bdfsg-1.2%2Bdeb12u1?arch=amd64&distro=debian-12.8",
+      "type": "library",
+      "supplier": {
+        "name": "Janos Lenart <ocsi@debian.org>"
+      },
+      "name": "tar",
+      "version": "1.34+dfsg-1.2+deb12u1",
+      "purl": "pkg:deb/debian/tar@1.34%2Bdfsg-1.2%2Bdeb12u1?arch=amd64&distro=debian-12.8"
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "id": "CVE-2005-2541",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "debian"
+          },
+          "severity": "low"
+        },
+        {
+          "source": {
+            "name": "nvd"
+          },
+          "score": 10,
+          "severity": "high",
+          "method": "CVSSv2",
+          "vector": "AV:N/AC:L/Au:N/C:C/I:C/A:C"
+        },
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 7,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:H"
+        }
+      ],
+      "description": "Tar 1.15.1 does not properly warn the user when...",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2005-2541"
+        },
+        {
+          "url": "http://marc.info/?l=bugtraq&m=112327628230258&w=2"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2005-2541"
+        },
+        {
+          "url": "https://lists.apache.org/thread.html/rc713534b10f9daeee2e0990239fa407e2118e4aa9e88a7041177497c%40%3Cissues.guacamole.apache.org%3E"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2005-2541"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2005-2541"
+        }
+      ],
+      "published": "2005-08-10T04:00:00+00:00",
+      "updated": "2025-04-03T01:03:51+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/tar@1.34%2Bdfsg-1.2%2Bdeb12u1?arch=amd64&distro=debian-12.8",
+          "versions": [
+            {
+              "version": "1.34+dfsg-1.2+deb12u1",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
