@@ -38,4 +38,4 @@ jobs:
         uses: aboutcode-org/scancode-action@main
         with:
           pipelines: "load_sbom"
-          inputs-path: "${{ github.workspace }}/trivy-report.sbom.json"
+          inputs-path: "${{ github.workspace }}/"
