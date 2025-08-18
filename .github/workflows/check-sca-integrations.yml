@@ -11,9 +11,7 @@ permissions:
   contents: read
 
 env:
-  #  IMAGE_REFERENCE: 'python:3.13-slim'
-  IMAGE_REFERENCE: 'python:3.10.0'
-
+    IMAGE_REFERENCE: 'python:3.13.0-slim'
 jobs:
   generate-sbom:
     runs-on: ubuntu-latest
