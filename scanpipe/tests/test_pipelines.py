@@ -1388,11 +1388,11 @@ class PipelinesIntegrationTest(TestCase):
             "scoring_tool_documentation_url": "https://github.com/[trunc...]",
             "score_date": "2025-07-24T18:50:16Z",
         }
-        with mock.patch("scorecode.ossf_scorecard.fetch_scorecard") as fetch:
+        with mock.patch("scorecode.ossf_scorecard.fetch_scorecard_info") as fetch:
             fetch.return_value = PackageScore(**package_score_data)
-        exitcode, out = pipeline.execute()
-        self.assertEqual(0, exitcode, msg=out)
+            exitcode, out = pipeline.execute()
 
+        self.assertEqual(0, exitcode, msg=out)
         package1.refresh_from_db()
         scorecard_entry = package1.scores.filter(scoring_tool="ossf-scorecard").first()
         self.assertIsNotNone(scorecard_entry)
@@ -1746,6 +1746,20 @@ class PipelinesIntegrationTest(TestCase):
             "Resource paths listed at about_resource is not found in the to/ codebase"
         )
         self.assertIn(expected, message.description)
+
+    def test_scanpipe_deploy_to_develop_pipeline_without_selected_groups(self):
+        pipeline_name = "map_deploy_to_develop"
+        project1 = make_project(name="Analysis")
+
+        data_dir = self.data / "d2d" / "about_files"
+        project1.copy_input_from(data_dir / "from-with-about-file.zip")
+        project1.copy_input_from(data_dir / "to-with-jar.zip")
+
+        run = project1.add_pipeline(pipeline_name=pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.is_available")

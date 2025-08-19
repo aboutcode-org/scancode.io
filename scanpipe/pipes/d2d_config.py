@@ -156,7 +156,7 @@ def load_ecosystem_config(pipeline, options):
     - which source files to get source symbols from
     - which unmapped paths to ignore in deployed binaries
     """
-    # Add default configurations which are common accross ecosystems
+    # Add default configurations which are common across ecosystems
     pipeline.ecosystem_config = ECOSYSTEM_CONFIGS.get("Default")
 
     # Add configurations for each selected ecosystem
