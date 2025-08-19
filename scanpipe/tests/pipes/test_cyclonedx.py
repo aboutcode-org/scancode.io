@@ -248,6 +248,20 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         ]
         self.assertEqual(expected_depends_on, extra_data["depends_on"])
 
+    def test_scanpipe_cyclonedx_resolve_cyclonedx_packages_vulnerabilities(self):
+        input_location = self.data / "python-3.13.0-vulnerabilities.cdx.json"
+        packages = cyclonedx.resolve_cyclonedx_packages(input_location)
+        self.assertEqual(1, len(packages))
+
+        affected_by = packages[0]["affected_by_vulnerabilities"]
+        expected = [
+            {
+                "vulnerability_id": "CVE-2005-2541",
+                "summary": "Tar 1.15.1 does not properly warn the user when...",
+            }
+        ]
+        self.assertEqual(expected, affected_by)
+
     def test_scanpipe_cyclonedx_resolve_cyclonedx_packages_pre_validation(self):
         # This SBOM includes multiple deserialization issues that are "fixed"
         # by the pre-validation cleanup.
