@@ -35,7 +35,7 @@ jobs:
           retention-days: 20
 
       - name: Load the Trivy SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@file-as-inputs-path
+        uses: aboutcode-org/scancode-action@main
         with:
           pipelines: "load_sbom"
           inputs-path: "${{ github.workspace }}/trivy-report.sbom.json"
@@ -44,4 +44,4 @@ jobs:
       - name: Check the SBOM was properly loaded in ScanCode.io
         shell: bash
         run: |
-          scanpipe shell --command "from scanpipe.models import DiscoveredPackage; package_manager = DiscoveredPackage.objects; print(package_manager.count()); assert package_manager.count() > 90; print(package_manager.vulnerable().count()); assert package_manager.vulnerable().count() > 40;"
+          scanpipe shell --command "from scanpipe.models import DiscoveredPackage, DiscoveredDependency; package_manager = DiscoveredPackage.objects; assert package_manager.count() > 90; assert package_manager.vulnerable().count() > 40; assert DiscoveredDependency.objects.count() > 190;"
