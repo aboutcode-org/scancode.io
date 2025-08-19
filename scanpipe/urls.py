@@ -137,7 +137,7 @@ urlpatterns = [
         name="codebase_resource_tree",
     ),
     path(
-        "project/<slug:slug>/file-table/",
+        "project/<slug:slug>/resource_table/",
         views.CodebaseResourceTableView.as_view(),
         name="codebase_resource_table",
     ),
