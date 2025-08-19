@@ -39,6 +39,7 @@ jobs:
         with:
           pipelines: "load_sbom"
           inputs-path: "${{ github.workspace }}/trivy-report.sbom.json"
+          scancodeio-repo-branch: "1729-sca-integrations-trivy"
 
       - name: Check the SBOM was properly loaded in ScanCode.io
         shell: bash
