@@ -66,7 +66,11 @@ class ScanPipePoliciesTest(TestCase):
         with self.assertRaisesMessage(ValidationError, error_msg):
             validate_policies(policies_dict)
 
-        error_msg = "The `license_policies` key is missing from provided policies data."
+        error_msg = (
+            "At least one of the following policy types must be present: "
+            "license_clarity_thresholds, license_policies, "
+            "scorecard_score_thresholds"
+        )
         policies_dict = {}
         with self.assertRaisesMessage(ValidationError, error_msg):
             validate_policies(policies_dict)
