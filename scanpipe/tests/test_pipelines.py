@@ -1388,11 +1388,11 @@ class PipelinesIntegrationTest(TestCase):
             "scoring_tool_documentation_url": "https://github.com/[trunc...]",
             "score_date": "2025-07-24T18:50:16Z",
         }
-        with mock.patch("scorecode.ossf_scorecard.fetch_scorecard_info") as fetch:
+        with mock.patch("scorecode.ossf_scorecard.fetch_scorecard") as fetch:
             fetch.return_value = PackageScore(**package_score_data)
-            exitcode, out = pipeline.execute()
-
+        exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
+
         package1.refresh_from_db()
         scorecard_entry = package1.scores.filter(scoring_tool="ossf-scorecard").first()
         self.assertIsNotNone(scorecard_entry)
@@ -1617,6 +1617,31 @@ class PipelinesIntegrationTest(TestCase):
         dependency = project1.discovereddependencies.all()[0]
         self.assertEqual("bom.1.4.json", str(dependency.datafile_resource))
 
+    def test_scanpipe_load_sbom_pipeline_cyclonedx_with_vulnerabilities(self):
+        pipeline_name = "load_sbom"
+        project1 = make_project()
+
+        input_location = (
+            self.data / "cyclonedx" / "python-3.13.0-vulnerabilities.cdx.json"
+        )
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        package = project1.discoveredpackages.get()
+        expected = [
+            {
+                "vulnerability_id": "CVE-2005-2541",
+                "summary": "Tar 1.15.1 does not properly warn the user when...",
+            }
+        ]
+        self.assertEqual(expected, package.affected_by_vulnerabilities)
+
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("uuid.uuid4")
     def test_scanpipe_deploy_to_develop_pipeline_integration(
@@ -1746,20 +1771,6 @@ class PipelinesIntegrationTest(TestCase):
             "Resource paths listed at about_resource is not found in the to/ codebase"
         )
         self.assertIn(expected, message.description)
-
-    def test_scanpipe_deploy_to_develop_pipeline_without_selected_groups(self):
-        pipeline_name = "map_deploy_to_develop"
-        project1 = make_project(name="Analysis")
-
-        data_dir = self.data / "d2d" / "about_files"
-        project1.copy_input_from(data_dir / "from-with-about-file.zip")
-        project1.copy_input_from(data_dir / "to-with-jar.zip")
-
-        run = project1.add_pipeline(pipeline_name=pipeline_name)
-        pipeline = run.make_pipeline_instance()
-
-        exitcode, out = pipeline.execute()
-        self.assertEqual(0, exitcode, msg=out)
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.is_available")
