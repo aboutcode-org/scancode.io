@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v35.3.0 (unreleased)
+v35.3.0 (2025-08-20)
 --------------------
 
 - Enhanced scorecard compliance support with:
