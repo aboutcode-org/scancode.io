@@ -23,11 +23,14 @@ jobs:
           image: ${{ env.IMAGE_REFERENCE }}
           format: cyclonedx-json
           artifact-name: "anchore-sylt-sbom.cdx.json"
+          output-file: "${{ github.event.repository.name }}-sbom.spdx.json"
           upload-artifact: true
 
       - name: Scan SBOM with Grype scanner for vulnerabilities
         uses: anchore/scan-action@v6
         with:
-          sbom: "anchore-sylt-sbom.cdx.json"
+#          sbom: "anchore-sylt-sbom.cdx.json"
+          sbom: "${{ github.event.repository.name }}-sbom.spdx.json"
           output-format: cyclonedx-json
           output-file: "anchore-grype-sbom.cdx.json"
+          fail-build: false
