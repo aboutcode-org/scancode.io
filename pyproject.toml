@@ -41,16 +41,16 @@ dependencies = [
   "django-crispy-forms==2.4",
   "crispy-bootstrap3==2024.1",
   "django-filter==25.1",
-  "djangorestframework==3.16.0",
+  "djangorestframework==3.16.1",
   "django-taggit==6.1.0",
   # Database
   "psycopg[binary]==3.2.9",
   # wait_for_database Django management command
   "django-probes==1.7.0",
   # Task queue
-  "rq==2.4.1",
-  "django-rq==3.0.1",
-  "redis==6.2.0",
+  "rq==2.5.0",
+  "django-rq==3.1",
+  "redis==6.4.0",
   # WSGI server
   "gunicorn==23.0.0",
   # Docker
@@ -60,7 +60,7 @@ dependencies = [
   "extractcode[full]==31.0.0",
   "commoncode==32.3.0",
   "Beautifulsoup4[chardet]==4.13.4",
-  "packageurl-python==0.17.3",
+  "packageurl-python==0.17.5",
   # Workaround issue https://github.com/aboutcode-org/scancode.io/issues/1795
   "fingerprints==1.2.3",
   "normality==2.6.1",
@@ -80,7 +80,7 @@ dependencies = [
   "requests==2.32.4",
   "GitPython==3.1.45",
   # Profiling
-  "pyinstrument==5.0.3",
+  "pyinstrument==5.1.1",
   # CycloneDX
   "cyclonedx-python-lib==10.2.0",
   "jsonschema==4.24.0",
@@ -89,7 +89,7 @@ dependencies = [
   # Univers
   "univers==31.0.0",
   # Markdown
-  "markdown-it-py==3.0.0",
+  "markdown-it-py==4.0.0",
   "bleach==6.2.0",
   # Antivirus
   "clamd==1.0.2",
@@ -106,10 +106,10 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   # Validation
-  "ruff==0.12.5",
+  "ruff==0.12.9",
   "doc8==2.0.0",
   # Debug
-  "django-debug-toolbar==5.2.0",
+  "django-debug-toolbar==6.0.0",
   # Documentation
   "Sphinx==8.1.3",  # Newer versions dropped Python 3.10 support
   "sphinx-rtd-theme==3.0.2",
