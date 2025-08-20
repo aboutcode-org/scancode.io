@@ -1,4 +1,12 @@
-name: Generate SBOM with Anchore (Syft and Grype) and load into ScanCode.io
+name: Generate SBOM with Anchore Grype and load into ScanCode.io
+
+# This workflow:
+#  1. Generates a CycloneDX SBOM for a container image using Anchore Grype.
+#  2. Uploads the SBOM as a GitHub artifact for future inspection.
+#  3. Loads the SBOM into ScanCode.io for further analysis.
+#  4. Runs assertions to verify that the SBOM was properly processed in ScanCode.io.
+#
+# It runs on demand, and once a week (scheduled).
 
 on:
   workflow_dispatch:
@@ -6,6 +14,9 @@ on:
   push:
     branches:
       - main
+  schedule:
+    # Run once a week (every 7 days) at 00:00 UTC on Sunday
+    - cron: "0 0 * * 0"
 
 permissions:
   contents: read
@@ -17,24 +28,7 @@ jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
     steps:
-#      - name: Generate CycloneDX SBOM with Anchore Syft
-#        uses: anchore/sbom-action@v0
-#        with:
-#          image: ${{ env.IMAGE_REFERENCE }}
-#          format: cyclonedx-json
-#          output-file: "${{ github.event.repository.name }}-sbom.cdx.json"
-#          artifact-name: "anchore-sylt-sbom.cdx.json"
-#          upload-artifact: true
-#
-#      - name: Scan SBOM with Grype scanner for vulnerabilities
-#        uses: anchore/scan-action@v6
-#        with:
-#          sbom: "${{ github.event.repository.name }}-sbom.cdx.json"
-#          output-format: cyclonedx-json
-#          output-file: "anchore-grype-sbom.cdx.json"
-#          fail-build: false
-
-      - name: Scan image
+      - name: Generate CycloneDX SBOM with Anchore Grype scanner
         uses: anchore/scan-action@v6
         with:
           image: ${{ env.IMAGE_REFERENCE }}
@@ -45,7 +39,6 @@ jobs:
       - name: Upload SBOM as GitHub Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: anchore-grype-sbom
           path: "anchore-grype-sbom.cdx.json"
           retention-days: 20
 
@@ -58,4 +51,4 @@ jobs:
       - name: Verify SBOM Analysis Results in ScanCode.io
         shell: bash
         run: |
-          scanpipe shell --command "from scanpipe.models import DiscoveredPackage, DiscoveredDependency; package_manager = DiscoveredPackage.objects; print(package_manager.count()); print(package_manager.vulnerable().count()); print(DiscoveredDependency.objects.count())"
+          scanpipe shell --command "from scanpipe.models import DiscoveredPackage, DiscoveredDependency; package_manager = DiscoveredPackage.objects; assert package_manager.count() > 3200; assert package_manager.vulnerable().count() > 40; assert DiscoveredDependency.objects.count() > 220"
