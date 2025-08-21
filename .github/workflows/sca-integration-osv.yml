@@ -18,12 +18,22 @@ permissions:
 env:
   IMAGE_REFERENCE: "python:3.13.0-slim"
 
+#jobs:
+#  generate-and-load-sbom:
+#    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.2.1
+#    with:
+#      scan-args: |-
+#        image
+#        python:3.13.0-slim
+#        --format
+#        cyclonedx-1-5
+
 jobs:
   generate-and-load-sbom:
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.2.1
-    with:
-      scan-args: |-
-        image
-        python:3.13.0-slim
-        --format
-        cyclonedx-1-5
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Run OSV Scanner
+        uses: docker://ghcr.io/google/osv-scanner-action:v2.2.1
+        with:
+          args: image python:3.13.0-slim --format cyclonedx-1-5
