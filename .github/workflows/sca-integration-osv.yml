@@ -35,11 +35,10 @@ jobs:
     steps:
       - name: Docker
         run: |
-          docker --version
-          docker pull python:3.13.0-slim
-          docker save python:3.13.0-slim > python_s3.13.0-slim.tar
+#          docker pull python:3.13.0-slim
+          docker save alpine:3.17.0 > alpine_3.17.0.tar
 
       - name: Run OSV Scanner
         uses: docker://ghcr.io/google/osv-scanner-action:v2.2.1
         with:
-          args: scan image --archive python_s3.13.0-slim.tar --format cyclonedx-1-5
+          args: scan image --archive alpine_3.17.0.tar --format cyclonedx-1-5
