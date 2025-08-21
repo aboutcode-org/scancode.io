@@ -37,8 +37,9 @@ jobs:
         run: |
           docker --version
           docker pull python:3.13.0-slim
+          docker save python:3.13.0-slim > python_s3.13.0-slim.tar
 
       - name: Run OSV Scanner
         uses: docker://ghcr.io/google/osv-scanner-action:v2.2.1
         with:
-          args: scan image python:3.13.0-slim --format cyclonedx-1-5
+          args: scan image python_s3.13.0-slim.tar --format cyclonedx-1-5
