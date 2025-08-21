@@ -1,4 +1,5 @@
-name: OSV-Scanner
+name: Generate SBOM with OSV-Scanner and load into ScanCode.io
+
 on:
   workflow_dispatch:
   pull_request:
@@ -14,7 +15,7 @@ env:
 
 jobs:
   generate-and-load-sbom:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Generate CycloneDX SBOM with OSV-Scanner
-        uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.2.1"
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.2.1
+    with:
+      scan-args: |-
+        --help
