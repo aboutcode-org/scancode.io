@@ -18,16 +18,6 @@ permissions:
 env:
   IMAGE_REFERENCE: "python:3.13.0-slim"
 
-#jobs:
-#  generate-and-load-sbom:
-#    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.2.1
-#    with:
-#      scan-args: |-
-#        image
-#        python:3.13.0-slim
-#        --format
-#        cyclonedx-1-5
-
 jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
@@ -35,7 +25,7 @@ jobs:
     steps:
       - name: Docker
         run: |
-#          docker pull python:3.13.0-slim
+          docker pull alpine:3.17.0
           docker save alpine:3.17.0 > alpine_3.17.0.tar
 
       - name: Run OSV Scanner
