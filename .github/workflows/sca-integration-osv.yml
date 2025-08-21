@@ -33,6 +33,10 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
+      - run: |
+          docker --version
+          docker pull python:3.13.0-slim
+
       - name: Run OSV Scanner
         uses: docker://ghcr.io/google/osv-scanner-action:v2.2.1
         with:
