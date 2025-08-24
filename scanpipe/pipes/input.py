@@ -20,30 +20,34 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import hashlib
+import logging
 import os
 import shutil
-from pathlib import Path
-import logging
 from datetime import datetime
-import hashlib
-import requests
+from pathlib import Path
 
 from django.core.exceptions import FieldDoesNotExist
 from django.core.validators import EMPTY_VALUES
 from django.db import models
 
 import openpyxl
+import requests
 from typecode.contenttype import get_type
 
 from scanpipe import pipes
-from scanpipe.models import CodebaseRelation, InputSource
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import InputSource
 from scanpipe.pipes import scancode
 from scanpipe.pipes.output import mappings_key_by_fieldname
-from scanpipe.settings import download_store, ENABLE_DOWNLOAD_ARCHIVING, DOWNLOAD_ARCHIVING_PROVIDER
+from scanpipe.settings import ENABLE_DOWNLOAD_ARCHIVING
+from scanpipe.settings import download_store
+
 logger = logging.getLogger(__name__)
+
 
 def copy_input(input_location, dest_path):
     """Copy the ``input_location`` (file or directory) to the ``dest_path``."""
@@ -235,6 +239,7 @@ def load_inventory_from_xlsx(project, input_location, extra_data_prefix=None):
             extra_data = {extra_data_prefix: extra_data}
         project.update_extra_data(extra_data)
 
+
 def add_input_from_url(project, url, filename=None):
     """
     Download the file from the provided ``url`` and add it as an InputSource for the
@@ -242,7 +247,7 @@ def add_input_from_url(project, url, filename=None):
     If archiving is enabled, store the content in the DownloadStore and save metadata.
     """
     try:
-        response = requests.get(url, stream=True)
+        response = requests.get(url, stream=True,timeout=30)
         response.raise_for_status()
         content = response.content
     except requests.RequestException as e:
@@ -250,9 +255,15 @@ def add_input_from_url(project, url, filename=None):
         raise
 
     should_archive = (
-        ENABLE_DOWNLOAD_ARCHIVING == "always" or
-        (ENABLE_DOWNLOAD_ARCHIVING == "per_project" and getattr(project, "archive_downloads", False)) or
-        (ENABLE_DOWNLOAD_ARCHIVING == "per_input" and "archive" in getattr(project, "input_tags", []))
+        ENABLE_DOWNLOAD_ARCHIVING == "always"
+        or (
+            ENABLE_DOWNLOAD_ARCHIVING == "per_project"
+            and getattr(project, "archive_downloads", False)
+        )
+        or (
+            ENABLE_DOWNLOAD_ARCHIVING == "per_input"
+            and "archive" in getattr(project, "input_tags", [])
+        )
     )
 
     filename = filename or url.split("/")[-1]
@@ -265,7 +276,7 @@ def add_input_from_url(project, url, filename=None):
                     content=content,
                     download_url=url,
                     download_date=datetime.now().isoformat(),
-                    filename=filename
+                    filename=filename,
                 )
             except Exception as e:
                 logger.error(f"Failed to archive download for {url}: {e}")
@@ -284,7 +295,7 @@ def add_input_from_url(project, url, filename=None):
     else:
         input_path = project.input_path / filename
         try:
-            with open(input_path, 'wb') as f:
+            with open(input_path, "wb") as f:
                 f.write(content)
         except Exception as e:
             logger.error(f"Failed to save {filename} to {input_path}: {e}")
@@ -297,6 +308,7 @@ def add_input_from_url(project, url, filename=None):
             is_uploaded=False,
         )
 
+
 def add_input_from_upload(project, uploaded_file):
     """
     Add an uploaded file as an InputSource for the specified ``project``.
@@ -306,9 +318,15 @@ def add_input_from_upload(project, uploaded_file):
     filename = uploaded_file.name
 
     should_archive = (
-        ENABLE_DOWNLOAD_ARCHIVING == "always" or
-        (ENABLE_DOWNLOAD_ARCHIVING == "per_project" and getattr(project, "archive_downloads", False)) or
-        (ENABLE_DOWNLOAD_ARCHIVING == "per_input" and "archive" in getattr(project, "input_tags", []))
+        ENABLE_DOWNLOAD_ARCHIVING == "always"
+        or (
+            ENABLE_DOWNLOAD_ARCHIVING == "per_project"
+            and getattr(project, "archive_downloads", False)
+        )
+        or (
+            ENABLE_DOWNLOAD_ARCHIVING == "per_input"
+            and "archive" in getattr(project, "input_tags", [])
+        )
     )
 
     if should_archive and download_store:
@@ -320,7 +338,7 @@ def add_input_from_upload(project, uploaded_file):
                     content=content,
                     download_url="",  # No URL for uploads
                     download_date=datetime.now().isoformat(),
-                    filename=filename
+                    filename=filename,
                 )
             except Exception as e:
                 logger.error(f"Failed to archive upload {filename}: {e}")
@@ -339,7 +357,7 @@ def add_input_from_upload(project, uploaded_file):
     else:
         input_path = project.input_path / filename
         try:
-            with open(input_path, 'wb') as f:
+            with open(input_path, "wb") as f:
                 f.write(content)
         except Exception as e:
             logger.error(f"Failed to save {filename} to {input_path}: {e}")

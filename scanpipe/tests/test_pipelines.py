@@ -29,6 +29,7 @@ from contextlib import redirect_stderr
 from pathlib import Path
 from unittest import mock
 from unittest import skipIf
+from unittest.mock import patch
 
 from django.conf import settings
 from django.test import TestCase
@@ -40,6 +41,7 @@ from scancode.cli_test_utils import purl_with_fake_uuid
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import InputSource
 from scanpipe.pipelines import CommonStepsMixin
 from scanpipe.pipelines import InputFilesError
 from scanpipe.pipelines import Pipeline
@@ -284,6 +286,35 @@ class ScanPipePipelinesTest(TestCase):
         input_source.refresh_from_db()
         self.assertEqual("scancode.io.git", input_source.filename)
         self.assertTrue(input_source.exists())
+
+    @mock.patch("requests.get")
+    def test_archive_downloads(self, mock_get):
+        project1 = make_project()
+        run = project1.add_pipeline("scan_codebase")
+        pipeline = run.make_pipeline_instance()
+        test_filename = "sample.tar.gz"
+        test_url = "https://files.pythonhosted.org/packages/sample.tar.gz"
+        test_data_path = (
+            Path(__file__).parent / "data" / "test-downloads" / test_filename
+        )
+        with open(test_data_path, "rb") as f:
+            test_content = f.read()
+
+        InputSource.objects.create(
+            project=project1,
+            filename=test_filename,
+            download_url=test_url,
+            is_uploaded=False,
+        )
+        with patch("scanpipe.settings.ENABLE_DOWNLOAD_ARCHIVING", "always"):
+            mock_get.return_value.content = test_content
+            mock_get.return_value.status_code = 200
+            pipeline.archive_downloads()
+            input_source = InputSource.objects.get(project=project1)
+            self.assertTrue(input_source.sha256)
+            self.assertTrue(input_source.download_date)
+            self.assertEqual(input_source.download_url, test_url)
+            self.assertEqual(input_source.filename, test_filename)
 
     def test_scanpipe_pipeline_class_save_errors_context_manager(self):
         project1 = make_project()

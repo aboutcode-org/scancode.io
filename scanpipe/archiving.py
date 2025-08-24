@@ -21,19 +21,23 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
 import hashlib
 import json
 import logging
-from pathlib import Path
-import boto3 
-from botocore.exceptions import ClientError 
-import paramiko 
-from paramiko.ssh_exception import SSHException 
 import os
+import stat
+from abc import ABC
+from abc import abstractmethod
+from dataclasses import dataclass
+from pathlib import Path
+
+import boto3
+import paramiko
+from botocore.exceptions import ClientError
+from paramiko.ssh_exception import SSHException
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class Download:
@@ -42,23 +46,28 @@ class Download:
     download_url: str
     filename: str
 
+
 class DownloadStore(ABC):
     def _compute_sha256(self, content: bytes) -> str:
         """Compute SHA256 hash for content."""
         return hashlib.sha256(content).hexdigest()
 
-    def _compute_origin_hash(self, filename: str, download_date: str, download_url: str) -> str:
+    def _compute_origin_hash(
+        self, filename: str, download_date: str, download_url: str
+    ) -> str:
         """Compute a hash for the metadata to name the origin JSON file."""
-        to_hash = f"{filename}{download_date}{download_url}".encode("utf-8")
+        to_hash = f"{filename}{download_date}{download_url}".encode()
         return hashlib.sha256(to_hash).hexdigest()
 
-    def _build_metadata(self, sha256: str, filename: str, download_date: str, download_url: str) -> dict:
+    def _build_metadata(
+        self, sha256: str, filename: str, download_date: str, download_url: str
+    ) -> dict:
         """Build metadata dictionary for JSON storage."""
         return {
             "sha256": sha256,
             "filename": filename,
             "download_date": download_date,
-            "url": download_url
+            "url": download_url,
         }
 
     @abstractmethod
@@ -78,13 +87,19 @@ class DownloadStore(ABC):
 
     @abstractmethod
     def put(self, content: bytes, download_url: str, download_date: str, filename: str):
-        """Store content with its metadata. Return a Download object on success. Raise an exception on error."""
+        """
+        Store content with its metadata. Return a Download object on success.
+        Raise an exception on error.
+        """
         pass
 
     @abstractmethod
-    def find(self, download_url: str = None, filename: str = None, download_date: str = None):
+    def find(
+        self, download_url: str = None, filename: str = None, download_date: str = None
+    ):
         """Return a Download object matching the metadata or None."""
         pass
+
 
 class LocalFilesystemProvider(DownloadStore):
     def __init__(self, root_path: Path):
@@ -98,11 +113,10 @@ class LocalFilesystemProvider(DownloadStore):
         """Return an iterable of all stored downloads."""
         downloads = []
         for content_path in self.root_path.rglob("content"):
-            sha256 = str(content_path.parent.relative_to(self.root_path)).replace("/", "")
             origin_files = list(content_path.parent.glob("origin-*.json"))
             for origin_file in origin_files:
                 try:
-                    with open(origin_file, "r") as f:
+                    with open(origin_file) as f:
                         data = json.load(f)
                     downloads.append(Download(**data))
                 except Exception as e:
@@ -116,11 +130,13 @@ class LocalFilesystemProvider(DownloadStore):
             origin_files = list(content_path.glob("origin-*.json"))
             if origin_files:
                 try:
-                    with open(origin_files[0], "r") as f:
+                    with open(origin_files[0]) as f:
                         data = json.load(f)
                     return Download(**data)
                 except Exception as e:
-                    logger.error(f"Error reading origin file for {sha256_checksum}: {e}")
+                    logger.error(
+                        f"Error reading origin file for {sha256_checksum}: {e}"
+                    )
         return None
 
     def put(self, content: bytes, download_url: str, download_date: str, filename: str):
@@ -132,7 +148,7 @@ class LocalFilesystemProvider(DownloadStore):
         content_file = content_path / "content"
         if not content_file.exists():
             try:
-                with open(content_file, 'wb') as f:
+                with open(content_file, "wb") as f:
                     f.write(content)
             except Exception as e:
                 raise Exception(f"Failed to write content to {content_file}: {e}")
@@ -145,39 +161,51 @@ class LocalFilesystemProvider(DownloadStore):
 
         metadata = self._build_metadata(sha256, filename, download_date, download_url)
         try:
-            with open(origin_path, 'w') as f:
+            with open(origin_path, "w") as f:
                 json.dump(metadata, f, indent=2)
         except Exception as e:
             raise Exception(f"Failed to write metadata to {origin_path}: {e}")
 
         return Download(**metadata)
 
-    def find(self, download_url: str = None, filename: str = None, download_date: str = None):
+    def find(
+        self, download_url: str = None, filename: str = None, download_date: str = None
+    ):
         """Find a download based on metadata."""
         if not (download_url or filename or download_date):
             return None
         for content_path in self.root_path.rglob("origin-*.json"):
             try:
-                with open(content_path, "r") as f:
+                with open(content_path) as f:
                     data = json.load(f)
                 if (
-                    (download_url is None or data.get("url") == download_url) and
-                    (filename is None or data.get("filename") == filename) and
-                    (download_date is None or data.get("download_date") == download_date)
+                    (download_url is None or data.get("url") == download_url)
+                    and (filename is None or data.get("filename") == filename)
+                    and (
+                        download_date is None
+                        or data.get("download_date") == download_date
+                    )
                 ):
                     return Download(**data)
             except Exception as e:
                 logger.error(f"Error reading {content_path}: {e}")
         return None
 
+
 class S3LikeProvider(DownloadStore):
-    def __init__(self, bucket_name: str, aws_userid: str, aws_apikey: str, other_aws_credentials: dict):
+    def __init__(
+        self,
+        bucket_name: str,
+        aws_userid: str,
+        aws_apikey: str,
+        other_aws_credentials: dict,
+    ):
         self.bucket_name = bucket_name
         self.s3_client = boto3.client(
-            's3',
+            "s3",
             aws_access_key_id=aws_userid,
             aws_secret_access_key=aws_apikey,
-            **(other_aws_credentials or {})
+            **(other_aws_credentials or {}),
         )
 
     def _get_content_path(self, sha256: str) -> str:
@@ -194,7 +222,9 @@ class S3LikeProvider(DownloadStore):
                     key = obj["Key"]
                     if key.endswith(".json"):
                         try:
-                            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
+                            response = self.s3_client.get_object(
+                                Bucket=self.bucket_name, Key=key
+                            )
                             data = json.loads(response["Body"].read())
                             downloads.append(Download(**data))
                         except Exception as e:
@@ -208,13 +238,13 @@ class S3LikeProvider(DownloadStore):
         prefix = self._get_content_path(sha256_checksum)
         try:
             response = self.s3_client.list_objects_v2(
-                Bucket=self.bucket_name,
-                Prefix=prefix,
-                MaxKeys=1
+                Bucket=self.bucket_name, Prefix=prefix, MaxKeys=1
             )
             if "Contents" in response:
                 key = response["Contents"][0]["Key"]
-                obj_response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
+                obj_response = self.s3_client.get_object(
+                    Bucket=self.bucket_name, Key=key
+                )
                 data = json.loads(obj_response["Body"].read())
                 return Download(**data)
         except ClientError as e:
@@ -255,7 +285,9 @@ class S3LikeProvider(DownloadStore):
 
         return Download(**metadata)
 
-    def find(self, download_url: str = None, filename: str = None, download_date: str = None):
+    def find(
+        self, download_url: str = None, filename: str = None, download_date: str = None
+    ):
         """Find a download based on metadata."""
         if not (download_url or filename or download_date):
             return None
@@ -266,12 +298,22 @@ class S3LikeProvider(DownloadStore):
                     key = obj["Key"]
                     if key.endswith(".json"):
                         try:
-                            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
+                            response = self.s3_client.get_object(
+                                Bucket=self.bucket_name, Key=key
+                            )
                             data = json.loads(response["Body"].read())
                             if (
-                                (download_url is None or data.get("url") == download_url) and
-                                (filename is None or data.get("filename") == filename) and
-                                (download_date is None or data.get("download_date") == download_date)
+                                (
+                                    download_url is None
+                                    or data.get("url") == download_url
+                                )
+                                and (
+                                    filename is None or data.get("filename") == filename
+                                )
+                                and (
+                                    download_date is None
+                                    or data.get("download_date") == download_date
+                                )
                             ):
                                 return Download(**data)
                         except Exception as e:
@@ -279,6 +321,7 @@ class S3LikeProvider(DownloadStore):
         except ClientError as e:
             logger.error(f"Failed to find in S3: {e}")
         return None
+
 
 class SftpProvider(DownloadStore):
     def __init__(self, host: str, root_path: str, ssh_credentials: dict):
@@ -334,9 +377,13 @@ class SftpProvider(DownloadStore):
         content_path = self._get_content_path(sha256_checksum)
         try:
             files = self.sftp.listdir(content_path)
-            origin_files = [f for f in files if f.startswith("origin-") and f.endswith(".json")]
+            origin_files = [
+                f for f in files if f.startswith("origin-") and f.endswith(".json")
+            ]
             if origin_files:
-                with self.sftp.open(os.path.join(content_path, origin_files[0]), "r") as f:
+                with self.sftp.open(
+                    os.path.join(content_path, origin_files[0]), "r"
+                ) as f:
                     data = json.load(f)
                 return Download(**data)
         except SSHException as e:
@@ -358,7 +405,7 @@ class SftpProvider(DownloadStore):
             logger.info(f"Content already exists for {sha256}")
         except SSHException:
             try:
-                with self.sftp.open(content_file, 'wb') as f:
+                with self.sftp.open(content_file, "wb") as f:
                     f.write(content)
             except SSHException as e:
                 raise Exception(f"Failed to write content to SFTP {content_file}: {e}")
@@ -370,17 +417,21 @@ class SftpProvider(DownloadStore):
             self.sftp.stat(origin_path)
             raise Exception(f"Origin {origin_filename} already exists")
         except SSHException:
-            metadata = self._build_metadata(sha256, filename, download_date, download_url)
+            metadata = self._build_metadata(
+                sha256, filename, download_date, download_url
+            )
             metadata_json = json.dumps(metadata, indent=2).encode("utf-8")
             try:
-                with self.sftp.open(origin_path, 'wb') as f:
+                with self.sftp.open(origin_path, "wb") as f:
                     f.write(metadata_json)
             except SSHException as e:
                 raise Exception(f"Failed to write metadata to SFTP {origin_path}: {e}")
 
         return Download(**metadata)
 
-    def find(self, download_url: str = None, filename: str = None, download_date: str = None):
+    def find(
+        self, download_url: str = None, filename: str = None, download_date: str = None
+    ):
         """Find a download based on metadata."""
         if not (download_url or filename or download_date):
             return None
@@ -393,9 +444,17 @@ class SftpProvider(DownloadStore):
                             with self.sftp.open(file_path, "r") as f:
                                 data = json.load(f)
                             if (
-                                (download_url is None or data.get("url") == download_url) and
-                                (filename is None or data.get("filename") == filename) and
-                                (download_date is None or data.get("download_date") == download_date)
+                                (
+                                    download_url is None
+                                    or data.get("url") == download_url
+                                )
+                                and (
+                                    filename is None or data.get("filename") == filename
+                                )
+                                and (
+                                    download_date is None
+                                    or data.get("download_date") == download_date
+                                )
                             ):
                                 return Download(**data)
                         except Exception as e:

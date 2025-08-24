@@ -24,9 +24,12 @@ import sys
 import tempfile
 from pathlib import Path
 from venv import logger
-import environ
-from scanpipe.archiving import LocalFilesystemProvider, S3LikeProvider, SftpProvider
 
+import environ
+
+from scanpipe.archiving import LocalFilesystemProvider
+from scanpipe.archiving import S3LikeProvider
+from scanpipe.archiving import SftpProvider
 
 PROJECT_DIR = environ.Path(__file__) - 1
 ROOT_DIR = PROJECT_DIR - 1
@@ -378,10 +381,14 @@ CRISPY_TEMPLATE_PACK = "bootstrap3"
 ENABLE_DOWNLOAD_ARCHIVING = env.bool("ENABLE_DOWNLOAD_ARCHIVING", default=False)
 
 # localstorage, s3, sftp
-DOWNLOAD_ARCHIVING_PROVIDER = env.str("DOWNLOAD_ARCHIVING_PROVIDER", default="localstorage")
+DOWNLOAD_ARCHIVING_PROVIDER = env.str(
+    "DOWNLOAD_ARCHIVING_PROVIDER", default="localstorage"
+)
 
 # For local storage, we would store the root path in that setting
-DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION = env.dict("DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION", default=None)
+DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION = env.dict(
+    "DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION", default=None
+)
 
 # Initialize the DownloadStore based on provider
 
@@ -398,7 +405,10 @@ if ENABLE_DOWNLOAD_ARCHIVING:
         config = DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION or {}
         required_keys = ["bucket_name", "aws_userid", "aws_apikey"]
         if not all(key in config for key in required_keys):
-            logger.error(f"S3 provider requires {required_keys} in DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION")
+            logger.error(
+                f"S3 provider requires {required_keys}"
+                "in DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION"
+            )
         else:
             try:
                 download_store = S3LikeProvider(
@@ -413,7 +423,10 @@ if ENABLE_DOWNLOAD_ARCHIVING:
         config = DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION or {}
         required_keys = ["host", "root_path", "ssh_credentials"]
         if not all(key in config for key in required_keys):
-            logger.error(f"SFTP provider requires {required_keys} in DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION")
+            logger.error(
+                f"SFTP provider requires {required_keys}"
+                "in DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION"
+            )
         else:
             try:
                 download_store = SftpProvider(
@@ -424,7 +437,9 @@ if ENABLE_DOWNLOAD_ARCHIVING:
             except Exception as e:
                 logger.error(f"Failed to initialize SftpProvider: {e}")
     else:
-        logger.error(f"Unknown DOWNLOAD_ARCHIVING_PROVIDER: {DOWNLOAD_ARCHIVING_PROVIDER}")
+        logger.error(
+            f"Unknown DOWNLOAD_ARCHIVING_PROVIDER: {DOWNLOAD_ARCHIVING_PROVIDER}"
+        )
 
 # Job Queue
 

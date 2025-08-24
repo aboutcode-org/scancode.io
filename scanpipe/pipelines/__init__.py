@@ -24,14 +24,18 @@ import inspect
 import logging
 import traceback
 from contextlib import contextmanager
+from datetime import datetime
 from functools import wraps
 from pathlib import Path
 
 import bleach
+import requests
 from markdown_it import MarkdownIt
 from pyinstrument import Profiler
 
 from aboutcode.pipeline import BasePipeline
+from scanpipe.settings import ENABLE_DOWNLOAD_ARCHIVING
+from scanpipe.settings import download_store
 
 logger = logging.getLogger(__name__)
 
@@ -153,6 +157,46 @@ class CommonStepsMixin:
         if error_tracebacks:
             raise InputFilesError(error_tracebacks)
 
+    def archive_downloads(self):
+        """
+        Archive downloaded inputs to the centralized DownloadStore if not already
+        archived.Updates InputSource with archiving metadata (sha256, download_date).
+        """
+        logger.info(f"Archiving downloads for project {self.project.name}")
+        for input_source in self.project.inputsources.filter(
+            sha256__isnull=True, is_uploaded=False
+        ):
+            if input_source.download_url:
+                try:
+                    response = requests.get(
+                        input_source.download_url, stream=True,timeout=30
+                        )
+                    response.raise_for_status()
+                    content = response.content
+                    filename = (
+                        input_source.filename
+                        or input_source.download_url.split("/")[-1]
+                    )
+                    download = download_store.put(
+                        content=content,
+                        download_url=input_source.download_url,
+                        download_date=datetime.now().isoformat(),
+                        filename=filename,
+                    )
+                    input_source.sha256 = download.sha256
+                    input_source.download_date = download.download_date
+                    input_source.save()
+                except Exception as e:
+                    self.add_error(
+                        exception=e,
+                        message=f"Failed to archive {input_source.download_url}",
+                    )
+            else:
+                logger.warning(
+                    f"No download URL for input {input_source.filename},"
+                    "skipping archiving"
+                )
+
 
 class ProjectPipeline(CommonStepsMixin, BasePipeline):
     """Main class for all project related pipelines including common steps methods."""
@@ -182,8 +226,12 @@ class ProjectPipeline(CommonStepsMixin, BasePipeline):
     @classmethod
     def get_initial_steps(cls):
         """Add the ``download_inputs`` step as an initial step if enabled."""
+        steps = []
         if cls.download_inputs:
-            return (cls.download_missing_inputs,)
+            steps.append(cls.download_missing_inputs)
+        if ENABLE_DOWNLOAD_ARCHIVING:
+            steps.append(cls.archive_downloads)
+        return tuple(steps)
 
     @classmethod
     def get_info(cls, as_html=False):
