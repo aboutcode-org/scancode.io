@@ -1,9 +1,9 @@
-<ul class="pl-2">
+<ul>
   {% for node in children %}
     <li class="mb-1">
       {% if node.is_dir %}
         <div class="tree-node is-flex is-align-items-center has-text-weight-semibold px-1" data-folder data-path="{{ node.path }}"{% if node.has_children %} data-target="{{ node.path|slugify }}" data-url="{% url 'codebase_resource_tree' slug=project.slug %}?path={{ node.path }}"{% endif %}>
-          <span class="icon is-small chevron mr-1{% if not node.has_children %} is-invisible{% endif %} is-clickable" data-chevron>
+          <span class="icon is-small chevron mr-1{% if not node.has_children %} is-invisible{% endif %} is-clickable is-flex is-align-items-center" data-chevron>
             <i class="fas fa-chevron-right"></i>
           </span>
           <span class="is-flex is-align-items-center folder-meta is-clickable" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ node.path }}" hx-target="#right-pane">
