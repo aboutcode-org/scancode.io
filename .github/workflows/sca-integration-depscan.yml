@@ -27,16 +27,32 @@ jobs:
           docker save --output docker-image.tar ${{ env.IMAGE_REFERENCE }}
           chmod 644 docker-image.tar
 
+      - name: Install OWASP dep-scan
+        run: |
+          npm install @cyclonedx/cdxgen
+          pip install owasp-depscan
+
       - name: Generate SBOM with OWASP dep-scan
         run: |
-          docker run --rm -v ${{ github.workspace }}:/app \
-            -e SCAN_DEBUG_MODE=debug \
-            ghcr.io/owasp-dep-scan/dep-scan depscan \
-            --src /app/docker-image.tar \
+          depscan \
+            --src docker-image.tar \
             --type docker,license \
             --explain \
-            --reports-dir /app/reports/ \
+            --reports-dir reports/ \
             --report-name depscan-sbom.cdx.json
+        env:
+          SCAN_DEBUG_MODE: debug
+
+#      - name: Generate SBOM with OWASP dep-scan
+#        run: |
+#          docker run --rm -v ${{ github.workspace }}:/app \
+#            -e SCAN_DEBUG_MODE=debug \
+#            ghcr.io/owasp-dep-scan/dep-scan depscan \
+#            --src /app/docker-image.tar \
+#            --type docker,license \
+#            --explain \
+#            --reports-dir /app/reports/ \
+#            --report-name depscan-sbom.cdx.json
 
       - run: ls -la reports
 
