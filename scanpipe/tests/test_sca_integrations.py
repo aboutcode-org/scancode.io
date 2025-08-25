@@ -98,7 +98,9 @@ class ScanPipeSCAIntegrationsTest(TestCase):
     def test_scanpipe_scan_integrations_load_sbom_depscan(self):
         # Input file generated with:
         # $ depscan --src alpine:3.17.0 --type docker
-        input_location = self.data / "sca-integrations" / "depscan-alpine-3.17-sbom.json"
+        input_location = (
+            self.data / "sca-integrations" / "depscan-alpine-3.17-sbom.json"
+        )
 
         pipeline_name = "load_sbom"
         project1 = make_project()
