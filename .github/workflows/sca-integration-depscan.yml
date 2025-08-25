@@ -7,9 +7,6 @@ on:
     branches:
       - main
 
-permissions:
-  contents: read
-
 env:
   IMAGE_REFERENCE: "python:3.13.0-slim"
 
@@ -17,19 +14,26 @@ jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
     steps:
+      - name: Prepare writable reports directory
+        run: |
+          mkdir -p reports
+          chmod 777 reports
+
       - name: Generate SBOM with OWASP dep-scan
         run: |
           docker run --rm -v $PWD:/app \
             ghcr.io/owasp-dep-scan/dep-scan depscan \
             --src ${{ env.IMAGE_REFERENCE }} \
-            --reports-dir /app \
+            --reports-dir /app/reports \
             --report-name depscan-sbom.cdx.json
+
+      - run: ls -la reports
 
       - name: Upload SBOM as GitHub Artifact
         uses: actions/upload-artifact@v4
         with:
           name: depscan-sbom
-          path: "depscan-sbom.cdx.json"
+          path: "reports/depscan-sbom.cdx.json"
           retention-days: 20
 
 #      - name: Import SBOM into ScanCode.io
