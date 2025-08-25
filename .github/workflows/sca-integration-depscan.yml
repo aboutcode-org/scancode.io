@@ -15,16 +15,15 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Prepare writable reports directory
-        run: |
-          mkdir -p reports
-          chmod 777 reports
+        run: mkdir -p reports/ && chmod 777 reports/
 
       - name: Generate SBOM with OWASP dep-scan
         run: |
           docker run --rm -v $PWD:/app \
             ghcr.io/owasp-dep-scan/dep-scan depscan \
             --src ${{ env.IMAGE_REFERENCE }} \
-            --reports-dir /app/reports \
+            --type docker,license \
+            --reports-dir /app/reports/ \
             --report-name depscan-sbom.cdx.json
 
       - run: ls -la reports
@@ -33,7 +32,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: depscan-sbom
-          path: "reports/depscan-sbom.cdx.json"
+          path: reports/
           retention-days: 20
 
 #      - name: Import SBOM into ScanCode.io
