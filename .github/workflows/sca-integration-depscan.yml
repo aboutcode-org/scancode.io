@@ -11,21 +11,13 @@ permissions:
   contents: read
 
 env:
-  IMAGE_REFERENCE: "python:3.13.0-slim"
-#  IMAGE_REFERENCE: "alpine:3.17.0"
+#  IMAGE_REFERENCE: "python:3.13.0-slim"
+  IMAGE_REFERENCE: "alpine:3.17.0"
 
 jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
     steps:
-#      - name: Prepare writable reports directory
-#        run: mkdir -p reports && chmod 777 reports
-
-      - name: Pull and save the Docker image
-        run: |
-          docker pull ${{ env.IMAGE_REFERENCE }}
-          docker save --output docker-image.tar ${{ env.IMAGE_REFERENCE }}
-
       - name: Install OWASP dep-scan
         run: |
           sudo npm install -g @cyclonedx/cdxgen
@@ -46,7 +38,7 @@ jobs:
           path: reports/
           retention-days: 20
 
-      - name: Uninstall dep-scan to avoid conflict in the Python env
+      - name: Uninstall dep-scan to avoid conflicts in the Python env
         run: pip uninstall --yes owasp-depscan
 
       - name: Import SBOM into ScanCode.io
