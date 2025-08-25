@@ -34,27 +34,10 @@ jobs:
       - name: Generate SBOM with OWASP dep-scan
         run: |
           depscan \
-            --src docker-image.tar \
+            --src ${{ env.IMAGE_REFERENCE }} \
             --type docker \
             --reports-dir reports \
             --explain
-
-#            --report-name depscan-sbom.cdx.json
-#        env:
-#          SCAN_DEBUG_MODE: debug
-#
-#      - name: Generate SBOM with OWASP dep-scan
-#        run: |
-#          docker run --rm -v ${{ github.workspace }}:/app \
-#            -e SCAN_DEBUG_MODE=debug \
-#            ghcr.io/owasp-dep-scan/dep-scan depscan \
-#            --src /app/docker-image.tar \
-#            --type docker,license \
-#            --explain \
-#            --reports-dir /app/reports/ \
-#            --report-name depscan-sbom.cdx.json
-
-#      - run: ls -la reports
 
       - name: Upload SBOM as GitHub Artifact
         uses: actions/upload-artifact@v4
