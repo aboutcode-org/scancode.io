@@ -18,14 +18,13 @@ jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
     steps:
-      - name: Prepare writable reports directory
-        run: mkdir -p reports/ && chmod 777 reports/
+#      - name: Prepare writable reports directory
+#        run: mkdir -p reports && chmod 777 reports
 
       - name: Pull and save the Docker image
         run: |
           docker pull ${{ env.IMAGE_REFERENCE }}
           docker save --output docker-image.tar ${{ env.IMAGE_REFERENCE }}
-#          chmod 644 docker-image.tar
 
       - name: Install OWASP dep-scan
         run: |
@@ -37,12 +36,13 @@ jobs:
           depscan \
             --src docker-image.tar \
             --type docker \
-            --explain \
-            --reports-dir reports/
-#            --report-name depscan-sbom.cdx.json
-        env:
-          SCAN_DEBUG_MODE: debug
+            --reports-dir reports \
+            --explain
 
+#            --report-name depscan-sbom.cdx.json
+#        env:
+#          SCAN_DEBUG_MODE: debug
+#
 #      - name: Generate SBOM with OWASP dep-scan
 #        run: |
 #          docker run --rm -v ${{ github.workspace }}:/app \
@@ -54,7 +54,7 @@ jobs:
 #            --reports-dir /app/reports/ \
 #            --report-name depscan-sbom.cdx.json
 
-      - run: ls -la reports
+#      - run: ls -la reports
 
       - name: Upload SBOM as GitHub Artifact
         uses: actions/upload-artifact@v4
@@ -63,13 +63,16 @@ jobs:
           path: reports/
           retention-days: 20
 
+      - name: Uninstall dep-scan to avoid conflict in the Python env
+        run: pip uninstall --yes owasp-depscan
+
       - name: Import SBOM into ScanCode.io
         uses: aboutcode-org/scancode-action@main
         with:
           pipelines: "load_sbom"
-          inputs-path: "reports/sbom-docker.json"
+          inputs-path: "reports/sbom-docker.vdr.json"
 
       - name: Verify SBOM Analysis Results in ScanCode.io
         shell: bash
         run: |
-          scanpipe shell --command "from scanpipe.models import DiscoveredPackage, DiscoveredDependency; package_manager = DiscoveredPackage.objects; assert package_manager.count() > 340; assert package_manager.vulnerable().count() == 0; assert DiscoveredDependency.objects.count() == 0"
+          scanpipe shell --command "from scanpipe.models import DiscoveredPackage, DiscoveredDependency; package_manager = DiscoveredPackage.objects; assert package_manager.count() > 220; assert package_manager.vulnerable().count() > 10; assert DiscoveredDependency.objects.count() > 150"
