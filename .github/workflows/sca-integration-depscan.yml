@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+
 permissions:
   contents: read
 
@@ -21,14 +22,14 @@ jobs:
           docker run --rm -v $PWD:/app \
             ghcr.io/owasp-dep-scan/dep-scan depscan \
             --src ${{ env.IMAGE_REFERENCE }} \
-            --reports-dir /app/reports \
+            --reports-dir /app \
             --report-name depscan-sbom.cdx.json
 
       - name: Upload SBOM as GitHub Artifact
         uses: actions/upload-artifact@v4
         with:
           name: depscan-sbom
-          path: "$PWD/reports/depscan-sbom.cdx.json"
+          path: "depscan-sbom.cdx.json"
           retention-days: 20
 
 #      - name: Import SBOM into ScanCode.io
