@@ -7,9 +7,12 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 env:
 #  IMAGE_REFERENCE: "python:3.13.0-slim"
-  IMAGE_REFERENCE: "alpine:3.17.0"
+  IMAGE_REFERENCE: "docker.io/library/alpine:3.17.0"
 
 jobs:
   generate-and-load-sbom:
@@ -25,6 +28,7 @@ jobs:
             ghcr.io/owasp-dep-scan/dep-scan depscan \
             --src ${{ env.IMAGE_REFERENCE }} \
             --type docker,license \
+            --explain \
             --reports-dir /app/reports/ \
             --report-name depscan-sbom.cdx.json
 
