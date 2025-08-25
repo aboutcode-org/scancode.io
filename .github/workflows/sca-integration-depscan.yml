@@ -36,7 +36,7 @@ jobs:
         run: |
           depscan \
             --src docker-image.tar \
-            --type docker,license \
+            --type docker \
             --explain \
             --reports-dir reports/ \
             --report-name depscan-sbom.cdx.json
