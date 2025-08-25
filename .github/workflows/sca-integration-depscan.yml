@@ -8,7 +8,8 @@ on:
       - main
 
 env:
-  IMAGE_REFERENCE: "python:3.13.0-slim"
+#  IMAGE_REFERENCE: "python:3.13.0-slim"
+  IMAGE_REFERENCE: "alpine:3.17.0"
 
 jobs:
   generate-and-load-sbom:
@@ -20,6 +21,7 @@ jobs:
       - name: Generate SBOM with OWASP dep-scan
         run: |
           docker run --rm -v $PWD:/app \
+            -e SCAN_DEBUG_MODE=debug \
             ghcr.io/owasp-dep-scan/dep-scan depscan \
             --src ${{ env.IMAGE_REFERENCE }} \
             --type docker,license \
