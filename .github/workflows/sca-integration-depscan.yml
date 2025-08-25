@@ -25,7 +25,7 @@ jobs:
         run: |
           docker pull ${{ env.IMAGE_REFERENCE }}
           docker save --output docker-image.tar ${{ env.IMAGE_REFERENCE }}
-          chmod 644 docker-image.tar
+#          chmod 644 docker-image.tar
 
       - name: Install OWASP dep-scan
         run: |
@@ -38,8 +38,8 @@ jobs:
             --src docker-image.tar \
             --type docker \
             --explain \
-            --reports-dir reports/ \
-            --report-name depscan-sbom.cdx.json
+            --reports-dir reports/
+#            --report-name depscan-sbom.cdx.json
         env:
           SCAN_DEBUG_MODE: debug
 
@@ -63,13 +63,13 @@ jobs:
           path: reports/
           retention-days: 20
 
-#      - name: Import SBOM into ScanCode.io
-#        uses: aboutcode-org/scancode-action@main
-#        with:
-#          pipelines: "load_sbom"
-#          inputs-path: "depscan-sbom.cdx.json"
-#
-#      - name: Verify SBOM Analysis Results in ScanCode.io
-#        shell: bash
-#        run: |
-#          scanpipe shell --command "from scanpipe.models import DiscoveredPackage, DiscoveredDependency; package_manager = DiscoveredPackage.objects; assert package_manager.count() > 340; assert package_manager.vulnerable().count() == 0; assert DiscoveredDependency.objects.count() == 0"
+      - name: Import SBOM into ScanCode.io
+        uses: aboutcode-org/scancode-action@main
+        with:
+          pipelines: "load_sbom"
+          inputs-path: "reports/sbom-docker.json"
+
+      - name: Verify SBOM Analysis Results in ScanCode.io
+        shell: bash
+        run: |
+          scanpipe shell --command "from scanpipe.models import DiscoveredPackage, DiscoveredDependency; package_manager = DiscoveredPackage.objects; assert package_manager.count() > 340; assert package_manager.vulnerable().count() == 0; assert DiscoveredDependency.objects.count() == 0"
