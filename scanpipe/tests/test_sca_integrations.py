@@ -73,3 +73,24 @@ class ScanPipeSCAIntegrationsTest(TestCase):
         self.assertEqual(94, project1.discoveredpackages.count())
         self.assertEqual(7, project1.discoveredpackages.vulnerable().count())
         self.assertEqual(20, project1.discovereddependencies.count())
+
+    def test_scanpipe_scan_integrations_load_sbom_cdxgen(self):
+        # Input file generated with:
+        # $ cdxgen alpine:3.17.0 --type docker --spec-version 1.6 --json-pretty \
+        #     --output cdxgen-alpine-3.17-sbom.json
+        input_location = self.data / "sca-integrations" / "cdxgen-alpine-3.17-sbom.json"
+
+        pipeline_name = "load_sbom"
+        project1 = make_project()
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(1, project1.codebaseresources.count())
+        self.assertEqual(14, project1.discoveredpackages.count())
+        self.assertEqual(0, project1.discoveredpackages.vulnerable().count())
+        self.assertEqual(0, project1.discovereddependencies.count())
