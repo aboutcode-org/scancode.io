@@ -12,7 +12,7 @@ permissions:
 
 env:
 #  IMAGE_REFERENCE: "python:3.13.0-slim"
-  IMAGE_REFERENCE: "docker.io/library/alpine:3.17.0"
+  IMAGE_REFERENCE: "alpine:3.17.0"
 
 jobs:
   generate-and-load-sbom:
@@ -21,12 +21,17 @@ jobs:
       - name: Prepare writable reports directory
         run: mkdir -p reports/ && chmod 777 reports/
 
+      - name: Pull and save the Docker image
+        run: |
+          docker pull ${{ env.IMAGE_REFERENCE }}
+          docker save --output docker-image.tar ${{ env.IMAGE_REFERENCE }}
+
       - name: Generate SBOM with OWASP dep-scan
         run: |
           docker run --rm -v $PWD:/app \
             -e SCAN_DEBUG_MODE=debug \
             ghcr.io/owasp-dep-scan/dep-scan depscan \
-            --src ${{ env.IMAGE_REFERENCE }} \
+            --src /app/docker-image.tar \
             --type docker,license \
             --explain \
             --reports-dir /app/reports/ \
