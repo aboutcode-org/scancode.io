@@ -14,13 +14,6 @@ on:
     # Run once a week (every 7 days) at 00:00 UTC on Sunday
     - cron: "0 0 * * 0"
 
-on:
-  workflow_dispatch:
-  pull_request:
-  push:
-    branches:
-      - main
-
 permissions:
   contents: read
 
