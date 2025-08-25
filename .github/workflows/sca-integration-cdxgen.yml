@@ -27,7 +27,7 @@ jobs:
         run: npm install @cyclonedx/cdxgen
 
       - name: Generate SBOM with CycloneDX cdxgen
-        run: npx cdxgen ${{ env.IMAGE_REFERENCE }} --type docker -output cdxgen-sbom.cdx.json --profile license-compliance
+        run: npx cdxgen ${{ env.IMAGE_REFERENCE }} --type docker -output cdxgen-sbom.cdx.json --json-pretty
 
       - name: Upload SBOM as GitHub Artifact
         uses: actions/upload-artifact@v4
