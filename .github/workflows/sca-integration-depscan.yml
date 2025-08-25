@@ -11,8 +11,8 @@ permissions:
   contents: read
 
 env:
-#  IMAGE_REFERENCE: "python:3.13.0-slim"
-  IMAGE_REFERENCE: "alpine:3.17.0"
+  IMAGE_REFERENCE: "python:3.13.0-slim"
+#  IMAGE_REFERENCE: "alpine:3.17.0"
 
 jobs:
   generate-and-load-sbom:
