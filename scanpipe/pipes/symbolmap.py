@@ -41,6 +41,8 @@ MATCHING_RATIO_RUST = 0.5
 SMALL_FILE_SYMBOLS_THRESHOLD = 20
 MATCHING_RATIO_RUST_SMALL_FILE = 0.4
 MATCHING_RATIO_ELF = 0.05
+MATCHING_RATIO_MACHO = 0.15
+MATCHING_RATIO_WINPE = 0.15
 MATCHING_RATIO_JAVASCRIPT = 0.7
 SMALL_FILE_SYMBOLS_THRESHOLD_JAVASCRIPT = 30
 MATCHING_RATIO_JAVASCRIPT_SMALL_FILE = 0.5
@@ -205,6 +207,22 @@ def match_source_symbols_to_binary(source_symbols, binary_symbols, map_type):
         if (
             matched_symbols_ratio > MATCHING_RATIO_ELF
             or matched_symbols_unique_ratio > MATCHING_RATIO_ELF
+        ):
+            return True, stats
+        else:
+            return False, stats
+    elif map_type == "macho_symbols":
+        if (
+            matched_symbols_ratio > MATCHING_RATIO_MACHO
+            or matched_symbols_unique_ratio > MATCHING_RATIO_MACHO
+        ):
+            return True, stats
+        else:
+            return False, stats
+    elif map_type == "winpe_symbols":
+        if (
+            matched_symbols_ratio > MATCHING_RATIO_WINPE
+            or matched_symbols_unique_ratio > MATCHING_RATIO_WINPE
         ):
             return True, stats
         else:

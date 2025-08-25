@@ -125,6 +125,7 @@ SCANCODEIO_PAGINATE_BY = env.dict(
         "resource": 100,
         "package": 100,
         "dependency": 100,
+        "license": 100,
         "relation": 100,
     },
 )
@@ -297,6 +298,7 @@ if IS_TESTS:
     SCANCODEIO_WORKSPACE_LOCATION = tempfile.mkdtemp()
     SCANCODEIO_REQUIRE_AUTHENTICATION = True
     SCANCODEIO_SCAN_FILE_TIMEOUT = 120
+    SCANCODEIO_POLICIES_FILE = None
     # The default password hasher is rather slow by design.
     # Using a faster hashing algorithm in the testing context to speed up the run.
     PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]

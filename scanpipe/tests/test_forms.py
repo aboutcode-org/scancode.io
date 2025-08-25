@@ -219,7 +219,9 @@ class ScanPipeFormsTest(TestCase):
         self.assertFalse(form.is_valid())
         expected = {
             "policies": [
-                "The `license_policies` key is missing from provided policies data."
+                "At least one of the following policy types must be present: "
+                "license_clarity_thresholds, license_policies, "
+                "scorecard_score_thresholds"
             ]
         }
         self.assertEqual(expected, form.errors)
@@ -230,7 +232,7 @@ class ScanPipeFormsTest(TestCase):
         self.assertTrue(form.is_valid())
         project = form.save()
         self.assertEqual(policies_as_yaml.strip(), project.settings["policies"])
-        self.assertEqual(license_policies_index, project.get_policy_index())
+        self.assertEqual(license_policies_index, project.get_license_policy_index())
 
     def test_scanpipe_forms_project_settings_form_purl(self):
         data_invalid_purl = {

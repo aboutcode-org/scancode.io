@@ -541,7 +541,7 @@ def to_xlsx(project):
     exclude_fields = XLSX_EXCLUDE_FIELDS.copy()
     output_file = project.get_output_file_path("results", "xlsx")
 
-    if not project.policies_enabled:
+    if not project.license_policies_enabled:
         exclude_fields.append("compliance_alert")
 
     model_names = [
@@ -567,21 +567,11 @@ def to_xlsx(project):
 
 
 def add_vulnerabilities_sheet(workbook, project):
-    vulnerable_packages_queryset = (
-        DiscoveredPackage.objects.project(project)
-        .vulnerable()
-        .only_package_url_fields(extra=["affected_by_vulnerabilities"])
-        .order_by_package_url()
-    )
-    vulnerable_dependencies_queryset = (
-        DiscoveredDependency.objects.project(project)
-        .vulnerable()
-        .only_package_url_fields(extra=["affected_by_vulnerabilities"])
-        .order_by_package_url()
-    )
+    vulnerable_packages = project.discoveredpackages.vulnerable_ordered()
+    vulnerable_dependencies = project.discovereddependencies.vulnerable_ordered()
     vulnerable_querysets = [
-        vulnerable_packages_queryset,
-        vulnerable_dependencies_queryset,
+        vulnerable_packages,
+        vulnerable_dependencies,
     ]
 
     vulnerability_fields = [
@@ -702,7 +692,7 @@ def to_spdx(project, include_files=False):
             license_expressions.append(license_expression)
 
     for dependency in discovereddependency_qs:
-        packages_as_spdx.append(dependency.as_spdx())
+        packages_as_spdx.append(dependency.as_spdx_package())
         if dependency.for_package:
             relationships.append(
                 spdx.Relationship(

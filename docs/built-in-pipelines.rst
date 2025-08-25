@@ -82,7 +82,6 @@ Collect symbols and string with Tree-Sitter (addon)
 
 Enrich With PurlDB (addon)
 --------------------------
-
 .. warning::
     This pipeline requires access to a PurlDB service.
     Refer to :ref:`scancodeio_settings_purldb` to configure access to PurlDB in your
@@ -96,7 +95,6 @@ Enrich With PurlDB (addon)
 
 Find Vulnerabilities (addon)
 ----------------------------
-
 .. warning::
     This pipeline requires access to a VulnerableCode database.
     Refer to :ref:`scancodeio_settings_vulnerablecode` to configure access to
@@ -150,7 +148,6 @@ Resolve Dependencies
 
 Map Deploy To Develop
 ---------------------
-
 .. warning::
     This pipeline requires input files to be tagged with the following:
 
@@ -168,7 +165,6 @@ Map Deploy To Develop
 
 Match to MatchCode (addon)
 --------------------------
-
 .. warning::
     This pipeline requires access to a MatchCode.io service.
     Refer to :ref:`scancodeio_settings_matchcodeio` to configure access to
@@ -182,7 +178,6 @@ Match to MatchCode (addon)
 
 Populate PurlDB (addon)
 -----------------------
-
 .. warning::
     This pipeline requires access to a PurlDB service.
     Refer to :ref:`scancodeio_settings_purldb` to configure access to PurlDB in your
@@ -196,7 +191,6 @@ Populate PurlDB (addon)
 
 Publish To FederatedCode (addon)
 --------------------------------
-
 .. warning::
     This pipeline requires access to a FederatedCode service.
     Refer to :ref:`scancodeio_settings_federatedcode` to configure access to
@@ -227,5 +221,15 @@ Scan For Virus
 Scan Single Package
 -------------------
 .. autoclass:: scanpipe.pipelines.scan_single_package.ScanSinglePackage()
+    :members:
+    :member-order: bysource
+
+Fetch Scores (addon)
+--------------------
+.. warning::
+    This pipeline is preconfigured to access the "OpenSSF Scorecard API"
+    available at https://api.securityscorecards.dev/
+
+.. autoclass:: scanpipe.pipelines.fetch_scores.FetchScores()
     :members:
     :member-order: bysource

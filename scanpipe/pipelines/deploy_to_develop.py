@@ -24,6 +24,7 @@ from aboutcode.pipeline import optional_step
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
+from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import input
 from scanpipe.pipes import matchcode
@@ -64,6 +65,8 @@ class DeployToDevelop(Pipeline):
             cls.flag_empty_files,
             cls.flag_whitespace_files,
             cls.flag_ignored_resources,
+            cls.load_ecosystem_config,
+            cls.map_ruby,
             cls.map_about_files,
             cls.map_checksum,
             cls.match_archives_to_purldb,
@@ -72,9 +75,14 @@ class DeployToDevelop(Pipeline):
             cls.map_jar_to_source,
             cls.map_javascript,
             cls.map_javascript_symbols,
+            cls.map_javascript_strings,
+            cls.get_symbols_from_binaries,
             cls.map_elf,
+            cls.map_macho,
+            cls.map_winpe,
             cls.map_go,
             cls.map_rust,
+            cls.map_python,
             cls.match_directories_to_purldb,
             cls.match_resources_to_purldb,
             cls.map_javascript_post_purldb_match,
@@ -88,36 +96,10 @@ class DeployToDevelop(Pipeline):
             cls.remove_packages_without_resources,
             cls.scan_unmapped_to_files,
             cls.scan_mapped_from_for_files,
+            cls.collect_and_create_license_detections,
             cls.flag_deployed_from_resources_with_missing_license,
             cls.create_local_files_packages,
         )
-
-    purldb_package_extensions = [".jar", ".war", ".zip"]
-    purldb_resource_extensions = [
-        ".map",
-        ".js",
-        ".mjs",
-        ".ts",
-        ".d.ts",
-        ".jsx",
-        ".tsx",
-        ".css",
-        ".scss",
-        ".less",
-        ".sass",
-        ".soy",
-        ".class",
-    ]
-    doc_extensions = [
-        ".pdf",
-        ".doc",
-        ".docx",
-        ".ppt",
-        ".pptx",
-        ".tex",
-        ".odt",
-        ".odp",
-    ]
 
     def get_inputs(self):
         """Locate the ``from`` and ``to`` input files."""
@@ -153,6 +135,15 @@ class DeployToDevelop(Pipeline):
         """Flag whitespace files with size less than or equal to 100 byte as ignored."""
         d2d.flag_whitespace_files(project=self.project)
 
+    def load_ecosystem_config(self):
+        """Load ecosystem specific configurations for d2d steps for selected options."""
+        d2d_config.load_ecosystem_config(pipeline=self, options=self.selected_groups)
+
+    @optional_step("Ruby")
+    def map_ruby(self):
+        """Load Ruby specific configurations for d2d steps."""
+        pass
+
     def map_about_files(self):
         """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
         d2d.map_about_files(project=self.project, logger=self.log)
@@ -169,7 +160,7 @@ class DeployToDevelop(Pipeline):
 
         d2d.match_purldb_resources(
             project=self.project,
-            extensions=self.purldb_package_extensions,
+            extensions=self.ecosystem_config.matchable_package_extensions,
             matcher_func=d2d.match_purldb_package,
             logger=self.log,
         )
@@ -202,21 +193,53 @@ class DeployToDevelop(Pipeline):
         """Map deployed JavaScript, TypeScript to its sources using symbols."""
         d2d.map_javascript_symbols(project=self.project, logger=self.log)
 
+    @optional_step("JavaScript")
+    def map_javascript_strings(self):
+        """Map deployed JavaScript, TypeScript to its sources using string literals."""
+        d2d.map_javascript_strings(project=self.project, logger=self.log)
+
+    def get_symbols_from_binaries(self):
+        """Extract symbols from Elf, Mach0 and windows binaries for mapping."""
+        d2d.extract_binary_symbols(
+            project=self.project,
+            options=self.selected_groups,
+            logger=self.log,
+        )
+
     @optional_step("Elf")
     def map_elf(self):
         """Map ELF binaries to their sources using dwarf paths and symbols."""
         d2d.map_elfs_with_dwarf_paths(project=self.project, logger=self.log)
         d2d.map_elfs_binaries_with_symbols(project=self.project, logger=self.log)
 
+    @optional_step("MacOS")
+    def map_macho(self):
+        """Map mach0 binaries to their sources using symbols."""
+        d2d.map_macho_binaries_with_symbols(project=self.project, logger=self.log)
+
+    @optional_step("Windows")
+    def map_winpe(self):
+        """Map winpe binaries to their sources using symbols."""
+        d2d.map_winpe_binaries_with_symbols(project=self.project, logger=self.log)
+
     @optional_step("Go")
     def map_go(self):
-        """Map Go binaries to their sources using paths."""
+        """Map Go binaries to their sources using paths and symbols."""
         d2d.map_go_paths(project=self.project, logger=self.log)
+        d2d.map_go_binaries_with_symbols(project=self.project, logger=self.log)
 
     @optional_step("Rust")
     def map_rust(self):
         """Map Rust binaries to their sources using symbols."""
         d2d.map_rust_binaries_with_symbols(project=self.project, logger=self.log)
+
+    @optional_step("Python")
+    def map_python(self):
+        """
+        Map binaries from Python packages to their sources using dwarf paths and
+        symbols.
+        """
+        d2d.map_python_pyx_to_binaries(project=self.project, logger=self.log)
 
     def match_directories_to_purldb(self):
         """Match selected directories in PurlDB."""
@@ -237,7 +260,7 @@ class DeployToDevelop(Pipeline):
 
         d2d.match_purldb_resources(
             project=self.project,
-            extensions=self.purldb_resource_extensions,
+            extensions=self.ecosystem_config.matchable_resource_extensions,
             matcher_func=d2d.match_purldb_resource,
             logger=self.log,
         )
@@ -275,6 +298,7 @@ class DeployToDevelop(Pipeline):
     def perform_house_keeping_tasks(self):
         """
         On deployed side
+            - Ignore specific files based on ecosystem based configurations.
             - PurlDB match files with ``no-java-source`` and empty status,
                 if no match is found update status to ``requires-review``.
             - Update status for uninteresting files.
@@ -285,9 +309,14 @@ class DeployToDevelop(Pipeline):
         """
         d2d.match_resources_with_no_java_source(project=self.project, logger=self.log)
         d2d.handle_dangling_deployed_legal_files(project=self.project, logger=self.log)
+        d2d.ignore_unmapped_resources_from_config(
+            project=self.project,
+            patterns_to_ignore=self.ecosystem_config.deployed_resource_path_exclusions,
+            logger=self.log,
+        )
         d2d.match_unmapped_resources(
             project=self.project,
-            matched_extensions=self.purldb_resource_extensions,
+            matched_extensions=self.ecosystem_config.matchable_resource_extensions,
             logger=self.log,
         )
         d2d.flag_undeployed_resources(project=self.project)
@@ -315,6 +344,13 @@ class DeployToDevelop(Pipeline):
         scan_files = d2d.get_from_files_for_scanning(self.project.codebaseresources)
         scancode.scan_for_files(self.project, scan_files, progress_logger=self.log)
 
+    def collect_and_create_license_detections(self):
+        """
+        Collect and create unique license detections from resources and
+        package data.
+        """
+        scancode.collect_and_create_license_detections(project=self.project)
+
     def create_local_files_packages(self):
         """Create local-files packages for codebase resources not part of a package."""
         d2d.create_local_files_packages(self.project)
@@ -323,5 +359,5 @@ class DeployToDevelop(Pipeline):
         """Update the status for deployed from files with missing license."""
         d2d.flag_deployed_from_resources_with_missing_license(
             self.project,
-            doc_extensions=self.doc_extensions,
+            doc_extensions=self.ecosystem_config.doc_extensions,
         )

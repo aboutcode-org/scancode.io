@@ -1,0 +1,10 @@
+{
+    "ecosystem_option": "Default",
+    "matchable_package_extensions": [".jar", ".war", ".gem", ".zip", ".tar.gz", ".tar.xz"],
+    "matchable_resource_extensions": [".map", ".js", ".mjs", ".ts", ".d.ts", ".jsx", ".tsx", ".css", ".scss", ".less", ".sass", ".soy",".class", ".rb"],
+    "doc_extensions": [".pdf", ".doc", ".docx", ".ppt", ".pptx", ".tex", ".odt", ".odp"],
+    "deployed_resource_path_exclusions": ["*checksums.yaml.gz*", "*metadata.gz*", "*data.tar.gz.sig"],
+    "devel_resource_path_exclusions": ["*/tests/*"],
+    "standard_symbols_to_exclude": [],
+    "source_symbol_extensions": []
+}

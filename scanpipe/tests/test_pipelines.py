@@ -37,6 +37,7 @@ from django.test import tag
 
 from packageurl import PackageURL
 from scancode.cli_test_utils import purl_with_fake_uuid
+from scorecode.models import PackageScore
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
@@ -55,6 +56,7 @@ from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import FIXTURES_REGEN
+from scanpipe.tests import make_mock_response
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
 from scanpipe.tests import package_data1
@@ -228,9 +230,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual("", run.log)
 
         download_url = "https://download.url/file.zip"
-        mock_get.return_value = mock.Mock(
-            content=b"\x00", headers={}, status_code=200, url=download_url
-        )
+        mock_get.return_value = make_mock_response(url=download_url)
         input_source2 = project1.add_input_source(download_url=download_url)
         pipeline.download_missing_inputs()
         self.assertIn("Fetching input from https://download.url/file.zip", run.log)
@@ -456,8 +456,11 @@ class ScanPipePipelinesTest(TestCase):
         with mock.patch("scanpipe.pipes.flag.flag_ignored_patterns") as mock_flag:
             mock_flag.return_value = None
             pipeline.flag_ignored_resources()
+
+        mock_flag.assert_called_once()
         patterns_args = ["*.ext", *flag.DEFAULT_IGNORED_PATTERNS]
-        mock_flag.assert_called_with(project1, patterns=patterns_args)
+        self.assertEqual(mock_flag.mock_calls[0].kwargs["patterns"], patterns_args)
+        self.assertEqual(mock_flag.mock_calls[0].kwargs["codebaseresources"].count(), 0)
 
     def test_scanpipe_pipeline_class_extract_archive(self):
         project1 = make_project()
@@ -892,6 +895,60 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data / "scancode" / "is-npm-1.0.0_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
+    def test_scanpipe_scan_codebase_creates_top_level_paths(self):
+        pipeline_name = "scan_codebase"
+        project1 = make_project()
+
+        filename = "is-npm-1.0.0.tgz"
+        input_location = self.data / "scancode" / filename
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        expected_top_level_paths = ["is-npm-1.0.0.tgz", "is-npm-1.0.0.tgz-extract"]
+
+        top_level_resources = project1.codebaseresources.filter(parent_path="")
+        top_level_paths = [resource.path for resource in top_level_resources]
+
+        self.assertListEqual(top_level_paths, expected_top_level_paths)
+
+    def test_scanpipe_scan_codebase_creates_parent_path_field(self):
+        pipeline_name = "scan_codebase"
+        project1 = make_project()
+
+        filename = "is-npm-1.0.0.tgz"
+        input_location = self.data / "scancode" / filename
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        expected_top_level_paths = ["is-npm-1.0.0.tgz", "is-npm-1.0.0.tgz-extract"]
+        expected_nested_paths = [
+            "is-npm-1.0.0.tgz-extract/package/index.js",
+            "is-npm-1.0.0.tgz-extract/package/package.json",
+            "is-npm-1.0.0.tgz-extract/package/readme.md",
+        ]
+
+        top_level_resources = project1.codebaseresources.filter(parent_path="")
+        top_level_paths = [resource.path for resource in top_level_resources]
+
+        self.assertListEqual(top_level_paths, expected_top_level_paths)
+
+        nested_resources = project1.codebaseresources.filter(
+            parent_path="is-npm-1.0.0.tgz-extract/package"
+        )
+        nested_paths = [resource.path for resource in nested_resources]
+
+        self.assertListEqual(nested_paths, expected_nested_paths)
+
     def test_scanpipe_inspect_packages_creates_packages_npm(self):
         pipeline_name = "inspect_packages"
         project1 = make_project()
@@ -995,6 +1052,7 @@ class PipelinesIntegrationTest(TestCase):
         )
         self.assertPipelineResultEqual(expected_file, result_file)
 
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_resolved_dependencies_cocoapods(self):
         pipeline_name = "resolve_dependencies"
         project1 = make_project()
@@ -1237,7 +1295,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(16, project1.codebaseresources.count())
+        self.assertEqual(17, project1.codebaseresources.count())
         self.assertEqual(2, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
 
@@ -1334,6 +1392,44 @@ class PipelinesIntegrationTest(TestCase):
         package1.refresh_from_db()
         expected = vulnerability_data[0]["affected_by_vulnerabilities"]
         self.assertEqual(expected, package1.affected_by_vulnerabilities)
+
+    @mock.patch("scorecode.ossf_scorecard.is_available")
+    def test_scanpipe_fetch_scores_pipeline_integration(self, mock_is_available):
+        pipeline_name = "fetch_scores"
+        project1 = make_project()
+        package1 = DiscoveredPackage.create_from_data(project1, package_data1)
+        package1.vcs_url = "https://github.com/ossf/scorecard"
+        package1.save()
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        mock_is_available.return_value = False
+        exitcode, out = pipeline.execute()
+        self.assertEqual(1, exitcode, msg=out)
+        self.assertIn("ScoreCode service is not available.", out)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        mock_is_available.return_value = True
+
+        package_score_data = {
+            "scoring_tool": "ossf_scorecard",
+            "scoring_tool_version": "v5.2.1",
+            "score": "9.7",
+            "scoring_tool_documentation_url": "https://github.com/[trunc...]",
+            "score_date": "2025-07-24T18:50:16Z",
+        }
+        with mock.patch("scorecode.ossf_scorecard.fetch_scorecard") as fetch:
+            fetch.return_value = PackageScore(**package_score_data)
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        package1.refresh_from_db()
+        scorecard_entry = package1.scores.filter(scoring_tool="ossf-scorecard").first()
+        self.assertIsNotNone(scorecard_entry)
+        self.assertEqual("ossf-scorecard", scorecard_entry.scoring_tool)
+        self.assertEqual("v5.2.1", scorecard_entry.scoring_tool_version)
+        self.assertTrue(scorecard_entry.score)
 
     def test_scanpipe_resolve_dependencies_pipeline_integration(self):
         pipeline_name = "resolve_dependencies"
@@ -1551,6 +1647,31 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(112, project1.discovereddependencies.count())
         dependency = project1.discovereddependencies.all()[0]
         self.assertEqual("bom.1.4.json", str(dependency.datafile_resource))
+
+    def test_scanpipe_load_sbom_pipeline_cyclonedx_with_vulnerabilities(self):
+        pipeline_name = "load_sbom"
+        project1 = make_project()
+
+        input_location = (
+            self.data / "cyclonedx" / "python-3.13.0-vulnerabilities.cdx.json"
+        )
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        package = project1.discoveredpackages.get()
+        expected = [
+            {
+                "vulnerability_id": "CVE-2005-2541",
+                "summary": "Tar 1.15.1 does not properly warn the user when...",
+            }
+        ]
+        self.assertEqual(expected, package.affected_by_vulnerabilities)
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("uuid.uuid4")

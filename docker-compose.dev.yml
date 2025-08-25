@@ -6,6 +6,7 @@
 # $ docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm web bash
 # $ SCANCODEIO_TEST_FIXTURES_REGEN=1 ./manage.py test
 
+name: scancodeio
 services:
   web:
     env_file:

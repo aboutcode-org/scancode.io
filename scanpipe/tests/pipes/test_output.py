@@ -234,7 +234,7 @@ class ScanPipeOutputPipesTest(TestCase):
             "MESSAGES",
             "TODOS",
         ]
-        self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
+        self.assertEqual(expected_sheet_names, workbook.sheetnames)
 
     def test_scanpipe_pipes_outputs_get_xlsx_report(self):
         project_qs = None
@@ -259,7 +259,7 @@ class ScanPipeOutputPipesTest(TestCase):
         expected_sheet_names = [
             "PACKAGES",
         ]
-        self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
+        self.assertEqual(expected_sheet_names, workbook.sheetnames)
 
         model_short_name = "todo"
         output_file = output.get_xlsx_report(project_qs, model_short_name)
@@ -267,7 +267,7 @@ class ScanPipeOutputPipesTest(TestCase):
         expected_sheet_names = [
             "TODOS",
         ]
-        self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
+        self.assertEqual(expected_sheet_names, workbook.sheetnames)
 
     def test_scanpipe_pipes_outputs_get_xlsx_fields_order(self):
         output_file = output.to_xlsx(project=make_project())
@@ -301,6 +301,7 @@ class ScanPipeOutputPipesTest(TestCase):
             "sha1",
             "sha256",
             "sha512",
+            "sha1_git",
             "is_binary",
             "is_text",
             "is_archive",
@@ -337,7 +338,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
         project = Project.objects.get(name="asgiref")
         package = project.discoveredpackages.get(
-            uuid="b5035991-5b4b-40be-b68b-1c9c528078cd"
+            uuid="7969de5e-5589-4441-bffa-a60e12b43280"
         )
 
         package.other_license_expression_spdx = "Apache-2.0 AND LicenseRef-test"

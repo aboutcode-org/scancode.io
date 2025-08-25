@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import importlib.util
 import inspect
 import logging
 import sys
@@ -38,7 +39,6 @@ from django.utils.translation import gettext_lazy as _
 from licensedcode.models import load_licenses
 
 from scanpipe.policies import load_policies_file
-from scanpipe.policies import make_license_policy_index
 
 try:
     from importlib import metadata as importlib_metadata
@@ -60,7 +60,7 @@ class ScanPipeConfig(AppConfig):
 
         # Mapping of registered pipeline names to pipeline classes.
         self._pipelines = {}
-        self.license_policies_index = {}
+        self.policies = {}
 
         workspace_location = settings.SCANCODEIO_WORKSPACE_LOCATION
         self.workspace_path = Path(workspace_location).expanduser().resolve()
@@ -134,7 +134,14 @@ class ScanPipeConfig(AppConfig):
         after being found.
         """
         module_name = inspect.getmodulename(path)
-        module = SourceFileLoader(module_name, str(path)).load_module()
+
+        loader = SourceFileLoader(module_name, str(path))
+        spec = importlib.util.spec_from_loader(module_name, loader)
+        if spec and spec.loader:
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        else:
+            raise ImportError(f"Could not load module from path: {path}")
 
         def is_local_module_pipeline(obj):
             return is_pipeline(obj) and obj.__module__ == module_name
@@ -218,7 +225,7 @@ class ScanPipeConfig(AppConfig):
 
     def set_policies(self):
         """
-        Compute and sets the `license_policies` on the app instance.
+        Set the global app policies on the app instance.
 
         If the policies file is available but not formatted properly or doesn't
         include the proper content, we want to raise an exception while the app
@@ -232,7 +239,7 @@ class ScanPipeConfig(AppConfig):
         if policies_file.exists():
             policies = load_policies_file(policies_file)
             logger.debug(style.SUCCESS(f"Loaded policies from {policies_file}"))
-            self.license_policies_index = make_license_policy_index(policies)
+            self.policies = policies
         else:
             logger.debug(style.WARNING("Policies file not found."))
 

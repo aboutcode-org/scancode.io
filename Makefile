@@ -143,10 +143,6 @@ docs:
 	rm -rf docs/_build/
 	@${ACTIVATE} sphinx-build docs/ docs/_build/
 
-bump:
-	@echo "-> Bump the version"
-	@${ACTIVATE} bumpver update --no-fetch --patch
-
 docker-images:
 	@echo "-> Build Docker services"
 	docker compose build
@@ -155,7 +151,7 @@ docker-images:
 	@echo "-> Save the service images to a tar archive in the build/ directory"
 	@rm -rf build/
 	@mkdir -p build/
-	@docker save postgres redis scancodeio-worker scancodeio-web nginx | gzip > build/scancodeio-images.tar.gz
+	@docker save postgres redis scancodeio-worker scancodeio-web nginx clamav/clamav | gzip > build/scancodeio-images.tar.gz
 
 offline-package: docker-images
 	@echo "-> Build package for offline installation in dist/"
@@ -163,4 +159,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run run-docker-dev test fasttest docs bump docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run run-docker-dev test fasttest docs docker-images offline-package

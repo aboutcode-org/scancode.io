@@ -55,17 +55,20 @@ from packagedcode.models import PackageData
 from packageurl import PackageURL
 from requests.exceptions import RequestException
 from rq.job import JobStatus
+from scorecode.models import PackageScore
 
 from scancodeio import __version__ as scancodeio_version
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import DiscoveredPackageScore
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.models import RunNotAllowedToStart
+from scanpipe.models import ScorecardCheck
 from scanpipe.models import UUIDTaggedItem
 from scanpipe.models import WebhookSubscription
 from scanpipe.models import convert_glob_to_django_regex
@@ -75,9 +78,11 @@ from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import dependency_data2
+from scanpipe.tests import global_policies
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import make_dependency
 from scanpipe.tests import make_message
+from scanpipe.tests import make_mock_response
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_directory
@@ -177,6 +182,7 @@ class ScanPipeModelsTest(TestCase):
             "scanpipe.CodebaseRelation": 0,
             "scanpipe.CodebaseResource": 1,
             "scanpipe.DiscoveredDependency": 0,
+            "scanpipe.DiscoveredLicense": 0,
             "scanpipe.DiscoveredPackage": 1,
             "scanpipe.DiscoveredPackage_codebase_resources": 1,
             "scanpipe.InputSource": 0,
@@ -696,13 +702,33 @@ class ScanPipeModelsTest(TestCase):
         policies_file_location = str(self.project1.get_input_policies_file())
         self.assertTrue(policies_file_location.endswith("input/policies.yml"))
 
-    def test_scanpipe_project_model_get_policy_index(self):
-        scanpipe_app.license_policies_index = None
-        self.assertFalse(self.project1.policies_enabled)
+    @patch.object(scanpipe_app, "policies", new=global_policies)
+    def test_scanpipe_project_model_get_policies_dict(self):
+        self.assertEqual(scanpipe_app.policies, self.project1.get_policies_dict())
 
-        policies_from_app_settings = {"from": "scanpipe_app"}
-        scanpipe_app.license_policies_index = policies_from_app_settings
-        self.assertEqual(policies_from_app_settings, self.project1.get_policy_index())
+        policies_from_input_dir = {"license_policies": [{"license_key": "input_dir"}]}
+        policies_file = self.project1.input_path / "policies.yml"
+        policies_file.touch()
+        policies_as_yaml = saneyaml.dump(policies_from_input_dir)
+        policies_file.write_text(policies_as_yaml)
+        self.assertEqual(policies_from_input_dir, self.project1.get_policies_dict())
+        # Refresh the instance to bypass the cached_property cache.
+        self.project1 = Project.objects.get(uuid=self.project1.uuid)
+        self.assertTrue(self.project1.license_policies_enabled)
+
+        policies_from_project_env = {
+            "license_policies": [{"license_key": "project_env"}]
+        }
+        config = {"policies": policies_from_project_env}
+        self.project1.settings = config
+        self.project1.save()
+        self.assertEqual(policies_from_project_env, self.project1.get_policies_dict())
+
+    @patch.object(scanpipe_app, "policies", new=global_policies)
+    def test_scanpipe_project_model_get_license_policy_index(self):
+        self.assertEqual(
+            license_policies_index, self.project1.get_license_policy_index()
+        )
 
         policies_from_input_dir = {"license_policies": [{"license_key": "input_dir"}]}
         policies_file = self.project1.input_path / "policies.yml"
@@ -710,10 +736,12 @@ class ScanPipeModelsTest(TestCase):
         policies_as_yaml = saneyaml.dump(policies_from_input_dir)
         policies_file.write_text(policies_as_yaml)
         expected_index_from_input = {"input_dir": {"license_key": "input_dir"}}
-        self.assertEqual(expected_index_from_input, self.project1.get_policy_index())
+        self.assertEqual(
+            expected_index_from_input, self.project1.get_license_policy_index()
+        )
         # Refresh the instance to bypass the cached_property cache.
         self.project1 = Project.objects.get(uuid=self.project1.uuid)
-        self.assertTrue(self.project1.policies_enabled)
+        self.assertTrue(self.project1.license_policies_enabled)
 
         policies_from_project_env = {
             "license_policies": [{"license_key": "project_env"}]
@@ -722,10 +750,26 @@ class ScanPipeModelsTest(TestCase):
         self.project1.settings = config
         self.project1.save()
         expected_index_from_env = {"project_env": {"license_key": "project_env"}}
-        self.assertEqual(expected_index_from_env, self.project1.get_policy_index())
+        self.assertEqual(
+            expected_index_from_env, self.project1.get_license_policy_index()
+        )
 
-        # Reset the index value
-        scanpipe_app.license_policies_index = None
+    def test_scanpipe_models_license_policies_enabled(self):
+        resource1 = make_resource_file(self.project1, path="example")
+        package1 = make_package(self.project1, "pkg:type/a")
+
+        self.assertFalse(self.project1.license_policies_enabled)
+        self.assertFalse(resource1.license_policies_enabled)
+        self.assertFalse(package1.license_policies_enabled)
+
+        with patch.object(scanpipe_app, "policies", new=global_policies):
+            # Refresh the instance to bypass the cached_property cache.
+            self.project1 = Project.objects.get(uuid=self.project1.uuid)
+            resource1 = self.project1.codebaseresources.get()
+            package1 = self.project1.discoveredpackages.get()
+            self.assertTrue(self.project1.license_policies_enabled)
+            self.assertTrue(resource1.license_policies_enabled)
+            self.assertTrue(package1.license_policies_enabled)
 
     def test_scanpipe_project_get_settings_as_yml(self):
         self.assertEqual("{}\n", self.project1.get_settings_as_yml())
@@ -1473,9 +1517,7 @@ class ScanPipeModelsTest(TestCase):
     @mock.patch("requests.sessions.Session.get")
     def test_scanpipe_input_source_model_fetch(self, mock_get):
         download_url = "https://download.url/file.zip"
-        mock_get.return_value = mock.Mock(
-            content=b"\x00", headers={}, status_code=200, url=download_url
-        )
+        mock_get.return_value = make_mock_response(url=download_url)
 
         input_source = self.project1.add_input_source(download_url=download_url)
         destination = input_source.fetch()
@@ -1548,28 +1590,31 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(extracted_dir_resource, archive_resource.extracted_to())
         self.assertEqual(archive_resource, extracted_dir_resource.extracted_from())
 
+    @patch.object(scanpipe_app, "policies", new=global_policies)
     def test_scanpipe_codebase_resource_model_compliance_alert(self):
-        scanpipe_app.license_policies_index = license_policies_index
+        project_license_policies_index = self.project1.license_policy_index
+        self.assertEqual(license_policies_index, project_license_policies_index)
+
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
         self.assertEqual("", resource.compliance_alert)
 
         license_expression = "bsd-new"
-        self.assertNotIn(license_expression, scanpipe_app.license_policies_index)
+        self.assertNotIn(license_expression, project_license_policies_index)
         resource.update(detected_license_expression=license_expression)
         self.assertEqual("missing", resource.compliance_alert)
 
         license_expression = "apache-2.0"
-        self.assertIn(license_expression, scanpipe_app.license_policies_index)
+        self.assertIn(license_expression, project_license_policies_index)
         resource.update(detected_license_expression=license_expression)
         self.assertEqual("ok", resource.compliance_alert)
 
         license_expression = "mpl-2.0"
-        self.assertIn(license_expression, scanpipe_app.license_policies_index)
+        self.assertIn(license_expression, project_license_policies_index)
         resource.update(detected_license_expression=license_expression)
         self.assertEqual("warning", resource.compliance_alert)
 
         license_expression = "gpl-3.0"
-        self.assertIn(license_expression, scanpipe_app.license_policies_index)
+        self.assertIn(license_expression, project_license_policies_index)
         resource.update(detected_license_expression=license_expression)
         self.assertEqual("error", resource.compliance_alert)
 
@@ -1577,11 +1622,16 @@ class ScanPipeModelsTest(TestCase):
         resource.update(detected_license_expression=license_expression)
         self.assertEqual("error", resource.compliance_alert)
 
-        # Reset the index value
-        scanpipe_app.license_policies_index = None
+        license_expression = "LicenseRef-scancode-unknown-license-reference"
+        resource.update(detected_license_expression=license_expression)
+        self.assertEqual("error", resource.compliance_alert)
 
+        license_expression = "OFL-1.1 AND apache-2.0"
+        resource.update(detected_license_expression=license_expression)
+        self.assertEqual("warning", resource.compliance_alert)
+
+    @patch.object(scanpipe_app, "policies", new=global_policies)
     def test_scanpipe_codebase_resource_model_compliance_alert_update_fields(self):
-        scanpipe_app.license_policies_index = license_policies_index
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
         self.assertEqual("", resource.compliance_alert)
 
@@ -1591,8 +1641,32 @@ class ScanPipeModelsTest(TestCase):
         resource.refresh_from_db()
         self.assertEqual("ok", resource.compliance_alert)
 
-        # Reset the index value
-        scanpipe_app.license_policies_index = None
+    def test_scanpipe_codebase_resource_model_parent_path_set_during_save(self):
+        resource = self.project1.codebaseresources.create(path="")
+        self.assertEqual("", resource.parent_path)
+
+        resource = self.project1.codebaseresources.create(path=".")
+        self.assertEqual("", resource.parent_path)
+
+        resource = self.project1.codebaseresources.create(path="file")
+        self.assertEqual("", resource.parent_path)
+
+        resource = self.project1.codebaseresources.create(path="dir/")
+        self.assertEqual("", resource.parent_path)
+
+        resource = self.project1.codebaseresources.create(path="dir1/dir2/")
+        self.assertEqual("dir1", resource.parent_path)
+
+        resource = self.project1.codebaseresources.create(path="dir1/dir2/file")
+        self.assertEqual("dir1/dir2", resource.parent_path)
+
+    @patch.object(scanpipe_app, "policies", new=global_policies)
+    def test_scanpipe_can_compute_compliance_alert_for_license_exceptions(self):
+        scanpipe_app.license_policies_index = license_policies_index
+        resource = CodebaseResource.objects.create(project=self.project1, path="file")
+        license_expression = "gpl-2.0-plus WITH font-exception-gpl"
+        resource.update(detected_license_expression=license_expression)
+        self.assertEqual("warning", resource.compute_compliance_alert())
 
     def test_scanpipe_scan_fields_model_mixin_methods(self):
         expected = [
@@ -1990,14 +2064,34 @@ class ScanPipeModelsTest(TestCase):
         z = make_package(project, "pkg:type/z")
         # Project -> A -> B -> C
         # Project -> Z
-        make_dependency(project, for_package=a, resolved_to_package=b)
-        make_dependency(project, for_package=b, resolved_to_package=c)
+        a_to_b = make_dependency(
+            project, for_package=a, resolved_to_package=b, dependency_uid="a_to_b"
+        )
+        b_to_c = make_dependency(
+            project, for_package=b, resolved_to_package=c, dependency_uid="b_to_c"
+        )
+        unresolved_dependency = make_dependency(project, dependency_uid="unresolved")
+
+        self.assertFalse(a_to_b.is_project_dependency)
+        self.assertTrue(a_to_b.is_package_dependency)
+        self.assertTrue(a_to_b.is_resolved_to_package)
+        self.assertTrue(unresolved_dependency.is_project_dependency)
+        self.assertFalse(unresolved_dependency.is_package_dependency)
+        self.assertFalse(unresolved_dependency.is_resolved_to_package)
 
         project_packages_qs = project.discoveredpackages.order_by("name")
         root_packages = project_packages_qs.root_packages()
         self.assertEqual([a, z], list(root_packages))
         non_root_packages = project_packages_qs.non_root_packages()
         self.assertEqual([b, c], list(non_root_packages))
+
+        dependency_qs = project.discovereddependencies
+        self.assertEqual(
+            [unresolved_dependency], list(dependency_qs.project_dependencies())
+        )
+        self.assertEqual([a_to_b, b_to_c], list(dependency_qs.package_dependencies()))
+        self.assertEqual([a_to_b, b_to_c], list(dependency_qs.resolved()))
+        self.assertEqual([unresolved_dependency], list(dependency_qs.unresolved()))
 
     @skipIf(sys.platform != "linux", "Ordering differs on macOS.")
     def test_scanpipe_codebase_resource_model_walk_method(self):
@@ -2054,7 +2148,9 @@ class ScanPipeModelsTest(TestCase):
             path="asgiref-3.3.0.whl-extract/asgiref/compatibility.py"
         )
         expected_parent_path = "asgiref-3.3.0.whl-extract/asgiref"
-        self.assertEqual(expected_parent_path, asgiref_resource.parent_path())
+        self.assertEqual(
+            expected_parent_path, asgiref_resource.compute_parent_directory()
+        )
         self.assertTrue(asgiref_resource.has_parent())
         expected_parent = self.project_asgiref.codebaseresources.get(
             path="asgiref-3.3.0.whl-extract/asgiref"
@@ -2415,29 +2511,26 @@ class ScanPipeModelsTest(TestCase):
             cyclonedx_component.evidence.licenses[0].value,
         )
 
+    @patch.object(scanpipe_app, "policies", new=global_policies)
     def test_scanpipe_discovered_package_model_compliance_alert(self):
-        scanpipe_app.license_policies_index = license_policies_index
         package_data = package_data1.copy()
         package_data["declared_license_expression"] = ""
         package = DiscoveredPackage.create_from_data(self.project1, package_data)
         self.assertEqual("", package.compliance_alert)
 
         license_expression = "bsd-new"
-        self.assertNotIn(license_expression, scanpipe_app.license_policies_index)
+        self.assertNotIn(license_expression, self.project1.license_policy_index)
         package.update(declared_license_expression=license_expression)
         self.assertEqual("missing", package.compliance_alert)
 
         license_expression = "apache-2.0"
-        self.assertIn(license_expression, scanpipe_app.license_policies_index)
+        self.assertIn(license_expression, self.project1.license_policy_index)
         package.update(declared_license_expression=license_expression)
         self.assertEqual("ok", package.compliance_alert)
 
         license_expression = "apache-2.0 AND mpl-2.0 OR gpl-3.0"
         package.update(declared_license_expression=license_expression)
         self.assertEqual("error", package.compliance_alert)
-
-        # Reset the index value
-        scanpipe_app.license_policies_index = None
 
     def test_scanpipe_discovered_package_model_spdx_id(self):
         package1 = make_package(self.project1, "pkg:type/a")
@@ -2539,7 +2632,9 @@ class ScanPipeModelsTest(TestCase):
             "resolved_from_dependencies",
             "parent_packages",
             "children_packages",
+            "discovered_packages_score",
             "notes",
+            "scores",
         ]
 
         package_data_only_field = ["datasource_id", "dependencies"]
@@ -2633,9 +2728,145 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue("e" in paths)
         self.assertTrue("a" in paths)
 
+    def test_scanpipe_scorecard_models(self):
+        with open(self.data / "scorecode/scorecard_response.json") as file:
+            scorecard_data = json.load(file)
+
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        scorecard_obj = PackageScore.from_data(scorecard_data)
+        package_score = DiscoveredPackageScore.create_from_package_and_scorecard(
+            package=package, scorecard_data=scorecard_obj
+        )
+
+        self.assertEqual("4.2", package_score.score)
+        self.assertEqual(
+            package_score.scoring_tool, DiscoveredPackageScore.ScoringTool.OSSF
+        )
+        self.assertGreaterEqual(float(package_score.score), -1)
+
+        checks = package_score.checks.all()
+        self.assertGreaterEqual(checks.count(), 1)
+
+        for check in checks:
+            self.assertIsInstance(check.check_name, str)
+
+            score = check.check_score
+            # Check if score is "-1" or a numeric string within range 0-10
+            self.assertTrue(
+                (score == "-1") or (score.isdigit() and 0 <= int(score) <= 10),
+                "Score must be '-1' or a number between 0 and 10",
+            )
+
+    def test_scanpipe_create_from_scorecard_data(self):
+        """Test that create_from_scorecard_data successfully creates a package score."""
+        with open(self.data / "scorecode/scorecard_response.json") as file:
+            scorecard_data = json.load(file)
+
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+
+        scorecard_obj = PackageScore.from_data(scorecard_data)
+        package_score = DiscoveredPackageScore.create_from_scorecard_data(
+            discovered_package=package,
+            scorecard_data=scorecard_obj,
+            scoring_tool="ossf-scorecard",
+        )
+
+        self.assertEqual("4.2", package_score.score)
+        self.assertEqual(package_score.discovered_package, package)
+        self.assertEqual(package_score.score, scorecard_obj.score)
+        self.assertEqual(
+            package_score.scoring_tool_version, scorecard_obj.scoring_tool_version
+        )
+        self.assertIsNotNone(package_score.score_date)
+
+        actual_checks = package_score.checks.all()
+        expected_checks = {check["name"]: check for check in scorecard_data["checks"]}
+
+        self.assertEqual(
+            set(check.check_name for check in actual_checks),
+            set(expected_checks.keys()),
+        )
+
+        for check in actual_checks:
+            expected = expected_checks[check.check_name]
+            self.assertEqual(check.check_score, str(expected["score"]))
+            self.assertEqual(check.reason, expected["reason"])
+            self.assertEqual(check.details, expected["details"] or [])
+
+    def test_scanpipe_parse_score_date(self):
+        """Test parse_score_date with valid, invalid, and custom date formats."""
+        # Valid date formats
+        valid_dates = {
+            "2024-02-22T12:34:56Z": timezone.datetime(
+                2024, 2, 22, 12, 34, 56, tzinfo=tz.utc
+            ),
+            "2024-02-22": timezone.datetime(
+                2024, 2, 22, tzinfo=timezone.get_current_timezone()
+            ),
+        }
+        for date_str, expected in valid_dates.items():
+            with self.subTest(date_str=date_str):
+                parsed_date = DiscoveredPackageScore.parse_score_date(date_str)
+                self.assertIsNotNone(parsed_date)
+                self.assertEqual(parsed_date, expected)
+
+        # Invalid date formats
+        invalid_dates = [
+            "2024/02/22",
+            "Feb 22, 2024",
+            "22-02-2024",
+            "not-a-date",
+            None,
+            "",
+        ]
+        for date_str in invalid_dates:
+            with self.subTest(date_str=date_str):
+                self.assertIsNone(DiscoveredPackageScore.parse_score_date(date_str))
+
+        # Custom date format
+        custom_date_str = "22-02-2024 14:30"
+        custom_format = ["%d-%m-%Y %H:%M"]
+        parsed_custom = DiscoveredPackageScore.parse_score_date(
+            custom_date_str, custom_format
+        )
+
+        self.assertIsNotNone(parsed_custom)
+        self.assertEqual(parsed_custom.date(), timezone.datetime(2024, 2, 22).date())
+
+    def test_scanpipe_create_scorecard_check_from_data(self):
+        """Test create_from_data successfully creates a ScorecardCheck instance."""
+        with open(self.data / "scorecode/scorecard_response.json") as file:
+            scorecard_data = json.load(file)
+
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        scorecard_obj = PackageScore.from_data(scorecard_data)
+        package_score = DiscoveredPackageScore.create_from_package_and_scorecard(
+            package=package, scorecard_data=scorecard_obj
+        )
+
+        # Step 1: Retrieve the first check that was automatically created
+        check_data = scorecard_data["checks"][0]  # Extract first check
+        scorecard_check = ScorecardCheck.objects.get(
+            package_score=package_score, check_name=check_data["name"]
+        )
+
+        # Step 2: Assertions to validate correct object creation
+        self.assertIsNotNone(scorecard_check)
+        self.assertEqual(scorecard_check.package_score, package_score)
+        self.assertEqual(scorecard_check.check_name, check_data["name"])
+        self.assertEqual(scorecard_check.check_score, str(check_data["score"]))
+        self.assertEqual(scorecard_check.reason, check_data["reason"])
+        self.assertEqual(scorecard_check.details, check_data["details"] or [])
+
+        # Step 3: Ensure the number of checks matches the scorecard data
+        self.assertEqual(
+            package_score.checks.count(),
+            len(scorecard_data["checks"]),
+        )
+
     def test_scanpipe_model_codebase_resource_compliance_alert_queryset_mixin(self):
         severities = CodebaseResource.Compliance
-        make_resource_file(self.project1, path="none")
+        make_resource_file(self.project1)
         make_resource_file(self.project1, path="ok", compliance_alert=severities.OK)
         warning = make_resource_file(
             self.project1, path="warning", compliance_alert=severities.WARNING
@@ -2647,7 +2878,7 @@ class ScanPipeModelsTest(TestCase):
             self.project1, path="missing", compliance_alert=severities.MISSING
         )
 
-        qs = CodebaseResource.objects.order_by("path")
+        qs = self.project1.codebaseresources.order_by("path")
         self.assertQuerySetEqual(qs.compliance_issues(severities.ERROR), [error])
         self.assertQuerySetEqual(
             qs.compliance_issues(severities.WARNING), [error, warning]
@@ -2655,6 +2886,23 @@ class ScanPipeModelsTest(TestCase):
         self.assertQuerySetEqual(
             qs.compliance_issues(severities.MISSING), [error, missing, warning]
         )
+
+    def test_scanpipe_model_codebase_resource_has_compliance_issue(self):
+        severities = CodebaseResource.Compliance
+        none = make_resource_file(self.project1)
+        self.assertFalse(none.has_compliance_issue)
+
+        ok = make_resource_file(self.project1, compliance_alert=severities.OK)
+        self.assertFalse(ok.has_compliance_issue)
+
+        warning = make_resource_file(self.project1, compliance_alert=severities.WARNING)
+        self.assertTrue(warning.has_compliance_issue)
+
+        error = make_resource_file(self.project1, compliance_alert=severities.ERROR)
+        self.assertTrue(error.has_compliance_issue)
+
+        missing = make_resource_file(self.project1, compliance_alert=severities.MISSING)
+        self.assertTrue(missing.has_compliance_issue)
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
@@ -2907,10 +3155,11 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
     def test_scanpipe_discovered_dependency_model_create_from_data(self):
         project1 = make_project("Analysis")
 
-        DiscoveredPackage.create_from_data(project1, package_data1)
+        package1 = DiscoveredPackage.create_from_data(project1, package_data1)
         CodebaseResource.objects.create(
             project=project1, path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO"
         )
+        # Unresolved dependency
         dependency = DiscoveredDependency.create_from_data(
             project1, dependency_data1, strip_datafile_path_root=False
         )
@@ -2934,23 +3183,17 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             dependency.datafile_path,
         )
         self.assertEqual("pypi_sdist_pkginfo", dependency.datasource_id)
+        self.assertFalse(dependency.is_project_dependency)
+        self.assertTrue(dependency.is_package_dependency)
+        self.assertFalse(dependency.is_resolved_to_package)
 
-        # Test field validation when using create_from_data
-        dependency_count = DiscoveredDependency.objects.count()
-        incomplete_data = dict(dependency_data1)
-        incomplete_data["dependency_uid"] = ""
-        self.assertIsNone(
-            DiscoveredDependency.create_from_data(project1, incomplete_data)
+        # Resolved project dependency, resolved_to_package provided as arg
+        dependency2 = DiscoveredDependency.create_from_data(
+            project1, dependency_data={}, resolved_to_package=package1
         )
-        self.assertEqual(dependency_count, DiscoveredDependency.objects.count())
-        message = project1.projectmessages.latest("created_date")
-        self.assertEqual("DiscoveredDependency", message.model)
-        self.assertEqual(ProjectMessage.Severity.WARNING, message.severity)
-        expected_message = "No values for the following required fields: dependency_uid"
-        self.assertEqual(expected_message, message.description)
-        self.assertEqual(dependency_data1["purl"], message.details["purl"])
-        self.assertEqual("", message.details["dependency_uid"])
-        self.assertEqual("", message.traceback)
+        self.assertTrue(dependency2.is_project_dependency)
+        self.assertFalse(dependency2.is_package_dependency)
+        self.assertTrue(dependency2.is_resolved_to_package)
 
     def test_scanpipe_discovered_package_model_unique_package_uid_in_project(self):
         project1 = make_project("Analysis")

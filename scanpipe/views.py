@@ -70,6 +70,7 @@ from scancodeio.auth import conditional_login_required
 from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.filters import PAGE_VAR
 from scanpipe.filters import DependencyFilterSet
+from scanpipe.filters import LicenseFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
 from scanpipe.filters import ProjectMessageFilterSet
@@ -92,6 +93,7 @@ from scanpipe.forms import WebhookSubscriptionForm
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
+from scanpipe.models import DiscoveredLicense
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
@@ -181,12 +183,12 @@ LICENSE_CLARITY_FIELDS = [
 
 
 SCAN_SUMMARY_FIELDS = [
-    ("Declared license", "declared_license_expression"),
-    ("Declared holder", "declared_holder"),
-    ("Primary language", "primary_language"),
-    ("Other licenses", "other_license_expressions"),
-    ("Other holders", "other_holders"),
-    ("Other languages", "other_languages"),
+    "declared_license_expression",
+    "declared_holder",
+    "primary_language",
+    "other_license_expressions",
+    "other_holders",
+    "other_languages",
 ]
 
 
@@ -333,7 +335,9 @@ class TabSetMixin:
         """
         Return the formatted value of the specified `field_name` from the object.
 
-        By default, JSON types (list and dict) are rendered as YAML.
+        By default, JSON types (list and dict) are rendered as YAML,
+        except some fields which are used for a more complex tabular
+        representation with links to other views.
         If a `render_func` is provided, it will take precedence and be used for
         rendering the value.
         """
@@ -345,9 +349,25 @@ class TabSetMixin:
         if isinstance(field_value, Manager):
             return list(field_value.all())
 
+        # We need these as mappings
+        detection_fields = [
+            "license_detections",
+            "other_license_detections",
+            "license_clues",
+            "matches",
+            "file_regions",
+            "urls",
+            "emails",
+            "datafile_paths",
+            "datasource_ids",
+            "detection_log",
+            "review_comments",
+        ]
+
         if isinstance(field_value, list | dict):
-            with suppress(Exception):
-                field_value = render_as_yaml(field_value)
+            if field_name not in detection_fields:
+                with suppress(Exception):
+                    field_value = render_as_yaml(field_value)
 
         return field_value
 
@@ -726,11 +746,12 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         ]
 
     @staticmethod
-    def get_scan_summary_data(scan_summary_json):
+    def get_scan_summary_data(project, scan_summary_json):
         summary_data = {}
 
-        for field_label, field_name in SCAN_SUMMARY_FIELDS:
-            field_data = scan_summary_json.get(field_name)
+        for field_name, field_data in scan_summary_json.items():
+            if field_name not in SCAN_SUMMARY_FIELDS:
+                continue
 
             if type(field_data) is list:
                 # Do not include `None` entries
@@ -739,7 +760,13 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 # Converts single value type into common data-structure
                 values = [{"value": field_data}]
 
-            summary_data[field_label] = values
+            summary_data[field_name] = values
+
+        key_files = project.codebaseresources.filter(is_key_file=True)
+        summary_data["key_file_licenses"] = {
+            key_file.path: key_file.detected_license_expression
+            for key_file in key_files
+        }
 
         return summary_data
 
@@ -797,7 +824,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             with suppress(json.decoder.JSONDecodeError):
                 scan_summary_json = json.loads(scan_summary_file.read_text())
                 license_clarity = self.get_license_clarity_data(scan_summary_json)
-                scan_summary = self.get_scan_summary_data(scan_summary_json)
+                scan_summary = self.get_scan_summary_data(project, scan_summary_json)
 
         codebase_root = sorted(
             project.codebase_path.glob("*"),
@@ -808,9 +835,9 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         pipeline_runs = project.runs.all()
         self.check_run_scancode_version(pipeline_runs)
 
-        policies_enabled = False
+        license_policies_enabled = False
         try:
-            policies_enabled = project.policies_enabled
+            license_policies_enabled = project.license_policies_enabled
         except ValidationError as e:
             messages.error(self.request, str(e))
 
@@ -830,7 +857,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "pipeline_runs": pipeline_runs,
                 "codebase_root": codebase_root,
                 "file_filter": self.request.GET.get("file-filter", "all"),
-                "policies_enabled": policies_enabled,
+                "license_policies_enabled": license_policies_enabled,
             }
         )
 
@@ -1013,7 +1040,7 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
             },
             "package": {
                 "queryset": project.discoveredpackages,
-                "fields": ["type", "declared_license_expression"],
+                "fields": ["type", "declared_license_expression", "compliance_alert"],
             },
             "dependency": {
                 "queryset": project.discovereddependencies,
@@ -1029,10 +1056,9 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
             for field_name in fields:
                 if field_name in ["holders", "copyrights"]:
                     field_values = (
-                        data.get(field_name[:-1])
+                        data.get(field_name[:-1]) if isinstance(data, dict) else ""
                         for entry in qs_values
-                        for data in entry.get(field_name, [])
-                        if isinstance(data, dict)
+                        for data in (entry.get(field_name, []) or [""])
                     )
                 else:
                     field_values = (entry[field_name] for entry in qs_values)
@@ -1077,42 +1103,87 @@ class ProjectResourceStatusSummaryView(ConditionalLoginRequired, generic.DetailV
         return context
 
 
-class ProjectResourceLicenseSummaryView(ConditionalLoginRequired, generic.DetailView):
+class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.DetailView):
     model = Project
-    template_name = "scanpipe/panels/resource_license_summary.html"
+    template_name = "scanpipe/panels/license_detections_summary.html"
 
     @staticmethod
-    def get_resource_license_summary(project, limit=10):
+    def get_license_detection_summary(project, limit=10):
+        proper_license_detections = project.discoveredlicenses.filter(
+            is_license_clue=False,
+        )
         license_counter = count_group_by(
-            project.codebaseresources.files(), "detected_license_expression"
+            proper_license_detections, "license_expression"
         )
 
         if list(license_counter.keys()) == [""]:
-            return
+            return None, None, None
 
         # Order the license list by the number of detections, higher first
         sorted_by_count = dict(
             sorted(license_counter.items(), key=operator.itemgetter(1), reverse=True)
         )
 
-        # Remove the "no licenses" entry from the top list
-        no_licenses = sorted_by_count.pop("", None)
-
         # Keep the top entries
         top_licenses = dict(list(sorted_by_count.items())[:limit])
 
-        # Add the "no licenses" entry at the end
-        if no_licenses:
-            top_licenses[""] = no_licenses
+        # Also get count for detections with
+        expressions_with_compliance_alert = []
+        issue_count_by_expression = {}
+        for license_expression in top_licenses.keys():
+            detections_for_expression = proper_license_detections.filter(
+                license_expression=license_expression
+            )
+            has_compliance_alert = (
+                detections_for_expression.has_compliance_alert().exists()
+            )
+            issue_count = detections_for_expression.needs_review().count()
+            if has_compliance_alert:
+                expressions_with_compliance_alert.append(license_expression)
+            if issue_count > 0:
+                issue_count_by_expression[license_expression] = issue_count
 
-        return top_licenses
+        total_counts = {
+            "with_compliance_error": (
+                proper_license_detections.has_compliance_alert().count()
+            ),
+            "needs_review": proper_license_detections.needs_review().count(),
+            "all": proper_license_detections.count(),
+        }
+
+        license_clues = project.discoveredlicenses.filter(
+            is_license_clue=True,
+        )
+        clue_counts = {}
+        if license_clues.exists():
+            clue_counts = {
+                "with_compliance_error": (license_clues.has_compliance_alert().count()),
+                "needs_review": license_clues.needs_review().count(),
+                "all": license_clues.count(),
+            }
+
+        return (
+            top_licenses,
+            expressions_with_compliance_alert,
+            issue_count_by_expression,
+            total_counts,
+            license_clues,
+            clue_counts,
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        summary = self.get_resource_license_summary(project=self.object)
-        context["resource_license_summary"] = summary
-        context["project_resources_url"] = reverse(
-            "project_resources", args=[self.object.slug]
+        summary, expressions, issues, counts, clues, clue_counts = (
+            self.get_license_detection_summary(project=self.object)
+        )
+        context["license_detection_summary"] = summary
+        context["expressions_with_compliance_alert"] = expressions
+        context["issue_count_by_expression"] = issues
+        context["total_counts"] = counts
+        context["license_clues"] = clues
+        context["clue_counts"] = clue_counts
+        context["project_licenses_url"] = reverse(
+            "project_licenses", args=[self.object.slug]
         )
         return context
 
@@ -1202,7 +1273,7 @@ class ProjectCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
         context = super().get_context_data(**kwargs)
         project = self.object
 
-        if not project.policies_enabled:
+        if not project.license_policies_enabled:
             raise Http404
 
         compliance_alerts = compliance.get_project_compliance_alerts(
@@ -1210,6 +1281,13 @@ class ProjectCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
             fail_level="missing",
         )
         context["compliance_alerts"] = compliance_alerts
+
+        context["license_clarity_compliance_alert"] = (
+            project.get_license_clarity_compliance_alert()
+        )
+
+        context["scorecard_compliance_alert"] = project.get_scorecard_compliance_alert()
+
         return context
 
 
@@ -1352,14 +1430,12 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
         An instance of BaseProjectActionForm can be provided as the ``action_form``
         argument for the support of ``select_across``.
         """
-        if action_form:
-            select_across = action_form.cleaned_data.get("select_across")
+        if action_form and action_form.cleaned_data.get("select_across"):
             # url_query may be empty for a "select everything"
             url_query = action_form.cleaned_data.get("url_query", "")
-            if select_across:
-                project_filterset = ProjectFilterSet(data=QueryDict(url_query))
-                if project_filterset.is_valid():
-                    return project_filterset.qs
+            project_filterset = ProjectFilterSet(data=QueryDict(url_query))
+            if project_filterset.is_valid():
+                return project_filterset.qs
 
         if selected_project_ids:
             return Project.objects.filter(uuid__in=selected_project_ids)
@@ -1789,6 +1865,57 @@ class DiscoveredDependencyListView(
         return super().get_queryset().order_by("dependency_uid")
 
 
+class DiscoveredLicenseListView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    TableColumnsMixin,
+    ExportXLSXMixin,
+    PaginatedFilterView,
+):
+    model = DiscoveredLicense
+    filterset_class = LicenseFilterSet
+    template_name = "scanpipe/license_detection_list.html"
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("license", 10)
+    table_columns = [
+        "identifier",
+        {
+            "field_name": "license_expression",
+            "filter_fieldname": "license_expression",
+        },
+        {
+            "field_name": "license_expression_spdx",
+            "filter_fieldname": "license_expression_spdx",
+        },
+        "detection_count",
+        "is_license_clue",
+        "needs_review",
+        {
+            "field_name": "compliance_alert",
+            "filter_fieldname": "compliance_alert",
+        },
+    ]
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .only(
+                "detection_count",
+                "license_expression",
+                "license_expression_spdx",
+                "compliance_alert",
+            )
+            .order_by_count_and_expression()
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["display_compliance_alert"] = (
+            self.get_project().license_policies_enabled
+        )
+        return context
+
+
 class ProjectMessageListView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
@@ -1914,6 +2041,7 @@ class CodebaseResourceDetailsView(
                 {"field_name": "sha1", "label": "SHA1"},
                 {"field_name": "sha256", "label": "SHA256"},
                 {"field_name": "sha512", "label": "SHA512"},
+                {"field_name": "sha1_git", "label": "SHA1_git"},
                 "is_binary",
                 "is_text",
                 "is_archive",
@@ -1937,23 +2065,24 @@ class CodebaseResourceDetailsView(
             "disable_condition": do_not_disable,
             "display_condition": is_displayable_image_type,
         },
-        "detection": {
+        "terms": {
             "fields": [
                 "detected_license_expression",
                 {
                     "field_name": "detected_license_expression_spdx",
                     "label": "Detected license expression (SPDX)",
                 },
-                "license_detections",
-                "license_clues",
                 "percentage_of_license_text",
-                "copyrights",
-                "holders",
-                "authors",
-                "emails",
-                "urls",
+                {"field_name": "copyrights", "render_func": render_as_yaml},
+                {"field_name": "holders", "render_func": render_as_yaml},
+                {"field_name": "authors", "render_func": render_as_yaml},
             ],
+            "icon_class": "fa-solid fa-file-contract",
+        },
+        "detection": {
+            "fields": ["license_detections", "license_clues", "emails", "urls"],
             "icon_class": "fa-solid fa-search",
+            "template": "scanpipe/tabset/tab_resource_detections.html",
         },
         "packages": {
             "fields": ["discovered_packages"],
@@ -2006,24 +2135,33 @@ class CodebaseResourceDetailsView(
 
     @staticmethod
     def get_matched_snippet_annotations(resource):
-        # convert qspan from list of ints to Spans
-        matched_snippet_annotations = []
         matched_snippets = resource.extra_data.get("matched_snippets")
-        if matched_snippets:
-            line_by_pos = resource.extra_data.get("line_by_pos")
-            for matched_snippet in matched_snippets:
-                match_detections = matched_snippet["match_detections"]
-                qspan = Span(match_detections)
-                for span in qspan.subspans():
-                    # line_by_pos is stored as JSON and keys in JSON are always
-                    # strings
-                    matched_snippet_annotations.append(
-                        {
-                            "start_line": line_by_pos[str(span.start)],
-                            "end_line": line_by_pos[str(span.end)],
-                        }
-                    )
-        return matched_snippet_annotations
+        line_by_pos = resource.extra_data.get("line_by_pos")
+        if not matched_snippets:
+            return []
+
+        snippet_annotations = []
+        for snippet in matched_snippets:
+            package = snippet.get("package", "")
+            resource = snippet.get("resource", "")
+            similarity = snippet.get("similarity", 0)
+            text = (
+                f"package: {package}\nresource: {resource}\nsimilarity: {similarity}\n"
+            )
+
+            # convert qspan from list of ints to Spans
+            qspan = Span(snippet["match_detections"])
+            for span in qspan.subspans():
+                # line_by_pos is stored as JSON and keys in JSON are always strings
+                snippet_annotations.append(
+                    {
+                        "start_line": line_by_pos[str(span.start)],
+                        "end_line": line_by_pos[str(span.end)],
+                        "text": text,
+                    }
+                )
+
+        return snippet_annotations
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2166,14 +2304,23 @@ class DiscoveredPackageDetailsView(
                     "field_name": "other_license_expression_spdx",
                     "label": "Other license expression (SPDX)",
                 },
+                "compliance_alert",
                 "extracted_license_statement",
                 "copyright",
                 "holder",
                 "notice_text",
+            ],
+            "icon_class": "fa-solid fa-file-contract",
+        },
+        "detection": {
+            "fields": [
+                "datasource_ids",
+                "datafile_paths",
                 "license_detections",
                 "other_license_detections",
             ],
-            "icon_class": "fa-solid fa-file-contract",
+            "icon_class": "fa-solid fa-search",
+            "template": "scanpipe/tabset/tab_package_detections.html",
         },
         "resources": {
             "fields": ["codebase_resources"],
@@ -2332,6 +2479,35 @@ class DiscoveredDependencyDetailsView(
         context = super().get_context_data(**kwargs)
         context["dependency_data"] = DiscoveredDependencySerializer(self.object).data
         return context
+
+
+class DiscoveredLicenseDetailsView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    TabSetMixin,
+    generic.DetailView,
+):
+    model = DiscoveredLicense
+    model_label = "license_detections"
+    slug_field = "identifier"
+    slug_url_kwarg = "identifier"
+    template_name = "scanpipe/license_detection_detail.html"
+    tabset = {
+        "essentials": {
+            "fields": [
+                "license_expression",
+                "license_expression_spdx",
+                "identifier",
+                "detection_count",
+            ],
+            "icon_class": "fa-solid fa-info-circle",
+        },
+        "detection": {
+            "fields": ["matches", "detection_log", "review_comments", "file_regions"],
+            "icon_class": "fa-solid fa-search",
+            "template": "scanpipe/tabset/tab_license_detections.html",
+        },
+    }
 
 
 @conditional_login_required
@@ -2528,33 +2704,57 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
         try:
-            dependency_tree = self.get_dependency_tree(project=self.object)
+            context["dependency_tree"] = self.get_dependency_tree(project=self.object)
         except RecursionError:
             context["recursion_error"] = True
-            return context
 
-        context["dependency_tree"] = dependency_tree
         return context
 
     def get_dependency_tree(self, project):
-        root_packages = project.discoveredpackages.root_packages().order_by("name")
+        root_packages = (
+            project.discoveredpackages.root_packages()
+            .order_by("name")
+            .only_package_url_fields(
+                extra=["project_id", "compliance_alert", "affected_by_vulnerabilities"]
+            )
+        )
         project_children = [self.get_node(package) for package in root_packages]
 
-        project_tree = {
+        # Dependencies with no assigned `for_packages`.
+        project_dependencies = project.discovereddependencies.project_dependencies()
+        for dependency in project_dependencies:
+            project_children.append({"name": dependency.package_url})
+
+        dependency_tree = {
             "name": project.name,
             "children": project_children,
         }
-
-        return project_tree
+        return dependency_tree
 
     def get_node(self, package):
-        node = {"name": str(package)}
+        # Resolved dependencies
         children = [
             self.get_node(child_package)
-            for child_package in package.children_packages.all()
+            for child_package in package.children_packages.all().order_by("name")
         ]
-        if children:
-            node["children"] = children
+
+        # Un-resolved dependencies
+        unresolved_dependencies = package.declared_dependencies.unresolved()
+        for dependency in unresolved_dependencies:
+            children.append(
+                {
+                    "name": dependency.package_url,
+                    "is_vulnerable": dependency.is_vulnerable,
+                }
+            )
+
+        node = {
+            "name": str(package),
+            "url": package.get_absolute_url(),
+            "compliance_alert": package.compliance_alert,
+            "has_compliance_issue": package.has_compliance_issue,
+            "is_vulnerable": package.is_vulnerable,
+            "children": children,
+        }
         return node

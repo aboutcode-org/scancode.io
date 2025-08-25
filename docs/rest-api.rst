@@ -493,6 +493,56 @@ Data:
         }
     }
 
+.. _rest_api_license_clarity_compliance:
+
+License Clarity Compliance
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This action returns the **license clarity compliance alert** for a project.
+
+The license clarity compliance alert is a single value (``ok``, ``warning``, or ``error``)
+that summarizes the project's **license clarity status**, based on the thresholds defined in
+the ``policies.yml`` file.
+
+``GET /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/license_clarity_compliance/``
+
+Data:
+    - ``license_clarity_compliance_alert``: The overall license clarity compliance alert
+      for the project.
+
+      Possible values: ``ok``, ``warning``, ``error``.
+
+.. code-block:: json
+
+    {
+        "license_clarity_compliance_alert": "warning"
+    }
+
+.. _rest_api_scorecard_compliance:
+
+Scorecard Compliance
+^^^^^^^^^^^^^^^^^^^^
+
+This action returns the **scorecard compliance alert** for a project.
+
+The scorecard compliance alert is a single value (``ok``, ``warning``, or ``error``)
+that summarizes the project's **OpenSSF Scorecard security compliance status**,
+based on the thresholds defined in the ``policies.yml`` file.
+
+``GET /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/scorecard_compliance/``
+
+Data:
+    - ``scorecard_compliance_alert``: The overall scorecard compliance alert
+      for the project.
+
+      Possible values: ``ok``, ``warning``, ``error``.
+
+.. code-block:: json
+
+    {
+        "scorecard_compliance_alert": "warning"
+    }
+
 Reset
 ^^^^^
 
@@ -533,7 +583,7 @@ File content
 This displays the content of a ``project`` file resource provided using the
 ``?path=<resource_path>`` argument.
 
-``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/file_content/?path=setup.py``
+``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/file_content/?path=filename.ext``
 
 .. code-block:: json
 

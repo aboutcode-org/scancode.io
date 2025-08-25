@@ -79,11 +79,7 @@ class ScanPipeScancodePipesTest(TestCase):
         errors = scancode.extract_archive(input_location, target)
 
         error_message = "gzip decompression failed"
-        if sys.platform == "darwin":
-            error_message += " (zlib returned error -3, msg invalid code lengths set)"
-
-        expected = {input_location: [error_message]}
-        self.assertEqual(expected, errors)
+        self.assertIn(error_message, errors[str(input_location)][0])
 
     def test_scanpipe_pipes_scancode_extract_archives(self):
         tempdir = Path(tempfile.mkdtemp())
@@ -113,11 +109,7 @@ class ScanPipeScancodePipesTest(TestCase):
         errors = scancode.extract_archives(tempdir)
 
         error_message = "gzip decompression failed"
-        if sys.platform == "darwin":
-            error_message += " (zlib returned error -3, msg invalid code lengths set)"
-
-        expected = {str(target): [error_message]}
-        self.assertEqual(expected, errors)
+        self.assertIn(error_message, errors[str(target)][0])
 
     @skipIf(sys.platform != "linux", "QCOW2 extraction is not available on macOS.")
     def test_scanpipe_pipes_scancode_extract_archive_vmimage_qcow2(self):
@@ -159,6 +151,7 @@ class ScanPipeScancodePipesTest(TestCase):
             "sha1": "4bd631df28995c332bf69d9d4f0f74d7ee089598",
             "md5": "90cd416fd24df31f608249b77bae80f1",
             "sha256": sha256,
+            "sha1_git": "1f72cf031889492f93c055fd29c4a3083025c6cf",
             "mime_type": "text/plain",
             "file_type": "ASCII text",
         }
@@ -242,7 +235,10 @@ class ScanPipeScancodePipesTest(TestCase):
         scancode.save_scan_file_results(codebase_resource2, scan_results, scan_errors)
         codebase_resource2.refresh_from_db()
         self.assertEqual("scanned", codebase_resource2.status)
-        expected = "apache-2.0 AND warranty-disclaimer"
+        expected = (
+            "apache-2.0 AND (apache-2.0 AND scancode-acknowledgment)"
+            " AND warranty-disclaimer"
+        )
         self.assertEqual(expected, codebase_resource2.detected_license_expression)
 
     def test_scanpipe_pipes_scancode_scan_file_and_save_results_timeout_error(self):
@@ -463,8 +459,8 @@ class ScanPipeScancodePipesTest(TestCase):
             self.assertEqual(resource1.status, flag.IGNORED_BY_MAX_FILE_SIZE)
 
     def test_scanpipe_pipes_scancode_make_results_summary(self, regen=FIXTURES_REGEN):
-        # Ensure the policies index is empty to avoid any side effect on results
-        scanpipe_app.license_policies_index = None
+        # Ensure the policies are empty to avoid any side effect on results
+        scanpipe_app.policies = None
         # Run the scan_single_package pipeline to have a proper DB and local files setup
         pipeline_name = "scan_single_package"
         project1 = Project.objects.create(name="Analysis")
@@ -506,7 +502,7 @@ class ScanPipeScancodePipesTest(TestCase):
         resource = project.codebaseresources.get(name="package.json")
 
         # This assembly should not trigger that many queries.
-        with self.assertNumQueries(18):
+        with self.assertNumQueries(17):
             scancode.assemble_package(resource, project, processed_paths)
 
         self.assertEqual(1, project.discoveredpackages.count())
@@ -727,3 +723,21 @@ class ScanPipeScancodePipesTest(TestCase):
         resolved_dep = project1.discovereddependencies.get(name="bluebird")
         self.assertEqual(resolved_dep, dep_2)
         self.assertEqual(resolved_dep.resolved_to_package, pkg_1)
+
+    def test_scanpipe_pipes_scancode_scan_single_package_correct_parent_path(self):
+        project1 = Project.objects.create(name="Analysis")
+        input_location = self.data / "scancode" / "is-npm-1.0.0.tgz"
+        project1.copy_input_from(input_location)
+        run = project1.add_pipeline("scan_single_package")
+        pipeline = run.make_pipeline_instance()
+        exitcode, out = pipeline.execute()
+
+        self.assertEqual(0, exitcode, msg=out)
+        self.assertEqual(4, project1.codebaseresources.count())
+
+        root = project1.codebaseresources.get(path="package")
+        self.assertEqual("", root.parent_path)
+        self.assertNotEqual("codebase", root.parent_path)
+
+        file1 = project1.codebaseresources.get(path="package/index.js")
+        self.assertEqual("package", file1.parent_path)

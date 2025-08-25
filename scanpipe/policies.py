@@ -35,8 +35,8 @@ def load_policies_yaml(policies_yaml):
 
 def load_policies_file(policies_file, validate=True):
     """
-    Load provided ``policies_file`` into a Python dictionary.
-    The policies format is validated by default.
+    Load provided ``policies_file`` into a Python dictionary. The policies format
+    is validated by default to ensure at least one policy type exists.
     """
     policies_dict = load_policies_yaml(policies_yaml=policies_file.read_text())
     if validate:
@@ -45,13 +45,23 @@ def load_policies_file(policies_file, validate=True):
 
 
 def validate_policies(policies_dict):
-    """Return True if the provided ``policies_dict`` is valid."""
+    """
+    Return True if the provided ``policies_dict`` contains at least
+    one supported policy type.
+    """
     if not isinstance(policies_dict, dict):
         raise ValidationError("The `policies_dict` argument must be a dictionary.")
 
-    if "license_policies" not in policies_dict:
+    supported_keys = {
+        "license_policies",
+        "license_clarity_thresholds",
+        "scorecard_score_thresholds",
+    }
+
+    if not any(key in policies_dict for key in supported_keys):
         raise ValidationError(
-            "The `license_policies` key is missing from provided policies data."
+            "At least one of the following policy types must be present: "
+            f"{', '.join(sorted(supported_keys))}"
         )
 
     return True

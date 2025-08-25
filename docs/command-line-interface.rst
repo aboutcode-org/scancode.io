@@ -497,6 +497,10 @@ Optional arguments:
 - ``--fail-level {ERROR,WARNING,MISSING}`` Compliance alert level that will cause the
   command to exit with a non-zero status. Default is ERROR.
 
+- ``--fail-on-vulnerabilities`` Exit with a non-zero status if known vulnerabilities
+  are detected in discovered packages and dependencies.
+  Requires the ``find_vulnerabilities`` pipeline to be executed beforehand.
+
 `$ scanpipe archive-project --project PROJECT`
 ----------------------------------------------
 
@@ -548,6 +552,14 @@ Optional arguments:
   For example, to delete all projects created more than one week ago::
 
     scanpipe flush-projects --retain-days 7
+
+- ``--dry-run`` Do not delete any projects; just print the ones that would be flushed.
+
+- ``--label LABELS`` Filter projects by the provided label.
+  Multiple labels can be provided by using this argument multiple times.
+
+- ``--pipeline PIPELINES`` Filter projects by the provided pipeline name.
+  Multiple pipeline name can be provided by using this argument multiple times.
 
 - ``--no-input`` Does not prompt the user for input of any kind.
 

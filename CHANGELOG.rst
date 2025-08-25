@@ -1,13 +1,110 @@
 Changelog
 =========
 
-v34.12.0 (unreleased)
----------------------
+v35.3.0 (2025-08-20)
+--------------------
+
+- Enhanced scorecard compliance support with:
+  * New ``scorecard_compliance_alert`` in project ``extra_data``.
+  * ``/api/projects/{id}/scorecard_compliance/`` API endpoint.
+  * Scorecard compliance integration in ``check-compliance`` management command.
+  * UI template support for scorecard compliance alert.
+  * ``evaluate_scorecard_compliance()`` pipe function for compliance evaluation.
+  https://github.com/aboutcode-org/scancode.io/pull/1800
+
+v35.2.0 (2025-08-01)
+--------------------
+
+- Refactor policies implementation to support more than licenses.
+  The entire ``policies`` data is now stored on the ``ScanPipeConfig`` in place of the
+  ``license_policy_index``.
+  Also, a new method ``get_policies_dict`` methods is now available on the ``Project``
+  model to easily retrieve all the policies data as a dictionary.
+  Renamed for clarity:
+  * ``policy_index`` to ``license_policy_index``
+  * ``policies_enabled`` to ``license_policies_enabled``
+  https://github.com/aboutcode-org/scancode.io/pull/1718
+
+- Add support for SPDX license identifiers as ``license_key`` in license policies
+  ``policies.yml`` file.
+  https://github.com/aboutcode-org/scancode.io/issues/1348
+
+- Enhance the dependency tree view in a more dynamic rendering.
+  Vulnerabilities and compliance alert are displayed along the dependency entries.
+  https://github.com/aboutcode-org/scancode.io/pull/1742
+
+- Add new ``fetch_scores`` pipeline.
+  This pipeline retrieves ScoreCode data for each discovered package in the project
+  and stores it in the corresponding package instances.
+  https://github.com/aboutcode-org/scancode.io/pull/1294
+
+v35.1.0 (2025-07-02)
+--------------------
+
+- Replace the ``setup.py``/``setup.cfg`` by ``pyproject.toml`` file.
+  https://github.com/aboutcode-org/scancode.io/issues/1608
+
+- Update scancode-toolkit to v32.4.0. See CHANGELOG for updates:
+  https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.4.0
+  Adds a new ``git_sha1`` attribute to the ``CodebaseResource`` model as this
+  is now computed and returned from the ``scancode-toolkit`` ``--info`` plugin.
+  https://github.com/aboutcode-org/scancode.io/pull/1708
+
+- Add a ``--fail-on-vulnerabilities`` option in ``check-compliance`` management command.
+  When this option is enabled, the command will exit with a non-zero status if known
+  vulnerabilities are detected in discovered packages and dependencies.
+  Requires the ``find_vulnerabilities`` pipeline to be executed beforehand.
+  https://github.com/aboutcode-org/scancode.io/pull/1702
+
+- Enable ``--license-references`` scan option in the ``scan_single_package`` pipeline.
+  The ``license_references`` and ``license_rule_references`` attributes will now be
+  available in the scan results, including the details about detected licenses and
+  license rules used during the scan.
+  https://github.com/aboutcode-org/scancode.io/issues/1657
+
+- Add a new step to the ``DeployToDevelop`` pipeline, ``map_python``, to match
+  Cython source files (.pyx) to their compiled binaries.
+  https://github.com/aboutcode-org/scancode.io/pull/1703
+
+v35.0.0 (2025-06-23)
+--------------------
+
+- Add support for Python 3.13.
+  Upgrade the base image in Dockerfile to ``python:3.13-slim``.
+  https://github.com/aboutcode-org/scancode.io/pull/1469/files
+
+- Display matched snippets details in "Resource viewer", including the package,
+  resource, and similarity values.
+  https://github.com/aboutcode-org/scancode.io/issues/1688
+
+- Add filtering by label and pipeline in the ``flush-projects`` management command.
+  Also, a new ``--dry-run`` option is available to test the filters before applying
+  the deletion.
+  https://github.com/aboutcode-org/scancode.io/pull/1690
+
+- Add support for using Package URL (purl) as project input.
+  This implementation is based on ``purl2url.get_download_url``.
+  https://github.com/aboutcode-org/scancode.io/issues/1383
 
 - Raise a ``MatchCodeIOException`` when the response from the MatchCode.io service is
   not valid in ``send_project_json_to_matchcode``.
   This generally means an issue on the MatchCode.io server side.
   https://github.com/aboutcode-org/scancode.io/issues/1665
+
+- Upgrade Bulma CSS and Ace JS libraries to latest versions.
+  Refine the CSS for the Resource viewer.
+  https://github.com/aboutcode-org/scancode.io/pull/1692
+
+- Add "(No value detected)" for Copyright and Holder charts.
+  https://github.com/aboutcode-org/scancode.io/issues/1697
+
+- Add "Package Compliance Alert" chart in the Policies section.
+  https://github.com/aboutcode-org/scancode.io/pull/1699
+
+- Update univers to v31.0.0, catch ``NotImplementedError`` in
+  ``get_unique_unresolved_purls``, and properly log error in project.
+  https://github.com/aboutcode-org/scancode.io/pull/1700
+  https://github.com/aboutcode-org/scancode.io/pull/1701
 
 v34.11.0 (2025-05-02)
 ---------------------

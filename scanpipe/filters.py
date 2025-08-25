@@ -40,6 +40,7 @@ from packageurl.contrib.django.filters import PackageURLFilter
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
+from scanpipe.models import DiscoveredLicense
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
@@ -446,7 +447,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         """Filter by Run status using the `RunQuerySet` methods."""
         run_queryset_method = value
         run_queryset = getattr(Run.objects, run_queryset_method)()
-        return queryset.filter(runs__in=run_queryset)
+        return queryset.filter(runs__in=run_queryset).distinct()
 
 
 class JSONContainsFilter(django_filters.CharFilter):
@@ -483,6 +484,7 @@ MAP_TYPE_CHOICES = (
     ("about_file", "about file"),
     ("java_to_class", "java to class"),
     ("jar_to_source", "jar to source"),
+    ("javascript_strings", "js strings"),
     ("javascript_symbols", "js symbols"),
     ("js_compiled", "js compiled"),
     ("js_colocation", "js colocation"),
@@ -492,6 +494,10 @@ MAP_TYPE_CHOICES = (
     ("dwarf_included_paths", "dwarf_included_paths"),
     ("dwarf_compiled_paths", "dwarf_compiled_paths"),
     ("go_file_paths", "go_file_paths"),
+    ("elf_symbols", "Elf Symbols"),
+    ("macho_symbols", "Mach0 Symbols"),
+    ("winpe_symbols", "WinPE Symbols"),
+    ("rust_symbols", "Rust Symbols"),
 )
 
 
@@ -548,6 +554,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "related_from__from_resource__path",
         ],
     )
+
     compliance_alert = django_filters.ChoiceFilter(
         choices=[(EMPTY_VAR, "None")] + CodebaseResource.Compliance.choices,
     )
@@ -570,6 +577,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "sha1",
             "sha256",
             "sha512",
+            "sha1_git",
             "size",
             "status",
             "tag",
@@ -606,8 +614,8 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        license_expression_filer = self.filters["detected_license_expression"]
-        license_expression_filer.extra["widget"] = HasValueDropdownWidget()
+        license_expression_filter = self.filters["detected_license_expression"]
+        license_expression_filter.extra["widget"] = HasValueDropdownWidget()
 
 
 class IsVulnerable(django_filters.ChoiceFilter):
@@ -635,6 +643,19 @@ class DiscoveredPackageSearchFilter(QuerySearchFilter):
             return qs.for_package_url(value)
 
         return super().filter(qs, value)
+
+
+class DiscoveredLicenseSearchFilter(QuerySearchFilter):
+    def filter(self, qs, value):
+        if not value:
+            return qs
+
+        search_fields = ["license_expression", "license_expression_spdx"]
+        lookups = Q()
+        for field_names in search_fields:
+            lookups |= Q(**{f"{field_names}__{self.lookup_expr}": value})
+
+        return qs.filter(lookups)
 
 
 class GroupOrderingFilter(django_filters.OrderingFilter):
@@ -811,6 +832,52 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_direct",
             "datasource_id",
             "is_vulnerable",
+        ]
+
+
+class LicenseFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    dropdown_widget_fields = [
+        "compliance_alert",
+        "license_expression",
+        "license_expression_spdx",
+        "is_license_clue",
+        "needs_review",
+    ]
+
+    search = DiscoveredLicenseSearchFilter(
+        label="Search", field_name="name", lookup_expr="icontains"
+    )
+    sort = GroupOrderingFilter(
+        label="Sort",
+        fields=[
+            "detection_count",
+            "identifier",
+            "license_expression",
+            "license_expression_spdx",
+            "compliance_alert",
+            "is_license_clue",
+            "needs_review",
+        ],
+    )
+    license_expression = django_filters.AllValuesFilter()
+    license_expression_spdx = django_filters.AllValuesFilter()
+    compliance_alert = django_filters.ChoiceFilter(
+        choices=[(EMPTY_VAR, "None")] + CodebaseResource.Compliance.choices,
+    )
+    is_license_clue = StrictBooleanFilter()
+    needs_review = StrictBooleanFilter()
+
+    class Meta:
+        model = DiscoveredLicense
+        fields = [
+            "search",
+            "identifier",
+            "detection_count",
+            "license_expression",
+            "license_expression_spdx",
+            "compliance_alert",
+            "is_license_clue",
+            "needs_review",
         ]
 
 
