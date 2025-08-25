@@ -11,18 +11,12 @@ permissions:
   contents: read
 
 env:
-#  IMAGE_REFERENCE: "python:3.13.0-slim"
-  IMAGE_REFERENCE: "alpine:3.17.0"
+  IMAGE_REFERENCE: "python:3.13.0-slim"
 
 jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
     steps:
-#      - name: Set up Node.js
-#        uses: actions/setup-node@v4
-#        with:
-#          node-version: '23'
-
       - name: Install CycloneDX cdxgen
         run: npm install @cyclonedx/cdxgen
 
@@ -50,4 +44,4 @@ jobs:
       - name: Verify SBOM Analysis Results in ScanCode.io
         shell: bash
         run: |
-          scanpipe shell --command "from scanpipe.models import DiscoveredPackage; package_manager = DiscoveredPackage.objects; print(package_manager.count());"
+          scanpipe shell --command "from scanpipe.models import DiscoveredPackage, DiscoveredDependency; package_manager = DiscoveredPackage.objects; assert package_manager.count() > 340; assert package_manager.vulnerable().count() == 0; assert DiscoveredDependency.objects.count() == 0"
