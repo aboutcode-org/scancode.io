@@ -16,9 +16,7 @@ env:
 jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
-#    steps:
-#    - uses: actions/checkout@v4
-
+    steps:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -47,5 +45,5 @@ jobs:
     - name: Upload SBOM artifact
       uses: actions/upload-artifact@v4
       with:
-        name: sbom-tool-sbom
+        name: sbom-tool-output
         path: sbom-output
