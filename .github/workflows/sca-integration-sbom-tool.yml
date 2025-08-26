@@ -17,33 +17,47 @@ jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
     steps:
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
+#    - name: Setup .NET
+#      uses: actions/setup-dotnet@v4
+#      with:
+#        dotnet-version: 8.0.x
 
-#    - name: Build
-#      run: dotnet build Sample.sln --output buildOutput
-
-    - name: Download SBOM Tool
+    - name: Download SBOM tool
       run: |
         curl -Lo $RUNNER_TEMP/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64
         chmod +x $RUNNER_TEMP/sbom-tool
 
-    - name: Generate SBOM for Docker image
+    - name: Generate SBOM with SBOM tool
       run: |
         mkdir -p sbom-output
         $RUNNER_TEMP/sbom-tool generate \
           -di ${{ env.IMAGE_REFERENCE }} \
-          -pn DockerImage \
+#          -pn DockerImage \
           -pv 1.0.0 \
           -ps Company \
           -nsb https://sbom.company.com \
           -m sbom-output \
           -V Verbose
 
+    - name: Verify SBOM Analysis Results in ScanCode.io
+      shell: bash
+      run: |
+        ls -la 
+        ls -la sbom-output
+
     - name: Upload SBOM artifact
       uses: actions/upload-artifact@v4
       with:
         name: sbom-tool-output
         path: sbom-output
+
+    - name: Import SBOM into ScanCode.io
+      uses: aboutcode-org/scancode-action@main
+      with:
+        pipelines: "load_sbom"
+        inputs-path: "sbom-output/_manifest/spdx_2.2/manifest.spdx.json"
+
+#    - name: Verify SBOM Analysis Results in ScanCode.io
+#      shell: bash
+#      run: |
+#        scanpipe shell --command "from scanpipe.models import DiscoveredPackage, DiscoveredDependency; package_manager = DiscoveredPackage.objects; assert package_manager.count() > 220; assert package_manager.vulnerable().count() > 10; assert DiscoveredDependency.objects.count() > 150"
