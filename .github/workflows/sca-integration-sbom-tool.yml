@@ -11,17 +11,13 @@ permissions:
   contents: read
 
 env:
-  IMAGE_REFERENCE: "python:3.13.0-slim"
+  IMAGE_REFERENCE: "alpine:3.17.0"
+#  IMAGE_REFERENCE: "python:3.13.0-slim"
 
 jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
     steps:
-#    - name: Setup .NET
-#      uses: actions/setup-dotnet@v4
-#      with:
-#        dotnet-version: 8.0.x
-
     - name: Download SBOM tool
       run: |
         curl -Lo $RUNNER_TEMP/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64
@@ -39,23 +35,17 @@ jobs:
           -m sbom-output \
           -V Verbose
 
-    - name: Verify SBOM Analysis Results in ScanCode.io
-      shell: bash
-      run: |
-        ls -la 
-        ls -la sbom-output
-
     - name: Upload SBOM artifact
       uses: actions/upload-artifact@v4
       with:
         name: sbom-tool-output
-        path: sbom-output
+        path: sbom-tool-output
 
     - name: Import SBOM into ScanCode.io
       uses: aboutcode-org/scancode-action@main
       with:
         pipelines: "load_sbom"
-        inputs-path: "sbom-output/_manifest/spdx_2.2/manifest.spdx.json"
+        inputs-path: "sbom-tool-output/_manifest/spdx_2.2/manifest.spdx.json"
 
 #    - name: Verify SBOM Analysis Results in ScanCode.io
 #      shell: bash
