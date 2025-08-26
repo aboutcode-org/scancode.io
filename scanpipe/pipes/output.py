@@ -673,7 +673,7 @@ def _get_spdx_extracted_licenses(license_expressions):
 
 def get_dependency_as_spdx_relationship(dependency, document_spdx_id, packages_as_spdx):
     """Return a spdx.Relationship crafted from the provided ``dependency`` instance."""
-    if dependency.is_for_package:  # Package dependency
+    if dependency.for_package:  # Package dependency
         parent_id = dependency.for_package.spdx_id
     else:  # Project dependency
         parent_id = document_spdx_id

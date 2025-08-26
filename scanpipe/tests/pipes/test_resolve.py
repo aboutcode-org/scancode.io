@@ -268,7 +268,7 @@ class ScanPipeResolvePipesTest(TestCase):
         pipes.collect_and_create_codebase_resources(project1)
         resources = resolve.get_manifest_resources(project1)
 
-        packages = resolve.get_packages(
+        packages, _ = resolve.get_data_from_manifests(
             project1,
             resolve.sbom_registry,
             resources,
@@ -301,7 +301,7 @@ class ScanPipeResolvePipesTest(TestCase):
         copy_inputs(project1.inputs(), project1.codebase_path)
         pipes.collect_and_create_codebase_resources(project1)
         resources = resolve.get_manifest_resources(project1)
-        packages = resolve.get_packages(
+        packages, _ = resolve.get_data_from_manifests(
             project1,
             resolve.sbom_registry,
             resources,
