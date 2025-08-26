@@ -10,27 +10,42 @@ on:
 permissions:
   contents: read
 
+env:
+  IMAGE_REFERENCE: "python:3.13.0-slim"
+
 jobs:
-  build:
+  generate-and-load-sbom:
     runs-on: ubuntu-24.04
-    steps:
-    - uses: actions/checkout@v4
+#    steps:
+#    - uses: actions/checkout@v4
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
 
-    - name: Build
-      run: dotnet build Sample.sln --output buildOutput
+#    - name: Build
+#      run: dotnet build Sample.sln --output buildOutput
 
-    - name: Generate SBOM
+    - name: Download SBOM Tool
       run: |
         curl -Lo $RUNNER_TEMP/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64
         chmod +x $RUNNER_TEMP/sbom-tool
-        $RUNNER_TEMP/sbom-tool generate -b ./buildOutput -bc . -pn Test -pv 1.0.0 -ps MyCompany -nsb https://sbom.mycompany.com -V Verbose
 
-    - name: Upload a Build Artifact
+    - name: Generate SBOM for Docker image
+      run: |
+        mkdir -p sbom-output
+        $RUNNER_TEMP/sbom-tool generate \
+          -di ${{ env.IMAGE_REFERENCE }} \
+          -pn DockerImage \
+          -pv 1.0.0 \
+          -ps Company \
+          -nsb https://sbom.company.com \
+          -m sbom-output \
+          -V Verbose
+
+    - name: Upload SBOM artifact
       uses: actions/upload-artifact@v4
       with:
-        path: buildOutput
+        name: sbom-tool-sbom
+        path: sbom-output
