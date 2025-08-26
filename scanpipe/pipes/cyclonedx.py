@@ -158,12 +158,12 @@ def cyclonedx_component_to_package_data(
     vulnerabilities = vulnerabilities or {}
     extra_data = {}
 
-    # Store the original bom_ref and dependencies for future processing.
     bom_ref = str(cdx_component.bom_ref)
-    if bom_ref:
-        extra_data["bom_ref"] = bom_ref
-        if depends_on := dependencies.get(bom_ref):
-            extra_data["depends_on"] = depends_on
+    if depends_on := dependencies.get(bom_ref):
+        extra_data["depends_on"] = depends_on
+
+    # Store the original "bom_ref" as package_uid for dependencies resolution.
+    package_uid = bom_ref
 
     package_url_dict = {}
     if cdx_component.purl:
@@ -189,6 +189,7 @@ def cyclonedx_component_to_package_data(
             )
 
     package_data = {
+        "package_uid": package_uid,
         "name": cdx_component.name,
         "extracted_license_statement": declared_license,
         "copyright": cdx_component.copyright,
