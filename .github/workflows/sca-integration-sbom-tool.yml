@@ -32,6 +32,7 @@ jobs:
         mkdir -p sbom-output
         $RUNNER_TEMP/sbom-tool generate \
           -di ${{ env.IMAGE_REFERENCE }} \
+          -pn DockerImage \
           -pv 1.0.0 \
           -ps Company \
           -nsb https://sbom.company.com \
