@@ -32,20 +32,20 @@ jobs:
           -pv 1.0.0 \
           -ps Company \
           -nsb https://sbom.company.com \
-          -m sbom-tool-output \
+          -m sbom-output \
           -V Verbose
 
     - name: Upload SBOM artifact
       uses: actions/upload-artifact@v4
       with:
-        name: sbom-tool-output
-        path: sbom-tool-output
+        name: sbom-output
+        path: sbom-output
 
     - name: Import SBOM into ScanCode.io
       uses: aboutcode-org/scancode-action@main
       with:
         pipelines: "load_sbom"
-        inputs-path: "sbom-tool-output/_manifest/spdx_2.2/manifest.spdx.json"
+        inputs-path: "sbom-output/_manifest/spdx_2.2/manifest.spdx.json"
 
 #    - name: Verify SBOM Analysis Results in ScanCode.io
 #      shell: bash
