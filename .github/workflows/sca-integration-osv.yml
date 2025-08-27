@@ -8,11 +8,6 @@ on:
       - main
 
 permissions:
-  # Required to upload SARIF file to CodeQL. See: https://github.com/github/codeql-action/issues/2117
-  actions: read
-  # Require writing security events to upload SARIF file to security tab
-  security-events: write
-  # to fetch code (actions/checkout)
   contents: read
 
 env:
@@ -31,20 +26,21 @@ jobs:
       - name: Run OSV Scanner
         run: |
           osv-scanner scan --help
-          osv-scanner scan image ${{ env.IMAGE_REFERENCE }} --all-packages --format spdx-2-3 --output sbom.spdx.json || true
-
-#      - name: Run OSV Scanner
-#        uses: docker://ghcr.io/google/osv-scanner-action:v2.2.1
-#        with:
-#          args: scan image --archive alpine_3.17.0.tar --format spdx-2-3 --all-packages
-#          args: scan image --archive alpine_3.17.0.tar --format json
+          osv-scanner scan image ${{ env.IMAGE_REFERENCE }} --all-packages --format spdx-2-3 --output osv-sbom.cdx.json || true
 
       - name: Upload SBOM as GitHub Artifact
         uses: actions/upload-artifact@v4
         with:
           name: osv-scanner-sbom-report
-          path: sbom.spdx.json
+          path: osv-sbom.cdx.json
           retention-days: 20
+
+      - name: Import SBOM into ScanCode.io
+        uses: aboutcode-org/scancode-action@main
+        with:
+          pipelines: "load_sbom"
+          inputs-path: "sbom-output/_manifest/spdx_2.2/manifest.spdx.json"
+          scancodeio-repo-branch: "main"
 
       - name: Verify SBOM Analysis Results in ScanCode.io
         shell: bash
