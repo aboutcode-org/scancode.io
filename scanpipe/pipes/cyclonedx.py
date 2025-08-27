@@ -162,9 +162,6 @@ def cyclonedx_component_to_package_data(
     if depends_on := dependencies.get(bom_ref):
         extra_data["depends_on"] = depends_on
 
-    # Store the original "bom_ref" as package_uid for dependencies resolution.
-    package_uid = bom_ref
-
     package_url_dict = {}
     if cdx_component.purl:
         package_url_dict = cdx_component.purl.to_dict(encode=True)
@@ -189,7 +186,8 @@ def cyclonedx_component_to_package_data(
             )
 
     package_data = {
-        "package_uid": package_uid,
+        # Store the original "bom_ref" as package_uid for dependencies resolution.
+        "package_uid": bom_ref,
         "name": cdx_component.name,
         "extracted_license_statement": declared_license,
         "copyright": cdx_component.copyright,

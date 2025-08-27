@@ -72,8 +72,10 @@ class LoadSBOM(ScanCodebase):
 
     def create_dependencies_from_sboms(self):
         """Create the dependency relationship declared in the SBOMs."""
+        # CycloneDX support: the dependency data is stored in ``extra_data``.
         resolve.create_dependencies_from_packages_extra_data(project=self.project)
 
+        # SPDX support: the dependency data is loaded from ``self.dependencies``.
         for dependency_data in self.dependencies:
             DiscoveredDependency.create_from_data(
                 project=self.project,

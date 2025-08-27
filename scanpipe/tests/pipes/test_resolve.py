@@ -316,9 +316,11 @@ class ScanPipeResolvePipesTest(TestCase):
 
     def test_scanpipe_resolve_create_dependencies_from_packages_extra_data(self):
         p1 = Project.objects.create(name="Analysis")
-        parent_extra_data = {"depends_on": ["child"]}
-        parent = make_package(p1, "pkg:type/parent", extra_data=parent_extra_data)
-        child = make_package(p1, "pkg:type/child", extra_data={"bom_ref": "child"})
+
+        parent = make_package(
+            p1, "pkg:type/parent", extra_data={"depends_on": ["child"]}
+        )
+        child = make_package(p1, "pkg:type/child", package_uid="child")
 
         created_count = resolve.create_dependencies_from_packages_extra_data(p1)
         self.assertEqual(1, created_count)

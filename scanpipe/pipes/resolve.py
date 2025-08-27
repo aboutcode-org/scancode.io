@@ -61,7 +61,13 @@ def resolve_manifest_resources(resource, package_registry):
 
 
 def get_dependencies_from_manifest(resource):
-    """Get dependency data from resource."""
+    """
+    Get dependency data from resource.
+    This is used for SPDX where the dependency data is stored as its own
+    entry in the SBOM.
+    On the CycloneDX side, the dependency data is stored inline in the
+    component entries, it is stored on the package ``extra_data``.
+    """
     dependencies = []
 
     default_package_type = get_default_package_type(resource.location)
