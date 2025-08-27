@@ -24,9 +24,13 @@ jobs:
           sudo mv osv-scanner_linux_amd64 /usr/local/bin/osv-scanner
 
       - name: Run OSV Scanner
+        # OSV-Scanner exits with code 1 when vulnerabilities are found.
+        continue-on-error: true
         run: |
-          osv-scanner scan --help
-          osv-scanner scan image ${{ env.IMAGE_REFERENCE }} --all-packages --format spdx-2-3 --output osv-sbom.cdx.json || true
+          osv-scanner scan image ${{ env.IMAGE_REFERENCE }} \
+            --all-packages \
+            --format spdx-2-3 \
+            --output osv-sbom.cdx.json
 
       - name: Upload SBOM as GitHub Artifact
         uses: actions/upload-artifact@v4
@@ -39,7 +43,7 @@ jobs:
         uses: aboutcode-org/scancode-action@main
         with:
           pipelines: "load_sbom"
-          inputs-path: "sbom-output/_manifest/spdx_2.2/manifest.spdx.json"
+          inputs-path: "osv-sbom.cdx.json"
           scancodeio-repo-branch: "main"
 
       - name: Verify SBOM Analysis Results in ScanCode.io
