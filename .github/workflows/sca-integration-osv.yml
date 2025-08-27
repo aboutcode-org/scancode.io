@@ -23,14 +23,16 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Docker
-        run: |
-          docker pull alpine:3.17.0
-          docker save alpine:3.17.0 > alpine_3.17.0.tar
+#      - name: Docker
+#        run: |
+#          docker pull alpine:3.17.0
+#          docker save alpine:3.17.0 > alpine_3.17.0.tar
 
-      - name: Install OSC-Scanner
+      - name: Install OSV-Scanner
         run: |
-          go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest
+          curl -sLO https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64
+          chmod +x osv-scanner_linux_amd64
+          sudo mv osv-scanner_linux_amd64 /usr/local/bin/osv-scanner
 
       - name: Run OSV Scanner
         run: |
