@@ -355,6 +355,12 @@ class ScanPipeSPDXPipesTest(TestCase):
         document = spdx.Document(**self.document_data)
         assert self.document_spdx_data == document.as_dict()
 
+    def test_spdx_relationship_is_dependency_relationship_property(self):
+        relationship = spdx.Relationship.from_data(self.relationship_spdx_data)
+        assert relationship.is_dependency_relationship is False
+        relationship.relationship = "DEPENDENCY_OF"
+        assert relationship.is_dependency_relationship
+
     def test_spdx_document_from_data(self):
         assert spdx.Document.from_data({})
         document = spdx.Document.from_data(self.document_spdx_data)
