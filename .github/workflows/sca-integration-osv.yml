@@ -36,7 +36,8 @@ jobs:
 
       - name: Run OSV Scanner
         run: |
-          osv-scanner scan image alpine:3.17.0
+          osv-scanner --help
+          osv-scanner scan image alpine:3.17.0 --all-packages --format=json
 
 #      - name: Run OSV Scanner
 #        uses: docker://ghcr.io/google/osv-scanner-action:v2.2.1
