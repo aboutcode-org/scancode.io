@@ -79,7 +79,9 @@ def get_external_references(component):
 
     references = defaultdict(list)
     for reference in external_references:
-        references[reference.type.value].append(reference.url.uri)
+        reference_url = reference.url
+        if reference_url and reference_url.uri:
+            references[reference.type.value].append(reference_url.uri)
 
     return dict(references)
 
