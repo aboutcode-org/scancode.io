@@ -1,6 +1,12 @@
 Changelog
 =========
 
+v35.4.0 (unreleased)
+--------------------
+
+- Resolve and load dependencies from SPDX SBOMs.
+  https://github.com/aboutcode-org/scancode.io/issues/1145
+
 v35.3.0 (2025-08-20)
 --------------------
 

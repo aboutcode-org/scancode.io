@@ -79,7 +79,9 @@ def get_external_references(component):
 
     references = defaultdict(list)
     for reference in external_references:
-        references[reference.type.value].append(reference.url.uri)
+        reference_url = reference.url
+        if reference_url and reference_url.uri:
+            references[reference.type.value].append(reference_url.uri)
 
     return dict(references)
 
@@ -158,12 +160,9 @@ def cyclonedx_component_to_package_data(
     vulnerabilities = vulnerabilities or {}
     extra_data = {}
 
-    # Store the original bom_ref and dependencies for future processing.
     bom_ref = str(cdx_component.bom_ref)
-    if bom_ref:
-        extra_data["bom_ref"] = bom_ref
-        if depends_on := dependencies.get(bom_ref):
-            extra_data["depends_on"] = depends_on
+    if depends_on := dependencies.get(bom_ref):
+        extra_data["depends_on"] = depends_on
 
     package_url_dict = {}
     if cdx_component.purl:
@@ -189,6 +188,8 @@ def cyclonedx_component_to_package_data(
             )
 
     package_data = {
+        # Store the original "bom_ref" as package_uid for dependencies resolution.
+        "package_uid": bom_ref,
         "name": cdx_component.name,
         "extracted_license_statement": declared_license,
         "copyright": cdx_component.copyright,
