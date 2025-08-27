@@ -376,7 +376,9 @@ are actively supported and tested::
   - Anchore: https://anchore.com/sbom/
   - CycloneDX cdxgen: https://cyclonedx.github.io/cdxgen/
   - OWASP dep-scan: https://owasp.org/www-project-dep-scan/
+  - SBOM tool: https://github.com/microsoft/sbom-tool
   - Trivy: https://trivy.dev/latest/
+  - OSV-Scanner: https://osv.dev/
 
 .. note:: Imported SBOMs must follow the SPDX or CycloneDX standards, in JSON format.
    You can use the ``load-sbom`` pipeline to process and enhance these SBOMs in your
