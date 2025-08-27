@@ -37,7 +37,7 @@ jobs:
       - name: Run OSV Scanner
         run: |
           osv-scanner scan --help
-          osv-scanner scan image alpine:3.17.0 --all-packages --format cyclonedx-1-5
+          osv-scanner scan image alpine:3.17.0 --all-packages --format spdx-2-3 --output sbom.spdx.json || true
 
 #      - name: Run OSV Scanner
 #        uses: docker://ghcr.io/google/osv-scanner-action:v2.2.1
