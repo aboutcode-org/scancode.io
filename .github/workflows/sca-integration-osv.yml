@@ -30,20 +30,20 @@ jobs:
           osv-scanner scan image ${{ env.IMAGE_REFERENCE }} \
             --all-packages \
             --format spdx-2-3 \
-            --output osv-sbom.cdx.json
+            --output osv-sbom.spdx.json
 
       - name: Upload SBOM as GitHub Artifact
         uses: actions/upload-artifact@v4
         with:
           name: osv-scanner-sbom-report
-          path: osv-sbom.cdx.json
+          path: osv-sbom.spdx.json
           retention-days: 20
 
       - name: Import SBOM into ScanCode.io
         uses: aboutcode-org/scancode-action@main
         with:
           pipelines: "load_sbom"
-          inputs-path: "osv-sbom.cdx.json"
+          inputs-path: "osv-sbom.spdx.json"
           scancodeio-repo-branch: "main"
 
       - name: Verify SBOM Analysis Results in ScanCode.io
