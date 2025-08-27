@@ -59,7 +59,7 @@
     },
     {
       "name": "",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-for_package_b",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-d0e1eab2-9b8b-449b-b9d1-12147ffdd8a8",
       "downloadLocation": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
       "copyrightText": "NOASSERTION",
@@ -68,7 +68,7 @@
     },
     {
       "name": "unresolved",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-unresolved",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-29fbe562-a191-44b4-88e8-a9678071ecee",
       "downloadLocation": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
       "copyrightText": "NOASSERTION",
@@ -87,8 +87,8 @@
     "SPDXRef-scancodeio-discoveredpackage-a83a60de-81bc-4bf4-b48c-dc78e0e658a9",
     "SPDXRef-scancodeio-discoveredpackage-81147701-285f-485c-ba36-9cd3742790b1",
     "SPDXRef-scancodeio-discoveredpackage-e391c33e-d7d0-4a97-a3c3-e947375c53d5",
-    "SPDXRef-scancodeio-discovereddependency-for_package_b",
-    "SPDXRef-scancodeio-discovereddependency-unresolved"
+    "SPDXRef-scancodeio-discovereddependency-d0e1eab2-9b8b-449b-b9d1-12147ffdd8a8",
+    "SPDXRef-scancodeio-discovereddependency-29fbe562-a191-44b4-88e8-a9678071ecee"
   ],
   "relationships": [
     {
@@ -97,12 +97,12 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-for_package_b",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-d0e1eab2-9b8b-449b-b9d1-12147ffdd8a8",
       "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-81147701-285f-485c-ba36-9cd3742790b1",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-unresolved",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-29fbe562-a191-44b4-88e8-a9678071ecee",
       "relatedSpdxElement": "SPDXRef-DOCUMENT-b74fe5df-e965-415e-ba65-f38421a0695d",
       "relationshipType": "DEPENDENCY_OF"
     }

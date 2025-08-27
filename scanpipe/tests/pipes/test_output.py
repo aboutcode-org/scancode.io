@@ -478,11 +478,25 @@ class ScanPipeOutputPipesTest(TestCase):
             project, "pkg:type/b", uuid="81147701-285f-485c-ba36-9cd3742790b1"
         )
         # 1. Package resolved dependency
-        make_dependency(project, for_package=a, resolved_to_package=b)
+        make_dependency(
+            project,
+            for_package=a,
+            resolved_to_package=b,
+            uuid="3c3ac137-d573-43b0-be6b-3be2815d1c2f",
+        )
         # 2. Package unresolved dependency
-        make_dependency(project, for_package=b, dependency_uid="for_package_b")
+        make_dependency(
+            project,
+            for_package=b,
+            dependency_uid="for_package_b",
+            uuid="d0e1eab2-9b8b-449b-b9d1-12147ffdd8a8",
+        )
         # 3. Project unresolved dependency
-        unresolved_dependency = make_dependency(project, dependency_uid="unresolved")
+        unresolved_dependency = make_dependency(
+            project,
+            dependency_uid="unresolved",
+            uuid="29fbe562-a191-44b4-88e8-a9678071ecee",
+        )
         unresolved_dependency.set_package_url("pkg:type/unresolved")
         unresolved_dependency.save()
         # 4. Project package
