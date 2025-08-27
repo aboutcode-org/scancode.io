@@ -32,7 +32,7 @@ jobs:
         uses: docker://ghcr.io/google/osv-scanner-action:v2.2.1
         with:
 #          args: scan image --archive alpine_3.17.0.tar --format spdx-2-3 --all-packages > osv-scanner.spdx.json || true
-          args: scan image --archive alpine_3.17.0.tar --format cyclonedx-1-5 --all-packages > osv-scanner.cdx.json || true
+          args: scan image --archive alpine_3.17.0.tar --format json
 
       - name: Upload SBOM as GitHub Artifact
         uses: actions/upload-artifact@v4
