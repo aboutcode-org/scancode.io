@@ -21,13 +21,7 @@ env:
 jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
-
     steps:
-#      - name: Docker
-#        run: |
-#          docker pull alpine:3.17.0
-#          docker save alpine:3.17.0 > alpine_3.17.0.tar
-
       - name: Install OSV-Scanner
         run: |
           curl -sLO https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64
@@ -37,12 +31,12 @@ jobs:
       - name: Run OSV Scanner
         run: |
           osv-scanner scan --help
-          osv-scanner scan image alpine:3.17.0 --all-packages --format spdx-2-3 --output sbom.spdx.json || true
+          osv-scanner scan image ${{ env.IMAGE_REFERENCE }} --all-packages --format spdx-2-3 --output sbom.spdx.json || true
 
 #      - name: Run OSV Scanner
 #        uses: docker://ghcr.io/google/osv-scanner-action:v2.2.1
 #        with:
-#          args: scan image --archive alpine_3.17.0.tar --format spdx-2-3 --all-packages > osv-scanner.spdx.json || true
+#          args: scan image --archive alpine_3.17.0.tar --format spdx-2-3 --all-packages
 #          args: scan image --archive alpine_3.17.0.tar --format json
 
       - name: Upload SBOM as GitHub Artifact
@@ -51,3 +45,8 @@ jobs:
           name: osv-scanner-sbom-report
           path: sbom.spdx.json
           retention-days: 20
+
+      - name: Verify SBOM Analysis Results in ScanCode.io
+        shell: bash
+        run: |
+          scanpipe shell --command "from scanpipe.models import DiscoveredPackage, DiscoveredDependency; package_manager = DiscoveredPackage.objects; print(package_manager.count()); print(package_manager.vulnerable().count()); print(DiscoveredDependency.objects.count())"
