@@ -28,15 +28,23 @@ jobs:
           docker pull alpine:3.17.0
           docker save alpine:3.17.0 > alpine_3.17.0.tar
 
-      - name: Run OSV Scanner
-        uses: docker://ghcr.io/google/osv-scanner-action:v2.2.1
-        with:
-#          args: scan image --archive alpine_3.17.0.tar --format spdx-2-3 --all-packages > osv-scanner.spdx.json || true
-          args: scan image --archive alpine_3.17.0.tar --format json
+      - name: Install OSC-Scanner
+        run: |
+          go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest
 
-      - name: Upload SBOM as GitHub Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: osv-scanner-sbom-report
-          path: osv-scanner.cdx.json
-          retention-days: 20
+      - name: Run OSV Scanner
+        run: |
+          osv-scanner scan image alpine:3.17.0
+
+#      - name: Run OSV Scanner
+#        uses: docker://ghcr.io/google/osv-scanner-action:v2.2.1
+#        with:
+#          args: scan image --archive alpine_3.17.0.tar --format spdx-2-3 --all-packages > osv-scanner.spdx.json || true
+#          args: scan image --archive alpine_3.17.0.tar --format json
+
+#      - name: Upload SBOM as GitHub Artifact
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: osv-scanner-sbom-report
+#          path: osv-scanner.cdx.json
+#          retention-days: 20
