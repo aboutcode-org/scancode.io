@@ -138,4 +138,4 @@ class ScanPipeSCAIntegrationsTest(TestCase):
         self.assertEqual(1, project1.codebaseresources.count())
         self.assertEqual(16, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discoveredpackages.vulnerable().count())
-        self.assertEqual(0, project1.discovereddependencies.count())
+        self.assertEqual(16, project1.discovereddependencies.count())
