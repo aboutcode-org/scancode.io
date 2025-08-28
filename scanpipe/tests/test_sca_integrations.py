@@ -138,4 +138,50 @@ class ScanPipeSCAIntegrationsTest(TestCase):
         self.assertEqual(1, project1.codebaseresources.count())
         self.assertEqual(16, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discoveredpackages.vulnerable().count())
-        self.assertEqual(16, project1.discovereddependencies.count())
+        self.assertEqual(15, project1.discovereddependencies.count())
+
+    def test_scanpipe_scan_integrations_load_sbom_osv_scanner(self):
+        # Input file generated with:
+        # $ osv-scanner scan image alpine:3.17.0 \
+        #     --all-packages \
+        #     --format spdx-2-3 \
+        #     --output osv-scanner-alpine-3.17-sbom.spdx.json
+        input_location = (
+            self.data / "sca-integrations" / "osv-scanner-alpine-3.17-sbom.spdx.json"
+        )
+
+        pipeline_name = "load_sbom"
+        project1 = make_project()
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(1, project1.codebaseresources.count())
+        self.assertEqual(16, project1.discoveredpackages.count())
+        self.assertEqual(0, project1.discoveredpackages.vulnerable().count())
+        self.assertEqual(15, project1.discovereddependencies.count())
+
+    def test_scanpipe_scan_integrations_load_sbom_osv_scanner_cdx_vulnerabilities(self):
+        # Input file taken from: https://google.github.io/osv-scanner/output/#cyclonedx
+        input_location = (
+            self.data / "sca-integrations" / "osv-scanner-vulns-sbom.cdx.json"
+        )
+
+        pipeline_name = "load_sbom"
+        project1 = make_project()
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(1, project1.codebaseresources.count())
+        self.assertEqual(3, project1.discoveredpackages.count())
+        self.assertEqual(1, project1.discoveredpackages.vulnerable().count())
+        self.assertEqual(0, project1.discovereddependencies.count())
