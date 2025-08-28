@@ -17,18 +17,20 @@ jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
     steps:
-#      - name: Checkout repo
-#        uses: actions/checkout@v4
-
       - name: Start Python container
         run: |
           docker run -d --name sbom_target ${{ env.IMAGE_REFERENCE }} tail -f /dev/null
 
+      - name: Prepare target container for OS detection
+        run: |
+          docker exec sbom_target apt-get update
+          docker exec sbom_target apt-get install -y lsb-release
+
       - name: Pull Vuls and dictionary images
         run: |
           docker pull vuls/vuls
-          docker pull vuls/go-cve-dictionary
-          docker pull vuls/goval-dictionary
+#          docker pull vuls/go-cve-dictionary
+#          docker pull vuls/goval-dictionary
 
       - name: Prepare Vuls config.toml
         run: |
@@ -37,7 +39,6 @@ jobs:
           host = "sbom_target"
           port = "local"
           containerType = "docker"
-          containersIncluded = ["sbom_target"]
           EOF
 
       - name: Fetch CVE Databases
@@ -46,10 +47,18 @@ jobs:
 #          docker run --rm -v $PWD/vuls-data:/vuls vuls/go-cve-dictionary fetch nvd
 #          docker run --rm -v $PWD/vuls-data:/vuls vuls/go-cve-dictionary fetch jvn
 
-# FAILS:
 #      - name: Fetch OVAL Definitions
 #        run: |
+#          mkdir -p ./vuls-data
 #          docker run --rm -v $PWD/vuls-data:/vuls vuls/goval-dictionary fetch debian
+
+      - name: Test Vuls Config
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v $PWD:/workdir \
+            -w /workdir \
+            vuls/vuls configtest -config=/workdir/config.toml
 
       - name: Run Vuls Scan
         run: |
@@ -66,4 +75,3 @@ jobs:
           name: vuls-scan-report
           path: results
           retention-days: 20
-
