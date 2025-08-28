@@ -2800,16 +2800,22 @@ class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
 
 class CodebaseResourceTableView(
     ConditionalLoginRequired,
+    PrefetchRelatedViewMixin,
     ProjectRelatedViewMixin,
     TableColumnsMixin,
     PaginatedFilterView,
 ):
+    prefetch_related = [
+        Prefetch(
+            "discovered_packages",
+            queryset=DiscoveredPackage.objects.only_package_url_fields(),
+        )
+    ]
     def get_filterset_kwargs(self, filterset_class):
         """Remove 'path' from filterset data when showing children of a directory."""
         kwargs = super().get_filterset_kwargs(filterset_class)
         path = self.request.GET.get("path")
         if path:
-            # Only remove 'path' if we're showing children of a directory
             base_qs = super().get_queryset()
             if base_qs.filter(path=path, type="directory").exists():
                 data = kwargs.get("data")
@@ -2861,7 +2867,6 @@ class CodebaseResourceTableView(
     def get_queryset(self):
         path = self.request.GET.get("path")
         base_qs = super().get_queryset()
-        # Default: all resources for the project
         queryset = base_qs
         if path:
             dir_qs = base_qs.filter(path=path, type="directory")
@@ -2886,7 +2891,6 @@ class CodebaseResourceTableView(
                 "compliance_alert",
                 "package_data",
             )
-            .prefetch_related("discovered_packages")
             .order_by("type", "path")
         )
 
