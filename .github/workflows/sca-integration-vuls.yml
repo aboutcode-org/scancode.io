@@ -44,11 +44,12 @@ jobs:
         run: |
           mkdir -p ./vuls-data
           docker run --rm -v $PWD/vuls-data:/vuls vuls/go-cve-dictionary fetch nvd
-          docker run --rm -v $PWD/vuls-data:/vuls vuls/go-cve-dictionary fetch jvn
+#          docker run --rm -v $PWD/vuls-data:/vuls vuls/go-cve-dictionary fetch jvn
 
-      - name: Fetch OVAL Definitions
-        run: |
-          docker run --rm -v $PWD/vuls-data:/vuls vuls/goval-dictionary fetch debian
+# FAILS:
+#      - name: Fetch OVAL Definitions
+#        run: |
+#          docker run --rm -v $PWD/vuls-data:/vuls vuls/goval-dictionary fetch debian
 
       - name: Run Vuls Scan
         run: |
