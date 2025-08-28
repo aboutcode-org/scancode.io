@@ -1,7 +1,6 @@
 {% load humanize %}
 
 <div id="right-pane">
-{% if resources %}
   <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
     <thead class="is-sticky">
       <tr>
@@ -31,59 +30,76 @@
       </tr>
     </thead>
     <tbody>
-      {% for resource in resources %}
-        <tr>
-          <td class="break-all" style="min-width: 200px;">
-            {% if resource.type == "directory" %}
-              {{ resource.path }}
-            {% else %}
-              <a href="{% url 'resource_detail' project.slug resource.path %}">{{ resource.path }}</a>
-            {% endif %}
-          </td>
-          <td>
-            {{ resource.status }}
-          </td>
-          <td>
-            {{ resource.type }}
-          </td>
-          <td>
-            {% if resource.type != "directory" %}
-              {{ resource.size|filesizeformat|default_if_none:"" }}
-            {% endif %}
-          </td>
-          <td class="break-all" style="min-width: 100px;">
-            {{ resource.name }}
-          </td>
-          <td>
-            {{ resource.extension }}
-          </td>
-          <td class="break-all">
-            {{ resource.programming_language }}
-          </td>
-          <td class="break-all">
-            {{ resource.mime_type }}
-          </td>
-          <td>
-            {{ resource.tag }}
-          </td>
-          <td>
-            {{ resource.detected_license_expression }}
-          </td>
-          <td>
-            {{ resource.compliance_alert }}
-          </td>
-          <td>
-            {% if resource.discovered_packages.all %}
-              {% for package in resource.discovered_packages.all|slice:"0:3" %}
-                <a href="{% url 'project_packages' project.slug %}?purl={{ package.package_url }}">{{ package }}</a>{% if not forloop.last %}, {% endif %}
-              {% endfor %}
-              {% if resource.discovered_packages.all|length > 3 %}
-                +{{ resource.discovered_packages.all|length|add:"-3" }} more
+      {% if resources %}
+        {% for resource in resources %}
+          <tr>
+            <td class="break-all" style="min-width: 200px;">
+              {% if resource.type == "directory" %}
+                {{ resource.path }}
+              {% else %}
+                <a href="{% url 'resource_detail' project.slug resource.path %}">{{ resource.path }}</a>
               {% endif %}
-            {% endif %}
+            </td>
+            <td>
+              {{ resource.status }}
+            </td>
+            <td>
+              {{ resource.type }}
+            </td>
+            <td>
+              {% if resource.type != "directory" %}
+                {{ resource.size|filesizeformat|default_if_none:"" }}
+              {% endif %}
+            </td>
+            <td class="break-all" style="min-width: 100px;">
+              {{ resource.name }}
+            </td>
+            <td>
+              {{ resource.extension }}
+            </td>
+            <td class="break-all">
+              {{ resource.programming_language }}
+            </td>
+            <td class="break-all">
+              {{ resource.mime_type }}
+            </td>
+            <td>
+              {{ resource.tag }}
+            </td>
+            <td>
+              {{ resource.detected_license_expression }}
+            </td>
+            <td>
+              {{ resource.compliance_alert }}
+            </td>
+            <td>
+              {% if resource.discovered_packages.all %}
+                {% for package in resource.discovered_packages.all|slice:"0:3" %}
+                  <a href="{% url 'project_packages' project.slug %}?purl={{ package.package_url }}">{{ package }}</a>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+                {% if resource.discovered_packages.all|length > 3 %}
+                  +{{ resource.discovered_packages.all|length|add:"-3" }} more
+                {% endif %}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td colspan="100%" style="background: none; border: none; padding: 2rem 0;" class="has-text-centered">
+            <div class="icon is-large has-text-grey-light mb-3">
+              <i class="fas fa-folder-open fa-3x"></i>
+            </div>
+            <p class="has-text-grey">
+              {% if path %}
+                No resources found in this directory.
+              {% else %}
+                Select a file or folder from the tree to view its contents.
+              {% endif %}
+            </p>
           </td>
         </tr>
-      {% endfor %}
+      {% endif %}
     </tbody>
   </table>
 
@@ -104,18 +120,4 @@
       </ul>
     </nav>
   {% endif %}
-{% else %}
-  <div class="has-text-centered p-6">
-    <div class="icon is-large has-text-grey-light mb-3">
-      <i class="fas fa-folder-open fa-3x"></i>
-    </div>
-    <p class="has-text-grey">
-      {% if path %}
-        No resources found in this directory.
-      {% else %}
-        Select a file or folder from the tree to view its contents.
-      {% endif %}
-    </p>
-  </div>
-{% endif %}
 </div>

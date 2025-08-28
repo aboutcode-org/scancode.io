@@ -1,35 +1,28 @@
 <div class="dropdown is-hoverable{% if is_right %} is-right{% endif %}">
   <div class="dropdown-trigger">
-    <a class="{% if filter.value or filter.data %}has-text-link{% else %}is-grey-link{% endif %}" aria-haspopup="true" aria-controls="{{ filter.id_for_label }}">
+    <a class="{% if filter.value %}has-text-link{% else %}is-grey-link{% endif %}" aria-haspopup="true" aria-controls="{{ filter.id_for_label }}">
       <span class="icon width-1 height-1"><i class="fa-solid fa-filter"></i></span>
     </a>
   </div>
   <div class="dropdown-menu" id="{{ filter.id_for_label }}" role="menu">
     <div class="dropdown-content p-2">
-      {% if is_htmx %}
-        <form
-          action=""
-          method="get"
-          hx-get="{% url 'codebase_resource_table' project.slug %}"
-          hx-target="#right-pane"
-          hx-push-url="false"
-          hx-vals='{"path": "{{ path|escapejs }}"}'
-        >
-          <div class="select is-small">
-            <select
-              name="{{ filter.name }}"
-              id="filter-select-{{ filter.name }}"
-              onchange="this.form.requestSubmit()"
-            >
-              {% for val, label in filter.field.choices %}
-                <option value="{{ val }}" {% if filter.value == val %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-        </form>
-      {% else %}
-        {{ filter }}
-      {% endif %}
+      {% for val, label in filter.field.choices %}
+        {% if is_htmx %}
+          <a href="#"
+             class="dropdown-item{% if filter.value == val or not filter.value and val == '' %} is-active{% endif %}"
+             hx-get="{% url 'codebase_resource_table' project.slug %}"
+             hx-target="#right-pane"
+             hx-push-url="false"
+             hx-vals='{"path": "{{ path|escapejs }}", "{{ filter.name }}": "{{ val }}"}'>
+            {{ label }}
+          </a>
+        {% else %}
+          <a href="?{{ filter.name }}={{ val }}"
+             class="dropdown-item{% if filter.value == val or not filter.value and val == '' %} is-active{% endif %}">
+            {{ label }}
+          </a>
+        {% endif %}
+      {% endfor %}
     </div>
   </div>
 </div>

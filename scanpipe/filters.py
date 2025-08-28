@@ -525,9 +525,8 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     detected_license_expression = django_filters.ChoiceFilter(
         label="Detected license expression",
         choices=[
-            ("", "All"),
-            ("_EMPTY_", "None"),
-            ("_ANY_", "Any"),
+            (EMPTY_VAR, "None"),
+            (ANY_VAR, "Any"),
         ],
         widget=HasValueDropdownWidget(),
     )
