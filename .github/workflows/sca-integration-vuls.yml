@@ -37,7 +37,6 @@ jobs:
           cat > config.toml <<'EOF'
           [servers.sbom_target]
           host = "sbom_target"
-          port = "local"
           containerType = "docker"
           EOF
 
