@@ -11,26 +11,29 @@ permissions:
   contents: read
 
 env:
-  IMAGE_REFERENCE: "python:3.13.0-slim"
+  IMAGE_REFERENCE: "python:3.13.0"
 
 jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Start Python container
         run: |
           docker run -d --name sbom_target ${{ env.IMAGE_REFERENCE }} tail -f /dev/null
 
-      - name: Prepare target container for OS detection
+      - name: Prepare container for deep scan
         run: |
           docker exec sbom_target apt-get update
-          docker exec sbom_target apt-get install -y lsb-release
+          docker exec sbom_target apt-get install -y lsb-release sudo apt-utils
 
       - name: Pull Vuls and dictionary images
         run: |
           docker pull vuls/vuls
-#          docker pull vuls/go-cve-dictionary
-#          docker pull vuls/goval-dictionary
+          docker pull vuls/go-cve-dictionary
+          docker pull vuls/goval-dictionary
 
       - name: Prepare Vuls config.toml
         run: |
