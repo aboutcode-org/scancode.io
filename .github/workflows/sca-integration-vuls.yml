@@ -43,7 +43,7 @@ jobs:
       - name: Fetch CVE Databases
         run: |
           mkdir -p ./vuls-data
-          docker run --rm -v $PWD/vuls-data:/vuls vuls/go-cve-dictionary fetch nvd
+#          docker run --rm -v $PWD/vuls-data:/vuls vuls/go-cve-dictionary fetch nvd
 #          docker run --rm -v $PWD/vuls-data:/vuls vuls/go-cve-dictionary fetch jvn
 
 # FAILS:
@@ -58,7 +58,7 @@ jobs:
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v $PWD:/workdir \
             -w /workdir \
-            vuls/vuls scan -config=./config.toml -results-dir=./results
+            vuls/vuls scan -config=/workdir/config.toml -results-dir=/workdir/results
 
       - name: Upload Vuls report as GitHub Artifact
         uses: actions/upload-artifact@v4
