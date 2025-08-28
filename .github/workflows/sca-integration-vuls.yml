@@ -1,0 +1,64 @@
+name: Generate SBOM with Vuls and load into ScanCode.io
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_REFERENCE: "python:3.13.0-slim"
+
+jobs:
+  generate-and-load-sbom:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Start Python container
+        run: |
+          docker run -d --name sbom_target ${{ env.IMAGE_REFERENCE }} tail -f /dev/null
+
+      - name: Pull Vuls and dictionary images
+        run: |
+          docker pull vuls/vuls
+          docker pull vuls/go-cve-dictionary
+          docker pull vuls/goval-dictionary
+
+      - name: Prepare Vuls config.toml
+        run: |
+          cat > config.toml <<'EOF'
+          [servers.sbom_target]
+          host = "sbom_target"
+          port = "local"
+          containerType = "docker"
+          containersIncluded = ["sbom_target"]
+          EOF
+
+      - name: Fetch CVE Databases
+        run: |
+          mkdir -p ./vuls-data
+          docker run --rm -v $PWD/vuls-data:/vuls vuls/go-cve-dictionary fetchnvd -dbpath=/vuls/cve.sqlite3
+          docker run --rm -v $PWD/vuls-data:/vuls vuls/goval-dictionary fetch-debian -dbpath=/vuls/oval.sqlite3 12
+
+      - name: Run Vuls Scan
+        run: |
+          mkdir -p ./results
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v $PWD:/workdir \
+            -w /workdir \
+            vuls/vuls scan -config=./config.toml -results-dir=./results
+
+      - name: Upload Vuls report as GitHub Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vuls-scan-report
+          path: results
+          retention-days: 20
+
