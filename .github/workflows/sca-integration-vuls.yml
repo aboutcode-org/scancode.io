@@ -17,8 +17,8 @@ jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+#      - name: Checkout repo
+#        uses: actions/checkout@v4
 
       - name: Start Python container
         run: |
@@ -43,8 +43,12 @@ jobs:
       - name: Fetch CVE Databases
         run: |
           mkdir -p ./vuls-data
-          docker run --rm -v $PWD/vuls-data:/vuls vuls/go-cve-dictionary fetchnvd -dbpath=/vuls/cve.sqlite3
-          docker run --rm -v $PWD/vuls-data:/vuls vuls/goval-dictionary fetch-debian -dbpath=/vuls/oval.sqlite3 12
+          docker run --rm -v $PWD/vuls-data:/vuls vuls/go-cve-dictionary fetch nvd
+          docker run --rm -v $PWD/vuls-data:/vuls vuls/go-cve-dictionary fetch jvn
+
+      - name: Fetch OVAL Definitions
+        run: |
+          docker run --rm -v $PWD/vuls-data:/vuls vuls/goval-dictionary fetch debian
 
       - name: Run Vuls Scan
         run: |
