@@ -35,9 +35,10 @@ jobs:
       - name: Prepare Vuls config.toml
         run: |
           cat > config.toml <<'EOF'
-          [servers.sbom_target]
-          host = "sbom_target"
+          [servers]
+          [servers.local-docker]
           containerType = "docker"
+          containers = ["sbom_target"]
           EOF
 
       - name: Fetch CVE Databases
