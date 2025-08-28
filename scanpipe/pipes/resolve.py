@@ -408,6 +408,9 @@ def resolve_spdx_dependencies(input_location):
     return [
         spdx_relationship_to_dependency_data(spdx_relationship)
         for spdx_relationship in spdx_relationships
+        if spdx_relationship.spdx_id != "NOASSERTION"
+        and spdx_relationship.related_spdx_id != "NOASSERTION"
+        and spdx_relationship.relationship != "DESCRIBES"
     ]
 
 

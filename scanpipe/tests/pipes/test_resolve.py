@@ -238,7 +238,12 @@ class ScanPipeResolvePipesTest(TestCase):
     def test_scanpipe_pipes_resolve_spdx_dependencies(self):
         input_location = self.data / "spdx" / "SPDXJSONExample-v2.3.spdx.json"
         dependencies_data = resolve.resolve_spdx_dependencies(input_location)
-        self.assertEqual(7, len(dependencies_data))
+        self.assertEqual(6, len(dependencies_data))
+
+    def test_scanpipe_pipes_resolve_spdx_dependencies_noassertion(self):
+        input_location = self.data / "spdx" / "noassertion.spdx.json"
+        dependencies_data = resolve.resolve_spdx_dependencies(input_location)
+        self.assertEqual(1, len(dependencies_data))
 
     def test_scanpipe_resolve_get_manifest_resources(self):
         project1 = Project.objects.create(name="Analysis")
