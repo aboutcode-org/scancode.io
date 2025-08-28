@@ -418,7 +418,7 @@ class TableColumnsMixin:
         sortable_fields = []
         active_sort = ""
         filterset = getattr(self, "filterset", None)
-        if filterset and "sort" in filterset.filters:
+        if filterset and hasattr(filterset, "filters") and "sort" in filterset.filters:
             sortable_fields = list(filterset.filters["sort"].param_map.keys())
             active_sort = filterset.data.get("sort", "")
 
@@ -441,18 +441,29 @@ class TableColumnsMixin:
             sort_name = column_data.get("sort_name") or field_name
             if sort_name in sortable_fields:
                 is_sorted = sort_name == active_sort.lstrip("-")
-
-                sort_direction = ""
-                if is_sorted and not active_sort.startswith("-"):
+                if is_sorted and active_sort.startswith("-"):
                     sort_direction = "-"
+                else:
+                    sort_direction = ""
 
                 column_data["is_sorted"] = is_sorted
                 column_data["sort_direction"] = sort_direction
+
                 query_dict = self.request.GET.copy()
-                query_dict["sort"] = f"{sort_direction}{sort_name}"
+                if is_sorted and sort_direction == "":
+                    query_dict["sort"] = f"-{sort_name}"
+                else:
+                    query_dict["sort"] = sort_name
                 column_data["sort_query"] = query_dict.urlencode()
 
-            if filter_fieldname := column_data.get("filter_fieldname"):
+            filter_fieldname = column_data.get("filter_fieldname")
+            if (
+                filter_fieldname
+                and filterset
+                and hasattr(filterset, "form")
+                and filterset.form is not None
+                and filter_fieldname in filterset.form.fields
+            ):
                 column_data["filter"] = filterset.form[filter_fieldname]
 
             columns_data.append(column_data)
@@ -683,6 +694,9 @@ class ProjectListView(
         context["reset_form"] = ProjectResetForm()
         context["outputs_download_form"] = ProjectOutputDownloadForm()
         context["report_form"] = ProjectReportForm()
+        context["request"] = (
+            self.request
+        )  # Ensure request is available in template context
         return context
 
     def get_queryset(self):
@@ -2787,38 +2801,78 @@ class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
 class CodebaseResourceTableView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
-    generic.ListView,
+    TableColumnsMixin,
+    PaginatedFilterView,
 ):
+    def get_filterset_kwargs(self, filterset_class):
+        """Remove 'path' from filterset data when showing children of a directory."""
+        kwargs = super().get_filterset_kwargs(filterset_class)
+        path = self.request.GET.get("path")
+        if path:
+            # Only remove 'path' if we're showing children of a directory
+            base_qs = super().get_queryset()
+            if base_qs.filter(path=path, type="directory").exists():
+                data = kwargs.get("data")
+                if data:
+                    data = data.copy()
+                    data.pop("path", None)
+                    kwargs["data"] = data
+        return kwargs
+
     model = CodebaseResource
+    filterset_class = ResourceFilterSet
     template_name = "scanpipe/panels/resource_table_panel.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("resource", 100)
-    context_object_name = "resources"
+    table_columns = [
+        "path",
+        {
+            "field_name": "status",
+            "filter_fieldname": "status",
+        },
+        {
+            "field_name": "type",
+            "filter_fieldname": "type",
+        },
+        "size",
+        "name",
+        "extension",
+        "programming_language",
+        "mime_type",
+        {
+            "field_name": "tag",
+            "filter_fieldname": "tag",
+        },
+        {
+            "field_name": "detected_license_expression",
+            "filter_fieldname": "detected_license_expression",
+        },
+        {
+            "field_name": "compliance_alert",
+            "filter_fieldname": "compliance_alert",
+            "filter_is_right": True,
+        },
+        {
+            "field_name": "packages",
+            "filter_fieldname": "in_package",
+            "filter_is_right": True,
+        },
+    ]
 
     def get_queryset(self):
-        path = self.request.GET.get("path", "")
-
-        qs = super().get_queryset().filter(path=path)
-        if qs.exists() and not qs.first().is_dir:
-            return qs.only(
-                "path",
-                "status",
-                "type",
-                "size",
-                "name",
-                "extension",
-                "programming_language",
-                "mime_type",
-                "tag",
-                "detected_license_expression",
-                "compliance_alert",
-                "package_data",
-            ).prefetch_related("discovered_packages")
-
+        path = self.request.GET.get("path")
+        base_qs = super().get_queryset()
+        # Default: all resources for the project
+        queryset = base_qs
+        if path:
+            dir_qs = base_qs.filter(path=path, type="directory")
+            if dir_qs.exists():
+                queryset = base_qs.filter(parent_path=path)
+            else:
+                file_qs = base_qs.filter(path=path).exclude(type="directory")
+                if file_qs.exists():
+                    queryset = file_qs
         return (
-            super()
-            .get_queryset()
-            .filter(parent_path=path)
-            .only(
+            queryset.only(
                 "path",
                 "status",
                 "type",
@@ -2833,10 +2887,26 @@ class CodebaseResourceTableView(
                 "package_data",
             )
             .prefetch_related("discovered_packages")
-            .order_by("path")
+            .order_by("type", "path")
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["path"] = self.request.GET.get("path", "")
+        context["columns_data"] = self.get_columns_data()
+        page_obj = context.get("page_obj")
+        if page_obj is not None:
+            context["resources"] = page_obj.object_list
+        else:
+            context["resources"] = context.get("object_list") or context.get("queryset")
+
         return context
+
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.headers.get("HX-Request") == "true":
+            from django.http import HttpResponse
+            from django.template.loader import render_to_string
+
+            html = render_to_string(self.template_name, context, request=self.request)
+            return HttpResponse(html)
+        return super().render_to_response(context, **response_kwargs)

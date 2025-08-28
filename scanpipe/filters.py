@@ -522,6 +522,16 @@ class RelationMapTypeFilter(django_filters.ChoiceFilter):
 
 
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    detected_license_expression = django_filters.ChoiceFilter(
+        label="Detected license expression",
+        choices=[
+            ("", "All"),
+            ("_EMPTY_", "None"),
+            ("_ANY_", "Any"),
+        ],
+        widget=HasValueDropdownWidget(),
+    )
+
     dropdown_widget_fields = [
         "status",
         "type",
@@ -529,6 +539,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "compliance_alert",
         "in_package",
         "relation_map_type",
+        "detected_license_expression",
     ]
 
     search = QuerySearchFilter(
