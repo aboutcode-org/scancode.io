@@ -20,60 +20,33 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Start Python container
+      - name: Prepare Vuls image scan config.toml
         run: |
-          docker run -d --name sbom_target ${{ env.IMAGE_REFERENCE }} tail -f /dev/null
+          mkdir -p ./vuls-config
+          cat > ./vuls-config/config.toml <<'EOF'
+          [servers]
+          [servers.image]
+          type="pseudo"
 
-      - name: Prepare container for deep scan
-        run: |
-          docker exec sbom_target apt-get update
-          docker exec sbom_target apt-get install -y lsb-release sudo apt-utils
-
-      - name: Pull Vuls and dictionary images
-        run: |
-          docker pull vuls/vuls
-          docker pull vuls/go-cve-dictionary
-          docker pull vuls/goval-dictionary
-
-      - name: Prepare Vuls config.toml
-        run: |
-          cat > config.toml <<'EOF'
-          [servers.sbom_target]
-          host = "sbom_target"
-          containerType = "docker"
+            [servers.image.images.localpython]
+            name="${{ env.IMAGE_REFERENCE }}"
+            tag="latest"
           EOF
 
-      - name: Fetch CVE Databases
-        run: |
-          mkdir -p ./vuls-data
-#          docker run --rm -v $PWD/vuls-data:/vuls vuls/go-cve-dictionary fetch nvd
-#          docker run --rm -v $PWD/vuls-data:/vuls vuls/go-cve-dictionary fetch jvn
+      - name: Pull Vuls image
+        run: docker pull vuls/vuls:latest
 
-#      - name: Fetch OVAL Definitions
-#        run: |
-#          mkdir -p ./vuls-data
-#          docker run --rm -v $PWD/vuls-data:/vuls vuls/goval-dictionary fetch debian
-
-      - name: Test Vuls Config
-        run: |
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            -v $PWD:/workdir \
-            -w /workdir \
-            vuls/vuls configtest -config=/workdir/config.toml
-
-      - name: Run Vuls Scan
+      - name: Run Vuls Image Scan
         run: |
           mkdir -p ./results
           docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
             -v $PWD:/workdir \
             -w /workdir \
-            vuls/vuls scan -config=/workdir/config.toml -results-dir=/workdir/results
+            vuls/vuls scan -config=/workdir/vuls-config/config.toml -results-dir=/workdir/results
 
       - name: Upload Vuls report as GitHub Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: vuls-scan-report
+          name: vuls-image-scan-report
           path: results
           retention-days: 20
