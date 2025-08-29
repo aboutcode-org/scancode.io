@@ -43,7 +43,9 @@ jobs:
           mkdir -p ./results
           docker run --rm \
             -v $PWD:/workdir \
+            -w /workdir \
             -u $(id -u):$(id -g) \
+            -e VULS_HOME=/workdir/.vuls \
             vuls/vuls scan \
             -config=/workdir/vuls-config/config.toml \
             -results-dir=/workdir/results
