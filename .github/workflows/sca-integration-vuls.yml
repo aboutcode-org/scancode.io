@@ -40,9 +40,7 @@ jobs:
         run: |
           mkdir -p ./results
           docker run --rm \
-            -u $(id -u):$(id -g) \
             -v $PWD:/workdir \
-            -w /workdir \
             vuls/vuls scan -config=/workdir/vuls-config/config.toml -results-dir=/workdir/results
 
       - name: Upload Vuls report as GitHub Artifact
