@@ -42,9 +42,9 @@ services:
     image: docker.io/library/alpine:latest
     restart: "no"
     command: sh -c "
-      if [ ! -f /var/scancodeio/.chown_done ]; then
+      if [ ! -f /var/scancodeio/workspace/.chown_done ]; then
         chown -R ${APP_UID:-1000}:${APP_GID:-1000} /var/scancodeio/ &&
-        touch /var/scancodeio/.chown_done;
+        touch /var/scancodeio/workspace/.chown_done;
         echo 'Chown applied!';
       else
         echo 'Chown already applied, skipping...';
