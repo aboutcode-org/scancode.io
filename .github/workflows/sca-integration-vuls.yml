@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 env:
-  IMAGE_REFERENCE: "python:3.13.0"
+  IMAGE_REFERENCE: "alpine:3.17"
 
 jobs:
   generate-and-load-sbom:
@@ -40,6 +40,7 @@ jobs:
         run: |
           mkdir -p ./results
           docker run --rm \
+            -u $(id -u):$(id -g) \
             -v $PWD:/workdir \
             -w /workdir \
             vuls/vuls scan -config=/workdir/vuls-config/config.toml -results-dir=/workdir/results
