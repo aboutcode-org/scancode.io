@@ -50,7 +50,7 @@ session = requests.Session()
 PURLDB_API_URL = None
 PURLDB_URL = settings.PURLDB_URL
 if PURLDB_URL:
-    PURLDB_API_URL = f"{PURLDB_URL.rstrip('/')}/api/"
+    PURLDB_API_URL = f"{PURLDB_URL}/api/"
 
 # Basic Authentication
 PURLDB_USER = settings.PURLDB_USER
@@ -318,8 +318,12 @@ def get_unique_unresolved_purls(project):
 
             try:
                 vers = range_class.from_native(extracted_requirement)
-            except (InvalidVersionRange, InvalidVersion) as exception:
-                if exception is InvalidVersionRange:
+            except (
+                InvalidVersionRange,
+                InvalidVersion,
+                NotImplementedError,
+            ) as exception:
+                if exception in (InvalidVersionRange, NotImplementedError):
                     description = "Version range is invalid or unsupported"
                 else:
                     description = "Extracted requirement is not a valid version"

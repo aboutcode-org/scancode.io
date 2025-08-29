@@ -1,0 +1,17 @@
+{% load humanize %}
+<div class="level-item has-text-centered">
+  <div>
+    <p class="heading">
+      <a href="{{ url }}">{{ label }}</a>
+    </p>
+    <p class="title">
+      {% if count %}
+        <a href="{{ url }}">
+          {{ count|intcomma }}
+        </a>
+      {% else %}
+        <span class="has-text-grey">0</span>
+      {% endif %}
+    </p>
+  </div>
+</div>

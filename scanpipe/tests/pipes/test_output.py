@@ -176,6 +176,8 @@ class ScanPipeOutputPipesTest(TestCase):
         fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
+        make_message(project, model="resource", description="Error1")
+        make_message(project, model="package", description="Error2")
 
         output_file = output.to_json(project=project)
         self.assertIn(output_file.name, project.output_root)
@@ -190,6 +192,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual(18, len(results["files"]))
         self.assertEqual(2, len(results["packages"]))
         self.assertEqual(4, len(results["dependencies"]))
+        self.assertEqual(2, len(results["headers"][0]["messages"]))
 
         self.assertEqual("scanpipe", results["headers"][0]["tool_name"])
         expected = [f"pkg:pypi/scancode-toolkit@{scancode_toolkit_version}"]
@@ -199,7 +202,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
         # Make sure the output can be generated even if the work_directory was wiped
         shutil.rmtree(project.work_directory)
-        with self.assertNumQueries(9):
+        with self.assertNumQueries(10):
             output_file = output.to_json(project=project)
         self.assertIn(output_file.name, project.output_root)
 
@@ -231,7 +234,7 @@ class ScanPipeOutputPipesTest(TestCase):
             "MESSAGES",
             "TODOS",
         ]
-        self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
+        self.assertEqual(expected_sheet_names, workbook.sheetnames)
 
     def test_scanpipe_pipes_outputs_get_xlsx_report(self):
         project_qs = None
@@ -256,7 +259,7 @@ class ScanPipeOutputPipesTest(TestCase):
         expected_sheet_names = [
             "PACKAGES",
         ]
-        self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
+        self.assertEqual(expected_sheet_names, workbook.sheetnames)
 
         model_short_name = "todo"
         output_file = output.get_xlsx_report(project_qs, model_short_name)
@@ -264,7 +267,53 @@ class ScanPipeOutputPipesTest(TestCase):
         expected_sheet_names = [
             "TODOS",
         ]
-        self.assertEqual(expected_sheet_names, workbook.get_sheet_names())
+        self.assertEqual(expected_sheet_names, workbook.sheetnames)
+
+    def test_scanpipe_pipes_outputs_get_xlsx_fields_order(self):
+        output_file = output.to_xlsx(project=make_project())
+        workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
+
+        self.assertIn("RESOURCES", workbook.sheetnames)
+        resources_sheet = workbook["RESOURCES"]
+        headers = [cell.value for cell in next(resources_sheet.iter_rows())]
+
+        expected_order = [
+            "path",
+            "type",
+            "name",
+            "status",
+            "for_packages",
+            "tag",
+            "extension",
+            "size",
+            "mime_type",
+            "file_type",
+            "programming_language",
+            "detected_license_expression",
+            "detected_license_expression_spdx",
+            "percentage_of_license_text",
+            "copyrights",
+            "holders",
+            "authors",
+            "emails",
+            "urls",
+            "md5",
+            "sha1",
+            "sha256",
+            "sha512",
+            "sha1_git",
+            "is_binary",
+            "is_text",
+            "is_archive",
+            "is_media",
+            "is_legal",
+            "is_manifest",
+            "is_readme",
+            "is_top_level",
+            "is_key_file",
+            "xlsx_errors",
+        ]
+        self.assertEqual(expected_order, headers)
 
     def test_scanpipe_pipes_outputs_vulnerability_as_cyclonedx(self):
         component_bom_ref = "pkg:pypi/django@4.0.10"
@@ -289,7 +338,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
         project = Project.objects.get(name="asgiref")
         package = project.discoveredpackages.get(
-            uuid="b5035991-5b4b-40be-b68b-1c9c528078cd"
+            uuid="7969de5e-5589-4441-bffa-a60e12b43280"
         )
 
         package.other_license_expression_spdx = "Apache-2.0 AND LicenseRef-test"
@@ -415,6 +464,61 @@ class ScanPipeOutputPipesTest(TestCase):
         ]
         self.assertEqual(expected, license_infos["seeAlsos"])
         self.assertTrue(license_infos["extractedText"].startswith("License:"))
+
+    @mock.patch("uuid.uuid4")
+    def test_scanpipe_pipes_outputs_to_spdx_dependencies(self, mock_uuid4):
+        forced_uuid = "b74fe5df-e965-415e-ba65-f38421a0695d"
+        mock_uuid4.return_value = forced_uuid
+        project = Project.objects.create(name="Analysis", uuid=forced_uuid)
+
+        a = make_package(
+            project, "pkg:type/a", uuid="a83a60de-81bc-4bf4-b48c-dc78e0e658a9"
+        )
+        b = make_package(
+            project, "pkg:type/b", uuid="81147701-285f-485c-ba36-9cd3742790b1"
+        )
+        # 1. Package resolved dependency
+        make_dependency(
+            project,
+            for_package=a,
+            resolved_to_package=b,
+            uuid="3c3ac137-d573-43b0-be6b-3be2815d1c2f",
+        )
+        # 2. Package unresolved dependency
+        make_dependency(
+            project,
+            for_package=b,
+            dependency_uid="for_package_b",
+            uuid="d0e1eab2-9b8b-449b-b9d1-12147ffdd8a8",
+        )
+        # 3. Project unresolved dependency
+        unresolved_dependency = make_dependency(
+            project,
+            dependency_uid="unresolved",
+            uuid="29fbe562-a191-44b4-88e8-a9678071ecee",
+        )
+        unresolved_dependency.set_package_url("pkg:type/unresolved")
+        unresolved_dependency.save()
+        # 4. Project package
+        make_package(project, "pkg:type/z", uuid="e391c33e-d7d0-4a97-a3c3-e947375c53d5")
+
+        self.assertEqual(3, project.discoveredpackages.count())
+        self.assertEqual(3, project.discovereddependencies.count())
+
+        output_file = output.to_spdx(project=project)
+        results_json = json.loads(output_file.read_text())
+        self.assertEqual(5, len(results_json["packages"]))
+        self.assertEqual(3, len(results_json["relationships"]))
+
+        # Patch the `created` date and tool version
+        results_json["creationInfo"]["created"] = "2000-01-01T01:02:03Z"
+        results_json["creationInfo"]["creators"] = ["Tool: ScanCode.io"]
+        # Files ordering is system dependent, excluded for now
+        results_json["files"] = []
+        results = json.dumps(results_json, indent=2)
+
+        expected_file = self.data / "spdx" / "dependencies.spdx.json"
+        self.assertResultsEqual(expected_file, results)
 
     def test_scanpipe_pipes_outputs_make_unknown_license_object(self):
         licensing = get_licensing()

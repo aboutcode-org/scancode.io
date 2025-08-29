@@ -104,7 +104,6 @@ Default is ``None``, in which case all files will be scanned.
     set using the .env file, and the project setting ``scan_max_file_size`` takes
     precedence over the scancodeio setting ``SCANCODEIO_SCAN_MAX_FILE_SIZE``.
 
-
 ignored_patterns
 ^^^^^^^^^^^^^^^^
 

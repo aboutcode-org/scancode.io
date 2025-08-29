@@ -20,10 +20,11 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+from django.conf import settings
+
 from scancode_config import __version__ as scancode_toolkit_version
 
 from scancodeio import __version__ as scancodeio_version
-from scancodeio import settings
 
 
 def versions(request):

@@ -1,0 +1,28 @@
+name: Run unit tests on Docker container
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  run-unit-tests:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate the .env file and the SECRET_KEY
+        run: make envfile
+
+      - name: Build and run the Docker Compose stack
+        run: docker compose up -d
+
+      - name: Run tests
+        run: docker compose run -e FROM_DOCKER_IMAGE=1 web python ./manage.py test --verbosity=2 --noinput

@@ -26,6 +26,7 @@ VENV_LOCATION=.venv
 ACTIVATE?=. ${VENV_LOCATION}/bin/activate;
 MANAGE=${VENV_LOCATION}/bin/python manage.py
 VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
+PIP_ARGS=--find-links=./etc/thirdparty/dummy_dist
 # Do not depend on Python to generate the SECRET_KEY
 GET_SECRET_KEY=`head -c50 /dev/urandom | base64 | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
@@ -51,11 +52,11 @@ virtualenv:
 
 conf: virtualenv
 	@echo "-> Install dependencies"
-	@${ACTIVATE} pip install -e .
+	@${ACTIVATE} pip install ${PIP_ARGS} --editable .
 
 dev: virtualenv
 	@echo "-> Configure and install development dependencies"
-	@${ACTIVATE} pip install -e .[dev]
+	@${ACTIVATE} pip install ${PIP_ARGS} --editable .[dev]
 
 envfile:
 	@echo "-> Create the .env file and generate a secret key"
@@ -79,6 +80,8 @@ check:
 	@echo "-> Run Ruff format validation"
 	@${ACTIVATE} ruff format --check
 	@$(MAKE) doc8
+	@echo "-> Run ABOUT files validation"
+	@${ACTIVATE} about check --exclude .venv/ --exclude scanpipe/tests/ .
 
 check-deploy:
 	@echo "-> Check Django deployment settings"
@@ -140,10 +143,6 @@ docs:
 	rm -rf docs/_build/
 	@${ACTIVATE} sphinx-build docs/ docs/_build/
 
-bump:
-	@echo "-> Bump the version"
-	@${ACTIVATE} bumpver update --no-fetch --patch
-
 docker-images:
 	@echo "-> Build Docker services"
 	docker compose build
@@ -152,7 +151,7 @@ docker-images:
 	@echo "-> Save the service images to a tar archive in the build/ directory"
 	@rm -rf build/
 	@mkdir -p build/
-	@docker save postgres redis scancodeio-worker scancodeio-web nginx | gzip > build/scancodeio-images.tar.gz
+	@docker save postgres redis scancodeio-worker scancodeio-web nginx clamav/clamav | gzip > build/scancodeio-images.tar.gz
 
 offline-package: docker-images
 	@echo "-> Build package for offline installation in dist/"
@@ -160,4 +159,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run run-docker-dev test fasttest docs bump docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run run-docker-dev test fasttest docs docker-images offline-package

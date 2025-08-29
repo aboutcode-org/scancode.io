@@ -1,5 +1,5 @@
-<article id="inputs-panel" class="panel is-info">
-  <p class="panel-heading py-2 is-size-6">
+<article id="inputs-panel" class="panel is-dark">
+  <p class="panel-heading">
     Inputs
   </p>
   {% for input_source in input_sources %}
@@ -36,6 +36,13 @@
         {% if input_source.is_file and input_source.size %}
           <span class="mr-1">{{ input_source.size|filesizeformat }}</span>
         {% endif %}
+        {% if input_source.download_url %}
+          <a class="copy-to-clipboard is-grey-link is-clickable mr-1" title="Copy URL" aria-label="Copy URL" data-copy="{{ input_source.download_url }}" data-copy-feedback="URL copied!">
+            <span class="icon width-1 height-1">
+              <i class="fa-regular fa-copy"></i>
+            </span>
+          </a>
+        {% endif %}
         {% if input_source.is_file and input_source.exists and input_source.filename %}
           <a class="is-grey-link is-clickable" href="{% url 'project_download_input' project.slug input_source.filename %}"><span class="icon width-1 height-1"><i class="fa-solid fa-download"></i></span></a>
         {% endif %}
@@ -52,7 +59,7 @@
   {% endfor %}
   <div class="panel-block">
     {% if project.can_change_inputs %}
-      <button class="button is-link is-outlined is-fullwidth modal-button" data-target="add-inputs-modal" aria-haspopup="true">Add inputs</button>
+      <button class="button is-link {% if input_sources %}is-outlined{% endif %} is-fullwidth modal-button" data-target="add-inputs-modal" aria-haspopup="true">Add inputs</button>
       {% include "scanpipe/modals/add_inputs_modal.html" %}
     {% else %}
       <button class="button is-link is-outlined is-fullwidth" disabled>Add inputs</button>

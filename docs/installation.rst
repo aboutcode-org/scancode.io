@@ -55,6 +55,40 @@ create an **environment file**, and **build the Docker image**::
     As the ``docker-compose`` v1 command is officially deprecated by Docker, you will
     only find references to the ``docker compose`` v2 command in this documentation.
 
+.. note::
+    If you intend to run an Android deploy to develop project, ``Java``, ``jadx
+    v1.5.0`` and ``android-inspector`` must be installed in the Docker image by
+    adding the following lines to the ``Dockerfile`` and rebuilding the Docker
+    image:
+
+    Add at line 65 after `apt-get` command::
+
+        # Install Java and utilities to install jadx
+        RUN apt-get update \
+        && apt-get install -y --no-install-recommends \
+            openjdk-17-jre-headless \
+            unzip \
+            wget
+
+        # Download and extract jadx
+        RUN wget https://github.com/skylot/jadx/releases/download/v1.5.0/jadx-1.5.0.zip \
+        && unzip -d /usr jadx-1.5.0.zip
+
+        # Remove jadx archive and installed utilities
+        RUN apt-get remove -y unzip wget \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+        && rm jadx-1.5.0.zip
+
+    Add at end of file::
+
+        # Install android-inspector
+        RUN pip install --no-cache-dir android-inspector
+
+    Rebuild the image::
+
+        docker compose build
+
 Run the App
 ^^^^^^^^^^^
 
@@ -182,6 +216,10 @@ and scripts on your local machine::
 A tarball ``scancodeio-offline-package-VERSION.tar`` will be
 created in the :guilabel:`dist/` directory.
 
+.. note::
+    The offline package includes all necessary Docker images: postgres, redis,
+    scancodeio-web, scancodeio-worker, nginx, and clamav/clamav.
+
 Install on an offline server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -221,8 +259,8 @@ And visit the web UI at: http://localhost/project/
 
 .. _local_development_installation:
 
-Local development installation
-------------------------------
+Local development
+-----------------
 
 Supported Platforms
 ^^^^^^^^^^^^^^^^^^^
@@ -245,9 +283,9 @@ Pre-installation Checklist
 
 Before you install ScanCode.io, make sure you have the following prerequisites:
 
- * **Python: versions 3.10 to 3.12** found at https://www.python.org/downloads/
+ * **Python: versions 3.10 to 3.13** found at https://www.python.org/downloads/
  * **Git**: most recent release available at https://git-scm.com/
- * **PostgreSQL**: release 11 or later found at https://www.postgresql.org/ or
+ * **PostgreSQL**: release 13 or later found at https://www.postgresql.org/ or
    https://postgresapp.com/ on macOS
 
 .. _system_dependencies:
@@ -289,6 +327,20 @@ For the :ref:`pipeline_collect_strings_gettext` pipeline, `gettext <https://www.
 
         brew install gettext
 
+For the Android deploy to develop pipeline, `jadx <https://github.com/skylot/jadx>` and `Java <https://openjdk.org/index.html>`_ are needed.
+
+    * On **Linux** install it using::
+
+        # Ensure that you are in the scancode.io directory
+        sudo apt-get install openjdk-21-jre # Install Java 21
+        wget https://github.com/skylot/jadx/releases/download/v1.5.0/jadx-1.5.0.zip # Download jadx v1.5.0
+        unzip -qd jadx-1.5.0 jadx-1.5.0.zip # Extract jadx-1.5.0.zip
+        export PATH=$PATH:`pwd`/jadx-1.5.0/bin/jadx:`pwd`/jadx-1.5.0/lib # add jadx-1.5.0 binary and libraries to your path
+
+    * On **MacOS** install it using Homebrew::
+
+        brew install jadx
+
 Clone and Configure
 ^^^^^^^^^^^^^^^^^^^
 
@@ -321,6 +373,11 @@ Clone and Configure
  * Create an environment file::
 
     make envfile
+
+ * If you intend to run an Android deploy to develop project, install the pipeline::
+
+    source .venv/bin/activate
+    pip install android-inspector
 
 Database
 ^^^^^^^^

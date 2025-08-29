@@ -68,6 +68,16 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
                 "a timestamp (in the format [YYMMDD_HHMMSS]) will be used."
             ),
         )
+        parser.add_argument(
+            "--create-global-webhook",
+            action="store_true",
+            default=False,
+            help=(
+                "Create the global webhook for each project, "
+                "if enabled in the settings. "
+                "If not provided, the global webhook subscriptions are not created."
+            ),
+        )
 
     def handle(self, *args, **options):
         self.verbosity = options["verbosity"]
@@ -110,6 +120,7 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
                     labels=options["labels"],
                     execute=options["execute"],
                     run_async=options["async"],
+                    create_global_webhook=options["create_global_webhook"],
                 )
                 self.created_project_count += 1
 
@@ -143,6 +154,7 @@ class Command(CreateProjectCommandMixin, PipelineCommandMixin, BaseCommand):
                 labels=options["labels"],
                 execute=options["execute"],
                 run_async=options["async"],
+                create_global_webhook=options["create_global_webhook"],
             )
             self.created_project_count += 1
 

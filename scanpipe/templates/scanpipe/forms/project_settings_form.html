@@ -1,0 +1,226 @@
+<form method="post" action="{% url 'project_settings' project.slug %}">{% csrf_token %}
+  <div class="panel is-dark">
+    <p id="general" class="panel-heading">General</p>
+    <div class="panel-block is-block px-4">
+      <div class="field">
+        <label class="label" for="{{ form.name.id_for_label }}">
+          Project name
+        </label>
+        <div class="control">
+          {{ form.name }}
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="{{ form.purl.id_for_label }}">
+          PURL
+        </label>
+        <div class="control">
+          {{ form.purl }}
+        </div>
+        <p class="help">{{ form.purl.help_text|urlize }}</p>
+      </div>
+      <div class="field">
+        <label class="label" for="{{ form.notes.id_for_label }}">
+          {{ form.notes.label }}
+        </label>
+        <div class="control">
+          {{ form.notes }}
+        </div>
+        <p class="help">{{ form.notes.help_text }}</p>
+      </div>
+      <div class="field">
+        <label class="label" for="id_uuid">UUID</label>
+        <div class="control">
+          <input type="text" id="id_uuid" class="input" value="{{ project.uuid }}" disabled="disabled">
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="id_work_directory">Work directory</label>
+        <div class="control">
+          <input type="text" id="id_work_directory" class="input" value="{{ project.work_directory }}" disabled="disabled">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel is-dark">
+    <p id="webhooks" class="panel-heading">Webhooks</p>
+    <div class="panel-block is-block px-4">
+      <table class="table mb-1">
+        <thead>
+          <tr>
+            <th>URL</th>
+            <th>Active</th>
+            <th>Include summary</th>
+            <th>Include results</th>
+            <th>Trigger on each run</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for webhook in webhook_subscriptions %}
+          <tr>
+            <td class="pr-5">
+              {{ webhook.target_url|truncatechars:30 }}
+            </td>
+            <td>
+              <i class="fa-solid {% if webhook.is_active %}fa-check{% else %}fa-xmark{% endif %}"></i>
+            </td>
+            <td>
+              <i class="fa-solid {% if webhook.include_summary %}fa-check{% else %}fa-xmark{% endif %}"></i>
+            </td>
+            <td>
+              <i class="fa-solid {% if webhook.include_results %}fa-check{% else %}fa-xmark{% endif %}"></i>
+            </td>
+            <td>
+              <i class="fa-solid {% if webhook.trigger_on_each_run %}fa-check{% else %}fa-xmark{% endif %}"></i>
+            </td>
+            <td>
+              <button type="button" class="button is-small is-text modal-button is-grey-link" data-target="modal-webhook-delete" aria-haspopup="true" data-url="{% url 'project_delete_webhook' project.slug webhook.uuid %}">
+                <i class="fa-regular fa-trash-can"></i>
+              </button>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="42" class="p-3">
+              No Webhooks defined.
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <a href="#" class="button is-smaller is-link modal-button mb-1" data-target="modal-webhook-add" aria-haspopup="true">
+        Add Webhook
+      </a>
+    </div>
+  </div>
+
+  <div class="panel is-dark">
+    <p id="ignored" class="panel-heading">Ignored</p>
+    <div class="panel-block is-block px-4">
+      <div class="field">
+        <label class="label" for="{{ form.ignored_patterns.id_for_label }}">
+          {{ form.ignored_patterns.label }}
+        </label>
+        <div class="control">
+          {{ form.ignored_patterns }}
+        </div>
+        <div class="help">
+          {{ form.ignored_patterns.help_text|safe|linebreaksbr }}
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="{{ form.scan_max_file_size.id_for_label }}">
+          {{ form.scan_max_file_size.label }}
+        </label>
+        <div class="control">
+          {{ form.scan_max_file_size }}
+        </div>
+        <div class="help">
+          {{ form.scan_max_file_size.help_text|safe|linebreaksbr }}
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="{{ form.ignored_dependency_scopes.id_for_label }}">
+          {{ form.ignored_dependency_scopes.label }}
+        </label>
+        <div class="control">
+          {{ form.ignored_dependency_scopes }}
+        </div>
+        <div class="help">
+          {{ form.ignored_dependency_scopes.help_text|safe|linebreaksbr }}
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="{{ form.ignored_vulnerabilities.id_for_label }}">
+          {{ form.ignored_vulnerabilities.label }}
+        </label>
+        <div class="control">
+          {{ form.ignored_vulnerabilities }}
+        </div>
+        <div class="help">
+          {{ form.ignored_vulnerabilities.help_text|safe|linebreaksbr }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel is-dark">
+    <p id="policies" class="panel-heading">Policies</p>
+    <div class="panel-block is-block px-4">
+      <div>
+        {% if project.license_policies_enabled %}
+          <i class="fa-solid fa-check"></i>
+          Policies are <strong>enabled</strong> for this project.
+        {% else %}
+          <i class="fa-solid fa-xmark"></i>
+          Policies are <strong>not enabled</strong> for this project.
+        {% endif %}
+      </div>
+      <div class="field mt-2">
+        <label class="label" for="{{ form.policies.id_for_label }}">
+          {{ form.policies.label }}
+        </label>
+        <div class="control">
+          {{ form.policies }}
+        </div>
+        <p class="help">{{ form.policies.help_text|urlize }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel is-dark">
+    <p id="dejacode" class="panel-heading">DejaCode</p>
+    <div class="panel-block is-block px-4">
+      <div class="field">
+        <label class="label" for="{{ form.product_name.id_for_label }}">
+          Product name
+        </label>
+        <div class="control">
+          {{ form.product_name }}
+        </div>
+        <p class="help">{{ form.product_name.help_text }}</p>
+      </div>
+      <div class="field">
+        <label class="label" for="{{ form.product_version.id_for_label }}">
+          Product version
+        </label>
+        <div class="control">
+          {{ form.product_version }}
+        </div>
+        <p class="help">{{ form.product_version.help_text }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel is-dark">
+    <p id="attribution" class="panel-heading">Attribution</p>
+    <div class="panel-block is-block px-4">
+      <div class="field">
+        <label class="label" for="{{ form.attribution_template.id_for_label }}">
+          {{ form.attribution_template.label }}
+        </label>
+        <div class="control">
+          {{ form.attribution_template }}
+        </div>
+        <p class="help">
+          {{ form.attribution_template.help_text|urlize|linebreaksbr }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="columns mt-4 mb-5 is-variable is-1">
+    <div class="column is-one-third">
+      <a href="{% url 'project_detail' project.slug %}" class="button is-fullwidth">Cancel</a>
+    </div>
+    <div class="column">
+      <input type="submit" class="button is-fullwidth is-link" value="Update">
+    </div>
+  </div>
+  {{ form.media }}
+</form>

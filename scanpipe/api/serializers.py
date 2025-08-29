@@ -31,6 +31,7 @@ from scanpipe.api import ExcludeFromListViewMixin
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
+from scanpipe.models import DiscoveredLicense
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import InputSource
 from scanpipe.models import Project
@@ -350,22 +351,9 @@ class CodebaseResourceSerializer(serializers.ModelSerializer):
             "tag",
             "extension",
             "size",
-            "md5",
-            "sha1",
-            "sha256",
-            "sha512",
             "mime_type",
             "file_type",
             "programming_language",
-            "is_binary",
-            "is_text",
-            "is_archive",
-            "is_media",
-            "is_legal",
-            "is_manifest",
-            "is_readme",
-            "is_top_level",
-            "is_key_file",
             "detected_license_expression",
             "detected_license_expression_spdx",
             "license_detections",
@@ -378,6 +366,20 @@ class CodebaseResourceSerializer(serializers.ModelSerializer):
             "package_data",
             "emails",
             "urls",
+            "md5",
+            "sha1",
+            "sha256",
+            "sha512",
+            "sha1_git",
+            "is_binary",
+            "is_text",
+            "is_archive",
+            "is_media",
+            "is_legal",
+            "is_manifest",
+            "is_readme",
+            "is_top_level",
+            "is_key_file",
             "extra_data",
         ]
 
@@ -468,6 +470,20 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
         ]
 
 
+class DiscoveredLicenseSerializer(serializers.ModelSerializer):
+    compliance_alert = serializers.CharField()
+
+    class Meta:
+        model = DiscoveredLicense
+        fields = [
+            "detection_count",
+            "identifier",
+            "license_expression",
+            "license_expression_spdx",
+            "compliance_alert",
+        ]
+
+
 class CodebaseRelationSerializer(serializers.ModelSerializer):
     from_resource = serializers.ReadOnlyField(source="from_resource.path")
     to_resource = serializers.ReadOnlyField(source="to_resource.path")
@@ -526,6 +542,7 @@ def get_model_serializer(model_class):
         CodebaseResource: CodebaseResourceSerializer,
         DiscoveredPackage: DiscoveredPackageSerializer,
         DiscoveredDependency: DiscoveredDependencySerializer,
+        DiscoveredLicense: DiscoveredLicenseSerializer,
         CodebaseRelation: CodebaseRelationSerializer,
         ProjectMessage: ProjectMessageSerializer,
     }.get(model_class, None)

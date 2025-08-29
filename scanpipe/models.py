@@ -88,6 +88,8 @@ from rq.command import send_stop_job_command
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
 from rq.job import JobStatus
+from scorecode.contrib.django.models import PackageScoreMixin
+from scorecode.contrib.django.models import ScorecardChecksMixin
 from taggit.managers import TaggableManager
 from taggit.models import GenericUUIDTaggedItemBase
 from taggit.models import TaggedItemBase
@@ -127,6 +129,18 @@ class UUIDPKModel(models.Model):
     @property
     def short_uuid(self):
         return str(self.uuid)[0:8]
+
+
+class UUIDFieldMixin(models.Model):
+    uuid = models.UUIDField(
+        verbose_name=_("UUID"),
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+    )
+
+    class Meta:
+        abstract = True
 
 
 class HashFieldsMixin(models.Model):
@@ -217,7 +231,7 @@ class AbstractTaskFieldsModel(models.Model):
         Note that projects with queued or running pipeline runs cannot be deleted.
         See the `_raise_if_run_in_progress` method.
         The following if statements should not be triggered unless the `.delete()`
-        method is directly call from a instance of this class.
+        method is directly call from an instance of this class.
         """
         with suppress(redis.exceptions.ConnectionError, AttributeError):
             if self.status == self.Status.RUNNING:
@@ -419,6 +433,9 @@ class ExtraDataFieldMixin(models.Model):
         help_text=_("Optional mapping of extra data key/values."),
     )
 
+    class Meta:
+        abstract = True
+
     def update_extra_data(self, data):
         """Update the `extra_data` field with the provided `data` dict."""
         if not isinstance(data, dict):
@@ -426,9 +443,6 @@ class ExtraDataFieldMixin(models.Model):
 
         self.extra_data.update(data)
         self.save(update_fields=["extra_data"])
-
-    class Meta:
-        abstract = True
 
 
 class UpdateMixin:
@@ -603,6 +617,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Save this project instance.
         The workspace directories are set up during project creation.
         """
+        # True if the model has not been saved to the database yet.
+        is_new = self._state.adding
+        # True if the new instance is a clone of an existing one.
+        is_clone = kwargs.pop("is_clone", False)
+        # True if the global webhook creation should be skipped.
+        skip_global_webhook = kwargs.pop("skip_global_webhook", False)
+
         if not self.slug:
             self.slug = get_project_slug(project=self)
 
@@ -611,6 +632,23 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.setup_work_directory()
 
         super().save(*args, **kwargs)
+
+        global_webhook = settings.SCANCODEIO_GLOBAL_WEBHOOK
+        if global_webhook and is_new and not is_clone and not skip_global_webhook:
+            self.setup_global_webhook()
+
+    def get_absolute_url(self):
+        """Return this project's details URL."""
+        return reverse("project_detail", args=[self.slug])
+
+    def setup_global_webhook(self):
+        """
+        Create a global webhook subscription instance from values defined in the
+        settings.
+        """
+        webhook_data = settings.SCANCODEIO_GLOBAL_WEBHOOK
+        if webhook_data.get("target_url"):
+            self.add_webhook_subscription(**webhook_data)
 
     def archive(self, remove_input=False, remove_codebase=False, remove_output=False):
         """
@@ -665,6 +703,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.projectmessages,
             self.codebaserelations,
             self.discovereddependencies,
+            self.discoveredlicenses,
             self.codebaseresources,
             self.runs,
         ]
@@ -741,11 +780,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         execute_now=False,
     ):
         """Clone this project using the provided ``clone_name`` as new project name."""
-        new_project = Project.objects.create(
+        new_project = Project(
             name=clone_name,
             purl=self.purl,
             settings=self.settings if copy_settings else {},
         )
+        new_project.save(is_clone=True)
 
         if labels := self.labels.names():
             new_project.labels.add(*labels)
@@ -1147,8 +1187,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         file_path = Path(self.input_path / filename)
 
         with open(file_path, "wb+") as f:
-            for chunk in file_object.chunks():
-                f.write(chunk)
+            f.writelines(file_object.chunks())
 
     def copy_input_from(self, input_location):
         """
@@ -1176,10 +1215,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if not download_url and not filename:
             raise Exception("Provide at least a value for download_url or filename.")
 
-        # Add tag can be provided using the "#<fragment>" part of the URL
         if download_url:
             parsed_url = urlparse(download_url)
-            tag = parsed_url.fragment or tag
+            # Add tag can be provided using the "#<fragment>" part of the URL
+            if not tag and parsed_url.fragment:
+                tag = parsed_url.fragment[:50]
 
         return InputSource.objects.create(
             project=self,
@@ -1394,10 +1434,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             object_instance,
         )
 
-    def get_absolute_url(self):
-        """Return this project's details URL."""
-        return reverse("project_detail", args=[self.slug])
-
     @cached_property
     def resource_count(self):
         """Return the number of resources related to this project."""
@@ -1445,6 +1481,35 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         return self.discovereddependencies.count()
 
     @cached_property
+    def license_detections_count(self):
+        """Return the number of license detections in this project."""
+        return self.discoveredlicenses.count()
+
+    @cached_property
+    def package_compliance_alert_count(self):
+        """
+        Return the number of packages related to this project which have
+        a license compliance error alert.
+        """
+        return self.discoveredpackages.has_compliance_alert().count()
+
+    @cached_property
+    def license_compliance_alert_count(self):
+        """
+        Return the number of license detections related to this project
+        which have a license compliance error alert.
+        """
+        return self.discoveredlicenses.has_compliance_alert().count()
+
+    @cached_property
+    def resource_compliance_alert_count(self):
+        """
+        Return the number of codebase resources related to this project which have
+        a license compliance error alert.
+        """
+        return self.codebaseresources.has_compliance_alert().count()
+
+    @cached_property
     def message_count(self):
         """Return the number of messages related to this project."""
         return self.projectmessages.count()
@@ -1462,37 +1527,54 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         return self.resource_count == 1
 
-    def get_policy_index(self):
+    def get_policies_dict(self):
         """
-        Return the policy index for this project instance.
+        Load and return the policies from the following locations in that order:
 
-        The policies are loaded from the following locations in that order:
-        1. the project local settings
-        2. the "policies.yml" file in the project input/ directory
-        3. the global app settings license policies
+        1. project local settings (stored in the database)
+        2. "policies.yml" file in the project ``input/`` directory
+        3. global app settings policies, from SCANCODEIO_POLICIES_FILE setting
         """
         if policies_from_settings := self.get_env("policies"):
             policies_dict = policies_from_settings
             if isinstance(policies_from_settings, str):
                 policies_dict = policies.load_policies_yaml(policies_from_settings)
-            return policies.make_license_policy_index(policies_dict)
+            return policies_dict
 
-        elif policies_file := self.get_input_policies_file():
-            policies_dict = policies.load_policies_file(policies_file)
-            return policies.make_license_policy_index(policies_dict)
+        elif project_input_policies_file := self.get_input_policies_file():
+            return policies.load_policies_file(project_input_policies_file)
 
-        else:
-            return scanpipe_app.license_policies_index
+        return scanpipe_app.policies
+
+    def get_license_clarity_compliance_alert(self):
+        """
+        Return the license clarity compliance alert value for the project,
+        or None if not set.
+        """
+        return self.extra_data.get("license_clarity_compliance_alert")
+
+    def get_scorecard_compliance_alert(self):
+        """
+        Return the scorecard compliance alert value for the project,
+        or None if not set.
+        """
+        return self.extra_data.get("scorecard_compliance_alert")
+
+    def get_license_policy_index(self):
+        """Return the policy license index for this project instance."""
+        if policies_dict := self.get_policies_dict():
+            return policies.make_license_policy_index(policies_dict)
+        return {}
 
     @cached_property
-    def policy_index(self):
-        """Return the cached policy index for this project instance."""
-        return self.get_policy_index()
+    def license_policy_index(self):
+        """Return the cached license policy index for this project instance."""
+        return self.get_license_policy_index()
 
     @property
-    def policies_enabled(self):
-        """Return True if the policies are enabled for this project."""
-        return bool(self.policy_index)
+    def license_policies_enabled(self):
+        """Return True if the license policies are available for this project."""
+        return bool(self.license_policy_index)
 
 
 class GroupingQuerySetMixin:
@@ -2181,6 +2263,9 @@ class ComplianceAlertQuerySetMixin:
 
         return self.filter(compliance_alert__in=severity_mapping[severity])
 
+    def has_compliance_alert(self):
+        return self.filter(Q(compliance_alert__exact=CodebaseResource.Compliance.ERROR))
+
 
 def convert_glob_to_django_regex(glob_pattern):
     """
@@ -2254,10 +2339,10 @@ class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuery
         return self.filter(~Q(type=self.model.Type.SYMLINK))
 
     def has_license_detections(self):
-        return self.filter(~Q(license_detections=[]))
+        return self.filter(~Q(license_detections=[]) | ~Q(license_clues=[]))
 
     def has_no_license_detections(self):
-        return self.filter(license_detections=[])
+        return self.filter(Q(license_detections=[]) & Q(license_clues=[]))
 
     def has_package_data(self):
         return self.filter(~Q(package_data=[]))
@@ -2475,6 +2560,16 @@ class ComplianceAlertMixin(models.Model):
         ERROR = "error"
         MISSING = "missing"
 
+    # Map each compliance status to a severity level.
+    # Higher numbers indicate more severe compliance issues.
+    # This allows consistent comparison and sorting of compliance states.
+    COMPLIANCE_SEVERITY_MAP = {
+        Compliance.OK: 0,
+        Compliance.MISSING: 1,
+        Compliance.WARNING: 2,
+        Compliance.ERROR: 3,
+    }
+
     compliance_alert = models.CharField(
         max_length=10,
         blank=True,
@@ -2487,6 +2582,35 @@ class ComplianceAlertMixin(models.Model):
 
     class Meta:
         abstract = True
+
+    def save(self, codebase=None, *args, **kwargs):
+        """
+        Injects policies, if the feature is enabled, when the
+        ``license_expression_field`` field value has changed.
+
+        ``codebase`` is not used in this context but required for compatibility
+        with the commoncode.resource.Codebase class API.
+        """
+        if self.license_policies_enabled:
+            loaded_license_expression = getattr(self, "_loaded_license_expression", "")
+            license_expression = getattr(self, self.license_expression_field, "")
+            if license_expression != loaded_license_expression:
+                self.compliance_alert = self.compute_compliance_alert()
+                if "update_fields" in kwargs:
+                    kwargs["update_fields"].append("compliance_alert")
+
+        super().save(*args, **kwargs)
+
+    @property
+    def has_compliance_alert(self):
+        """
+        Returns True if this instance has a compliance alert of `ERROR`
+        for it's respective license_expression fields.
+        """
+        if self.compliance_alert == self.Compliance.ERROR:
+            return True
+
+        return False
 
     @classmethod
     def from_db(cls, db, field_names, values):
@@ -2503,64 +2627,51 @@ class ComplianceAlertMixin(models.Model):
 
         return new
 
-    def save(self, codebase=None, *args, **kwargs):
-        """
-        Injects policies, if the feature is enabled, when the
-        ``license_expression_field`` field value has changed.
-
-        `codebase` is not used in this context but required for compatibility
-        with the commoncode.resource.Codebase class API.
-        """
-        if self.policies_enabled:
-            loaded_license_expression = getattr(self, "_loaded_license_expression", "")
-            license_expression = getattr(self, self.license_expression_field, "")
-            if license_expression != loaded_license_expression:
-                self.compliance_alert = self.compute_compliance_alert()
-                if "update_fields" in kwargs:
-                    kwargs["update_fields"].append("compliance_alert")
-
-        super().save(*args, **kwargs)
+    @property
+    def has_compliance_issue(self):
+        """Return True if the compliance status is not OK or not set."""
+        if not self.compliance_alert or self.compliance_alert == self.Compliance.OK:
+            return False
+        return True
 
     @property
-    def policy_index(self):
-        return self.project.policy_index
+    def license_policy_index(self):
+        return self.project.license_policy_index
 
     @cached_property
-    def policies_enabled(self):
-        return self.project.policies_enabled
+    def license_policies_enabled(self):
+        return self.project.license_policies_enabled
 
     def compute_compliance_alert(self):
-        """Compute and return the compliance_alert value from the licenses policies."""
+        """
+        Compute and return the compliance_alert value from the license policies.
+        Chooses the most severe compliance_alert found among licenses.
+        """
         license_expression = getattr(self, self.license_expression_field, "")
-        if not license_expression:
+        license_policy_index = self.license_policy_index
+        if not license_expression or not license_policy_index:
             return ""
 
-        policy_index = self.policy_index
-        if not policy_index:
-            return
-
         licensing = get_licensing()
-        parsed = licensing.parse(license_expression, simple=True)
-        license_keys = licensing.license_keys(parsed)
+        parsed_symbols = licensing.license_symbols(license_expression, simple=True)
 
-        alerts = []
-        for license_key in license_keys:
-            if policy := policy_index.get(license_key):
-                alerts.append(policy.get("compliance_alert") or self.Compliance.OK)
-            else:
-                alerts.append(self.Compliance.MISSING)
-
-        compliance_ordered_by_severity = [
-            self.Compliance.ERROR,
-            self.Compliance.WARNING,
-            self.Compliance.MISSING,
+        alerts = [
+            self.get_alert_for_symbol(license_policy_index, symbol)
+            for symbol in parsed_symbols
         ]
+        most_severe_alert = max(alerts, key=self.COMPLIANCE_SEVERITY_MAP.get)
+        return most_severe_alert or self.Compliance.OK
 
-        for compliance_severity in compliance_ordered_by_severity:
-            if compliance_severity in alerts:
-                return compliance_severity
+    def get_alert_for_symbol(self, policy_index, symbol):
+        """Retrieve the compliance alert for a given license symbol."""
+        license_key = symbol.key
+        spdx_key = getattr(symbol.wrapped, "spdx_license_key", None)
 
-        return self.Compliance.OK
+        policy = policy_index.get(license_key) or policy_index.get(spdx_key)
+        if policy:
+            return policy.get("compliance_alert") or self.Compliance.OK
+
+        return self.Compliance.MISSING
 
 
 class FileClassifierFieldsModelMixin(models.Model):
@@ -2643,6 +2754,17 @@ class CodebaseResource(
             'Eg.: "/usr/bin/bash" for a path of "tarball-extract/rootfs/usr/bin/bash"'
         ),
     )
+
+    parent_path = models.CharField(
+        max_length=2000,
+        blank=True,
+        help_text=_(
+            "The path of the resource's parent directory. "
+            "Set to empty string for top-level (root) resources. "
+            "Used to efficiently retrieve a directory's contents."
+        ),
+    )
+
     status = models.CharField(
         blank=True,
         max_length=50,
@@ -2706,6 +2828,12 @@ class CodebaseResource(
     is_text = models.BooleanField(default=False)
     is_archive = models.BooleanField(default=False)
     is_media = models.BooleanField(default=False)
+    sha1_git = models.CharField(
+        _("SHA1_git"),
+        max_length=40,
+        blank=True,
+        help_text=_("SHA1 checksum generated by Git, hex-encoded."),
+    )
     package_data = models.JSONField(
         default=list,
         blank=True,
@@ -2730,6 +2858,7 @@ class CodebaseResource(
             models.Index(fields=["compliance_alert"]),
             models.Index(fields=["is_binary"]),
             models.Index(fields=["is_text"]),
+            models.Index(fields=["project", "parent_path"]),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -2741,6 +2870,14 @@ class CodebaseResource(
 
     def __str__(self):
         return self.path
+
+    def save(self, *args, **kwargs):
+        if self.path and not self.parent_path:
+            self.parent_path = self.compute_parent_directory() or ""
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse("resource_detail", args=[self.project.slug, self.path])
 
     @property
     def location_path(self):
@@ -2807,16 +2944,21 @@ class CodebaseResource(
 
         return part_and_subpath
 
-    def parent_path(self):
+    def compute_parent_directory(self):
         """Return the parent path for this CodebaseResource or None."""
-        return parent_directory(self.path, with_trail=False)
+        if parent_path := parent_directory(str(self.path), with_trail=False):
+            return parent_path
 
     def has_parent(self):
         """
         Return True if this CodebaseResource has a parent CodebaseResource or
         False otherwise.
         """
-        parent_path = self.parent_path()
+        if self.parent_path:
+            return True
+
+        # Support for resources created before the parent_path was stored as a field.
+        parent_path = self.compute_parent_directory()
         if not parent_path:
             return False
         if self.project.codebaseresources.filter(path=parent_path).exists():
@@ -2831,7 +2973,13 @@ class CodebaseResource(
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
-        parent_path = self.parent_path()
+        if self.parent_path:
+            parent_path = self.parent_path
+
+        # Support for resources created before the parent_path was stored as a field.
+        else:
+            parent_path = self.compute_parent_directory()
+
         return parent_path and self.project.codebaseresources.get(path=parent_path)
 
     def siblings(self, codebase=None):
@@ -2889,8 +3037,17 @@ class CodebaseResource(
             if not topdown:
                 yield child
 
-    def get_absolute_url(self):
-        return reverse("resource_detail", args=[self.project.slug, self.path])
+    def extracted_to(self, codebase=None):
+        """Return the path this Resource archive was extracted to or None."""
+        extract_path = f"{self.path}-extract"
+        return self.project.get_resource(extract_path)
+
+    def extracted_from(self, codebase=None):
+        """Return the path to an archive this Resource was extracted from or None."""
+        path = self.path
+        if "-extract" in path:
+            archive_path, _, _ = self.path.rpartition("-extract")
+            return self.project.get_resource(archive_path)
 
     def get_raw_url(self):
         """Return the URL to access the RAW content of the resource."""
@@ -3083,18 +3240,25 @@ class VulnerabilityMixin(models.Model):
 
     affected_by_vulnerabilities = models.JSONField(blank=True, default=list)
 
+    class Meta:
+        abstract = True
+
     @property
     def is_vulnerable(self):
         """Returns True if this instance is affected by vulnerabilities."""
         return bool(self.affected_by_vulnerabilities)
 
-    class Meta:
-        abstract = True
-
 
 class VulnerabilityQuerySetMixin:
     def vulnerable(self):
         return self.filter(~Q(affected_by_vulnerabilities__in=EMPTY_VALUES))
+
+    def vulnerable_ordered(self):
+        return (
+            self.vulnerable()
+            .only_package_url_fields(extra=["affected_by_vulnerabilities"])
+            .order_by_package_url()
+        )
 
 
 class DiscoveredPackageQuerySet(
@@ -3111,6 +3275,12 @@ class DiscoveredPackageQuerySet(
             output_field=IntegerField(),
         )
         return self.annotate(resources_count=count_subquery)
+
+    def has_license_detections(self):
+        return self.filter(~Q(license_detections=[]) | ~Q(other_license_detections=[]))
+
+    def has_no_license_detections(self):
+        return self.filter(Q(license_detections=[]) & Q(other_license_detections=[]))
 
     def only_package_url_fields(self, extra=None):
         """
@@ -3367,6 +3537,7 @@ class AbstractPackage(models.Model):
 
 class DiscoveredPackage(
     ProjectRelatedModel,
+    UUIDFieldMixin,
     ExtraDataFieldMixin,
     SaveProjectMessageMixin,
     UpdateFromDataMixin,
@@ -3388,9 +3559,6 @@ class DiscoveredPackage(
 
     license_expression_field = "declared_license_expression"
 
-    uuid = models.UUIDField(
-        verbose_name=_("UUID"), default=uuid.uuid4, unique=True, editable=False
-    )
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
     )
@@ -3704,6 +3872,18 @@ class DiscoveredDependencyQuerySet(
     VulnerabilityQuerySetMixin,
     ProjectRelatedQuerySet,
 ):
+    def project_dependencies(self):
+        return self.filter(for_package__isnull=True)
+
+    def package_dependencies(self):
+        return self.filter(for_package__isnull=False)
+
+    def resolved(self):
+        return self.filter(resolved_to_package__isnull=False)
+
+    def unresolved(self):
+        return self.filter(resolved_to_package__isnull=True)
+
     def prefetch_for_serializer(self):
         """
         Optimized prefetching for a QuerySet to be consumed by the
@@ -3736,6 +3916,7 @@ class DiscoveredDependencyQuerySet(
 
 class DiscoveredDependency(
     ProjectRelatedModel,
+    UUIDFieldMixin,
     SaveProjectMessageMixin,
     UpdateFromDataMixin,
     VulnerabilityMixin,
@@ -3747,6 +3928,26 @@ class DiscoveredDependency(
     system and application packages discovered in the code under analysis.
     Dependencies are usually collected from parsed package data such as a package
     manifest or lockfile.
+
+    This class manages dependencies with the following considerations:
+
+    1. A dependency can be associated with a Package via the ``for_package`` field.
+       In this case, it is termed a "Package's dependency".
+       If there is no such association, the dependency is considered a
+       "Project's dependency".
+
+    2. A dependency can also be linked to a Package through the ``resolved_to_package``
+       field. When this link exists, the dependency is considered "resolved".
+
+    3. Dependencies can be either direct or transitive:
+       - A **direct dependency** is explicitly declared in a package manifest or
+       lockfile.
+       - A **transitive dependency** is not declared directly, but is required by one
+       of the project's direct dependencies.
+
+    Understanding the distinction between direct and transitive dependencies is
+    important for analyzing dependency trees, resolving version conflicts, and
+    assessing potential security risks.
     """
 
     # Overrides the `project` field to set the proper `related_name`.
@@ -3897,6 +4098,24 @@ class DiscoveredDependency(
         if self.datafile_resource:
             return self.datafile_resource.path
 
+    @property
+    def is_project_dependency(self):
+        """
+        Return True if the dependency is directly associated with the project
+        (not tied to a specific package).
+        """
+        return not bool(self.for_package_id)
+
+    @property
+    def is_package_dependency(self):
+        """Return True if the dependency is explicitly associated with a package."""
+        return bool(self.for_package_id)
+
+    @property
+    def is_resolved_to_package(self):
+        """Return True if the dependency is resolved to a package."""
+        return bool(self.resolved_to_package_id)
+
     @classmethod
     def create_from_data(
         cls,
@@ -3912,6 +4131,14 @@ class DiscoveredDependency(
         Create and returns a DiscoveredDependency for a `project` from the
         `dependency_data`.
 
+        The `for_package` and `resolved_to_package` FKs can be provided as args,
+        or in the `dependency_data` using the `for_package_uid` and
+        `resolve_to_package_uid`.
+
+        Note that a dependency:
+         - without a `for_package` FK is a "Project's dependency"
+         - without a `resolve_to_package` is "unresolved".
+
         If `strip_datafile_path_root` is True, then `create_from_data()` will
         strip the root path segment from the `datafile_path` of
         `dependency_data` before looking up the corresponding CodebaseResource
@@ -3920,51 +4147,36 @@ class DiscoveredDependency(
         not stripped for `datafile_path`.
         """
         dependency_data = dependency_data.copy()
-        required_fields = ["purl", "dependency_uid"]
-        missing_values = [
-            field_name
-            for field_name in required_fields
-            if not dependency_data.get(field_name)
-        ]
+        project_packages_qs = project.discoveredpackages
 
-        if missing_values:
-            message = (
-                f"No values for the following required fields: "
-                f"{', '.join(missing_values)}"
+        if not dependency_data.get("dependency_uid"):
+            dependency_data["dependency_uid"] = str(uuid.uuid4())
+
+        for_package_uid = dependency_data.get("for_package_uid")
+        if not for_package and for_package_uid:
+            for_package = project_packages_qs.get_or_none(package_uid=for_package_uid)
+
+        resolve_to_package_uid = dependency_data.get("resolve_to_package_uid")
+        if not resolved_to_package and resolve_to_package_uid:
+            resolved_to_package = project_packages_qs.get_or_none(
+                package_uid=resolve_to_package_uid
             )
 
-            project.add_warning(description=message, model=cls, details=dependency_data)
-            return
-
-        if not for_package:
-            for_package_uid = dependency_data.get("for_package_uid")
-            if for_package_uid:
-                for_package = project.discoveredpackages.get(
-                    package_uid=for_package_uid
-                )
-
-        if not resolved_to_package:
-            resolved_to_uid = dependency_data.get("resolved_to_uid")
-            if resolved_to_uid:
-                resolved_to_package = project.discoveredpackages.get(
-                    package_uid=resolved_to_uid
-                )
-
-        if not datafile_resource:
-            datafile_path = dependency_data.get("datafile_path")
-            if datafile_path:
-                if strip_datafile_path_root:
-                    segments = datafile_path.split("/")
-                    datafile_path = "/".join(segments[1:])
-                datafile_resource = project.codebaseresources.get(path=datafile_path)
+        datafile_path = dependency_data.get("datafile_path")
+        if not datafile_resource and datafile_path:
+            if strip_datafile_path_root:
+                segments = datafile_path.split("/")
+                datafile_path = "/".join(segments[1:])
+            datafile_resource = project.codebaseresources.get(path=datafile_path)
 
         if datasource_id:
             dependency_data["datasource_id"] = datasource_id
 
-        # Set purl fields from `purl`
+        # Set package_url fields from the ``purl`` string.
         purl = dependency_data.get("purl")
-        purl_mapping = PackageURL.from_string(purl).to_dict()
-        dependency_data.update(**purl_mapping)
+        if purl:
+            purl_data_dict = PackageURL.from_string(purl).to_dict()
+            dependency_data.update(**purl_data_dict)
 
         cleaned_data = {
             field_name: value
@@ -3998,9 +4210,12 @@ class DiscoveredDependency(
 
     @property
     def spdx_id(self):
-        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.dependency_uid}"
+        # We cannot rely on `dependency_uid` for the SPDX ID because it may contain
+        # PURL components that are not SPDX-compliant. According to the spec,
+        # "SPDXID is a unique string containing letters, numbers, ., and/or -"
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
 
-    def as_spdx(self):
+    def as_spdx_package(self):
         """Return this Dependency as an SPDX Package entry."""
         from scanpipe.pipes import spdx
 
@@ -4021,6 +4236,225 @@ class DiscoveredDependency(
             version=self.version,
             external_refs=external_refs,
         )
+
+
+class DiscoveredLicenseQuerySet(
+    ComplianceAlertQuerySetMixin,
+    ProjectRelatedQuerySet,
+):
+    def needs_review(self):
+        return self.filter(needs_review=True)
+
+    def does_not_need_review(self):
+        return self.filter(needs_review=False)
+
+    def order_by_count_and_expression(self):
+        """Order by detection count and license expression (identifer) fields."""
+        return self.order_by("-detection_count", "identifier")
+
+
+class AbstractLicenseDetection(models.Model):
+    """
+    These fields should be kept in line with
+    `licensedcode.detection.LicenseDetection`.
+    """
+
+    license_expression = models.TextField(
+        blank=True,
+        help_text=_(
+            "A license expression string using the SPDX license expression"
+            " syntax and ScanCode license keys, the effective license expression"
+            " for this license detection."
+        ),
+    )
+
+    license_expression_spdx = models.TextField(
+        blank=True,
+        help_text=_("SPDX license expression string with SPDX ids."),
+    )
+
+    matches = models.JSONField(
+        _("Reference Matches"),
+        default=list,
+        blank=True,
+        help_text=_("List of license matches combined in this detection."),
+    )
+
+    detection_log = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_(
+            "A list of detection DetectionRule explaining how "
+            "this detection was created."
+        ),
+    )
+
+    identifier = models.CharField(
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "An identifier unique for a license detection, containing the license "
+            "expression and a UUID crafted from the match contents."
+        ),
+    )
+
+    class Meta:
+        abstract = True
+
+
+class DiscoveredLicense(
+    ProjectRelatedModel,
+    SaveProjectMessageMixin,
+    UpdateFromDataMixin,
+    ComplianceAlertMixin,
+    AbstractLicenseDetection,
+):
+    """
+    A project's Discovered Licenses are the unique License Detection objects
+    discovered in the code under analysis.
+    """
+
+    license_expression_field = "license_expression"
+
+    from_package = models.BooleanField(
+        default=False,
+        help_text=_(
+            "True if this was discovered in a extracted license statement "
+            "and False if this was discovered in a file."
+        ),
+    )
+
+    is_license_clue = models.BooleanField(
+        default=False,
+        help_text=_(
+            "True if this is not a proper license detection which should be "
+            "considered in the license_expression for the parent resource/package. "
+            "A license match is considered as a clue if it could be a possible"
+            "false positives or the matched rule is tagged as a clue explicitly."
+        ),
+    )
+
+    detection_count = models.BigIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Total number of this license detection discovered."),
+    )
+
+    file_regions = models.JSONField(
+        _("Detection Locations"),
+        default=list,
+        blank=True,
+        help_text=_(
+            "A list of file regions with resource path, start and end line "
+            "details for each place this license detection was discovered at. "
+            "Also contains whether this license was discovered from a file or "
+            "from package metadata."
+        ),
+    )
+
+    needs_review = models.BooleanField(
+        default=False,
+        help_text=_(
+            "True if this was license detection needs to be reviewed "
+            "as there might be a license detection issue."
+        ),
+    )
+
+    review_comments = models.JSONField(
+        _("Review Comments"),
+        default=list,
+        blank=True,
+        help_text=_(
+            "A list of review comments for license detection issues which "
+            "needs review. These descriptive comments are based on ambigous "
+            "detection types and could also offers helpful suggestions on "
+            "how to review/report these detection issues."
+        ),
+    )
+
+    objects = DiscoveredLicenseQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["detection_count", "identifier"]
+        indexes = [
+            models.Index(fields=["identifier"]),
+            models.Index(fields=["license_expression"]),
+            models.Index(fields=["license_expression_spdx"]),
+            models.Index(fields=["detection_count"]),
+            models.Index(fields=["is_license_clue"]),
+            models.Index(fields=["from_package"]),
+            models.Index(fields=["needs_review"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "identifier"],
+                condition=~Q(identifier=""),
+                name="%(app_label)s_%(class)s_unique_license_id_within_project",
+            ),
+        ]
+
+    def __str__(self):
+        return self.identifier
+
+    @classmethod
+    def create_from_data(cls, project, detection_data, from_package=False):
+        """
+        Create and returns a DiscoveredLicense for a `project` from the
+        `detection_data`. If one of the values of the required fields is not
+        available, a "ProjectMessage" is created instead of a new
+        DiscoveredLicense instance.
+        """
+        detection_data = detection_data.copy()
+        required_fields = ["license_expression", "identifier", "matches"]
+        missing_values = [
+            field_name
+            for field_name in required_fields
+            if not detection_data.get(field_name)
+        ]
+
+        if missing_values:
+            message = (
+                f"No values for the following required fields: "
+                f"{', '.join(missing_values)}"
+            )
+
+            project.add_warning(
+                description=message,
+                model=cls,
+                details=detection_data,
+            )
+            return
+
+        cleaned_data = {
+            field_name: value
+            for field_name, value in detection_data.items()
+            if field_name in cls.model_fields() and value not in EMPTY_VALUES
+        }
+
+        discovered_license = cls(
+            project=project, from_package=from_package, **cleaned_data
+        )
+        # Using save_error=False to not capture potential errors at this level but
+        # rather in the CodebaseResource.create_and_add_license_data method so
+        # resource data can be injected in the ProjectMessage record.
+        discovered_license.save(save_error=False, capture_exception=False)
+        return discovered_license
+
+    def update_with_file_region(self, file_region, count_detection):
+        """
+        If the `file_region` is a new file region, include it in the
+        `file_regions` list and increase the `detection_count` by 1.
+        """
+        file_region_data = file_region.to_dict()
+        if file_region_data not in self.file_regions:
+            self.file_regions.append(file_region_data)
+            if count_detection:
+                if not self.detection_count:
+                    self.detection_count = 1
+                else:
+                    self.detection_count += 1
+
+            self.save(update_fields=["detection_count", "file_regions"])
 
 
 def normalize_package_url_data(purl_mapping, ignore_nulls=False):
@@ -4131,6 +4565,73 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
 
         return payload
 
+    @staticmethod
+    def get_slack_payload(pipeline_run):
+        """
+        Get a custom payload dedicated to Slack webhooks.
+        See https://api.slack.com/messaging/webhooks
+        """
+        status = pipeline_run.status
+        project = pipeline_run.project
+
+        if site_url := scanpipe_app.site_url:
+            project_url = site_url + project.get_absolute_url()
+            project_display = f"<{project_url}|{project.name}>"
+        else:
+            project_display = project.name
+
+        status_to_color = {
+            Run.Status.SUCCESS: "#48c78e",
+            Run.Status.FAILURE: "#f14668",
+            # The following status do not trigger the webhook delivery:
+            # Run.Status.STOPPED: "#f14668",
+            # Run.Status.STALE: "#363636",
+        }
+        color = status_to_color.get(status, "")
+
+        pipeline_name = pipeline_run.pipeline_name
+        pretext = f"Project *{project_display}* update:"
+        text = f"Pipeline `{pipeline_name}` completed with {status}."
+        blocks = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": text,
+                },
+            }
+        ]
+
+        # Adds the task output in case of run failure
+        if pipeline_run.status == Run.Status.FAILURE and pipeline_run.task_output:
+            slack_text_max_length = 3000  # Slack's block message limit
+            output_text = pipeline_run.task_output
+            # Truncate the task output and add an indicator if it was cut off
+            if len(output_text) > slack_text_max_length:
+                output_text = (
+                    output_text[: slack_text_max_length - 30] + "\n... (truncated)"
+                )
+
+            task_output_block = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"```{output_text}```",
+                },
+            }
+            blocks.append(task_output_block)
+
+        return {
+            "username": "ScanCode.io",
+            "text": pretext,
+            "attachments": [
+                {
+                    "color": color,
+                    "blocks": blocks,
+                }
+            ],
+        }
+
     def deliver(self, pipeline_run, timeout=10):
         """Deliver this Webhook by sending a POST request to the `target_url`."""
         logger.info(f"Delivering Webhook {self.uuid}")
@@ -4139,7 +4640,11 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             logger.info(f"Webhook {self.uuid} is not active.")
             return False
 
-        payload = self.get_payload(pipeline_run)
+        if "hooks.slack.com" in self.target_url:
+            payload = self.get_slack_payload(pipeline_run)
+        else:
+            payload = self.get_payload(pipeline_run)
+
         delivery = WebhookDelivery(
             project=self.project,
             webhook_subscription=self,
@@ -4264,3 +4769,99 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
     """Create an API key token on user creation, using the signal system."""
     if created:
         Token.objects.create(user_id=instance.pk)
+
+
+class DiscoveredPackageScore(UUIDPKModel, PackageScoreMixin):
+    """Represents a security or quality score for a DiscoveredPackage."""
+
+    discovered_package = models.ForeignKey(
+        DiscoveredPackage,
+        related_name="scores",
+        help_text=_("The package for which the score is given"),
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+
+    class Meta:
+        verbose_name = "discovered package score"
+        verbose_name_plural = "discovered package scores"
+        ordering = ["-score"]
+        indexes = [
+            models.Index(fields=["score"]),
+            models.Index(fields=["scoring_tool_version"]),
+        ]
+
+    def __str__(self):
+        return self.score or str(self.uuid)
+
+    @classmethod
+    def create_from_scorecard_data(
+        cls, discovered_package, scorecard_data, scoring_tool="ossf-scorecard"
+    ):
+        """Create ScoreCard object from scorecard data and discovered package"""
+        final_data = {
+            "score": scorecard_data.score,
+            "scoring_tool_version": scorecard_data.scoring_tool_version,
+            "scoring_tool_documentation_url": (
+                scorecard_data.scoring_tool_documentation_url
+            ),
+            "score_date": cls.parse_score_date(scorecard_data.score_date),
+        }
+
+        scorecard_object = cls.objects.create(
+            **final_data,
+            discovered_package=discovered_package,
+            scoring_tool=scoring_tool,
+        )
+
+        for check in scorecard_data.checks:
+            ScorecardCheck.create_from_data(package_score=scorecard_object, check=check)
+
+        return scorecard_object
+
+    @classmethod
+    def create_from_package_and_scorecard(cls, scorecard_data, package):
+        score_object = cls.create_from_scorecard_data(
+            discovered_package=package,
+            scorecard_data=scorecard_data,
+            scoring_tool="ossf-scorecard",
+        )
+        return score_object
+
+
+class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
+    """
+    Represents an individual check within a Scorecard evaluation for a
+    DiscoveredPackageScore.
+    """
+
+    package_score = models.ForeignKey(
+        DiscoveredPackageScore,
+        related_name="checks",
+        help_text=_("The checks for which the score is given"),
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+
+    class Meta:
+        verbose_name = "scorecard check"
+        verbose_name_plural = "scorecard checks"
+        ordering = ["-check_score"]
+        indexes = [
+            models.Index(fields=["check_score"]),
+            models.Index(fields=["check_name"]),
+        ]
+
+    def __str__(self):
+        return self.check_score or str(self.uuid)
+
+    @classmethod
+    def create_from_data(cls, package_score, check):
+        """Create a ScorecardCheck instance from provided data."""
+        return cls.objects.create(
+            check_name=check.check_name,
+            check_score=check.check_score,
+            reason=check.reason or "",
+            details=check.details or [],
+            package_score=package_score,
+        )

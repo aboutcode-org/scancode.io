@@ -21,6 +21,7 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipes import flag
 from scanpipe.pipes import matchcode
 
 
@@ -45,6 +46,7 @@ class MatchToMatchCode(Pipeline):
 
     download_inputs = False
     is_addon = True
+    results_url = "/project/{slug}/resources/?status=" + flag.MATCHED_TO_PURLDB_PACKAGE
 
     @classmethod
     def steps(cls):
@@ -63,10 +65,10 @@ class MatchToMatchCode(Pipeline):
                 "related settings to a MatchCode.io instance or reach out "
                 "to the maintainers for other arrangements."
             )
-            raise Exception(msg)
+            raise matchcode.MatchCodeIOException(msg)
 
         if not matchcode.is_available():
-            raise Exception("MatchCode.io is not available.")
+            raise matchcode.MatchCodeIOException("MatchCode.io is not available.")
 
     def send_project_json_to_matchcode(self):
         """Create a JSON scan of the project Codebase and send it to MatchCode.io."""

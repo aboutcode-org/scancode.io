@@ -79,7 +79,9 @@ def get_external_references(component):
 
     references = defaultdict(list)
     for reference in external_references:
-        references[reference.type.value].append(reference.url.uri)
+        reference_url = reference.url
+        if reference_url and reference_url.uri:
+            references[reference.type.value].append(reference_url.uri)
 
     return dict(references)
 
@@ -150,17 +152,17 @@ def is_cyclonedx_bom(input_location):
     return False
 
 
-def cyclonedx_component_to_package_data(cdx_component, dependencies=None):
+def cyclonedx_component_to_package_data(
+    cdx_component, dependencies=None, vulnerabilities=None
+):
     """Return package_data from CycloneDX component."""
     dependencies = dependencies or {}
+    vulnerabilities = vulnerabilities or {}
     extra_data = {}
 
-    # Store the original bom_ref and dependencies for future processing.
     bom_ref = str(cdx_component.bom_ref)
-    if bom_ref:
-        extra_data["bom_ref"] = bom_ref
-        if depends_on := dependencies.get(bom_ref):
-            extra_data["depends_on"] = depends_on
+    if depends_on := dependencies.get(bom_ref):
+        extra_data["depends_on"] = depends_on
 
     package_url_dict = {}
     if cdx_component.purl:
@@ -175,13 +177,26 @@ def cyclonedx_component_to_package_data(cdx_component, dependencies=None):
         nested_purls = [component.bom_ref.value for component in nested_components]
         extra_data["nestedComponents"] = sorted(nested_purls)
 
+    affected_by_vulnerabilities = []
+    if affected_by := vulnerabilities.get(bom_ref):
+        for cdx_vulnerability in affected_by:
+            affected_by_vulnerabilities.append(
+                {
+                    "vulnerability_id": str(cdx_vulnerability.id),
+                    "summary": cdx_vulnerability.description,
+                }
+            )
+
     package_data = {
+        # Store the original "bom_ref" as package_uid for dependencies resolution.
+        "package_uid": bom_ref,
         "name": cdx_component.name,
         "extracted_license_statement": declared_license,
         "copyright": cdx_component.copyright,
         "version": cdx_component.version,
         "description": cdx_component.description,
         "extra_data": extra_data,
+        "affected_by_vulnerabilities": affected_by_vulnerabilities,
         **package_url_dict,
         **get_checksums(cdx_component),
         **get_properties_data(cdx_component),
@@ -216,7 +231,6 @@ def delete_ignored_root_properties(cyclonedx_document_json):
         "services",
         "externalReferences",
         "compositions",
-        "vulnerabilities",
         "annotations",
         "formulation",
         "declarations",
@@ -324,7 +338,12 @@ def resolve_cyclonedx_packages(input_location):
         if depends_on := [str(dep.ref) for dep in entry.dependencies]:
             dependencies[str(entry.ref)].extend(depends_on)
 
+    vulnerabilities = defaultdict(list)
+    for vulnerability in cyclonedx_bom.vulnerabilities:
+        for affected_target in vulnerability.affects:
+            vulnerabilities[str(affected_target.ref)].append(vulnerability)
+
     return [
-        cyclonedx_component_to_package_data(component, dependencies)
+        cyclonedx_component_to_package_data(component, dependencies, vulnerabilities)
         for component in components
     ]

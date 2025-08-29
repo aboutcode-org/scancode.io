@@ -262,7 +262,7 @@ function displayOverlay() {
   const background = document.createElement("div");
   background.setAttribute("id", "background-overlay");
   background.className = "modal-background";
-  background.style.cssText = "z-index:100;color:white;text-align:center;padding-top:150px;position:fixed;";
+  background.style.cssText = "z-index:100;color:white;text-align:center;padding-top:150px;position:fixed;background-color:rgba(9, 10, 12, 0.86)";
   background.innerHTML = '<div class="fa-5x"><i class="fas fa-circle-notch fa-spin"></i></div>';
   document.body.appendChild(background);
   return background;
@@ -356,6 +356,54 @@ class PaginationNavigator {
   }
 }
 
+// Copy to Clipboard (using `navigator.clipboard`)
+
+function enableCopyToClipboard(selector) {
+  const elements = document.querySelectorAll(selector);
+
+  elements.forEach(element => {
+    element.addEventListener("click", async () => {
+      let textToCopy = "";
+
+      // Determine the text to copy
+      if (element.hasAttribute("data-copy")) {
+        textToCopy = element.getAttribute("data-copy"); // From a custom attribute
+      } else if (element.value) {
+        textToCopy = element.value; // From an input field
+      } else {
+        textToCopy = element.innerText.trim(); // From the element's text
+      }
+
+      // Default tooltip text or custom text from data-copy-feedback attribute
+      const tooltipText = element.getAttribute('data-copy-feedback') || 'Copied!';
+
+      if (textToCopy) {
+        try {
+          await navigator.clipboard.writeText(textToCopy).then(() => {
+            // Create a tooltip
+            const tooltip = document.createElement('span');
+            tooltip.classList.add('copy-tooltip');
+            tooltip.textContent = tooltipText;
+            element.appendChild(tooltip);
+
+            // Show the tooltip
+            setTimeout(() => {
+              tooltip.classList.add('visible');
+            }, 0); // Add class immediately to trigger CSS transition
+
+            // Remove the tooltip after 1.5 seconds
+            setTimeout(() => {
+              element.removeChild(tooltip);
+            }, 1500);
+          });
+        } catch (err) {
+          console.error("Clipboard copy failed:", err);
+        }
+      }
+    });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 
   setupOpenModalButtons();
@@ -365,6 +413,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setupTextarea();
   setupHighlightControls();
   setupSelectCheckbox();
+  enableCopyToClipboard(".copy-to-clipboard");
 
   const paginationContainer = document.querySelector("#pagination-header");
   if (paginationContainer) {
@@ -404,6 +453,14 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // Timezone
+  // Detects the user's current timezone using the browser's API
+  // and stores it in a cookie to be used by the backend for localization.
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (timezone) {
+    document.cookie = `client_timezone=${timezone}; path=/; SameSite=Lax`;
+  }
+
 });
 
 // Toasts (requires bulma-toast.js)
@@ -441,3 +498,98 @@ function displayPipelineStatusToast(run_status, pipeline_name, project_url) {
 
     bulmaToast.toast({...default_options, ...custom_options});
 }
+
+// Themes
+
+const STORAGE_KEY = "bulma-theme";
+const SYSTEM_THEME = "system";
+const DEFAULT_THEME = "light";
+
+const state = {
+  chosenTheme: SYSTEM_THEME, // light|dark|system
+  appliedTheme: DEFAULT_THEME, // light|dark
+  OSTheme: null, // light|dark|null
+};
+
+const $themeSwitchers = document.querySelectorAll(".js-themes a");
+
+const updateThemeUI = () => {
+  $themeSwitchers.forEach((el) => {
+    const swatchTheme = el.dataset.scheme;
+
+    if (state.chosenTheme === swatchTheme) {
+      el.classList.add("is-active");
+    } else {
+      el.classList.remove("is-active");
+    }
+  });
+};
+
+const setTheme = (theme, save = true) => {
+  state.chosenTheme = theme;
+  state.appliedTheme = theme;
+
+  if (theme === SYSTEM_THEME) {
+    state.appliedTheme = state.OSTheme;
+    document.documentElement.removeAttribute("data-theme");
+    window.localStorage.removeItem(STORAGE_KEY);
+  } else {
+    document.documentElement.setAttribute("data-theme", theme);
+
+    if (save) {
+      window.localStorage.setItem(STORAGE_KEY, theme);
+    }
+  }
+
+  updateThemeUI();
+};
+
+const toggleTheme = () => {
+  if (state.appliedTheme === "light") {
+    setTheme("dark");
+  } else {
+    setTheme("light");
+  }
+};
+
+const detectOSTheme = () => {
+  if (!window.matchMedia) {
+    // matchMedia method not supported
+    return DEFAULT_THEME;
+  }
+
+  if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    // OS theme setting detected as dark
+    return "dark";
+  } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
+    return "light";
+  }
+
+  return DEFAULT_THEME;
+};
+
+// On load, check if any preference was saved
+const localTheme = window.localStorage.getItem(STORAGE_KEY);
+state.OSTheme = detectOSTheme();
+
+if (localTheme) {
+  setTheme(localTheme, false);
+} else {
+  setTheme(SYSTEM_THEME);
+}
+
+// Event listeners
+$themeSwitchers.forEach((el) => {
+  el.addEventListener("click", () => {
+    const theme = el.dataset.scheme;
+    setTheme(theme);
+  });
+});
+
+window
+  .matchMedia("(prefers-color-scheme: dark)")
+  .addEventListener("change", (event) => {
+    const theme = event.matches ? "dark" : "light";
+    state.OSTheme = theme;
+    setTheme(theme);
+  });

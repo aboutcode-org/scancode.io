@@ -82,9 +82,9 @@ class ResolveDependencies(ScanCodebase):
     def get_packages_from_manifest(self):
         """
         Resolve package data from lockfiles/requirement files with package
-        requirements/dependenices.
+        requirements/dependencies.
         """
-        self.resolved_packages = resolve.get_packages(
+        self.packages, self.dependencies = resolve.get_data_from_manifests(
             project=self.project,
             package_registry=resolve.resolver_registry,
             manifest_resources=self.manifest_resources,
@@ -99,6 +99,6 @@ class ResolveDependencies(ScanCodebase):
         """
         resolve.create_packages_and_dependencies(
             project=self.project,
-            packages=self.resolved_packages,
+            packages=self.packages,
             resolved=True,
         )

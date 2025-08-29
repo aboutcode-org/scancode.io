@@ -40,6 +40,7 @@ from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import dependency_data1
+from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
@@ -304,6 +305,25 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         pipes.make_codebase_resource(p1, resource_location)
         self.assertEqual(1, p1.codebaseresources.count())
         self.assertEqual(0, p1.projectmessages.count())
+
+    @mock.patch("scanpipe.pipes.scancode.get_resource_info")
+    def test_scanpipe_pipes_make_codebase_resource_permission_denied(
+        self, mock_get_info
+    ):
+        project = make_project()
+        mock_get_info.side_effect = PermissionError("Permission denied")
+        resource_location = str(project.codebase_path / "notice.NOTICE")
+
+        resource = pipes.make_codebase_resource(project, location=resource_location)
+        self.assertTrue(resource.pk)
+        self.assertEqual(flag.RESOURCE_READ_ERROR, resource.status)
+        self.assertEqual("notice.NOTICE", str(resource.path))
+
+        error = project.projectmessages.get()
+        self.assertEqual("error", error.severity)
+        self.assertEqual("Permission denied", error.description)
+        self.assertEqual("CodebaseResource", error.model)
+        self.assertEqual({"resource_path": "notice.NOTICE"}, error.details)
 
     def test_scanpipe_add_resource_to_package(self):
         project1 = Project.objects.create(name="Analysis")

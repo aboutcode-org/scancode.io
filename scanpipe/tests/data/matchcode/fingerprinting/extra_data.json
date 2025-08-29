@@ -1,0 +1,278 @@
+{
+    "halo1": "0000004f5cc2ec9a5ebdaa44336f53be569d6829",
+    "snippets": [
+        {
+            "snippet": "24a1651c51468fb8cf1ac6c38a2c4add",
+            "position": "0"
+        },
+        {
+            "snippet": "7b1cbef763885c6856df8b15fa4e57a5",
+            "position": 5
+        },
+        {
+            "snippet": "46828d9d4a64300b1543e4e5a6356ed5",
+            "position": 12
+        },
+        {
+            "snippet": "c0496b020a8d87a3b1bf1a83c67c16d5",
+            "position": 14
+        },
+        {
+            "snippet": "b2ec716c571a0368ea37dbb7821c6945",
+            "position": 15
+        },
+        {
+            "snippet": "8dd2b57022204ecd9ea4a2471f224fd4",
+            "position": 22
+        },
+        {
+            "snippet": "cb9216ce4ad33a5d6feb378dbf0404c8",
+            "position": 30
+        },
+        {
+            "snippet": "034b634f1c726c9c0f7740ea9723637b",
+            "position": 37
+        },
+        {
+            "snippet": "d0bb8a1740512218c8e87bbaa5f5d9a6",
+            "position": 38
+        },
+        {
+            "snippet": "7ae529b13ddb3b0c74421772d78821a7",
+            "position": 41
+        },
+        {
+            "snippet": "b2aad3c6ab2c2c9ba1a95edac417aa09",
+            "position": 42
+        },
+        {
+            "snippet": "be339f1c1670b7789e83f875978c1e06",
+            "position": 46
+        },
+        {
+            "snippet": "a895f0ff2b99352b33392fda0a87a4cf",
+            "position": 53
+        },
+        {
+            "snippet": "6819c7f718a1fa7f2501009d21ee46d7",
+            "position": 57
+        },
+        {
+            "snippet": "97ecd33b1ca08589363df198458d976f",
+            "position": 61
+        },
+        {
+            "snippet": "2c73086d098f182cf8441046b97af434",
+            "position": 64
+        },
+        {
+            "snippet": "3ba6ad01d6f9130be38df14a44633abd",
+            "position": 67
+        }
+    ],
+    "line_by_pos": {
+        "0": 1,
+        "1": 1,
+        "2": 1,
+        "3": 3,
+        "4": 3,
+        "5": 3,
+        "6": 3,
+        "7": 3,
+        "8": 4,
+        "9": 4,
+        "10": 5,
+        "11": 5,
+        "12": 6,
+        "13": 6,
+        "14": 6,
+        "15": 6,
+        "16": 6,
+        "17": 6,
+        "18": 7,
+        "19": 7,
+        "20": 7,
+        "21": 7,
+        "22": 7,
+        "23": 7,
+        "24": 8,
+        "25": 8,
+        "26": 8,
+        "27": 8,
+        "28": 8,
+        "29": 8,
+        "30": 11,
+        "31": 11,
+        "32": 11,
+        "33": 11,
+        "34": 11,
+        "35": 11,
+        "36": 11,
+        "37": 12,
+        "38": 12,
+        "39": 12,
+        "40": 15,
+        "41": 15,
+        "42": 16,
+        "43": 16,
+        "44": 16,
+        "45": 16,
+        "46": 17,
+        "47": 17,
+        "48": 17,
+        "49": 18,
+        "50": 18,
+        "51": 19,
+        "52": 19,
+        "53": 19,
+        "54": 20,
+        "55": 20,
+        "56": 20,
+        "57": 20,
+        "58": 21,
+        "59": 21,
+        "60": 21,
+        "61": 21,
+        "62": 21,
+        "63": 22,
+        "64": 22,
+        "65": 22,
+        "66": 22,
+        "67": 22,
+        "68": 23,
+        "69": 23,
+        "70": 24,
+        "71": 24,
+        "72": 24,
+        "73": 25,
+        "74": 25,
+        "75": 25,
+        "76": 27,
+        "77": 27,
+        "78": 28,
+        "79": 28,
+        "80": 28,
+        "81": 29,
+        "82": 29
+    },
+    "stemmed_halo1": "000000240a64b6c8aae4625491a8aa77ffd9b2a6",
+    "stemmed_snippets": [
+        {
+            "snippet": "8e5f6fead6d0469a9af967bd3b3c823c",
+            "position": "0"
+        },
+        {
+            "snippet": "3b4fb17158ed94e2babd49970af94d06",
+            "position": 2
+        },
+        {
+            "snippet": "b0607c96667235727aa1e4212e907f7b",
+            "position": 3
+        },
+        {
+            "snippet": "65aecd343e17c78db5cfca34a8a4fa02",
+            "position": 4
+        },
+        {
+            "snippet": "89a7bf1c4ead7854f274e6f41b7654da",
+            "position": 5
+        },
+        {
+            "snippet": "8c38b55be87ffec2c0b91d6085f12e69",
+            "position": 6
+        },
+        {
+            "snippet": "5e0ddfbe6eeaa0bbe00f0a3bcb4183a8",
+            "position": 7
+        },
+        {
+            "snippet": "f8a7cabd43fb2d8a40a23d83217e3d8b",
+            "position": 8
+        },
+        {
+            "snippet": "fdc4910fe720d6b9f20196d306e7aedc",
+            "position": 9
+        },
+        {
+            "snippet": "7a5ee56ca82edc1c76e0b0b9322129dd",
+            "position": 10
+        },
+        {
+            "snippet": "6b93bb4ea1623dd6946a21f99418a3fa",
+            "position": 11
+        },
+        {
+            "snippet": "8f2a211b1a10cbd28fb8f1ad21dbf5fb",
+            "position": 12
+        },
+        {
+            "snippet": "c3c82df4de85b1c9dbf69b2b5a45935c",
+            "position": 13
+        },
+        {
+            "snippet": "216e662345dd2969bff90aefdae76672",
+            "position": 14
+        },
+        {
+            "snippet": "24d9e003c332e26e2cae1263d18e0ef6",
+            "position": 15
+        },
+        {
+            "snippet": "7210020de6bfe60b69ca8ec908845a15",
+            "position": 17
+        },
+        {
+            "snippet": "667f800b10c105c2418effd6035e6763",
+            "position": 18
+        },
+        {
+            "snippet": "c18caedb3daf59b210278b2b6d1d0db5",
+            "position": 19
+        },
+        {
+            "snippet": "a19fe989f63161a76526933a34593741",
+            "position": 20
+        },
+        {
+            "snippet": "f782389ac40b56bc81a7c92f40d87a83",
+            "position": 21
+        },
+        {
+            "snippet": "4ed61cd372dcc7d88c95d899271fd138",
+            "position": 22
+        },
+        {
+            "snippet": "e9c74c50192eb95bc4595254fc253427",
+            "position": 23
+        },
+        {
+            "snippet": "5a908af743b549f1f0ef8ab02c9053eb",
+            "position": 24
+        }
+    ],
+    "matched_snippets": [
+        {
+            "package": "pkg:github/isaacs/inherits@v2.0.3",
+            "resource": "inherits-2.0.3/inherits.js",
+            "similarity": "1.0",
+            "match_detections": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15
+            ]
+        }
+    ]
+}

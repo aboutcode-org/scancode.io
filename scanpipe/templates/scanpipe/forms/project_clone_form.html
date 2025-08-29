@@ -1,0 +1,43 @@
+{% include 'scanpipe/forms/form_errors.html' %}
+<div class="field">
+  <label class="label" for="{{ form.clone_name.id_for_label }}">{{ form.clone_name.label }}</label>
+  <div class="control">
+    {{ form.clone_name }}
+    <p class="help">{{ form.clone_name.help_text }}</p>
+  </div>
+</div>
+<div class="field">
+  <label class="checkbox" for="{{ form.copy_inputs.id_for_label }}">
+    {{ form.copy_inputs }}
+    {{ form.copy_inputs.label }}
+  </label>
+  <p class="help">{{ form.copy_inputs.help_text }}</p>
+</div>
+<div class="field">
+  <label class="checkbox" for="{{ form.copy_pipelines.id_for_label }}">
+    {{ form.copy_pipelines }}
+    {{ form.copy_pipelines.label }}
+  </label>
+  <p class="help">{{ form.copy_pipelines.help_text }}</p>
+</div>
+<div class="field">
+  <label class="checkbox" for="{{ form.copy_settings.id_for_label }}">
+    {{ form.copy_settings }}
+    {{ form.copy_settings.label }}
+  </label>
+  <p class="help">{{ form.copy_settings.help_text }}</p>
+</div>
+<div class="field">
+  <label class="checkbox" for="{{ form.copy_subscriptions.id_for_label }}">
+    {{ form.copy_subscriptions }}
+    {{ form.copy_subscriptions.label }}
+  </label>
+  <p class="help">{{ form.copy_subscriptions.help_text }}</p>
+</div>
+<div class="field">
+  <label class="checkbox" for="{{ form.execute_now.id_for_label }}-clone">
+    <input type="checkbox" name="{{ form.execute_now.html_name }}" id="{{ form.execute_now.id_for_label }}-clone">
+    {{ form.execute_now.label }}
+  </label>
+  <p class="help">{{ form.execute_now.help_text }}</p>
+</div>

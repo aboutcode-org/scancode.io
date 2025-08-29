@@ -1,0 +1,117 @@
+<div class="content">
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+        <thead>
+          <tr>
+            <th>License expression</th>
+            <th>Origin resource path</th>
+            <th>Matched text</th>
+            <th>Rule URL</th>
+            <th>Score</th>
+            <th>Matcher</th>
+            <th>Match length</th>
+            <th>Match coverage</th>
+            <th>Rule relevance</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for match in tab_data.fields.matches.value %}
+          <tr>
+            <td class="break-all">
+                {{ match.license_expression }}
+            </td>
+            <td class="break-all">
+                <a href="{% url 'resource_detail' project.slug match.from_file %}#detection">{{ match.from_file }}</a>
+            </td>
+            <td class="break-all">
+              {{ match.matched_text }}
+            </td>
+            <td class="break-all">
+              {% if match.rule_url %}
+              <a href="{{match.rule_url}}">
+                {{ match.rule_identifier }}
+                <i class="fa-solid fa-up-right-from-square is-small"></i>
+              </a>
+              {% else %}
+                {{ match.rule_identifier }}
+              {% endif %}
+            </td>
+            <td class="break-all">
+                {{ match.score }}
+            </td>
+            <td class="break-all">
+                {{ match.matcher }}
+            </td>
+            <td class="break-all">
+                {{ match.matched_length }}
+            </td>
+            <td class="break-all">
+                {{ match.match_coverage }}
+            </td>
+            <td class="break-all">
+                {{ match.rule_relevance }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+    </table>
+    {% if tab_data.fields.detection_log.value %}
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+        <thead>
+          <tr>
+            <th>Detection log</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log_entry in tab_data.fields.detection_log.value %}
+          <tr>
+              <td class="break-all">
+                  {{ log_entry }}
+              </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% if tab_data.fields.review_comments.value %}
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+        <thead>
+          <tr>
+            <th>Review Comments</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for comment in tab_data.fields.review_comments.value %}
+          <tr>
+              <td class="break-all">
+                  {{ comment }}
+              </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+        <thead>
+          <tr>
+            <th>Resource path</th>
+            <th>Start line</th>
+            <th>End line</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for file_region in tab_data.fields.file_regions.value %}
+          <tr>
+              <td class="break-all">
+                <a href="{% url 'resource_detail' project.slug file_region.path %}#detection">{{ file_region.path }}</a>
+              </td>
+              <td class="break-all">
+                  {{ file_region.start_line }}
+              </td>
+              <td class="break-all">
+                {{ file_region.end_line }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+    </table>
+  </div>

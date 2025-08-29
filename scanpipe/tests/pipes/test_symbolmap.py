@@ -65,7 +65,9 @@ class ScanPipeSymbolmapPipesTest(TestCase):
             "Ok",
         ]
         is_source_matched, _stats = symbolmap.match_source_symbols_to_binary(
-            rust_test_file_symbols, self.get_binary_symbols()
+            rust_test_file_symbols,
+            self.get_binary_symbols(),
+            map_type="rust_symbols",
         )
         self.assertFalse(is_source_matched)
 
@@ -128,7 +130,9 @@ class ScanPipeSymbolmapPipesTest(TestCase):
             "write",
         ]
         is_source_matched, _stats = symbolmap.match_source_symbols_to_binary(
-            rust_main_file_symbols, self.get_binary_symbols()
+            rust_main_file_symbols,
+            self.get_binary_symbols(),
+            map_type="rust_symbols",
         )
         self.assertTrue(is_source_matched)
 
@@ -174,6 +178,7 @@ class ScanPipeSymbolmapPipesTest(TestCase):
             project=project1, path="binary"
         )
         symbolmap.map_resources_with_symbols(
+            project=project1,
             to_resource=binary_resource,
             from_resources=CodebaseResource.objects.all().filter(path__endswith=".rs"),
             binary_symbols=["test_symbol1", "test_symbol2"],
@@ -196,3 +201,150 @@ class ScanPipeSymbolmapPipesTest(TestCase):
                 ]
             )
         )
+
+    def test_scanpipe_pipes_symbolmap_is_decomposed_javascript(self):
+        javascript_file_symbols = [
+            "a",
+            "g",
+            "bn",
+            "object",
+            "i",
+            "j",
+            "k",
+            "o",
+            "l",
+            "cmd",
+            "t",
+            "r",
+            "cmd",
+            "z",
+            "str",
+            "n",
+            "j",
+        ]
+
+        self.assertTrue(symbolmap.is_decomposed_javascript(javascript_file_symbols))
+
+    def test_scanpipe_pipes_symbolmap_get_symbols_probability_distribution(self):
+        source_symbols = [
+            "charSet",
+            "generatePassword",
+            "length",
+            "password",
+            "i",
+            "i",
+            "length",
+            "i",
+            "randomIndex",
+            "Math",
+            "Math",
+            "charSet",
+            "randomChar",
+            "charSet",
+            "randomIndex",
+            "password",
+            "randomChar",
+            "password",
+            "passwordLength",
+            "parseInt",
+            "prompt",
+            "password",
+            "generatePassword",
+            "passwordLength",
+            "alert",
+            "password",
+        ]
+
+        unique_symbols = sorted(list(set(source_symbols)))
+        result_prob_dist = symbolmap.get_symbols_probability_distribution(
+            source_symbols, unique_symbols
+        )
+        expected_prob_dist = [
+            0.07692307692307693,
+            0.038461538461538464,
+            0.11538461538461539,
+            0.07692307692307693,
+            0.11538461538461539,
+            0.07692307692307693,
+            0.038461538461538464,
+            0.19230769230769232,
+            0.07692307692307693,
+            0.038461538461538464,
+            0.07692307692307693,
+            0.07692307692307693,
+        ]
+
+        # print(result_prob_dist)
+        self.assertListEqual(result_prob_dist, expected_prob_dist)
+
+    def test_get_similarity_between_source_and_deployed_symbols(
+        self,
+    ):
+        source_symbols = [
+            "charSet",
+            "generatePassword",
+            "length",
+            "password",
+            "i",
+            "i",
+            "length",
+            "i",
+            "randomIndex",
+            "Math",
+            "Math",
+            "charSet",
+            "randomChar",
+            "charSet",
+            "randomIndex",
+            "password",
+            "randomChar",
+            "password",
+            "passwordLength",
+            "parseInt",
+            "prompt",
+            "password",
+            "generatePassword",
+            "passwordLength",
+            "alert",
+            "password",
+        ]
+
+        deployed_symbols = [
+            "charSet",
+            "generatePassword",
+            "r",
+            "e",
+            "s",
+            "s",
+            "r",
+            "s",
+            "o",
+            "Math",
+            "Math",
+            "charSet",
+            "t",
+            "charSet",
+            "o",
+            "e",
+            "t",
+            "e",
+            "passwordLength",
+            "parseInt",
+            "prompt",
+            "password",
+            "generatePassword",
+            "passwordLength",
+            "alert",
+            "password",
+        ]
+        is_match, similarity = (
+            symbolmap.get_similarity_between_source_and_deployed_symbols(
+                source_symbols=source_symbols,
+                deployed_symbols=deployed_symbols,
+                matching_ratio=symbolmap.MATCHING_RATIO_JAVASCRIPT,
+                matching_ratio_small_file=symbolmap.MATCHING_RATIO_JAVASCRIPT_SMALL_FILE,
+                small_file_threshold=symbolmap.SMALL_FILE_SYMBOLS_THRESHOLD_JAVASCRIPT,
+            )
+        )
+        self.assertFalse(is_match)
+        self.assertAlmostEqual(float(similarity), 0.4589, places=3)

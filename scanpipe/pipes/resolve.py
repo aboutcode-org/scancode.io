@@ -21,6 +21,7 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
+import logging
 import sys
 import uuid
 from pathlib import Path
@@ -28,11 +29,11 @@ from pathlib import Path
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
 
+import python_inspector.api as python_inspector
 from attributecode.model import About
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
 from packageurl import PackageURL
-from python_inspector.api import resolve_dependencies
 
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -46,6 +47,8 @@ from scanpipe.pipes import update_or_create_package
 Resolve packages from manifest, lockfile, and SBOM.
 """
 
+logger = logging.getLogger("scanpipe.pipes")
+
 
 def resolve_manifest_resources(resource, package_registry):
     """Get package data from resource."""
@@ -57,12 +60,33 @@ def resolve_manifest_resources(resource, package_registry):
     return packages
 
 
-def get_packages(project, package_registry, manifest_resources, model=None):
+def get_dependencies_from_manifest(resource):
     """
-    Get package data from package manifests/lockfiles/SBOMs or
-    get package data for resolved packages from package requirements.
+    Get dependency data from resource.
+    This is used for SPDX where the dependency data is stored as its own
+    entry in the SBOM.
+    On the CycloneDX side, the dependency data is stored inline in the
+    component entries, it is stored on the package ``extra_data``.
+    """
+    dependencies = []
+
+    default_package_type = get_default_package_type(resource.location)
+    if not default_package_type:
+        return []
+
+    if default_package_type == "spdx":
+        dependencies = resolve_spdx_dependencies(input_location=resource.location)
+
+    return dependencies
+
+
+def get_data_from_manifests(project, package_registry, manifest_resources, model=None):
+    """
+    Get package and dependency data from package manifests/lockfiles/SBOMs or
+    for resolved packages from package requirements.
     """
     resolved_packages = []
+    resolved_dependencies = []
     sboms_headers = {}
 
     if not manifest_resources.exists():
@@ -73,7 +97,8 @@ def get_packages(project, package_registry, manifest_resources, model=None):
         return []
 
     for resource in manifest_resources:
-        if packages := resolve_manifest_resources(resource, package_registry):
+        packages = resolve_manifest_resources(resource, package_registry)
+        if packages:
             resolved_packages.extend(packages)
             if headers := get_manifest_headers(resource):
                 sboms_headers[resource.name] = headers
@@ -84,10 +109,14 @@ def get_packages(project, package_registry, manifest_resources, model=None):
                 object_instance=resource,
             )
 
+        dependencies = get_dependencies_from_manifest(resource)
+        if dependencies:
+            resolved_dependencies.extend(dependencies)
+
     if sboms_headers:
         project.update_extra_data({"sboms_headers": sboms_headers})
 
-    return resolved_packages
+    return resolved_packages, resolved_dependencies
 
 
 def create_packages_and_dependencies(project, packages, resolved=False):
@@ -136,7 +165,7 @@ def create_dependencies_from_packages_extra_data(project):
 
         for bom_ref in for_package.extra_data.get("depends_on", []):
             try:
-                resolved_to_package = project_packages.get(extra_data__bom_ref=bom_ref)
+                resolved_to_package = project_packages.get(package_uid=bom_ref)
             except (ObjectDoesNotExist, MultipleObjectsReturned):
                 project.add_error(
                     description=f"Could not find resolved_to package entry: {bom_ref}.",
@@ -164,17 +193,22 @@ def get_packages_from_manifest(input_location, package_registry=None):
     Resolve packages or get packages data from a package manifest file/
     lockfile/SBOM at `input_location`.
     """
+    logger.info(f"> Get packages from manifest: {input_location}")
     default_package_type = get_default_package_type(input_location)
     # we only try to resolve packages if file at input_location is
     # a package manifest, and ignore for other files
     if not default_package_type:
+        logger.info("  Package type not found.")
         return
 
     # Get resolvers for available packages/SBOMs in the registry
     resolver = package_registry.get(default_package_type)
     if resolver:
+        logger.info(f"  Using resolver={resolver.__name__}")
         resolved_packages = resolver(input_location=input_location)
         return resolved_packages
+    else:
+        logger.info(f"  No resolvers available for type={default_package_type}")
 
 
 def get_manifest_resources(project):
@@ -188,18 +222,29 @@ def get_manifest_resources(project):
 
 
 def resolve_pypi_packages(input_location):
-    """Resolve the PyPI packages from the `input_location` requirements file."""
+    """Resolve the PyPI packages from the ``input_location`` requirements file."""
     python_version = f"{sys.version_info.major}{sys.version_info.minor}"
     operating_system = "linux"
 
-    inspector_output = resolve_dependencies(
+    resolution_output = python_inspector.resolve_dependencies(
         requirement_files=[input_location],
         python_version=python_version,
         operating_system=operating_system,
+        # Prefer source distributions over binary distributions,
+        # if no source distribution is available then binary distributions are used.
         prefer_source=True,
+        # Activate the verbosity and send it to the logger.
+        verbose=True,
+        printer=logger.info,
     )
 
-    return inspector_output.packages
+    packages = resolution_output.packages
+    # python-inspector returns the `extracted_license_statement` under the
+    # `declared_license` field.
+    for package in packages:
+        package["extracted_license_statement"] = package.get("declared_license", "")
+
+    return packages
 
 
 def resolve_about_package(input_location):
@@ -265,8 +310,12 @@ def convert_spdx_expression(license_expression_spdx):
     return get_license_detections_and_expression(license_expression_spdx)[1]
 
 
-def spdx_package_to_discovered_package_data(spdx_package):
+def spdx_package_to_package_data(spdx_package):
+    """Convert the provided spdx_package into package_data."""
     package_url_dict = {}
+    # Store the original "SPDXID" as package_uid for dependencies resolution.
+    package_uid = spdx_package.spdx_id
+
     for ref in spdx_package.external_refs:
         if ref.type == "purl":
             purl = ref.locator
@@ -283,6 +332,7 @@ def spdx_package_to_discovered_package_data(spdx_package):
         declared_expression = convert_spdx_expression(declared_license_expression_spdx)
 
     package_data = {
+        "package_uid": package_uid,
         "name": spdx_package.name,
         "download_url": spdx_package.download_location,
         "declared_license_expression": declared_expression,
@@ -305,8 +355,28 @@ def spdx_package_to_discovered_package_data(spdx_package):
     }
 
 
-def resolve_spdx_packages(input_location):
-    """Resolve the packages from the `input_location` SPDX document file."""
+def spdx_relationship_to_dependency_data(spdx_relationship):
+    """Convert the provided spdx_relationship into dependency_data."""
+    # spdx_id is a dependency of related_spdx_id
+    if spdx_relationship.is_dependency_relationship:
+        for_package_uid = spdx_relationship.related_spdx_id
+        resolve_to_package_uid = spdx_relationship.spdx_id
+    else:  # spdx_id depends on related_spdx_id
+        for_package_uid = spdx_relationship.spdx_id
+        resolve_to_package_uid = spdx_relationship.related_spdx_id
+
+    dependency_data = {
+        "for_package_uid": for_package_uid,
+        "resolve_to_package_uid": resolve_to_package_uid,
+        "is_runtime": True,
+        "is_resolved": True,
+        "is_direct": True,
+    }
+    return dependency_data
+
+
+def get_spdx_document_from_file(input_location):
+    """Return the loaded SPDX document from the `input_location` file."""
     input_path = Path(input_location)
     spdx_document = json.loads(input_path.read_text())
 
@@ -315,9 +385,32 @@ def resolve_spdx_packages(input_location):
     except Exception as e:
         raise Exception(f'SPDX document "{input_path.name}" is not valid: {e}')
 
+    return spdx_document
+
+
+def resolve_spdx_packages(input_location):
+    """Resolve the packages from the `input_location` SPDX document file."""
+    spdx_document = get_spdx_document_from_file(input_location)
     return [
-        spdx_package_to_discovered_package_data(spdx.Package.from_data(spdx_package))
+        spdx_package_to_package_data(spdx.Package.from_data(spdx_package))
         for spdx_package in spdx_document.get("packages", [])
+    ]
+
+
+def resolve_spdx_dependencies(input_location):
+    """Resolve the dependencies from the `input_location` SPDX document file."""
+    spdx_document = get_spdx_document_from_file(input_location)
+    spdx_relationships = [
+        spdx.Relationship.from_data(spdx_relationship)
+        for spdx_relationship in spdx_document.get("relationships", [])
+    ]
+
+    return [
+        spdx_relationship_to_dependency_data(spdx_relationship)
+        for spdx_relationship in spdx_relationships
+        if spdx_relationship.spdx_id != "NOASSERTION"
+        and spdx_relationship.related_spdx_id != "NOASSERTION"
+        and spdx_relationship.relationship != "DESCRIBES"
     ]
 
 

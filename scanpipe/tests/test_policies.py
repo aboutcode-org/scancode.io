@@ -66,7 +66,11 @@ class ScanPipePoliciesTest(TestCase):
         with self.assertRaisesMessage(ValidationError, error_msg):
             validate_policies(policies_dict)
 
-        error_msg = "The `license_policies` key is missing from provided policies data."
+        error_msg = (
+            "At least one of the following policy types must be present: "
+            "license_clarity_thresholds, license_policies, "
+            "scorecard_score_thresholds"
+        )
         policies_dict = {}
         with self.assertRaisesMessage(ValidationError, error_msg):
             validate_policies(policies_dict)
@@ -98,10 +102,12 @@ class ScanPipePoliciesTest(TestCase):
         pipeline = run.make_pipeline_instance()
 
         # Capture the real method's return value
-        real_get_policy_index = project1.get_policy_index
+        real_get_license_policy_index = project1.get_license_policy_index
 
-        with mock.patch("scanpipe.models.Project.get_policy_index") as mock_get_index:
-            mock_get_index.side_effect = real_get_policy_index
+        with mock.patch(
+            "scanpipe.models.Project.get_license_policy_index"
+        ) as mock_get_index:
+            mock_get_index.side_effect = real_get_license_policy_index
             exitcode, out = pipeline.execute()
         mock_get_index.assert_called_once()
 
@@ -127,12 +133,12 @@ class ScanPipePoliciesTest(TestCase):
         expected = "codebase/include_policies_file.zip-extract/policies.yml"
         project_policies_file = project1.get_input_policies_file()
         self.assertTrue(str(project_policies_file).endswith(expected))
-        self.assertTrue(project1.policies_enabled)
+        self.assertTrue(project1.license_policies_enabled)
         expected_index = {
             "apache-2.0": {"license_key": "apache-2.0", "compliance_alert": ""},
             "gpl-2.0": {"license_key": "gpl-2.0", "compliance_alert": "error"},
         }
-        self.assertEqual(expected_index, project1.get_policy_index())
+        self.assertEqual(expected_index, project1.get_license_policy_index())
 
     def test_scanpipe_policies_through_scancode_config_file(self):
         project1 = make_project()

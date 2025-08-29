@@ -224,10 +224,14 @@ class JSONResultsGenerator:
         return json.dumps(data, indent=2, cls=DjangoJSONEncoder)
 
     def get_headers(self, project):
+        from scanpipe.api.serializers import ProjectMessageSerializer
         from scanpipe.api.serializers import RunSerializer
 
         runs = project.runs.all()
         runs = RunSerializer(runs, many=True, exclude_fields=("url", "project"))
+
+        messages = project.projectmessages.all()
+        messages = ProjectMessageSerializer(messages, many=True)
 
         other_tools = [f"pkg:pypi/scancode-toolkit@{scancode_toolkit_version}"]
 
@@ -242,6 +246,7 @@ class JSONResultsGenerator:
             "settings": project.settings,
             "input_sources": project.get_inputs_with_source(),
             "runs": runs.data,
+            "messages": messages.data,
             "extra_data": project.extra_data,
         }
         yield self.encode(headers)
@@ -366,9 +371,11 @@ def add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     """
     worksheet = workbook.add_worksheet(worksheet_name)
     worksheet.set_default_row(height=14)
+    worksheet.freeze_panes(1, 0)  # Freeze the header row
+    cell_format = workbook.add_format({"font_size": 10})
 
     header = list(fields) + ["xlsx_errors"]
-    worksheet.write_row(row=0, col=0, data=header)
+    worksheet.write_row(row=0, col=0, data=header, cell_format=cell_format)
 
     errors_count = 0
     errors_col_index = len(fields) - 1  # rows and cols are zero-indexed
@@ -391,12 +398,22 @@ def add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
                 row_errors.append(error)
 
             if value:
-                worksheet.write_string(row_index, col_index, str(value))
+                worksheet.write_string(
+                    row=row_index,
+                    col=col_index,
+                    string=str(value),
+                    cell_format=cell_format,
+                )
 
         if row_errors:
             errors_count += len(row_errors)
             row_errors = "\n".join(row_errors)
-            worksheet.write_string(row_index, errors_col_index, row_errors)
+            worksheet.write_string(
+                row=row_index,
+                col=errors_col_index,
+                string=row_errors,
+                cell_format=cell_format,
+            )
 
     return errors_count
 
@@ -524,7 +541,7 @@ def to_xlsx(project):
     exclude_fields = XLSX_EXCLUDE_FIELDS.copy()
     output_file = project.get_output_file_path("results", "xlsx")
 
-    if not project.policies_enabled:
+    if not project.license_policies_enabled:
         exclude_fields.append("compliance_alert")
 
     model_names = [
@@ -550,21 +567,11 @@ def to_xlsx(project):
 
 
 def add_vulnerabilities_sheet(workbook, project):
-    vulnerable_packages_queryset = (
-        DiscoveredPackage.objects.project(project)
-        .vulnerable()
-        .only_package_url_fields(extra=["affected_by_vulnerabilities"])
-        .order_by_package_url()
-    )
-    vulnerable_dependencies_queryset = (
-        DiscoveredDependency.objects.project(project)
-        .vulnerable()
-        .only_package_url_fields(extra=["affected_by_vulnerabilities"])
-        .order_by_package_url()
-    )
+    vulnerable_packages = project.discoveredpackages.vulnerable_ordered()
+    vulnerable_dependencies = project.discovereddependencies.vulnerable_ordered()
     vulnerable_querysets = [
-        vulnerable_packages_queryset,
-        vulnerable_dependencies_queryset,
+        vulnerable_packages,
+        vulnerable_dependencies,
     ]
 
     vulnerability_fields = [
@@ -664,6 +671,28 @@ def _get_spdx_extracted_licenses(license_expressions):
     return extracted_licenses
 
 
+def get_dependency_as_spdx_relationship(dependency, document_spdx_id, packages_as_spdx):
+    """Return a spdx.Relationship crafted from the provided ``dependency`` instance."""
+    if dependency.for_package:  # Package dependency
+        parent_id = dependency.for_package.spdx_id
+    else:  # Project dependency
+        parent_id = document_spdx_id
+
+    if dependency.is_resolved_to_package:  # Resolved to a Package
+        child_id = dependency.resolved_to_package.spdx_id
+    else:  # Not resolved to a Package (only package_url value is available)
+        dependency_as_package = dependency.as_spdx_package()
+        packages_as_spdx.append(dependency_as_package)
+        child_id = dependency_as_package.spdx_id
+
+    spdx_relationship = spdx.Relationship(
+        spdx_id=child_id,
+        related_spdx_id=parent_id,
+        relationship="DEPENDENCY_OF",
+    )
+    return spdx_relationship
+
+
 def to_spdx(project, include_files=False):
     """
     Generate output for the provided ``project`` in SPDX document format.
@@ -675,6 +704,7 @@ def to_spdx(project, include_files=False):
     discoveredpackage_qs = get_queryset(project, "discoveredpackage")
     discovereddependency_qs = get_queryset(project, "discovereddependency")
 
+    document_spdx_id = f"SPDXRef-DOCUMENT-{project.uuid}"
     packages_as_spdx = []
     license_expressions = []
     relationships = []
@@ -685,15 +715,12 @@ def to_spdx(project, include_files=False):
             license_expressions.append(license_expression)
 
     for dependency in discovereddependency_qs:
-        packages_as_spdx.append(dependency.as_spdx())
-        if dependency.for_package:
-            relationships.append(
-                spdx.Relationship(
-                    spdx_id=dependency.spdx_id,
-                    related_spdx_id=dependency.for_package.spdx_id,
-                    relationship="DEPENDENCY_OF",
-                )
-            )
+        spdx_relationship = get_dependency_as_spdx_relationship(
+            dependency,
+            document_spdx_id,
+            packages_as_spdx,
+        )
+        relationships.append(spdx_relationship)
 
     files_as_spdx = []
     if include_files:
@@ -703,6 +730,7 @@ def to_spdx(project, include_files=False):
         ]
 
     document = spdx.Document(
+        spdx_id=document_spdx_id,
         name=f"scancodeio_{project.name}",
         namespace=f"https://scancode.io/spdxdocs/{project.uuid}",
         creation_info=spdx.CreationInfo(tool=f"ScanCode.io-{scancodeio_version}"),

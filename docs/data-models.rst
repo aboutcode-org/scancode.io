@@ -14,12 +14,16 @@ Project
     :undoc-members:
     :member-order: groupwise
 
+.. _data_models_codebase_resource:
+
 CodebaseResource
 ----------------
 .. autoclass:: scanpipe.models.CodebaseResource()
     :members:
     :undoc-members:
     :member-order: groupwise
+
+.. _data_models_discovered_package:
 
 DiscoveredPackage
 -----------------
@@ -28,6 +32,8 @@ DiscoveredPackage
     :undoc-members:
     :member-order: groupwise
 
+.. _data_models_discovered_dependency:
+
 DiscoveredDependency
 --------------------
 .. autoclass:: scanpipe.models.DiscoveredDependency()
@@ -35,12 +41,16 @@ DiscoveredDependency
     :undoc-members:
     :member-order: groupwise
 
+.. _data_models_codebase_relation:
+
 CodebaseRelation
 ----------------
 .. autoclass:: scanpipe.models.CodebaseRelation()
     :members:
     :undoc-members:
     :member-order: groupwise
+
+.. _data_models_project_message:
 
 ProjectMessage
 --------------

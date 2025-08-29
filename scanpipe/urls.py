@@ -57,6 +57,11 @@ urlpatterns = [
         name="package_detail",
     ),
     path(
+        "project/<slug:slug>/license_detections/<slug:identifier>/",
+        views.DiscoveredLicenseDetailsView.as_view(),
+        name="license_detail",
+    ),
+    path(
         "project/<slug:slug>/dependencies/<path:dependency_uid>/",
         views.DiscoveredDependencyDetailsView.as_view(),
         name="dependency_detail",
@@ -65,6 +70,11 @@ urlpatterns = [
         "project/<slug:slug>/packages/",
         views.DiscoveredPackageListView.as_view(),
         name="project_packages",
+    ),
+    path(
+        "project/<slug:slug>/license_detections/",
+        views.DiscoveredLicenseListView.as_view(),
+        name="project_licenses",
     ),
     path(
         "project/<slug:slug>/dependencies/",
@@ -110,6 +120,11 @@ urlpatterns = [
         "project/<slug:slug>/settings/",
         views.ProjectSettingsView.as_view(),
         name="project_settings",
+    ),
+    path(
+        "project/<slug:slug>/settings/webhooks/add",
+        views.ProjectSettingsWebhookCreateView.as_view(),
+        name="project_settings_add_webhook",
     ),
     path(
         "project/<slug:slug>/codebase/",
@@ -167,6 +182,11 @@ urlpatterns = [
         name="project_delete_input",
     ),
     path(
+        "project/<slug:slug>/delete_webhook/<uuid:webhook_uuid>/",
+        views.delete_webhook_view,
+        name="project_delete_webhook",
+    ),
+    path(
         "project/<slug:slug>/download_input/<str:filename>/",
         views.download_input_view,
         name="project_download_input",
@@ -202,9 +222,9 @@ urlpatterns = [
         name="project_resource_status_summary",
     ),
     path(
-        "project/<slug:slug>/resource_license_summary/",
-        views.ProjectResourceLicenseSummaryView.as_view(),
-        name="project_resource_license_summary",
+        "project/<slug:slug>/license_detection_summary/",
+        views.ProjectLicenseDetectionSummaryView.as_view(),
+        name="project_license_detection_summary",
     ),
     path(
         "project/<slug:slug>/compliance_panel/",

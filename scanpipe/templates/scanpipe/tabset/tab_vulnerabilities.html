@@ -11,7 +11,7 @@
       {% for vulnerability in tab_data.fields.affected_by_vulnerabilities.value %}
         <tr>
           <td>
-            <a href="{{ VULNERABLECODE_URL }}vulnerabilities/{{ vulnerability.vulnerability_id }}" target="_blank">
+            <a href="{{ VULNERABLECODE_URL }}/vulnerabilities/{{ vulnerability.vulnerability_id }}" target="_blank">
               {{ vulnerability.vulnerability_id }}
               <i class="fa-solid fa-up-right-from-square is-small"></i>
             </a>

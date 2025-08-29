@@ -163,11 +163,11 @@ class ScanPipeCycloneDXPipesTest(TestCase):
 
     def test_scanpipe_cyclonedx_component_to_package_data(self):
         expected = {
+            "package_uid": "pkg:pypi/toml@0.10.2?extension=tar.gz",
             "name": "toml",
             "extracted_license_statement": "OFL-1.1\nApache-2.0",
             "version": "0.10.2",
             "extra_data": {
-                "bom_ref": "pkg:pypi/toml@0.10.2?extension=tar.gz",
                 "externalReferences": {
                     "advisories": ["https://cyclonedx.org/advisories"],
                     "bom": ["https://cyclonedx.org/bom"],
@@ -240,23 +240,35 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         packages = cyclonedx.resolve_cyclonedx_packages(input_location)
         self.assertEqual(62, len(packages))
 
+        self.assertEqual("asm89/stack-cors-1.3.0.0", packages[0]["package_uid"])
         extra_data = packages[0]["extra_data"]
-        self.assertEqual("asm89/stack-cors-1.3.0.0", extra_data["bom_ref"])
         expected_depends_on = [
             "symfony/http-foundation-5.4.16.0",
             "symfony/http-kernel-5.4.16.0",
         ]
         self.assertEqual(expected_depends_on, extra_data["depends_on"])
 
+    def test_scanpipe_cyclonedx_resolve_cyclonedx_packages_vulnerabilities(self):
+        input_location = self.data / "python-3.13.0-vulnerabilities.cdx.json"
+        packages = cyclonedx.resolve_cyclonedx_packages(input_location)
+        self.assertEqual(1, len(packages))
+
+        affected_by = packages[0]["affected_by_vulnerabilities"]
+        expected = [
+            {
+                "vulnerability_id": "CVE-2005-2541",
+                "summary": "Tar 1.15.1 does not properly warn the user when...",
+            }
+        ]
+        self.assertEqual(expected, affected_by)
+
     def test_scanpipe_cyclonedx_resolve_cyclonedx_packages_pre_validation(self):
         # This SBOM includes multiple deserialization issues that are "fixed"
         # by the pre-validation cleanup.
         input_location = self.data / "broken_sbom.json"
         package_data = cyclonedx.resolve_cyclonedx_packages(input_location)
-        self.assertEqual(
-            [{"extra_data": {"bom_ref": "pkg:pypi/asgiref@3.3.0"}, "name": "asgiref"}],
-            package_data,
-        )
+        expected = [{"name": "asgiref", "package_uid": "pkg:pypi/asgiref@3.3.0"}]
+        self.assertEqual(expected, package_data)
 
     def test_scanpipe_cyclonedx_cleanup_components_properties(self):
         cyclonedx_document_json = {
