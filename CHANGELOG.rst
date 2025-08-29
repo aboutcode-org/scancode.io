@@ -4,6 +4,13 @@ Changelog
 v35.4.0 (unreleased)
 --------------------
 
+- Use deterministic UID/GID in Dockerfile.
+  A temporary ``chown`` service is now started in the ``docker-compose`` stack
+  to fix the permissions. This process is only fully run once.
+  You may manually run this process using the following:
+  ``$ chown -R 1000:1000 /var/scancodeio/``
+  https://github.com/aboutcode-org/scancode.io/issues/1555
+
 - Resolve and load dependencies from SPDX SBOMs.
   https://github.com/aboutcode-org/scancode.io/issues/1145
 
