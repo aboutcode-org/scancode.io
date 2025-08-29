@@ -8,6 +8,11 @@ services:
       - db_data:/var/lib/postgresql/data/
     shm_size: "1gb"
     restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: docker.io/library/redis:latest
@@ -18,12 +23,45 @@ services:
       - redis_data:/data
     restart: always
 
+  # This service is responsible for ensuring the correct ownership of files
+  # in the shared volumes used by the application (static and workspace).
+  # It ensures that all files inside the `/var/scancodeio/` directory are owned
+  # by the user and group with the UID and GID defined in the environment variables
+  # APP_UID and APP_GID, which default to 1000 if not set.
+  #
+  # The service runs only once (due to "restart: no") and performs a `chown` operation
+  # to change the ownership of the static and workspace directories, ensuring proper
+  # file access rights for the running application containers.
+  #
+  # Volumes mounted:
+  # - static: Ensures the ownership of static files in the /var/scancodeio/static directory
+  # - media: Ensures the ownership of media files in the /var/scancodeio/workspace directory
+  #
+  # Notes: This service can be removed in future ScanCode.io release.
+  chown:
+    image: docker.io/library/alpine:latest
+    restart: "no"
+    command: sh -c "
+      if [ ! -f /var/scancodeio/.chown_done ]; then
+        chown -R ${APP_UID:-1000}:${APP_GID:-1000} /var/scancodeio/ &&
+        touch /var/scancodeio/.chown_done;
+        echo 'Chown applied!';
+      else
+        echo 'Chown already applied, skipping...';
+      fi"
+    env_file:
+      - docker.env
+    volumes:
+      - static:/var/scancodeio/static/
+      - workspace:/var/scancodeio/workspace/
+
   web:
     build: .
-    command: wait-for-it --strict --timeout=60 db:5432 -- sh -c "
+    command: sh -c "
         ./manage.py migrate &&
         ./manage.py collectstatic --no-input --verbosity 0 --clear &&
-        gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 --workers 8 ${GUNICORN_RELOAD_FLAG:-}"
+        gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 \
+          --workers 8 ${GUNICORN_RELOAD_FLAG:-}"
     env_file:
       - docker.env
     expose:
@@ -34,12 +72,17 @@ services:
       - workspace:/var/scancodeio/workspace/
       - static:/var/scancodeio/static/
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      chown:
+        condition: service_completed_successfully
 
   worker:
     build: .
     # Ensure that potential db migrations run first by waiting until "web" is up
-    command: wait-for-it --strict --timeout=120 web:8000 -- sh -c "
+    command: wait-for-it --strict --timeout=600 web:8000 -- sh -c "
         ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker
                              --queue-class scancodeio.worker.ScanCodeIOQueue
                              --verbosity 1"
@@ -53,6 +96,7 @@ services:
       - redis
       - db
       - web
+      - chown
 
   nginx:
     image: docker.io/library/nginx:alpine
