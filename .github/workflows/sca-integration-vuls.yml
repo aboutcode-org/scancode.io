@@ -48,7 +48,7 @@ jobs:
         run: |
           docker run --rm \
             -v $PWD:/workdir \
-            vuls/vuls scan \
+            vuls/vuls report \
             -config=/workdir/config.toml \
             -format-cyclonedx-json
 
