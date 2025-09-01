@@ -50,3 +50,8 @@ jobs:
             -v $PWD/vuls:/vuls \
             -e VULS_RESULT_DIR=/vuls/result \
             vuls/vuls report -config=/vuls/config.toml -format-cyclonedx-json
+
+      - name: DEBUG
+        run: |
+          ls -la /vuls/ 
+          ls -la /vuls/result
