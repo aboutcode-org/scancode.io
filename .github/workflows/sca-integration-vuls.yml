@@ -17,25 +17,35 @@ jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+#      - name: Checkout repository
+#        uses: actions/checkout@v4
 
-      - name: Prepare Vuls config.toml
+      - name: Install dependencies
         run: |
-          cat > config.toml <<'EOF'
-          [servers]
+          sudo apt-get update
+          sudo apt-get install -y git curl unzip sudo
 
-          [servers.localhost]
-          host = "localhost"
-          port = "local"
+      - name: Install Vuls
+        run: |
+          git clone https://github.com/vulsio/vulsctl.git
+          cd vulsctl/docker/
+
+      - name: Create Vuls config
+        run: |
+          cat <<EOF > config.toml
+          [servers]
+          [servers.local]
+          host = "127.0.0.1"
+          user = "runner"
+          password = ""
+          sudo = true
           EOF
 
+#      - name: Run Vuls configtest
+#        run: ./scan.sh configtest
+
       - name: Run Vuls scan
-        run: |
-          docker run --rm \
-            -v $PWD:/workdir \
-            vuls/vuls configtest \
-            -config=/workdir/config.toml
+        run: ./scan.sh local
 
 #      - name: Prepare Vuls config.toml
 #        run: |
