@@ -41,7 +41,7 @@ jobs:
         run: vuls scan -config ./vuls/config.toml
 
       - name: Run Vuls report as CycloneDX
-        run: vuls report -config ./vuls/config.toml -format-cyclonedx-json -debug -results-dir=results
+        run: vuls report -config ./vuls/config.toml -format-cyclonedx-json -debug -results-dir=/home/runner/work/scancode.io/scancode.io/results
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
