@@ -19,7 +19,6 @@ jobs:
     steps:
       - name: Install Vuls
         run: |
-#          curl -sL https://github.com/future-architect/vuls/releases/download/v0.27.0/vuls_0.27.0_linux_amd64.tar.gz \
           curl -sL https://github.com/future-architect/vuls/releases/download/v0.33.4/vuls_0.33.4_linux_amd64.tar.gz \
           | tar -xz
           sudo mv vuls /usr/local/bin/vuls
@@ -50,50 +49,3 @@ jobs:
         with:
           name: results
           path: results
-
-
-#      - name: Prepare Vuls config.toml
-#        run: |
-#          mkdir -p vuls/
-#          cat > vuls/config.toml <<'EOF'
-#          [servers]
-#
-#          [servers.localhost]
-#          host = "localhost"
-#          port = "local"
-#          EOF
-#
-#      - name: Run Vuls configtest
-#        run: |
-#          docker run --rm \
-#            -v $PWD/vuls:/vuls \
-#            vuls/vuls configtest -config=/vuls/config.toml
-#
-#      - name: Run Vuls scan
-#        run: |
-#          mkdir -p $PWD/vuls/result
-#          docker run --rm \
-#            -v $PWD/vuls:/vuls \
-#            -e VULS_RESULT_DIR=/vuls/result \
-#            -e HOME=/vuls \
-#            --user $(id -u):$(id -g) \
-#            vuls/vuls scan -config=/vuls/config.toml
-#
-#      - name: Run Vuls report
-#        run: |
-#          docker run --rm \
-#            -v $PWD/vuls:/vuls \
-#            -e VULS_RESULT_DIR=/vuls/result \
-#            vuls/vuls report -config=/vuls/config.toml -format-cyclonedx-json
-#
-#      - name: DEBUG
-#        run: |
-#          ls -la vuls/
-#          ls -la vuls/result
-##          ls -la vuls/results
-#
-#      - name: Upload SBOM artifact
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: vuls
-#          path: vuls
