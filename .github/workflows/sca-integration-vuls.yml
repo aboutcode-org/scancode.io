@@ -22,37 +22,54 @@ jobs:
 
       - name: Prepare Vuls config.toml
         run: |
-          mkdir -p ./vuls-config
-          cat > ./vuls-config/config.toml <<'EOF'
+          cat > config.toml <<'EOF'
           [servers]
 
-          [servers.cpescan]
-          type = "pseudo"
-          cpeNames = [
-              "cpe:/o:fortinet:fortios:4.3.0",
-          ]
+          [servers.localhost]
+          host = "localhost"
+          port = "local"
           EOF
 
-      # Pull Vuls image
-      - name: Pull Vuls Docker image
-        run: docker pull vuls/vuls:latest
-
-      # Run Vuls scan
       - name: Run Vuls scan
         run: |
-          mkdir -p ./results
           docker run --rm \
             -v $PWD:/workdir \
-            -w /workdir \
-            -u $(id -u):$(id -g) \
-            -e VULS_HOME=/workdir/.vuls \
-            vuls/vuls scan \
-            -config=/workdir/vuls-config/config.toml \
-            -results-dir=/workdir/results
+            vuls/vuls configtest \
+            -config=/workdir/config.toml
 
-      - name: Upload Vuls scan report
-        uses: actions/upload-artifact@v4
-        with:
-          name: vuls-scan-report
-          path: results
-          retention-days: 20
+#      - name: Prepare Vuls config.toml
+#        run: |
+#          mkdir -p ./vuls-config
+#          cat > ./vuls-config/config.toml <<'EOF'
+#          [servers]
+#
+#          [servers.cpescan]
+#          type = "pseudo"
+#          cpeNames = [
+#              "cpe:/o:fortinet:fortios:4.3.0",
+#          ]
+#          EOF
+
+#      # Pull Vuls image
+#      - name: Pull Vuls Docker image
+#        run: docker pull vuls/vuls:latest
+#
+#      # Run Vuls scan
+#      - name: Run Vuls scan
+#        run: |
+#          mkdir -p ./results
+#          docker run --rm \
+#            -v $PWD:/workdir \
+#            -w /workdir \
+#            -u $(id -u):$(id -g) \
+#            -e VULS_HOME=/workdir/.vuls \
+#            vuls/vuls scan \
+#            -config=/workdir/vuls-config/config.toml \
+#            -results-dir=/workdir/results
+#
+#      - name: Upload Vuls scan report
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: vuls-scan-report
+#          path: results
+#          retention-days: 20
