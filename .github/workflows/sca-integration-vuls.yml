@@ -19,32 +19,34 @@ jobs:
     steps:
       - name: Prepare Vuls config.toml
         run: |
-          cat > config.toml <<'EOF'
+          mkdir -p vuls
+          cat > vuls/config.toml <<'EOF'
           [servers]
-
+          
           [servers.localhost]
           host = "localhost"
           port = "local"
+          user = "runner"
+          sudo = true
           EOF
 
-      - name: Check config
+      - name: Run Vuls configtest
         run: |
           docker run --rm \
-            -v $PWD:/workdir \
-            vuls/vuls configtest \
-            -config=/workdir/config.toml
+            -v $PWD/vuls:/vuls \
+            vuls/vuls configtest -config=/vuls/config.toml
 
       - name: Run Vuls scan
         run: |
+          mkdir -p $PWD/vuls/result
           docker run --rm \
-            -v $PWD:/workdir \
-            vuls/vuls scan \
-            -config=/workdir/config.toml
+            -v $PWD/vuls:/vuls \
+            -e VULS_RESULT_DIR=/vuls/result \
+            vuls/vuls scan -config=/vuls/config.toml
 
       - name: Run Vuls report
         run: |
           docker run --rm \
-            -v $PWD:/workdir \
-            vuls/vuls report \
-            -config=/workdir/config.toml \
-            -format-cyclonedx-json
+            -v $PWD/vuls:/vuls \
+            -e VULS_RESULT_DIR=/vuls/result \
+            vuls/vuls report -config=/vuls/config.toml -format-cyclonedx-json
