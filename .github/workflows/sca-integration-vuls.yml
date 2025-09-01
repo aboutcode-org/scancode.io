@@ -11,7 +11,8 @@ permissions:
   contents: read
 
 env:
-  IMAGE_REFERENCE: "alpine:3.17"
+#  IMAGE_REFERENCE: "alpine:3.17"
+  VULS_VERSION: "0.33.4"
 
 jobs:
   generate-and-load-sbom:
@@ -19,11 +20,11 @@ jobs:
     steps:
       - name: Install Vuls
         run: |
-          curl -sL https://github.com/future-architect/vuls/releases/download/v0.33.4/vuls_0.33.4_linux_amd64.tar.gz \
+          curl -sL https://github.com/future-architect/vuls/releases/download/v${{ env.IMAGE_REFERENCE }}/vuls_${{ env.IMAGE_REFERENCE }}_linux_amd64.tar.gz \
           | tar -xz
           sudo mv vuls /usr/local/bin/vuls
 
-      - name: Create config.toml
+      - name: Create Vuls config.toml
         run: |
           mkdir -p vuls
           cat > vuls/config.toml <<EOF
@@ -31,18 +32,16 @@ jobs:
           [servers.localhost]
           host = "localhost"
           port = "local"
-          user = "runner"
-          sudo = true
           EOF
 
-      - name: Run configtest
+      - name: Run Vuls configtest
         run: vuls configtest -config ./vuls/config.toml
 
-      - name: Run scan
+      - name: Run Vuls scan
         run: vuls scan -config ./vuls/config.toml
 
-      - name: Run report
-        run: vuls report -config ./vuls/config.toml -format-cyclonedx-json
+      - name: Run Vuls report as CycloneDX
+        run: vuls report -config ./vuls/config.toml -format-cyclonedx-json -debug -results-dir=results
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
