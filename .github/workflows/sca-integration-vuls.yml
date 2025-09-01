@@ -30,6 +30,7 @@ jobs:
           [servers]
           [servers.localhost]
           host = "localhost"
+          port = "local"
           user = "runner"
           sudo = true
           EOF
