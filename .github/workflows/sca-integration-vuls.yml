@@ -35,13 +35,13 @@ jobs:
           EOF
 
       - name: Run configtest
-        run: vuls configtest -c ./vuls/config.toml
+        run: vuls configtest -config ./vuls/config.toml
 
       - name: Run scan
-        run: vuls scan -c ./vuls/config.toml
+        run: vuls scan -config ./vuls/config.toml
 
       - name: Run report
-        run: vuls report -c ./vuls/config.toml -format-cyclonedx-json
+        run: vuls report -config ./vuls/config.toml -format-cyclonedx-json
 
 #      - name: Prepare Vuls config.toml
 #        run: |
