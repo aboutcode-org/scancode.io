@@ -17,9 +17,6 @@ jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
     steps:
-#      - name: Checkout repository
-#        uses: actions/checkout@v4
-
       - name: Prepare Vuls config.toml
         run: |
           cat > config.toml <<'EOF'
@@ -43,12 +40,11 @@ jobs:
             -v $PWD:/workdir \
             vuls/vuls scan \
             -config=/workdir/config.toml
-            -results-dir=/workdir/results
+            -results-dir=/workdir
 
       - name: DEBUG
         run: |
           ls -la
-          ls -la results
 
       - name: Report Vuls scan
         run: |
