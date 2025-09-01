@@ -44,6 +44,18 @@ jobs:
             vuls/vuls scan \
             -config=/workdir/config.toml
 
+      - name: Report Vuls scan
+        run: |
+          docker run --rm \
+            -v $PWD:/workdir \
+            vuls/vuls scan \
+            -config=/workdir/config.toml \
+            -format-cyclonedx-json
+
+      - name: DEBUG
+        run: |
+          ls -la
+
 #      - name: Prepare Vuls config.toml
 #        run: |
 #          mkdir -p ./vuls-config
