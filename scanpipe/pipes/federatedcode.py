@@ -31,6 +31,7 @@ from urllib.parse import urljoin
 from django.conf import settings
 
 import requests
+import saneyaml
 from git import Repo
 from packageurl import PackageURL
 
@@ -192,9 +193,7 @@ def commit_and_push_changes(
     """
     files_to_commit = [file_to_commit]
     commit_changes(
-        repo=repo,
-        files_to_commit=files_to_commit,
-        commit_message=commit_message
+        repo=repo, files_to_commit=files_to_commit, commit_message=commit_message
     )
     push_changes(
         repo=repo,
@@ -205,3 +204,14 @@ def commit_and_push_changes(
 def delete_local_clone(repo):
     """Remove local clone."""
     shutil.rmtree(repo.working_dir)
+
+
+def write_data_as_yaml(base_path, file_path, data):
+    """
+    Write the ``data`` as YAML to the ``file_path`` in the ``base_path`` root directory.
+    Create directories in the path as needed.
+    """
+    write_to = Path(base_path) / Path(file_path)
+    write_to.parent.mkdir(parents=True, exist_ok=True)
+    with open(write_to, encoding="utf-8", mode="w") as f:
+        f.write(saneyaml.dump(data))
