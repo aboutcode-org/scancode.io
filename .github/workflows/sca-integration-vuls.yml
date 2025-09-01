@@ -40,13 +40,8 @@ jobs:
             -v $PWD:/workdir \
             vuls/vuls scan \
             -config=/workdir/config.toml
-            -results-dir=/workdir
 
-      - name: DEBUG
-        run: |
-          ls -la
-
-      - name: Report Vuls scan
+      - name: Run Vuls report
         run: |
           docker run --rm \
             -v $PWD:/workdir \
