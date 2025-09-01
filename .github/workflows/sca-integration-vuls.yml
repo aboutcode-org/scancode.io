@@ -53,5 +53,5 @@ jobs:
 
       - name: DEBUG
         run: |
-          ls -la /vuls/ 
-          ls -la /vuls/result
+          ls -la vuls
+          ls -la vuls/result
