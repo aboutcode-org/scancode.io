@@ -32,6 +32,8 @@ jobs:
           [servers.localhost]
           host = "localhost"
           port = "local"
+          user = "runner"
+          sudo = true
           EOF
 
       - name: Run Vuls configtest
