@@ -20,7 +20,7 @@ jobs:
     steps:
       - name: Install Vuls
         run: |
-          curl -sL https://github.com/future-architect/vuls/releases/download/v${{ env.IMAGE_REFERENCE }}/vuls_${{ env.IMAGE_REFERENCE }}_linux_amd64.tar.gz \
+          curl -sL https://github.com/future-architect/vuls/releases/download/v${{ env.VULS_VERSION }}/vuls_${{ env.VULS_VERSION }}_linux_amd64.tar.gz \
           | tar -xz
           sudo mv vuls /usr/local/bin/vuls
 
