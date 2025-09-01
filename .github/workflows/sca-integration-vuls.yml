@@ -20,32 +20,29 @@ jobs:
 #      - name: Checkout repository
 #        uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Prepare Vuls config.toml
         run: |
-          sudo apt-get update
-          sudo apt-get install -y git curl unzip sudo
-
-      - name: Install Vuls
-        run: |
-          git clone https://github.com/vulsio/vulsctl.git
-          cd vulsctl/docker/
-
-      - name: Create Vuls config
-        run: |
-          cat <<EOF > config.toml
+          cat > config.toml <<'EOF'
           [servers]
-          [servers.local]
-          host = "127.0.0.1"
-          user = "runner"
-          password = ""
-          sudo = true
+
+          [servers.localhost]
+          host = "localhost"
+          port = "local"
           EOF
 
-#      - name: Run Vuls configtest
-#        run: ./scan.sh configtest
+      - name: Check config
+        run: |
+          docker run --rm \
+            -v $PWD:/workdir \
+            vuls/vuls configtest \
+            -config=/workdir/config.toml
 
       - name: Run Vuls scan
-        run: ./scan.sh local
+        run: |
+          docker run --rm \
+            -v $PWD:/workdir \
+            vuls/vuls scan \
+            -config=/workdir/config.toml
 
 #      - name: Prepare Vuls config.toml
 #        run: |
