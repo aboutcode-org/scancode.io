@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Prepare Vuls config.toml
         run: |
-          mkdir -p vuls
+          mkdir -p vuls/result
           cat > vuls/config.toml <<'EOF'
           [servers]
           
@@ -39,7 +39,6 @@ jobs:
           mkdir -p $PWD/vuls/result
           docker run --rm \
             -v $PWD/vuls:/vuls \
-            --user $(id -u):$(id -g) \
             -e VULS_RESULT_DIR=/vuls/result \
             vuls/vuls scan -config=/vuls/config.toml
 
