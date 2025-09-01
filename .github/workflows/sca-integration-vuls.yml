@@ -23,10 +23,10 @@ jobs:
           curl -sL https://github.com/future-architect/vuls/releases/download/v${{ env.VULS_VERSION }}/vuls_${{ env.VULS_VERSION }}_linux_amd64.tar.gz \
           | tar -xz
           sudo mv vuls /usr/local/bin/vuls
+          mkdir -p $PWD/vuls/results
 
       - name: Create Vuls config.toml
         run: |
-          mkdir -p vuls
           cat > vuls/config.toml <<EOF
           [servers]
           [servers.localhost]
@@ -38,13 +38,13 @@ jobs:
         run: vuls configtest -config ./vuls/config.toml
 
       - name: Run Vuls scan
-        run: vuls scan -config ./vuls/config.toml
+        run: vuls scan -config ./vuls/config.toml -results-dir ./vuls/results
 
       - name: Run Vuls report as CycloneDX
-        run: vuls report -config ./vuls/config.toml -format-cyclonedx-json -debug -results-dir=/home/runner/work/scancode.io/scancode.io/results
+        run: vuls report -config ./vuls/config.toml -results-dir ./vuls/results -format-cyclonedx-json
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
         with:
           name: results
-          path: results
+          path: vuls/results
