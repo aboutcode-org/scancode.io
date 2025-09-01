@@ -17,7 +17,7 @@ jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
     container:
-      image: ubuntu:24.04.1
+      image: ubuntu:24.04.2
     steps:
       - name: Prepare Vuls config.toml
         run: |
@@ -28,8 +28,6 @@ jobs:
           [servers.localhost]
           host = "localhost"
           port = "local"
-#          user = "runner"
-#          sudo = true
           EOF
 
       - name: Run Vuls configtest
