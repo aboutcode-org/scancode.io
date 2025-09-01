@@ -38,10 +38,10 @@ jobs:
         run: vuls configtest -config ./vuls/config.toml
 
       - name: Run Vuls scan
-        run: vuls scan -config ./vuls/config.toml -results-dir ./vuls/results
+        run: vuls scan -config ./vuls/config.toml -results-dir $PWD/vuls/results
 
       - name: Run Vuls report as CycloneDX
-        run: vuls report -config ./vuls/config.toml -results-dir ./vuls/results -format-cyclonedx-json
+        run: vuls report -config ./vuls/config.toml -results-dir $PWD/vuls/results -format-cyclonedx-json
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
