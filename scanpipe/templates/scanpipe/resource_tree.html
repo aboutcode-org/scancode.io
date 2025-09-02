@@ -106,7 +106,6 @@
         const folderNode = chevron.closest("[data-folder]");
         const targetId = folderNode.dataset.target;
         const url = folderNode.dataset.url;
-        const icon = chevron.querySelector("i");
         const target = document.getElementById("dir-" + targetId);
 
         if (target.dataset.loaded === "true") {
@@ -122,6 +121,26 @@
         chevron.classList.toggle("rotated");
         e.stopPropagation();
         return;
+      }
+
+      const folderMeta = e.target.closest(".folder-meta");
+      if (folderMeta) {
+        const folderNode = folderMeta.closest("[data-folder]");
+        if (folderNode && folderNode.dataset.target) {
+          const chevron = folderNode.querySelector("[data-chevron]");
+          const target = document.getElementById("dir-" + folderNode.dataset.target);
+
+          if (target.classList.contains("is-hidden")) {
+            target.classList.remove("is-hidden");
+            chevron.classList.add("rotated");
+            if (target.dataset.loaded !== "true") {
+              const response = await fetch(folderNode.dataset.url + "&tree_panel=true");
+              target.innerHTML = await response.text();
+              target.dataset.loaded = "true";
+              htmx.process(target);
+            }
+          }
+        }
       }
     });
 

@@ -6,7 +6,7 @@
           <span class="icon is-small chevron mr-1{% if not node.has_children %} is-invisible{% endif %} is-clickable is-flex is-align-items-center" data-chevron>
             <i class="fas fa-chevron-right"></i>
           </span>
-          <span class="is-flex is-align-items-center folder-meta is-clickable" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ node.path }}" hx-target="#right-pane">
+          <span class="is-flex is-align-items-center folder-meta is-clickable" data-folder-click hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ node.path }}" hx-target="#right-pane">
             <span class="icon is-small mr-1">
               <i class="fas fa-folder"></i>
             </span>
