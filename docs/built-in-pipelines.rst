@@ -48,11 +48,44 @@ Analyse Docker Windows Image
 
 .. _pipeline_benchmark_purls:
 
-Benchmark Purls (addon)
+Benchmark PURLs (addon)
 -----------------------
+
+To check an **SBOM against a list of expected Package URLs (PURLs)**:
+
+1. **Create a new project** and provide two inputs:
+
+   * The SBOM file you want to check.
+   * A list of expected PURLs in a ``*-purls.txt`` file with one PURL per line.
+
+     .. tip:: You may also flag any filename using the ``purls`` input tag.
+
+2. **Run the pipelines**:
+
+   * Select and run the ``load_sbom`` pipeline to load the SBOM.
+   * Run the ``benchmark_purls`` pipeline to validate against the expected PURLs.
+
+3. **Download the results** from the "output" section of the project.
+
+The output file contains only the differences between the discovered PURLs and
+the expected PURLs:
+
+* Lines starting with ``-`` are missing from the project.
+* Lines starting with ``+`` are unexpected in the project.
+
+.. note::
+  The ``load_sbom`` pipeline is provided as an example to benchmark external
+  tools using SBOMs as inputs. You can also run ``benchmark_purls`` directly
+  after any ScanCode.io pipeline to validate the discovered PURLs.
+
+.. tip::
+  You can provide multiple expected PURLs files.
+
+
 .. autoclass:: scanpipe.pipelines.benchmark_purls.BenchmarkPurls()
     :members:
     :member-order: bysource
+
 
 .. _pipeline_collect_strings_gettext:
 
