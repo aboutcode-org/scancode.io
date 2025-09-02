@@ -142,6 +142,22 @@
           }
         }
       }
+
+      const expandLink = e.target.closest(".expand-in-tree");
+      if (expandLink) {
+        e.preventDefault();
+        const path = expandLink.getAttribute("data-path");
+        const leftPane = document.getElementById("left-pane");
+        if (!leftPane) return;
+        const folderNode = leftPane.querySelector(`[data-folder][data-path="${path}"]`);
+        if (folderNode) {
+          const chevron = folderNode.querySelector("[data-chevron]");
+          if (chevron && !chevron.classList.contains("rotated")) {
+            chevron.click();
+          }
+          folderNode.scrollIntoView({behavior: "smooth", block: "center"});
+        }
+      }
     });
 
     document.addEventListener("DOMContentLoaded", function() {

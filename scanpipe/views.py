@@ -2818,6 +2818,7 @@ class CodebaseResourceTableView(
             super()
             .get_queryset()
             .filter(parent_path=path)
+            .with_has_children()
             .only(
                 "path",
                 "status",
