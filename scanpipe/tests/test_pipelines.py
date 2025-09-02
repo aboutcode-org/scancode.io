@@ -2000,3 +2000,28 @@ class PipelinesIntegrationTest(TestCase):
         run.refresh_from_db()
         self.assertIn("pkg:npm/csvtojson@2.0.10 ['release_date'", run.log)
         self.assertIn("1 discovered package enriched with the PurlDB.", run.log)
+
+    def test_scanpipe_benchmark_purls_pipeline_integration(self):
+        project1 = make_project(name="Analysis")
+
+        file_location = self.data / "benchmark" / "scancodeio_alpine_3.22.1.cdx.json"
+        project1.copy_input_from(file_location)
+        file_location = self.data / "benchmark" / "alpine-3.22.1-expected-purls.txt"
+        project1.copy_input_from(file_location)
+
+        run = project1.add_pipeline(pipeline_name="load_sbom")
+        pipeline = run.make_pipeline_instance()
+        pipeline.execute()
+        self.assertEqual(2, project1.codebaseresources.count())
+        self.assertEqual(16, project1.discoveredpackages.count())
+
+        run = project1.add_pipeline(pipeline_name="benchmark_purls")
+        pipeline = run.make_pipeline_instance()
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        result_file = project1.get_latest_output(
+            filename="benchmark_purls", extension="txt"
+        )
+        expected_file = self.data / "benchmark" / "alpine-3.22.1-expected-benchmark.txt"
+        self.assertEqual(expected_file.read_text(), result_file.read_text())
