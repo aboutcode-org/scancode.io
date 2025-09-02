@@ -46,7 +46,7 @@ Analyse Docker Windows Image
     :members:
     :member-order: bysource
 
-.. _analyze_benchmark_purls:
+.. _pipeline_benchmark_purls:
 
 Benchmark Purls (addon)
 -----------------------

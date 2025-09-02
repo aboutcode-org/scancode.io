@@ -1147,12 +1147,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         filename = f"{name}-{filename_now()}.{extension}"
         return self.output_path / filename
 
-    def get_latest_output(self, filename):
+    def get_latest_output(self, filename, extension="json"):
         """
         Return the latest output file with the "filename" prefix, for example
         "scancode-<timestamp>.json".
         """
-        output_files = sorted(self.output_path.glob(f"*{filename}*.json"))
+        output_files = sorted(self.output_path.glob(f"*{filename}*.{extension}"))
         if output_files:
             return output_files[-1]
 
