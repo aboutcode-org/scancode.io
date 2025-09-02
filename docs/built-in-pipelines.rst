@@ -46,6 +46,14 @@ Analyse Docker Windows Image
     :members:
     :member-order: bysource
 
+.. _analyze_benchmark_purls:
+
+Benchmark Purls (addon)
+-----------------------
+.. autoclass:: scanpipe.pipelines.benchmark_purls.BenchmarkPurls()
+    :members:
+    :member-order: bysource
+
 .. _pipeline_collect_strings_gettext:
 
 Collect string with Xgettext (addon)

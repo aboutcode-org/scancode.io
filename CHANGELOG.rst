@@ -17,6 +17,9 @@ v35.4.0 (unreleased)
 - Display the optional steps in the Pipelines autodoc.
   https://github.com/aboutcode-org/scancode.io/issues/1822
 
+- Add new ``benchmark_purls`` pipeline.
+  https://github.com/aboutcode-org/scancode.io/issues/1804
+
 v35.3.0 (2025-08-20)
 --------------------
 
