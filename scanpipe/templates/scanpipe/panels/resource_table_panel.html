@@ -23,11 +23,7 @@
           <tr>
             <td class="break-all" style="min-width: 200px;">
               {% if resource.is_dir %}
-                {% if resource.has_children %}
-                  <a href="#" class="expand-in-tree" data-path="{{ resource.path }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ resource.path }}" hx-target="#right-pane">{{ resource.path }}</a>
-                {% else %}
-                  {{ resource.path }}
-                {% endif %}
+                <a href="#" class="expand-in-tree" data-path="{{ resource.path }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ resource.path }}" hx-target="#right-pane">{{ resource.path }}</a>
               {% else %}
                 <a href="{% url 'resource_detail' project.slug resource.path %}">{{ resource.path }}</a>
               {% endif %}

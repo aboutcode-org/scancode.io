@@ -178,29 +178,18 @@
         
         const container = document.querySelector('.resizable-container');
         const containerRect = container.getBoundingClientRect();
-        const newLeftWidth = e.clientX - containerRect.left;
+        let newLeftWidth = e.clientX - containerRect.left;
         const containerWidth = containerRect.width;
         const resizerWidth = 5;
-        
+        const minLeftWidth = 200;
+        if (newLeftWidth < minLeftWidth) newLeftWidth = minLeftWidth;
+        if (newLeftWidth > containerWidth - resizerWidth) newLeftWidth = containerWidth - resizerWidth;
+
         const leftPercent = (newLeftWidth / containerWidth) * 100;
         const rightPercent = ((containerWidth - newLeftWidth - resizerWidth) / containerWidth) * 100;
-        
-        if (leftPercent <= 2) {
-          leftPane.style.flexBasis = '0%';
-          rightPane.style.flexBasis = '100%';
-          leftPane.classList.add('collapsed');
-          rightPane.classList.remove('collapsed');
-        } else if (rightPercent <= 2) {
-          leftPane.style.flexBasis = '100%';
-          rightPane.style.flexBasis = '0%';
-          leftPane.classList.remove('collapsed');
-          rightPane.classList.add('collapsed');
-        } else {
-          leftPane.style.flexBasis = leftPercent + '%';
-          rightPane.style.flexBasis = rightPercent + '%';
-          leftPane.classList.remove('collapsed');
-          rightPane.classList.remove('collapsed');
-        }
+
+        leftPane.style.flexBasis = leftPercent + '%';
+        rightPane.style.flexBasis = rightPercent + '%';
       });
 
       document.addEventListener('mouseup', function() {
