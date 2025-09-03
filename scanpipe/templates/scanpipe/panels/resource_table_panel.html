@@ -1,74 +1,47 @@
 {% load humanize %}
 
 {% if resources %}
-  <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+  <table class="table is-bordered is-striped is-narrow is-fullwidth">
     <thead class="is-sticky">
         <tr>
-          <th>Path</th>
-          <th>Status</th>
-          <th>Type</th>
-          <th>Size</th>
           <th>Name</th>
-          <th>Extension</th>
+          <th>Status</th>
           <th>Language</th>
-          <th>MIME Type</th>
-          <th>Tag</th>
           <th>License</th>
           <th>Alert</th>
-          <th>Packages</th>
         </tr>
       </thead>
       <tbody>
         {% for resource in resources %}
           <tr>
-            <td class="break-all" style="min-width: 200px;">
-              {% if resource.is_dir %}
-                <a href="#" class="expand-in-tree" data-path="{{ resource.path }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ resource.path }}" hx-target="#right-pane">{{ resource.path }}</a>
-              {% else %}
-                <a href="{% url 'resource_detail' project.slug resource.path %}">{{ resource.path }}</a>
-              {% endif %}
+            <td class="is-flex is-align-items-center break-all" style="min-width: 100px;">
+                <span class="icon is-small mr-2">
+                  {% if resource.is_dir %}
+                    <i class="fas fa-folder"></i>
+                  {% else %}
+                    <i class="far fa-file"></i>
+                  {% endif %}
+                </span>
+                {% if resource.is_dir %}
+                  <a href="#" class="expand-in-tree" data-path="{{ resource.path }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ resource.path }}" hx-target="#right-pane">{{ resource.name }}</a>
+                {% else %}
+                  <a href="{% url 'resource_detail' project.slug resource.path %}">{{ resource.name }}</a>
+                {% endif %}
+                {% if resource.tag %}
+                  <span class="tag is-rounded ml-2">{{ resource.tag }}</span>
+                {% endif %}
             </td>
             <td>
               {{ resource.status }}
             </td>
-            <td>
-              {{ resource.type }}
-            </td>
-            <td>
-              {% if resource.is_file %}
-                {{ resource.size|filesizeformat|default_if_none:"" }}
-              {% endif %}
-            </td>
-            <td class="break-all" style="min-width: 100px;">
-              {{ resource.name }}
-            </td>
-            <td>
-              {{ resource.extension }}
-            </td>
             <td class="break-all">
               {{ resource.programming_language }}
-            </td>
-            <td class="break-all">
-              {{ resource.mime_type }}
-            </td>
-            <td>
-              {{ resource.tag }}
             </td>
             <td>
               {{ resource.detected_license_expression }}
             </td>
             <td>
               {{ resource.compliance_alert }}
-            </td>
-            <td>
-              {% if resource.discovered_packages.all %}
-                {% for package in resource.discovered_packages.all|slice:":3" %}
-                  <a href="{% url 'project_packages' project.slug %}?purl={{ package.package_url }}">{{ package }}</a>{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-                {% if resource.discovered_packages.all|length > 3 %}
-                  +{{ resource.discovered_packages.all|length|add:"-3" }} more
-                {% endif %}
-              {% endif %}
             </td>
           </tr>
         {% endfor %}
@@ -84,7 +57,11 @@
         <a class="pagination-next" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ path }}&page={{ page_obj.next_page_number }}" hx-target="#right-pane">Next page</a>
       {% endif %}
       <ul class="pagination-list">
-        <li><span class="pagination-ellipsis">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+        <li>
+          <span class="pagination-ellipsis">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+          </span>
+        </li>
       </ul>
     </nav>
   {% endif %}

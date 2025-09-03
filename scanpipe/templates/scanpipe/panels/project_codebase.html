@@ -1,24 +1,26 @@
 <nav id="codebase-navigation" class="panel is-dark">
-  <p class="panel-heading is-flex is-justify-content-space-between is-align-items-center">
-    <span>Codebase</span>
+  <div class="panel-heading is-flex is-justify-content-space-between is-align-items-center">
+    <div>
+      <span>Codebase</span>
+      {% if current_dir and current_dir != "." %}
+        <span class="tag ml-2">
+          {% for dir_name, full_path in codebase_breadcrumbs.items %}
+            {% if not forloop.last %}
+              <a href="#" hx-target="#codebase-navigation" hx-swap="outerHTML" hx-get="{{ project_details_url }}codebase/?current_dir={{ full_path }}">
+                {{ dir_name }}
+              </a>
+              <span class="mr-1">/</span>
+            {% else %}
+              {{ dir_name }}/
+            {% endif %}
+          {% endfor %}
+        </span>
+      {% endif %}
+    </div>
     <a href="{% url 'codebase_resource_tree' project.slug %}" class="ml-2 has-text-white has-text-decoration-none">
       <i class="fa-solid fa-folder-tree mr-1"></i>Tree view
     </a>
-    {% if current_dir and current_dir != "." %}
-      <span class="tag ml-2">
-        {% for dir_name, full_path in codebase_breadcrumbs.items %}
-          {% if not forloop.last %}
-            <a href="#" hx-target="#codebase-navigation" hx-swap="outerHTML" hx-get="{{ project_details_url }}codebase/?current_dir={{ full_path }}">
-              {{ dir_name }}
-            </a>
-            <span class="mr-1">/</span>
-          {% else %}
-            {{ dir_name }}/
-          {% endif %}
-        {% endfor %}
-      </span>
-    {% endif %}
-  </p>
+  </div>
   {% for node in codebase_tree %}
     {% if node.is_dir %}
        <a class="panel-block" href="#" hx-target="#codebase-navigation" hx-swap="outerHTML" hx-get="{{ project_details_url }}codebase/?current_dir={{ node.location }}">

@@ -1,13 +1,9 @@
 {% extends "scanpipe/base.html" %}
 {% load static humanize %}
-{% block title %}ScanCode.io: {{ project.name }} - Resource Tree{% endblock %}
+{% block title %}ScanCode.io: {{ project.name }} - Resources tree{% endblock %}
 
 {% block extrahead %}
   <style>
-    .is-current {
-      background: rgba(128,128,128,0.10);
-      border-radius: 6px;
-    }
     .chevron {
       transition: transform 0.2s ease;
       display: inline-block;
@@ -15,13 +11,11 @@
     .chevron.rotated {
       transform: rotate(90deg);
     }
-    
     .resizable-container {
       display: flex;
       height: calc(100vh - 140px);
       margin: 0;
     }
-    
     .left-pane {
       min-width: 0;
       max-width: 100%;
@@ -30,37 +24,34 @@
       overflow-x: hidden;
       flex-basis: 25%;
       transition: opacity 0.2s ease;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    
     .left-pane.collapsed {
       opacity: 0;
       pointer-events: none;
     }
-    
     .resizer {
-      width: 5px;
+      width: 3px;
       background: #ddd;
       cursor: col-resize;
       position: relative;
       flex-shrink: 0;
     }
-    
     .resizer:hover {
       background: #bbb;
     }
-    
     .resizer::before {
       content: '';
       position: absolute;
       top: 50%;
-      left: 1px;
+      left: 0px;
       transform: translateY(-50%);
-      width: 3px;
+      width: 2px;
       height: 30px;
       background: #999;
       border-radius: 2px;
     }
-    
     .right-pane {
       flex: 1;
       overflow-y: auto;
@@ -68,10 +59,23 @@
       min-width: 0;
       transition: opacity 0.2s ease;
     }
-    
     .right-pane.collapsed {
       opacity: 0;
       pointer-events: none;
+    }
+    .right-pane a:hover {
+      text-decoration: underline;
+    }
+    .is-current, .is-current:hover {
+      background-color: var(--bulma-background-hover) !important;
+      border-radius: var(--bulma-radius);
+    }
+    .tree-node, .tree-node-file {
+      padding: .25rem 0 .25rem 0;
+    }
+    .tree-node:hover, .tree-node-file:hover {
+      background-color: var(--bulma-background);
+      border-radius: var(--bulma-radius);
     }
   </style>
 {% endblock %}
@@ -81,22 +85,20 @@
     {% include 'scanpipe/includes/navbar_header.html' %}
     <section class="mx-5">
       <div class="is-flex is-justify-content-space-between">
-        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Resource Tree" %}
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Resources tree" %}
       </div>
     </section>
   </div>
 
 <div class="resizable-container">
-  <div class="left-pane" id="left-pane">
-    <div id="resource-tree" class="p-4">
+  <div id="left-pane" class="left-pane px-2">
+    <div id="resource-tree">
       {% include "scanpipe/panels/codebase_tree_panel.html" with children=children path=path %}
     </div>
   </div>
-  <div class="resizer" id="resizer"></div>
-  <div class="right-pane" id="right-pane">
-    <div class="p-4">
-      {% include "scanpipe/panels/resource_table_panel.html" %}
-    </div>
+  <div id="resizer" class="resizer"></div>
+  <div id="right-pane" class="right-pane px-2">
+    {% include "scanpipe/panels/resource_table_panel.html" %}
   </div>
 </div>
 {% endblock %}

@@ -53,6 +53,13 @@
           <a href="{% url 'project_resources' project.slug %}">
             {{ project.codebaseresources_count|intcomma }}
           </a>
+          {% if project.codebaseresources_count > 1 %}
+            <a href="{% url 'codebase_resource_tree' project.slug %}">
+              <span class="icon">
+                <i class="fa-solid fa-folder-tree fa-sm"></i>
+              </span>
+            </a>
+          {% endif %}
         {% else %}
           <span>0</span>
         {% endif %}

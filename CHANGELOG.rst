@@ -20,6 +20,9 @@ v35.4.0 (unreleased)
 - Add new ``benchmark_purls`` pipeline.
   https://github.com/aboutcode-org/scancode.io/issues/1804
 
+- Add a Resources tree view.
+  https://github.com/aboutcode-org/scancode.io/issues/1682
+
 v35.3.0 (2025-08-20)
 --------------------
 
