@@ -4,6 +4,10 @@
 
 {% block extrahead %}
   <style>
+    .is-current {
+      background: rgba(128,128,128,0.10);
+      border-radius: 6px;
+    }
     .chevron {
       transition: transform 0.2s ease;
       display: inline-block;
@@ -127,6 +131,8 @@
       if (folderMeta) {
         const folderNode = folderMeta.closest("[data-folder]");
         if (folderNode && folderNode.dataset.target) {
+          document.querySelectorAll('.tree-node.is-current, .is-file.is-current').forEach(el => el.classList.remove('is-current'));
+          folderNode.classList.add('is-current');
           const chevron = folderNode.querySelector("[data-chevron]");
           const target = document.getElementById("dir-" + folderNode.dataset.target);
 
@@ -143,19 +149,25 @@
         }
       }
 
+      const fileNode = e.target.closest(".is-file[data-file]");
+      if (fileNode) {
+        document.querySelectorAll('.tree-node.is-current, .is-file.is-current').forEach(el => el.classList.remove('is-current'));
+        fileNode.classList.add('is-current');
+      }
+
       const expandLink = e.target.closest(".expand-in-tree");
       if (expandLink) {
         e.preventDefault();
         const path = expandLink.getAttribute("data-path");
         const leftPane = document.getElementById("left-pane");
         if (!leftPane) return;
-        const folderNode = leftPane.querySelector(`[data-folder][data-path="${path}"]`);
-        if (folderNode) {
-          const chevron = folderNode.querySelector("[data-chevron]");
-          if (chevron && !chevron.classList.contains("rotated")) {
-            chevron.click();
-          }
-          folderNode.scrollIntoView({behavior: "smooth", block: "center"});
+        let node = leftPane.querySelector(`[data-folder][data-path="${path}"], .is-file[data-file][data-path="${path}"]`);
+        if (node) {
+          document.querySelectorAll('.tree-node.is-current, .is-file.is-current').forEach(el => el.classList.remove('is-current'));
+          node.classList.add('is-current');
+          const chevron = node.querySelector("[data-chevron]");
+          if (chevron && !chevron.classList.contains("rotated")) chevron.click();
+          node.scrollIntoView({behavior: "smooth", block: "center"});
         }
       }
     });

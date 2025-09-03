@@ -17,7 +17,7 @@
           <div id="dir-{{ node.path|slugify }}" class="ml-4 is-hidden" data-loaded="false"></div>
         {% endif %}
       {% else %}
-        <div class="is-flex is-align-items-center ml-5 is-clickable" data-file data-path="{{ node.path }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ node.path }}" hx-target="#right-pane">
+        <div class="is-flex is-align-items-center ml-5 is-clickable is-file" data-file data-path="{{ node.path }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ node.path }}" hx-target="#right-pane">
           <span class="icon is-small mr-1">
             <i class="far fa-file"></i>
           </span>
