@@ -1,0 +1,30 @@
+name: Generate SBOM with ORT and load into ScanCode.io
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_REFERENCE: "python:3.13.0-slim"
+
+jobs:
+  generate-and-load-sbom:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Create requirements.txt
+        run: |
+          cat << 'EOF' > requirements.txt
+          amqp==5.1.1
+          appdirs==1.4.4
+          asgiref==3.5.2
+          urllib3==1.26.0
+          EOF
+
+      - name: Run GitHub Action for ORT
+        uses: oss-review-toolkit/ort-ci-github-action@v1
