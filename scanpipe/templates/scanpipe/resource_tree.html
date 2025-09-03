@@ -1,6 +1,6 @@
 {% extends "scanpipe/base.html" %}
 {% load static humanize %}
-{% block title %}ScanCode.io: {{ project.name }} - Resources (tree view){% endblock %}
+{% block title %}ScanCode.io: {{ project.name }} - Resources tree{% endblock %}
 
 {% block extrahead %}
   <style>
@@ -85,7 +85,7 @@
     {% include 'scanpipe/includes/navbar_header.html' %}
     <section class="mx-5">
       <div class="is-flex is-justify-content-space-between">
-        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Resources (tree view)" %}
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Resources tree" %}
       </div>
     </section>
   </div>

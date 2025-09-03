@@ -50,7 +50,7 @@
       </div>
 
       {% if object_list %}
-        {% include 'scanpipe/includes/project_list_table.html' with projects=object_list %}
+        {% include 'scanpipe/tables/project_list_table.html' with projects=object_list %}
       {% else %}
         <article class="box has-text-centered border-dashed">
           {% if filter.is_active %}
