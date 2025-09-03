@@ -1,6 +1,9 @@
 <nav id="codebase-navigation" class="panel is-dark">
-  <p class="panel-heading">
-    Codebase
+  <p class="panel-heading is-flex is-justify-content-space-between is-align-items-center">
+    <span>Codebase</span>
+    <a href="{% url 'codebase_resource_tree' project.slug %}" class="ml-2 has-text-white has-text-decoration-none">
+      <i class="fa-solid fa-folder-tree mr-1"></i>Tree view
+    </a>
     {% if current_dir and current_dir != "." %}
       <span class="tag ml-2">
         {% for dir_name, full_path in codebase_breadcrumbs.items %}

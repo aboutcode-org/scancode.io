@@ -1,0 +1,104 @@
+{% load humanize %}
+
+{% if resources %}
+  <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+    <thead class="is-sticky">
+        <tr>
+          <th>Path</th>
+          <th>Status</th>
+          <th>Type</th>
+          <th>Size</th>
+          <th>Name</th>
+          <th>Extension</th>
+          <th>Language</th>
+          <th>MIME Type</th>
+          <th>Tag</th>
+          <th>License</th>
+          <th>Alert</th>
+          <th>Packages</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for resource in resources %}
+          <tr>
+            <td class="break-all" style="min-width: 200px;">
+              {% if resource.is_dir %}
+                <a href="#" class="expand-in-tree" data-path="{{ resource.path }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ resource.path }}" hx-target="#right-pane">{{ resource.path }}</a>
+              {% else %}
+                <a href="{% url 'resource_detail' project.slug resource.path %}">{{ resource.path }}</a>
+              {% endif %}
+            </td>
+            <td>
+              {{ resource.status }}
+            </td>
+            <td>
+              {{ resource.type }}
+            </td>
+            <td>
+              {% if resource.is_file %}
+                {{ resource.size|filesizeformat|default_if_none:"" }}
+              {% endif %}
+            </td>
+            <td class="break-all" style="min-width: 100px;">
+              {{ resource.name }}
+            </td>
+            <td>
+              {{ resource.extension }}
+            </td>
+            <td class="break-all">
+              {{ resource.programming_language }}
+            </td>
+            <td class="break-all">
+              {{ resource.mime_type }}
+            </td>
+            <td>
+              {{ resource.tag }}
+            </td>
+            <td>
+              {{ resource.detected_license_expression }}
+            </td>
+            <td>
+              {{ resource.compliance_alert }}
+            </td>
+            <td>
+              {% if resource.discovered_packages.all %}
+                {% for package in resource.discovered_packages.all|slice:":3" %}
+                  <a href="{% url 'project_packages' project.slug %}?purl={{ package.package_url }}">{{ package }}</a>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+                {% if resource.discovered_packages.all|length > 3 %}
+                  +{{ resource.discovered_packages.all|length|add:"-3" }} more
+                {% endif %}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+  </table>
+
+  {% if is_paginated %}
+    <nav class="pagination is-centered mt-4" role="navigation">
+      {% if page_obj.has_previous %}
+        <a class="pagination-previous" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ path }}&page={{ page_obj.previous_page_number }}" hx-target="#right-pane">Previous</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+        <a class="pagination-next" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ path }}&page={{ page_obj.next_page_number }}" hx-target="#right-pane">Next page</a>
+      {% endif %}
+      <ul class="pagination-list">
+        <li><span class="pagination-ellipsis">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+      </ul>
+    </nav>
+  {% endif %}
+{% else %}
+  <div class="has-text-centered p-6">
+    <div class="icon is-large has-text-grey-light mb-3">
+      <i class="fas fa-folder-open fa-3x"></i>
+    </div>
+    <p class="has-text-grey">
+      {% if path %}
+        No resources found in this directory.
+      {% else %}
+        Select a file or folder from the tree to view its contents.
+      {% endif %}
+    </p>
+  </div>
+{% endif %}
