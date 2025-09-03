@@ -1,6 +1,6 @@
 {% extends "scanpipe/base.html" %}
 {% load static humanize %}
-{% block title %}ScanCode.io: {{ project.name }} - Tree view{% endblock %}
+{% block title %}ScanCode.io: {{ project.name }} - Resources (tree view){% endblock %}
 
 {% block extrahead %}
   <style>
@@ -63,6 +63,9 @@
       opacity: 0;
       pointer-events: none;
     }
+    .right-pane a:hover {
+      text-decoration: underline;
+    }
     .is-current, .is-current:hover {
       background-color: var(--bulma-background-hover) !important;
       border-radius: var(--bulma-radius);
@@ -82,7 +85,7 @@
     {% include 'scanpipe/includes/navbar_header.html' %}
     <section class="mx-5">
       <div class="is-flex is-justify-content-space-between">
-        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Tree view" %}
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Resources (tree view)" %}
       </div>
     </section>
   </div>

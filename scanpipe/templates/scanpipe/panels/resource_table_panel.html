@@ -14,22 +14,22 @@
       <tbody>
         {% for resource in resources %}
           <tr>
-            <td class="break-all" style="min-width: 100px;">
-              <span class="icon is-small mr-1">
+            <td class="is-flex is-align-items-center break-all" style="min-width: 100px;">
+                <span class="icon is-small mr-2">
+                  {% if resource.is_dir %}
+                    <i class="fas fa-folder"></i>
+                  {% else %}
+                    <i class="far fa-file"></i>
+                  {% endif %}
+                </span>
                 {% if resource.is_dir %}
-                  <i class="fas fa-folder"></i>
+                  <a href="#" class="expand-in-tree" data-path="{{ resource.path }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ resource.path }}" hx-target="#right-pane">{{ resource.name }}</a>
                 {% else %}
-                  <i class="far fa-file"></i>
+                  <a href="{% url 'resource_detail' project.slug resource.path %}">{{ resource.name }}</a>
                 {% endif %}
-              </span>
-              {% if resource.is_dir %}
-                <a href="#" class="expand-in-tree" data-path="{{ resource.path }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ resource.path }}" hx-target="#right-pane">{{ resource.name }}</a>
-              {% else %}
-                <a href="{% url 'resource_detail' project.slug resource.path %}">{{ resource.name }}</a>
-              {% endif %}
-              {% if resource.tag %}
-                <span class="tag is-rounded">{{ resource.tag }}</span>
-              {% endif %}
+                {% if resource.tag %}
+                  <span class="tag is-rounded ml-2">{{ resource.tag }}</span>
+                {% endif %}
             </td>
             <td>
               {{ resource.status }}

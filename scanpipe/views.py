@@ -2772,7 +2772,7 @@ class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
             project.codebaseresources.filter(parent_path=path)
             .with_has_children()
             .only("id", "project_id", "path", "name", "type")
-            .order_by("path")
+            .order_by("type", "path")
         )
 
         context = {
@@ -2825,18 +2825,14 @@ class CodebaseResourceTableView(
                 "path",
                 "status",
                 "type",
-                "size",
                 "name",
-                "extension",
                 "programming_language",
-                "mime_type",
                 "tag",
                 "detected_license_expression",
                 "compliance_alert",
-                "package_data",
             )
             .prefetch_related("discovered_packages")
-            .order_by("path")
+            .order_by("type", "path")
         )
 
     def get_context_data(self, **kwargs):

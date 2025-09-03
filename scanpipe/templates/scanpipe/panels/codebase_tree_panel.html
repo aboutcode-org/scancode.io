@@ -7,7 +7,7 @@
             <i class="fas fa-chevron-right"></i>
           </span>
           <span class="is-flex is-align-items-center folder-meta is-clickable" data-folder-click hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ node.path }}" hx-target="#right-pane">
-            <span class="icon is-small mr-1">
+            <span class="icon is-small mr-2">
               <i class="fas fa-folder"></i>
             </span>
             <span>{{ node.name }}</span>
@@ -18,7 +18,7 @@
         {% endif %}
       {% else %}
         <div class="tree-node-file is-flex is-align-items-center pl-5 is-clickable is-file" data-file data-path="{{ node.path }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ node.path }}" hx-target="#right-pane">
-          <span class="icon is-small mr-1">
+          <span class="icon is-small mr-2">
             <i class="far fa-file"></i>
           </span>
           <span>{{ node.name }}</span>
