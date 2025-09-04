@@ -82,8 +82,8 @@ dependencies = [
   # Profiling
   "pyinstrument==5.1.1",
   # CycloneDX
-  "cyclonedx-python-lib==10.2.0",
-  "jsonschema==4.24.0",
+  "cyclonedx-python-lib==11.0.0",
+  "jsonschema==4.25.1",
   # MatchCode-toolkit
   "matchcode-toolkit==7.2.2",
   # Univers

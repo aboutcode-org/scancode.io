@@ -270,6 +270,11 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         expected = [{"name": "asgiref", "package_uid": "pkg:pypi/asgiref@3.3.0"}]
         self.assertEqual(expected, package_data)
 
+    def test_scanpipe_cyclonedx_resolve_cyclonedx_packages_missing_components(self):
+        input_location = self.data / "missing_components.json"
+        package_data = cyclonedx.resolve_cyclonedx_packages(input_location)
+        self.assertEqual([], package_data)
+
     def test_scanpipe_cyclonedx_cleanup_components_properties(self):
         cyclonedx_document_json = {
             "components": [
