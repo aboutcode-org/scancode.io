@@ -23,6 +23,12 @@ v35.4.0 (unreleased)
 - Add a Resources tree view.
   https://github.com/aboutcode-org/scancode.io/issues/1682
 
+- Improve CycloneDX SBOM support.
+  * Upgrade the cyclonedx-python-lib to 11.0.0
+  * Fix the validate_document following library upgrade.
+  * Add support when the "components" entry is missing.
+  https://github.com/aboutcode-org/scancode.io/issues/1727
+
 v35.3.0 (2025-08-20)
 --------------------
 
