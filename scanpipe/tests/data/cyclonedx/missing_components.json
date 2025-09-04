@@ -1,0 +1,21 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:b74fe5df-e965-415e-ba65-f38421a0695d",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "bom-ref": "804c3391-e6f9-415f-bb7a-cb6653853a46",
+      "name": "name",
+      "type": "library"
+    },
+    "timestamp": "2024-03-07T17:05:37.329061+00:00",
+    "tools": [
+      {
+        "name": "ScanCode.io",
+        "version": "0.0.0"
+      }
+    ]
+  }
+}

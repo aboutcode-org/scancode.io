@@ -285,7 +285,7 @@ def cleanup_components_properties(cyclonedx_document_json):
         elif isinstance(value, list) and not any(value):
             return True
 
-    for component in cyclonedx_document_json["components"]:
+    for component in cyclonedx_document_json.get("components", []):
         for property_name, property_value in component.items():
             if is_empty(property_value) or property_name in ignored_properties:
                 entries_to_delete.append((component, property_name))
