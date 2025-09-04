@@ -1,0 +1,218 @@
+{% extends "scanpipe/base.html" %}
+{% load static humanize %}
+{% block title %}ScanCode.io: {{ project.name }} - Resources tree{% endblock %}
+
+{% block extrahead %}
+  <style>
+    .chevron {
+      transition: transform 0.2s ease;
+      display: inline-block;
+    }
+    .chevron.rotated {
+      transform: rotate(90deg);
+    }
+    .resizable-container {
+      display: flex;
+      height: calc(100vh - 140px);
+      margin: 0;
+    }
+    .left-pane {
+      min-width: 0;
+      max-width: 100%;
+      border-right: 1px solid #ccc;
+      overflow-y: auto;
+      overflow-x: hidden;
+      flex-basis: 25%;
+      transition: opacity 0.2s ease;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .left-pane.collapsed {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .resizer {
+      width: 3px;
+      background: #ddd;
+      cursor: col-resize;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .resizer:hover {
+      background: #bbb;
+    }
+    .resizer::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0px;
+      transform: translateY(-50%);
+      width: 2px;
+      height: 30px;
+      background: #999;
+      border-radius: 2px;
+    }
+    .right-pane {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      min-width: 0;
+      transition: opacity 0.2s ease;
+    }
+    .right-pane.collapsed {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .right-pane a:hover {
+      text-decoration: underline;
+    }
+    .is-current, .is-current:hover {
+      background-color: var(--bulma-background-hover) !important;
+      border-radius: var(--bulma-radius);
+    }
+    .tree-node, .tree-node-file {
+      padding: .25rem 0 .25rem 0;
+    }
+    .tree-node:hover, .tree-node-file:hover {
+      background-color: var(--bulma-background);
+      border-radius: var(--bulma-radius);
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Resources tree" %}
+      </div>
+    </section>
+  </div>
+
+<div class="resizable-container">
+  <div id="left-pane" class="left-pane px-2">
+    <div id="resource-tree">
+      {% include "scanpipe/panels/codebase_tree_panel.html" with children=children path=path %}
+    </div>
+  </div>
+  <div id="resizer" class="resizer"></div>
+  <div id="right-pane" class="right-pane px-2">
+    {% include "scanpipe/panels/resource_table_panel.html" %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    // Tree functionality
+    document.addEventListener("click", async function (e) {
+      const chevron = e.target.closest("[data-chevron]");
+      if (chevron) {
+        const folderNode = chevron.closest("[data-folder]");
+        const targetId = folderNode.dataset.target;
+        const url = folderNode.dataset.url;
+        const target = document.getElementById("dir-" + targetId);
+
+        if (target.dataset.loaded === "true") {
+          target.classList.toggle("is-hidden");
+        } else {
+          target.classList.remove("is-hidden");
+          const response = await fetch(url + "&tree_panel=true");
+          target.innerHTML = await response.text();
+          target.dataset.loaded = "true";
+          htmx.process(target);
+        }
+
+        chevron.classList.toggle("rotated");
+        e.stopPropagation();
+        return;
+      }
+
+      const folderMeta = e.target.closest(".folder-meta");
+      if (folderMeta) {
+        const folderNode = folderMeta.closest("[data-folder]");
+        if (folderNode && folderNode.dataset.target) {
+          document.querySelectorAll('.tree-node.is-current, .is-file.is-current').forEach(el => el.classList.remove('is-current'));
+          folderNode.classList.add('is-current');
+          const chevron = folderNode.querySelector("[data-chevron]");
+          const target = document.getElementById("dir-" + folderNode.dataset.target);
+
+          if (target.classList.contains("is-hidden")) {
+            target.classList.remove("is-hidden");
+            chevron.classList.add("rotated");
+            if (target.dataset.loaded !== "true") {
+              const response = await fetch(folderNode.dataset.url + "&tree_panel=true");
+              target.innerHTML = await response.text();
+              target.dataset.loaded = "true";
+              htmx.process(target);
+            }
+          }
+        }
+      }
+
+      const fileNode = e.target.closest(".is-file[data-file]");
+      if (fileNode) {
+        document.querySelectorAll('.tree-node.is-current, .is-file.is-current').forEach(el => el.classList.remove('is-current'));
+        fileNode.classList.add('is-current');
+      }
+
+      const expandLink = e.target.closest(".expand-in-tree");
+      if (expandLink) {
+        e.preventDefault();
+        const path = expandLink.getAttribute("data-path");
+        const leftPane = document.getElementById("left-pane");
+        if (!leftPane) return;
+        let node = leftPane.querySelector(`[data-folder][data-path="${path}"], .is-file[data-file][data-path="${path}"]`);
+        if (node) {
+          document.querySelectorAll('.tree-node.is-current, .is-file.is-current').forEach(el => el.classList.remove('is-current'));
+          node.classList.add('is-current');
+          const chevron = node.querySelector("[data-chevron]");
+          if (chevron && !chevron.classList.contains("rotated")) chevron.click();
+          node.scrollIntoView({behavior: "smooth", block: "center"});
+        }
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const resizer = document.getElementById('resizer');
+      const leftPane = document.getElementById('left-pane');
+      const rightPane = document.getElementById('right-pane');
+      let isResizing = false;
+
+      resizer.addEventListener('mousedown', function(e) {
+        isResizing = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', function(e) {
+        if (!isResizing) return;
+        
+        const container = document.querySelector('.resizable-container');
+        const containerRect = container.getBoundingClientRect();
+        let newLeftWidth = e.clientX - containerRect.left;
+        const containerWidth = containerRect.width;
+        const resizerWidth = 5;
+        const minLeftWidth = 200;
+        if (newLeftWidth < minLeftWidth) newLeftWidth = minLeftWidth;
+        if (newLeftWidth > containerWidth - resizerWidth) newLeftWidth = containerWidth - resizerWidth;
+
+        const leftPercent = (newLeftWidth / containerWidth) * 100;
+        const rightPercent = ((containerWidth - newLeftWidth - resizerWidth) / containerWidth) * 100;
+
+        leftPane.style.flexBasis = leftPercent + '%';
+        rightPane.style.flexBasis = rightPercent + '%';
+      });
+
+      document.addEventListener('mouseup', function() {
+        if (isResizing) {
+          isResizing = false;
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+        }
+      });
+    });
+  </script>
+{% endblock %}

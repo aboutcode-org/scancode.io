@@ -17,6 +17,12 @@
   </div>
 
   <div id="resource-list" class="container is-fluid mb-3">
+    <a href="{% url 'codebase_resource_tree' project.slug %}" class="is-pulled-right">
+      <span class="icon">
+        <i class="fa-solid fa-folder-tree"></i>
+      </span>
+      <span>View the resource tree</span>
+    </a>
     <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
       {% include 'scanpipe/includes/list_view_thead.html' %}
       <tbody>

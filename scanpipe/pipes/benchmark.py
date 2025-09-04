@@ -49,6 +49,18 @@ def get_expected_purls(project):
     return sorted(set(expected_purls))
 
 
+def get_unique_project_purls(project):
+    """
+    Return the sorted list of unique Package URLs (PURLs) discovered in the project.
+
+    Extracts the ``purl`` field from all discovered packages, removes duplicates,
+    and sorts the result to provide a deterministic list of project PURLs.
+    """
+    project_packages = project.discoveredpackages.only_package_url_fields()
+    sorted_unique_purls = sorted({package.purl for package in project_packages})
+    return sorted_unique_purls
+
+
 def compare_purls(project, expected_purls):
     """
     Compare discovered project PURLs against the expected PURLs.
@@ -57,10 +69,10 @@ def compare_purls(project, expected_purls):
     - Lines starting with '-' are missing from the project.
     - Lines starting with '+' are unexpected in the project.
     """
-    project_packages = project.discoveredpackages.only_package_url_fields()
-    sorted_unique_purls = sorted({package.purl for package in project_packages})
+    sorted_project_purls = get_unique_project_purls(project)
+    print(sorted_project_purls)
 
-    diff_result = difflib.ndiff(sorted_unique_purls, expected_purls)
+    diff_result = difflib.ndiff(sorted_project_purls, expected_purls)
 
     # Keep only lines that are diffs (- or +)
     filtered_diff = [line for line in diff_result if line.startswith(("-", "+"))]
