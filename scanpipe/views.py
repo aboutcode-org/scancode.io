@@ -2840,5 +2840,7 @@ class CodebaseResourceTableView(
         path = self.request.GET.get("path", "")
         context["path"] = path
         segments = path.strip("/").split("/")
-        context["path_segments"] = [ ("/".join(segments[:i+1]), segment) for i, segment in enumerate(segments) ]
+        context["path_segments"] = [
+            ("/".join(segments[: i + 1]), segment) for i, segment in enumerate(segments)
+        ]
         return context
