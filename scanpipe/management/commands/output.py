@@ -25,7 +25,7 @@ from django.core.management.base import CommandError
 from scanpipe.management.commands import ProjectCommand
 from scanpipe.pipes import output
 
-SUPPORTED_FORMATS = ["json", "csv", "xlsx", "attribution", "spdx", "cyclonedx"]
+SUPPORTED_FORMATS = ["json", "csv", "xlsx", "attribution", "spdx", "cyclonedx", "ort"]
 
 
 class Command(ProjectCommand):
@@ -84,6 +84,7 @@ class Command(ProjectCommand):
             "spdx": output.to_spdx,
             "cyclonedx": output.to_cyclonedx,
             "attribution": output.to_attribution,
+            "ort": output.to_ort,
         }.get(output_format)
 
         if not output_function:

@@ -168,6 +168,8 @@ class ProjectViewSet(
             output_file = output.to_cyclonedx(project, **output_kwargs)
         elif format == "attribution":
             output_file = output.to_attribution(project)
+        elif format == "ort":
+            output_file = output.to_ort(project)
         else:
             message = {"status": f"Format {format} not supported."}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
