@@ -1,4 +1,23 @@
 {% load humanize %}
+<div class="mb-4">
+  <div class="has-text-weight-semibold is-flex is-align-items-center is-family-monospace">
+    {% if path_segments %}
+      <span id="resource-path" class="has-text-weight-medium">
+        {% for subpath, segment in path_segments %}
+          {% if not forloop.first %}<span class="mx-1">/</span>{% endif %}
+          {% if not forloop.last %}
+            <a href="#" class="expand-in-tree has-text-link" data-path="{{ subpath }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ subpath }}" hx-target="#right-pane">{{ segment }}</a>
+          {% else %}
+            <span>{{ segment }}</span>
+          {% endif %}
+        {% endfor %}
+      </span>
+      <button class="copy-to-clipboard ml-2 is-size-6 is-shadowless is-white" aria-label="Copy path" data-copy="{{ path }}" data-copy-feedback="Path copied!">
+        <i class="fa-regular fa-copy"></i>
+      </button>
+    {% endif %}
+  </div>
+</div>
 
 {% if resources %}
   <table class="table is-bordered is-striped is-narrow is-fullwidth">

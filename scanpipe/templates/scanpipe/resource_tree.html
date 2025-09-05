@@ -105,6 +105,14 @@
 
 {% block scripts %}
   <script>
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+      if (evt.target && evt.target.id === 'right-pane') {
+        if (typeof enableCopyToClipboard === 'function') {
+          enableCopyToClipboard('.copy-to-clipboard');
+        }
+      }
+    });
+    
     // Tree functionality
     document.addEventListener("click", async function (e) {
       const chevron = e.target.closest("[data-chevron]");
