@@ -23,7 +23,7 @@
                   {% endif %}
                 </span>
                 {% if resource.is_dir %}
-                  <a href="#" class="expand-in-tree" data-path="{{ resource.path }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ resource.path }}" hx-target="#right-pane">{{ resource.name }}</a>
+                  <a href="#" class="expand-in-tree" data-path="{{ resource.path }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ resource.path }}" hx-target="#right-pane" hx-push-url="{% url 'codebase_resource_tree' project.slug %}?path={{ resource.path }}">{{ resource.name }}</a>
                 {% else %}
                   <a href="{% url 'resource_detail' project.slug resource.path %}">{{ resource.name }}</a>
                 {% endif %}
