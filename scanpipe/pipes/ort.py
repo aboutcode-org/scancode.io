@@ -35,23 +35,35 @@ class SourceArtifact:
 
 
 @dataclass
+class VCS:
+    type: str = ""
+    url: str = ""
+    revision: str = ""
+    path: str = ""
+    sourceArtifact: SourceArtifact | None = None
+
+
+@dataclass
 class Dependency:
     id: str
     purl: str
     sourceArtifact: SourceArtifact
-    declaredLicenses: list = field(default_factory=list)
+    declaredLicenses: list[str] = field(default_factory=list)
 
 
 @dataclass
 class Project:
     projectName: str
     dependencies: list[Dependency] = field(default_factory=list)
+    projectVcs: VCS = field(default_factory=VCS)
 
     @classmethod
     def from_yaml(cls, yaml_str: str):
         """Create a Project object from a YAML string."""
         data = yaml.safe_load(yaml_str)
-        deps = [
+
+        # Parse dependencies
+        dependencies = [
             Dependency(
                 id=dependency["id"],
                 purl=dependency["purl"],
@@ -60,7 +72,16 @@ class Project:
             )
             for dependency in data.get("dependencies", [])
         ]
-        return cls(projectName=data["projectName"], dependencies=deps)
+
+        # Optional projectVcs
+        vcs_data = data.get("projectVcs", {})
+        project_vcs = VCS(**vcs_data) if vcs_data else VCS()
+
+        return cls(
+            projectName=data["projectName"],
+            dependencies=dependencies,
+            projectVcs=project_vcs,
+        )
 
     @classmethod
     def from_file(cls, filepath: str | Path):
@@ -70,6 +91,10 @@ class Project:
     def to_yaml(self) -> str:
         """Dump the Project object back to a YAML string."""
         return yaml.safe_dump(asdict(self), sort_keys=False, allow_unicode=True)
+
+    def to_file(self, filepath: str | Path):
+        """Write the Project object to a YAML file."""
+        Path(filepath).write_text(self.to_yaml(), encoding="utf-8")
 
 
 def to_ort_package_list_yml(project):
