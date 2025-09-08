@@ -28,79 +28,94 @@ from pathlib import Path
 
 import saneyaml
 
+"""
+This module provides Python dataclass models for representing a package list
+in a format compatible with the OSS Review Toolkit (ORT)
+`CreateAnalyzerResultFromPackageListCommand`.
 
+The models are simplified adaptations of the Kotlin classes from:
+https://github.com/oss-review-toolkit/ort/blob/main/cli-helper/src/main/kotlin/commands/CreateAnalyzerResultFromPackageListCommand.kt
+
+This module is intended for generating ORT-compatible YAML package lists from Python
+objects, allowing integration with ORT's analyzer workflows or manual creation of
+package metadata.
+"""
+
+
+# private data class SourceArtifact(
+#     val url: String,
+#     val hash: Hash? = null
+# )
 @dataclass
 class SourceArtifact:
     url: str
+    hash: str = None
 
 
+# private data class Vcs(
+#     val type: String? = null,
+#     val url: String? = null,
+#     val revision: String? = null,
+#     val path: String? = null
+# )
 @dataclass
-class VCS:
-    type: str = ""
-    url: str = ""
-    revision: str = ""
-    path: str = ""
-    sourceArtifact: SourceArtifact | None = None
+class Vcs:
+    type: str = None
+    url: str = None
+    revision: str = None
+    path: str = None
 
 
+# private data class Dependency(
+#     val id: Identifier,
+#     val purl: String? = null,
+#     val vcs: Vcs? = null,
+#     val sourceArtifact: SourceArtifact? = null,
+#     val declaredLicenses: Set<String> = emptySet(),
+#     val concludedLicense: SpdxExpression? = null,
+#     val isExcluded: Boolean = false,
+#     val isDynamicallyLinked: Boolean = false,
+#     val labels: Map<String, String> = emptyMap()
+# )
 @dataclass
 class Dependency:
     id: str
-    purl: str
-    sourceArtifact: SourceArtifact
-    vcs: VCS = field(default_factory=VCS)
-    declaredLicenses: list[str] = field(default_factory=list)
+    purl: str = None
+    vcs: Vcs = None
+    sourceArtifact: SourceArtifact = None
+    declaredLicenses: list = field(default_factory=set)
+    # concludedLicense: str = None
+    # isExcluded: bool = False
+    # isDynamicallyLinked: bool = False
+    # labels: dict = field(default_factory=dict)
+
+    # Additions to the initial model:
     description: str = ""
     homepageUrl: str = ""
 
 
+# private data class PackageList(
+#     val projectName: String? = null,
+#     val projectVcs: Vcs? = null,
+#     val dependencies: List<Dependency> = emptyList()
+# )
 @dataclass
-class Project:
+class PackageList:
     projectName: str
-    projectVcs: VCS = field(default_factory=VCS)
-    dependencies: list[Dependency] = field(default_factory=list)
+    projectVcs: Vcs = None
+    dependencies: list = field(default_factory=list)
 
-    @classmethod
-    def from_yaml(cls, yaml_str: str):
-        """Create a Project object from a YAML string."""
-        data = saneyaml.load(yaml_str)
-
-        # Parse dependencies
-        dependencies = [
-            Dependency(
-                id=dependency["id"],
-                purl=dependency["purl"],
-                sourceArtifact=SourceArtifact(**dependency["sourceArtifact"]),
-                declaredLicenses=dependency.get("declaredLicenses", []),
-            )
-            for dependency in data.get("dependencies", [])
-        ]
-
-        # Optional projectVcs
-        vcs_data = data.get("projectVcs", {})
-        project_vcs = VCS(**vcs_data) if vcs_data else VCS()
-
-        return cls(
-            projectName=data["projectName"],
-            dependencies=dependencies,
-            projectVcs=project_vcs,
-        )
-
-    @classmethod
-    def from_file(cls, filepath: str | Path):
-        """Create a Project object by loading a YAML file."""
-        return cls.from_yaml(Path(filepath).read_text(encoding="utf-8"))
-
-    def to_yaml(self) -> str:
+    def to_yaml(self):
         """Dump the Project object back to a YAML string."""
         return saneyaml.dump(asdict(self))
 
-    def to_file(self, filepath: str | Path):
+    def to_file(self, filepath):
         """Write the Project object to a YAML file."""
         Path(filepath).write_text(self.to_yaml(), encoding="utf-8")
 
 
 def to_ort_package_list_yml(project):
+    """Convert a project object into a YAML string in the ORT package list format."""
     dependencies = []
     for package in project.discoveredpackages.all():
         dependency = Dependency(
@@ -108,15 +123,15 @@ def to_ort_package_list_yml(project):
             purl=package.purl,
             sourceArtifact=SourceArtifact(url=package.download_url),
             declaredLicenses=[package.get_declared_license_expression_spdx()],
-            vcs=VCS(url=package.vcs_url),
+            vcs=Vcs(url=package.vcs_url),
             description=package.description,
             homepageUrl=package.homepage_url,
         )
         dependencies.append(dependency)
 
-    project = Project(
+    package_list = PackageList(
         projectName=project.name,
         dependencies=dependencies,
     )
 
-    return project.to_yaml()
+    return package_list.to_yaml()
