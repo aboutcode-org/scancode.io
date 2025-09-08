@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
 
-import yaml
+import saneyaml
 
 
 @dataclass
@@ -63,7 +63,7 @@ class Project:
     @classmethod
     def from_yaml(cls, yaml_str: str):
         """Create a Project object from a YAML string."""
-        data = yaml.safe_load(yaml_str)
+        data = saneyaml.load(yaml_str)
 
         # Parse dependencies
         dependencies = [
@@ -93,7 +93,7 @@ class Project:
 
     def to_yaml(self) -> str:
         """Dump the Project object back to a YAML string."""
-        return yaml.safe_dump(asdict(self), sort_keys=False, allow_unicode=True)
+        return saneyaml.dump(asdict(self))
 
     def to_file(self, filepath: str | Path):
         """Write the Project object to a YAML file."""
