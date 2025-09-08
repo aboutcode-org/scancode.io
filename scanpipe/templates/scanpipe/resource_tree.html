@@ -116,10 +116,8 @@
 {% block scripts %}
   <script>
     document.body.addEventListener('htmx:afterSettle', function(evt) {
-      if (evt.target && evt.target.id === 'right-pane') {
-        if (typeof enableCopyToClipboard === 'function') {
-          enableCopyToClipboard('.copy-to-clipboard');
-        }
+      if (typeof enableCopyToClipboard === 'function') {
+        enableCopyToClipboard('.copy-to-clipboard');
       }
     });
 
