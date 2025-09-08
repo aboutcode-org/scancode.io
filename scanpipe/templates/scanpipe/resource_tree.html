@@ -54,10 +54,16 @@
     }
     .right-pane {
       flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
       min-width: 0;
       transition: opacity 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .right-pane .table-scroll-area {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
     .right-pane.collapsed {
       opacity: 0;
@@ -105,6 +111,14 @@
 
 {% block scripts %}
   <script>
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+      if (evt.target && evt.target.id === 'right-pane') {
+        if (typeof enableCopyToClipboard === 'function') {
+          enableCopyToClipboard('.copy-to-clipboard');
+        }
+      }
+    });
+    
     // Tree functionality
     document.addEventListener("click", async function (e) {
       const chevron = e.target.closest("[data-chevron]");

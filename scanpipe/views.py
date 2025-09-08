@@ -2839,5 +2839,10 @@ class CodebaseResourceTableView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["path"] = self.request.GET.get("path", "")
+        path = self.request.GET.get("path", "")
+        context["path"] = path
+        segments = path.strip("/").split("/")
+        context["path_segments"] = [
+            ("/".join(segments[: i + 1]), segment) for i, segment in enumerate(segments)
+        ]
         return context
