@@ -48,14 +48,17 @@ class Dependency:
     id: str
     purl: str
     sourceArtifact: SourceArtifact
+    vcs: VCS = field(default_factory=VCS)
     declaredLicenses: list[str] = field(default_factory=list)
+    description: str = ""
+    homepageUrl: str = ""
 
 
 @dataclass
 class Project:
     projectName: str
-    dependencies: list[Dependency] = field(default_factory=list)
     projectVcs: VCS = field(default_factory=VCS)
+    dependencies: list[Dependency] = field(default_factory=list)
 
     @classmethod
     def from_yaml(cls, yaml_str: str):
@@ -105,6 +108,9 @@ def to_ort_package_list_yml(project):
             purl=package.purl,
             sourceArtifact=SourceArtifact(url=package.download_url),
             declaredLicenses=[package.get_declared_license_expression_spdx()],
+            vcs=VCS(url=package.vcs_url),
+            description=package.description,
+            homepageUrl=package.homepage_url,
         )
         dependencies.append(dependency)
 
