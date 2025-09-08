@@ -1,13 +1,13 @@
 {% load humanize %}
 <div class="mb-4">
-  <div class="has-text-weight-semibold is-flex is-align-items-center is-family-monospace">
+  <div class="has-text-weight-semibold is-flex is-align-items-center">
     {% if path_segments %}
       <span id="resource-path" class="has-text-weight-medium">
         {% spaceless %}
         {% for subpath, segment in path_segments %}
           {% if not forloop.first %}<span class="mx-1">/</span>{% endif %}
           {% if not forloop.last %}
-            <a href="#" class="expand-in-tree has-text-link" data-path="{{ subpath }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ subpath }}" hx-target="#right-pane" hx-push-url="{% url 'codebase_resource_tree' project.slug %}?path={{ subpath }}">{{ segment }}</a>
+            <a href="{% url 'codebase_resource_tree' project.slug %}?path={{ subpath }}" class="expand-in-tree has-text-link" data-path="{{ subpath }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ subpath }}" hx-target="#right-pane" hx-push-url="{% url 'codebase_resource_tree' project.slug %}?path={{ subpath }}">{{ segment }}</a>
           {% else %}
             <span>{{ segment }}</span>
           {% endif %}
@@ -45,7 +45,7 @@
                     {% endif %}
                   </span>
                   {% if resource.is_dir %}
-                    <a href="#" class="expand-in-tree" data-path="{{ resource.path }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ resource.path }}" hx-target="#right-pane" hx-push-url="{% url 'codebase_resource_tree' project.slug %}?path={{ resource.path }}">{{ resource.name }}</a>
+                    <a href="{% url 'codebase_resource_tree' project.slug %}?path={{ resource.path }}" class="expand-in-tree" data-path="{{ resource.path }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ resource.path }}" hx-target="#right-pane" hx-push-url="{% url 'codebase_resource_tree' project.slug %}?path={{ resource.path }}">{{ resource.name }}</a>
                   {% else %}
                     <a href="{% url 'resource_detail' project.slug resource.path %}">{{ resource.name }}</a>
                   {% endif %}
