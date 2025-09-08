@@ -72,7 +72,7 @@ class Project:
         return yaml.safe_dump(asdict(self), sort_keys=False, allow_unicode=True)
 
 
-def to_ort(project):
+def to_ort_package_list_yml(project):
     dependencies = []
     for package in project.discoveredpackages.all():
         dependency = Dependency(

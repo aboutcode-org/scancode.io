@@ -1630,8 +1630,8 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
             output_file = output.to_cyclonedx(project, **output_kwargs)
         elif format == "attribution":
             output_file = output.to_attribution(project)
-        elif format == "ort":
-            output_file = output.to_ort(project)
+        elif format == "ort-package-list":
+            output_file = output.to_ort_package_list_yml(project)
         else:
             raise Http404("Format not supported.")
 
