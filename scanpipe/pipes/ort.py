@@ -49,7 +49,8 @@ package metadata.
 @dataclass
 class SourceArtifact:
     url: str
-    hash: str = None
+    # Cannot coerce empty String ("") to `org.ossreviewtoolkit.model.Hash` value
+    # hash: str = None
 
 
 # private data class Vcs(
@@ -90,8 +91,10 @@ class Dependency:
     # labels: dict = field(default_factory=dict)
 
     # Additions to the initial model:
-    description: str = ""
-    homepageUrl: str = ""
+    # UnrecognizedPropertyException: Unrecognized field "description"
+    # description: str = ""
+    # UnrecognizedPropertyException: Unrecognized field "homepageUrl"
+    # homepageUrl: str = ""
 
 
 # private data class PackageList(
@@ -102,7 +105,7 @@ class Dependency:
 @dataclass
 class PackageList:
     projectName: str
-    projectVcs: Vcs = None
+    projectVcs: Vcs = field(default_factory=Vcs)
     dependencies: list = field(default_factory=list)
 
     def to_yaml(self):
@@ -124,8 +127,8 @@ def to_ort_package_list_yml(project):
             sourceArtifact=SourceArtifact(url=package.download_url),
             declaredLicenses=[package.get_declared_license_expression_spdx()],
             vcs=Vcs(url=package.vcs_url),
-            description=package.description,
-            homepageUrl=package.homepage_url,
+            # description=package.description,
+            # homepageUrl=package.homepage_url,
         )
         dependencies.append(dependency)
 
