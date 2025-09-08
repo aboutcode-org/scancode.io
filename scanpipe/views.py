@@ -2767,9 +2767,10 @@ class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
         slug = self.kwargs.get("slug")
         project = get_object_or_404(Project, slug=slug)
         path = request.GET.get("path", "")
+        parent_path = path if request.GET.get("tree_panel") == "true" else ""
 
         children = (
-            project.codebaseresources.filter(parent_path=path)
+            project.codebaseresources.filter(parent_path=parent_path)
             .with_has_children()
             .only("id", "project_id", "path", "name", "type")
             .order_by("type", "path")
