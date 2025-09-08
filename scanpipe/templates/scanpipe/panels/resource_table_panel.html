@@ -1,5 +1,4 @@
 {% load humanize %}
-
 <div class="mb-4">
   <div class="has-text-weight-semibold is-flex is-align-items-center is-family-monospace">
     {% if path_segments %}
@@ -16,11 +15,6 @@
         {% endspaceless %}
       </span>
       <button class="copy-to-clipboard ml-2 is-size-6 is-shadowless is-white" aria-label="Copy path" data-copy="{{ path }}" data-copy-feedback="Path copied!">
-        <i class="fa-regular fa-copy"></i>
-      </button>
-    {% else %}
-      <span id="resource-path" class="has-text-weight-medium">/</span>
-      <button class="copy-to-clipboard ml-2 is-size-6 is-shadowless is-white" aria-label="Copy path" data-copy="/" data-copy-feedback="Path copied!">
         <i class="fa-regular fa-copy"></i>
       </button>
     {% endif %}

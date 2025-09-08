@@ -115,7 +115,7 @@
 
 {% block scripts %}
   <script>
-    document.body.addEventListener('htmx:afterSwap', function(evt) {
+    document.body.addEventListener('htmx:afterSettle', function(evt) {
       if (evt.target && evt.target.id === 'right-pane') {
         if (typeof enableCopyToClipboard === 'function') {
           enableCopyToClipboard('.copy-to-clipboard');
@@ -163,10 +163,6 @@
         finalNode.classList.add('is-current');
         finalNode.scrollIntoView({ behavior: "smooth", block: "center" });
       }
-
-      const rightPane = document.getElementById('right-pane');
-      rightPane.setAttribute('hx-get', `/project/{{ project.slug }}/resource_table/?path=${encodeURIComponent(path)}`);
-      htmx.trigger(rightPane, 'htmx:trigger');
     }
 
     document.addEventListener("click", async e => {
@@ -182,7 +178,10 @@
     });
 
     document.addEventListener("DOMContentLoaded", function() {
-      expandToPath("{{ path }}");
+      const currentPath = "{{ path }}";
+      if (currentPath) {
+        expandToPath(currentPath);
+      }
 
       const resizer = document.getElementById('resizer');
       const leftPane = document.getElementById('left-pane');
