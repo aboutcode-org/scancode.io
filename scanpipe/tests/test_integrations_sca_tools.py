@@ -35,9 +35,9 @@ Adding new test data
         --output trivy-alpine-3.17-sbom.json alpine:3.17.0
 
 2. Save the SBOM file under:
-    tests/data/sca-integrations/
+    tests/data/integrations-sca/
 
-3. Add expected counts for that SBOM to ``SCA_INTEGRATIONS_TEST_DATA`` below.
+3. Add expected counts for that SBOM to `TEST_DATA`` below.
 
 Example:
     "trivy-alpine-3.17-sbom.json": {
@@ -55,7 +55,7 @@ Example:
 
 4. Run the test suite:
 
-    ./manage.py test scanpipe.tests.test_sca_integrations
+    ./manage.py test scanpipe.tests.test_integrations_sca
 
 5. Commit both the SBOM file and dictionary entry.
 
@@ -76,7 +76,7 @@ from scanpipe.tests import make_project
 # - ``packages_vulnerable``: Vulnerable DiscoveredPackages
 # - ``dependencies``: DiscoveredDependencies
 # - ``purls``: The list of PURLs present in the SBOM
-SCA_INTEGRATIONS_TEST_DATA = {
+TEST_DATA = {
     ### Anchore Grype
     #   $ grype -v -o cyclonedx-json \
     #       --file anchore-alpine-3.17-sbom.json alpine:3.17.0
@@ -349,27 +349,22 @@ SCA_INTEGRATIONS_TEST_DATA = {
 }
 
 
-class ScanPipeSCAIntegrationsTest(TestCase):
+class ScanPipeIntegrationsBaseTest(TestCase):
     """
     Run consistency checks across all SBOM integration test files.
 
-    For each SBOM listed in ``SCA_INTEGRATIONS_TEST_DATA``, this test:
+    For each SBOM listed in ``TEST_DATA``, this test:
     - Loads the SBOM into a temporary ScanCode.io project.
     - Executes the ``load_sbom`` pipeline.
     - Verifies that the number of resources, packages, vulnerable packages,
       and dependencies match the expected values.
     """
 
-    data = Path(__file__).parent / "data"
-
-    def test_scanpipe_sca_integrations_tools(self):
-        """Loop through all SBOM files and run integration checks."""
-        for sbom_filename, expected_results in SCA_INTEGRATIONS_TEST_DATA.items():
-            self._test_scanpipe_sca_integrations_tool(sbom_filename, expected_results)
+    data = None
 
     def _test_scanpipe_sca_integrations_tool(self, sbom_filename, expected_results):
         """Run a single SBOM integration test."""
-        input_location = self.data / "sca-integrations" / sbom_filename
+        input_location = self.data / sbom_filename
 
         # Create a fresh project and load the SBOM into it
         project = make_project()
@@ -410,3 +405,12 @@ class ScanPipeSCAIntegrationsTest(TestCase):
             purls_diff = benchmark.compare_purls(project, expected_purls)
             formatted_diff = "\n".join(purls_diff)
             self.assertFalse(purls_diff, msg=f"\n{sbom_filename}\n{formatted_diff}")
+
+
+class ScanPipeIntegrationsSCAToolsTest(ScanPipeIntegrationsBaseTest):
+    data = Path(__file__).parent / "data" / "integrations-sca"
+
+    def test_scanpipe_integrations_sca_tools(self):
+        """Loop through all SBOM files and run integration checks."""
+        for sbom_filename, expected_results in TEST_DATA.items():
+            self._test_scanpipe_sca_integrations_tool(sbom_filename, expected_results)
