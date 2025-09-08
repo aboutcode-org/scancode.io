@@ -117,12 +117,27 @@ class PackageList:
         Path(filepath).write_text(self.to_yaml(), encoding="utf-8")
 
 
+def get_ort_project_type(project):
+    """
+    Determine the ORT project type based on the project's input sources.
+
+    Currently, this function checks whether any of the project's
+    input download URLs start with "docker://".
+    If at least one Docker URL is found, it returns "docker".
+    """
+    inputs_url = project.inputsources.values_list("download_url", flat=True)
+    if any(url.startswith("docker://") for url in inputs_url):
+        return "docker"
+
+
 def to_ort_package_list_yml(project):
     """Convert a project object into a YAML string in the ORT package list format."""
+    project_type = get_ort_project_type(project)
+
     dependencies = []
     for package in project.discoveredpackages.all():
         dependency = Dependency(
-            id=f"{package.type}::{package.name}:{package.version}",
+            id=f"{project_type or package.type}::{package.name}:{package.version}",
             purl=package.purl,
             sourceArtifact=SourceArtifact(url=package.download_url),
             declaredLicenses=[package.get_declared_license_expression_spdx()],
