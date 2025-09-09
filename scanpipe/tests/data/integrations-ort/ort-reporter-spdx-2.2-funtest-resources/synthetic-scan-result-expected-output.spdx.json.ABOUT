@@ -1,0 +1,12 @@
+about_resource: synthetic-scan-result-expected-output.spdx.json
+name: ort
+version: 67.1.0
+download_url: https://raw.githubusercontent.com/oss-review-toolkit/ort/729d577730ee46c3bded6cf04d5aa9813b6a8591/plugins/reporters/spdx/src/funTest/resources/v2.2/synthetic-scan-result-expected-output.spdx.json
+description: The OSS Review Toolkit (ORT) is a FOSS policy automation and orchestration toolkit
+homepage_url: https://oss-review-toolkit.org
+license_expression: apache-2.0
+copyright: Copyright (C) 2017-2025 The ORT Project Authors
+redistribute: yes
+attribute: yes
+track_changes: yes
+package_url: pkg:github/oss-review-toolkit/ort@67.1.0#plugins/reporters/spdx/src/funTest/resources/v2.2/synthetic-scan-result-expected-output.spdx.json
