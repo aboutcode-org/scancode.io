@@ -705,14 +705,28 @@ def to_spdx(project, include_files=False):
     discovereddependency_qs = get_queryset(project, "discovereddependency")
 
     document_spdx_id = f"SPDXRef-DOCUMENT-{project.uuid}"
+    project_as_root_package = spdx.Package(
+        spdx_id=f"SPDXRef-scancodeio-project-{project.uuid}",
+        name=project.name,
+        files_analyzed=True,
+    )
     packages_as_spdx = []
     license_expressions = []
     relationships = []
 
     for package in discoveredpackage_qs:
-        packages_as_spdx.append(package.as_spdx())
+        spdx_package = package.as_spdx()
+        packages_as_spdx.append(spdx_package)
+
         if license_expression := package.declared_license_expression:
             license_expressions.append(license_expression)
+
+        spdx_relationship = spdx.Relationship(
+            spdx_id=project_as_root_package.spdx_id,
+            related_spdx_id=spdx_package.spdx_id,
+            relationship="DEPENDS_ON",
+        )
+        relationships.append(spdx_relationship)
 
     for dependency in discovereddependency_qs:
         spdx_relationship = get_dependency_as_spdx_relationship(
@@ -733,6 +747,7 @@ def to_spdx(project, include_files=False):
         spdx_id=document_spdx_id,
         name=f"scancodeio_{project.name}",
         namespace=f"https://scancode.io/spdxdocs/{project.uuid}",
+        describe=project_as_root_package,
         creation_info=spdx.CreationInfo(tool=f"ScanCode.io-{scancodeio_version}"),
         packages=packages_as_spdx,
         files=files_as_spdx,

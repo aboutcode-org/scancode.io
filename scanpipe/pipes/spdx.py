@@ -267,7 +267,7 @@ class ExtractedLicensingInfo:
     """
 
     license_id: str
-    extracted_text: str
+    extracted_text: str = "NOASSERTION"
 
     name: str = ""
     comment: str = ""
@@ -542,6 +542,7 @@ class Document:
 
     name: str
     namespace: str
+    describe: Package
     creation_info: CreationInfo
     packages: list[Package]
 
@@ -556,15 +557,18 @@ class Document:
 
     def as_dict(self):
         """Return the SPDX document as a serializable dict."""
+        packages = [self.describe.as_dict()]
+        packages.extend([package.as_dict() for package in self.packages])
+
         data = {
             "spdxVersion": f"SPDX-{self.version}",
             "dataLicense": self.data_license,
             "SPDXID": self.spdx_id,
             "name": self.safe_document_name(self.name),
             "documentNamespace": self.namespace,
+            "documentDescribes": [self.describe.spdx_id],
             "creationInfo": self.creation_info.as_dict(),
-            "packages": [package.as_dict() for package in self.packages],
-            "documentDescribes": [package.spdx_id for package in self.packages],
+            "packages": packages,
         }
 
         if self.files:
