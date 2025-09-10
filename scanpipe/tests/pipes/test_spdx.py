@@ -318,6 +318,15 @@ class ScanPipeSPDXPipesTest(TestCase):
         licensing_info = spdx.ExtractedLicensingInfo(**self.licensing_info_data)
         assert self.licensing_info_spdx_data == licensing_info.as_dict()
 
+    def test_spdx_extracted_licensing_info_empty_extracted_text(self):
+        licensing_info = spdx.ExtractedLicensingInfo(
+            **{
+                "license_id": "LicenseRef-1",
+                "extracted_text": " ",
+            }
+        )
+        assert "NOASSERTION" == licensing_info.as_dict()["extractedText"]
+
     def test_spdx_extracted_licensing_info_from_data(self):
         assert spdx.ExtractedLicensingInfo.from_data({})
         licensing_info = spdx.ExtractedLicensingInfo.from_data(

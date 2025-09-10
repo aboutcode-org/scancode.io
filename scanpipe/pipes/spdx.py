@@ -280,9 +280,14 @@ class ExtractedLicensingInfo:
 
     def as_dict(self):
         """Return the data as a serializable dict."""
+        if self.extracted_text.strip():
+            extracted_text = self.extracted_text
+        else:
+            extracted_text = "NOASSERTION"
+
         required_data = {
             "licenseId": self.license_id,
-            "extractedText": self.extracted_text,
+            "extractedText": extracted_text,
         }
 
         optional_data = {
