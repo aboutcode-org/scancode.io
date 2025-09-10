@@ -97,11 +97,7 @@ def check_federatedcode_eligibility(project):
         - Source is a download_url.
         - Must have ``project_purl`` with version.
     """
-    if not is_configured():
-        raise Exception("FederatedCode is not configured.")
-
-    if not is_available():
-        raise Exception("FederatedCode Git account is not available.")
+    check_federatedcode_configured_and_available()
 
     all_executed_pipeline_successful = all(
         run.task_succeeded for run in project.runs.executed()
@@ -124,6 +120,21 @@ def check_federatedcode_eligibility(project):
 
     if not project_package_url.version:
         raise Exception("Missing version in Project PURL.")
+
+
+def check_federatedcode_configured_and_available():
+    """
+    Check if the criteria for pushing the results to FederatedCode
+    is satisfied.
+
+    Criteria:
+        - FederatedCode is configured and available.
+    """
+    if not is_configured():
+        raise Exception("FederatedCode is not configured.")
+
+    if not is_available():
+        raise Exception("FederatedCode Git account is not available.")
 
 
 def clone_repository(repo_url, logger=None):
@@ -162,9 +173,24 @@ def add_scan_result(project, repo, package_scan_file, logger=None):
 
 
 def commit_and_push_changes(
-    repo, file_to_commit, purl, remote_name="origin", logger=None
+    repo,
+    file_to_commit,
+    purl,
+    remote_name="origin",
+    logger=None,
 ):
     """Commit and push changes to remote repository."""
+    commit_changes(repo, file_to_commit, purl, remote_name)
+    push_changes(repo, remote_name)    
+
+def commit_changes(
+    repo,
+    file_to_commit,
+    purl,
+    remote_name="origin",
+    logger=None,
+):
+    """Commit changes to remote repository."""
     author_name = settings.FEDERATEDCODE_GIT_SERVICE_NAME
     author_email = settings.FEDERATEDCODE_GIT_SERVICE_EMAIL
 
@@ -182,6 +208,11 @@ def commit_and_push_changes(
 
     repo.index.add([file_to_commit])
     repo.index.commit(textwrap.dedent(commit_message))
+
+
+def push_changes(repo, remote_name="origin"):
+    """Push changes to remote repositiry."""
+    default_branch = repo.active_branch.name
     repo.git.push(remote_name, default_branch, "--no-verify")
 
 
