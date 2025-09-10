@@ -81,3 +81,23 @@ master_doc = "index"
 
 # user starts in light mode (Default Mode)
 default_dark_mode = False
+
+
+# Display the optional steps in the Pipelines autodoc.
+def autodoc_process_docstring(app, what, name, obj, options, lines):
+    """
+    Sphinx autodoc extension hook to insert `@optional_step` groups
+    into the generated documentation.
+
+    If a function or method has been decorated with ``@optional_step``,
+    the decorator attaches a ``.groups`` attribute to the object.
+    This hook inspects that attribute during autodoc processing and prepends
+    a short note at the top of the function’s docstring.
+    """
+    if hasattr(obj, "groups"):
+        groups_str = " ".join(f":guilabel:`{group}`" for group in sorted(obj.groups))
+        lines[:0] = [f"**Optional step:** {groups_str}", ""]
+
+
+def setup(app):
+    app.connect("autodoc-process-docstring", autodoc_process_docstring)

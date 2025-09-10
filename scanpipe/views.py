@@ -2758,3 +2758,90 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
             "children": children,
         }
         return node
+
+
+class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
+    template_name = "scanpipe/resource_tree.html"
+
+    def get(self, request, *args, **kwargs):
+        slug = self.kwargs.get("slug")
+        project = get_object_or_404(Project, slug=slug)
+        path = request.GET.get("path", "")
+        parent_path = path if request.GET.get("tree_panel") == "true" else ""
+
+        children = (
+            project.codebaseresources.filter(parent_path=parent_path)
+            .with_has_children()
+            .only("id", "project_id", "path", "name", "type")
+            .order_by("type", "path")
+        )
+
+        context = {
+            "project": project,
+            "path": path,
+            "children": children,
+        }
+
+        if request.GET.get("tree_panel") == "true":
+            return render(request, "scanpipe/panels/codebase_tree_panel.html", context)
+        return render(request, self.template_name, context)
+
+
+class CodebaseResourceTableView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    generic.ListView,
+):
+    model = CodebaseResource
+    template_name = "scanpipe/panels/resource_table_panel.html"
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("resource", 100)
+    context_object_name = "resources"
+
+    def get_queryset(self):
+        path = self.request.GET.get("path", "")
+
+        qs = super().get_queryset().filter(path=path)
+        if qs.exists() and not qs.first().is_dir:
+            return qs.only(
+                "path",
+                "status",
+                "type",
+                "size",
+                "name",
+                "extension",
+                "programming_language",
+                "mime_type",
+                "tag",
+                "detected_license_expression",
+                "compliance_alert",
+                "package_data",
+            ).prefetch_related("discovered_packages")
+
+        return (
+            super()
+            .get_queryset()
+            .filter(parent_path=path)
+            .with_has_children()
+            .only(
+                "path",
+                "status",
+                "type",
+                "name",
+                "programming_language",
+                "tag",
+                "detected_license_expression",
+                "compliance_alert",
+            )
+            .prefetch_related("discovered_packages")
+            .order_by("type", "path")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        path = self.request.GET.get("path", "")
+        context["path"] = path
+        segments = path.strip("/").split("/")
+        context["path_segments"] = [
+            ("/".join(segments[: i + 1]), segment) for i, segment in enumerate(segments)
+        ]
+        return context

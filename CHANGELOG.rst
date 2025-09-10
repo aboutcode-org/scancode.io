@@ -4,14 +4,37 @@ Changelog
 v35.4.0 (unreleased)
 --------------------
 
+- Use deterministic UID/GID in Dockerfile.
+  A temporary ``chown`` service is now started in the ``docker-compose`` stack
+  to fix the permissions. This process is only fully run once.
+  You may manually run this process using the following:
+  ``$ chown -R 1000:1000 /var/scancodeio/``
+  https://github.com/aboutcode-org/scancode.io/issues/1555
+
 - Resolve and load dependencies from SPDX SBOMs.
   https://github.com/aboutcode-org/scancode.io/issues/1145
+
+- Display the optional steps in the Pipelines autodoc.
+  https://github.com/aboutcode-org/scancode.io/issues/1822
+
+- Add new ``benchmark_purls`` pipeline.
+  https://github.com/aboutcode-org/scancode.io/issues/1804
+
+- Add a Resources tree view.
+  https://github.com/aboutcode-org/scancode.io/issues/1682
+
+- Improve CycloneDX SBOM support.
+  * Upgrade the cyclonedx-python-lib to 11.0.0
+  * Fix the validate_document following library upgrade.
+  * Add support when the "components" entry is missing.
+  https://github.com/aboutcode-org/scancode.io/issues/1727
 
 - Split the functionality of
   ``scanpipe.pipes.federatedcode.commit_and_push_changes`` into
   ``scanpipe.pipes.federatedcode.commit_changes`` and
   ``scanpipe.pipes.federatedcode.push_changes``. Add
   ``scanpipe.pipes.federatedcode.write_data_as_yaml``.
+
 
 v35.3.0 (2025-08-20)
 --------------------

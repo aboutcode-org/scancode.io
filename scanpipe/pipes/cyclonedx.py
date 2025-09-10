@@ -123,7 +123,10 @@ def validate_document(document):
     The validator is loaded from the document specVersion property.
     """
     if isinstance(document, str):
+        document_str = document
         document = json.loads(document)
+    else:
+        document_str = json.dumps(document)
 
     spec_version = document.get("specVersion")
     if not spec_version:
@@ -132,7 +135,8 @@ def validate_document(document):
     schema_version = SchemaVersion.from_version(spec_version)
 
     json_validator = JsonStrictValidator(schema_version)
-    return json_validator._validata_data(document)
+    json_validation_errors = json_validator.validate_str(document_str)
+    return json_validation_errors
 
 
 def is_cyclonedx_bom(input_location):
@@ -281,7 +285,7 @@ def cleanup_components_properties(cyclonedx_document_json):
         elif isinstance(value, list) and not any(value):
             return True
 
-    for component in cyclonedx_document_json["components"]:
+    for component in cyclonedx_document_json.get("components", []):
         for property_name, property_value in component.items():
             if is_empty(property_value) or property_name in ignored_properties:
                 entries_to_delete.append((component, property_name))

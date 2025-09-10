@@ -1,0 +1,224 @@
+{% extends "scanpipe/base.html" %}
+{% load static humanize %}
+{% block title %}ScanCode.io: {{ project.name }} - Resources tree{% endblock %}
+
+{% block extrahead %}
+  <style>
+    .chevron {
+      transition: transform 0.2s ease;
+      display: inline-block;
+    }
+    .chevron.rotated {
+      transform: rotate(90deg);
+    }
+    .resizable-container {
+      display: flex;
+      height: calc(100vh - 140px);
+      margin: 0;
+    }
+    .left-pane {
+      min-width: 0;
+      max-width: 100%;
+      border-right: 1px solid #ccc;
+      overflow-y: auto;
+      overflow-x: hidden;
+      flex-basis: 25%;
+      transition: opacity 0.2s ease;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .left-pane.collapsed {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .resizer {
+      width: 3px;
+      background: #ddd;
+      cursor: col-resize;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .resizer:hover {
+      background: #bbb;
+    }
+    .resizer::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0px;
+      transform: translateY(-50%);
+      width: 2px;
+      height: 30px;
+      background: #999;
+      border-radius: 2px;
+    }
+    .right-pane {
+      flex: 1;
+      min-width: 0;
+      transition: opacity 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .right-pane .table-scroll-area {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    .right-pane.collapsed {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .right-pane a:hover {
+      text-decoration: underline;
+    }
+    .is-current, .is-current:hover {
+      background-color: var(--bulma-background-hover) !important;
+      border-radius: var(--bulma-radius);
+    }
+    .tree-node, .tree-node-file {
+      padding: .25rem 0 .25rem 0;
+    }
+    .tree-node:hover, .tree-node-file:hover {
+      background-color: var(--bulma-background);
+      border-radius: var(--bulma-radius);
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Resources tree" %}
+      </div>
+    </section>
+  </div>
+
+<div class="resizable-container">
+  <div id="left-pane" class="left-pane px-2">
+    <div id="resource-tree">
+      {% include "scanpipe/panels/codebase_tree_panel.html" with children=children path=path %}
+    </div>
+  </div>
+  <div id="resizer" class="resizer"></div>
+  <div id="right-pane" class="right-pane px-2">
+    {% if path %}
+      <div hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ path }}" hx-trigger="load" hx-target="this"></div>
+    {% else %}
+      {% include "scanpipe/panels/resource_table_panel.html" %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    document.body.addEventListener('htmx:afterSettle', function(evt) {
+      if (typeof enableCopyToClipboard === 'function') {
+        enableCopyToClipboard('.copy-to-clipboard');
+      }
+    });
+
+    async function toggleFolderNode(folderNode, forceExpand = false) {
+      const targetId = folderNode.dataset.target;
+      const url = folderNode.dataset.url;
+      const target = document.getElementById("dir-" + targetId);
+      const chevron = folderNode.querySelector("[data-chevron]");
+      
+      if (!target || !chevron) return;
+
+      if (target.dataset.loaded === "true") {
+        if (forceExpand) {
+          target.classList.remove("is-hidden");
+          chevron.classList.add("rotated");
+        } else {
+          target.classList.toggle("is-hidden");
+          chevron.classList.toggle("rotated");
+        }
+      } else {
+        target.classList.remove("is-hidden");
+        const response = await fetch(url + "&tree_panel=true");
+        target.innerHTML = await response.text();
+        target.dataset.loaded = "true";
+        htmx.process(target);
+        chevron.classList.add("rotated");
+      }
+    }
+
+    async function expandToPath(path) {
+      const parts = path.split('/').filter(Boolean);
+      let current = "";
+      for (const part of parts) {
+        current = current ? current + "/" + part : part;
+        const folderNode = document.querySelector(`[data-folder][data-path="${current}"]`);
+        if (folderNode) await toggleFolderNode(folderNode, true);
+      }
+      const finalNode = document.querySelector(`[data-folder][data-path="${path}"], .is-file[data-file][data-path="${path}"]`);
+      if (finalNode) {
+        document.querySelectorAll('.is-current').forEach(el => el.classList.remove('is-current'));
+        finalNode.classList.add('is-current');
+        finalNode.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+
+    document.addEventListener("click", async e => {
+      const node = e.target.closest("[data-folder], .is-file[data-file], .expand-in-tree, [data-chevron]");
+      if (!node) return;
+
+      e.preventDefault();
+      if (node.matches("[data-chevron]")) {
+        await toggleFolderNode(node.closest("[data-folder]"));
+      } else if (node.matches("[data-folder], .is-file[data-file], .expand-in-tree")) {
+        await expandToPath(node.dataset.path);
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const currentPath = "{{ path }}";
+      if (currentPath) {
+        expandToPath(currentPath);
+      }
+
+      const resizer = document.getElementById('resizer');
+      const leftPane = document.getElementById('left-pane');
+      const rightPane = document.getElementById('right-pane');
+      let isResizing = false;
+
+      resizer.addEventListener('mousedown', function(e) {
+        isResizing = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', function(e) {
+        if (!isResizing) return;
+        
+        const container = document.querySelector('.resizable-container');
+        const containerRect = container.getBoundingClientRect();
+        let newLeftWidth = e.clientX - containerRect.left;
+        const containerWidth = containerRect.width;
+        const resizerWidth = 5;
+        const minLeftWidth = 200;
+        if (newLeftWidth < minLeftWidth) newLeftWidth = minLeftWidth;
+        if (newLeftWidth > containerWidth - resizerWidth) newLeftWidth = containerWidth - resizerWidth;
+
+        const leftPercent = (newLeftWidth / containerWidth) * 100;
+        const rightPercent = ((containerWidth - newLeftWidth - resizerWidth) / containerWidth) * 100;
+
+        leftPane.style.flexBasis = leftPercent + '%';
+        rightPane.style.flexBasis = rightPercent + '%';
+      });
+
+      document.addEventListener('mouseup', function() {
+        if (isResizing) {
+          isResizing = false;
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+        }
+      });
+    });
+  </script>
+{% endblock %}
