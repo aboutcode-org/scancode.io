@@ -744,11 +744,20 @@ def to_spdx(project, include_files=False):
             for resource in get_queryset(project, "codebaseresource").files()
         ]
 
+    # Use the Project (top-level package) as the root element that the SPDX document
+    # describes.
+    # This ensures "documentDescribes" points only to the main subject of the SBOM,
+    # not to every dependency or file in the project.
+    # See https://github.com/spdx/spdx-spec/issues/395 and
+    # https://github.com/aboutcode-org/scancode.io/issues/564#issuecomment-3269296563
+    # for detailed context.
+    describes = [project_as_root_package.spdx_id]
+
     document = spdx.Document(
         spdx_id=document_spdx_id,
         name=f"scancodeio_{project.name}",
         namespace=f"https://scancode.io/spdxdocs/{project.uuid}",
-        describes=[project_as_root_package.spdx_id],
+        describes=describes,
         creation_info=spdx.CreationInfo(tool=f"ScanCode.io-{scancodeio_version}"),
         packages=packages_as_spdx,
         files=files_as_spdx,

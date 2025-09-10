@@ -552,6 +552,15 @@ class Document:
 
     name: str
     namespace: str
+    # "documentDescribes" identifies the root element(s) that this SPDX document
+    # describes.
+    # In most SBOM cases, this will be a single SPDX ID representing the top-level
+    # package or project (e.g., the root manifest in a repository or the main
+    # distribution artifact).
+    # Although defined as an array, it should NOT list every package, file, or snippet.
+    # Multiple entries are only expected in special, non-SBOM cases
+    # (e.g., SPDX license lists).
+    # See https://github.com/spdx/spdx-spec/issues/395 for discussion and clarification.
     describes: list
     creation_info: CreationInfo
     packages: list[Package]
