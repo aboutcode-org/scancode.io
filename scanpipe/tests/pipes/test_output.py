@@ -507,8 +507,8 @@ class ScanPipeOutputPipesTest(TestCase):
 
         output_file = output.to_spdx(project=project)
         results_json = json.loads(output_file.read_text())
-        self.assertEqual(5, len(results_json["packages"]))
-        self.assertEqual(3, len(results_json["relationships"]))
+        self.assertEqual(6, len(results_json["packages"]))
+        self.assertEqual(6, len(results_json["relationships"]))
 
         # Patch the `created` date and tool version
         results_json["creationInfo"]["created"] = "2000-01-01T01:02:03Z"

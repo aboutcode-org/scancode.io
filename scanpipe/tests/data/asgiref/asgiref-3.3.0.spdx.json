@@ -4,6 +4,9 @@
   "SPDXID": "SPDXRef-DOCUMENT-804c3391-e6f9-415f-bb7a-cb6653853a46",
   "name": "scancodeio_asgiref",
   "documentNamespace": "https://scancode.io/spdxdocs/804c3391-e6f9-415f-bb7a-cb6653853a46",
+  "documentDescribes": [
+    "SPDXRef-scancodeio-project-804c3391-e6f9-415f-bb7a-cb6653853a46"
+  ],
   "creationInfo": {
     "created": "2000-01-01T01:02:03Z",
     "creators": [
@@ -12,6 +15,15 @@
     "licenseListVersion": "3.20"
   },
   "packages": [
+    {
+      "name": "asgiref",
+      "SPDXID": "SPDXRef-scancodeio-project-804c3391-e6f9-415f-bb7a-cb6653853a46",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "filesAnalyzed": true,
+      "licenseDeclared": "NOASSERTION"
+    },
     {
       "name": "asgiref",
       "SPDXID": "SPDXRef-scancodeio-discoveredpackage-9d0bdc32-1117-407a-9908-08d3558dc739",
@@ -115,16 +127,18 @@
       ]
     }
   ],
-  "documentDescribes": [
-    "SPDXRef-scancodeio-discoveredpackage-9d0bdc32-1117-407a-9908-08d3558dc739",
-    "SPDXRef-scancodeio-discoveredpackage-7969de5e-5589-4441-bffa-a60e12b43280",
-    "SPDXRef-scancodeio-discovereddependency-4cff8bf8-197c-4698-a43a-5c793586c780",
-    "SPDXRef-scancodeio-discovereddependency-4c5c1313-3850-4f81-ac27-8d496080d667",
-    "SPDXRef-scancodeio-discovereddependency-f983278c-22f1-43e1-ba2b-a020d659531b",
-    "SPDXRef-scancodeio-discovereddependency-98aeddb5-b81a-43d4-ac56-dc873a589fdf"
-  ],
   "files": [],
   "relationships": [
+    {
+      "spdxElementId": "SPDXRef-scancodeio-project-804c3391-e6f9-415f-bb7a-cb6653853a46",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-9d0bdc32-1117-407a-9908-08d3558dc739",
+      "relationshipType": "DEPENDS_ON"
+    },
+    {
+      "spdxElementId": "SPDXRef-scancodeio-project-804c3391-e6f9-415f-bb7a-cb6653853a46",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-7969de5e-5589-4441-bffa-a60e12b43280",
+      "relationshipType": "DEPENDS_ON"
+    },
     {
       "spdxElementId": "SPDXRef-scancodeio-discovereddependency-4cff8bf8-197c-4698-a43a-5c793586c780",
       "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-9d0bdc32-1117-407a-9908-08d3558dc739",

@@ -90,6 +90,10 @@ class ScanPipeSPDXPipesTest(TestCase):
                 "https://license1.homepage",
             ],
         }
+        self.project_as_root_package_data = {
+            "spdx_id": "SPDXRef-project",
+            "name": "Project",
+        }
         self.package_data = {
             "spdx_id": "SPDXRef-package1",
             "name": "lxml",
@@ -170,7 +174,9 @@ class ScanPipeSPDXPipesTest(TestCase):
             "name": "Document name",
             "namespace": "https://[CreatorWebsite]/[DocumentName]-[UUID]",
             "creation_info": spdx.CreationInfo(**self.creation_info_data),
+            "describes": [self.project_as_root_package_data["spdx_id"]],
             "packages": [
+                spdx.Package(**self.project_as_root_package_data),
                 spdx.Package(**self.package_data),
             ],
             "extracted_licenses": [
@@ -190,6 +196,7 @@ class ScanPipeSPDXPipesTest(TestCase):
             "SPDXID": "SPDXRef-DOCUMENT",
             "name": "document_name",
             "documentNamespace": "https://[CreatorWebsite]/[DocumentName]-[UUID]",
+            "documentDescribes": ["SPDXRef-project"],
             "creationInfo": {
                 "created": "2022-09-21T13:50:20Z",
                 "creators": [
@@ -201,6 +208,15 @@ class ScanPipeSPDXPipesTest(TestCase):
                 "comment": "Generated with SPDXCode",
             },
             "packages": [
+                {
+                    "name": "Project",
+                    "SPDXID": "SPDXRef-project",
+                    "downloadLocation": "NOASSERTION",
+                    "licenseConcluded": "NOASSERTION",
+                    "copyrightText": "NOASSERTION",
+                    "filesAnalyzed": False,
+                    "licenseDeclared": "NOASSERTION",
+                },
                 {
                     "name": "lxml",
                     "SPDXID": "SPDXRef-package1",
@@ -228,7 +244,7 @@ class ScanPipeSPDXPipesTest(TestCase):
                             "referenceLocator": "pkg:pypi/lxml@3.3.5",
                         }
                     ],
-                }
+                },
             ],
             "files": [
                 {
@@ -247,7 +263,6 @@ class ScanPipeSPDXPipesTest(TestCase):
                     "licenseComments": "license_comments",
                 }
             ],
-            "documentDescribes": ["SPDXRef-package1"],
             "hasExtractedLicensingInfos": [
                 {
                     "licenseId": "LicenseRef-1",
@@ -353,7 +368,7 @@ class ScanPipeSPDXPipesTest(TestCase):
 
     def test_spdx_document_as_dict(self):
         document = spdx.Document(**self.document_data)
-        assert self.document_spdx_data == document.as_dict()
+        assert self.document_spdx_data == document.as_dict(), document.as_dict()
 
     def test_spdx_relationship_is_dependency_relationship_property(self):
         relationship = spdx.Relationship.from_data(self.relationship_spdx_data)
