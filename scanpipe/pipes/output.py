@@ -700,17 +700,18 @@ def to_spdx(project, include_files=False):
     Return the path of the generated output file.
     """
     output_file = project.get_output_file_path("results", "spdx.json")
+    document_spdx_id = f"SPDXRef-DOCUMENT-{project.uuid}"
 
     discoveredpackage_qs = get_queryset(project, "discoveredpackage")
     discovereddependency_qs = get_queryset(project, "discovereddependency")
 
-    document_spdx_id = f"SPDXRef-DOCUMENT-{project.uuid}"
     project_as_root_package = spdx.Package(
         spdx_id=f"SPDXRef-scancodeio-project-{project.uuid}",
         name=project.name,
         files_analyzed=True,
     )
-    packages_as_spdx = []
+
+    packages_as_spdx = [project_as_root_package]
     license_expressions = []
     relationships = []
 
@@ -747,7 +748,7 @@ def to_spdx(project, include_files=False):
         spdx_id=document_spdx_id,
         name=f"scancodeio_{project.name}",
         namespace=f"https://scancode.io/spdxdocs/{project.uuid}",
-        describe=project_as_root_package,
+        describes=[project_as_root_package.spdx_id],
         creation_info=spdx.CreationInfo(tool=f"ScanCode.io-{scancodeio_version}"),
         packages=packages_as_spdx,
         files=files_as_spdx,

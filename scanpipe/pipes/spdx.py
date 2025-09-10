@@ -43,7 +43,6 @@ Spec documentation: https://spdx.github.io/spdx-spec/v2.3/
 
 Usage::
 
-    import pathlib
     from scanpipe.pipes import spdx
 
     creation_info = spdx.CreationInfo(
@@ -51,6 +50,11 @@ Usage::
         person_email="john@starship.space",
         organization_name="Starship",
         tool="SPDXCode-1.0",
+    )
+
+    root_package = spdx.Package(
+        spdx_id="SPDXRef-project1",
+        name="project1",
     )
 
     package1 = spdx.Package(
@@ -76,8 +80,9 @@ Usage::
     document = spdx.Document(
         name="Document name",
         namespace="https://[CreatorWebsite]/[pathToSpdx]/[DocumentName]-[UUID]",
+        describes=[root_package.spdx_id],
         creation_info=creation_info,
-        packages=[package1],
+        packages=[root_package, package1],
         extracted_licenses=[
             spdx.ExtractedLicensingInfo(
                 license_id="LicenseRef-1",
@@ -93,7 +98,7 @@ Usage::
     print(document.as_json())
 
     # Validate document
-    schema = pathlib.Path(spdx.SPDX_JSON_SCHEMA_LOCATION).read_text()
+    schema = spdx.SPDX_SCHEMA_PATH.read_text()
     document.validate(schema)
 
     # Write document to a file:
@@ -542,7 +547,7 @@ class Document:
 
     name: str
     namespace: str
-    describe: Package
+    describes: list
     creation_info: CreationInfo
     packages: list[Package]
 
@@ -557,18 +562,15 @@ class Document:
 
     def as_dict(self):
         """Return the SPDX document as a serializable dict."""
-        packages = [self.describe.as_dict()]
-        packages.extend([package.as_dict() for package in self.packages])
-
         data = {
             "spdxVersion": f"SPDX-{self.version}",
             "dataLicense": self.data_license,
             "SPDXID": self.spdx_id,
             "name": self.safe_document_name(self.name),
             "documentNamespace": self.namespace,
-            "documentDescribes": [self.describe.spdx_id],
+            "documentDescribes": self.describes,
             "creationInfo": self.creation_info.as_dict(),
-            "packages": packages,
+            "packages": [package.as_dict() for package in self.packages],
         }
 
         if self.files:
@@ -601,6 +603,7 @@ class Document:
             data_license=data.get("dataLicense"),
             name=data.get("name"),
             namespace=data.get("documentNamespace"),
+            describes=data.get("documentDescribes"),
             creation_info=CreationInfo.from_data(data.get("creationInfo", {})),
             packages=[
                 Package.from_data(package_data)
