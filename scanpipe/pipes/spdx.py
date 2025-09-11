@@ -251,7 +251,6 @@ class ExternalRef:
 
     def as_dict(self, spec_version=SPDX_SPEC_VERSION_2_3):
         """Return the data as a serializable dict."""
-
         if spec_version == SPDX_SPEC_VERSION_2_2:
             if self.category == "PACKAGE-MANAGER":
                 self.category = "PACKAGE_MANAGER"
@@ -394,12 +393,14 @@ class Package:
 
         # Fields only valid in 2.3
         if spec_version == SPDX_SPEC_VERSION_2_3:
-            optional_data.update({
-                "releaseDate": self.date_to_iso(self.release_date),
-                "builtDate": self.date_to_iso(self.built_date),
-                "validUntilDate": self.date_to_iso(self.valid_until_date),
-                "primaryPackagePurpose": self.primary_package_purpose,
-            })
+            optional_data.update(
+                {
+                    "releaseDate": self.date_to_iso(self.release_date),
+                    "builtDate": self.date_to_iso(self.built_date),
+                    "validUntilDate": self.date_to_iso(self.valid_until_date),
+                    "primaryPackagePurpose": self.primary_package_purpose,
+                }
+            )
 
         optional_data = {key: value for key, value in optional_data.items() if value}
         return {**required_data, **optional_data}
