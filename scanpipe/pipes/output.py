@@ -725,6 +725,10 @@ def to_spdx(project, include_files=False):
     discoveredpackage_qs = get_queryset(project, "discoveredpackage")
     discovereddependency_qs = get_queryset(project, "discovereddependency")
 
+    packages_as_spdx = []
+    license_expressions = []
+    relationships = []
+
     project_inputs_as_spdx_packages = get_inputs_as_spdx_packages(project)
 
     # Use the Project's input(s) as the root element(s) that the SPDX document
@@ -734,24 +738,23 @@ def to_spdx(project, include_files=False):
     # See https://github.com/spdx/spdx-spec/issues/395 and
     # https://github.com/aboutcode-org/scancode.io/issues/564#issuecomment-3269296563
     # for detailed context.
-    describes = [
-        input_as_spdx_package.spdx_id
-        for input_as_spdx_package in project_inputs_as_spdx_packages
-    ]
-    packages_as_spdx = project_inputs_as_spdx_packages
+    if project_inputs_as_spdx_packages:
+        packages_as_spdx.extend(project_inputs_as_spdx_packages)
+        describes = [
+            input_as_spdx_package.spdx_id
+            for input_as_spdx_package in project_inputs_as_spdx_packages
+        ]
 
-    # Fallback to the Project as the SPDX root element for the "documentDescribes"
-    if not project_inputs_as_spdx_packages:
+    # Fallback to the Project as the SPDX root element for the "documentDescribes",
+    # if not inputs are available.
+    else:
         project_as_root_package = spdx.Package(
             spdx_id=f"SPDXRef-scancodeio-project-{project.uuid}",
             name=project.name,
             files_analyzed=True,
         )
-        packages_as_spdx = [project_as_root_package]
+        packages_as_spdx.append(project_as_root_package)
         describes = [project_as_root_package.spdx_id]
-
-    license_expressions = []
-    relationships = []
 
     for package in discoveredpackage_qs:
         spdx_package = package.as_spdx()
