@@ -25,6 +25,7 @@ import decimal
 import io
 import json
 import re
+import uuid
 from operator import attrgetter
 from pathlib import Path
 
@@ -693,6 +694,25 @@ def get_dependency_as_spdx_relationship(dependency, document_spdx_id, packages_a
     return spdx_relationship
 
 
+def get_inputs_as_spdx_packages(project):
+    """Return the Project's inputs as SPDX package to be used as root elements."""
+    inputs_as_spdx_packages = []
+
+    for input_source in project.get_inputs_with_source():
+        input_uuid = input_source.get("uuid") or uuid.uuid4()
+
+        input_as_spdx_package = spdx.Package(
+            spdx_id=f"SPDXRef-scancodeio-input-{input_uuid}",
+            name=input_source.get("filename"),
+            filename=input_source.get("filename"),
+            download_location=input_source.get("download_url"),
+            files_analyzed=True,
+        )
+        inputs_as_spdx_packages.append(input_as_spdx_package)
+
+    return inputs_as_spdx_packages
+
+
 def to_spdx(project, include_files=False):
     """
     Generate output for the provided ``project`` in SPDX document format.
@@ -705,13 +725,31 @@ def to_spdx(project, include_files=False):
     discoveredpackage_qs = get_queryset(project, "discoveredpackage")
     discovereddependency_qs = get_queryset(project, "discovereddependency")
 
-    project_as_root_package = spdx.Package(
-        spdx_id=f"SPDXRef-scancodeio-project-{project.uuid}",
-        name=project.name,
-        files_analyzed=True,
-    )
+    project_inputs_as_spdx_packages = get_inputs_as_spdx_packages(project)
 
-    packages_as_spdx = [project_as_root_package]
+    # Use the Project's input(s) as the root element(s) that the SPDX document
+    # describes.
+    # This ensures "documentDescribes" points only to the main subject of the SBOM,
+    # not to every dependency or file in the project.
+    # See https://github.com/spdx/spdx-spec/issues/395 and
+    # https://github.com/aboutcode-org/scancode.io/issues/564#issuecomment-3269296563
+    # for detailed context.
+    describes = [
+        input_as_spdx_package.spdx_id
+        for input_as_spdx_package in project_inputs_as_spdx_packages
+    ]
+    packages_as_spdx = project_inputs_as_spdx_packages
+
+    # Fallback to the Project as the SPDX root element for the "documentDescribes"
+    if not project_inputs_as_spdx_packages:
+        project_as_root_package = spdx.Package(
+            spdx_id=f"SPDXRef-scancodeio-project-{project.uuid}",
+            name=project.name,
+            files_analyzed=True,
+        )
+        packages_as_spdx = [project_as_root_package]
+        describes = [project_as_root_package.spdx_id]
+
     license_expressions = []
     relationships = []
 
@@ -723,7 +761,7 @@ def to_spdx(project, include_files=False):
             license_expressions.append(license_expression)
 
         spdx_relationship = spdx.Relationship(
-            spdx_id=project_as_root_package.spdx_id,
+            spdx_id=describes[0],
             related_spdx_id=spdx_package.spdx_id,
             relationship="DEPENDS_ON",
         )
@@ -743,15 +781,6 @@ def to_spdx(project, include_files=False):
             resource.as_spdx()
             for resource in get_queryset(project, "codebaseresource").files()
         ]
-
-    # Use the Project (top-level package) as the root element that the SPDX document
-    # describes.
-    # This ensures "documentDescribes" points only to the main subject of the SBOM,
-    # not to every dependency or file in the project.
-    # See https://github.com/spdx/spdx-spec/issues/395 and
-    # https://github.com/aboutcode-org/scancode.io/issues/564#issuecomment-3269296563
-    # for detailed context.
-    describes = [project_as_root_package.spdx_id]
 
     document = spdx.Document(
         spdx_id=document_spdx_id,

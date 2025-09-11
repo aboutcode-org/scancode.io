@@ -362,6 +362,7 @@ class Package:
 
         optional_data = {
             "versionInfo": self.version,
+            "packageFileName": self.filename,
             "licenseDeclared": self.license_declared,
             "supplier": self.supplier,
             "originator": self.originator,
