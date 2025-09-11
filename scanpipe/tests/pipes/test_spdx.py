@@ -30,7 +30,7 @@ class ScanPipeSPDXPipesTest(TestCase):
     data = Path(__file__).parent.parent / "data"
 
     def setUp(self):
-        self.schema = spdx.SPDX_SCHEMA_PATH.read_text()
+        self.schema_2_3 = spdx.SPDX_SCHEMA_2_3_PATH.read_text()
 
         self.creation_info_data = {
             "person_name": "John Doe",
@@ -400,15 +400,15 @@ class ScanPipeSPDXPipesTest(TestCase):
 
     def test_spdx_document_validate(self):
         document = spdx.Document(**self.document_data)
-        document.validate(self.schema)
+        document.validate(self.schema_2_3)
 
     def test_spdx_validate_document(self):
         document = spdx.Document(**self.document_data)
-        spdx.validate_document(document, self.schema)
+        spdx.validate_document(document, self.schema_2_3)
 
         # Testing support for "PACKAGE_MANAGER" in place of "PACKAGE-MANAGER"
         document_location = self.data / "spdx" / "example-2.3.1.json"
-        spdx.validate_document(document_location.read_text(), self.schema)
+        spdx.validate_document(document_location.read_text(), self.schema_2_3)
 
         with self.assertRaises(Exception):
-            spdx.validate_document({}, self.schema)
+            spdx.validate_document({}, self.schema_2_3)

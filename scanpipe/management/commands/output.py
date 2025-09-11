@@ -71,7 +71,7 @@ class Command(ProjectCommand):
         output_kwargs = {}
         if ":" in output_format:
             output_format, version = output_format.split(":", maxsplit=1)
-            if output_format != "cyclonedx":
+            if output_format not in ["cyclonedx", "spdx"]:
                 raise CommandError(
                     'The ":" version syntax is only supported for the cyclonedx format.'
                 )

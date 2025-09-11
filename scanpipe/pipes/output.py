@@ -713,12 +713,15 @@ def get_inputs_as_spdx_packages(project):
     return inputs_as_spdx_packages
 
 
-def to_spdx(project, include_files=False):
+def to_spdx(project, version=spdx.SPDX_SPEC_VERSION_2_3, include_files=False):
     """
     Generate output for the provided ``project`` in SPDX document format.
     The output file is created in the ``project`` "output/" directory.
     Return the path of the generated output file.
     """
+    if version not in [spdx.SPDX_SPEC_VERSION_2_2, spdx.SPDX_SPEC_VERSION_2_3]:
+        raise ValueError(f"SPDX {version} is not supported.")
+
     output_file = project.get_output_file_path("results", "spdx.json")
     document_spdx_id = f"SPDXRef-DOCUMENT-{project.uuid}"
 
@@ -786,6 +789,7 @@ def to_spdx(project, include_files=False):
         ]
 
     document = spdx.Document(
+        version=version,
         spdx_id=document_spdx_id,
         name=f"scancodeio_{project.name}",
         namespace=f"https://scancode.io/spdxdocs/{project.uuid}",
