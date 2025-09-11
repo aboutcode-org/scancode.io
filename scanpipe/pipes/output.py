@@ -734,22 +734,20 @@ def to_spdx(project, version=spdx.SPDX_SPEC_VERSION_2_3, include_files=False):
 
     project_inputs_as_spdx_packages = get_inputs_as_spdx_packages(project)
 
-    # Use the Project's input(s) as the root element(s) that the SPDX document
-    # describes.
+    if project_inputs_as_spdx_packages:
+        packages_as_spdx.extend(project_inputs_as_spdx_packages)
+
+    # Use the Project's input as the root element that the SPDX document describes.
     # This ensures "documentDescribes" points only to the main subject of the SBOM,
     # not to every dependency or file in the project.
     # See https://github.com/spdx/spdx-spec/issues/395 and
     # https://github.com/aboutcode-org/scancode.io/issues/564#issuecomment-3269296563
     # for detailed context.
-    if project_inputs_as_spdx_packages:
-        packages_as_spdx.extend(project_inputs_as_spdx_packages)
-        describes = [
-            input_as_spdx_package.spdx_id
-            for input_as_spdx_package in project_inputs_as_spdx_packages
-        ]
+    if len(project_inputs_as_spdx_packages) == 1:
+        describe_spdx_id = project_inputs_as_spdx_packages[0].spdx_id
 
     # Fallback to the Project as the SPDX root element for the "documentDescribes",
-    # if not inputs are available.
+    # if more than one input, or if no inputs, are available.
     else:
         project_as_root_package = spdx.Package(
             spdx_id=f"SPDXRef-scancodeio-project-{project.uuid}",
@@ -757,7 +755,7 @@ def to_spdx(project, version=spdx.SPDX_SPEC_VERSION_2_3, include_files=False):
             files_analyzed=True,
         )
         packages_as_spdx.append(project_as_root_package)
-        describes = [project_as_root_package.spdx_id]
+        describe_spdx_id = project_as_root_package.spdx_id
 
     for package in discoveredpackage_qs:
         spdx_package = package.as_spdx()
@@ -767,7 +765,7 @@ def to_spdx(project, version=spdx.SPDX_SPEC_VERSION_2_3, include_files=False):
             license_expressions.append(license_expression)
 
         spdx_relationship = spdx.Relationship(
-            spdx_id=describes[0],
+            spdx_id=describe_spdx_id,
             related_spdx_id=spdx_package.spdx_id,
             relationship="DEPENDS_ON",
         )
@@ -793,7 +791,7 @@ def to_spdx(project, version=spdx.SPDX_SPEC_VERSION_2_3, include_files=False):
         spdx_id=document_spdx_id,
         name=f"scancodeio_{project.name}",
         namespace=f"https://scancode.io/spdxdocs/{project.uuid}",
-        describes=describes,
+        describes=[describe_spdx_id],
         creation_info=spdx.CreationInfo(tool=f"ScanCode.io-{scancodeio_version}"),
         packages=packages_as_spdx,
         files=files_as_spdx,
