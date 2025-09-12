@@ -60,6 +60,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import ProjectMessage
 from scanpipe.pipes import docker
 from scanpipe.pipes import flag
+from scanpipe.pipes import ort
 from scanpipe.pipes import spdx
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -1058,10 +1059,23 @@ def to_attribution(project):
     return output_file
 
 
+def to_ort_package_list_yml(project):
+    """
+    Generate an ORT compatible "package-list.yml" output.
+    The output file is created in the ``project`` "output/" directory.
+    Return the path of the generated output file.
+    """
+    output_file = project.get_output_file_path("results", "package-list.yml")
+    ort_yml = ort.to_ort_package_list_yml(project)
+    output_file.write_text(ort_yml)
+    return output_file
+
+
 FORMAT_TO_FUNCTION_MAPPING = {
     "json": to_json,
     "xlsx": to_xlsx,
     "spdx": to_spdx,
     "cyclonedx": to_cyclonedx,
     "attribution": to_attribution,
+    "ort-package-list": to_ort_package_list_yml,
 }
