@@ -94,6 +94,7 @@ class Dependency:
     # isDynamicallyLinked: bool = False
     # labels: dict = field(default_factory=dict)
 
+
 # private data class PackageList(
 #     val projectName: String? = null,
 #     val projectVcs: Vcs? = null,

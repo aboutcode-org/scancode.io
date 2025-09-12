@@ -520,6 +520,18 @@ class ScanPipeOutputPipesTest(TestCase):
         expected_file = self.data / "spdx" / "dependencies.spdx.json"
         self.assertResultsEqual(expected_file, results)
 
+    def test_scanpipe_pipes_outputs_to_to_ort_package_list_yml(self):
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+        project = Project.objects.get(name="asgiref")
+
+        with self.assertNumQueries(2):
+            output_file = output.to_ort_package_list_yml(project=project)
+        self.assertIn(output_file.name, project.output_root)
+
+        expected_file = self.data / "asgiref" / "asgiref-3.3.0.package-list.yml"
+        self.assertResultsEqual(expected_file, output_file.read_text())
+
     def test_scanpipe_pipes_outputs_make_unknown_license_object(self):
         licensing = get_licensing()
         parsed_expression = licensing.parse("some-unknown-license")
