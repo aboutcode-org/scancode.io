@@ -30,6 +30,7 @@ from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
 
 import python_inspector.api as python_inspector
+import saneyaml
 from attributecode.model import About
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
@@ -378,7 +379,11 @@ def spdx_relationship_to_dependency_data(spdx_relationship):
 def get_spdx_document_from_file(input_location):
     """Return the loaded SPDX document from the `input_location` file."""
     input_path = Path(input_location)
-    spdx_document = json.loads(input_path.read_text())
+
+    if str(input_path).endswith((".yml", ".yaml")):
+        spdx_document = saneyaml.load(input_path.read_text())
+    else:
+        spdx_document = json.loads(input_path.read_text())
 
     try:
         spdx.validate_document(spdx_document)
@@ -425,13 +430,13 @@ def get_default_package_type(input_location):
         if handler.is_datafile(input_location):
             return handler.default_package_type
 
-    if input_location.endswith((".spdx", ".spdx.json")):
+    if input_location.endswith((".spdx", ".spdx.json", ".spdx.yml")):
         return "spdx"
 
     if input_location.endswith(("bom.json", ".cdx.json", "bom.xml", ".cdx.xml")):
         return "cyclonedx"
 
-    if input_location.endswith((".json", ".xml")):
+    if input_location.endswith((".json", ".xml", ".yml", ".yaml")):
         if cyclonedx.is_cyclonedx_bom(input_location):
             return "cyclonedx"
         if spdx.is_spdx_document(input_location):

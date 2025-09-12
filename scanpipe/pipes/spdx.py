@@ -29,6 +29,8 @@ from datetime import datetime
 from datetime import timezone
 from pathlib import Path
 
+import saneyaml
+
 SCHEMAS_LOCATION = Path(__file__).parent / "schemas"
 SPDX_LICENSE_LIST_VERSION = "3.20"
 
@@ -696,8 +698,15 @@ def validate_document(document, schema=SPDX_SCHEMA_2_3_PATH):
 
 def is_spdx_document(input_location):
     """Return True if the file at `input_location` is a SPDX Document."""
+    input_location = str(input_location)
+    data = {}
+
     with suppress(Exception):
-        data = json.loads(Path(input_location).read_text())
-        if data.get("SPDXID"):
-            return True
+        if input_location.endswith(".json"):
+            data = json.loads(Path(input_location).read_text())
+        elif input_location.endswith((".yml", ".yaml")):
+            data = saneyaml.load(Path(input_location).read_text())
+
+    if data.get("SPDXID"):
+        return True
     return False

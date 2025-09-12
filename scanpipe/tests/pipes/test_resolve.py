@@ -50,7 +50,13 @@ class ScanPipeResolvePipesTest(TestCase):
         input_location = self.manifest_location / "toml.spdx.json"
         self.assertEqual("spdx", resolve.get_default_package_type(input_location))
 
+        input_location = self.manifest_location / "curl-7.70.0-v2.2.spdx.yml"
+        self.assertEqual("spdx", resolve.get_default_package_type(input_location))
+
         input_location = self.manifest_location / "toml.json"
+        self.assertEqual("spdx", resolve.get_default_package_type(input_location))
+
+        input_location = self.manifest_location / "curl-7.70.0.yaml"
         self.assertEqual("spdx", resolve.get_default_package_type(input_location))
 
         input_location = self.data / "cyclonedx/nested.cdx.json"
@@ -180,6 +186,12 @@ class ScanPipeResolvePipesTest(TestCase):
         self.assertIsInstance(spdx_document, dict)
         self.assertEqual("SPDXRef-DOCUMENT", spdx_document["SPDXID"])
         self.assertEqual("SPDX-2.3", spdx_document["spdxVersion"])
+
+        input_location = self.data / "manifests" / "curl-7.70.0-v2.2.spdx.yml"
+        spdx_document = resolve.get_spdx_document_from_file(input_location)
+        self.assertIsInstance(spdx_document, dict)
+        self.assertEqual("SPDXRef-DOCUMENT", spdx_document["SPDXID"])
+        self.assertEqual("SPDX-2.2", spdx_document["spdxVersion"])
 
     def test_scanpipe_pipes_resolve_spdx_package_to_package_data(self):
         p1 = Project.objects.create(name="Analysis")
