@@ -28,6 +28,7 @@ from unittest.mock import patch
 from django.test import TestCase
 
 import git
+import saneyaml
 
 from scanpipe import models
 from scanpipe.pipes import federatedcode
@@ -77,3 +78,28 @@ class ScanPipeFederatedCodeTest(TestCase):
         federatedcode.delete_local_clone(repo)
 
         self.assertEqual(False, Path(local_dir).exists())
+
+    def test_scanpipe_pipes_federatedcode_write_data_as_yaml(self):
+        # create local repo
+        local_dir = tempfile.mkdtemp()
+        repo = git.Repo.init(local_dir)
+
+        # write data
+        data = ["123", "abc", 3]
+        federatedcode.write_data_as_yaml(
+            base_path=repo.working_dir,
+            file_path="test.yml",
+            data=data,
+        )
+
+        # Check if file was written
+        test_file_path = Path(repo.working_dir) / "test.yml"
+        self.assertEqual(True, test_file_path.exists())
+        with open(test_file_path) as f:
+            contents = f.read()
+        yml = saneyaml.load(contents)
+        expected_results = ["123", "abc", "3"]
+        self.assertEqual(expected_results, yml)
+
+        # clean up
+        shutil.rmtree(repo.working_dir)

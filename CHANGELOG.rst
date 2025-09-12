@@ -29,6 +29,13 @@ v35.4.0 (unreleased)
   * Add support when the "components" entry is missing.
   https://github.com/aboutcode-org/scancode.io/issues/1727
 
+- Split the functionality of
+  ``scanpipe.pipes.federatedcode.commit_and_push_changes`` into
+  ``scanpipe.pipes.federatedcode.commit_changes`` and
+  ``scanpipe.pipes.federatedcode.push_changes``. Add
+  ``scanpipe.pipes.federatedcode.write_data_as_yaml``.
+
+
 v35.3.0 (2025-08-20)
 --------------------
 

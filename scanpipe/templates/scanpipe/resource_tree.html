@@ -104,91 +104,83 @@
   </div>
   <div id="resizer" class="resizer"></div>
   <div id="right-pane" class="right-pane px-2">
-    {% include "scanpipe/panels/resource_table_panel.html" %}
+    {% if path %}
+      <div hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ path }}" hx-trigger="load" hx-target="this"></div>
+    {% else %}
+      {% include "scanpipe/panels/resource_table_panel.html" %}
+    {% endif %}
   </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
   <script>
-    document.body.addEventListener('htmx:afterSwap', function(evt) {
-      if (evt.target && evt.target.id === 'right-pane') {
-        if (typeof enableCopyToClipboard === 'function') {
-          enableCopyToClipboard('.copy-to-clipboard');
-        }
+    document.body.addEventListener('htmx:afterSettle', function(evt) {
+      if (typeof enableCopyToClipboard === 'function') {
+        enableCopyToClipboard('.copy-to-clipboard');
       }
     });
-    
-    // Tree functionality
-    document.addEventListener("click", async function (e) {
-      const chevron = e.target.closest("[data-chevron]");
-      if (chevron) {
-        const folderNode = chevron.closest("[data-folder]");
-        const targetId = folderNode.dataset.target;
-        const url = folderNode.dataset.url;
-        const target = document.getElementById("dir-" + targetId);
 
-        if (target.dataset.loaded === "true") {
-          target.classList.toggle("is-hidden");
-        } else {
+    async function toggleFolderNode(folderNode, forceExpand = false) {
+      const targetId = folderNode.dataset.target;
+      const url = folderNode.dataset.url;
+      const target = document.getElementById("dir-" + targetId);
+      const chevron = folderNode.querySelector("[data-chevron]");
+      
+      if (!target || !chevron) return;
+
+      if (target.dataset.loaded === "true") {
+        if (forceExpand) {
           target.classList.remove("is-hidden");
-          const response = await fetch(url + "&tree_panel=true");
-          target.innerHTML = await response.text();
-          target.dataset.loaded = "true";
-          htmx.process(target);
+          chevron.classList.add("rotated");
+        } else {
+          target.classList.toggle("is-hidden");
+          chevron.classList.toggle("rotated");
         }
-
-        chevron.classList.toggle("rotated");
-        e.stopPropagation();
-        return;
+      } else {
+        target.classList.remove("is-hidden");
+        const response = await fetch(url + "&tree_panel=true");
+        target.innerHTML = await response.text();
+        target.dataset.loaded = "true";
+        htmx.process(target);
+        chevron.classList.add("rotated");
       }
+    }
 
-      const folderMeta = e.target.closest(".folder-meta");
-      if (folderMeta) {
-        const folderNode = folderMeta.closest("[data-folder]");
-        if (folderNode && folderNode.dataset.target) {
-          document.querySelectorAll('.tree-node.is-current, .is-file.is-current').forEach(el => el.classList.remove('is-current'));
-          folderNode.classList.add('is-current');
-          const chevron = folderNode.querySelector("[data-chevron]");
-          const target = document.getElementById("dir-" + folderNode.dataset.target);
-
-          if (target.classList.contains("is-hidden")) {
-            target.classList.remove("is-hidden");
-            chevron.classList.add("rotated");
-            if (target.dataset.loaded !== "true") {
-              const response = await fetch(folderNode.dataset.url + "&tree_panel=true");
-              target.innerHTML = await response.text();
-              target.dataset.loaded = "true";
-              htmx.process(target);
-            }
-          }
-        }
+    async function expandToPath(path) {
+      const parts = path.split('/').filter(Boolean);
+      let current = "";
+      for (const part of parts) {
+        current = current ? current + "/" + part : part;
+        const folderNode = document.querySelector(`[data-folder][data-path="${current}"]`);
+        if (folderNode) await toggleFolderNode(folderNode, true);
       }
-
-      const fileNode = e.target.closest(".is-file[data-file]");
-      if (fileNode) {
-        document.querySelectorAll('.tree-node.is-current, .is-file.is-current').forEach(el => el.classList.remove('is-current'));
-        fileNode.classList.add('is-current');
+      const finalNode = document.querySelector(`[data-folder][data-path="${path}"], .is-file[data-file][data-path="${path}"]`);
+      if (finalNode) {
+        document.querySelectorAll('.is-current').forEach(el => el.classList.remove('is-current'));
+        finalNode.classList.add('is-current');
+        finalNode.scrollIntoView({ behavior: "smooth", block: "center" });
       }
+    }
 
-      const expandLink = e.target.closest(".expand-in-tree");
-      if (expandLink) {
-        e.preventDefault();
-        const path = expandLink.getAttribute("data-path");
-        const leftPane = document.getElementById("left-pane");
-        if (!leftPane) return;
-        let node = leftPane.querySelector(`[data-folder][data-path="${path}"], .is-file[data-file][data-path="${path}"]`);
-        if (node) {
-          document.querySelectorAll('.tree-node.is-current, .is-file.is-current').forEach(el => el.classList.remove('is-current'));
-          node.classList.add('is-current');
-          const chevron = node.querySelector("[data-chevron]");
-          if (chevron && !chevron.classList.contains("rotated")) chevron.click();
-          node.scrollIntoView({behavior: "smooth", block: "center"});
-        }
+    document.addEventListener("click", async e => {
+      const node = e.target.closest("[data-folder], .is-file[data-file], .expand-in-tree, [data-chevron]");
+      if (!node) return;
+
+      e.preventDefault();
+      if (node.matches("[data-chevron]")) {
+        await toggleFolderNode(node.closest("[data-folder]"));
+      } else if (node.matches("[data-folder], .is-file[data-file], .expand-in-tree")) {
+        await expandToPath(node.dataset.path);
       }
     });
 
     document.addEventListener("DOMContentLoaded", function() {
+      const currentPath = "{{ path }}";
+      if (currentPath) {
+        expandToPath(currentPath);
+      }
+
       const resizer = document.getElementById('resizer');
       const leftPane = document.getElementById('left-pane');
       const rightPane = document.getElementById('right-pane');

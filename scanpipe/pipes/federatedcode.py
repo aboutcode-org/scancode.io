@@ -31,6 +31,7 @@ from urllib.parse import urljoin
 from django.conf import settings
 
 import requests
+import saneyaml
 from git import Repo
 from packageurl import PackageURL
 
@@ -161,6 +162,19 @@ def add_scan_result(project, repo, package_scan_file, logger=None):
     return relative_scan_file_path
 
 
+def commit_changes(repo, files_to_commit, commit_message):
+    """Commit changes to remote repository."""
+    repo.index.add(files_to_commit)
+    repo.index.commit(textwrap.dedent(commit_message))
+
+
+def push_changes(repo, remote_name="origin", branch_name=""):
+    """Push changes to remote repository."""
+    if not branch_name:
+        branch_name = repo.active_branch.name
+    repo.git.push(remote_name, branch_name, "--no-verify")
+
+
 def commit_and_push_changes(
     repo, file_to_commit, purl, remote_name="origin", logger=None
 ):
@@ -177,14 +191,27 @@ def commit_and_push_changes(
 
     Signed-off-by: {author_name} <{author_email}>
     """
-
-    default_branch = repo.active_branch.name
-
-    repo.index.add([file_to_commit])
-    repo.index.commit(textwrap.dedent(commit_message))
-    repo.git.push(remote_name, default_branch, "--no-verify")
+    files_to_commit = [file_to_commit]
+    commit_changes(
+        repo=repo, files_to_commit=files_to_commit, commit_message=commit_message
+    )
+    push_changes(
+        repo=repo,
+        remote_name=remote_name,
+    )
 
 
 def delete_local_clone(repo):
     """Remove local clone."""
     shutil.rmtree(repo.working_dir)
+
+
+def write_data_as_yaml(base_path, file_path, data):
+    """
+    Write the ``data`` as YAML to the ``file_path`` in the ``base_path`` root directory.
+    Create directories in the path as needed.
+    """
+    write_to = Path(base_path) / Path(file_path)
+    write_to.parent.mkdir(parents=True, exist_ok=True)
+    with open(write_to, encoding="utf-8", mode="w") as f:
+        f.write(saneyaml.dump(data))
