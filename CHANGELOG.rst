@@ -35,6 +35,8 @@ v35.4.0 (unreleased)
   ``scanpipe.pipes.federatedcode.push_changes``. Add
   ``scanpipe.pipes.federatedcode.write_data_as_yaml``.
 
+- Add ORT ``package-list.yml`` as new downloadable output format.
+  https://github.com/aboutcode-org/scancode.io/pull/1852
 
 v35.3.0 (2025-08-20)
 --------------------
