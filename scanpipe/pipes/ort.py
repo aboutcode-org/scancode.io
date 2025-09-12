@@ -74,6 +74,8 @@ class Vcs:
 #     val sourceArtifact: SourceArtifact? = null,
 #     val declaredLicenses: Set<String> = emptySet(),
 #     val concludedLicense: SpdxExpression? = null,
+#     val description: String? = null,
+#     val homepageUrl: String? = null,
 #     val isExcluded: Boolean = false,
 #     val isDynamicallyLinked: Boolean = false,
 #     val labels: Map<String, String> = emptyMap()
@@ -86,16 +88,11 @@ class Dependency:
     sourceArtifact: SourceArtifact = None
     declaredLicenses: list = field(default_factory=set)
     # concludedLicense: str = None
+    description: str = None
+    homepageUrl: str = None
     # isExcluded: bool = False
     # isDynamicallyLinked: bool = False
     # labels: dict = field(default_factory=dict)
-
-    # Additions to the initial model:
-    # UnrecognizedPropertyException: Unrecognized field "description"
-    # description: str = ""
-    # UnrecognizedPropertyException: Unrecognized field "homepageUrl"
-    # homepageUrl: str = ""
-
 
 # private data class PackageList(
 #     val projectName: String? = null,
@@ -142,8 +139,8 @@ def to_ort_package_list_yml(project):
             sourceArtifact=SourceArtifact(url=package.download_url),
             declaredLicenses=[package.get_declared_license_expression_spdx()],
             vcs=Vcs(url=package.vcs_url),
-            # description=package.description,
-            # homepageUrl=package.homepage_url,
+            description=package.description,
+            homepageUrl=package.homepage_url,
         )
         dependencies.append(dependency)
 
