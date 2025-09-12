@@ -38,6 +38,8 @@ v35.4.0 (unreleased)
 - Add ORT ``package-list.yml`` as new downloadable output format.
   https://github.com/aboutcode-org/scancode.io/pull/1852
 
+- Add support for SPDX as YAML in ``load_sbom`` pipeline.
+
 v35.3.0 (2025-08-20)
 --------------------
 
