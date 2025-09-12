@@ -36,13 +36,15 @@ jobs:
           scancodeio-repo-branch: "main"
           output-formats: "ort-package-list spdx cyclonedx json xlsx"
 
-      - name: DEBUG
+      - name: Copy package-list.yml to workspace root
         run: |
-          echo ${{ env.PROJECT_WORK_DIRECTORY }}
+          FILE=$(ls ${{ env.PROJECT_WORK_DIRECTORY }}/output/*.package-list.yml | head -n 1)
+          cp "$FILE" "${GITHUB_WORKSPACE}/package-list.yml"
+          ls -lh "${GITHUB_WORKSPACE}/package-list.yml"
 
       - name: Generates an ORT analyzer-result.yml file
         run: |
-          docker run --rm -v ${{ env.PROJECT_WORK_DIRECTORY }}/output:/data \
+          docker run --rm -v ${GITHUB_WORKSPACE}:/data \
             --entrypoint /opt/ort/bin/orth \
             ghcr.io/oss-review-toolkit/ort:${{ env.ORT_VERSION }} \
             create-analyzer-result-from-package-list \
@@ -51,7 +53,7 @@ jobs:
 
       - name: Generates an ORT analyzer-result.yml file
         run: |
-          docker run --rm -v ${{ env.PROJECT_WORK_DIRECTORY }}/output:/data \
+          docker run --rm -v ${GITHUB_WORKSPACE}:/data \
           ghcr.io/oss-review-toolkit/ort:${{ env.ORT_VERSION }} \
           report \
             --ort-file /data/analyzer-result.yml \
