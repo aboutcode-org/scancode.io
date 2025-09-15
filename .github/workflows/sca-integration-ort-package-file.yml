@@ -63,11 +63,11 @@ jobs:
             --report-formats CycloneDX,SpdxDocument
 
       - name: DEBUG
-        run: ls -la ${{ env.PROJECT_WORK_DIRECTORY }}/output/
+        run: ls -la ${GITHUB_WORKSPACE}/ort-data
 
       - name: Upload SBOMs as GitHub Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ort-report
-          path: ${GITHUB_WORKSPACE}/ort-data
+          path: "${GITHUB_WORKSPACE}/ort-data/*"
           retention-days: 20
