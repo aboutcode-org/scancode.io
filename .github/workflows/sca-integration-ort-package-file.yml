@@ -43,6 +43,7 @@ jobs:
         run: |
           FILE=$(ls ${{ env.PROJECT_WORK_DIRECTORY }}/output/*.package-list.yml | head -n 1)
           mkdir -p ${GITHUB_WORKSPACE}/ort-data/
+          sudo chown -R 1000:1000 ${GITHUB_WORKSPACE}/ort-data
           cp "$FILE" "${GITHUB_WORKSPACE}/ort-data/package-list.yml"
           ls -lh "${GITHUB_WORKSPACE}/ort-data/"
 
