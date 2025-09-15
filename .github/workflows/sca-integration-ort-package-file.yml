@@ -34,17 +34,21 @@ jobs:
           input-urls:
             "${{ env.SCIO_IMAGE_INPUT }}"
           scancodeio-repo-branch: "main"
-          output-formats: "ort-package-list spdx cyclonedx json xlsx"
+          output-formats: "ort-package-list spdx:2.2 cyclonedx json xlsx"
+
+      - name: DEBUG
+        run: ls -la ${{ env.PROJECT_WORK_DIRECTORY }}/output/
 
       - name: Copy package-list.yml to workspace root
         run: |
           FILE=$(ls ${{ env.PROJECT_WORK_DIRECTORY }}/output/*.package-list.yml | head -n 1)
-          cp "$FILE" "${GITHUB_WORKSPACE}/package-list.yml"
-          ls -lh "${GITHUB_WORKSPACE}/package-list.yml"
+          mkdir -p ${GITHUB_WORKSPACE}/ort-data/
+          cp "$FILE" "${GITHUB_WORKSPACE}/ort-data/package-list.yml"
+          ls -lh "${GITHUB_WORKSPACE}/ort-data/"
 
       - name: Generates an ORT analyzer-result.yml file
         run: |
-          docker run --rm -v ${GITHUB_WORKSPACE}:/data \
+          docker run --rm -v ${GITHUB_WORKSPACE}/ort-data:/data \
             --entrypoint /opt/ort/bin/orth \
             ghcr.io/oss-review-toolkit/ort:${{ env.ORT_VERSION }} \
             create-analyzer-result-from-package-list \
@@ -53,7 +57,7 @@ jobs:
 
       - name: Generates an ORT analyzer-result.yml file
         run: |
-          docker run --rm -v ${GITHUB_WORKSPACE}:/data \
+          docker run --rm -v ${GITHUB_WORKSPACE}/ort-data:/data \
           ghcr.io/oss-review-toolkit/ort:${{ env.ORT_VERSION }} \
           report \
             --ort-file /data/analyzer-result.yml \
