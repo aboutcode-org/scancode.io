@@ -127,6 +127,24 @@ def check_federatedcode_eligibility(project):
         raise Exception("Missing version in Project PURL.")
 
 
+def check_federatedcode_configured_and_available(logger=None):
+    """
+    Check if the criteria for pushing the results to FederatedCode
+    is satisfied.
+
+    Criteria:
+        - FederatedCode is configured and available.
+    """
+    if not is_configured():
+        raise Exception("FederatedCode is not configured.")
+
+    if not is_available():
+        raise Exception("FederatedCode Git account is not available.")
+
+    if logger:
+        logger("Federatedcode repositories are configured and available.")
+
+
 def clone_repository(repo_url, logger=None):
     """Clone repository to local_path."""
     local_dir = tempfile.mkdtemp()
@@ -162,12 +180,6 @@ def add_scan_result(project, repo, package_scan_file, logger=None):
     return relative_scan_file_path
 
 
-def commit_changes(repo, files_to_commit, commit_message):
-    """Commit changes to remote repository."""
-    repo.index.add(files_to_commit)
-    repo.index.commit(textwrap.dedent(commit_message))
-
-
 def push_changes(repo, remote_name="origin", branch_name=""):
     """Push changes to remote repository."""
     if not branch_name:
@@ -176,29 +188,58 @@ def push_changes(repo, remote_name="origin", branch_name=""):
 
 
 def commit_and_push_changes(
-    repo, file_to_commit, purl, remote_name="origin", logger=None
+    repo,
+    files_to_commit,
+    commit_message=None,
+    purls=None,
+    remote_name="origin",
+    logger=None,
 ):
     """Commit and push changes to remote repository."""
-    author_name = settings.FEDERATEDCODE_GIT_SERVICE_NAME
-    author_email = settings.FEDERATEDCODE_GIT_SERVICE_EMAIL
+    commit_changes(repo, files_to_commit, commit_message, purls)
+    push_changes(repo, remote_name)
 
-    change_type = "Add" if file_to_commit in repo.untracked_files else "Update"
-    commit_message = f"""\
-    {change_type} scan result for {purl}
 
-    Tool: pkg:github/aboutcode-org/scancode.io@v{VERSION}
-    Reference: https://{settings.ALLOWED_HOSTS[0]}/
+def commit_changes(
+    repo,
+    files_to_commit,
+    commit_message=None,
+    purls=None,
+    mine_type="packageURL",
+    tool_name="pkg:github/aboutcode-org/scancode.io",
+    tool_version=VERSION,
+    logger=None,
+):
+    """Commit changes in files to a remote repository."""
+    if not files_to_commit:
+        return
 
-    Signed-off-by: {author_name} <{author_email}>
-    """
-    files_to_commit = [file_to_commit]
-    commit_changes(
-        repo=repo, files_to_commit=files_to_commit, commit_message=commit_message
-    )
-    push_changes(
-        repo=repo,
-        remote_name=remote_name,
-    )
+    if not commit_message:
+        author_name = settings.FEDERATEDCODE_GIT_SERVICE_NAME
+        author_email = settings.FEDERATEDCODE_GIT_SERVICE_EMAIL
+
+        files_added = all(
+            [
+                True
+                for changed_file in files_to_commit
+                if changed_file in repo.untracked_files
+            ]
+        )
+        change_type = "Add" if files_added else "Update"
+
+        purls = "\n".join(purls)
+        commit_message = f"""\
+        {change_type} {mine_type} results for:
+        {purls}
+
+        Tool: {tool_name}@v{tool_version}
+        Reference: https://{settings.ALLOWED_HOSTS[0]}
+
+        Signed-off-by: {author_name} <{author_email}>
+        """
+
+    repo.index.add(files_to_commit)
+    repo.index.commit(textwrap.dedent(commit_message))
 
 
 def delete_local_clone(repo):
