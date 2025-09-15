@@ -1388,9 +1388,10 @@ class PipelinesIntegrationTest(TestCase):
             "scoring_tool_documentation_url": "https://github.com/[trunc...]",
             "score_date": "2025-07-24T18:50:16Z",
         }
-        with mock.patch("scorecode.ossf_scorecard.fetch_scorecard") as fetch:
+        with mock.patch("scorecode.ossf_scorecard.fetch_scorecard_info") as fetch:
             fetch.return_value = PackageScore(**package_score_data)
-        exitcode, out = pipeline.execute()
+            exitcode, out = pipeline.execute()
+
         self.assertEqual(0, exitcode, msg=out)
 
         package1.refresh_from_db()

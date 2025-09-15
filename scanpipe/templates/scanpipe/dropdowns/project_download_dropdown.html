@@ -15,9 +15,15 @@
       <a href="{% url 'project_results' project.slug 'xlsx' %}" class="dropdown-item">
         <strong>XLSX</strong>
       </a>
-      <a href="{% url 'project_results' project.slug 'spdx' %}" class="dropdown-item">
+      <div class="dropdown-item">
         <strong>SPDX</strong>
-      </a>
+        <div class="has-text-weight-semibold">
+          <div class="buttons">
+            <a href="{% url 'project_results' project.slug 'spdx' '2.3' %}" class="tag is-link">2.3</a>
+            <a href="{% url 'project_results' project.slug 'spdx' '2.2' %}" class="tag">2.2</a>
+          </div>
+        </div>
+      </div>
       <div class="dropdown-item">
         <strong>CycloneDX</strong>
         <div class="has-text-weight-semibold">

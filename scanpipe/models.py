@@ -1248,7 +1248,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         adds the `input_source`.
         """
         self.write_input_file(uploaded_file)
-        self.add_input_source(filename=uploaded_file.name, is_uploaded=True, tag=tag)
+        input_source = self.add_input_source(
+            filename=uploaded_file.name,
+            is_uploaded=True,
+            tag=tag,
+        )
+        return input_source
 
     def add_uploads(self, uploads):
         """
