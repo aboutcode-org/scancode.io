@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="{% static 'main.css' %}" crossorigin="anonymous">
     {% block extrahead %}{% endblock %}
   </head>
-  <body class="pb-5">
+  <body class="pb-5" hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
     {% block content %}{% endblock %}
     {% include 'scanpipe/modals/search_syntax_modal.html' %}
     <script src="{% static 'main.js' %}" crossorigin="anonymous"></script>

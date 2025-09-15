@@ -37,12 +37,6 @@
 
 {% block scripts %}
   <script>
-    document.body.addEventListener('htmx:afterSettle', function(evt) {
-      if (typeof enableCopyToClipboard === 'function') {
-        enableCopyToClipboard('.copy-to-clipboard');
-      }
-    });
-
     async function toggleFolderNode(folderNode, forceExpand = false) {
       const targetId = folderNode.dataset.target;
       const url = folderNode.dataset.url;
