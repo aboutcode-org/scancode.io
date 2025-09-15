@@ -4,6 +4,9 @@
   "SPDXID": "SPDXRef-DOCUMENT-b74fe5df-e965-415e-ba65-f38421a0695d",
   "name": "scancodeio_analysis",
   "documentNamespace": "https://scancode.io/spdxdocs/b74fe5df-e965-415e-ba65-f38421a0695d",
+  "documentDescribes": [
+    "SPDXRef-scancodeio-project-b74fe5df-e965-415e-ba65-f38421a0695d"
+  ],
   "creationInfo": {
     "created": "2000-01-01T01:02:03Z",
     "creators": [
@@ -13,9 +16,19 @@
   },
   "packages": [
     {
+      "name": "Analysis",
+      "SPDXID": "SPDXRef-scancodeio-project-b74fe5df-e965-415e-ba65-f38421a0695d",
+      "downloadLocation": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "filesAnalyzed": true
+    },
+    {
       "name": "a",
       "SPDXID": "SPDXRef-scancodeio-discoveredpackage-a83a60de-81bc-4bf4-b48c-dc78e0e658a9",
       "downloadLocation": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "filesAnalyzed": false,
@@ -31,6 +44,7 @@
       "name": "b",
       "SPDXID": "SPDXRef-scancodeio-discoveredpackage-81147701-285f-485c-ba36-9cd3742790b1",
       "downloadLocation": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "filesAnalyzed": false,
@@ -46,6 +60,7 @@
       "name": "z",
       "SPDXID": "SPDXRef-scancodeio-discoveredpackage-e391c33e-d7d0-4a97-a3c3-e947375c53d5",
       "downloadLocation": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "filesAnalyzed": false,
@@ -61,19 +76,19 @@
       "name": "",
       "SPDXID": "SPDXRef-scancodeio-discovereddependency-d0e1eab2-9b8b-449b-b9d1-12147ffdd8a8",
       "downloadLocation": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
       "copyrightText": "NOASSERTION",
-      "filesAnalyzed": false,
-      "licenseDeclared": "NOASSERTION"
+      "filesAnalyzed": false
     },
     {
       "name": "unresolved",
       "SPDXID": "SPDXRef-scancodeio-discovereddependency-29fbe562-a191-44b4-88e8-a9678071ecee",
       "downloadLocation": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseDeclared": "NOASSERTION",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -83,14 +98,22 @@
       ]
     }
   ],
-  "documentDescribes": [
-    "SPDXRef-scancodeio-discoveredpackage-a83a60de-81bc-4bf4-b48c-dc78e0e658a9",
-    "SPDXRef-scancodeio-discoveredpackage-81147701-285f-485c-ba36-9cd3742790b1",
-    "SPDXRef-scancodeio-discoveredpackage-e391c33e-d7d0-4a97-a3c3-e947375c53d5",
-    "SPDXRef-scancodeio-discovereddependency-d0e1eab2-9b8b-449b-b9d1-12147ffdd8a8",
-    "SPDXRef-scancodeio-discovereddependency-29fbe562-a191-44b4-88e8-a9678071ecee"
-  ],
   "relationships": [
+    {
+      "spdxElementId": "SPDXRef-scancodeio-project-b74fe5df-e965-415e-ba65-f38421a0695d",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-a83a60de-81bc-4bf4-b48c-dc78e0e658a9",
+      "relationshipType": "DEPENDS_ON"
+    },
+    {
+      "spdxElementId": "SPDXRef-scancodeio-project-b74fe5df-e965-415e-ba65-f38421a0695d",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-81147701-285f-485c-ba36-9cd3742790b1",
+      "relationshipType": "DEPENDS_ON"
+    },
+    {
+      "spdxElementId": "SPDXRef-scancodeio-project-b74fe5df-e965-415e-ba65-f38421a0695d",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-e391c33e-d7d0-4a97-a3c3-e947375c53d5",
+      "relationshipType": "DEPENDS_ON"
+    },
     {
       "spdxElementId": "SPDXRef-scancodeio-discoveredpackage-81147701-285f-485c-ba36-9cd3742790b1",
       "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-a83a60de-81bc-4bf4-b48c-dc78e0e658a9",
