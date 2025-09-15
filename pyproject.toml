@@ -36,7 +36,7 @@ dependencies = [
   "importlib-metadata==8.7.0",
   "setuptools==80.9.0",
   # Django related
-  "Django==5.1.11",
+  "Django==5.1.12",
   "django-environ==0.12.0",
   "django-crispy-forms==2.4",
   "crispy-bootstrap3==2024.1",
@@ -44,11 +44,11 @@ dependencies = [
   "djangorestframework==3.16.1",
   "django-taggit==6.1.0",
   # Database
-  "psycopg[binary]==3.2.9",
+  "psycopg[binary]==3.2.10",
   # wait_for_database Django management command
   "django-probes==1.7.0",
   # Task queue
-  "rq==2.5.0",
+  "rq==2.6.0",
   "django-rq==3.1",
   "redis==6.4.0",
   # WSGI server
@@ -59,7 +59,7 @@ dependencies = [
   "scancode-toolkit[packages]==32.4.0",
   "extractcode[full]==31.0.0",
   "commoncode==32.3.0",
-  "Beautifulsoup4[chardet]==4.13.4",
+  "Beautifulsoup4[chardet]==4.13.5",
   "packageurl-python==0.17.5",
   # Workaround issue https://github.com/aboutcode-org/scancode.io/issues/1795
   "fingerprints==1.2.3",
@@ -75,19 +75,19 @@ dependencies = [
   "source-inspector==0.7.0; sys_platform != 'darwin' and platform_machine != 'arm64'",
   "aboutcode-toolkit==11.1.1",
   # Utilities
-  "XlsxWriter==3.2.5",
+  "XlsxWriter==3.2.8",
   "openpyxl==3.1.5",
-  "requests==2.32.4",
+  "requests==2.32.5",
   "GitPython==3.1.45",
   # Profiling
   "pyinstrument==5.1.1",
   # CycloneDX
-  "cyclonedx-python-lib==11.0.0",
+  "cyclonedx-python-lib==11.1.0",
   "jsonschema==4.25.1",
   # MatchCode-toolkit
   "matchcode-toolkit==7.2.2",
   # Univers
-  "univers==31.0.0",
+  "univers==31.1.0",
   # Markdown
   "markdown-it-py==4.0.0",
   "bleach==6.2.0",
@@ -100,13 +100,12 @@ dependencies = [
   "scipy==1.15.3",
   # ScoreCode
   "scorecode==0.0.4",
-
 ]
 
 [project.optional-dependencies]
 dev = [
   # Validation
-  "ruff==0.12.9",
+  "ruff==0.13.0",
   "doc8==2.0.0",
   # Debug
   "django-debug-toolbar==6.0.0",
