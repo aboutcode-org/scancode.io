@@ -30,7 +30,7 @@ from django.test import TestCase
 from scanpipe.models import InputSource
 from scanpipe.pipes.input import add_input_from_upload
 from scanpipe.pipes.input import add_input_from_url
-from scanpipe.settings import download_store
+from scancodeio.settings import download_store
 from scanpipe.tests import make_project
 
 

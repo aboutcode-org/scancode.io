@@ -28,8 +28,6 @@ from venv import logger
 import environ
 
 from scanpipe.archiving import LocalFilesystemProvider
-from scanpipe.archiving import S3LikeProvider
-from scanpipe.archiving import SftpProvider
 
 PROJECT_DIR = environ.Path(__file__) - 1
 ROOT_DIR = PROJECT_DIR - 1
@@ -378,11 +376,11 @@ STATICFILES_DIRS = [
 
 CRISPY_TEMPLATE_PACK = "bootstrap3"
 
-# Storing archives locally or in S3 (Package Storage settings)
+# Storing archives locally (Package Storage settings)
 
 ENABLE_DOWNLOAD_ARCHIVING = env.bool("ENABLE_DOWNLOAD_ARCHIVING", default=False)
 
-# localstorage, s3, sftp
+# localstorage configuration
 DOWNLOAD_ARCHIVING_PROVIDER = env.str(
     "DOWNLOAD_ARCHIVING_PROVIDER", default="localstorage"
 )
@@ -392,7 +390,7 @@ DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION = env.dict(
     "DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION", default=None
 )
 
-# Initialize the DownloadStore based on provider
+# Initialize the DownloadStore for local storage
 
 download_store = None
 if ENABLE_DOWNLOAD_ARCHIVING:
@@ -403,41 +401,6 @@ if ENABLE_DOWNLOAD_ARCHIVING:
             download_store = LocalFilesystemProvider(root_path=root_path)
         except Exception as e:
             logger.error(f"Failed to initialize LocalFilesystemProvider: {e}")
-    elif DOWNLOAD_ARCHIVING_PROVIDER == "s3":
-        config = DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION or {}
-        required_keys = ["bucket_name", "aws_userid", "aws_apikey"]
-        if not all(key in config for key in required_keys):
-            logger.error(
-                f"S3 provider requires {required_keys}"
-                "in DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION"
-            )
-        else:
-            try:
-                download_store = S3LikeProvider(
-                    bucket_name=config.get("bucket_name"),
-                    aws_userid=config.get("aws_userid"),
-                    aws_apikey=config.get("aws_apikey"),
-                    other_aws_credentials=config.get("other_aws_credentials", {}),
-                )
-            except Exception as e:
-                logger.error(f"Failed to initialize S3LikeProvider: {e}")
-    elif DOWNLOAD_ARCHIVING_PROVIDER == "sftp":
-        config = DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION or {}
-        required_keys = ["host", "root_path", "ssh_credentials"]
-        if not all(key in config for key in required_keys):
-            logger.error(
-                f"SFTP provider requires {required_keys}"
-                "in DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION"
-            )
-        else:
-            try:
-                download_store = SftpProvider(
-                    host=config.get("host"),
-                    root_path=config.get("root_path"),
-                    ssh_credentials=config.get("ssh_credentials", {}),
-                )
-            except Exception as e:
-                logger.error(f"Failed to initialize SftpProvider: {e}")
     else:
         logger.error(
             f"Unknown DOWNLOAD_ARCHIVING_PROVIDER: {DOWNLOAD_ARCHIVING_PROVIDER}"

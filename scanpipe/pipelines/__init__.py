@@ -34,8 +34,8 @@ from markdown_it import MarkdownIt
 from pyinstrument import Profiler
 
 from aboutcode.pipeline import BasePipeline
-from scanpipe.settings import ENABLE_DOWNLOAD_ARCHIVING
-from scanpipe.settings import download_store
+from scancodeio.settings import ENABLE_DOWNLOAD_ARCHIVING
+from scancodeio.settings import download_store
 
 logger = logging.getLogger(__name__)
 

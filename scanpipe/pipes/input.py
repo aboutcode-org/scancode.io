@@ -44,8 +44,8 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import InputSource
 from scanpipe.pipes import scancode
 from scanpipe.pipes.output import mappings_key_by_fieldname
-from scanpipe.settings import ENABLE_DOWNLOAD_ARCHIVING
-from scanpipe.settings import download_store
+from scancodeio.settings import ENABLE_DOWNLOAD_ARCHIVING
+from scancodeio.settings import download_store
 
 logger = logging.getLogger(__name__)
 
