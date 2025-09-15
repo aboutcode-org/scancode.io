@@ -36,9 +36,6 @@ jobs:
           scancodeio-repo-branch: "main"
           output-formats: "ort-package-list spdx:2.2 cyclonedx json xlsx"
 
-      - name: DEBUG
-        run: ls -la ${{ env.PROJECT_WORK_DIRECTORY }}/output/
-
       - name: Copy package-list.yml to workspace root
         run: |
           FILE=$(ls ${{ env.PROJECT_WORK_DIRECTORY }}/output/*.package-list.yml | head -n 1)
@@ -56,7 +53,7 @@ jobs:
               --package-list-file /data/package-list.yml \
               --ort-file /data/analyzer-result.yml
 
-      - name: Generates an ORT analyzer-result.yml file
+      - name: Report as CycloneDX and SPDX using the analyzer-result.yml file
         run: |
           docker run --rm -v ${GITHUB_WORKSPACE}/ort-data:/data \
           ghcr.io/oss-review-toolkit/ort:${{ env.ORT_VERSION }} \
@@ -64,3 +61,13 @@ jobs:
             --ort-file /data/analyzer-result.yml \
             --output-dir /data/results/ \
             --report-formats CycloneDX,SpdxDocument
+
+      - name: DEBUG
+        run: ls -la ${{ env.PROJECT_WORK_DIRECTORY }}/output/
+
+      - name: Upload SBOMs as GitHub Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ort-report
+          path: ${GITHUB_WORKSPACE}/ort-data
+          retention-days: 20
