@@ -2,15 +2,15 @@ name: Generate ORT package-file.yml with ScanCode.io and load into ORT
 
 # This workflow:
 #  1. Analyze a Docker image using ScanCode.io
-#  1. Generates an ORT `package-file.yml` from the project results
-#  2. Generates an ORT `analyzer-result.yml` using create-analyzer-result-from-package-list
-#  3. Run the ORT report on `analyzer-result.yml` to generate a CycloneDX and SpdxDocument
+#  2. Generates an ORT `package-file.yml` from the SCIO project results
+#  3. Generates an ORT `analyzer-result.yml` using create-analyzer-result-from-package-list
+#  4. Run the ORT report on `analyzer-result.yml` to generate a CycloneDX and SpdxDocument
 
 on:
   workflow_dispatch:
-#  schedule:
-#    # Run once a week (every 7 days) at 00:00 UTC on Sunday
-#    - cron: "0 0 * * 0"
+  schedule:
+    # Run once a week (every 7 days) at 00:00 UTC on Sunday
+    - cron: "0 0 * * 0"
   pull_request:
   push:
     branches:
@@ -62,24 +62,9 @@ jobs:
             --output-dir /data/results/ \
             --report-formats CycloneDX,SpdxDocument
 
-      - name: DEBUG
-        run: ls -la ${GITHUB_WORKSPACE}/ort-data/results
-
       - name: Upload SBOMs as GitHub Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ort-report
           path: "${GITHUB_WORKSPACE}/ort-data/results"
           retention-days: 20
-
-      - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@main
-        with:
-          pipelines: "load_sbom"
-          inputs-path: "${GITHUB_WORKSPACE}/ort-data/results/bom.cyclonedx.json"
-          scancodeio-repo-branch: "main"
-
-      - name: Verify SBOM Analysis Results in ScanCode.io
-        shell: bash
-        run: |
-          scanpipe shell --command "from scanpipe.models import DiscoveredPackage, DiscoveredDependency; package_manager = DiscoveredPackage.objects; print(package_manager.count()); print(package_manager.vulnerable().count()); print(DiscoveredDependency.objects.count())"
