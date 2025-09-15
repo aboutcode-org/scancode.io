@@ -2,90 +2,6 @@
 {% load static humanize %}
 {% block title %}ScanCode.io: {{ project.name }} - Resources tree{% endblock %}
 
-{% block extrahead %}
-  <style>
-    .chevron {
-      transition: transform 0.2s ease;
-      display: inline-block;
-    }
-    .chevron.rotated {
-      transform: rotate(90deg);
-    }
-    .resizable-container {
-      display: flex;
-      height: calc(100vh - 140px);
-      margin: 0;
-    }
-    .left-pane {
-      min-width: 0;
-      max-width: 100%;
-      border-right: 1px solid #ccc;
-      overflow-y: auto;
-      overflow-x: hidden;
-      flex-basis: 25%;
-      transition: opacity 0.2s ease;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .left-pane.collapsed {
-      opacity: 0;
-      pointer-events: none;
-    }
-    .resizer {
-      width: 3px;
-      background: #ddd;
-      cursor: col-resize;
-      position: relative;
-      flex-shrink: 0;
-    }
-    .resizer:hover {
-      background: #bbb;
-    }
-    .resizer::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 0px;
-      transform: translateY(-50%);
-      width: 2px;
-      height: 30px;
-      background: #999;
-      border-radius: 2px;
-    }
-    .right-pane {
-      flex: 1;
-      min-width: 0;
-      transition: opacity 0.2s ease;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-    .right-pane .table-scroll-area {
-      flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
-    }
-    .right-pane.collapsed {
-      opacity: 0;
-      pointer-events: none;
-    }
-    .right-pane a:hover {
-      text-decoration: underline;
-    }
-    .is-current, .is-current:hover {
-      background-color: var(--bulma-background-hover) !important;
-      border-radius: var(--bulma-radius);
-    }
-    .tree-node, .tree-node-file {
-      padding: .25rem 0 .25rem 0;
-    }
-    .tree-node:hover, .tree-node-file:hover {
-      background-color: var(--bulma-background);
-      border-radius: var(--bulma-radius);
-    }
-  </style>
-{% endblock %}
-
 {% block content %}
   <div id="content-header" class="container is-max-widescreen mb-3">
     {% include 'scanpipe/includes/navbar_header.html' %}
@@ -96,19 +12,25 @@
     </section>
   </div>
 
-<div class="resizable-container">
-  <div id="left-pane" class="left-pane px-2">
-    <div id="resource-tree">
-      {% include "scanpipe/panels/codebase_tree_panel.html" with children=children path=path %}
+<div id="resource-tree-container" class="container is-fluid p-0">
+  <div class="resizable-container is-flex">
+    <div id="left-pane" class="left-pane px-2">
+      <div id="resource-tree">
+        {% include "scanpipe/panels/codebase_tree_panel.html" with children=children path=path %}
+      </div>
     </div>
-  </div>
-  <div id="resizer" class="resizer"></div>
-  <div id="right-pane" class="right-pane px-2">
-    {% if path %}
-      <div hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ path }}" hx-trigger="load" hx-target="this"></div>
-    {% else %}
-      {% include "scanpipe/panels/resource_table_panel.html" %}
-    {% endif %}
+    <div id="resizer" class="resizer"></div>
+    <div id="right-pane" class="right-pane px-2">
+      {% if path %}
+        <div hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ path }}"
+             hx-trigger="load"
+             hx-target="this"
+        >
+        </div>
+      {% else %}
+        {% include "scanpipe/panels/resource_table_panel.html" %}
+      {% endif %}
+    </div>
   </div>
 </div>
 {% endblock %}

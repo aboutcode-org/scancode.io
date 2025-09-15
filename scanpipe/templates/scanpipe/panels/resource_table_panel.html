@@ -7,7 +7,15 @@
         {% for subpath, segment in path_segments %}
           {% if not forloop.first %}<span class="mx-1">/</span>{% endif %}
           {% if not forloop.last %}
-            <a href="{% url 'codebase_resource_tree' project.slug %}?path={{ subpath }}" class="expand-in-tree has-text-link" data-path="{{ subpath }}" hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ subpath }}" hx-target="#right-pane" hx-push-url="{% url 'codebase_resource_tree' project.slug %}?path={{ subpath }}">{{ segment }}</a>
+            <a href="{% url 'codebase_resource_tree' project.slug %}?path={{ subpath }}"
+               class="expand-in-tree"
+               data-path="{{ subpath }}"
+               hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ subpath }}"
+               hx-target="#right-pane"
+               hx-push-url="{% url 'codebase_resource_tree' project.slug %}?path={{ subpath }}"
+            >
+              {{ segment }}
+            </a>
           {% else %}
             <span>{{ segment }}</span>
           {% endif %}
