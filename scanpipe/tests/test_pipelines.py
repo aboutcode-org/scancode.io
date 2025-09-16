@@ -306,15 +306,36 @@ class ScanPipePipelinesTest(TestCase):
             download_url=test_url,
             is_uploaded=False,
         )
-        with patch("scanpipe.settings.ENABLE_DOWNLOAD_ARCHIVING", "always"):
-            mock_get.return_value.content = test_content
-            mock_get.return_value.status_code = 200
-            pipeline.archive_downloads()
-            input_source = InputSource.objects.get(project=project1)
-            self.assertTrue(input_source.sha256)
-            self.assertTrue(input_source.download_date)
-            self.assertEqual(input_source.download_url, test_url)
-            self.assertEqual(input_source.filename, test_filename)
+        
+        mock_get.return_value.content = test_content
+        mock_get.return_value.status_code = 200
+
+        pipeline.download_missing_inputs()
+        input_source.refresh_from_db()
+        self.assertTrue(input_source.file_path.startswith(settings.CENTRAL_ARCHIVE_PATH))
+        self.assertTrue(Path(input_source.file_path).exists())
+
+        
+        pipeline.archive_downloads()
+        input_source = InputSource.refresh_from_db()
+        self.assertTrue(input_source.sha256)
+        self.assertTrue(input_source.download_date)
+        self.assertEqual(input_source.download_url, test_url)
+        self.assertEqual(input_source.filename, test_filename)
+    
+        project2 = make_project(name="project2")
+        input_source2 = InputSource.objects.create(
+            project=project2,
+            filename=test_filename,
+            download_url=test_url,
+            is_uploaded=False,
+        )
+        run2 = project2.add_pipeline("scan_codebase")
+        pipeline2 = run2.make_pipeline_instance()
+        pipeline2.download_missing_inputs()
+        input_source2.refresh_from_db()
+        self.assertEqual(input_source.file_path, input_source2.file_path)
+        self.assertTrue(Path(input_source2.file_path).exists())
 
     def test_scanpipe_pipeline_class_save_errors_context_manager(self):
         project1 = make_project()

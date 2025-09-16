@@ -23,6 +23,7 @@
 import inspect
 import logging
 import traceback
+import hashlib
 from contextlib import contextmanager
 from datetime import datetime
 from functools import wraps
@@ -34,7 +35,6 @@ from markdown_it import MarkdownIt
 from pyinstrument import Profiler
 
 from aboutcode.pipeline import BasePipeline
-from scancodeio.settings import ENABLE_DOWNLOAD_ARCHIVING
 from scancodeio.settings import download_store
 
 logger = logging.getLogger(__name__)
@@ -148,9 +148,24 @@ class CommonStepsMixin:
                 error_tracebacks.append((msg, "No traceback available."))
                 continue
 
+            download_url = input_source.download_url
+            if not download_url:
+                continue
+
+            url_hash = hashlib.sha256(download_url.encode()).hexdigest()
+            filename = input_source.filename or Path(download_url).name or f"{url_hash}.archive"
+            archive_path = Path(settings.CENTRAL_ARCHIVE_PATH) / url_hash / filename
+
+            if archive_path.exists():
+                logger.info(f"Reusing existing archive at {archive_path}")
+                input_source.file_path = str(archive_path)
+                input_source.save()
+                continue
+
             self.log(f"Fetching input from {input_source.download_url}")
             try:
                 input_source.fetch()
+                
             except Exception as error:
                 traceback_str = traceback.format_exc()
                 logger.error(traceback_str)

@@ -63,7 +63,7 @@ class DownloadStore(ABC):
             "sha256": sha256,
             "filename": filename,
             "download_date": download_date,
-            "url": download_url,
+            "download_url": download_url,
         }
 
     @abstractmethod

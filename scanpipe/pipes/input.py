@@ -44,7 +44,6 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import InputSource
 from scanpipe.pipes import scancode
 from scanpipe.pipes.output import mappings_key_by_fieldname
-from scancodeio.settings import ENABLE_DOWNLOAD_ARCHIVING
 from scancodeio.settings import download_store
 
 logger = logging.getLogger(__name__)
@@ -262,60 +261,46 @@ def add_input_from_url(project, url, filename=None):
         logger.error(f"Failed to download {url}: {e}")
         raise
 
-    should_archive = (
-        ENABLE_DOWNLOAD_ARCHIVING == "always"
-        or (
-            ENABLE_DOWNLOAD_ARCHIVING == "per_project"
-            and getattr(project, "archive_downloads", False)
-        )
-        or (
-            ENABLE_DOWNLOAD_ARCHIVING == "per_input"
-            and "archive" in getattr(project, "input_tags", [])
-        )
-    )
+    filename = filename or url.split("/")[-1] or "downloaded_file"
+    url_hash = hashlib.sha256(url.encode()).hexdigest()
+    archive_path = Path(project.settings.CENTRAL_ARCHIVE_PATH) / url_hash / filename
 
-    filename = filename or url.split("/")[-1]
-    if should_archive and download_store:
-        sha256 = hashlib.sha256(content).hexdigest()
-        existing_download = download_store.get(sha256)
-        if not existing_download:
-            try:
-                download = download_store.put(
-                    content=content,
-                    download_url=url,
-                    download_date=datetime.now().isoformat(),
-                    filename=filename,
-                )
-            except Exception as e:
-                logger.error(f"Failed to archive download for {url}: {e}")
-                raise
-        else:
-            download = existing_download
-
-        InputSource.objects.create(
-            project=project,
-            sha256=download.sha256,
-            download_url=download.download_url,
-            filename=download.filename,
-            download_date=download.download_date,
-            is_uploaded=False,
-        )
+    if download_store:
+        try:
+            download = download_store.put(
+                content=content,
+                download_url=url,
+                download_date=datetime.now().isoformat(),
+                filename=filename,
+            )
+            InputSource.objects.create(
+                project=project,
+                sha256=download.sha256,
+                download_url=download.download_url,
+                filename=download.filename,
+                download_date=download.download_date,
+                file_path=str(download.path),
+                is_uploaded=False,
+            )
+        except Exception as e:
+            logger.error(f"Failed to archive download for {url}: {e}")
+            raise
     else:
         input_path = project.input_path / filename
         try:
+            input_path.parent.mkdir(parents=True, exist_ok=True)
             with open(input_path, "wb") as f:
                 f.write(content)
+            InputSource.objects.create(
+                project=project,
+                filename=filename,
+                download_url=url,
+                file_path=str(input_path),
+                is_uploaded=False,
+            )
         except Exception as e:
             logger.error(f"Failed to save {filename} to {input_path}: {e}")
             raise
-
-        InputSource.objects.create(
-            project=project,
-            filename=filename,
-            download_url=url,
-            is_uploaded=False,
-        )
-
 
 def add_input_from_upload(project, uploaded_file):
     """
@@ -325,54 +310,38 @@ def add_input_from_upload(project, uploaded_file):
     content = uploaded_file.read()
     filename = uploaded_file.name
 
-    should_archive = (
-        ENABLE_DOWNLOAD_ARCHIVING == "always"
-        or (
-            ENABLE_DOWNLOAD_ARCHIVING == "per_project"
-            and getattr(project, "archive_downloads", False)
-        )
-        or (
-            ENABLE_DOWNLOAD_ARCHIVING == "per_input"
-            and "archive" in getattr(project, "input_tags", [])
-        )
-    )
-
-    if should_archive and download_store:
-        sha256 = hashlib.sha256(content).hexdigest()
-        existing_download = download_store.get(sha256)
-        if not existing_download:
-            try:
-                download = download_store.put(
-                    content=content,
-                    download_url="",  # No URL for uploads
-                    download_date=datetime.now().isoformat(),
-                    filename=filename,
-                )
-            except Exception as e:
-                logger.error(f"Failed to archive upload {filename}: {e}")
-                raise
-        else:
-            download = existing_download
-
-        InputSource.objects.create(
-            project=project,
-            sha256=download.sha256,
-            download_url=download.download_url,
-            filename=download.filename,
-            download_date=download.download_date,
-            is_uploaded=True,
-        )
+    if download_store:
+        try:
+            download = download_store.put(
+                content=content,
+                download_url="",
+                download_date=datetime.now().isoformat(),
+                filename=filename,
+            )
+            InputSource.objects.create(
+                project=project,
+                sha256=download.sha256,
+                download_url=download.download_url,
+                filename=download.filename,
+                download_date=download.download_date,
+                file_path=str(download.path),
+                is_uploaded=True,
+            )
+        except Exception as e:
+            logger.error(f"Failed to archive upload {filename}: {e}")
+            raise
     else:
         input_path = project.input_path / filename
         try:
+            input_path.parent.mkdir(parents=True, exist_ok=True)
             with open(input_path, "wb") as f:
                 f.write(content)
+            InputSource.objects.create(
+                project=project,
+                filename=filename,
+                file_path=str(input_path),
+                is_uploaded=True,
+            )
         except Exception as e:
             logger.error(f"Failed to save {filename} to {input_path}: {e}")
             raise
-
-        InputSource.objects.create(
-            project=project,
-            filename=filename,
-            is_uploaded=True,
-        )

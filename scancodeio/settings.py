@@ -23,11 +23,12 @@
 import sys
 import tempfile
 from pathlib import Path
-from venv import logger
+import logging
 
 import environ
 
 from scanpipe.archiving import LocalFilesystemProvider
+
 
 PROJECT_DIR = environ.Path(__file__) - 1
 ROOT_DIR = PROJECT_DIR - 1
@@ -376,9 +377,10 @@ STATICFILES_DIRS = [
 
 CRISPY_TEMPLATE_PACK = "bootstrap3"
 
-# Storing archives locally (Package Storage settings)
-
-ENABLE_DOWNLOAD_ARCHIVING = env.bool("ENABLE_DOWNLOAD_ARCHIVING", default=False)
+# Centralized archive directory for all projects
+CENTRAL_ARCHIVE_PATH = env.str(
+    "CENTRAL_ARCHIVE_PATH", default="/var/scancodeio/archives"
+)
 
 # localstorage configuration
 DOWNLOAD_ARCHIVING_PROVIDER = env.str(
@@ -393,15 +395,15 @@ DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION = env.dict(
 # Initialize the DownloadStore for local storage
 
 download_store = None
-if ENABLE_DOWNLOAD_ARCHIVING:
-    if DOWNLOAD_ARCHIVING_PROVIDER == "localstorage":
-        config = DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION or {}
-        root_path = Path(config.get("root_path", "/var/scancodeio/downloads"))
-        try:
-            download_store = LocalFilesystemProvider(root_path=root_path)
-        except Exception as e:
-            logger.error(f"Failed to initialize LocalFilesystemProvider: {e}")
-    else:
+logger = logging.getLogger(__name__)
+if DOWNLOAD_ARCHIVING_PROVIDER == "localstorage":
+    config = DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION or {}
+    root_path = Path(config.get("root_path", CENTRAL_ARCHIVE_PATH))
+    try:
+        download_store = LocalFilesystemProvider(root_path=root_path)
+    except Exception as e:
+        logger.error(f"Failed to initialize LocalFilesystemProvider: {e}")
+else:
         logger.error(
             f"Unknown DOWNLOAD_ARCHIVING_PROVIDER: {DOWNLOAD_ARCHIVING_PROVIDER}"
         )
