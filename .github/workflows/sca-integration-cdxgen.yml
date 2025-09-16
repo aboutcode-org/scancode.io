@@ -34,7 +34,8 @@ jobs:
             --output cdxgen-sbom.cdx.json \
             --spec-version 1.6 \
             --json-pretty
-
+        env:
+          CDXGEN_TEMP_DIR: ${{ runner.temp }}/cdxgen-temp
       - name: Upload SBOM as GitHub Artifact
         uses: actions/upload-artifact@v4
         with:
