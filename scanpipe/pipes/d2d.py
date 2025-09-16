@@ -192,9 +192,15 @@ def map_java_to_class(project, logger=None):
     Map to/ compiled Java .class(es) to from/ .java source using Java fully
     qualified paths and indexing from/ .java files.
     """
-    project_files = project.codebaseresources.files().no_status()
+    project_files = project.codebaseresources.files()
+    # Collect all files from "from_codebase", even if they already have a
+    # status or are mapped. This is necessary because the deploy codebase
+    # may contain sources that match "from_codebase" via checksum. If those
+    # checksum-matched files are excluded from mapping, it can result in
+    # .class files failing to resolve. See
+    # https://github.com/aboutcode-org/scancode.io/issues/1854#issuecomment-3273472895
     from_resources = project_files.from_codebase()
-    to_resources = project_files.to_codebase().has_no_relation()
+    to_resources = project_files.to_codebase().no_status().has_no_relation()
 
     to_resources_dot_class = to_resources.filter(extension=".class")
     from_resources_dot_java = (
@@ -205,7 +211,6 @@ def map_java_to_class(project, logger=None):
     )
     to_resource_count = to_resources_dot_class.count()
     from_resource_count = from_resources_dot_java.count()
-
     if not from_resource_count:
         logger("No .java resources to map.")
         return
@@ -270,11 +275,7 @@ def find_java_packages(project, logger=None):
     Note: we use the same API as the ScanCode scans by design
     """
     from_java_resources = (
-        project.codebaseresources.files()
-        .no_status()
-        .from_codebase()
-        .has_no_relation()
-        .filter(extension=".java")
+        project.codebaseresources.files().from_codebase().filter(extension=".java")
     )
 
     if logger:
