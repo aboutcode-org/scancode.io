@@ -1,0 +1,66 @@
+name: Generate ORT package-file.yml with ScanCode.io and load into ORT
+
+# This workflow:
+#  1. Analyze a Docker image using ScanCode.io
+#  2. Generates an ORT `package-file.yml` from the SCIO project results
+#  3. Generates an ORT `analyzer-result.yml` using create-analyzer-result-from-package-list
+#  4. Run the ORT report on `analyzer-result.yml` to generate a CycloneDX and SpdxDocument
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Run once a week (every 7 days) at 00:00 UTC on Sunday
+    - cron: "0 0 * * 0"
+
+permissions:
+  contents: read
+
+env:
+  SCIO_IMAGE_INPUT: "docker://osadl/alpine-docker-base-image:v3.22-latest"
+  ORT_VERSION: "68.1.0"
+
+jobs:
+  generate-and-load-sbom:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Analyze Docker image with ScanCode.io
+        uses: aboutcode-org/scancode-action@main
+        with:
+          pipelines: "analyze_docker_image"
+          input-urls:
+            "${{ env.SCIO_IMAGE_INPUT }}"
+          scancodeio-repo-branch: "main"
+          output-formats: "ort-package-list spdx:2.2 cyclonedx json xlsx"
+
+      - name: Copy package-list.yml to workspace root
+        run: |
+          FILE=$(ls ${{ env.PROJECT_WORK_DIRECTORY }}/output/*.package-list.yml | head -n 1)
+          sudo mkdir -p ${GITHUB_WORKSPACE}/ort-data/
+          sudo cp "$FILE" "${GITHUB_WORKSPACE}/ort-data/package-list.yml"
+          sudo chmod -R 777 ${GITHUB_WORKSPACE}/ort-data/
+          ls -lh "${GITHUB_WORKSPACE}/ort-data/"
+
+      - name: Generates an ORT analyzer-result.yml file
+        run: |
+          docker run --rm -v ${GITHUB_WORKSPACE}/ort-data:/data \
+            --entrypoint /opt/ort/bin/orth \
+            ghcr.io/oss-review-toolkit/ort:${{ env.ORT_VERSION }} \
+            create-analyzer-result-from-package-list \
+              --package-list-file /data/package-list.yml \
+              --ort-file /data/analyzer-result.yml
+
+      - name: Report as CycloneDX and SPDX using the analyzer-result.yml file
+        run: |
+          docker run --rm -v ${GITHUB_WORKSPACE}/ort-data:/data \
+          ghcr.io/oss-review-toolkit/ort:${{ env.ORT_VERSION }} \
+          report \
+            --ort-file /data/analyzer-result.yml \
+            --output-dir /data/results/ \
+            --report-formats CycloneDX,SpdxDocument
+
+      - name: Upload SBOMs as GitHub Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ort-report
+          path: "${GITHUB_WORKSPACE}/ort-data/results"
+          retention-days: 20

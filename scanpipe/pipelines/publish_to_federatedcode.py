@@ -83,8 +83,8 @@ class PublishToFederatedCode(Pipeline):
         """Commit and push changes to remote repository."""
         federatedcode.commit_and_push_changes(
             repo=self.repo,
-            file_to_commit=str(self.relative_file_path),
-            purl=self.project.purl,
+            files_to_commit=[str(self.relative_file_path)],
+            purls=[self.project.purl],
             logger=self.log,
         )
         self.log(

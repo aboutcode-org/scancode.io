@@ -31,6 +31,7 @@ from pathlib import Path
 from unittest import mock
 
 from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import TestCase
 
@@ -417,7 +418,7 @@ class ScanPipeOutputPipesTest(TestCase):
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(9):
             output_file = output.to_spdx(project=project, include_files=True)
         self.assertIn(output_file.name, project.output_root)
 
@@ -464,6 +465,173 @@ class ScanPipeOutputPipesTest(TestCase):
         ]
         self.assertEqual(expected, license_infos["seeAlsos"])
         self.assertTrue(license_infos["extractedText"].startswith("License:"))
+
+    @mock.patch("uuid.uuid4")
+    def test_scanpipe_pipes_outputs_to_spdx_dependencies(self, mock_uuid4):
+        forced_uuid = "b74fe5df-e965-415e-ba65-f38421a0695d"
+        mock_uuid4.return_value = forced_uuid
+        project = Project.objects.create(name="Analysis", uuid=forced_uuid)
+
+        a = make_package(
+            project, "pkg:type/a", uuid="a83a60de-81bc-4bf4-b48c-dc78e0e658a9"
+        )
+        b = make_package(
+            project, "pkg:type/b", uuid="81147701-285f-485c-ba36-9cd3742790b1"
+        )
+        # 1. Package resolved dependency
+        make_dependency(
+            project,
+            for_package=a,
+            resolved_to_package=b,
+            uuid="3c3ac137-d573-43b0-be6b-3be2815d1c2f",
+        )
+        # 2. Package unresolved dependency
+        make_dependency(
+            project,
+            for_package=b,
+            dependency_uid="for_package_b",
+            uuid="d0e1eab2-9b8b-449b-b9d1-12147ffdd8a8",
+        )
+        # 3. Project unresolved dependency
+        unresolved_dependency = make_dependency(
+            project,
+            dependency_uid="unresolved",
+            uuid="29fbe562-a191-44b4-88e8-a9678071ecee",
+        )
+        unresolved_dependency.set_package_url("pkg:type/unresolved")
+        unresolved_dependency.save()
+        # 4. Project package
+        make_package(project, "pkg:type/z", uuid="e391c33e-d7d0-4a97-a3c3-e947375c53d5")
+
+        self.assertEqual(3, project.discoveredpackages.count())
+        self.assertEqual(3, project.discovereddependencies.count())
+
+        output_file = output.to_spdx(project=project)
+        results_json = json.loads(output_file.read_text())
+        self.assertEqual(6, len(results_json["packages"]))
+        self.assertEqual(6, len(results_json["relationships"]))
+
+        # Patch the `created` date and tool version
+        results_json["creationInfo"]["created"] = "2000-01-01T01:02:03Z"
+        results_json["creationInfo"]["creators"] = ["Tool: ScanCode.io"]
+        # Files ordering is system dependent, excluded for now
+        results_json["files"] = []
+        results = json.dumps(results_json, indent=2)
+
+        expected_file = self.data / "spdx" / "dependencies.spdx.json"
+        self.assertResultsEqual(expected_file, results)
+
+    @mock.patch("uuid.uuid4")
+    def test_scanpipe_pipes_outputs_to_spdx_get_inputs_as_spdx_packages(
+        self, mock_uuid4
+    ):
+        forced_uuid = "b74fe5df-e965-415e-ba65-f38421a0695d"
+        mock_uuid4.return_value = forced_uuid
+
+        # 1. Input manually copied to Project's inputs
+        project = make_project(name="Copied")
+        copied_input = project.input_path / "input_filename"
+        copied_input.touch()
+        inputs_as_spdx_packages = output.get_inputs_as_spdx_packages(project)
+        expected = [
+            {
+                "name": "input_filename",
+                "SPDXID": f"SPDXRef-scancodeio-input-{forced_uuid}",
+                "packageFileName": "input_filename",
+                "licenseConcluded": "NOASSERTION",
+                "copyrightText": "NOASSERTION",
+                "downloadLocation": "NOASSERTION",
+                "filesAnalyzed": True,
+                "licenseDeclared": "NOASSERTION",
+            }
+        ]
+        inputs_spdx_as_dict = [package.as_dict() for package in inputs_as_spdx_packages]
+        self.assertEqual(expected, inputs_spdx_as_dict)
+
+        # 2. Input uploaded to Project's inputs
+        project = make_project(name="Uploaded")
+        uploaded_file = SimpleUploadedFile("filename.ext", content=b"content")
+        input_source = project.add_upload(
+            uploaded_file=uploaded_file,
+        )
+        inputs_as_spdx_packages = output.get_inputs_as_spdx_packages(project)
+        expected = [
+            {
+                "name": "filename.ext",
+                "SPDXID": f"SPDXRef-scancodeio-input-{input_source.uuid}",
+                "packageFileName": "filename.ext",
+                "licenseConcluded": "NOASSERTION",
+                "copyrightText": "NOASSERTION",
+                "downloadLocation": "NOASSERTION",
+                "filesAnalyzed": True,
+                "licenseDeclared": "NOASSERTION",
+            }
+        ]
+        inputs_spdx_as_dict = [package.as_dict() for package in inputs_as_spdx_packages]
+        self.assertEqual(expected, inputs_spdx_as_dict)
+
+        # 3. Fetched (download_url, purl, docker, git, ...)
+        project = make_project(name="Fetched")
+        input_from_download_url = project.add_input_source(
+            download_url="https://download.url/archive.zip",
+            filename="archive.zip",
+        )
+        input_from_purl = project.add_input_source(
+            download_url="pkg:npm/dnd-core@7.0.2",
+            filename="dnd-core-7.0.2.tgz",
+        )
+        input_from_docker = project.add_input_source(
+            download_url="docker://registry.com/debian:10.9",
+            filename="debian_10.9.tar",
+        )
+        inputs_as_spdx_packages = output.get_inputs_as_spdx_packages(project)
+        inputs_spdx_as_dict = [package.as_dict() for package in inputs_as_spdx_packages]
+        self.maxDiff = None
+        expected = [
+            {
+                "name": "archive.zip",
+                "SPDXID": f"SPDXRef-scancodeio-input-{input_from_download_url.uuid}",
+                "downloadLocation": "https://download.url/archive.zip",
+                "licenseConcluded": "NOASSERTION",
+                "copyrightText": "NOASSERTION",
+                "filesAnalyzed": True,
+                "packageFileName": "archive.zip",
+                "licenseDeclared": "NOASSERTION",
+            },
+            {
+                "name": "debian_10.9.tar",
+                "SPDXID": f"SPDXRef-scancodeio-input-{input_from_docker.uuid}",
+                "downloadLocation": "docker://registry.com/debian:10.9",
+                "licenseConcluded": "NOASSERTION",
+                "copyrightText": "NOASSERTION",
+                "filesAnalyzed": True,
+                "packageFileName": "debian_10.9.tar",
+                "licenseDeclared": "NOASSERTION",
+            },
+            {
+                "name": "dnd-core-7.0.2.tgz",
+                "SPDXID": f"SPDXRef-scancodeio-input-{input_from_purl.uuid}",
+                "downloadLocation": "pkg:npm/dnd-core@7.0.2",
+                "licenseConcluded": "NOASSERTION",
+                "copyrightText": "NOASSERTION",
+                "filesAnalyzed": True,
+                "packageFileName": "dnd-core-7.0.2.tgz",
+                "licenseDeclared": "NOASSERTION",
+            },
+        ]
+        self.assertEqual(expected, inputs_spdx_as_dict)
+
+    def test_scanpipe_pipes_outputs_to_to_ort_package_list_yml(self):
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+        project = Project.objects.get(name="asgiref")
+
+        with self.assertNumQueries(2):
+            output_file = output.to_ort_package_list_yml(project=project)
+        self.assertIn(output_file.name, project.output_root)
+
+        expected_file = self.data / "asgiref" / "asgiref-3.3.0.package-list.yml"
+        self.assertResultsEqual(expected_file, output_file.read_text())
 
     def test_scanpipe_pipes_outputs_make_unknown_license_object(self):
         licensing = get_licensing()

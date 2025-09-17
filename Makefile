@@ -58,6 +58,11 @@ dev: virtualenv
 	@echo "-> Configure and install development dependencies"
 	@${ACTIVATE} pip install ${PIP_ARGS} --editable .[dev]
 
+dev-mining: virtualenv
+	@echo "-> Configure and install development dependencies"
+	@$(MAKE) dev
+	@${ACTIVATE} pip install ${PIP_ARGS} --editable .[mining]
+
 envfile:
 	@echo "-> Create the .env file and generate a secret key"
 	@if test -f ${ENV_FILE}; then echo ".env file exists already"; exit 1; fi

@@ -82,8 +82,8 @@ dependencies = [
   # Profiling
   "pyinstrument==5.1.1",
   # CycloneDX
-  "cyclonedx-python-lib==10.2.0",
-  "jsonschema==4.24.0",
+  "cyclonedx-python-lib==11.0.0",
+  "jsonschema==4.25.1",
   # MatchCode-toolkit
   "matchcode-toolkit==7.2.2",
   # Univers
@@ -119,6 +119,9 @@ dev = [
 android_analysis = [
   "android_inspector==0.0.1"
 ]
+mining = [
+  "minecode_pipelines==0.0.1b1"
+]
 
 [project.urls]
 Homepage = "https://github.com/aboutcode-org/scancode.io"
@@ -135,6 +138,7 @@ run = "scancodeio:combined_run"
 analyze_docker_image = "scanpipe.pipelines.analyze_docker:Docker"
 analyze_root_filesystem_or_vm_image = "scanpipe.pipelines.analyze_root_filesystem:RootFS"
 analyze_windows_docker_image = "scanpipe.pipelines.analyze_docker_windows:DockerWindows"
+benchmark_purls = "scanpipe.pipelines.benchmark_purls:BenchmarkPurls"
 collect_strings_gettext = "scanpipe.pipelines.collect_strings_gettext:CollectStringsGettext"
 collect_symbols_ctags = "scanpipe.pipelines.collect_symbols_ctags:CollectSymbolsCtags"
 collect_symbols_pygments = "scanpipe.pipelines.collect_symbols_pygments:CollectSymbolsPygments"

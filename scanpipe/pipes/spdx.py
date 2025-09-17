@@ -29,12 +29,21 @@ from datetime import datetime
 from datetime import timezone
 from pathlib import Path
 
-SPDX_SPEC_VERSION = "2.3"
+import saneyaml
+
+SCHEMAS_LOCATION = Path(__file__).parent / "schemas"
 SPDX_LICENSE_LIST_VERSION = "3.20"
-SPDX_SCHEMA_NAME = "spdx-schema-2.3.json"
-SPDX_SCHEMA_PATH = Path(__file__).parent / "schemas" / SPDX_SCHEMA_NAME
-SPDX_SCHEMA_URL = (
+
+SPDX_SPEC_VERSION_2_3 = "2.3"
+SPDX_SCHEMA_2_3_PATH = SCHEMAS_LOCATION / "spdx-schema-2.3.json"
+SPDX_SCHEMA_2_3_URL = (
     "https://github.com/spdx/spdx-spec/raw/development/v2.3.1/schemas/spdx-schema.json"
+)
+
+SPDX_SPEC_VERSION_2_2 = "2.2"
+SPDX_SCHEMA_2_2_PATH = SCHEMAS_LOCATION / "spdx-schema-2.2.json"
+SPDX_SCHEMA_2_2_URL = (
+    "https://github.com/spdx/spdx-spec/raw/development/v2.2/schemas/spdx-schema.json"
 )
 
 """
@@ -43,7 +52,6 @@ Spec documentation: https://spdx.github.io/spdx-spec/v2.3/
 
 Usage::
 
-    import pathlib
     from scanpipe.pipes import spdx
 
     creation_info = spdx.CreationInfo(
@@ -51,6 +59,11 @@ Usage::
         person_email="john@starship.space",
         organization_name="Starship",
         tool="SPDXCode-1.0",
+    )
+
+    root_package = spdx.Package(
+        spdx_id="SPDXRef-project1",
+        name="project1",
     )
 
     package1 = spdx.Package(
@@ -76,8 +89,9 @@ Usage::
     document = spdx.Document(
         name="Document name",
         namespace="https://[CreatorWebsite]/[pathToSpdx]/[DocumentName]-[UUID]",
+        describes=[root_package.spdx_id],
         creation_info=creation_info,
-        packages=[package1],
+        packages=[root_package, package1],
         extracted_licenses=[
             spdx.ExtractedLicensingInfo(
                 license_id="LicenseRef-1",
@@ -93,7 +107,7 @@ Usage::
     print(document.as_json())
 
     # Validate document
-    schema = pathlib.Path(spdx.SPDX_JSON_SCHEMA_LOCATION).read_text()
+    schema = spdx.SPDX_SCHEMA_2_3_PATH.read_text()
     document.validate(schema)
 
     # Write document to a file:
@@ -228,14 +242,21 @@ class ExternalRef:
     downloadable content believed to be relevant to the Package.
     """
 
-    category: str  # Supported values: OTHER, SECURITY, PERSISTENT-ID, PACKAGE-MANAGER
+    # Supported values:
+    # v2.3: OTHER, SECURITY, PERSISTENT-ID, PACKAGE-MANAGER
+    # v2.2: OTHER, SECURITY, PACKAGE_MANAGER
+    category: str
     type: str
     locator: str
 
     comment: str = ""
 
-    def as_dict(self):
+    def as_dict(self, spec_version=SPDX_SPEC_VERSION_2_3):
         """Return the data as a serializable dict."""
+        if spec_version == SPDX_SPEC_VERSION_2_2:
+            if self.category == "PACKAGE-MANAGER":
+                self.category = "PACKAGE_MANAGER"
+
         data = {
             "referenceCategory": self.category,
             "referenceType": self.type,
@@ -267,7 +288,7 @@ class ExtractedLicensingInfo:
     """
 
     license_id: str
-    extracted_text: str
+    extracted_text: str = "NOASSERTION"
 
     name: str = ""
     comment: str = ""
@@ -275,9 +296,14 @@ class ExtractedLicensingInfo:
 
     def as_dict(self):
         """Return the data as a serializable dict."""
+        if self.extracted_text.strip():
+            extracted_text = self.extracted_text
+        else:
+            extracted_text = "NOASSERTION"
+
         required_data = {
             "licenseId": self.license_id,
-            "extractedText": self.extracted_text,
+            "extractedText": extracted_text,
         }
 
         optional_data = {
@@ -335,7 +361,7 @@ class Package:
     external_refs: list[ExternalRef] = field(default_factory=list)
     attribution_texts: list[str] = field(default_factory=list)
 
-    def as_dict(self):
+    def as_dict(self, spec_version=SPDX_SPEC_VERSION_2_3):
         """Return the data as a serializable dict."""
         spdx_id = str(self.spdx_id)
         if not spdx_id.startswith("SPDXRef-"):
@@ -345,6 +371,7 @@ class Package:
             "name": self.name,
             "SPDXID": spdx_id,
             "downloadLocation": self.download_location or "NOASSERTION",
+            "licenseDeclared": self.license_declared or "NOASSERTION",
             "licenseConcluded": self.license_concluded or "NOASSERTION",
             "copyrightText": self.copyright_text or "NOASSERTION",
             "filesAnalyzed": self.files_analyzed,
@@ -352,23 +379,30 @@ class Package:
 
         optional_data = {
             "versionInfo": self.version,
-            "licenseDeclared": self.license_declared,
+            "packageFileName": self.filename,
             "supplier": self.supplier,
             "originator": self.originator,
             "homepage": self.homepage,
             "description": self.description,
             "summary": self.summary,
             "sourceInfo": self.source_info,
-            "releaseDate": self.date_to_iso(self.release_date),
-            "builtDate": self.date_to_iso(self.built_date),
-            "validUntilDate": self.date_to_iso(self.valid_until_date),
-            "primaryPackagePurpose": self.primary_package_purpose,
             "comment": self.comment,
             "licenseComments": self.license_comments,
             "checksums": [checksum.as_dict() for checksum in self.checksums],
-            "externalRefs": [ref.as_dict() for ref in self.external_refs],
+            "externalRefs": [ref.as_dict(spec_version) for ref in self.external_refs],
             "attributionTexts": self.attribution_texts,
         }
+
+        # Fields only valid in 2.3
+        if spec_version == SPDX_SPEC_VERSION_2_3:
+            optional_data.update(
+                {
+                    "releaseDate": self.date_to_iso(self.release_date),
+                    "builtDate": self.date_to_iso(self.built_date),
+                    "validUntilDate": self.date_to_iso(self.valid_until_date),
+                    "primaryPackagePurpose": self.primary_package_purpose,
+                }
+            )
 
         optional_data = {key: value for key, value in optional_data.items() if value}
         return {**required_data, **optional_data}
@@ -520,6 +554,18 @@ class Relationship:
             comment=data.get("comment"),
         )
 
+    @property
+    def is_dependency_relationship(self):
+        """
+        Return True if this relationship type implies that the spdx_id element
+        is a dependency of related_spdx_id.
+        """
+        reverse_dependency_types = ["ANCESTOR_OF", "CONTAINS", "DEPENDS_ON"]
+        # Every others types implies that the spdx_id element is a dependency of
+        # related_spdx_id. Such as:
+        # "DEPENDENCY_OF", "DESCENDANT_OF", "PACKAGE_OF", "CONTAINED_BY", ...
+        return self.relationship.upper() not in reverse_dependency_types
+
 
 @dataclass
 class Document:
@@ -530,11 +576,21 @@ class Document:
 
     name: str
     namespace: str
+    # "documentDescribes" identifies the root element(s) that this SPDX document
+    # describes.
+    # In most SBOM cases, this will be a single SPDX ID representing the top-level
+    # package or project (e.g., the root manifest in a repository or the main
+    # distribution artifact).
+    # Although defined as an array, it should NOT list every package, file, or snippet.
+    # Multiple entries are only expected in special, non-SBOM cases
+    # (e.g., SPDX license lists).
+    # See https://github.com/spdx/spdx-spec/issues/395 for discussion and clarification.
+    describes: list
     creation_info: CreationInfo
     packages: list[Package]
 
     spdx_id: str = "SPDXRef-DOCUMENT"
-    version: str = SPDX_SPEC_VERSION
+    version: str = SPDX_SPEC_VERSION_2_3
     data_license: str = "CC0-1.0"
     comment: str = ""
 
@@ -550,9 +606,9 @@ class Document:
             "SPDXID": self.spdx_id,
             "name": self.safe_document_name(self.name),
             "documentNamespace": self.namespace,
+            "documentDescribes": self.describes,
             "creationInfo": self.creation_info.as_dict(),
-            "packages": [package.as_dict() for package in self.packages],
-            "documentDescribes": [package.spdx_id for package in self.packages],
+            "packages": [package.as_dict(self.version) for package in self.packages],
         }
 
         if self.files:
@@ -585,6 +641,7 @@ class Document:
             data_license=data.get("dataLicense"),
             name=data.get("name"),
             namespace=data.get("documentNamespace"),
+            describes=data.get("documentDescribes"),
             creation_info=CreationInfo.from_data(data.get("creationInfo", {})),
             packages=[
                 Package.from_data(package_data)
@@ -612,7 +669,7 @@ class Document:
         return validate_document(document=self.as_dict(), schema=schema)
 
 
-def validate_document(document, schema=SPDX_SCHEMA_PATH):
+def validate_document(document, schema=SPDX_SCHEMA_2_3_PATH):
     """
     SPDX document validation.
     Requires the `jsonschema` library.
@@ -641,8 +698,15 @@ def validate_document(document, schema=SPDX_SCHEMA_PATH):
 
 def is_spdx_document(input_location):
     """Return True if the file at `input_location` is a SPDX Document."""
+    input_location = str(input_location)
+    data = {}
+
     with suppress(Exception):
-        data = json.loads(Path(input_location).read_text())
-        if data.get("SPDXID"):
-            return True
+        if input_location.endswith(".json"):
+            data = json.loads(Path(input_location).read_text())
+        elif input_location.endswith((".yml", ".yaml")):
+            data = saneyaml.load(Path(input_location).read_text())
+
+    if data.get("SPDXID"):
+        return True
     return False

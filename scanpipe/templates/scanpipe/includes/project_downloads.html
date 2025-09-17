@@ -7,16 +7,39 @@
     <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'xlsx' %}">
       <span class="icon mr-1"><i class="fa-solid fa-download"></i></span>XLSX
     </a>
-    <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'spdx' %}">
-      <span class="icon mr-1"><i class="fa-solid fa-download"></i></span>SPDX
-    </a>
     <div class="dropdown is-hoverable">
       <div class="dropdown-trigger">
-        <button class="button tag is-success is-medium" aria-haspopup="true" aria-controls="dropdown-menu-cyclonedx">
+        <button class="button tag is-success is-medium has-text-weight-normal" aria-haspopup="true" aria-controls="dropdown-menu-spdx">
+          <span class="icon">
+            <i class="fa-solid fa-download" aria-hidden="true"></i>
+          </span>
+          <span>SPDX</span>
+          <span class="icon is-small">
+            <i class="fa-solid fa-angle-down" aria-hidden="true"></i>
+          </span>
+        </button>
+      </div>
+      <div class="dropdown-menu" id="dropdown-menu-spdx" role="menu">
+        <div class="dropdown-content">
+          <a href="{% url 'project_results' project.slug 'spdx' '2.3' %}" class="dropdown-item has-text-weight-semibold">
+            Spec 2.3 <span class="tag is-link ml-1">Latest</span>
+          </a>
+          <a href="{% url 'project_results' project.slug 'spdx' '2.2' %}" class="dropdown-item">
+            Spec 2.2
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="dropdown is-hoverable">
+      <div class="dropdown-trigger">
+        <button class="button tag is-success is-medium has-text-weight-normal" aria-haspopup="true" aria-controls="dropdown-menu-cyclonedx">
           <span class="icon">
             <i class="fa-solid fa-download" aria-hidden="true"></i>
           </span>
           <span>CycloneDX</span>
+          <span class="icon is-small">
+            <i class="fa-solid fa-angle-down" aria-hidden="true"></i>
+          </span>
         </button>
       </div>
       <div class="dropdown-menu" id="dropdown-menu-cyclonedx" role="menu">
@@ -36,5 +59,25 @@
     <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'attribution' %}">
       <span class="icon mr-1"><i class="fa-solid fa-download"></i></span>Attribution
     </a>
+    <div class="dropdown is-hoverable">
+      <div class="dropdown-trigger">
+        <button class="button tag is-success is-medium has-text-weight-normal" aria-haspopup="true" aria-controls="dropdown-menu-ort">
+          <span class="icon">
+            <i class="fa-solid fa-download" aria-hidden="true"></i>
+          </span>
+          <span>Tools formats</span>
+          <span class="icon is-small">
+            <i class="fa-solid fa-angle-down" aria-hidden="true"></i>
+          </span>
+        </button>
+      </div>
+      <div class="dropdown-menu" id="dropdown-menu-ort" role="menu">
+        <div class="dropdown-content">
+          <a href="{% url 'project_results' project.slug 'ort-package-list' %}" class="dropdown-item has-text-weight-semibold">
+            ORT package-list.yml
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 </article>

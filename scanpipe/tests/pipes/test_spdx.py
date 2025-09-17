@@ -30,7 +30,7 @@ class ScanPipeSPDXPipesTest(TestCase):
     data = Path(__file__).parent.parent / "data"
 
     def setUp(self):
-        self.schema = spdx.SPDX_SCHEMA_PATH.read_text()
+        self.schema_2_3 = spdx.SPDX_SCHEMA_2_3_PATH.read_text()
 
         self.creation_info_data = {
             "person_name": "John Doe",
@@ -89,6 +89,10 @@ class ScanPipeSPDXPipesTest(TestCase):
                 "https://license1.text",
                 "https://license1.homepage",
             ],
+        }
+        self.project_as_root_package_data = {
+            "spdx_id": "SPDXRef-project",
+            "name": "Project",
         }
         self.package_data = {
             "spdx_id": "SPDXRef-package1",
@@ -170,7 +174,9 @@ class ScanPipeSPDXPipesTest(TestCase):
             "name": "Document name",
             "namespace": "https://[CreatorWebsite]/[DocumentName]-[UUID]",
             "creation_info": spdx.CreationInfo(**self.creation_info_data),
+            "describes": [self.project_as_root_package_data["spdx_id"]],
             "packages": [
+                spdx.Package(**self.project_as_root_package_data),
                 spdx.Package(**self.package_data),
             ],
             "extracted_licenses": [
@@ -190,6 +196,7 @@ class ScanPipeSPDXPipesTest(TestCase):
             "SPDXID": "SPDXRef-DOCUMENT",
             "name": "document_name",
             "documentNamespace": "https://[CreatorWebsite]/[DocumentName]-[UUID]",
+            "documentDescribes": ["SPDXRef-project"],
             "creationInfo": {
                 "created": "2022-09-21T13:50:20Z",
                 "creators": [
@@ -201,6 +208,15 @@ class ScanPipeSPDXPipesTest(TestCase):
                 "comment": "Generated with SPDXCode",
             },
             "packages": [
+                {
+                    "name": "Project",
+                    "SPDXID": "SPDXRef-project",
+                    "downloadLocation": "NOASSERTION",
+                    "licenseConcluded": "NOASSERTION",
+                    "copyrightText": "NOASSERTION",
+                    "filesAnalyzed": False,
+                    "licenseDeclared": "NOASSERTION",
+                },
                 {
                     "name": "lxml",
                     "SPDXID": "SPDXRef-package1",
@@ -228,7 +244,7 @@ class ScanPipeSPDXPipesTest(TestCase):
                             "referenceLocator": "pkg:pypi/lxml@3.3.5",
                         }
                     ],
-                }
+                },
             ],
             "files": [
                 {
@@ -247,7 +263,6 @@ class ScanPipeSPDXPipesTest(TestCase):
                     "licenseComments": "license_comments",
                 }
             ],
-            "documentDescribes": ["SPDXRef-package1"],
             "hasExtractedLicensingInfos": [
                 {
                     "licenseId": "LicenseRef-1",
@@ -303,6 +318,15 @@ class ScanPipeSPDXPipesTest(TestCase):
         licensing_info = spdx.ExtractedLicensingInfo(**self.licensing_info_data)
         assert self.licensing_info_spdx_data == licensing_info.as_dict()
 
+    def test_spdx_extracted_licensing_info_empty_extracted_text(self):
+        licensing_info = spdx.ExtractedLicensingInfo(
+            **{
+                "license_id": "LicenseRef-1",
+                "extracted_text": " ",
+            }
+        )
+        assert "NOASSERTION" == licensing_info.as_dict()["extractedText"]
+
     def test_spdx_extracted_licensing_info_from_data(self):
         assert spdx.ExtractedLicensingInfo.from_data({})
         licensing_info = spdx.ExtractedLicensingInfo.from_data(
@@ -353,7 +377,13 @@ class ScanPipeSPDXPipesTest(TestCase):
 
     def test_spdx_document_as_dict(self):
         document = spdx.Document(**self.document_data)
-        assert self.document_spdx_data == document.as_dict()
+        assert self.document_spdx_data == document.as_dict(), document.as_dict()
+
+    def test_spdx_relationship_is_dependency_relationship_property(self):
+        relationship = spdx.Relationship.from_data(self.relationship_spdx_data)
+        assert relationship.is_dependency_relationship is False
+        relationship.relationship = "DEPENDENCY_OF"
+        assert relationship.is_dependency_relationship
 
     def test_spdx_document_from_data(self):
         assert spdx.Document.from_data({})
@@ -370,15 +400,15 @@ class ScanPipeSPDXPipesTest(TestCase):
 
     def test_spdx_document_validate(self):
         document = spdx.Document(**self.document_data)
-        document.validate(self.schema)
+        document.validate(self.schema_2_3)
 
     def test_spdx_validate_document(self):
         document = spdx.Document(**self.document_data)
-        spdx.validate_document(document, self.schema)
+        spdx.validate_document(document, self.schema_2_3)
 
         # Testing support for "PACKAGE_MANAGER" in place of "PACKAGE-MANAGER"
         document_location = self.data / "spdx" / "example-2.3.1.json"
-        spdx.validate_document(document_location.read_text(), self.schema)
+        spdx.validate_document(document_location.read_text(), self.schema_2_3)
 
         with self.assertRaises(Exception):
-            spdx.validate_document({}, self.schema)
+            spdx.validate_document({}, self.schema_2_3)

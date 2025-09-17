@@ -25,6 +25,7 @@ import decimal
 import io
 import json
 import re
+import uuid
 from operator import attrgetter
 from pathlib import Path
 
@@ -60,6 +61,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import ProjectMessage
 from scanpipe.pipes import docker
 from scanpipe.pipes import flag
+from scanpipe.pipes import ort
 from scanpipe.pipes import spdx
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -671,13 +673,58 @@ def _get_spdx_extracted_licenses(license_expressions):
     return extracted_licenses
 
 
-def to_spdx(project, include_files=False):
+def get_dependency_as_spdx_relationship(dependency, document_spdx_id, packages_as_spdx):
+    """Return a spdx.Relationship crafted from the provided ``dependency`` instance."""
+    if dependency.for_package:  # Package dependency
+        parent_id = dependency.for_package.spdx_id
+    else:  # Project dependency
+        parent_id = document_spdx_id
+
+    if dependency.is_resolved_to_package:  # Resolved to a Package
+        child_id = dependency.resolved_to_package.spdx_id
+    else:  # Not resolved to a Package (only package_url value is available)
+        dependency_as_package = dependency.as_spdx_package()
+        packages_as_spdx.append(dependency_as_package)
+        child_id = dependency_as_package.spdx_id
+
+    spdx_relationship = spdx.Relationship(
+        spdx_id=child_id,
+        related_spdx_id=parent_id,
+        relationship="DEPENDENCY_OF",
+    )
+    return spdx_relationship
+
+
+def get_inputs_as_spdx_packages(project):
+    """Return the Project's inputs as SPDX package to be used as root elements."""
+    inputs_as_spdx_packages = []
+
+    for input_source in project.get_inputs_with_source():
+        input_uuid = input_source.get("uuid") or uuid.uuid4()
+
+        input_as_spdx_package = spdx.Package(
+            spdx_id=f"SPDXRef-scancodeio-input-{input_uuid}",
+            name=input_source.get("filename"),
+            filename=input_source.get("filename"),
+            download_location=input_source.get("download_url"),
+            files_analyzed=True,
+        )
+        inputs_as_spdx_packages.append(input_as_spdx_package)
+
+    return inputs_as_spdx_packages
+
+
+def to_spdx(project, version=spdx.SPDX_SPEC_VERSION_2_3, include_files=False):
     """
     Generate output for the provided ``project`` in SPDX document format.
     The output file is created in the ``project`` "output/" directory.
     Return the path of the generated output file.
     """
+    if version not in [spdx.SPDX_SPEC_VERSION_2_2, spdx.SPDX_SPEC_VERSION_2_3]:
+        raise ValueError(f"SPDX {version} is not supported.")
+
     output_file = project.get_output_file_path("results", "spdx.json")
+    document_spdx_id = f"SPDXRef-DOCUMENT-{project.uuid}"
 
     discoveredpackage_qs = get_queryset(project, "discoveredpackage")
     discovereddependency_qs = get_queryset(project, "discovereddependency")
@@ -686,21 +733,52 @@ def to_spdx(project, include_files=False):
     license_expressions = []
     relationships = []
 
+    project_inputs_as_spdx_packages = get_inputs_as_spdx_packages(project)
+
+    if project_inputs_as_spdx_packages:
+        packages_as_spdx.extend(project_inputs_as_spdx_packages)
+
+    # Use the Project's input as the root element that the SPDX document describes.
+    # This ensures "documentDescribes" points only to the main subject of the SBOM,
+    # not to every dependency or file in the project.
+    # See https://github.com/spdx/spdx-spec/issues/395 and
+    # https://github.com/aboutcode-org/scancode.io/issues/564#issuecomment-3269296563
+    # for detailed context.
+    if len(project_inputs_as_spdx_packages) == 1:
+        describe_spdx_id = project_inputs_as_spdx_packages[0].spdx_id
+
+    # Fallback to the Project as the SPDX root element for the "documentDescribes",
+    # if more than one input, or if no inputs, are available.
+    else:
+        project_as_root_package = spdx.Package(
+            spdx_id=f"SPDXRef-scancodeio-project-{project.uuid}",
+            name=project.name,
+            files_analyzed=True,
+        )
+        packages_as_spdx.append(project_as_root_package)
+        describe_spdx_id = project_as_root_package.spdx_id
+
     for package in discoveredpackage_qs:
-        packages_as_spdx.append(package.as_spdx())
+        spdx_package = package.as_spdx()
+        packages_as_spdx.append(spdx_package)
+
         if license_expression := package.declared_license_expression:
             license_expressions.append(license_expression)
 
+        spdx_relationship = spdx.Relationship(
+            spdx_id=describe_spdx_id,
+            related_spdx_id=spdx_package.spdx_id,
+            relationship="DEPENDS_ON",
+        )
+        relationships.append(spdx_relationship)
+
     for dependency in discovereddependency_qs:
-        packages_as_spdx.append(dependency.as_spdx_package())
-        if dependency.for_package:
-            relationships.append(
-                spdx.Relationship(
-                    spdx_id=dependency.spdx_id,
-                    related_spdx_id=dependency.for_package.spdx_id,
-                    relationship="DEPENDENCY_OF",
-                )
-            )
+        spdx_relationship = get_dependency_as_spdx_relationship(
+            dependency,
+            document_spdx_id,
+            packages_as_spdx,
+        )
+        relationships.append(spdx_relationship)
 
     files_as_spdx = []
     if include_files:
@@ -710,8 +788,11 @@ def to_spdx(project, include_files=False):
         ]
 
     document = spdx.Document(
+        version=version,
+        spdx_id=document_spdx_id,
         name=f"scancodeio_{project.name}",
         namespace=f"https://scancode.io/spdxdocs/{project.uuid}",
+        describes=[describe_spdx_id],
         creation_info=spdx.CreationInfo(tool=f"ScanCode.io-{scancodeio_version}"),
         packages=packages_as_spdx,
         files=files_as_spdx,
@@ -1037,10 +1118,23 @@ def to_attribution(project):
     return output_file
 
 
+def to_ort_package_list_yml(project):
+    """
+    Generate an ORT compatible "package-list.yml" output.
+    The output file is created in the ``project`` "output/" directory.
+    Return the path of the generated output file.
+    """
+    output_file = project.get_output_file_path("results", "package-list.yml")
+    ort_yml = ort.to_ort_package_list_yml(project)
+    output_file.write_text(ort_yml)
+    return output_file
+
+
 FORMAT_TO_FUNCTION_MAPPING = {
     "json": to_json,
     "xlsx": to_xlsx,
     "spdx": to_spdx,
     "cyclonedx": to_cyclonedx,
     "attribution": to_attribution,
+    "ort-package-list": to_ort_package_list_yml,
 }

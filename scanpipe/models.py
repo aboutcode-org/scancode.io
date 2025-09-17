@@ -46,6 +46,7 @@ from django.db import models
 from django.db import transaction
 from django.db.models import Case
 from django.db.models import Count
+from django.db.models import Exists
 from django.db.models import IntegerField
 from django.db.models import OuterRef
 from django.db.models import Prefetch
@@ -1147,12 +1148,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         filename = f"{name}-{filename_now()}.{extension}"
         return self.output_path / filename
 
-    def get_latest_output(self, filename):
+    def get_latest_output(self, filename, extension="json"):
         """
         Return the latest output file with the "filename" prefix, for example
         "scancode-<timestamp>.json".
         """
-        output_files = sorted(self.output_path.glob(f"*{filename}*.json"))
+        output_files = sorted(self.output_path.glob(f"*{filename}*.{extension}"))
         if output_files:
             return output_files[-1]
 
@@ -1247,7 +1248,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         adds the `input_source`.
         """
         self.write_input_file(uploaded_file)
-        self.add_input_source(filename=uploaded_file.name, is_uploaded=True, tag=tag)
+        input_source = self.add_input_source(
+            filename=uploaded_file.name,
+            is_uploaded=True,
+            tag=tag,
+        )
+        return input_source
 
     def add_uploads(self, uploads):
         """
@@ -2431,6 +2437,17 @@ class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuery
 
     def executable_binaries(self):
         return self.union(self.win_exes(), self.macho_binaries(), self.elfs())
+
+    def with_has_children(self):
+        """
+        Annotate the QuerySet with has_children field based on whether
+        each resource has any children (subdirectories/files).
+        """
+        children_qs = CodebaseResource.objects.filter(
+            parent_path=OuterRef("path"),
+        )
+
+        return self.annotate(has_children=Exists(children_qs))
 
 
 class ScanFieldsModelMixin(models.Model):

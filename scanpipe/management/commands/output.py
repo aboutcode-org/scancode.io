@@ -25,7 +25,15 @@ from django.core.management.base import CommandError
 from scanpipe.management.commands import ProjectCommand
 from scanpipe.pipes import output
 
-SUPPORTED_FORMATS = ["json", "csv", "xlsx", "attribution", "spdx", "cyclonedx"]
+SUPPORTED_FORMATS = [
+    "json",
+    "csv",
+    "xlsx",
+    "attribution",
+    "spdx",
+    "cyclonedx",
+    "ort-package-list",
+]
 
 
 class Command(ProjectCommand):
@@ -71,7 +79,7 @@ class Command(ProjectCommand):
         output_kwargs = {}
         if ":" in output_format:
             output_format, version = output_format.split(":", maxsplit=1)
-            if output_format != "cyclonedx":
+            if output_format not in ["cyclonedx", "spdx"]:
                 raise CommandError(
                     'The ":" version syntax is only supported for the cyclonedx format.'
                 )
@@ -84,6 +92,7 @@ class Command(ProjectCommand):
             "spdx": output.to_spdx,
             "cyclonedx": output.to_cyclonedx,
             "attribution": output.to_attribution,
+            "ort-package-list": output.to_ort_package_list_yml,
         }.get(output_format)
 
         if not output_function:

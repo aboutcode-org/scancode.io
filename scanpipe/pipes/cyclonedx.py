@@ -79,7 +79,9 @@ def get_external_references(component):
 
     references = defaultdict(list)
     for reference in external_references:
-        references[reference.type.value].append(reference.url.uri)
+        reference_url = reference.url
+        if reference_url and reference_url.uri:
+            references[reference.type.value].append(reference_url.uri)
 
     return dict(references)
 
@@ -121,7 +123,10 @@ def validate_document(document):
     The validator is loaded from the document specVersion property.
     """
     if isinstance(document, str):
+        document_str = document
         document = json.loads(document)
+    else:
+        document_str = json.dumps(document)
 
     spec_version = document.get("specVersion")
     if not spec_version:
@@ -130,7 +135,8 @@ def validate_document(document):
     schema_version = SchemaVersion.from_version(spec_version)
 
     json_validator = JsonStrictValidator(schema_version)
-    return json_validator._validata_data(document)
+    json_validation_errors = json_validator.validate_str(document_str)
+    return json_validation_errors
 
 
 def is_cyclonedx_bom(input_location):
@@ -158,12 +164,9 @@ def cyclonedx_component_to_package_data(
     vulnerabilities = vulnerabilities or {}
     extra_data = {}
 
-    # Store the original bom_ref and dependencies for future processing.
     bom_ref = str(cdx_component.bom_ref)
-    if bom_ref:
-        extra_data["bom_ref"] = bom_ref
-        if depends_on := dependencies.get(bom_ref):
-            extra_data["depends_on"] = depends_on
+    if depends_on := dependencies.get(bom_ref):
+        extra_data["depends_on"] = depends_on
 
     package_url_dict = {}
     if cdx_component.purl:
@@ -189,6 +192,8 @@ def cyclonedx_component_to_package_data(
             )
 
     package_data = {
+        # Store the original "bom_ref" as package_uid for dependencies resolution.
+        "package_uid": bom_ref,
         "name": cdx_component.name,
         "extracted_license_statement": declared_license,
         "copyright": cdx_component.copyright,
@@ -280,7 +285,7 @@ def cleanup_components_properties(cyclonedx_document_json):
         elif isinstance(value, list) and not any(value):
             return True
 
-    for component in cyclonedx_document_json["components"]:
+    for component in cyclonedx_document_json.get("components", []):
         for property_name, property_value in component.items():
             if is_empty(property_value) or property_name in ignored_properties:
                 entries_to_delete.append((component, property_name))

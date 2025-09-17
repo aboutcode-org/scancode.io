@@ -153,21 +153,24 @@ class ProjectViewSet(
         """Return the results in the provided `output_format` as an attachment."""
         project = self.get_object()
         format = request.query_params.get("output_format", "json")
+
         version = request.query_params.get("version")
         output_kwargs = {}
+        if version:
+            output_kwargs["version"] = version
 
         if format == "json":
             return project_results_json_response(project, as_attachment=True)
         elif format == "xlsx":
             output_file = output.to_xlsx(project)
         elif format == "spdx":
-            output_file = output.to_spdx(project)
+            output_file = output.to_spdx(project, **output_kwargs)
         elif format == "cyclonedx":
-            if version:
-                output_kwargs["version"] = version
             output_file = output.to_cyclonedx(project, **output_kwargs)
         elif format == "attribution":
             output_file = output.to_attribution(project)
+        elif format == "ort-package-list":
+            output_file = output.to_ort_package_list_yml(project)
         else:
             message = {"status": f"Format {format} not supported."}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
