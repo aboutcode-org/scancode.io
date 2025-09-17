@@ -20,15 +20,14 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import logging
 import sys
 import tempfile
 from pathlib import Path
-import logging
 
 import environ
 
 from scanpipe.archiving import LocalFilesystemProvider
-
 
 PROJECT_DIR = environ.Path(__file__) - 1
 ROOT_DIR = PROJECT_DIR - 1
@@ -404,9 +403,7 @@ if DOWNLOAD_ARCHIVING_PROVIDER == "localstorage":
     except Exception as e:
         logger.error(f"Failed to initialize LocalFilesystemProvider: {e}")
 else:
-        logger.error(
-            f"Unknown DOWNLOAD_ARCHIVING_PROVIDER: {DOWNLOAD_ARCHIVING_PROVIDER}"
-        )
+    logger.error(f"Unknown DOWNLOAD_ARCHIVING_PROVIDER: {DOWNLOAD_ARCHIVING_PROVIDER}")
 
 # Job Queue
 
