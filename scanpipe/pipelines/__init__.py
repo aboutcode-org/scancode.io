@@ -29,13 +29,15 @@ from datetime import datetime
 from functools import wraps
 from pathlib import Path
 
+from django.conf import settings
+
 import bleach
 from markdown_it import MarkdownIt
 from pyinstrument import Profiler
-from django.conf import settings
 
 from aboutcode.pipeline import BasePipeline
 from scancodeio.settings import download_store
+
 logger = logging.getLogger(__name__)
 
 

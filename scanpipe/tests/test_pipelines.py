@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-=======
->>>>>>> ca2f49f5 (Revert "Revert "Revert "add tests for storing packages""")
 # SPDX-License-Identifier: Apache-2.0
 #
 # http://nexb.com and https://github.com/nexB/scancode.io
@@ -37,10 +29,6 @@ from contextlib import redirect_stderr
 from pathlib import Path
 from unittest import mock
 from unittest import skipIf
-<<<<<<< HEAD
-=======
-from unittest.mock import patch
->>>>>>> ca2f49f5 (Revert "Revert "Revert "add tests for storing packages""")
 
 from django.conf import settings
 from django.test import TestCase
@@ -311,49 +299,31 @@ class ScanPipePipelinesTest(TestCase):
         with open(test_data_path, "rb") as f:
             test_content = f.read()
 
-<<<<<<< HEAD
-        input_source=InputSource.objects.create(
-=======
-        InputSource.objects.create(
->>>>>>> ca2f49f5 (Revert "Revert "Revert "add tests for storing packages""")
-            project=project1,
-            filename=test_filename,
-            download_url=test_url,
-            is_uploaded=False,
+        input_source = InputSource.objects.create(
+            InputSource.objects.create(
+                project=project1,
+                filename=test_filename,
+                download_url=test_url,
+                is_uploaded=False,
+            )
         )
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> ca2f49f5 (Revert "Revert "Revert "add tests for storing packages""")
         mock_get.return_value.content = test_content
         mock_get.return_value.status_code = 200
 
         pipeline.download_missing_inputs()
         input_source.refresh_from_db()
-<<<<<<< HEAD
         self.assertTrue(
             input_source.file_path.startswith(settings.CENTRAL_ARCHIVE_PATH)
         )
         self.assertTrue(Path(input_source.file_path).exists())
 
-=======
-        self.assertTrue(input_source.file_path.startswith(settings.CENTRAL_ARCHIVE_PATH))
-        self.assertTrue(Path(input_source.file_path).exists())
-
-        
->>>>>>> ca2f49f5 (Revert "Revert "Revert "add tests for storing packages""")
         pipeline.archive_downloads()
         input_source = InputSource.refresh_from_db()
         self.assertTrue(input_source.sha256)
         self.assertTrue(input_source.download_date)
         self.assertEqual(input_source.download_url, test_url)
         self.assertEqual(input_source.filename, test_filename)
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> ca2f49f5 (Revert "Revert "Revert "add tests for storing packages""")
         project2 = make_project(name="project2")
         input_source2 = InputSource.objects.create(
             project=project2,
