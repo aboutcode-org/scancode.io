@@ -25,7 +25,6 @@ import inspect
 import logging
 import traceback
 from contextlib import contextmanager
-from datetime import datetime
 from functools import wraps
 from pathlib import Path
 
@@ -36,7 +35,6 @@ from markdown_it import MarkdownIt
 from pyinstrument import Profiler
 
 from aboutcode.pipeline import BasePipeline
-from scancodeio.settings import download_store
 
 logger = logging.getLogger(__name__)
 
@@ -179,6 +177,7 @@ class CommonStepsMixin:
 
         if error_tracebacks:
             raise InputFilesError(error_tracebacks)
+
 
 class ProjectPipeline(CommonStepsMixin, BasePipeline):
     """Main class for all project related pipelines including common steps methods."""

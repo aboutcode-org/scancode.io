@@ -25,11 +25,11 @@
 
 
 from pathlib import Path
+from unittest.mock import Mock
 from unittest.mock import patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
-from django.conf import settings
 
 from scanpipe.models import InputSource
 from scanpipe.pipes.input import add_input_from_upload
@@ -49,38 +49,17 @@ class TestInput(TestCase):
 
     @patch("requests.get")
     def test_add_input_from_url(self, mock_get):
-        test_url = "https://files.pythonhosted.org/packages/sample.tar.gz"
-        mock_get.return_value.content = self.test_content
-        mock_get.return_value.status_code = 200
+        test_url = "https://example.com/test.tar.gz"
+        mock_response = Mock()
+        mock_response.content = self.test_content
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
         add_input_from_url(self.project, test_url, filename=self.test_filename)
         input_source = InputSource.objects.get(project=self.project)
-        self.assertEqual(input_source.filename, self.test_filename)
         self.assertEqual(input_source.download_url, test_url)
-        self.assertTrue(input_source.sha256)
-        self.assertTrue(input_source.download_date)
-        self.assertFalse(input_source.is_uploaded)
-        self.assertTrue(
-            input_source.file_path.startswith(settings.CENTRAL_ARCHIVE_PATH)
-        )
-        self.assertTrue(Path(input_source.file_path).exists())
-
-    @patch("scanpipe.pipes.input.download_store", None)
-    @patch("requests.get")
-    def test_add_input_from_url_fallback(self, mock_get):
-        test_url = "https://files.pythonhosted.org/packages/sample.tar.gz"
-        mock_get.return_value.content = self.test_content
-        mock_get.return_value.status_code = 200
-        add_input_from_url(self.project, test_url, filename=self.test_filename)
-        input_source = InputSource.objects.get(project=self.project)
         self.assertEqual(input_source.filename, self.test_filename)
-        self.assertEqual(input_source.download_url, test_url)
-        self.assertFalse(input_source.sha256)
-        self.assertFalse(input_source.download_date)
         self.assertFalse(input_source.is_uploaded)
-        self.assertTrue(
-            str(input_source.file_path).startswith(str(self.project.input_path))
-        )
-        self.assertTrue(Path(input_source.file_path).exists())
+        self.assertTrue((self.project.input_path / self.test_filename).exists())
 
     def test_add_input_from_upload(self):
         uploaded_file = SimpleUploadedFile(self.test_filename, self.test_content)
@@ -88,25 +67,28 @@ class TestInput(TestCase):
         input_source = InputSource.objects.get(project=self.project)
         self.assertEqual(input_source.filename, self.test_filename)
         self.assertEqual(input_source.download_url, "")
-        self.assertTrue(input_source.sha256)
-        self.assertTrue(input_source.download_date)
         self.assertTrue(input_source.is_uploaded)
-        self.assertTrue(
-            input_source.file_path.startswith(settings.CENTRAL_ARCHIVE_PATH)
-        )
-        self.assertTrue(Path(input_source.file_path).exists())
+        self.assertTrue((self.project.input_path / self.test_filename).exists())
 
-    @patch("scanpipe.pipes.input.download_store", None)
+    @patch("requests.get")
+    def test_add_input_from_url_fallback(self, mock_get):
+        test_url = "https://example.com/test.tar.gz"
+        mock_response = Mock()
+        mock_response.content = self.test_content
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
+        add_input_from_url(self.project, test_url, filename=self.test_filename)
+        input_source = InputSource.objects.get(project=self.project)
+        self.assertEqual(input_source.download_url, test_url)
+        self.assertEqual(input_source.filename, self.test_filename)
+        self.assertFalse(input_source.is_uploaded)
+        self.assertTrue((self.project.input_path / self.test_filename).exists())
+
     def test_add_input_from_upload_fallback(self):
         uploaded_file = SimpleUploadedFile(self.test_filename, self.test_content)
         add_input_from_upload(self.project, uploaded_file)
         input_source = InputSource.objects.get(project=self.project)
         self.assertEqual(input_source.filename, self.test_filename)
         self.assertEqual(input_source.download_url, "")
-        self.assertFalse(input_source.sha256)
-        self.assertFalse(input_source.download_date)
         self.assertTrue(input_source.is_uploaded)
-        self.assertTrue(
-            str(input_source.file_path).startswith(str(self.project.input_path))
-        )
-        self.assertTrue(Path(input_source.file_path).exists())
+        self.assertTrue((self.project.input_path / self.test_filename).exists())

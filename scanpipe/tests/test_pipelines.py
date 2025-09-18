@@ -41,7 +41,6 @@ from scorecode.models import PackageScore
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
-from scanpipe.models import InputSource
 from scanpipe.pipelines import CommonStepsMixin
 from scanpipe.pipelines import InputFilesError
 from scanpipe.pipelines import Pipeline
@@ -185,7 +184,7 @@ class ScanPipePipelinesTest(TestCase):
         run = project1.add_pipeline("download_inputs")
         pipeline = run.make_pipeline_instance()
         self.assertTrue(pipeline.download_inputs)
-        expected = (CommonStepsMixin.download_missing_inputs)
+        expected = (CommonStepsMixin.download_missing_inputs,)
         self.assertEqual(expected, pipeline.get_initial_steps())
         expected = (CommonStepsMixin.download_missing_inputs, DownloadInput.step1)
         self.assertEqual(expected, pipeline.get_steps())
@@ -287,57 +286,6 @@ class ScanPipePipelinesTest(TestCase):
         self.assertTrue(input_source.exists())
 
     @mock.patch("requests.get")
-    def test_archive_downloads(self, mock_get):
-        project1 = make_project()
-        run = project1.add_pipeline("scan_codebase")
-        pipeline = run.make_pipeline_instance()
-        test_filename = "sample.tar.gz"
-        test_url = "https://files.pythonhosted.org/packages/sample.tar.gz"
-        test_data_path = (
-            Path(__file__).parent / "data" / "test-downloads" / test_filename
-        )
-        with open(test_data_path, "rb") as f:
-            test_content = f.read()
-
-        input_source = InputSource.objects.create(
-            InputSource.objects.create(
-                project1=project1,
-                filename=test_filename,
-                download_url=test_url,
-                is_uploaded=False,
-            )
-        )
-        mock_get.return_value.content = test_content
-        mock_get.return_value.status_code = 200
-
-        pipeline.download_missing_inputs()
-        input_source.refresh_from_db()
-        self.assertTrue(
-            input_source.file_path.startswith(settings.CENTRAL_ARCHIVE_PATH)
-        )
-        self.assertTrue(Path(input_source.file_path).exists())
-
-        pipeline.archive_downloads()
-        input_source = InputSource.refresh_from_db()
-        self.assertTrue(input_source.sha256)
-        self.assertTrue(input_source.download_date)
-        self.assertEqual(input_source.download_url, test_url)
-        self.assertEqual(input_source.filename, test_filename)
-
-        project2 = make_project(name="project2")
-        input_source2 = InputSource.objects.create(
-            project=project2,
-            filename=test_filename,
-            download_url=test_url,
-            is_uploaded=False,
-        )
-        run2 = project2.add_pipeline("scan_codebase")
-        pipeline2 = run2.make_pipeline_instance()
-        pipeline2.download_missing_inputs()
-        input_source2.refresh_from_db()
-        self.assertEqual(input_source.file_path, input_source2.file_path)
-        self.assertTrue(Path(input_source2.file_path).exists())
-
     def test_scanpipe_pipeline_class_save_errors_context_manager(self):
         project1 = make_project()
         run = project1.add_pipeline("do_nothing")

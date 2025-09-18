@@ -23,7 +23,6 @@
 import logging
 import os
 import shutil
-from datetime import datetime
 from pathlib import Path
 
 from django.core.exceptions import FieldDoesNotExist
@@ -34,7 +33,6 @@ import openpyxl
 import requests
 from typecode.contenttype import get_type
 
-from scancodeio.settings import download_store
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
@@ -261,43 +259,21 @@ def add_input_from_url(project, url, filename=None):
         raise
 
     filename = filename or url.split("/")[-1] or "downloaded_file"
+    input_path = project.input_path / filename
 
-    if download_store:
-        try:
-            download = download_store.put(
-                content=content,
-                download_url=url,
-                download_date=datetime.now().isoformat(),
-                filename=filename,
-            )
-            InputSource.objects.create(
-                project=project,
-                sha256=download.sha256,
-                download_url=download.download_url,
-                filename=download.filename,
-                download_date=download.download_date,
-                file_path=str(download.path),
-                is_uploaded=False,
-            )
-        except Exception as e:
-            logger.error(f"Failed to archive download for {url}: {e}")
-            raise
-    else:
-        input_path = project.input_path / filename
-        try:
-            input_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(input_path, "wb") as f:
-                f.write(content)
-            InputSource.objects.create(
-                project=project,
-                filename=filename,
-                download_url=url,
-                file_path=str(input_path),
-                is_uploaded=False,
-            )
-        except Exception as e:
-            logger.error(f"Failed to save {filename} to {input_path}: {e}")
-            raise
+    try:
+        input_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(input_path, "wb") as f:
+            f.write(content)
+        InputSource.objects.create(
+            project=project,
+            filename=filename,
+            download_url=url,
+            is_uploaded=False,
+        )
+    except Exception as e:
+        logger.error(f"Failed to save {filename} to {input_path}: {e}")
+        raise
 
 
 def add_input_from_upload(project, uploaded_file):
@@ -307,39 +283,16 @@ def add_input_from_upload(project, uploaded_file):
     """
     content = uploaded_file.read()
     filename = uploaded_file.name
-
-    if download_store:
-        try:
-            download = download_store.put(
-                content=content,
-                download_url="",
-                download_date=datetime.now().isoformat(),
-                filename=filename,
-            )
-            InputSource.objects.create(
-                project=project,
-                sha256=download.sha256,
-                download_url=download.download_url,
-                filename=download.filename,
-                download_date=download.download_date,
-                file_path=str(download.path),
-                is_uploaded=True,
-            )
-        except Exception as e:
-            logger.error(f"Failed to archive upload {filename}: {e}")
-            raise
-    else:
-        input_path = project.input_path / filename
-        try:
-            input_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(input_path, "wb") as f:
-                f.write(content)
-            InputSource.objects.create(
-                project=project,
-                filename=filename,
-                file_path=str(input_path),
-                is_uploaded=True,
-            )
-        except Exception as e:
-            logger.error(f"Failed to save {filename} to {input_path}: {e}")
-            raise
+    input_path = project.input_path / filename
+    try:
+        input_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(input_path, "wb") as f:
+            f.write(content)
+        InputSource.objects.create(
+            project=project,
+            filename=filename,
+            is_uploaded=True,
+        )
+    except Exception as e:
+        logger.error(f"Failed to save {filename} to {input_path}: {e}")
+        raise
