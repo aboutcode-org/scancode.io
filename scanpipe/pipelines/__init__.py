@@ -32,11 +32,10 @@ from pathlib import Path
 import bleach
 from markdown_it import MarkdownIt
 from pyinstrument import Profiler
+from django.conf import settings
 
 from aboutcode.pipeline import BasePipeline
 from scancodeio.settings import download_store
-from scancodeio.settings import settings
-
 logger = logging.getLogger(__name__)
 
 
