@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 
+=======
+>>>>>>> b6d23428 (Revert "Revert "add tests for storing packages"")
 # SPDX-License-Identifier: Apache-2.0
 #
 # http://nexb.com and https://github.com/aboutcode-org/scancode.io
@@ -92,4 +95,8 @@ COPY --chown=$APP_USER:$APP_USER pyproject.toml $APP_DIR/
 RUN pip install --no-cache-dir .
 
 # Copy the codebase and set the proper permissions for the APP_USER
+<<<<<<< HEAD
 COPY --chown=$APP_USER:$APP_USER . $APP_DIR
+=======
+COPY --chown=$APP_USER:$APP_USER . $APP_DIR
+>>>>>>> b6d23428 (Revert "Revert "add tests for storing packages"")

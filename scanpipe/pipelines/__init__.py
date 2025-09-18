@@ -20,22 +20,22 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import hashlib
 import inspect
 import logging
 import traceback
-import hashlib
 from contextlib import contextmanager
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
 
 import bleach
-import requests
 from markdown_it import MarkdownIt
 from pyinstrument import Profiler
 
 from aboutcode.pipeline import BasePipeline
 from scancodeio.settings import download_store
+from scancodeio.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +153,11 @@ class CommonStepsMixin:
                 continue
 
             url_hash = hashlib.sha256(download_url.encode()).hexdigest()
-            filename = input_source.filename or Path(download_url).name or f"{url_hash}.archive"
+            filename = (
+                input_source.filename
+                or Path(download_url).name
+                or f"{url_hash}.archive"
+            )
             archive_path = Path(settings.CENTRAL_ARCHIVE_PATH) / url_hash / filename
 
             if archive_path.exists():
@@ -165,7 +169,7 @@ class CommonStepsMixin:
             self.log(f"Fetching input from {input_source.download_url}")
             try:
                 input_source.fetch()
-                
+
             except Exception as error:
                 traceback_str = traceback.format_exc()
                 logger.error(traceback_str)
@@ -185,34 +189,38 @@ class CommonStepsMixin:
             sha256__isnull=True, is_uploaded=False
         ):
             if input_source.download_url:
-                try:
-                    response = requests.get(
-                        input_source.download_url, stream=True,timeout=30
-                        )
-                    response.raise_for_status()
-                    content = response.content
-                    filename = (
-                        input_source.filename
-                        or input_source.download_url.split("/")[-1]
-                    )
-                    download = download_store.put(
-                        content=content,
-                        download_url=input_source.download_url,
-                        download_date=datetime.now().isoformat(),
-                        filename=filename,
-                    )
-                    input_source.sha256 = download.sha256
-                    input_source.download_date = download.download_date
-                    input_source.save()
-                except Exception as e:
-                    self.add_error(
-                        exception=e,
-                        message=f"Failed to archive {input_source.download_url}",
-                    )
-            else:
                 logger.warning(
-                    f"No download URL for input {input_source.filename},"
+                    f"No download URL for input {input_source.filename}, "
                     "skipping archiving"
+                )
+                continue
+
+            if not input_source.file_path:
+                logger.warning(
+                    f"No file_path for input {input_source.download_url}, "
+                    "skipping archiving"
+                )
+                continue
+            try:
+                with open(input_source.file_path, "rb") as f:
+                    content = f.read()
+                filename = (
+                    input_source.filename or input_source.download_url.split("/")[-1]
+                )
+                download = download_store.put(
+                    content=content,
+                    download_url=input_source.download_url,
+                    download_date=datetime.now().isoformat(),
+                    filename=filename,
+                )
+                input_source.sha256 = download.sha256
+                input_source.download_date = download.download_date
+                input_source.file_path = str(download.path)
+                input_source.save()
+            except Exception as e:
+                self.add_error(
+                    exception=e,
+                    message=f"Failed to archive {input_source.download_url}",
                 )
 
 
@@ -249,7 +257,6 @@ class ProjectPipeline(CommonStepsMixin, BasePipeline):
         steps = []
         if cls.download_inputs:
             steps.append(cls.download_missing_inputs)
-        if ENABLE_DOWNLOAD_ARCHIVING:
             steps.append(cls.archive_downloads)
         return tuple(steps)
 
