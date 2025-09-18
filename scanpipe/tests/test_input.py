@@ -29,8 +29,8 @@ from unittest.mock import patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
+from django.conf import settings
 
-from scancodeio.settings import settings
 from scanpipe.models import InputSource
 from scanpipe.pipes.input import add_input_from_upload
 from scanpipe.pipes.input import add_input_from_url

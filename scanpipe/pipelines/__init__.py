@@ -180,51 +180,6 @@ class CommonStepsMixin:
         if error_tracebacks:
             raise InputFilesError(error_tracebacks)
 
-    def archive_downloads(self):
-        """
-        Archive downloaded inputs to the centralized DownloadStore if not already
-        archived.Updates InputSource with archiving metadata (sha256, download_date).
-        """
-        logger.info(f"Archiving downloads for project {self.project.name}")
-        for input_source in self.project.inputsources.filter(
-            sha256__isnull=True, is_uploaded=False
-        ):
-            if input_source.download_url:
-                logger.warning(
-                    f"No download URL for input {input_source.filename}, "
-                    "skipping archiving"
-                )
-                continue
-
-            if not input_source.file_path:
-                logger.warning(
-                    f"No file_path for input {input_source.download_url}, "
-                    "skipping archiving"
-                )
-                continue
-            try:
-                with open(input_source.file_path, "rb") as f:
-                    content = f.read()
-                filename = (
-                    input_source.filename or input_source.download_url.split("/")[-1]
-                )
-                download = download_store.put(
-                    content=content,
-                    download_url=input_source.download_url,
-                    download_date=datetime.now().isoformat(),
-                    filename=filename,
-                )
-                input_source.sha256 = download.sha256
-                input_source.download_date = download.download_date
-                input_source.file_path = str(download.path)
-                input_source.save()
-            except Exception as e:
-                self.add_error(
-                    exception=e,
-                    message=f"Failed to archive {input_source.download_url}",
-                )
-
-
 class ProjectPipeline(CommonStepsMixin, BasePipeline):
     """Main class for all project related pipelines including common steps methods."""
 
@@ -258,7 +213,6 @@ class ProjectPipeline(CommonStepsMixin, BasePipeline):
         steps = []
         if cls.download_inputs:
             steps.append(cls.download_missing_inputs)
-            steps.append(cls.archive_downloads)
         return tuple(steps)
 
     @classmethod

@@ -185,7 +185,7 @@ class ScanPipePipelinesTest(TestCase):
         run = project1.add_pipeline("download_inputs")
         pipeline = run.make_pipeline_instance()
         self.assertTrue(pipeline.download_inputs)
-        expected = (CommonStepsMixin.download_missing_inputs,)
+        expected = (CommonStepsMixin.download_missing_inputs)
         self.assertEqual(expected, pipeline.get_initial_steps())
         expected = (CommonStepsMixin.download_missing_inputs, DownloadInput.step1)
         self.assertEqual(expected, pipeline.get_steps())
@@ -301,7 +301,7 @@ class ScanPipePipelinesTest(TestCase):
 
         input_source = InputSource.objects.create(
             InputSource.objects.create(
-                project=project1,
+                project1=project1,
                 filename=test_filename,
                 download_url=test_url,
                 is_uploaded=False,
