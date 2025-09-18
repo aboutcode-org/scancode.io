@@ -24,13 +24,10 @@
 import hashlib
 import json
 import logging
-import os
-import stat
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-
 
 logger = logging.getLogger(__name__)
 
@@ -186,5 +183,3 @@ class LocalFilesystemProvider(DownloadStore):
             except Exception as e:
                 logger.error(f"Error reading {content_path}: {e}")
         return None
-
-

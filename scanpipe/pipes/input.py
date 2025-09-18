@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-import hashlib
 import logging
 import os
 import shutil
@@ -35,6 +34,7 @@ import openpyxl
 import requests
 from typecode.contenttype import get_type
 
+from scancodeio.settings import download_store
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
@@ -44,7 +44,6 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import InputSource
 from scanpipe.pipes import scancode
 from scanpipe.pipes.output import mappings_key_by_fieldname
-from scancodeio.settings import download_store
 
 logger = logging.getLogger(__name__)
 
@@ -254,7 +253,7 @@ def add_input_from_url(project, url, filename=None):
     If archiving is enabled, store the content in the DownloadStore and save metadata.
     """
     try:
-        response = requests.get(url, stream=True,timeout=30)
+        response = requests.get(url, stream=True, timeout=30)
         response.raise_for_status()
         content = response.content
     except requests.RequestException as e:
@@ -262,8 +261,6 @@ def add_input_from_url(project, url, filename=None):
         raise
 
     filename = filename or url.split("/")[-1] or "downloaded_file"
-    url_hash = hashlib.sha256(url.encode()).hexdigest()
-    archive_path = Path(project.settings.CENTRAL_ARCHIVE_PATH) / url_hash / filename
 
     if download_store:
         try:
@@ -301,6 +298,7 @@ def add_input_from_url(project, url, filename=None):
         except Exception as e:
             logger.error(f"Failed to save {filename} to {input_path}: {e}")
             raise
+
 
 def add_input_from_upload(project, uploaded_file):
     """
