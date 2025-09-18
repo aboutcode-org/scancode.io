@@ -286,7 +286,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertTrue(input_source.exists())
 
     @mock.patch("requests.get")
-    def test_scanpipe_pipeline_class_save_errors_context_manager(self):
+    def test_scanpipe_pipeline_class_save_errors_context_manager(self, *args, **kwargs):
         project1 = make_project()
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
