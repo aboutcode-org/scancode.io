@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-=======
->>>>>>> b6d23428 (Revert "Revert "add tests for storing packages"")
-=======
->>>>>>> 507231a0 (Revert "add tests for storing packages")
 # SPDX-License-Identifier: Apache-2.0
 #
 # http://nexb.com and https://github.com/aboutcode-org/scancode.io
