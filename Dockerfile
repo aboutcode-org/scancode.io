@@ -93,6 +93,3 @@ RUN pip install --no-cache-dir .
 
 # Copy the codebase and set the proper permissions for the APP_USER
 COPY --chown=$APP_USER:$APP_USER . $APP_DIR
-
-
-

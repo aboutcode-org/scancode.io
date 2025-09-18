@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -2053,5 +2054,4 @@ class PipelinesIntegrationTest(TestCase):
         run.refresh_from_db()
         self.assertIn("pkg:npm/csvtojson@2.0.10 ['release_date'", run.log)
         self.assertIn("1 discovered package enriched with the PurlDB.", run.log)
-
 
