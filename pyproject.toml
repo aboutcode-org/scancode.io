@@ -100,7 +100,8 @@ dependencies = [
   "scipy==1.15.3",
   # ScoreCode
   "scorecode==0.0.4",
-
+  # Workaround issue https://github.com/aboutcode-org/scancode.io/issues/1885
+  "click==8.2.1"
 ]
 
 [project.optional-dependencies]
