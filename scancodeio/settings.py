@@ -20,11 +20,14 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import logging
 import sys
 import tempfile
 from pathlib import Path
 
 import environ
+
+from scanpipe.archiving import LocalFilesystemProvider
 
 PROJECT_DIR = environ.Path(__file__) - 1
 ROOT_DIR = PROJECT_DIR - 1
@@ -372,6 +375,35 @@ STATICFILES_DIRS = [
 # Third-party apps
 
 CRISPY_TEMPLATE_PACK = "bootstrap3"
+
+# Centralized archive directory for all projects
+CENTRAL_ARCHIVE_PATH = env.str(
+    "CENTRAL_ARCHIVE_PATH", default="/var/scancodeio/archives"
+)
+
+# localstorage configuration
+DOWNLOAD_ARCHIVING_PROVIDER = env.str(
+    "DOWNLOAD_ARCHIVING_PROVIDER", default="localstorage"
+)
+
+# For local storage, we would store the root path in that setting
+DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION = env.dict(
+    "DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION", default=None
+)
+
+# Initialize the DownloadStore for local storage
+
+download_store = None
+logger = logging.getLogger(__name__)
+if DOWNLOAD_ARCHIVING_PROVIDER == "localstorage":
+    config = DOWNLOAD_ARCHIVING_PROVIDER_CONFIGURATION or {}
+    root_path = Path(config.get("root_path", CENTRAL_ARCHIVE_PATH))
+    try:
+        download_store = LocalFilesystemProvider(root_path=root_path)
+    except Exception as e:
+        logger.error(f"Failed to initialize LocalFilesystemProvider: {e}")
+else:
+    logger.error(f"Unknown DOWNLOAD_ARCHIVING_PROVIDER: {DOWNLOAD_ARCHIVING_PROVIDER}")
 
 # Job Queue
 

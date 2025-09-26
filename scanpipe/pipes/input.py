@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import logging
 import os
 import shutil
 from pathlib import Path
@@ -29,6 +30,7 @@ from django.core.validators import EMPTY_VALUES
 from django.db import models
 
 import openpyxl
+import requests
 from typecode.contenttype import get_type
 
 from scanpipe import pipes
@@ -37,8 +39,11 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredLicense
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import InputSource
 from scanpipe.pipes import scancode
 from scanpipe.pipes.output import mappings_key_by_fieldname
+
+logger = logging.getLogger(__name__)
 
 
 def copy_input(input_location, dest_path):
@@ -237,3 +242,57 @@ def load_inventory_from_xlsx(project, input_location, extra_data_prefix=None):
         if extra_data_prefix:
             extra_data = {extra_data_prefix: extra_data}
         project.update_extra_data(extra_data)
+
+
+def add_input_from_url(project, url, filename=None):
+    """
+    Download the file from the provided ``url`` and add it as an InputSource for the
+    specified ``project``. Optionally, specify a ``filename`` for the downloaded file.
+    If archiving is enabled, store the content in the DownloadStore and save metadata.
+    """
+    try:
+        response = requests.get(url, stream=True, timeout=30)
+        response.raise_for_status()
+        content = response.content
+    except requests.RequestException as e:
+        logger.error(f"Failed to download {url}: {e}")
+        raise
+
+    filename = filename or url.split("/")[-1] or "downloaded_file"
+    input_path = project.input_path / filename
+
+    try:
+        input_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(input_path, "wb") as f:
+            f.write(content)
+        InputSource.objects.create(
+            project=project,
+            filename=filename,
+            download_url=url,
+            is_uploaded=False,
+        )
+    except Exception as e:
+        logger.error(f"Failed to save {filename} to {input_path}: {e}")
+        raise
+
+
+def add_input_from_upload(project, uploaded_file):
+    """
+    Add an uploaded file as an InputSource for the specified ``project``.
+    If archiving is enabled, store the content in the DownloadStore and save metadata.
+    """
+    content = uploaded_file.read()
+    filename = uploaded_file.name
+    input_path = project.input_path / filename
+    try:
+        input_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(input_path, "wb") as f:
+            f.write(content)
+        InputSource.objects.create(
+            project=project,
+            filename=filename,
+            is_uploaded=True,
+        )
+    except Exception as e:
+        logger.error(f"Failed to save {filename} to {input_path}: {e}")
+        raise
