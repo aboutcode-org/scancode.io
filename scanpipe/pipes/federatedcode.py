@@ -218,18 +218,9 @@ def commit_changes(
         author_name = settings.FEDERATEDCODE_GIT_SERVICE_NAME
         author_email = settings.FEDERATEDCODE_GIT_SERVICE_EMAIL
 
-        files_added = all(
-            [
-                True
-                for changed_file in files_to_commit
-                if changed_file in repo.untracked_files
-            ]
-        )
-        change_type = "Add" if files_added else "Update"
-
         purls = "\n".join(purls)
         commit_message = f"""\
-        {change_type} {mine_type} results for:
+        Add {mine_type} results for:
         {purls}
 
         Tool: {tool_name}@v{tool_version}
