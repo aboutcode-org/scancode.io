@@ -21,6 +21,7 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
+import os
 
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
@@ -34,12 +35,14 @@ from rest_framework import renderers
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
 from scanpipe.api.serializers import CodebaseRelationSerializer
 from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
+from scanpipe.api.serializers import DownloadedPackageSerializer
 from scanpipe.api.serializers import PipelineSerializer
 from scanpipe.api.serializers import ProjectMessageSerializer
 from scanpipe.api.serializers import ProjectSerializer
@@ -50,6 +53,7 @@ from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectMessageFilterSet
 from scanpipe.filters import RelationFilterSet
 from scanpipe.filters import ResourceFilterSet
+from scanpipe.models import DownloadedPackage
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
@@ -561,3 +565,123 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 
         run.delete_task()
         return Response({"status": f"Pipeline {run.pipeline_name} deleted."})
+
+
+class DownloadedPackageFilter(django_filters.FilterSet):
+    url = django_filters.CharFilter(lookup_expr="exact")
+    checksum = django_filters.CharFilter(
+        field_name="package_archive__checksum_sha256", lookup_expr="exact"
+    )
+
+    class Meta:
+        model = DownloadedPackage
+        fields = ["url", "checksum"]
+
+
+class DownloadedPackageViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    """
+    A viewset for managing DownloadedPackage instances, providing endpoints to list,
+    retrieve, and download packages by ID, URL, or checksum.
+    """
+
+    queryset = DownloadedPackage.objects.select_related("package_archive")
+    serializer_class = DownloadedPackageSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    lookup_field = "id"
+    filterset_class = DownloadedPackageFilter
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+
+    def get_queryset(self):
+        project_uuid = self.kwargs["project_uuid"]
+        try:
+            project = Project.objects.get(uuid=project_uuid)
+            return self.queryset.filter(project=project)
+        except Project.DoesNotExist:
+            return self.queryset.none()
+
+    @action(detail=True, methods=["get"])
+    def download(self, request, project_uuid=None, id=None):
+        """Download a package file by ID."""
+        try:
+            package = self.get_queryset().get(id=id)
+            file_path = package.package_archive.package_file.path
+            if not file_path or not os.path.exists(file_path):
+                return Response({"error": "Package file not found"}, status=404)
+            file_name = os.path.basename(file_path)
+            return FileResponse(
+                open(file_path, "rb"),
+                as_attachment=True,
+                filename=file_name,
+            )
+        except DownloadedPackage.DoesNotExist:
+            return Response({"error": "Package not found"}, status=404)
+
+    @action(detail=False, methods=["get"])
+    def by_url(self, request, project_uuid=None):
+        """Query package details by URL."""
+        url = request.query_params.get("url")
+        if not url:
+            return Response({"error": "URL parameter is required"}, status=400)
+        try:
+            package = self.get_queryset().get(url=url)
+            serializer = self.get_serializer(package)
+            return Response(serializer.data)
+        except DownloadedPackage.DoesNotExist:
+            return Response({"error": "Package not found"}, status=404)
+
+    @action(detail=False, methods=["get"])
+    def download_by_url(self, request, project_uuid=None):
+        """Download a package file by URL."""
+        url = request.query_params.get("url")
+        if not url:
+            return Response({"error": "URL parameter is required"}, status=400)
+        try:
+            package = self.get_queryset().get(url=url)
+            file_path = package.package_archive.package_file.path
+            if not file_path or not os.path.exists(file_path):
+                return Response({"error": "Package file not found"}, status=404)
+            file_name = os.path.basename(file_path)
+            return FileResponse(
+                open(file_path, "rb"),
+                as_attachment=True,
+                filename=file_name,
+            )
+        except DownloadedPackage.DoesNotExist:
+            return Response({"error": "Package not found"}, status=404)
+
+    @action(detail=False, methods=["get"])
+    def by_checksum(self, request, project_uuid=None):
+        """Query package details by SHA256 checksum."""
+        checksum = request.query_params.get("checksum")
+        if not checksum:
+            return Response({"error": "Checksum parameter is required"}, status=400)
+        try:
+            package = self.get_queryset().get(package_archive__checksum_sha256=checksum)
+            serializer = self.get_serializer(package)
+            return Response(serializer.data)
+        except DownloadedPackage.DoesNotExist:
+            return Response({"error": "Package not found"}, status=404)
+
+    @action(detail=False, methods=["get"])
+    def download_by_checksum(self, request, project_uuid=None):
+        """Download a package file by SHA256 checksum."""
+        checksum = request.query_params.get("checksum")
+        if not checksum:
+            return Response({"error": "Checksum parameter is required"}, status=400)
+        try:
+            package = self.get_queryset().get(package_archive__checksum_sha256=checksum)
+            file_path = package.package_archive.package_file.path
+            if not file_path or not os.path.exists(file_path):
+                return Response({"error": "Package file not found"}, status=404)
+            file_name = os.path.basename(file_path)
+            return FileResponse(
+                open(file_path, "rb"),
+                as_attachment=True,
+                filename=file_name,
+            )
+        except DownloadedPackage.DoesNotExist:
+            return Response({"error": "Package not found"}, status=404)
