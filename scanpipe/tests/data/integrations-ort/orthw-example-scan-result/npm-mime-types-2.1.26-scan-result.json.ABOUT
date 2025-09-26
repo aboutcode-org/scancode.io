@@ -1,0 +1,12 @@
+about_resource: synthetic-scan-result-expected-output.spdx.json
+name: orthw-shell
+version: d3c917327f37c066ff857773a056a0187c68c317
+download_url: https://raw.githubusercontent.com/oss-review-toolkit/orthw-shell/d3c917327f37c066ff857773a056a0187c68c317/examples/npm-mime-types-2.1.26-scan-result.json
+description: Simplify and speed up common tasks in your ORT-based FOSS review workflows with ORTHW
+homepage_url: https://oss-review-toolkit.org
+license_expression: apache-2.0
+copyright: Copyright (C) 2019-2022 HERE Europe B.V., Copyright (C) 2022 EPAM Systems, Inc.
+redistribute: yes
+attribute: yes
+track_changes: yes
+package_url: pkg:github/oss-review-toolkit/orthw-shell@d3c917327f37c066ff857773a056a0187c68c317#examples/npm-mime-types-2.1.26-scan-result.json
