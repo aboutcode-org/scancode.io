@@ -32,6 +32,7 @@ from django.conf import settings
 
 import requests
 import saneyaml
+from git import GitCommandError
 from git import Repo
 from packageurl import PackageURL
 
@@ -199,9 +200,20 @@ def commit_and_push_changes(
     remote_name="origin",
     logger=None,
 ):
-    """Commit and push changes to remote repository."""
-    commit_changes(repo, files_to_commit, commit_message, purls)
-    push_changes(repo, remote_name)
+    """
+    Commit and push changes to remote repository.
+    Returns True if changes are successfully pushed, False otherwise.
+    """
+    try:
+        commit_changes(repo, files_to_commit, commit_message, purls, logger)
+        push_changes(repo, remote_name)
+    except GitCommandError as e:
+        if "nothing to commit" in e.stdout.lower():
+            logger("Nothing to commit, working tree clean.")
+        else:
+            logger(f"Error while committing change: {e}")
+        return False
+    return True
 
 
 def commit_changes(
@@ -222,18 +234,9 @@ def commit_changes(
         author_name = settings.FEDERATEDCODE_GIT_SERVICE_NAME
         author_email = settings.FEDERATEDCODE_GIT_SERVICE_EMAIL
 
-        files_added = all(
-            [
-                True
-                for changed_file in files_to_commit
-                if changed_file in repo.untracked_files
-            ]
-        )
-        change_type = "Add" if files_added else "Update"
-
         purls = "\n".join(purls)
         commit_message = f"""\
-        {change_type} {mine_type} results for:
+        Add {mine_type} results for:
         {purls}
 
         Tool: {tool_name}@v{tool_version}
@@ -243,7 +246,11 @@ def commit_changes(
         """
 
     repo.index.add(files_to_commit)
-    repo.index.commit(textwrap.dedent(commit_message))
+    repo.git.commit(
+        m=textwrap.dedent(commit_message),
+        allow_empty=False,
+        no_verify=True,
+    )
 
 
 def delete_local_clone(repo):
