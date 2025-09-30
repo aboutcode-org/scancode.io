@@ -145,7 +145,7 @@ def check_federatedcode_configured_and_available(logger=None):
         logger("Federatedcode repositories are configured and available.")
 
 
-def clone_repository(repo_url, logger=None):
+def clone_repository(repo_url, shallow_clone=True, logger=None):
     """Clone repository to local_path."""
     local_dir = tempfile.mkdtemp()
 
@@ -153,7 +153,11 @@ def clone_repository(repo_url, logger=None):
         "https://",
         f"https://{settings.FEDERATEDCODE_GIT_SERVICE_TOKEN}@",
     )
-    repo = Repo.clone_from(url=authenticated_repo_url, to_path=local_dir, depth=1)
+
+    if shallow_clone:
+        repo = Repo.clone_from(url=authenticated_repo_url, to_path=local_dir, depth=1)
+    else:
+        repo = Repo.clone_from(url=authenticated_repo_url, to_path=local_dir)
 
     repo.config_writer(config_level="repository").set_value(
         "user", "name", settings.FEDERATEDCODE_GIT_SERVICE_NAME
