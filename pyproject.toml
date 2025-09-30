@@ -121,7 +121,7 @@ android_analysis = [
   "android_inspector==0.0.1"
 ]
 mining = [
-  "minecode_pipelines==0.0.1b11"
+  "minecode_pipelines==0.0.1b10"
 ]
 
 [project.urls]
