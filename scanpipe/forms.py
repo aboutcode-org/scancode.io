@@ -74,7 +74,7 @@ class InputsBaseForm(forms.Form):
                 "placeholder": (
                     "https://domain.com/archive.zip\n"
                     "docker://docker-reference (e.g.: docker://postgres:13)\n"
-                    "pkg://type/name@version"
+                    "pkg:type/name@version (e.g.: pkg:pypi/django@1.11.1)"
                 ),
             },
         ),
