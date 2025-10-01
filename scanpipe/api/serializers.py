@@ -33,6 +33,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredLicense
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import DownloadedPackage
 from scanpipe.models import InputSource
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
@@ -536,6 +537,37 @@ class PipelineSerializer(PipelineChoicesMixin, serializers.ModelSerializer):
         ]
 
 
+class DownloadedPackageSerializer(serializers.ModelSerializer):
+    download_url = serializers.SerializerMethodField()
+    archive_checksum = serializers.CharField(
+        source="package_archive.checksum_sha256", read_only=True
+    )
+
+    class Meta:
+        model = DownloadedPackage
+        fields = [
+            "id",
+            "url",
+            "filename",
+            "download_date",
+            "scan_log",
+            "scan_date",
+            "scancode_version",
+            "pipeline_name",
+            "archive_checksum",
+            "download_url",
+        ]
+        read_only_fields = fields
+
+    def get_download_url(self, obj):
+        request = self.context.get("request")
+        if obj.package_archive.package_file and request:
+            return request.build_absolute_uri(
+                f"/api/projects/{obj.project.uuid}/packages/{obj.id}/download/"
+            )
+        return None
+
+
 def get_model_serializer(model_class):
     """Return a Serializer class that ia related to a given `model_class`."""
     serializer = {
@@ -545,6 +577,7 @@ def get_model_serializer(model_class):
         DiscoveredLicense: DiscoveredLicenseSerializer,
         CodebaseRelation: CodebaseRelationSerializer,
         ProjectMessage: ProjectMessageSerializer,
+        DownloadedPackage: DownloadedPackageSerializer,
     }.get(model_class, None)
 
     if not serializer:
