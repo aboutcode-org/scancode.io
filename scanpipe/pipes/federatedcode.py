@@ -198,12 +198,31 @@ def commit_and_push_changes(
     commit_message=None,
     purls=None,
     remote_name="origin",
-    logger=None,
+    mine_type="packageURL",
+    tool_name="pkg:github/aboutcode-org/scancode.io",
+    tool_version=VERSION,
+    logger=print
 ):
     """
     Commit and push changes to remote repository.
     Returns True if changes are successfully pushed, False otherwise.
     """
+
+    if not commit_message:
+        author_name = settings.FEDERATEDCODE_GIT_SERVICE_NAME
+        author_email = settings.FEDERATEDCODE_GIT_SERVICE_EMAIL
+
+        purls = "\n".join(purls)
+        commit_message = textwrap.dedent(f"""\
+        Add {mine_type} results for:
+        {purls}
+
+        Tool: {tool_name}@v{tool_version}
+        Reference: https://{settings.ALLOWED_HOSTS[0]}
+
+        Signed-off-by: {author_name} <{author_email}>
+        """)
+
     try:
         commit_changes(repo, files_to_commit, commit_message, purls, logger)
         push_changes(repo, remote_name)
