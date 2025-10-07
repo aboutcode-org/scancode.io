@@ -450,7 +450,7 @@ class ScanPipeD2DPipesTest(TestCase):
         relation = self.project1.codebaserelations.get(map_type="jar_to_source")
         self.assertEqual(from2, relation.from_resource)
         self.assertEqual(to_jar, relation.to_resource)
-    
+
     def test_scanpipe_pipes_d2d_map_jar_to_scala_source(self):
         from1 = make_resource_file(
             self.project1,
@@ -499,7 +499,7 @@ class ScanPipeD2DPipesTest(TestCase):
         relation = self.project1.codebaserelations.get(map_type="jar_to_source")
         self.assertEqual(from2, relation.from_resource)
         self.assertEqual(to_jar, relation.to_resource)
-    
+
     def test_scanpipe_pipes_d2d_map_jar_to_kotlin_source(self):
         from1 = make_resource_file(
             self.project1,
