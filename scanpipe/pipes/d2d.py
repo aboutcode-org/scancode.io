@@ -161,33 +161,38 @@ def map_checksum(project, checksum_field, logger=None):
         _map_checksum_resource(to_resource, from_resources, checksum_field)
 
 
-def _map_java_to_class_resource(to_resource, from_resources, from_classes_index):
+def _map_jvm_to_class_resource(
+    to_resource, from_resources, from_classes_index, jvm_lang: jvm.JvmLanguage
+):
     """
     Map the ``to_resource`` .class file Resource with a Resource in
     ``from_resources`` .java files, using the ``from_classes_index`` index of
     from/ fully qualified Java class names.
     """
-    normalized_java_path = jvm.get_normalized_java_path(to_resource.path)
-    match = pathmap.find_paths(path=normalized_java_path, index=from_classes_index)
-    if not match:
-        return
-
-    for resource_id in match.resource_ids:
-        from_resource = from_resources.get(id=resource_id)
-        # compute the root of the packages on the source side
-        from_source_root_parts = from_resource.path.strip("/").split("/")
-        from_source_root = "/".join(
-            from_source_root_parts[: -match.matched_path_length]
+    for extension in jvm_lang.source_extensions:
+        normalized_path = jvm_lang.get_normalized_path(
+            path=to_resource.path, extension=extension
         )
-        pipes.make_relation(
-            from_resource=from_resource,
-            to_resource=to_resource,
-            map_type="java_to_class",
-            extra_data={"from_source_root": f"{from_source_root}/"},
-        )
+        match = pathmap.find_paths(path=normalized_path, index=from_classes_index)
+        if not match:
+            return
+
+        for resource_id in match.resource_ids:
+            from_resource = from_resources.get(id=resource_id)
+            # compute the root of the packages on the source side
+            from_source_root_parts = from_resource.path.strip("/").split("/")
+            from_source_root = "/".join(
+                from_source_root_parts[: -match.matched_path_length]
+            )
+            pipes.make_relation(
+                from_resource=from_resource,
+                to_resource=to_resource,
+                map_type=jvm_lang.binary_map_type,
+                extra_data={"from_source_root": f"{from_source_root}/"},
+            )
 
 
-def map_java_to_class(project, logger=None):
+def map_jvm_to_class(project, jvm_lang: jvm.JvmLanguage, logger=None):
     """
     Map to/ compiled Java .class(es) to from/ .java source using Java fully
     qualified paths and indexing from/ .java files.
@@ -196,112 +201,76 @@ def map_java_to_class(project, logger=None):
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
 
-    to_resources_dot_class = to_resources.filter(extension=".class")
-    from_resources_dot_java = (
-        from_resources.filter(extension=".java")
+    filter = {f"extra_data__{jvm_lang.source_package_attribute_name}__isnull": False}
+
+    to_resources_binary_extension = to_resources.filter(
+        extension__in=jvm_lang.binary_extensions
+    )
+    from_resources_source_extension = (
+        from_resources.filter(extension__in=jvm_lang.source_extensions)
         # The "java_package" extra_data value is set during the `find_java_packages`,
         # it is required to build the index.
-        .filter(extra_data__java_package__isnull=False)
+        .filter(**filter)
     )
-    to_resource_count = to_resources_dot_class.count()
-    from_resource_count = from_resources_dot_java.count()
+    to_resource_count = to_resources_binary_extension.count()
+    from_resource_count = from_resources_source_extension.count()
 
     if not from_resource_count:
-        logger("No .java resources to map.")
+        logger(f"No {jvm_lang.source_extensions} resources to map.")
         return
 
     if logger:
         logger(
             f"Mapping {to_resource_count:,d} .class resources to "
-            f"{from_resource_count:,d} .java"
+            f"{from_resource_count:,d} {jvm_lang.source_extensions}"
         )
 
     # build an index using from-side Java fully qualified class file names
     # built from the "java_package" and file name
-    indexables = get_indexable_qualified_java_paths(from_resources_dot_java)
+    indexables = jvm_lang.get_indexable_qualified_paths(from_resources_source_extension)
 
     # we do not index subpath since we want to match only fully qualified names
     from_classes_index = pathmap.build_index(indexables, with_subpaths=False)
 
-    resource_iterator = to_resources_dot_class.iterator(chunk_size=2000)
+    resource_iterator = to_resources_binary_extension.iterator(chunk_size=2000)
     progress = LoopProgress(to_resource_count, logger)
 
     for to_resource in progress.iter(resource_iterator):
-        _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
-
-
-def get_indexable_qualified_java_paths_from_values(resource_values):
-    """
-    Yield tuples of (resource id, fully-qualified Java path) for indexable
-    classes from a list of ``resource_data`` tuples of "from/" side of the
-    project codebase.
-
-    These ``resource_data`` input tuples are in the form:
-        (resource.id, resource.name, resource.extra_data)
-
-    And the output tuples look like this example::
-        (123, "org/apache/commons/LoggerImpl.java")
-    """
-    for resource_id, resource_name, resource_extra_data in resource_values:
-        fully_qualified = jvm.get_fully_qualified_java_path(
-            java_package=resource_extra_data.get("java_package"),
-            filename=resource_name,
+        _map_jvm_to_class_resource(
+            to_resource, from_resources, from_classes_index, jvm_lang
         )
-        yield resource_id, fully_qualified
 
 
-def get_indexable_qualified_java_paths(from_resources_dot_java):
+def find_jvm_packages(project, jvm_lang: jvm.JvmLanguage, logger=None):
     """
-    Yield tuples of (resource id, fully-qualified Java class name) for indexable
-    classes from the "from/" side of the project codebase using the
-    "java_package" Resource.extra_data.
-    """
-    resource_values = from_resources_dot_java.values_list("id", "name", "extra_data")
-    return get_indexable_qualified_java_paths_from_values(resource_values)
-
-
-def find_java_packages(project, logger=None):
-    """
-    Collect the Java packages of Java source files for a ``project``.
+    Collect the JVM packages of Java source files for a ``project``.
 
     Multiprocessing is enabled by default on this pipe, the number of processes
     can be controlled through the SCANCODEIO_PROCESSES setting.
 
     Note: we use the same API as the ScanCode scans by design
     """
-    from_java_resources = (
-        project.codebaseresources.files()
-        .no_status()
-        .from_codebase()
-        .has_no_relation()
-        .filter(extension=".java")
+    resources = (
+        project.codebaseresources.files().no_status().from_codebase().has_no_relation()
     )
+
+    from_jvm_resources = resources.filter(extension__in=jvm_lang.source_extensions)
 
     if logger:
         logger(
-            f"Finding Java package for {from_java_resources.count():,d} "
-            ".java resources."
+            f"Finding {jvm_lang.name} packages for {from_jvm_resources.count():,d} "
+            f"{jvm_lang.source_extensions} resources."
         )
 
     scancode.scan_resources(
-        resource_qs=from_java_resources,
-        scan_func=scan_for_java_package,
-        save_func=save_java_package_scan_results,
+        resource_qs=from_jvm_resources,
+        scan_func=jvm_lang.scan_for_source_package,
+        save_func=save_jvm_package_scan_results,
         progress_logger=logger,
     )
 
 
-def scan_for_java_package(location, with_threading=True):
-    """
-    Run a Java package scan on provided ``location``.
-
-    Return a dict of scan ``results`` and a list of ``errors``.
-    """
-    scanners = [scancode.Scanner("java_package", jvm.get_java_package)]
-    return scancode._scan_resource(location, scanners, with_threading=with_threading)
-
-
-def save_java_package_scan_results(codebase_resource, scan_results, scan_errors):
+def save_jvm_package_scan_results(codebase_resource, scan_results, scan_errors):
     """
     Save the resource Java package scan results in the database as Resource.extra_data.
     Create project errors if any occurred during the scan.
@@ -314,11 +283,14 @@ def save_java_package_scan_results(codebase_resource, scan_results, scan_errors)
         codebase_resource.update_extra_data(scan_results)
 
 
-def _map_jar_to_source_resource(jar_resource, to_resources, from_resources):
+def _map_jar_to_jvm_source_resource(
+    jar_resource, to_resources, from_resources, jvm_lang: jvm.JvmLanguage
+):
     jar_extracted_path = get_extracted_path(jar_resource)
     jar_extracted_dot_class_files = list(
         to_resources.filter(
-            extension=".class", path__startswith=jar_extracted_path
+            extension__in=jvm_lang.binary_extensions,
+            path__startswith=jar_extracted_path,
         ).values("id", "status")
     )
 
@@ -338,7 +310,7 @@ def _map_jar_to_source_resource(jar_resource, to_resources, from_resources):
         dot_class_file.get("id") for dot_class_file in jar_extracted_dot_class_files
     ]
     java_to_class_extra_data_list = CodebaseRelation.objects.filter(
-        to_resource__in=dot_class_file_ids, map_type="java_to_class"
+        to_resource__in=dot_class_file_ids, map_type=jvm_lang.binary_map_type
     ).values_list("extra_data", flat=True)
 
     from_source_roots = [
@@ -358,7 +330,7 @@ def _map_jar_to_source_resource(jar_resource, to_resources, from_resources):
         )
 
 
-def map_jar_to_source(project, logger=None):
+def map_jar_to_jvm_source(project, jvm_lang: jvm.JvmLanguage, logger=None):
     """Map .jar files to their related source directory."""
     project_files = project.codebaseresources.files()
     # Include the directories to map on the common source
@@ -377,7 +349,9 @@ def map_jar_to_source(project, logger=None):
     progress = LoopProgress(to_jars_count, logger)
 
     for jar_resource in progress.iter(resource_iterator):
-        _map_jar_to_source_resource(jar_resource, to_resources, from_resources)
+        _map_jar_to_jvm_source_resource(
+            jar_resource, to_resources, from_resources, jvm_lang=jvm_lang
+        )
 
 
 def _map_path_resource(

@@ -86,6 +86,16 @@ ECOSYSTEM_CONFIGS = {
         matchable_package_extensions=[".jar", ".war"],
         matchable_resource_extensions=[".class"],
     ),
+    "Scala": EcosystemConfig(
+        ecosystem_option="Scala",
+        matchable_package_extensions=[".jar", ".war"],
+        matchable_resource_extensions=[".class"],
+    ),
+    "Kotlin": EcosystemConfig(
+        ecosystem_option="Kotlin",
+        matchable_package_extensions=[".jar", ".war"],
+        matchable_resource_extensions=[".class"],
+    ),
     "JavaScript": EcosystemConfig(
         ecosystem_option="JavaScript",
         matchable_resource_extensions=[
