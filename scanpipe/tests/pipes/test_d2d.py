@@ -402,7 +402,7 @@ class ScanPipeD2DPipesTest(TestCase):
         expected = "No ('.java',) resources to map."
         self.assertIn(expected, buffer.getvalue())
 
-    def test_scanpipe_pipes_d2d_map_jar_to_source(self):
+    def test_scanpipe_pipes_d2d_map_jar_to_java_source(self):
         from1 = make_resource_file(
             self.project1,
             path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/"
@@ -442,6 +442,104 @@ class ScanPipeD2DPipesTest(TestCase):
         with self.assertNumQueries(6):
             d2d.map_jar_to_jvm_source(
                 self.project1, logger=buffer.write, jvm_lang=jvm.JavaLanguage
+            )
+        expected = "Mapping 1 .jar resources using map_jar_to_source"
+        self.assertIn(expected, buffer.getvalue())
+
+        self.assertEqual(2, self.project1.codebaserelations.count())
+        relation = self.project1.codebaserelations.get(map_type="jar_to_source")
+        self.assertEqual(from2, relation.from_resource)
+        self.assertEqual(to_jar, relation.to_resource)
+    
+    def test_scanpipe_pipes_d2d_map_jar_to_scala_source(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider.scala",
+            extra_data={"scala_package": "org.apache.flume.node"},
+        )
+        from2 = make_resource_file(
+            self.project1,
+            path="from/flume-ng-node-1.9.0-sources.jar-extract",
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider.class",
+        )
+        make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
+        )
+        to_jar = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.ScalaLanguage
+        )
+        relation = self.project1.codebaserelations.get()
+        self.assertEqual(from1, relation.from_resource)
+        self.assertEqual(to1, relation.to_resource)
+        self.assertEqual("scala_to_class", relation.map_type)
+        expected = {"from_source_root": "from/flume-ng-node-1.9.0-sources.jar-extract/"}
+        self.assertEqual(expected, relation.extra_data)
+
+        buffer = io.StringIO()
+        with self.assertNumQueries(6):
+            d2d.map_jar_to_jvm_source(
+                self.project1, logger=buffer.write, jvm_lang=jvm.ScalaLanguage
+            )
+        expected = "Mapping 1 .jar resources using map_jar_to_source"
+        self.assertIn(expected, buffer.getvalue())
+
+        self.assertEqual(2, self.project1.codebaserelations.count())
+        relation = self.project1.codebaserelations.get(map_type="jar_to_source")
+        self.assertEqual(from2, relation.from_resource)
+        self.assertEqual(to_jar, relation.to_resource)
+    
+    def test_scanpipe_pipes_d2d_map_jar_to_kotlin_source(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider.kt",
+            extra_data={"kotlin_package": "org.apache.flume.node"},
+        )
+        from2 = make_resource_file(
+            self.project1,
+            path="from/flume-ng-node-1.9.0-sources.jar-extract",
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider.class",
+        )
+        make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
+        )
+        to_jar = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.KotlinLanguage
+        )
+        relation = self.project1.codebaserelations.get()
+        self.assertEqual(from1, relation.from_resource)
+        self.assertEqual(to1, relation.to_resource)
+        self.assertEqual("kotlin_to_class", relation.map_type)
+        expected = {"from_source_root": "from/flume-ng-node-1.9.0-sources.jar-extract/"}
+        self.assertEqual(expected, relation.extra_data)
+
+        buffer = io.StringIO()
+        with self.assertNumQueries(6):
+            d2d.map_jar_to_jvm_source(
+                self.project1, logger=buffer.write, jvm_lang=jvm.KotlinLanguage
             )
         expected = "Mapping 1 .jar resources using map_jar_to_source"
         self.assertIn(expected, buffer.getvalue())

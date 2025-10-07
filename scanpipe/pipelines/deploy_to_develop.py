@@ -73,11 +73,13 @@ class DeployToDevelop(Pipeline):
             cls.match_archives_to_purldb,
             cls.find_java_packages,
             cls.map_java_to_class,
-            cls.map_jar_to_source,
+            cls.map_jar_to_java_source,
             cls.find_scala_packages,
             cls.map_scala_to_class,
+            cls.map_jar_to_scala_source,
             cls.find_kotlin_packages,
             cls.map_kotlin_to_class,
+            cls.map_jar_to_kotlin_source,
             cls.map_javascript,
             cls.map_javascript_symbols,
             cls.map_javascript_strings,
@@ -185,7 +187,7 @@ class DeployToDevelop(Pipeline):
         )
 
     @optional_step("Java")
-    def map_jar_to_source(self):
+    def map_jar_to_java_source(self):
         """Map .jar files to their related source directory."""
         d2d.map_jar_to_jvm_source(
             project=self.project, logger=self.log, jvm_lang=jvm.JavaLanguage
@@ -223,6 +225,13 @@ class DeployToDevelop(Pipeline):
     def map_kotlin_to_class(self):
         """Map a .class compiled file to its .java source."""
         d2d.map_jvm_to_class(
+            project=self.project, logger=self.log, jvm_lang=jvm.KotlinLanguage
+        )
+
+    @optional_step("Kotlin")
+    def map_jar_to_kotlin_source(self):
+        """Map .jar files to their related source directory."""
+        d2d.map_jar_to_jvm_source(
             project=self.project, logger=self.log, jvm_lang=jvm.KotlinLanguage
         )
 
