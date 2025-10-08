@@ -201,8 +201,7 @@ class KotlinLanguage(JvmLanguage):
             class_name, _, _ = class_name.partition("$")
         else:
             class_name, _, _ = class_name.partition(".")  # plain .class
-        if class_name.endswith("Kt"):
-            class_name = class_name[: -len("Kt")]
+        class_name = class_name.removesuffix("Kt")
         return str(path.parent / f"{class_name}{extension}")
 
 
