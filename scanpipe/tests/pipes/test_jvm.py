@@ -97,3 +97,98 @@ class ScanPipeJvmTest(TestCase):
     def test_scanpipe_pipes_jvm_get_fully_qualified_java_path(self):
         fqjp = jvm.get_fully_qualified_path("org.common", "Bar.java")
         self.assertEqual("org/common/Bar.java", fqjp)
+
+
+class ScanPipeJvmScalaTest(TestCase):
+    data = Path(__file__).parent.parent / "data"
+
+    scala_code = """
+    package org.apache.logging.log4j.scala
+    import scala.concurrent.Future
+    """
+
+    scala_package_too_far_down = ("\n" * 501) + "package org.apache.logging.log4j.scala"
+
+    def test_scanpipe_pipes_jvm_find_scala_package(self):
+        package = jvm.ScalaLanguage.find_source_package(self.scala_code.splitlines())
+        self.assertEqual({"scala_package": "org.apache.logging.log4j.scala"}, package)
+
+    def test_scanpipe_pipes_jvm_find_scala_package_with_spaces(self):
+        lines = ["   package    foo.bar.baz ;"]
+        package = jvm.ScalaLanguage.find_source_package(lines)
+        self.assertEqual({"scala_package": "foo.bar.baz"}, package)
+
+    def test_scanpipe_pipes_jvm_find_scala_package_return_None(self):
+        package = jvm.ScalaLanguage.find_source_package(
+            self.scala_package_too_far_down.splitlines()
+        )
+        self.assertIsNone(package)
+
+    def test_scanpipe_pipes_jvm_get_normalized_scala_path(self):
+        njp = jvm.ScalaLanguage.get_normalized_path(
+            "foo/org/common/Bar.class", ".scala"
+        )
+        self.assertEqual("foo/org/common/Bar.scala", njp)
+
+    def test_scanpipe_pipes_jvm_get_normalized_scala_path_with_inner_class(self):
+        njp = jvm.ScalaLanguage.get_normalized_path(
+            "foo/org/common/Bar$inner.class", ".scala"
+        )
+        self.assertEqual("foo/org/common/Bar.scala", njp)
+
+    def test_scanpipe_pipes_jvm_get_fully_qualified_scala_path(self):
+        fqjp = jvm.get_fully_qualified_path("org.common", "Bar.scala")
+        self.assertEqual("org/common/Bar.scala", fqjp)
+
+
+class ScanPipeJvmKotlinTest(TestCase):
+    data = Path(__file__).parent.parent / "data"
+
+    kotlin_code = """
+    package org.apache.logging.log4j.kotlin
+
+    import kotlinx.coroutines.Deferred
+    """
+
+    kotlin_package_too_far_down = (
+        "\n" * 501
+    ) + "package org.apache.logging.log4j.kotlin"
+
+    def test_scanpipe_pipes_jvm_find_kotlin_package(self):
+        package = jvm.KotlinLanguage.find_source_package(self.kotlin_code.splitlines())
+        self.assertEqual({"kotlin_package": "org.apache.logging.log4j.kotlin"}, package)
+
+    def test_scanpipe_pipes_jvm_find_kotlin_package_with_spaces(self):
+        lines = ["   package    foo.bar.baz   "]
+        package = jvm.KotlinLanguage.find_source_package(lines)
+        self.assertEqual({"kotlin_package": "foo.bar.baz"}, package)
+
+    def test_scanpipe_pipes_jvm_find_kotlin_package_return_None(self):
+        package = jvm.KotlinLanguage.find_source_package(
+            self.kotlin_package_too_far_down.splitlines()
+        )
+        self.assertIsNone(package)
+
+    def test_scanpipe_pipes_jvm_get_normalized_kotlin_path(self):
+        njp = jvm.KotlinLanguage.get_normalized_path("foo/org/common/Bar.class", ".kt")
+        self.assertEqual("foo/org/common/Bar.kt", njp)
+
+    def test_scanpipe_pipes_jvm_get_normalized_kotlin_path_with_inner_class(self):
+        njp = jvm.KotlinLanguage.get_normalized_path(
+            "foo/org/common/Bar$inner.class", ".kt"
+        )
+        self.assertEqual("foo/org/common/Bar.kt", njp)
+        njp = jvm.KotlinLanguage.get_normalized_path(
+            "foo/org/common/BarKt$inner.class", ".kt"
+        )
+        self.assertEqual("foo/org/common/Bar.kt", njp)
+
+    def test_scanpipe_pipes_jvm_get_normalized_kotlin_path_with_Kt_suffix(self):
+        njp = jvm.KotlinLanguage.get_normalized_path(
+            "foo/org/common/LoggerKt.class", ".kt"
+        )
+        self.assertEqual("foo/org/common/Logger.kt", njp)
+
+    def test_scanpipe_pipes_jvm_get_fully_qualified_kotlin_path(self):
+        fqjp = jvm.get_fully_qualified_path("org.common", "Bar.kt")
+        self.assertEqual("org/common/Bar.kt", fqjp)
