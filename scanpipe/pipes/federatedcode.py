@@ -27,6 +27,7 @@ import tempfile
 import textwrap
 from pathlib import Path
 from urllib.parse import urljoin
+from urllib.parse import urlparse
 
 from django.conf import settings
 
@@ -43,6 +44,17 @@ from scanpipe.pipes.output import JSONResultsGenerator
 logger = logging.getLogger(__name__)
 
 
+def url_exists(url, timeout=5):
+    try:
+        response = requests.head(url, timeout=timeout)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as request_exception:
+        logger.debug(f"Error while checking {url}: {request_exception}")
+        return False
+
+    return response.status_code == requests.codes.ok
+
+
 def is_configured():
     """Return True if the required FederatedCode settings have been set."""
     if all(
@@ -57,19 +69,17 @@ def is_configured():
     return False
 
 
+def create_federatedcode_working_dir():
+    """Create temporary working dir for cloning federatedcode repositories."""
+    return Path(tempfile.mkdtemp())
+
+
 def is_available():
     """Return True if the configured Git account is available."""
     if not is_configured():
         return False
 
-    try:
-        response = requests.head(settings.FEDERATEDCODE_GIT_ACCOUNT_URL, timeout=5)
-        response.raise_for_status()
-    except requests.exceptions.RequestException as request_exception:
-        logger.debug(f"FederatedCode is_available() error: {request_exception}")
-        return False
-
-    return response.status_code == requests.codes.ok
+    return url_exists(settings.FEDERATEDCODE_GIT_ACCOUNT_URL)
 
 
 def get_package_repository(project_purl, logger=None):
@@ -85,7 +95,7 @@ def get_package_repository(project_purl, logger=None):
     )
     package_git_repo_url = urljoin(git_account_url, f"{package_repo_name}.git")
 
-    return package_git_repo_url, package_scan_path
+    return package_repo_name, package_git_repo_url, package_scan_path
 
 
 def check_federatedcode_eligibility(project):
@@ -146,25 +156,91 @@ def check_federatedcode_configured_and_available(logger=None):
         logger("Federatedcode repositories are configured and available.")
 
 
-def clone_repository(repo_url, logger=None):
-    """Clone repository to local_path."""
-    local_dir = tempfile.mkdtemp()
+def clone_repository(repo_url, clone_path, logger, shallow_clone=True):
+    """Clone repository to clone_path."""
+    logger(f"Cloning repository {repo_url}")
 
     authenticated_repo_url = repo_url.replace(
         "https://",
         f"https://{settings.FEDERATEDCODE_GIT_SERVICE_TOKEN}@",
     )
-    repo = Repo.clone_from(url=authenticated_repo_url, to_path=local_dir, depth=1)
+    clone_args = {
+        "url": authenticated_repo_url,
+        "to_path": clone_path,
+    }
+    if shallow_clone:
+        clone_args["depth"] = 1
 
+    repo = Repo.clone_from(**clone_args)
     repo.config_writer(config_level="repository").set_value(
         "user", "name", settings.FEDERATEDCODE_GIT_SERVICE_NAME
     ).release()
-
     repo.config_writer(config_level="repository").set_value(
         "user", "email", settings.FEDERATEDCODE_GIT_SERVICE_EMAIL
     ).release()
 
     return repo
+
+
+def get_github_org(url):
+    """Return Org username from GitHub account URL."""
+    github_account_url = urlparse(url)
+    path_after_domain = github_account_url.path.lstrip("/")
+    org_name = path_after_domain.split("/")[0]
+    return org_name
+
+
+def create_repository(repo_name, clone_path, logger, shallow_clone=True):
+    account_url = settings.FEDERATEDCODE_GIT_ACCOUNT_URL
+    repo_url = urljoin(account_url, repo_name)
+    headers = {
+        "Authorization": f"token {settings.FEDERATEDCODE_GIT_SERVICE_TOKEN}",
+        "Accept": "application/vnd.github+json",
+    }
+
+    data = {
+        "name": repo_name,
+        "private": False,
+        "auto_init": True,
+        "CC-BY-4.0": "cc-by-4.0",
+    }
+    org_name = get_github_org(account_url)
+    create_repo_api = f"https://api.github.com/orgs/{org_name}/repos"
+    response = requests.post(
+        create_repo_api,
+        headers=headers,
+        json=data,
+        timeout=5,
+    )
+    response.raise_for_status()
+    return clone_repository(
+        repo_url=repo_url,
+        clone_path=clone_path,
+        shallow_clone=shallow_clone,
+        logger=logger,
+    )
+
+
+def get_or_create_repository(repo_name, working_path, logger, shallow_clone=True):
+    repo_url = urljoin(settings.FEDERATEDCODE_GIT_ACCOUNT_URL, repo_name)
+    clone_path = working_path / repo_name
+
+    if clone_path.exists():
+        return False, Repo(clone_path)
+    if url_exists(repo_url):
+        return False, clone_repository(
+            repo_url=repo_url,
+            clone_path=clone_path,
+            logger=logger,
+            shallow_clone=shallow_clone,
+        )
+
+    return True, create_repository(
+        repo_name=repo_name,
+        clone_path=clone_path,
+        logger=logger,
+        shallow_clone=shallow_clone,
+    )
 
 
 def add_scan_result(project, repo, package_scan_file, logger=None):
