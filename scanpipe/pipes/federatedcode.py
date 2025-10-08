@@ -45,6 +45,10 @@ logger = logging.getLogger(__name__)
 
 
 def url_exists(url, timeout=5):
+    """
+    Check if the given `url` is reachable by doing head request.
+    Return True if response status is 200, else False.
+    """
     try:
         response = requests.head(url, timeout=timeout)
         response.raise_for_status()
@@ -183,7 +187,7 @@ def clone_repository(repo_url, clone_path, logger, shallow_clone=True):
 
 
 def get_github_org(url):
-    """Return Org username from GitHub account URL."""
+    """Return org username from GitHub account URL."""
     github_account_url = urlparse(url)
     path_after_domain = github_account_url.path.lstrip("/")
     org_name = path_after_domain.split("/")[0]
@@ -191,6 +195,10 @@ def get_github_org(url):
 
 
 def create_repository(repo_name, clone_path, logger, shallow_clone=True):
+    """
+    Create and initialize remote FederatedCode `repo_name` repository,
+    perform local checkout, and return it.
+    """
     account_url = settings.FEDERATEDCODE_GIT_ACCOUNT_URL
     repo_url = urljoin(account_url, repo_name)
     headers = {
@@ -222,6 +230,15 @@ def create_repository(repo_name, clone_path, logger, shallow_clone=True):
 
 
 def get_or_create_repository(repo_name, working_path, logger, shallow_clone=True):
+    """
+    Return local checkout of the FederatedCode `repo_name` repository.
+
+    - If local checkout for `repo_name` already exists in `working_path`, return it.
+    - If no local checkout exists but the remote repository `repo_name` exists,
+        clone it locally and return the checkout.
+    - If the remote repository does not exist, create and initialize `repo_name`
+        repository, perform local checkout, and return it.
+    """
     repo_url = urljoin(settings.FEDERATEDCODE_GIT_ACCOUNT_URL, repo_name)
     clone_path = working_path / repo_name
 
