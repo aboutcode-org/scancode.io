@@ -163,7 +163,7 @@ class JavaLanguage(JvmLanguage):
     source_extensions = (".java",)
     binary_extensions = (".class",)
     source_package_attribute_name = "java_package"
-    package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
+    package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;")
     binary_map_type = "java_to_class"
 
 
@@ -183,6 +183,27 @@ class KotlinLanguage(JvmLanguage):
     source_package_attribute_name = "kotlin_package"
     package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
     binary_map_type = "kotlin_to_class"
+
+    @classmethod
+    def get_normalized_path(cls, path, extension):
+        """
+        Return a normalized JVM file path for ``path`` .class file path string.
+        Account for inner classes in that their file name is the name of their
+        outer class.
+        """
+        if not path.endswith(cls.binary_extensions):
+            raise ValueError(
+                f"Only path ending with {cls.binary_extensions} are supported."
+            )
+        path = Path(path.strip("/"))
+        class_name = path.name
+        if "$" in class_name:  # inner class
+            class_name, _, _ = class_name.partition("$")
+        else:
+            class_name, _, _ = class_name.partition(".")  # plain .class
+        if class_name.endswith("Kt"):
+            class_name = class_name[: -len("Kt")]
+        return str(path.parent / f"{class_name}{extension}")
 
 
 def get_fully_qualified_path(jvm_package, filename):
