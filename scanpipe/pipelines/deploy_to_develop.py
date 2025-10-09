@@ -27,6 +27,7 @@ from scanpipe.pipes import d2d
 from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import input
+from scanpipe.pipes import jvm
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
@@ -72,7 +73,13 @@ class DeployToDevelop(Pipeline):
             cls.match_archives_to_purldb,
             cls.find_java_packages,
             cls.map_java_to_class,
-            cls.map_jar_to_source,
+            cls.map_jar_to_java_source,
+            cls.find_scala_packages,
+            cls.map_scala_to_class,
+            cls.map_jar_to_scala_source,
+            cls.find_kotlin_packages,
+            cls.map_kotlin_to_class,
+            cls.map_jar_to_kotlin_source,
             cls.map_javascript,
             cls.map_javascript_symbols,
             cls.map_javascript_strings,
@@ -168,17 +175,65 @@ class DeployToDevelop(Pipeline):
     @optional_step("Java")
     def find_java_packages(self):
         """Find the java package of the .java source files."""
-        d2d.find_java_packages(self.project, logger=self.log)
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.JavaLanguage, logger=self.log
+        )
 
     @optional_step("Java")
     def map_java_to_class(self):
         """Map a .class compiled file to its .java source."""
-        d2d.map_java_to_class(project=self.project, logger=self.log)
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.JavaLanguage, logger=self.log
+        )
 
     @optional_step("Java")
-    def map_jar_to_source(self):
+    def map_jar_to_java_source(self):
         """Map .jar files to their related source directory."""
-        d2d.map_jar_to_source(project=self.project, logger=self.log)
+        d2d.map_jar_to_jvm_source(
+            project=self.project, jvm_lang=jvm.JavaLanguage, logger=self.log
+        )
+
+    @optional_step("Scala")
+    def find_scala_packages(self):
+        """Find the java package of the .scala source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.ScalaLanguage, logger=self.log
+        )
+
+    @optional_step("Scala")
+    def map_scala_to_class(self):
+        """Map a .class compiled file to its .java source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.ScalaLanguage, logger=self.log
+        )
+
+    @optional_step("Scala")
+    def map_jar_to_scala_source(self):
+        """Map .jar files to their related source directory."""
+        d2d.map_jar_to_jvm_source(
+            project=self.project, jvm_lang=jvm.ScalaLanguage, logger=self.log
+        )
+
+    @optional_step("Kotlin")
+    def find_kotlin_packages(self):
+        """Find the java package of the .java source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.KotlinLanguage, logger=self.log
+        )
+
+    @optional_step("Kotlin")
+    def map_kotlin_to_class(self):
+        """Map a .class compiled file to its .java source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.KotlinLanguage, logger=self.log
+        )
+
+    @optional_step("Kotlin")
+    def map_jar_to_kotlin_source(self):
+        """Map .jar files to their related source directory."""
+        d2d.map_jar_to_jvm_source(
+            project=self.project, jvm_lang=jvm.KotlinLanguage, logger=self.log
+        )
 
     @optional_step("JavaScript")
     def map_javascript(self):
