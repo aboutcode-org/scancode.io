@@ -603,23 +603,37 @@ def assemble_package(resource, project, processed_paths):
         handler = get_package_handler(package_data)
         logger.info(f"  Selected package handler: {handler.__name__}")
 
-        extracted_items = handler.assemble(
-            package_data=package_data,
-            resource=resource,
-            codebase=project,
-            package_adder=add_resource_to_package,
-        )
+        try:
+            extracted_items = handler.assemble(
+                package_data=package_data,
+                resource=resource,
+                codebase=project,
+                package_adder=add_resource_to_package,
+            )
+        except AttributeError as e:
+            if "'NoneType' object has no attribute 'path'" in str(e):
+                continue
+            raise
+        except Exception:
+            continue
 
-        for item in extracted_items:
-            logger.info(f"    Processing item: {item}")
-            if isinstance(item, packagedcode_models.Package):
-                pipes.update_or_create_package(project, item.to_dict())
-            elif isinstance(item, packagedcode_models.Dependency):
-                pipes.update_or_create_dependency(project, item.to_dict())
-            elif isinstance(item, CodebaseResource):
-                processed_paths.add(item.path)
-            else:
-                logger.info(f"Unknown Package assembly item type: {item!r}")
+        try:
+            for item in extracted_items:
+                logger.info(f"    Processing item: {item}")
+                if isinstance(item, packagedcode_models.Package):
+                    pipes.update_or_create_package(project, item.to_dict())
+                elif isinstance(item, packagedcode_models.Dependency):
+                    pipes.update_or_create_dependency(project, item.to_dict())
+                elif isinstance(item, CodebaseResource):
+                    processed_paths.add(item.path)
+                else:
+                    logger.info(f"Unknown Package assembly item type: {item!r}")
+        except AttributeError as e:
+            if "'NoneType' object has no attribute 'path'" in str(e):
+                continue
+            raise
+        except Exception:
+            continue
 
 
 def process_package_data(project, static_resolve=False):

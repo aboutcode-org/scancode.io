@@ -2997,7 +2997,10 @@ class CodebaseResource(
         else:
             parent_path = self.compute_parent_directory()
 
-        return parent_path and self.project.codebaseresources.get(path=parent_path)
+        if parent_path:
+            with suppress(ObjectDoesNotExist):
+                return self.project.codebaseresources.get(path=parent_path)
+        return None
 
     def siblings(self, codebase=None):
         """
@@ -4184,7 +4187,7 @@ class DiscoveredDependency(
             if strip_datafile_path_root:
                 segments = datafile_path.split("/")
                 datafile_path = "/".join(segments[1:])
-            datafile_resource = project.codebaseresources.get(path=datafile_path)
+            datafile_resource = project.codebaseresources.get_or_none(path=datafile_path)
 
         if datasource_id:
             dependency_data["datasource_id"] = datasource_id
