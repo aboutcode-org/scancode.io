@@ -199,8 +199,9 @@ def create_repository(repo_name, clone_path, logger, shallow_clone=True):
     Create and initialize remote FederatedCode `repo_name` repository,
     perform local checkout, and return it.
     """
-    account_url = settings.FEDERATEDCODE_GIT_ACCOUNT_URL
+    account_url = f"{settings.FEDERATEDCODE_GIT_ACCOUNT_URL}/"
     repo_url = urljoin(account_url, repo_name)
+
     headers = {
         "Authorization": f"token {settings.FEDERATEDCODE_GIT_SERVICE_TOKEN}",
         "Accept": "application/vnd.github+json",
@@ -239,7 +240,8 @@ def get_or_create_repository(repo_name, working_path, logger, shallow_clone=True
     - If the remote repository does not exist, create and initialize `repo_name`
         repository, perform local checkout, and return it.
     """
-    repo_url = urljoin(settings.FEDERATEDCODE_GIT_ACCOUNT_URL, repo_name)
+    account_url = f"{settings.FEDERATEDCODE_GIT_ACCOUNT_URL}/"
+    repo_url = urljoin(account_url, repo_name)
     clone_path = working_path / repo_name
 
     if clone_path.exists():
