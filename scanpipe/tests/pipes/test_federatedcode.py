@@ -50,14 +50,16 @@ class ScanPipeFederatedCodeTest(TestCase):
             version="v.1.2.3",
         )
         project_purl = "pkg:npm/foobar@v1.2.3"
+        expected_repo_name = "aboutcode-packages-npm-3f1"
         expected_git_repo = "https://github.com/test/aboutcode-packages-npm-3f1.git"
         expected_scan_path = (
             "aboutcode-packages-npm-3f1/npm/foobar/v1.2.3/scancodeio.json"
         )
-        git_repo, scan_path = federatedcode.get_package_repository(
+        repo_name, git_repo, scan_path = federatedcode.get_package_repository(
             project_purl=project_purl
         )
 
+        self.assertEqual(expected_repo_name, repo_name)
         self.assertEqual(expected_git_repo, git_repo)
         self.assertEqual(expected_scan_path, str(scan_path))
 
