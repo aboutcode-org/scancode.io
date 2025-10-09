@@ -183,14 +183,14 @@ class DeployToDevelop(Pipeline):
     def map_java_to_class(self):
         """Map a .class compiled file to its .java source."""
         d2d.map_jvm_to_class(
-            project=self.project, logger=self.log, jvm_lang=jvm.JavaLanguage
+            project=self.project, jvm_lang=jvm.JavaLanguage, logger=self.log
         )
 
     @optional_step("Java")
     def map_jar_to_java_source(self):
         """Map .jar files to their related source directory."""
         d2d.map_jar_to_jvm_source(
-            project=self.project, logger=self.log, jvm_lang=jvm.JavaLanguage
+            project=self.project, jvm_lang=jvm.JavaLanguage, logger=self.log
         )
 
     @optional_step("Scala")
@@ -204,14 +204,14 @@ class DeployToDevelop(Pipeline):
     def map_scala_to_class(self):
         """Map a .class compiled file to its .java source."""
         d2d.map_jvm_to_class(
-            project=self.project, logger=self.log, jvm_lang=jvm.ScalaLanguage
+            project=self.project, jvm_lang=jvm.ScalaLanguage, logger=self.log
         )
 
     @optional_step("Scala")
     def map_jar_to_scala_source(self):
         """Map .jar files to their related source directory."""
         d2d.map_jar_to_jvm_source(
-            project=self.project, logger=self.log, jvm_lang=jvm.ScalaLanguage
+            project=self.project, jvm_lang=jvm.ScalaLanguage, logger=self.log
         )
 
     @optional_step("Kotlin")
@@ -225,14 +225,14 @@ class DeployToDevelop(Pipeline):
     def map_kotlin_to_class(self):
         """Map a .class compiled file to its .java source."""
         d2d.map_jvm_to_class(
-            project=self.project, logger=self.log, jvm_lang=jvm.KotlinLanguage
+            project=self.project, jvm_lang=jvm.KotlinLanguage, logger=self.log
         )
 
     @optional_step("Kotlin")
     def map_jar_to_kotlin_source(self):
         """Map .jar files to their related source directory."""
         d2d.map_jar_to_jvm_source(
-            project=self.project, logger=self.log, jvm_lang=jvm.KotlinLanguage
+            project=self.project, jvm_lang=jvm.KotlinLanguage, logger=self.log
         )
 
     @optional_step("JavaScript")

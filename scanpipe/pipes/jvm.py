@@ -20,7 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-"""Support for JVM-specific file formats such as .class and .java files."""
+"""
+Support for JVM-specific file formats such as
+.class and .java, .scala and .kotlin files.
+"""
 
 import re
 from pathlib import Path
@@ -91,7 +94,7 @@ class JvmLanguage:
     @classmethod
     def get_indexable_qualified_paths(cls, from_resources_dot_java):
         """
-        Yield tuples of (resource id, fully-qualified Java class name) for indexable
+        Yield tuples of (resource id, fully-qualified class name) for indexable
         classes from the "from/" side of the project codebase using the
         "java_package" Resource.extra_data.
         """
@@ -103,7 +106,7 @@ class JvmLanguage:
     @classmethod
     def get_indexable_qualified_paths_from_values(cls, resource_values):
         """
-        Yield tuples of (resource id, fully-qualified Java path) for indexable
+        Yield tuples of (resource id, fully-qualified path) for indexable
         classes from a list of ``resource_data`` tuples of "from/" side of the
         project codebase.
 
@@ -207,8 +210,8 @@ class KotlinLanguage(JvmLanguage):
 
 def get_fully_qualified_path(jvm_package, filename):
     """
-    Return a fully qualified java path of a .java ``filename`` in a
-    ``java_package`` string.
+    Return a fully qualified path of a ``filename`` in a
+    string.
     Note that we use "/" as path separators.
 
     For example::

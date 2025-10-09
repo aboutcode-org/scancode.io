@@ -166,8 +166,8 @@ def _map_jvm_to_class_resource(
 ):
     """
     Map the ``to_resource`` .class file Resource with a Resource in
-    ``from_resources`` .java files, using the ``from_classes_index`` index of
-    from/ fully qualified Java class names.
+    ``from_resources`` source files, using the ``from_classes_index`` index of
+    from/ fully qualified binary files.
     """
     for extension in jvm_lang.source_extensions:
         normalized_path = jvm_lang.get_normalized_path(
@@ -194,23 +194,26 @@ def _map_jvm_to_class_resource(
 
 def map_jvm_to_class(project, jvm_lang: jvm.JvmLanguage, logger=None):
     """
-    Map to/ compiled Java .class(es) to from/ .java source using Java fully
-    qualified paths and indexing from/ .java files.
+    Map to/ compiled Jvm's binary files to from/ using Jvm language's fully
+    qualified paths and indexing from/ Jvm lang's source files.
     """
     project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
 
-    filter = {f"extra_data__{jvm_lang.source_package_attribute_name}__isnull": False}
+    has_source_pkg_attr_name = {
+        f"extra_data__{jvm_lang.source_package_attribute_name}__isnull": False
+    }
 
     to_resources_binary_extension = to_resources.filter(
         extension__in=jvm_lang.binary_extensions
     )
     from_resources_source_extension = (
         from_resources.filter(extension__in=jvm_lang.source_extensions)
-        # The "java_package" extra_data value is set during the `find_java_packages`,
+        # The source_package_attribute_name extra_data value
+        # is set during the `find_jvm_package`,
         # it is required to build the index.
-        .filter(**filter)
+        .filter(**has_source_pkg_attr_name)
     )
     to_resource_count = to_resources_binary_extension.count()
     from_resource_count = from_resources_source_extension.count()
@@ -225,8 +228,8 @@ def map_jvm_to_class(project, jvm_lang: jvm.JvmLanguage, logger=None):
             f"{from_resource_count:,d} {jvm_lang.source_extensions}"
         )
 
-    # build an index using from-side Java fully qualified class file names
-    # built from the "java_package" and file name
+    # build an index using from-side fully qualified class file names
+    # built from the source_package_attribute_name and file name
     indexables = jvm_lang.get_indexable_qualified_paths(from_resources_source_extension)
 
     # we do not index subpath since we want to match only fully qualified names
@@ -237,13 +240,16 @@ def map_jvm_to_class(project, jvm_lang: jvm.JvmLanguage, logger=None):
 
     for to_resource in progress.iter(resource_iterator):
         _map_jvm_to_class_resource(
-            to_resource, from_resources, from_classes_index, jvm_lang
+            to_resource=to_resource,
+            from_resources=from_resources,
+            from_classes_index=from_classes_index,
+            jvm_lang=jvm_lang,
         )
 
 
 def find_jvm_packages(project, jvm_lang: jvm.JvmLanguage, logger=None):
     """
-    Collect the JVM packages of Java source files for a ``project``.
+    Collect the JVM packages of source files for a ``project``.
 
     Multiprocessing is enabled by default on this pipe, the number of processes
     can be controlled through the SCANCODEIO_PROCESSES setting.
@@ -272,7 +278,7 @@ def find_jvm_packages(project, jvm_lang: jvm.JvmLanguage, logger=None):
 
 def save_jvm_package_scan_results(codebase_resource, scan_results, scan_errors):
     """
-    Save the resource Java package scan results in the database as Resource.extra_data.
+    Save the resource Jvm package scan results in the database as Resource.extra_data.
     Create project errors if any occurred during the scan.
     """
     # The status is only updated in case of errors.
@@ -309,16 +315,16 @@ def _map_jar_to_jvm_source_resource(
     dot_class_file_ids = [
         dot_class_file.get("id") for dot_class_file in jar_extracted_dot_class_files
     ]
-    java_to_class_extra_data_list = CodebaseRelation.objects.filter(
+    jvm_binary_map_type_extra_data_list = CodebaseRelation.objects.filter(
         to_resource__in=dot_class_file_ids, map_type=jvm_lang.binary_map_type
     ).values_list("extra_data", flat=True)
 
     from_source_roots = [
         extra_data.get("from_source_root", "")
-        for extra_data in java_to_class_extra_data_list
+        for extra_data in jvm_binary_map_type_extra_data_list
     ]
     if len(set(from_source_roots)) != 1:
-        # Could not determine a common root directory for the java_to_class files
+        # Could not determine a common root directory for the binary_map_type files
         return
 
     common_source_root = from_source_roots[0].rstrip("/")
