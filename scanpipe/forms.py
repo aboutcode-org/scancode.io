@@ -124,6 +124,8 @@ class InputsBaseForm(forms.Form):
         for url in input_urls:
             project.add_input_source(download_url=url)
 
+        project.auto_populate_purl_if_single_package_url()
+
 
 class CheckboxChoiceField(forms.MultipleChoiceField):
     widget = forms.CheckboxSelectMultiple

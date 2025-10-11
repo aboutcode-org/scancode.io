@@ -1222,13 +1222,49 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             if not tag and parsed_url.fragment:
                 tag = parsed_url.fragment[:50]
 
-        return InputSource.objects.create(
+        input_source = InputSource.objects.create(
             project=self,
             download_url=download_url,
             filename=filename,
             is_uploaded=is_uploaded,
             tag=tag,
         )
+
+        self._auto_populate_purl_from_inputs()
+        
+        return input_source
+
+    def _auto_populate_purl_from_inputs(self):
+        """
+        Auto-populate the project's PURL field if the project has a single input
+        that is a valid package URL and the PURL field is currently empty.
+        """
+        if self.purl:
+            return
+
+        input_sources = self.inputsources.all()
+        
+        if input_sources.count() != 1:
+            return
+            
+        input_source = input_sources.first()
+        download_url = input_source.download_url
+        
+        if download_url and download_url.startswith('pkg:'):
+            try:
+                PackageURL.from_string(download_url)
+                self.purl = download_url
+                self.save(update_fields=['purl'])
+            except ValueError:
+                # Ignore
+                pass
+
+    def auto_populate_purl_if_single_package_url(self):
+        """
+        Public method to auto-populate PURL field if project has a single package URL input.
+        This can be called after all inputs have been added to a project.
+        """
+        self._auto_populate_purl_from_inputs()
 
     def add_downloads(self, downloads):
         """
