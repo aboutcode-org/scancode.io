@@ -57,9 +57,11 @@ jobs:
       - name: Verify SBOM Analysis Results in ScanCode.io
         shell: bash
         env:
-          EXPECTED_PACKAGE_COUNT: 100
-          EXPECTED_VULNERABLE_PACKAGE_COUNT: 0
-          EXPECTED_DEPENDENCY_COUNT: 90
+          EXPECTED_PACKAGE: 100
+          EXPECTED_VULNERABLE_PACKAGE: 0
+          EXPECTED_DEPENDENCY: 90
         run: |
-          scanpipe shell --command "from scanpipe.models import DiscoveredPackage; package_manager = DiscoveredPackage.objects; assert package_manager.count() >= int('${{ env.EXPECTED_PACKAGE_COUNT }}'), f'Expected at least ${{ env.EXPECTED_PACKAGE_COUNT }} packages, found {package_manager.count()}'; assert package_manager.vulnerable().count() >= int('${{ env.EXPECTED_VULNERABLE_PACKAGE_COUNT }}'), f'Expected ${{ env.EXPECTED_VULNERABLE_PACKAGE_COUNT }} vulnerable packages, found {package_manager.vulnerable().count()}'"
-          scanpipe shell --command "from scanpipe.models import DiscoveredDependency; assert DiscoveredDependency.objects.count() >= int('${{ env.EXPECTED_DEPENDENCY_COUNT }}'), f'Expected at least ${{ env.EXPECTED_DEPENDENCY_COUNT }} dependencies, found {DiscoveredDependency.objects.count()}'"
+          scanpipe verify-project --project scancode-action \
+            --packages ${{ env.EXPECTED_PACKAGE }} \
+            --vulnerable-packages ${{ env.EXPECTED_VULNERABLE_PACKAGE }} \
+            --dependencies ${{ env.EXPECTED_DEPENDENCY }}
