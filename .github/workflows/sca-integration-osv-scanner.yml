@@ -20,6 +20,9 @@ permissions:
 
 env:
   IMAGE_REFERENCE: "python:3.13.0-slim"
+  EXPECTED_PACKAGE: 100
+  EXPECTED_VULNERABLE_PACKAGE: 0
+  EXPECTED_DEPENDENCY: 90
 
 jobs:
   generate-and-load-sbom:
@@ -56,12 +59,9 @@ jobs:
 
       - name: Verify SBOM Analysis Results in ScanCode.io
         shell: bash
-        env:
-          EXPECTED_PACKAGE: 100
-          EXPECTED_VULNERABLE_PACKAGE: 0
-          EXPECTED_DEPENDENCY: 90
         run: |
-          scanpipe verify-project --project scancode-action \
+          scanpipe verify-project \
+            --project scancode-action \
             --packages ${{ env.EXPECTED_PACKAGE }} \
             --vulnerable-packages ${{ env.EXPECTED_VULNERABLE_PACKAGE }} \
             --dependencies ${{ env.EXPECTED_DEPENDENCY }}
