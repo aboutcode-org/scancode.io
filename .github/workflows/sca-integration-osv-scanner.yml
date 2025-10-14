@@ -52,7 +52,7 @@ jobs:
         with:
           pipelines: "load_sbom"
           inputs-path: "osv-sbom.spdx.json"
-          scancodeio-repo-branch: "main"
+          scancodeio-repo-branch: "sca-integration-workflow-fix"
 
       - name: Verify SBOM Analysis Results in ScanCode.io
         shell: bash
