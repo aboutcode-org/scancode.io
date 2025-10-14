@@ -96,4 +96,4 @@ class Command(ProjectCommand):
         if errors:
             raise CommandError("Project verification failed:\n" + "\n".join(errors))
 
-        self.stdout.write(self.style.SUCCESS("Project verification passed."))
+        self.stdout.write("Project verification passed.", self.style.SUCCESS)
