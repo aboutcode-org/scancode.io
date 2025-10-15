@@ -30,7 +30,7 @@ jobs:
       - name: Checkout minimal Go repo
         uses: actions/checkout@v4
         with:
-          repository: kubernetes/kubernetes
+          repository: opencontainers/runc
 
       - name: Generate SBOM with cyclonedx-gomod
         uses: CycloneDX/gh-gomod-generate-sbom@v2
