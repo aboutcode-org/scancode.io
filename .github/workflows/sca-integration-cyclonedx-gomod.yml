@@ -30,7 +30,7 @@ jobs:
       - name: Checkout minimal Go repo
         uses: actions/checkout@v4
         with:
-          repository: golang/time
+          repository: spf13/cobra
 
       # Download and invoke cyclonedx-gomod
       - name: Generate SBOM
