@@ -9,8 +9,8 @@ name: Generate SBOM with OSV-Scanner and load into ScanCode.io
 # It runs on demand, and once a week (scheduled).
 
 on:
-  workflow_dispatch:
   pull_request:
+  workflow_dispatch:
   schedule:
     # Run once a week (every 7 days) at 00:00 UTC on Sunday
     - cron: "0 0 * * 0"

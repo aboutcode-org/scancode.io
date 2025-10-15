@@ -9,6 +9,7 @@ name: Generate SBOM with Trivy and load into ScanCode.io
 # It runs on demand, and once a week (scheduled).
 
 on:
+  pull_request:
   workflow_dispatch:
   schedule:
     # Run once a week (every 7 days) at 00:00 UTC on Sunday
@@ -50,15 +51,6 @@ jobs:
           pipelines: "load_sbom"
           inputs-path: "trivy-report.sbom.json"
           scancodeio-repo-branch: "main"
-
-      - name: Verify SBOM Analysis Results in ScanCode.io
-        shell: bash
-        run: |
-          scanpipe verify-project \
-            --project scancode-action \
-            --packages ${{ env.EXPECTED_PACKAGE }} \
-            --vulnerable-packages ${{ env.EXPECTED_VULNERABLE_PACKAGE }} \
-            --dependencies ${{ env.EXPECTED_DEPENDENCY }}
 
       - name: Verify SBOM Analysis Results in ScanCode.io
         shell: bash
