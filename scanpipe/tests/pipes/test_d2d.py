@@ -390,6 +390,50 @@ class ScanPipeD2DPipesTest(TestCase):
         to3.refresh_from_db()
         self.assertEqual("", to3.status)
 
+    def test_scanpipe_pipes_d2d_map_java_to_class_with_java_in_deploy(self):
+        sha1 = "abcde"
+        from1 = make_resource_file(
+            self.project1,
+            path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider.java",
+            extra_data={"java_package": "org.apache.flume.node"},
+            sha1=sha1,
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider.java",
+            sha1=sha1,
+        )
+        to2 = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider.class",
+        )
+
+        buffer = io.StringIO()
+
+        # The pipeline will run map_checksum first
+        d2d.map_checksum(self.project1, "sha1", logger=buffer.write)
+        expected = "Mapping 1 to/ resources using sha1 against from/ codebase"
+        self.assertEqual(expected, buffer.getvalue())
+        self.assertEqual(1, to1.related_from.count())
+        relation1 = to1.related_from.get()
+        self.assertEqual("sha1", relation1.map_type)
+        self.assertEqual(from1, relation1.from_resource)
+
+        # Now run map_java_to_class
+        d2d.map_java_to_class(self.project1, logger=buffer.write)
+        expected = "Mapping 1 .class resources to 1 .java"
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(2, self.project1.codebaserelations.count())
+        relation2 = self.project1.codebaserelations.get(
+            to_resource=to2, from_resource=from1
+        )
+        self.assertEqual("java_to_class", relation2.map_type)
+        expected = {"from_source_root": "from/flume-ng-node-1.9.0-sources.jar-extract/"}
+        self.assertEqual(expected, relation2.extra_data)
+
     def test_scanpipe_pipes_d2d_map_java_to_class_no_java(self):
         make_resource_file(self.project1, path="to/Abstract.class")
         buffer = io.StringIO()
