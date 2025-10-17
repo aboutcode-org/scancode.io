@@ -1,7 +1,7 @@
-name: Generate SBOM with OSV-Scanner and load into ScanCode.io
+name: Generate SBOM with cyclonedx-gomod and load into ScanCode.io
 
 # This workflow:
-#  1. Generates a CycloneDX SBOM for a container image using OSV-Scanner.
+#  1. Generates a CycloneDX SBOM for a container image using cyclonedx-gomod.
 #  2. Uploads the SBOM as a GitHub artifact for future inspection.
 #  3. Loads the SBOM into ScanCode.io for further analysis.
 #  4. Runs assertions to verify that the SBOM was properly processed in ScanCode.io.
@@ -13,47 +13,43 @@ on:
   schedule:
     # Run once a week (every 7 days) at 00:00 UTC on Sunday
     - cron: "0 0 * * 0"
+  pull_request:
 
 permissions:
   contents: read
 
 env:
-  IMAGE_REFERENCE: "python:3.13.0-slim"
-  EXPECTED_PACKAGE: 100
+  EXPECTED_PACKAGE: 5
   EXPECTED_VULNERABLE_PACKAGE: 0
-  EXPECTED_DEPENDENCY: 90
+  EXPECTED_DEPENDENCY: 1
 
 jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
     steps:
-      - name: Install OSV-Scanner
-        run: |
-          curl -sLO https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64
-          chmod +x osv-scanner_linux_amd64
-          sudo mv osv-scanner_linux_amd64 /usr/local/bin/osv-scanner
+      - name: Checkout minimal Go repo
+        uses: actions/checkout@v4
+        with:
+          repository: opencontainers/runc
 
-      - name: Run OSV Scanner
-        # Using `|| true` as OSV-Scanner exits with code 1 when vulnerabilities are found.
-        run: |
-          osv-scanner scan image ${{ env.IMAGE_REFERENCE }} \
-            --all-packages \
-            --format spdx-2-3 \
-            --output osv-sbom.spdx.json \
-            || true
+      - name: Generate SBOM with cyclonedx-gomod
+        uses: CycloneDX/gh-gomod-generate-sbom@v2
+        with:
+          version: v1
+          args: mod -licenses -json -output gomod-sbom.cdx.json
 
       - name: Upload SBOM as GitHub Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: osv-scanner-sbom-report
-          path: osv-sbom.spdx.json
+          name: sbom-report
+          path: "gomod-sbom.cdx.json"
           retention-days: 20
 
       - name: Import SBOM into ScanCode.io
         uses: aboutcode-org/scancode-action@main
         with:
           pipelines: "load_sbom"
-          inputs-path: "osv-sbom.spdx.json"
+          inputs-path: "gomod-sbom.cdx.json"
           scancodeio-repo-branch: "main"
 
       - name: Verify SBOM Analysis Results in ScanCode.io

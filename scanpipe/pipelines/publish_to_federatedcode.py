@@ -21,6 +21,8 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 
+import shutil
+
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import federatedcode
 
@@ -41,11 +43,12 @@ class PublishToFederatedCode(Pipeline):
     def steps(cls):
         return (
             cls.check_federatedcode_eligibility,
+            cls.create_federatedcode_working_dir,
             cls.get_package_repository,
             cls.clone_repository,
             cls.add_scan_result,
             cls.commit_and_push_changes,
-            cls.delete_local_clone,
+            cls.delete_working_dir,
         )
 
     def check_federatedcode_eligibility(self):
@@ -55,9 +58,12 @@ class PublishToFederatedCode(Pipeline):
         """
         federatedcode.check_federatedcode_eligibility(project=self.project)
 
+    def create_federatedcode_working_dir(self):
+        self.working_path = federatedcode.create_federatedcode_working_dir()
+
     def get_package_repository(self):
         """Get the Git repository URL and scan path for a given package."""
-        self.package_git_repo, self.package_scan_file = (
+        self.package_repo_name, self.package_git_repo, self.package_scan_file = (
             federatedcode.get_package_repository(
                 project_purl=self.project.purl, logger=self.log
             )
@@ -67,6 +73,7 @@ class PublishToFederatedCode(Pipeline):
         """Clone repository to local_path."""
         self.repo = federatedcode.clone_repository(
             repo_url=self.package_git_repo,
+            clone_path=self.working_path / self.package_repo_name,
             logger=self.log,
         )
 
@@ -83,14 +90,14 @@ class PublishToFederatedCode(Pipeline):
         """Commit and push changes to remote repository."""
         federatedcode.commit_and_push_changes(
             repo=self.repo,
-            file_to_commit=str(self.relative_file_path),
-            purl=self.project.purl,
+            files_to_commit=[str(self.relative_file_path)],
+            purls=[self.project.purl],
             logger=self.log,
         )
         self.log(
             f"Scan result for '{self.project.purl}' pushed to '{self.package_git_repo}'"
         )
 
-    def delete_local_clone(self):
-        """Remove local clone."""
-        federatedcode.delete_local_clone(repo=self.repo)
+    def delete_working_dir(self):
+        """Remove temporary working dir."""
+        shutil.rmtree(self.working_dir)

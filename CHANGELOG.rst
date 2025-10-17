@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v35.4.0 (unreleased)
+v35.4.0 (2025-09-30)
 --------------------
 
 - Use deterministic UID/GID in Dockerfile.
