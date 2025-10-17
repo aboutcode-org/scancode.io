@@ -24,7 +24,6 @@ import difflib
 import io
 import json
 import operator
-import zipfile
 from collections import Counter
 from contextlib import suppress
 from pathlib import Path
@@ -1444,19 +1443,17 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
 
     @staticmethod
     def download_outputs_zip_response(project_qs, action_form):
+        """Generate and return a zip file response for selected projects."""
         output_format = action_form.cleaned_data["output_format"]
         output_function = output.FORMAT_TO_FUNCTION_MAPPING.get(output_format)
 
-        # In-memory file storage for the zip archive
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-            for project in project_qs:
-                output_file = output_function(project)
-                filename = output.safe_filename(f"{project.name}_{output_file.name}")
-                with open(output_file, "rb") as f:
-                    zip_file.writestr(filename, f.read())
+        files = []
+        for project in project_qs:
+            output_file = output_function(project)
+            filename = output.safe_filename(f"{project.name}_{output_file.name}")
+            files.append((filename, output_file))
 
-        zip_buffer.seek(0)
+        zip_buffer = output.make_zip_from_files(files)
         return FileResponse(
             zip_buffer,
             as_attachment=True,
@@ -1633,6 +1630,8 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
             output_file = output.to_attribution(project)
         elif format == "ort-package-list":
             output_file = output.to_ort_package_list_yml(project)
+        elif format == "all":
+            output_file = output.to_all_formats(project)
         else:
             raise Http404("Format not supported.")
 
