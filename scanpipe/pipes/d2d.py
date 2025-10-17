@@ -197,9 +197,15 @@ def map_jvm_to_class(project, jvm_lang: jvm.JvmLanguage, logger=None):
     Map to/ compiled Jvm's binary files to from/ using Jvm language's fully
     qualified paths and indexing from/ Jvm lang's source files.
     """
-    project_files = project.codebaseresources.files().no_status()
+    project_files = project.codebaseresources.files()
+    # Collect all files from "from_codebase", even if they already have a
+    # status or are mapped. This is necessary because the deploy codebase
+    # may contain sources that match "from_codebase" via checksum. If those
+    # checksum-matched files are excluded from mapping, it can result in
+    # .class files failing to resolve. See
+    # https://github.com/aboutcode-org/scancode.io/issues/1854#issuecomment-3273472895
     from_resources = project_files.from_codebase()
-    to_resources = project_files.to_codebase().has_no_relation()
+    to_resources = project_files.to_codebase().no_status().has_no_relation()
 
     has_source_pkg_attr_name = {
         f"extra_data__{jvm_lang.source_package_attribute_name}__isnull": False
