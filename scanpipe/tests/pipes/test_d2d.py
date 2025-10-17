@@ -426,8 +426,10 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(from1, relation1.from_resource)
 
         # Now run map_java_to_class
-        d2d.map_java_to_class(self.project1, logger=buffer.write)
-        expected = "Mapping 1 .class resources to 1 .java"
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.JavaLanguage
+        )
+        expected = "Mapping 1 .class resources to 1 ('.java',)"
         self.assertIn(expected, buffer.getvalue())
         self.assertEqual(2, self.project1.codebaserelations.count())
         relation2 = self.project1.codebaserelations.get(
