@@ -1,6 +1,12 @@
 Changelog
 =========
 
+v35.4.1 (unreleased)
+--------------------
+
+- Add ability to download all output results formats as a zipfile for a given project.
+  https://github.com/aboutcode-org/scancode.io/issues/1880
+
 v35.4.0 (2025-09-30)
 --------------------
 

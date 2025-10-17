@@ -1,18 +1,16 @@
 <article class="message is-success">
-  <div class="message-body">
-    Download results as:
+  <div class="message-body p-3">
+    <span class="icon"><i class="fa-solid fa-download"></i></span>
+    Download results:
     <a class="tag is-success is-medium ml-2" href="{% url 'project_results' project.slug 'json' %}">
-      <span class="icon mr-1"><i class="fa-solid fa-download"></i></span>JSON
+      JSON
     </a>
     <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'xlsx' %}">
-      <span class="icon mr-1"><i class="fa-solid fa-download"></i></span>XLSX
+      XLSX
     </a>
     <div class="dropdown is-hoverable">
       <div class="dropdown-trigger">
         <button class="button tag is-success is-medium has-text-weight-normal" aria-haspopup="true" aria-controls="dropdown-menu-spdx">
-          <span class="icon">
-            <i class="fa-solid fa-download" aria-hidden="true"></i>
-          </span>
           <span>SPDX</span>
           <span class="icon is-small">
             <i class="fa-solid fa-angle-down" aria-hidden="true"></i>
@@ -33,9 +31,6 @@
     <div class="dropdown is-hoverable">
       <div class="dropdown-trigger">
         <button class="button tag is-success is-medium has-text-weight-normal" aria-haspopup="true" aria-controls="dropdown-menu-cyclonedx">
-          <span class="icon">
-            <i class="fa-solid fa-download" aria-hidden="true"></i>
-          </span>
           <span>CycloneDX</span>
           <span class="icon is-small">
             <i class="fa-solid fa-angle-down" aria-hidden="true"></i>
@@ -57,14 +52,11 @@
       </div>
     </div>
     <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'attribution' %}">
-      <span class="icon mr-1"><i class="fa-solid fa-download"></i></span>Attribution
+      Attribution
     </a>
     <div class="dropdown is-hoverable">
       <div class="dropdown-trigger">
         <button class="button tag is-success is-medium has-text-weight-normal" aria-haspopup="true" aria-controls="dropdown-menu-ort">
-          <span class="icon">
-            <i class="fa-solid fa-download" aria-hidden="true"></i>
-          </span>
           <span>Tools formats</span>
           <span class="icon is-small">
             <i class="fa-solid fa-angle-down" aria-hidden="true"></i>
@@ -79,5 +71,9 @@
         </div>
       </div>
     </div>
+    <span class="p-1">|</span>
+    <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'all' %}">
+      All formats
+    </a>
   </div>
 </article>
