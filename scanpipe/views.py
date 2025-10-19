@@ -2848,7 +2848,5 @@ class CodebaseResourceTableView(
         if path and "/" in path:
             parent_segments = path.rstrip("/").split("/")[:-1]
             context["parent_path"] = "/".join(parent_segments)
-        else:
-            context["parent_path"] = None
 
         return context

@@ -34,22 +34,18 @@
           </tr>
         </thead>
         <tbody>
-          {% if parent_path is not None %}
+          {% if parent_path %}
             <tr class="expand-in-tree is-clickable" 
-                data-path="{{ parent_path|default_if_none:'' }}"
+                data-path="{{ parent_path }}"
                 hx-get="{% url 'codebase_resource_table' project.slug %}{% if parent_path %}?path={{ parent_path }}{% endif %}"
                 hx-target="#right-pane"
                 hx-push-url="{% url 'codebase_resource_tree' project.slug %}{% if parent_path %}?path={{ parent_path }}{% endif %}">
-              <td class="is-flex is-align-items-center break-all" style="min-width: 100px;">
+              <td class="is-align-items-center break-all" colspan="5" style="min-width: 100px;">
                 <span class="icon is-small mr-2">
                   <i class="fas fa-folder"></i>
                 </span>
                 <span class="has-text-weight-medium">..</span>
               </td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
             </tr>
           {% endif %}
           {% for resource in resources %}
