@@ -80,6 +80,7 @@ DB_PASS = os.getenv("SCANCODE_DB_PASS", "scancode")
 DB_NAME = "scancode"
 D2D_DIR = Path("d2d")
 
+
 def pull_required_images(docker_bin):
     """Ensure the required Docker images are present."""
     print("Checking and pulling required Docker images (if missing)...")
@@ -104,7 +105,7 @@ def safe_run(cmd, capture_output=False, silent=False):
     cmd[0] = shutil.which(cmd[0]) or cmd[0]
 
     try:
-        return subprocess.run(
+        return subprocess.run(  # NOQA S603
             cmd,
             check=True,
             text=True,
@@ -120,8 +121,8 @@ def wait_for_postgres(container_name, timeout=60):
     """Wait until the Postgres container is ready."""
     print("Waiting for Postgres to be ready...")
     for _ in range(timeout):
-        result = subprocess.run(
-            ["docker", "exec", container_name, "pg_isready", "-U", DB_USER],
+        result = subprocess.run(  # NOQA: S603
+            ["docker", "exec", container_name, "pg_isready", "-U", DB_USER],  # NOQA: S607
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
@@ -192,7 +193,6 @@ def main():
     print(f"Using Postgres host port: {db_port}")
 
     project_name = f"scanpipe_{uuid.uuid4().hex[:8]}"
-
 
     try:
         safe_run(
@@ -279,7 +279,7 @@ def main():
             f.write(result.stdout)
 
     finally:
-        subprocess.run(["docker", "rm", "-f", db_container_name], check=False)
+        subprocess.run(["docker", "rm", "-f", db_container_name], check=False)  # NOQA: S607, S603
 
 
 if __name__ == "__main__":
