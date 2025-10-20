@@ -29,9 +29,6 @@
 # PREREQUISITES:
 #   1. Python 3.8+ must be installed
 #   2. Docker must be installed and accessible via `sudo` or user group
-#   3. Required Docker images:
-#        docker pull postgres:13
-#        docker pull ghcr.io/aboutcode-org/scancode.io:latest
 #
 # ENVIRONMENT VARIABLES:
 #   SCANCODE_DB_PASS ->  Database password (default: "scancode")
@@ -82,6 +79,14 @@ DB_USER = os.getenv("SCANCODE_DB_USER", "scancode")
 DB_PASS = os.getenv("SCANCODE_DB_PASS", "scancode")
 DB_NAME = "scancode"
 D2D_DIR = Path("d2d")
+
+def pull_required_images(docker_bin):
+    """Ensure the required Docker images are present."""
+    print("Checking and pulling required Docker images (if missing)...")
+    images = [DB_IMAGE, SCANCODE_IMAGE]
+    for image in images:
+        safe_run([docker_bin, "pull", image], silent=True)
+    print("Docker images are ready.")
 
 
 def get_free_port():
@@ -177,6 +182,9 @@ def main():
         print("Both :from and :to input files are required.", file=sys.stderr)
         sys.exit(1)
 
+    docker_bin = shutil.which("docker") or "docker"
+    pull_required_images(docker_bin)
+
     from_name, to_name = prepare_d2d_dir(file_map["from"], file_map["to"])
 
     db_container_name = f"scancode_db_{uuid.uuid4().hex[:6]}"
@@ -185,7 +193,6 @@ def main():
 
     project_name = f"scanpipe_{uuid.uuid4().hex[:8]}"
 
-    docker_bin = shutil.which("docker") or "docker"
 
     try:
         safe_run(
