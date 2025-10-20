@@ -1153,18 +1153,6 @@ def make_zip_from_files(files):
     return zip_buffer
 
 
-# def to_all_formats(project):
-#     """Generate all output formats for a project and return a zipfile."""
-#     files = []
-#     for output_function in FORMAT_TO_FUNCTION_MAPPING.values():
-#         output_file = output_function(project)
-#         filename = safe_filename(f"{project.name}_{output_file.name}")
-#         files.append((filename, output_file))
-#     zip_buffer = make_zip_from_files(files)
-#     zip_buffer.name = "scancodeio_output_files.zip"
-#     return zip_buffer
-
-
 def to_all_formats(project):
     """Generate all output formats for a project and return a Django File-like zip."""
     files = []
@@ -1173,6 +1161,18 @@ def to_all_formats(project):
         filename = safe_filename(f"{project.name}_{output_file.name}")
         files.append((filename, output_file))
 
+    zip_buffer = make_zip_from_files(files)
+
+    # Wrap it into a Django File-like object
+    zip_file = ContentFile(zip_buffer.getvalue())
+    zip_file.name = safe_filename(f"{project.name}_outputs.zip")
+
+    return zip_file
+
+
+def to_all_outputs(project):
+    """Return a Django File-like zip containing all existing project's output/ files."""
+    files = [(path.name, path) for path in project.output_path.glob("*")]
     zip_buffer = make_zip_from_files(files)
 
     # Wrap it into a Django File-like object

@@ -644,13 +644,28 @@ class ScanPipeOutputPipesTest(TestCase):
 
         self.assertEqual("asgiref_outputs.zip", output_file.name)
 
-        output_file.seek(0)  # Important for reading from start
         with zipfile.ZipFile(output_file, "r") as zip_ref:
             zip_contents = zip_ref.namelist()
             file_count = len(zip_contents)
 
         expected_file_count = len(output.FORMAT_TO_FUNCTION_MAPPING)
-        self.assertEqual(file_count, expected_file_count)
+        self.assertEqual(expected_file_count, file_count)
+
+    def test_scanpipe_pipes_outputs_to_all_outputs(self):
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+        project = Project.objects.get(name="asgiref")
+
+        with self.assertNumQueries(0):
+            output_file = output.to_all_outputs(project=project)
+
+        self.assertEqual("asgiref_outputs.zip", output_file.name)
+
+        with zipfile.ZipFile(output_file, "r") as zip_ref:
+            zip_contents = zip_ref.namelist()
+            file_count = len(zip_contents)
+
+        self.assertEqual(len(project.output_root), file_count)
 
     def test_scanpipe_pipes_outputs_make_unknown_license_object(self):
         licensing = get_licensing()
