@@ -171,6 +171,10 @@ class ProjectViewSet(
             output_file = output.to_attribution(project)
         elif format == "ort-package-list":
             output_file = output.to_ort_package_list_yml(project)
+        elif format == "all_formats":
+            output_file = output.to_all_formats(project)
+        elif format == "all_outputs":
+            output_file = output.to_all_outputs(project)
         else:
             message = {"status": f"Format {format} not supported."}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)

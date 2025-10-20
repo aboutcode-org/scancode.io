@@ -285,7 +285,6 @@ Additional sheets are included **only when relevant** (i.e., when data is availa
 
 SPDX
 ^^^^
-
 ScanCode.io can generate Software Bill of Materials (SBOM) in the **SPDX** format,
 which is an open standard for communicating software component information.
 SPDX is widely used for license compliance, security analysis, and software supply
@@ -309,7 +308,6 @@ The SPDX output includes:
 
 CycloneDX
 ^^^^^^^^^
-
 ScanCode.io can generate **CycloneDX** SBOMs, a lightweight standard designed for
 security and dependency management. CycloneDX is optimized for vulnerability analysis
 and software supply chain risk assessment.
