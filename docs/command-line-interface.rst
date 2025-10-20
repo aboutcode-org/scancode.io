@@ -419,8 +419,8 @@ Displays status information about the ``PROJECT`` project.
 
 .. _cli_output:
 
-`$ scanpipe output --project PROJECT --format {json,csv,xlsx,spdx,cyclonedx,attribution,ort-package-list}`
-----------------------------------------------------------------------------------------------------------
+`$ scanpipe output --project PROJECT --format {json,csv,xlsx,spdx,cyclonedx,attribution,...}`
+---------------------------------------------------------------------------------------------
 
 Outputs the ``PROJECT`` results as JSON, XLSX, CSV, SPDX, CycloneDX,
 ORT package-list.yml, and Attribution.
