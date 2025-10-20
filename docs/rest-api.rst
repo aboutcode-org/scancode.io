@@ -694,9 +694,15 @@ Finally, use this action to download the project results in the provided
 ``output_format`` as an attachment file.
 
 Data:
-    - ``output_format``: ``json``, ``xlsx``, ``spdx``, ``cyclonedx``, ``attribution``
+    - ``output_format``: ``json``, ``xlsx``, ``spdx``, ``cyclonedx``, ``attribution``,
+      ``all_formats``, ``all_outputs``
 
 ``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/results_download/?output_format=cyclonedx``
+
+.. note::
+   Use ``all_formats`` to generate a zip file containing all output formats for a
+   project, while ``all_outputs`` can be used to obtain a zip file of all existing
+   output files for that project.
 
 .. tip::
   Refer to :ref:`output_files` to learn more about the available output formats.

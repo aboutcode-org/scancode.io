@@ -669,6 +669,16 @@ class ScanPipeAPITest(TransactionTestCase):
         # to prevent a "ResourceWarning: unclosed file"
         self.assertTrue(response.getvalue().startswith(b"PK"))
 
+        data = {"output_format": "all_formats"}
+        response = self.csrf_client.get(url, data=data)
+        expected = ["application/zip"]
+        self.assertIn(response["Content-Type"], expected)
+
+        data = {"output_format": "all_outputs"}
+        response = self.csrf_client.get(url, data=data)
+        expected = ["application/zip"]
+        self.assertIn(response["Content-Type"], expected)
+
     def test_scanpipe_api_project_action_pipelines(self):
         url = reverse("project-pipelines")
         response = self.csrf_client.get(url)
