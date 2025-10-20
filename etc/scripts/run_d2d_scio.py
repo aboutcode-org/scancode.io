@@ -19,6 +19,52 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
+#
+# ------------------------------------------------------------------------------
+# Documentation: Run ScanCode.io pipelines in Docker (D2D Runner)
+# ------------------------------------------------------------------------------
+# This script helps execute ScanCode.io pipelines in isolated Docker containers,
+# using a local Postgres database and a working directory named `./d2d`.
+#
+# PREREQUISITES:
+#   1. Python 3.8+ must be installed
+#   2. Docker must be installed and accessible via `sudo` or user group
+#   3. Required Docker images:
+#        docker pull postgres:13
+#        docker pull ghcr.io/aboutcode-org/scancode.io:latest
+#
+# ENVIRONMENT VARIABLES:
+#   SCANCODE_DB_PASS ->  Database password (default: "scancode")
+#   SCANCODE_DB_USER -> Database user (default: "scancode")
+#
+# USAGE EXAMPLE:
+#   sudo su -
+#   python3 etc/scripts/run_d2d_scio.py \
+#       --input-file ./path/from/from-intbitset.tar.gz:from \
+#       --input-file ./path/to/to-intbitset.whl:to \
+#       --option Python \
+#       --output res1.json
+#
+# PARAMETERS:
+#   --input-file <path:tag>   -> Required twice: one tagged `:from`, one tagged `:to`
+#   --option <name>           -> Optional; e.g. Python, Java, Javascript, Scala, Kotlin
+#   --output <file.json>      -> Required; JSON output file for results
+#
+# INTERNAL STEPS:
+#   1. Creates/uses `./d2d` directory
+#   2. Copies `from` and `to` files into it
+#   3. Spins up a temporary Postgres 13 container
+#   4. Waits for DB readiness
+#   5. Runs ScanCode.io pipeline (map_deploy_to_develop)
+#   6. Saves pipeline output to provided JSON file
+#   7. Cleans up containers automatically
+#
+# CLEANUP:
+#   Containers are auto-removed, but verify using:
+#       docker ps -a | grep scancode
+#   Manual cleanup if needed:
+#       docker rm -f <container_id>
+# ------------------------------------------------------------------------------
 
 import argparse
 import os
@@ -32,7 +78,7 @@ from pathlib import Path
 
 SCANCODE_IMAGE = "ghcr.io/aboutcode-org/scancode.io:latest"
 DB_IMAGE = "postgres:13"
-DB_USER = "scancode"
+DB_USER = os.getenv("SCANCODE_DB_USER", "scancode")
 DB_PASS = os.getenv("SCANCODE_DB_PASS", "scancode")
 DB_NAME = "scancode"
 D2D_DIR = Path("d2d")
