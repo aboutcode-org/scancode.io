@@ -20,12 +20,15 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import hashlib
 import inspect
 import logging
 import traceback
 from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
+
+from django.conf import settings
 
 import bleach
 from markdown_it import MarkdownIt
@@ -144,9 +147,28 @@ class CommonStepsMixin:
                 error_tracebacks.append((msg, "No traceback available."))
                 continue
 
+            download_url = input_source.download_url
+            if not download_url:
+                continue
+
+            url_hash = hashlib.sha256(download_url.encode()).hexdigest()
+            filename = (
+                input_source.filename
+                or Path(download_url).name
+                or f"{url_hash}.archive"
+            )
+            archive_path = Path(settings.CENTRAL_ARCHIVE_PATH) / url_hash / filename
+
+            if archive_path.exists():
+                logger.info(f"Reusing existing archive at {archive_path}")
+                input_source.file_path = str(archive_path)
+                input_source.save()
+                continue
+
             self.log(f"Fetching input from {input_source.download_url}")
             try:
                 input_source.fetch()
+
             except Exception as error:
                 traceback_str = traceback.format_exc()
                 logger.error(traceback_str)
@@ -187,8 +209,10 @@ class ProjectPipeline(CommonStepsMixin, BasePipeline):
     @classmethod
     def get_initial_steps(cls):
         """Add the ``download_inputs`` step as an initial step if enabled."""
+        steps = []
         if cls.download_inputs:
-            return (cls.download_missing_inputs,)
+            steps.append(cls.download_missing_inputs)
+        return tuple(steps)
 
     @classmethod
     def get_info(cls, as_html=False):
