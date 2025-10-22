@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+from collections import defaultdict
 from pathlib import Path
 
 from django.core.management import call_command
@@ -42,12 +43,16 @@ class Command(BaseCommand):
             help=(
                 "One or more pipeline to run. "
                 "The pipelines executed based on their given order. "
-                'Groups can be provided using the "pipeline_name:option1,option2"'
-                " syntax."
+                'Groups can be provided using the "pipeline_name:option1,option2" '
+                "syntax."
             ),
         )
         parser.add_argument(
-            "input_location", help="Input location: file, directory, and URL supported."
+            "input_location",
+            help=(
+                "Input location: file, directory, and URL supported."
+                'Multiple values can be provided using the "input1,input2" syntax.'
+            ),
         )
         parser.add_argument("--project", required=False, help="Project name.")
         parser.add_argument(
@@ -68,18 +73,8 @@ class Command(BaseCommand):
             "pipeline": pipelines,
             "execute": True,
             "verbosity": 0,
+            **self.get_input_options(input_location),
         }
-
-        if input_location.startswith(tuple(SCHEME_TO_FETCHER_MAPPING.keys())):
-            create_project_options["input_urls"] = [input_location]
-        else:
-            input_path = Path(input_location)
-            if not input_path.exists():
-                raise CommandError(f"{input_location} not found.")
-            if input_path.is_file():
-                create_project_options["input_files"] = [input_location]
-            else:
-                create_project_options["copy_codebase"] = input_location
 
         # Run the database migrations in case the database is not created or outdated.
         call_command("migrate", verbosity=0, interactive=False)
@@ -87,3 +82,29 @@ class Command(BaseCommand):
         call_command("create-project", project_name, **create_project_options)
         # Print the results for the specified format on stdout
         call_command("output", project=project_name, format=[output_format], print=True)
+
+    @staticmethod
+    def get_input_options(input_location):
+        """
+        Parse a comma-separated list of input locations and convert them into options
+        for the `create-project` command.
+        """
+        input_options = defaultdict(list)
+
+        for location in input_location.split(","):
+            if location.startswith(tuple(SCHEME_TO_FETCHER_MAPPING.keys())):
+                input_options["input_urls"].append(location)
+            else:
+                input_path = Path(location)
+                if not input_path.exists():
+                    raise CommandError(f"{location} not found.")
+                if input_path.is_file():
+                    input_options["input_files"].append(location)
+                else:
+                    if input_options["copy_codebase"]:
+                        raise CommandError(
+                            "Only one codebase directory can be provided as input."
+                        )
+                    input_options["copy_codebase"] = location
+
+        return input_options

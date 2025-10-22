@@ -984,6 +984,53 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual("do_nothing", runs[1]["pipeline_name"])
         self.assertEqual(["Group1", "Group2"], runs[1]["selected_groups"])
 
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_management_command_run_multiple_inputs(self, mock_get):
+        source_download_url = "https://example.com/z-source.zip#from"
+        bin_download_url = "https://example.com/z-bin.zip#to"
+        mock_get.side_effect = [
+            make_mock_response(url=source_download_url),
+            make_mock_response(url=bin_download_url),
+        ]
+
+        out = StringIO()
+        inputs = [
+            # copy_codebase option
+            str(self.data / "codebase"),
+            # input_files option
+            str(self.data / "d2d" / "jars" / "from-flume-ng-node-1.9.0.zip"),
+            str(self.data / "d2d" / "jars" / "to-flume-ng-node-1.9.0.zip"),
+            # input_urls option
+            source_download_url,
+            bin_download_url,
+        ]
+        joined_locations = ",".join(inputs)
+        with redirect_stdout(out):
+            call_command("run", "download_inputs", joined_locations)
+
+        json_data = json.loads(out.getvalue())
+        headers = json_data["headers"]
+        project_uuid = headers[0]["uuid"]
+        project = Project.objects.get(uuid=project_uuid)
+
+        expected = [
+            "from-flume-ng-node-1.9.0.zip",
+            "to-flume-ng-node-1.9.0.zip",
+            "z-bin.zip",
+            "z-source.zip",
+        ]
+        self.assertEqual(expected, sorted(project.input_files))
+
+        input_sources = headers[0]["input_sources"]
+        self.assertEqual("z-bin.zip", input_sources[2]["filename"])
+        self.assertEqual("to", input_sources[2]["tag"])
+        self.assertEqual("z-source.zip", input_sources[3]["filename"])
+        self.assertEqual("from", input_sources[3]["tag"])
+
+        codebase_files = [path.name for path in project.codebase_path.glob("*")]
+        expected = ["a.txt", "b.txt", "c.txt"]
+        self.assertEqual(expected, sorted(codebase_files))
+
     @mock.patch("scanpipe.models.Project.get_latest_output")
     @mock.patch("requests.post")
     @mock.patch("requests.sessions.Session.get")
