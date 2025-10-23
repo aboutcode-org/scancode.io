@@ -1371,6 +1371,49 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = ("project1", "file.ext", "file", "file.ext", "requires-review")
         self.assertEqual(expected, row1[0:5])
 
+    def test_scanpipe_management_command_verify_project(self):
+        project = make_project(name="my_project")
+        make_package(project, package_url="pkg:generic/name@1.0")
+        make_dependency(project)
+
+        out = StringIO()
+        call_command(
+            "verify-project",
+            "--project",
+            project.name,
+            "--packages",
+            "1",
+            "--vulnerable-packages",
+            "0",
+            "--dependencies",
+            "1",
+            "--vulnerable-dependencies",
+            "0",
+            stdout=out,
+        )
+        self.assertIn("Project verification passed.", out.getvalue())
+
+        out = StringIO()
+        expected = (
+            "Project verification failed:\n"
+            "Expected at least 5 packages, found 1\n"
+            "Expected at least 10 vulnerable packages, found 0\n"
+            "Expected at least 5 dependencies, found 1"
+        )
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command(
+                "verify-project",
+                "--project",
+                project.name,
+                "--packages",
+                "5",
+                "--vulnerable-packages",
+                "10",
+                "--dependencies",
+                "5",
+                stdout=out,
+            )
+
 
 class ScanPipeManagementCommandMixinTest(TestCase):
     class CreateProjectCommand(

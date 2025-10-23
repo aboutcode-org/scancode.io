@@ -26,10 +26,12 @@ import io
 import json
 import re
 import uuid
+import zipfile
 from operator import attrgetter
 from pathlib import Path
 
 from django.apps import apps
+from django.core.files.base import ContentFile
 from django.core.serializers.json import DjangoJSONEncoder
 from django.forms.models import model_to_dict
 from django.template import Context
@@ -1138,3 +1140,43 @@ FORMAT_TO_FUNCTION_MAPPING = {
     "attribution": to_attribution,
     "ort-package-list": to_ort_package_list_yml,
 }
+
+
+def make_zip_from_files(files):
+    """Return an in-memory zipfile given a list of (filename, file_path) pairs."""
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for filename, file_path in files:
+            with open(file_path, "rb") as f:
+                zip_file.writestr(filename, f.read())
+    zip_buffer.seek(0)
+    return zip_buffer
+
+
+def to_all_formats(project):
+    """Generate all output formats for a project and return a Django File-like zip."""
+    files = []
+    for output_function in FORMAT_TO_FUNCTION_MAPPING.values():
+        output_file = output_function(project)
+        filename = safe_filename(f"{project.name}_{output_file.name}")
+        files.append((filename, output_file))
+
+    zip_buffer = make_zip_from_files(files)
+
+    # Wrap it into a Django File-like object
+    zip_file = ContentFile(zip_buffer.getvalue())
+    zip_file.name = safe_filename(f"{project.name}_outputs.zip")
+
+    return zip_file
+
+
+def to_all_outputs(project):
+    """Return a Django File-like zip containing all existing project's output/ files."""
+    files = [(path.name, path) for path in project.output_path.glob("*")]
+    zip_buffer = make_zip_from_files(files)
+
+    # Wrap it into a Django File-like object
+    zip_file = ContentFile(zip_buffer.getvalue())
+    zip_file.name = safe_filename(f"{project.name}_outputs.zip")
+
+    return zip_file

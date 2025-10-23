@@ -27,11 +27,13 @@ import tempfile
 import textwrap
 from pathlib import Path
 from urllib.parse import urljoin
+from urllib.parse import urlparse
 
 from django.conf import settings
 
 import requests
 import saneyaml
+from git import GitCommandError
 from git import Repo
 from packageurl import PackageURL
 
@@ -40,6 +42,21 @@ from scancodeio import VERSION
 from scanpipe.pipes.output import JSONResultsGenerator
 
 logger = logging.getLogger(__name__)
+
+
+def url_exists(url, timeout=5):
+    """
+    Check if the given `url` is reachable by doing head request.
+    Return True if response status is 200, else False.
+    """
+    try:
+        response = requests.head(url, timeout=timeout)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as request_exception:
+        logger.debug(f"Error while checking {url}: {request_exception}")
+        return False
+
+    return response.status_code == requests.codes.ok
 
 
 def is_configured():
@@ -56,19 +73,17 @@ def is_configured():
     return False
 
 
+def create_federatedcode_working_dir():
+    """Create temporary working dir for cloning federatedcode repositories."""
+    return Path(tempfile.mkdtemp())
+
+
 def is_available():
     """Return True if the configured Git account is available."""
     if not is_configured():
         return False
 
-    try:
-        response = requests.head(settings.FEDERATEDCODE_GIT_ACCOUNT_URL, timeout=5)
-        response.raise_for_status()
-    except requests.exceptions.RequestException as request_exception:
-        logger.debug(f"FederatedCode is_available() error: {request_exception}")
-        return False
-
-    return response.status_code == requests.codes.ok
+    return url_exists(settings.FEDERATEDCODE_GIT_ACCOUNT_URL)
 
 
 def get_package_repository(project_purl, logger=None):
@@ -84,7 +99,7 @@ def get_package_repository(project_purl, logger=None):
     )
     package_git_repo_url = urljoin(git_account_url, f"{package_repo_name}.git")
 
-    return package_git_repo_url, package_scan_path
+    return package_repo_name, package_git_repo_url, package_scan_path
 
 
 def check_federatedcode_eligibility(project):
@@ -127,25 +142,124 @@ def check_federatedcode_eligibility(project):
         raise Exception("Missing version in Project PURL.")
 
 
-def clone_repository(repo_url, logger=None):
-    """Clone repository to local_path."""
-    local_dir = tempfile.mkdtemp()
+def check_federatedcode_configured_and_available(logger=None):
+    """
+    Check if the criteria for pushing the results to FederatedCode
+    is satisfied.
+
+    Criteria:
+        - FederatedCode is configured and available.
+    """
+    if not is_configured():
+        raise Exception("FederatedCode is not configured.")
+
+    if not is_available():
+        raise Exception("FederatedCode Git account is not available.")
+
+    if logger:
+        logger("Federatedcode repositories are configured and available.")
+
+
+def clone_repository(repo_url, clone_path, logger, shallow_clone=True):
+    """Clone repository to clone_path."""
+    logger(f"Cloning repository {repo_url}")
 
     authenticated_repo_url = repo_url.replace(
         "https://",
         f"https://{settings.FEDERATEDCODE_GIT_SERVICE_TOKEN}@",
     )
-    repo = Repo.clone_from(url=authenticated_repo_url, to_path=local_dir, depth=1)
+    clone_args = {
+        "url": authenticated_repo_url,
+        "to_path": clone_path,
+    }
+    if shallow_clone:
+        clone_args["depth"] = 1
 
+    repo = Repo.clone_from(**clone_args)
     repo.config_writer(config_level="repository").set_value(
         "user", "name", settings.FEDERATEDCODE_GIT_SERVICE_NAME
     ).release()
-
     repo.config_writer(config_level="repository").set_value(
         "user", "email", settings.FEDERATEDCODE_GIT_SERVICE_EMAIL
     ).release()
 
     return repo
+
+
+def get_github_org(url):
+    """Return org username from GitHub account URL."""
+    github_account_url = urlparse(url)
+    path_after_domain = github_account_url.path.lstrip("/")
+    org_name = path_after_domain.split("/")[0]
+    return org_name
+
+
+def create_repository(repo_name, clone_path, logger, shallow_clone=True):
+    """
+    Create and initialize remote FederatedCode `repo_name` repository,
+    perform local checkout, and return it.
+    """
+    account_url = f"{settings.FEDERATEDCODE_GIT_ACCOUNT_URL}/"
+    repo_url = urljoin(account_url, repo_name)
+
+    headers = {
+        "Authorization": f"token {settings.FEDERATEDCODE_GIT_SERVICE_TOKEN}",
+        "Accept": "application/vnd.github+json",
+    }
+
+    data = {
+        "name": repo_name,
+        "private": False,
+        "auto_init": True,
+        "CC-BY-4.0": "cc-by-4.0",
+    }
+    org_name = get_github_org(account_url)
+    create_repo_api = f"https://api.github.com/orgs/{org_name}/repos"
+    response = requests.post(
+        create_repo_api,
+        headers=headers,
+        json=data,
+        timeout=5,
+    )
+    response.raise_for_status()
+    return clone_repository(
+        repo_url=repo_url,
+        clone_path=clone_path,
+        shallow_clone=shallow_clone,
+        logger=logger,
+    )
+
+
+def get_or_create_repository(repo_name, working_path, logger, shallow_clone=True):
+    """
+    Return local checkout of the FederatedCode `repo_name` repository.
+
+    - If local checkout for `repo_name` already exists in `working_path`, return it.
+    - If no local checkout exists but the remote repository `repo_name` exists,
+        clone it locally and return the checkout.
+    - If the remote repository does not exist, create and initialize `repo_name`
+        repository, perform local checkout, and return it.
+    """
+    account_url = f"{settings.FEDERATEDCODE_GIT_ACCOUNT_URL}/"
+    repo_url = urljoin(account_url, repo_name)
+    clone_path = working_path / repo_name
+
+    if clone_path.exists():
+        return False, Repo(clone_path)
+    if url_exists(repo_url):
+        return False, clone_repository(
+            repo_url=repo_url,
+            clone_path=clone_path,
+            logger=logger,
+            shallow_clone=shallow_clone,
+        )
+
+    return True, create_repository(
+        repo_name=repo_name,
+        clone_path=clone_path,
+        logger=logger,
+        shallow_clone=shallow_clone,
+    )
 
 
 def add_scan_result(project, repo, package_scan_file, logger=None):
@@ -162,12 +276,6 @@ def add_scan_result(project, repo, package_scan_file, logger=None):
     return relative_scan_file_path
 
 
-def commit_changes(repo, files_to_commit, commit_message):
-    """Commit changes to remote repository."""
-    repo.index.add(files_to_commit)
-    repo.index.commit(textwrap.dedent(commit_message))
-
-
 def push_changes(repo, remote_name="origin", branch_name=""):
     """Push changes to remote repository."""
     if not branch_name:
@@ -176,28 +284,63 @@ def push_changes(repo, remote_name="origin", branch_name=""):
 
 
 def commit_and_push_changes(
-    repo, file_to_commit, purl, remote_name="origin", logger=None
+    repo,
+    files_to_commit,
+    commit_message=None,
+    purls=None,
+    remote_name="origin",
+    logger=None,
 ):
-    """Commit and push changes to remote repository."""
-    author_name = settings.FEDERATEDCODE_GIT_SERVICE_NAME
-    author_email = settings.FEDERATEDCODE_GIT_SERVICE_EMAIL
-
-    change_type = "Add" if file_to_commit in repo.untracked_files else "Update"
-    commit_message = f"""\
-    {change_type} scan result for {purl}
-
-    Tool: pkg:github/aboutcode-org/scancode.io@v{VERSION}
-    Reference: https://{settings.ALLOWED_HOSTS[0]}/
-
-    Signed-off-by: {author_name} <{author_email}>
     """
-    files_to_commit = [file_to_commit]
-    commit_changes(
-        repo=repo, files_to_commit=files_to_commit, commit_message=commit_message
-    )
-    push_changes(
-        repo=repo,
-        remote_name=remote_name,
+    Commit and push changes to remote repository.
+    Returns True if changes are successfully pushed, False otherwise.
+    """
+    try:
+        commit_changes(repo, files_to_commit, commit_message, purls, logger)
+        push_changes(repo, remote_name)
+    except GitCommandError as e:
+        if "nothing to commit" in e.stdout.lower():
+            logger("Nothing to commit, working tree clean.")
+        else:
+            logger(f"Error while committing change: {e}")
+        return False
+    return True
+
+
+def commit_changes(
+    repo,
+    files_to_commit,
+    commit_message=None,
+    purls=None,
+    mine_type="packageURL",
+    tool_name="pkg:github/aboutcode-org/scancode.io",
+    tool_version=VERSION,
+    logger=None,
+):
+    """Commit changes in files to a remote repository."""
+    if not files_to_commit:
+        return
+
+    if not commit_message:
+        author_name = settings.FEDERATEDCODE_GIT_SERVICE_NAME
+        author_email = settings.FEDERATEDCODE_GIT_SERVICE_EMAIL
+
+        purls = "\n".join(purls)
+        commit_message = f"""\
+        Add {mine_type} results for:
+        {purls}
+
+        Tool: {tool_name}@v{tool_version}
+        Reference: https://{settings.ALLOWED_HOSTS[0]}
+
+        Signed-off-by: {author_name} <{author_email}>
+        """
+
+    repo.index.add(files_to_commit)
+    repo.git.commit(
+        m=textwrap.dedent(commit_message),
+        allow_empty=False,
+        no_verify=True,
     )
 
 

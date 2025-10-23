@@ -179,4 +179,62 @@
       pipelineSelect.addEventListener("change", handlePipelineChange);
     });
   </script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      function detectPipelineFromValue(value) {
+        value = value.trim().toLowerCase();
+
+        if (!value) return "";
+
+        // Handle Docker reference
+        if (value.startsWith("docker:")) return "analyze_docker_image";
+
+        // Handle Package URL
+        if (value.startsWith("pkg:")) return "scan_single_package";
+
+        // Handle SBOM file formats
+        if (
+          value.endsWith(".spdx") ||
+          value.endsWith(".spdx.json") ||
+          value.endsWith(".spdx.yml") ||
+          value.endsWith("bom.json") ||
+          value.endsWith(".cdx.json") ||
+          value.endsWith(".cyclonedx.json") ||
+          value.endsWith("bom.xml") ||
+          value.endsWith(".cdx.xml") ||
+          value.endsWith(".cyclonedx.xml")
+        ) return "load_sbom";
+
+        // No match
+        return "";
+      }
+
+      const textarea = document.getElementById("id_input_urls");
+      const pipelineSelect = document.getElementById("id_pipeline");
+      const fileInput = document.getElementById("id_input_files");
+
+      // Handle textarea input
+      textarea.addEventListener("input", () => {
+        const value = textarea.value.trim();
+        const pipeline = detectPipelineFromValue(value);
+        pipelineSelect.value = pipeline;
+      });
+
+      // Handle file uploads
+      fileInput.addEventListener("change", () => {
+        const files = Array.from(fileInput.files);
+
+        // Detect based on first file, multiple input files not supported.
+        if (files.length === 1) {
+          const firstFile = files[0].name.toLowerCase();
+          const pipeline = detectPipelineFromValue(firstFile);
+          pipelineSelect.value = pipeline;
+        } else {
+          pipelineSelect.value = "";
+        }
+      });
+
+    });
+  </script>
 {% endblock %}

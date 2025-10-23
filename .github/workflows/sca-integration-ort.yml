@@ -13,13 +13,14 @@ on:
   schedule:
     # Run once a week (every 7 days) at 00:00 UTC on Sunday
     - cron: "0 0 * * 0"
-  pull_request:
-  push:
-    branches:
-      - main
 
 permissions:
   contents: read
+
+env:
+  EXPECTED_PACKAGE: 5
+  EXPECTED_VULNERABLE_PACKAGE: 1
+  EXPECTED_DEPENDENCY: 1
 
 jobs:
   generate-and-load-sbom:
@@ -47,4 +48,8 @@ jobs:
       - name: Verify SBOM Analysis Results in ScanCode.io
         shell: bash
         run: |
-          scanpipe shell --command "from scanpipe.models import DiscoveredPackage, DiscoveredDependency; package_manager = DiscoveredPackage.objects; assert package_manager.count() >= 5; assert package_manager.vulnerable().count() >= 1; assert DiscoveredDependency.objects.count() >= 1"
+          scanpipe verify-project \
+            --project scancode-action \
+            --packages ${{ env.EXPECTED_PACKAGE }} \
+            --vulnerable-packages ${{ env.EXPECTED_VULNERABLE_PACKAGE }} \
+            --dependencies ${{ env.EXPECTED_DEPENDENCY }}

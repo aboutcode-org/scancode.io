@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scancodeio"
-version = "35.3.0"
+version = "35.4.0"
 description = "Automate software composition analysis pipelines"
 readme = "README.rst"
 requires-python = ">=3.10,<3.14"
@@ -32,11 +32,12 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Topic :: Utilities"
 ]
+
 dependencies = [
   "importlib-metadata==8.7.0",
   "setuptools==80.9.0",
   # Django related
-  "Django==5.1.11",
+  "Django==5.1.13",
   "django-environ==0.12.0",
   "django-crispy-forms==2.4",
   "crispy-bootstrap3==2024.1",
@@ -45,11 +46,11 @@ dependencies = [
   "django-taggit==6.1.0",
   "django-htmx==1.24.0",
   # Database
-  "psycopg[binary]==3.2.9",
+  "psycopg[binary]==3.2.10",
   # wait_for_database Django management command
   "django-probes==1.7.0",
   # Task queue
-  "rq==2.5.0",
+  "rq==2.6.0",
   "django-rq==3.1",
   "redis==6.4.0",
   # WSGI server
@@ -72,23 +73,23 @@ dependencies = [
   "go-inspector==0.5.0",
   "rust-inspector==0.1.0",
   "binary-inspector==0.1.2",
-  "python-inspector==0.14.3",
+  "python-inspector==0.14.4",
   "source-inspector==0.7.0; sys_platform != 'darwin' and platform_machine != 'arm64'",
   "aboutcode-toolkit==11.1.1",
   # Utilities
-  "XlsxWriter==3.2.5",
+  "XlsxWriter==3.2.9",
   "openpyxl==3.1.5",
-  "requests==2.32.4",
+  "requests==2.32.5",
   "GitPython==3.1.45",
   # Profiling
   "pyinstrument==5.1.1",
   # CycloneDX
-  "cyclonedx-python-lib==11.0.0",
+  "cyclonedx-python-lib==11.2.0",
   "jsonschema==4.25.1",
   # MatchCode-toolkit
   "matchcode-toolkit==7.2.2",
   # Univers
-  "univers==31.0.0",
+  "univers==31.1.0",
   # Markdown
   "markdown-it-py==4.0.0",
   "bleach==6.2.0",
@@ -101,13 +102,14 @@ dependencies = [
   "scipy==1.15.3",
   # ScoreCode
   "scorecode==0.0.4",
-
+  # Workaround issue https://github.com/aboutcode-org/scancode.io/issues/1885
+  "click==8.2.1"
 ]
 
 [project.optional-dependencies]
 dev = [
   # Validation
-  "ruff==0.12.9",
+  "ruff==0.14.0",
   "doc8==2.0.0",
   # Debug
   "django-debug-toolbar==6.0.0",
@@ -119,6 +121,9 @@ dev = [
 ]
 android_analysis = [
   "android_inspector==0.0.1"
+]
+mining = [
+  "minecode_pipelines==0.0.1b8"
 ]
 
 [project.urls]

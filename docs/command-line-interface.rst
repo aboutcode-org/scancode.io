@@ -419,10 +419,11 @@ Displays status information about the ``PROJECT`` project.
 
 .. _cli_output:
 
-`$ scanpipe output --project PROJECT --format {json,csv,xlsx,spdx,cyclonedx,attribution}`
------------------------------------------------------------------------------------------
+`$ scanpipe output --project PROJECT --format {json,csv,xlsx,spdx,cyclonedx,attribution,...}`
+---------------------------------------------------------------------------------------------
 
-Outputs the ``PROJECT`` results as JSON, XLSX, CSV, SPDX, CycloneDX, and Attribution.
+Outputs the ``PROJECT`` results as JSON, XLSX, CSV, SPDX, CycloneDX,
+ORT package-list.yml, and Attribution.
 The output files are created in the ``PROJECT`` :guilabel:`output/` directory.
 
 Multiple formats can be provided at once::
@@ -651,3 +652,35 @@ instead of the default JSON output.
     $ run scan_codebase codebase/ --format cyclonedx > bom.json
 
 See the :ref:`cli_output` for more information about supported output formats.
+
+`$ scanpipe verify-project --project PROJECT`
+---------------------------------------------
+
+Verifies the analysis results of a project against expected package and dependency
+counts.
+This command is designed to ensure that a project’s scan results meet specific
+expectations — for example, that a minimum number of packages or dependencies were
+discovered, and that no unexpected vulnerabilities were introduced.
+
+Optional arguments:
+
+- ``--packages`` Minimum number of discovered packages expected.
+
+- ``--vulnerable-packages`` Minimum number of vulnerable packages expected.
+
+- ``--dependencies`` Minimum number of discovered dependencies expected.
+
+- ``--vulnerable-dependencies`` Minimum number of vulnerable dependencies expected.
+
+If any of these expectations are not met, the command exits with a non-zero status
+and prints a summary of all issues found.
+
+Example usage:
+
+.. code-block:: bash
+
+    $ scanpipe verify-project --project my_project --packages 100 --dependencies 50
+
+.. tip::
+    This command is particularly useful for **CI/CD pipelines** that need to validate
+    SBOM or vulnerability scan results against known baselines.
