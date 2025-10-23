@@ -463,6 +463,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 
+// HTMX
+
+document.body.addEventListener("htmx:afterSwap", function(evt) {
+  // Call the following functions after a HTMX swap is done.
+  setupTabs();
+  enableCopyToClipboard(".copy-to-clipboard");
+});
+
 // Toasts (requires bulma-toast.js)
 
 function displayPipelineStatusToast(run_status, pipeline_name, project_url) {

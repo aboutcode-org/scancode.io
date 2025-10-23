@@ -3,16 +3,6 @@
 
 {% block title %}ScanCode.io: Projects{% endblock %}
 
-{% block extrahead %}
-  <style>
-    ul#id_is_archived {display: inline-flex;}
-    ul#id_is_archived li {margin-right: 1rem;}
-    ul#id_is_archived li a {color: #7a7a7a;}
-    ul#id_is_archived li a:hover {text-decoration: underline;}
-    ul#id_is_archived li a.is-active {color: var(--bulma-text);}
-  </style>
-{% endblock %}
-
 {% block content %}
   <div class="container is-max-widescreen">
     {% include 'scanpipe/includes/navbar_header.html' %}
@@ -20,7 +10,7 @@
 
     <section class="mx-5 mb-5">
       <div class="is-flex is-justify-content-space-between mb-2">
-        <div>
+        <div id="project-list-header">
           {% include 'scanpipe/includes/breadcrumb.html' %}
           {{ filter.form.is_archived }}
           {% if filter.is_active %}
