@@ -2,6 +2,11 @@
 {% load static humanize %}
 {% block title %}ScanCode.io: {{ project.name }} - Resources tree{% endblock %}
 
+{% block extrahead %}
+  <script src="{% static 'ace-1.42.0.min.js' %}" crossorigin="anonymous"></script>
+  <script src="{% static 'ace-1.42.0-ext-searchbox.min.js' %}" crossorigin="anonymous"></script>
+{% endblock %}
+
 {% block content %}
   <div id="content-header" class="container is-max-widescreen mb-3">
     {% include 'scanpipe/includes/navbar_header.html' %}

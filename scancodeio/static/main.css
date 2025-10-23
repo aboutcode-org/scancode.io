@@ -530,8 +530,6 @@ body.full-screen #resource-viewer .message-header {
   flex: 1;
   min-width: 0;
   transition: opacity 0.2s ease;
-  display: flex;
-  flex-direction: column;
   height: 100%;
 }
 #resource-tree-container .right-pane .table-scroll-area {
