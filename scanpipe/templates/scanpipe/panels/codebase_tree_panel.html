@@ -27,8 +27,8 @@
           class="tree-node-file is-flex is-align-items-center pl-5 is-clickable is-file"
           data-file
           data-path="{{ node.path }}"
-          hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ node.path }}"
-          hx-target="#right-pane"
+          hx-get="{% url 'resource_detail' project.slug node.path %}"
+          hx-target="#right-pane-content"
           hx-push-url="{% url 'codebase_resource_tree' project.slug %}?path={{ node.path }}">
           <span class="icon is-small mr-2">
             <i class="far fa-file"></i>
