@@ -58,6 +58,7 @@ from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
 from django.views.generic.edit import UpdateView
 
+from django_htmx.http import HttpResponseClientRedirect
 import saneyaml
 import xlsxwriter
 from django_filters.views import FilterView
@@ -200,14 +201,6 @@ class PrefetchRelatedViewMixin:
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(*self.prefetch_related)
-
-
-class HTTPResponseHXRedirect(HttpResponseRedirect):
-    status_code = 200
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self["HX-Redirect"] = self["Location"]
 
 
 def render_as_yaml(value):
@@ -978,7 +971,7 @@ class ProjectSettingsWebhookCreateView(
     def form_valid(self, form):
         form.save(project=self.object)
         messages.success(self.request, "Webhook added to the project.")
-        return HTTPResponseHXRedirect(self.get_success_url())
+        return HttpResponseClientRedirect(self.get_success_url())
 
 
 class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
@@ -1480,7 +1473,7 @@ class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, UpdateView):
 
     def form_valid(self, form):
         super().form_valid(form)
-        return HTTPResponseHXRedirect(self.get_success_url())
+        return HttpResponseClientRedirect(self.get_success_url())
 
 
 @conditional_login_required
