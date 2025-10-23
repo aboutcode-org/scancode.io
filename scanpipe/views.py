@@ -58,10 +58,10 @@ from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
 from django.views.generic.edit import UpdateView
 
-from django_htmx.http import HttpResponseClientRedirect
 import saneyaml
 import xlsxwriter
 from django_filters.views import FilterView
+from django_htmx.http import HttpResponseClientRedirect
 from licensedcode.spans import Span
 from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
 
