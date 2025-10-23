@@ -2,7 +2,7 @@
   {% for node in children %}
     <li>
       {% if node.is_dir %}
-        <div class="tree-node is-flex is-align-items-center px-1" data-folder data-path="{{ node.path }}"{% if node.has_children %} data-target="{{ node.path|slugify }}" data-url="{% url 'codebase_resource_tree' slug=project.slug %}?path={{ node.path }}"{% endif %}>
+        <div class="tree-node is-flex is-align-items-center px-1" data-folder data-path="{{ node.path }}"{% if node.has_children %} data-target="{{ node.path|slugify }}" data-url="{% url 'project_resource_tree' slug=project.slug %}?path={{ node.path }}"{% endif %}>
           <span class="icon is-small chevron mr-1{% if not node.has_children %} is-invisible{% endif %} is-clickable is-flex is-align-items-center" data-chevron>
             <i class="fas fa-chevron-right"></i>
           </span>
@@ -10,9 +10,9 @@
             class="is-flex is-align-items-center folder-meta is-clickable"
             data-folder-click
             data-path="{{ node.path }}"
-            hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ node.path }}"
+            hx-get="{% url 'project_resource_tree_table' project.slug %}?path={{ node.path }}"
             hx-target="#right-pane"
-            hx-push-url="{% url 'codebase_resource_tree' project.slug %}?path={{ node.path }}">
+            hx-push-url="{% url 'project_resource_tree' project.slug %}?path={{ node.path }}">
             <span class="icon is-small mr-2">
               <i class="fas fa-folder"></i>
             </span>
@@ -29,7 +29,7 @@
           data-path="{{ node.path }}"
           hx-get="{% url 'resource_detail' project.slug node.path %}"
           hx-target="#right-pane-content"
-          hx-push-url="{% url 'codebase_resource_tree' project.slug %}?path={{ node.path }}">
+          hx-push-url="{% url 'project_resource_tree' project.slug %}?path={{ node.path }}">
           <span class="icon is-small mr-2">
             <i class="far fa-file"></i>
           </span>

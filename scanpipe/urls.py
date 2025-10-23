@@ -132,14 +132,14 @@ urlpatterns = [
         name="project_codebase",
     ),
     path(
-        "project/<slug:slug>/codebase_tree/",
-        views.CodebaseResourceTreeView.as_view(),
-        name="codebase_resource_tree",
+        "project/<slug:slug>/resource_tree/",
+        views.ProjectResourceTreeView.as_view(),
+        name="project_resource_tree",
     ),
     path(
-        "project/<slug:slug>/resource_table/",
-        views.CodebaseResourceTableView.as_view(),
-        name="codebase_resource_table",
+        "project/<slug:slug>/resource_tree_table/",
+        views.ProjectResourceTreeTableView.as_view(),
+        name="project_resource_tree_table",
     ),
     path(
         "run/<uuid:uuid>/",

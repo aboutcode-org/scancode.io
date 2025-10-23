@@ -21,19 +21,19 @@
     <div class="resizable-container is-flex">
       <div id="left-pane" class="left-pane px-2">
         <div id="resource-tree">
-          {% include "scanpipe/panels/codebase_tree_panel.html" with children=children path=path %}
+          {% include "scanpipe/tree/resource_left_pane_tree.html" with children=children path=path %}
         </div>
       </div>
       <div id="resizer" class="resizer"></div>
       <div id="right-pane" class="right-pane px-3">
         {% if path %}
           <div
-            hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ path }}"
+            hx-get="{% url 'project_resource_tree_table' project.slug %}?path={{ path }}"
             hx-trigger="load"
             hx-target="this">
           </div>
         {% else %}
-          {% include "scanpipe/panels/resource_table_panel.html" %}
+          {% include "scanpipe/tree/resource_right_pane_table.html" %}
         {% endif %}
       </div>
     </div>

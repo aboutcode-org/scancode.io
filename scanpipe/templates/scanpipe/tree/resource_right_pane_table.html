@@ -10,12 +10,12 @@
           {% endif %}
           {% if not forloop.last %}
             <a
-              href="{% url 'codebase_resource_tree' project.slug %}?path={{ subpath }}"
+              href="{% url 'project_resource_tree' project.slug %}?path={{ subpath }}"
               class="expand-in-tree"
               data-path="{{ subpath }}"
-              hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ subpath }}"
+              hx-get="{% url 'project_resource_tree_table' project.slug %}?path={{ subpath }}"
               hx-target="#right-pane"
-              hx-push-url="{% url 'codebase_resource_tree' project.slug %}?path={{ subpath }}"
+              hx-push-url="{% url 'project_resource_tree' project.slug %}?path={{ subpath }}"
             {# WARNING: spaceless is not working properly so keep the label without spaces #}
             >{{ segment }}</a>
           {% else %}
@@ -48,9 +48,9 @@
             <tr
               class="expand-in-tree is-clickable"
               data-path="{{ parent_path }}"
-              hx-get="{% url 'codebase_resource_table' project.slug %}{% if parent_path %}?path={{ parent_path }}{% endif %}"
+              hx-get="{% url 'project_resource_tree_table' project.slug %}{% if parent_path %}?path={{ parent_path }}{% endif %}"
               hx-target="#right-pane"
-              hx-push-url="{% url 'codebase_resource_tree' project.slug %}{% if parent_path %}?path={{ parent_path }}{% endif %}">
+              hx-push-url="{% url 'project_resource_tree' project.slug %}{% if parent_path %}?path={{ parent_path }}{% endif %}">
               <td colspan="5">
                 <div class="is-flex is-align-items-center">
                   <span class="icon is-small mr-2">
@@ -75,11 +75,11 @@
                   {% if resource.is_dir %}
                     <a
                       class="expand-in-tree"
-                      href="{% url 'codebase_resource_tree' project.slug %}?path={{ resource.path }}"
+                      href="{% url 'project_resource_tree' project.slug %}?path={{ resource.path }}"
                       data-path="{{ resource.path }}"
-                      hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ resource.path }}"
+                      hx-get="{% url 'project_resource_tree_table' project.slug %}?path={{ resource.path }}"
                       hx-target="#right-pane"
-                      hx-push-url="{% url 'codebase_resource_tree' project.slug %}?path={{ resource.path }}">
+                      hx-push-url="{% url 'project_resource_tree' project.slug %}?path={{ resource.path }}">
                       {{ resource.name }}
                     </a>
                   {% else %}
@@ -87,7 +87,7 @@
                       href="{% url 'resource_detail' project.slug resource.path %}"
                       hx-get="{% url 'resource_detail' project.slug resource.path %}"
                       hx-target="#right-pane-content"
-                      hx-push-url="{% url 'codebase_resource_tree' project.slug %}?path={{ resource.path }}">
+                      hx-push-url="{% url 'project_resource_tree' project.slug %}?path={{ resource.path }}">
                       {{ resource.name }}
                     </a>
                   {% endif %}
@@ -118,18 +118,18 @@
         {% if page_obj.has_previous %}
           <a
             class="pagination-previous"
-            hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ path }}&page={{ page_obj.previous_page_number }}"
+            hx-get="{% url 'project_resource_tree_table' project.slug %}?path={{ path }}&page={{ page_obj.previous_page_number }}"
             hx-target="#right-pane"
-            hx-push-url="{% url 'codebase_resource_tree' project.slug %}?path={{ path }}&page={{ page_obj.previous_page_number }}">
+            hx-push-url="{% url 'project_resource_tree' project.slug %}?path={{ path }}&page={{ page_obj.previous_page_number }}">
             Previous
           </a>
         {% endif %}
         {% if page_obj.has_next %}
           <a
             class="pagination-next"
-            hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ path }}&page={{ page_obj.next_page_number }}"
+            hx-get="{% url 'project_resource_tree_table' project.slug %}?path={{ path }}&page={{ page_obj.next_page_number }}"
             hx-target="#right-pane"
-            hx-push-url="{% url 'codebase_resource_tree' project.slug %}?path={{ path }}&page={{ page_obj.next_page_number }}">
+            hx-push-url="{% url 'project_resource_tree' project.slug %}?path={{ path }}&page={{ page_obj.next_page_number }}">
             Next page
           </a>
         {% endif %}
