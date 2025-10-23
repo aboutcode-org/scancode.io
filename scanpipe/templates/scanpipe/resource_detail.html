@@ -13,9 +13,11 @@
     {% include 'scanpipe/includes/navbar_header.html' %}
     <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
     {% include 'scanpipe/includes/breadcrumb_detail_view.html' with template_title="scanpipe/includes/resource_path_links.html" url_name="project_resources" %}
-    {% block partial-content %}
-      {% include 'scanpipe/tabset/tabset.html' %}
-    {% endblock %}
+    <div class="mx-5">
+      {% block partial-content %}
+        {% include 'scanpipe/tabset/tabset.html' %}
+      {% endblock %}
+    </div>
   </div>
 {% endblock %}
 
