@@ -561,23 +561,21 @@ class ExportJSONMixin:
         return response
 
 
-class FormAjaxMixin:
-    def is_xhr(self):
-        return self.request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
-
+class HTMXFormMixin:
     def form_valid(self, form):
         response = super().form_valid(form)
 
-        if self.is_xhr():
-            return JsonResponse({"redirect_url": self.get_success_url()}, status=201)
+        if self.request.htmx:
+            return HttpResponseClientRedirect(self.get_success_url())
 
         return response
 
     def form_invalid(self, form):
         response = super().form_invalid(form)
 
-        if self.is_xhr():
-            return JsonResponse({"errors": str(form.errors)}, status=400)
+        if self.request.htmx:
+            # Re-render the form with errors
+            return self.render_to_response(self.get_context_data(form=form))
 
         return response
 
@@ -697,7 +695,7 @@ class ProjectListView(
         )
 
 
-class ProjectCreateView(ConditionalLoginRequired, FormAjaxMixin, generic.CreateView):
+class ProjectCreateView(ConditionalLoginRequired, generic.CreateView):
     model = Project
     form_class = ProjectForm
     template_name = "scanpipe/project_form.html"
@@ -715,6 +713,23 @@ class ProjectCreateView(ConditionalLoginRequired, FormAjaxMixin, generic.CreateV
         context["pipelines"] = pipelines
         context["pipelines_available_groups"] = pipelines_available_groups
         return context
+
+    @property
+    def is_xhr(self):
+        # The request is XMLHttpRequest when using the input upload progress
+        return self.request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if self.is_xhr:
+            return JsonResponse({"redirect_url": self.get_success_url()}, status=201)
+        return response
+
+    def form_invalid(self, form):
+        response = super().form_invalid(form)
+        if self.is_xhr:
+            return JsonResponse({"errors": str(form.errors)}, status=400)
+        return response
 
 
 class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
@@ -958,7 +973,7 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
 
 
 class ProjectSettingsWebhookCreateView(
-    ConditionalLoginRequired, FormAjaxMixin, UpdateView
+    ConditionalLoginRequired, HTMXFormMixin, UpdateView
 ):
     model = Project
     form_class = WebhookSubscriptionForm
@@ -1466,14 +1481,10 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
         )
 
 
-class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, UpdateView):
+class ProjectCloneView(ConditionalLoginRequired, HTMXFormMixin, UpdateView):
     model = Project
     form_class = ProjectCloneForm
     template_name = "scanpipe/forms/project_clone_form.html"
-
-    def form_valid(self, form):
-        super().form_valid(form)
-        return HttpResponseClientRedirect(self.get_success_url())
 
 
 @conditional_login_required
