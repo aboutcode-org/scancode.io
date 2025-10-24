@@ -15,6 +15,35 @@
 <div id="resource-tree-container" class="container is-fluid p-0">
   <div class="resizable-container is-flex">
     <div id="left-pane" class="left-pane px-2">
+      <div class="mb-3 search-container">
+        <div class="field has-addons">
+          <div class="control has-icons-left is-expanded">
+            <input 
+              id="file-search-input" 
+              class="input is-small" 
+              type="text" 
+              placeholder="Go to file..."
+              autocomplete="off"
+              hx-get="{% url 'codebase_resource_search' project.slug %}"
+              hx-target="#search-results"
+              hx-trigger="input changed"
+              hx-include="this"
+              name="search"
+            >
+            <span class="icon is-small is-left">
+              <i class="fas fa-search"></i>
+            </span>
+          </div>
+          <div class="control">
+            <button id="clear-search" class="button is-small" type="button">
+              <span class="icon is-small">
+                <i class="fas fa-times"></i>
+              </span>
+            </button>
+          </div>
+        </div>
+        <div id="search-results" class="search-dropdown is-hidden"></div>
+      </div>
       <div id="resource-tree">
         {% include "scanpipe/panels/codebase_tree_panel.html" with children=children path=path %}
       </div>
@@ -133,6 +162,72 @@
           isResizing = false;
           document.body.style.cursor = '';
           document.body.style.userSelect = '';
+        }
+      });
+      
+      const searchInput = document.getElementById('file-search-input');
+      const searchResults = document.getElementById('search-results');
+      const clearSearchBtn = document.getElementById('clear-search');
+      
+      function toggleSearchResults(show = null) {
+        const shouldShow = show !== null ? show : searchInput.value.trim();
+        searchResults.classList.toggle('is-hidden', !shouldShow);
+      }
+      
+      function clearSearch() {
+        searchInput.value = '';
+        toggleSearchResults(false);
+        searchInput.focus();
+      }
+      
+      function handleSearchResultClick(searchResultItem) {
+        const path = searchResultItem.dataset.path;
+        
+        toggleSearchResults(false);
+        searchInput.blur();
+        
+        fetch(`{% url 'codebase_resource_table' project.slug %}?path=${encodeURIComponent(path)}`)
+          .then(response => response.text())
+          .then(html => {
+            document.getElementById('right-pane').innerHTML = html;
+            htmx.process(document.getElementById('right-pane'));
+            if (typeof enableCopyToClipboard === 'function') {
+              enableCopyToClipboard('.copy-to-clipboard');
+            }
+            const newUrl = `{% url 'codebase_resource_tree' project.slug %}?path=${encodeURIComponent(path)}`;
+            window.history.pushState(null, '', newUrl);
+            expandToPath(path);
+          });
+      }
+      
+      searchInput.addEventListener('focus', () => toggleSearchResults());
+      searchInput.addEventListener('input', () => toggleSearchResults());
+      
+      clearSearchBtn.addEventListener('click', clearSearch);
+      
+      searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          toggleSearchResults(false);
+          searchInput.blur();
+        }
+      });
+      
+      document.addEventListener('click', function(e) {
+        const searchResultItem = e.target.closest('.dropdown-item');
+        if (searchResultItem) {
+          e.preventDefault();
+          handleSearchResultClick(searchResultItem);
+          return;
+        }
+        
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+          toggleSearchResults(false);
+        }
+      });
+      
+      document.body.addEventListener('htmx:afterSettle', function(evt) {
+        if (evt.target === searchResults) {
+          toggleSearchResults();
         }
       });
     });
