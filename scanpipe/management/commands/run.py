@@ -28,6 +28,7 @@ from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 from django.utils.crypto import get_random_string
 
+from scanpipe.management.commands import extract_tag_from_input_file
 from scanpipe.pipes.fetch import SCHEME_TO_FETCHER_MAPPING
 
 
@@ -94,8 +95,10 @@ class Command(BaseCommand):
         for location in input_location.split(","):
             if location.startswith(tuple(SCHEME_TO_FETCHER_MAPPING.keys())):
                 input_options["input_urls"].append(location)
+
             else:
-                input_path = Path(location)
+                cleaned_location, _ = extract_tag_from_input_file(location)
+                input_path = Path(cleaned_location)
                 if not input_path.exists():
                     raise CommandError(f"{location} not found.")
                 if input_path.is_file():

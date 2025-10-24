@@ -1461,6 +1461,19 @@ class ScanPipeManagementCommandTest(TestCase):
                 stdout=out,
             )
 
+    def test_scanpipe_management_command_extract_tag_from_input_file(self):
+        extract_tag = commands.extract_tag_from_input_file
+        expected = ("file.ext", "")
+        self.assertEqual(expected, extract_tag("file.ext"))
+        expected = ("file.ext", "")
+        self.assertEqual(expected, extract_tag("file.ext:"))
+        expected = ("file.ext", "tag")
+        self.assertEqual(expected, extract_tag("file.ext:tag"))
+        expected = ("file.ext", "tag1:tag2")
+        self.assertEqual(expected, extract_tag("file.ext:tag1:tag2"))
+        expected = ("file.ext", "tag1,tag2")
+        self.assertEqual(expected, extract_tag("file.ext:tag1,tag2"))
+
 
 class ScanPipeManagementCommandMixinTest(TestCase):
     class CreateProjectCommand(
