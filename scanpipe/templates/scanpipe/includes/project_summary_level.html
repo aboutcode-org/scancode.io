@@ -70,7 +70,7 @@
             {{ project.resource_count|intcomma }}
           </a>
           {% if project.resource_count > 1 %}
-            <a href="{% url 'codebase_resource_tree' project.slug %}" class="ml-2">
+            <a href="{% url 'project_resource_tree' project.slug %}" class="ml-2">
               <span class="icon">
                 <i class="fa-solid fa-folder-tree is-size-6"></i>
               </span>

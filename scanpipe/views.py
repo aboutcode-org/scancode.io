@@ -2708,7 +2708,7 @@ class LicenseDetailsView(
 
 class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
     model = Project
-    template_name = "scanpipe/project_dependency_tree.html"
+    template_name = "scanpipe/dependency_tree.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2768,7 +2768,7 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
         return node
 
 
-class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
+class ProjectResourceTreeView(ConditionalLoginRequired, generic.DetailView):
     template_name = "scanpipe/resource_tree.html"
 
     def get(self, request, *args, **kwargs):
@@ -2791,17 +2791,19 @@ class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
         }
 
         if request.GET.get("tree_panel") == "true":
-            return render(request, "scanpipe/panels/codebase_tree_panel.html", context)
+            return render(
+                request, "scanpipe/tree/resource_left_pane_tree.html", context
+            )
         return render(request, self.template_name, context)
 
 
-class CodebaseResourceTableView(
+class ProjectResourceTreeTableView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
     generic.ListView,
 ):
     model = CodebaseResource
-    template_name = "scanpipe/panels/resource_table_panel.html"
+    template_name = "scanpipe/tree/resource_right_pane_table.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("resource", 100)
     context_object_name = "resources"
 
