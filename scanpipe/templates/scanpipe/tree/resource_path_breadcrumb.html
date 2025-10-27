@@ -1,4 +1,7 @@
 <nav class="breadcrumb is-flex is-align-items-center" aria-label="breadcrumbs">
+  <button id="expand-left-pane" class="button is-light px-2 mr-2 is-hidden">
+    <i class="fa-solid fa-square-caret-right"></i>
+  </button>
   <ul>
     {% for subpath, segment in path_segments %}
       {% if not forloop.last %}
