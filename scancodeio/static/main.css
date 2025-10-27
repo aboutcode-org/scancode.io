@@ -69,6 +69,9 @@
   --bulma-title-size: 1.5rem;
   color: var(--bulma-title-color);
 }
+.breadcrumb {
+  --bulma-breadcrumb-item-separator-color: var(--bulma-text);
+}
 .heading {
   font-size: var(--bulma-size-medium);
   font-weight: var(--bulma-weight-semibold);
