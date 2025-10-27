@@ -4,8 +4,8 @@
 {% block title %}ScanCode.io: {{ project.name }} - {{ object.name }}{% endblock %}
 
 {% block extrahead %}
-  <script src="{% static 'ace-1.42.0.min.js' %}" crossorigin="anonymous"></script>
-  <script src="{% static 'ace-1.42.0-ext-searchbox.min.js' %}" crossorigin="anonymous"></script>
+  <script src="{% static 'ace-1.43.3.min.js' %}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="{% static 'ace-1.43.3-ext-searchbox.min.js' %}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 {% endblock %}
 
 {% block content %}
@@ -24,6 +24,7 @@
 {% block scripts %}
   {{ detected_values|json_script:"detected_values" }}
   <script>
+  {
     let editor = ace.edit("editor", {
       mode: "ace/mode/text",
       autoScrollEditorIntoView: true,
@@ -131,5 +132,6 @@
       let is_full_screen = body.classList.toggle("full-screen");
       editor.resize()
     });
+  }
   </script>
 {% endblock %}
