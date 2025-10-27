@@ -67,6 +67,7 @@ class DeployToDevelop(Pipeline):
             cls.flag_whitespace_files,
             cls.flag_ignored_resources,
             cls.load_ecosystem_config,
+            cls.map_dependency_maven_to_class,
             cls.map_ruby,
             cls.map_about_files,
             cls.map_checksum,
@@ -192,6 +193,19 @@ class DeployToDevelop(Pipeline):
         d2d.map_jar_to_jvm_source(
             project=self.project, jvm_lang=jvm.JavaLanguage, logger=self.log
         )
+
+
+
+
+    @optional_step("Java")
+    def map_dependency_maven_to_class(self):
+        """Map dependency packages in pom.xml to .class files in "to/"."""
+        d2d.map_dependency_maven_to_class(
+            project=self.project, jvm_lang=jvm.JavaLanguage, logger=self.log
+        )
+
+
+
 
     @optional_step("Scala")
     def find_scala_packages(self):

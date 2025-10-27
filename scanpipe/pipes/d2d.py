@@ -125,7 +125,7 @@ def get_from_files_for_scanning(resources):
     side, but are not mapped using ABOUT files.
     """
     mapped_from_files = resources.from_codebase().files().has_relation()
-    return mapped_from_files.filter(~Q(status=flag.ABOUT_MAPPED))
+    return mapped_from_files.filter(~Q(status=flag.ABOUT_MAPPED)).filter(~Q(extra_data={"is_virtual": True}))
 
 
 def _map_checksum_resource(to_resource, from_resources, checksum_field):
@@ -365,6 +365,102 @@ def map_jar_to_jvm_source(project, jvm_lang: jvm.JvmLanguage, logger=None):
             jar_resource, to_resources, from_resources, jvm_lang=jvm_lang
         )
 
+
+
+def map_dependency_maven_to_class(project, jvm_lang: jvm.JvmLanguage, logger=None):
+    import os
+    import requests
+    from scanpipe.pipes import fetch
+    import xml.etree.ElementTree as ET
+    from scanpipe.pipes import scancode
+
+    from_resources = project.codebaseresources.files().from_codebase()
+    pom_paths = from_resources.filter(name="pom.xml")
+    for resource in pom_paths:
+        with open(resource.location, "rb") as pom_file:
+            tree = ET.parse(pom_file)
+            root = tree.getroot()
+
+            # Maven POM files use namespaces, so we need to handle that
+            ns = {'m': 'http://maven.apache.org/POM/4.0.0'}
+
+            for dep in root.findall('.//m:dependencies/m:dependency', ns):
+                group_id = dep.find('m:groupId', ns)
+                artifact_id = dep.find('m:artifactId', ns)
+                version = dep.find('m:version', ns)
+
+                maven_purl = "pkg:maven"
+
+                if group_id.text:
+                    maven_purl += "/" + group_id.text
+                if artifact_id.text:
+                    maven_purl += "/" + artifact_id.text
+                if version.text:
+                    maven_purl += "@" + version.text
+
+                try:
+                    download_data = fetch.fetch_package_url(maven_purl)
+                except requests.RequestException as error:
+                    error_message_details = {
+                        "resource_path": resource.location,
+                        "package_data": maven_purl,
+                    }
+                    project.add_error(
+                        exception=error,
+                        description=(f"Download failed: {str(error)}"),
+                        details=error_message_details,
+                    )
+                    continue
+                except ValueError as e:
+                    project.add_error(
+                        description=(e),
+                    )
+                    continue
+                extract_errors = scancode.extract_archives(location=download_data.path, recurse=True)
+                for resource_path, errors in extract_errors.items():
+                    project.add_error(
+                        description="\n".join(errors),
+                        model="extract_archives",
+                        details={"resource_path": resource_path},
+                    )
+
+                for root, dirs, files in os.walk(download_data.directory):
+                    for file in files:
+                        resource_data = {}
+                        location = os.path.join(root, file)
+                        try:
+                            resource_data = scancode.get_resource_info(location=str(location))
+                            # Update the resource path
+                            relative_path = Path(resource.location).relative_to(project.codebase_path)
+                            dep_path = str(relative_path) + "-dep" + str(location).replace(download_data.directory, "")
+                            resource_data['path'] = dep_path
+                            resource_data['tag'] = "from"
+                            resource_data['extra_data'] = {"is_virtual": True}
+                            pipes.update_or_create_resource(project, resource_data)
+                        except OSError as error:
+                            logger.error(
+                                f"Failed to read resource at {location}: "
+                                f"Permission denied or file inaccessible."
+                            )
+                            resource_data = {"status": flag.RESOURCE_READ_ERROR}
+                            project.add_error(
+                                model=CodebaseResource,
+                                details={"resource_path": str(location)},
+                                exception=error,
+                            )
+    try:
+        resource_data = scancode.get_resource_info(location=str(location))
+    except OSError as error:
+        logger.error(
+            f"Failed to read resource at {location}: "
+            f"Permission denied or file inaccessible."
+        )
+        resource_data = {"status": flag.RESOURCE_READ_ERROR}
+        project.add_error(
+            model=CodebaseResource,
+            details={"resource_path": str(relative_path)},
+            exception=error,
+        )
 
 def _map_path_resource(
     to_resource, from_resources, from_resources_index, diff_ratio_threshold=0.7
