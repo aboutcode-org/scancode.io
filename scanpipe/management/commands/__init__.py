@@ -284,20 +284,23 @@ def validate_pipelines(pipelines_data):
     return pipelines_data
 
 
-def extract_tag_from_input_files(input_files):
+def extract_tag_from_input_file(file_location):
     """
-    Add support for the ":tag" suffix in file location.
+    Parse a file location with optional tag suffix.
 
     For example: "/path/to/file.zip:tag"
     """
-    input_files_data = {}
-    for file in input_files:
-        if ":" in file:
-            key, value = file.split(":", maxsplit=1)
-            input_files_data.update({key: value})
-        else:
-            input_files_data.update({file: ""})
-    return input_files_data
+    if ":" in file_location:
+        cleaned_location, tag = file_location.split(":", maxsplit=1)
+        return cleaned_location, tag
+    return file_location, ""
+
+
+def extract_tag_from_input_files(input_files):
+    """Parse multiple file locations with optional tag suffixes."""
+    return dict(
+        extract_tag_from_input_file(file_location) for file_location in input_files
+    )
 
 
 def validate_input_files(input_files):
