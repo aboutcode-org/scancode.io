@@ -148,7 +148,8 @@ ECOSYSTEM_CONFIGS = {
     ),
     "Python": EcosystemConfig(
         ecosystem_option="Python",
-        source_symbol_extensions=[".pyx", ".pxd"],
+        source_symbol_extensions=[".pyx", ".pxd", ".py", ".pyi"],
+        matchable_resource_extensions=[".py", ".pyi"],
     ),
 }
 
