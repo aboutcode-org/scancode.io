@@ -26,7 +26,6 @@ import json
 import operator
 from collections import Counter
 from contextlib import suppress
-from pathlib import Path
 
 from django.apps import apps
 from django.conf import settings
@@ -1195,14 +1194,14 @@ class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.Detai
         return context
 
 
-class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
+class ProjectCodebasePanelView(ConditionalLoginRequired, generic.DetailView):
     model = Project
     template_name = "scanpipe/panels/project_codebase.html"
 
     @staticmethod
-    def get_tree(project, current_dir):
+    def get_root_tree(project):
         """
-        Return the direct content of the ``current_dir`` as a flat tree.
+        Return the direct content of the project codebase root directory as a flat tree.
 
         The lookups are scoped to the ``project`` codebase/ work directory.
         The security is handled by the FileSystemStorage and will raise a
@@ -1215,60 +1214,20 @@ class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
         # Raises ValueError if the codebase_root is not within the workspace_path
         codebase_root.relative_to(scanpipe_app.workspace_path)
         fs_storage = FileSystemStorage(location=codebase_root)
-        directories, files = fs_storage.listdir(current_dir)
-
-        def get_node(name, is_dir, location):
-            return {
-                "name": name,
-                "is_dir": is_dir,
-                "location": location,
-            }
+        directories, files = fs_storage.listdir(".")
 
         tree = []
-        root_directory = "."
-        include_parent = current_dir and current_dir != root_directory
-        if include_parent:
-            tree.append(
-                get_node(name="..", is_dir=True, location=str(Path(current_dir).parent))
-            )
-
         for resources, is_dir in [(sorted(directories), True), (sorted(files), False)]:
-            tree.extend(
-                get_node(name=name, is_dir=is_dir, location=f"{current_dir}/{name}")
-                for name in resources
-            )
+            tree.extend({"name": name, "is_dir": is_dir} for name in resources)
 
         return tree
 
-    @staticmethod
-    def get_breadcrumbs(current_dir):
-        breadcrumbs = {}
-        path_segments = current_dir.removeprefix("./").split("/")
-        last_path = ""
-
-        for segment in path_segments:
-            if segment:
-                last_path += f"{segment}/"
-                breadcrumbs[segment] = last_path
-
-        return breadcrumbs
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        current_dir = self.request.GET.get("current_dir") or "."
-
         try:
-            codebase_tree = self.get_tree(self.object, current_dir)
-        except FileNotFoundError:
-            raise Http404(f"{current_dir} not found")
+            context["codebase_root_tree"] = self.get_root_tree(self.object)
         except (ValueError, SuspiciousFileOperation) as error:
             raise Http404(error)
-
-        context["current_dir"] = current_dir
-        context["codebase_tree"] = codebase_tree
-        context["codebase_breadcrumbs"] = self.get_breadcrumbs(current_dir)
-        context["project_details_url"] = self.object.get_absolute_url()
-
         return context
 
 
@@ -2822,7 +2781,6 @@ class ProjectResourceTreeTableView(
                 "detected_license_expression",
                 "compliance_alert",
             )
-            .prefetch_related("discovered_packages")
             .order_by("type", "path")
         )
 

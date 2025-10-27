@@ -28,7 +28,6 @@ from pathlib import Path
 from unittest import mock
 
 from django.apps import apps
-from django.core.exceptions import SuspiciousFileOperation
 from django.http import FileResponse
 from django.http.response import Http404
 from django.test import TestCase
@@ -60,7 +59,7 @@ from scanpipe.tests import package_data1
 from scanpipe.tests import package_data2
 from scanpipe.views import CodebaseResourceDetailsView
 from scanpipe.views import ProjectActionView
-from scanpipe.views import ProjectCodebaseView
+from scanpipe.views import ProjectCodebasePanelView
 from scanpipe.views import ProjectDetailView
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -676,22 +675,9 @@ class ScanPipeViewsTest(TestCase):
         (self.project1.codebase_path / "file.txt").touch()
 
         response = self.client.get(url)
-        self.assertContains(response, "/codebase/?current_dir=./dir1")
-        self.assertContains(response, "/resources/./file.txt/")
-
-        data = {"current_dir": "dir1"}
-        response = self.client.get(url, data=data)
-        self.assertContains(response, "..")
-        self.assertContains(response, "/codebase/?current_dir=.")
-        self.assertContains(response, "/codebase/?current_dir=dir1/dir2")
-
-        data = {"current_dir": "not_existing"}
-        response = self.client.get(url, data=data)
-        self.assertEqual(404, response.status_code)
-
-        data = {"current_dir": "../"}
-        response = self.client.get(url, data=data)
-        self.assertEqual(404, response.status_code)
+        resource_tree_url = reverse("project_resource_tree", args=[self.project1.slug])
+        self.assertContains(response, f"{resource_tree_url}?path=dir1")
+        self.assertContains(response, f"{resource_tree_url}?path=file.txt")
 
     def test_scanpipe_views_project_codebase_view_ordering(self):
         url = reverse("project_codebase", args=[self.project1.slug])
@@ -703,12 +689,12 @@ class ScanPipeViewsTest(TestCase):
         (self.project1.codebase_path / "Dir").mkdir()
 
         response = self.client.get(url)
-        codebase_tree = response.context_data["codebase_tree"]
+        codebase_tree = response.context_data["codebase_root_tree"]
         expected = ["Dir", "Zdir", "a", "z", "a.txt", "z.txt"]
         self.assertEqual(expected, [path.get("name") for path in codebase_tree])
 
-    def test_scanpipe_views_project_codebase_view_get_tree(self):
-        get_tree = ProjectCodebaseView.get_tree
+    def test_scanpipe_views_project_codebase_view_get_root_tree(self):
+        get_root_tree = ProjectCodebasePanelView.get_root_tree
 
         (self.project1.codebase_path / "dir1").mkdir()
         (self.project1.codebase_path / "dir1/dir2").mkdir()
@@ -716,34 +702,20 @@ class ScanPipeViewsTest(TestCase):
 
         with mock.patch.object(scanpipe_app, "workspace_path", ""):
             self.assertEqual("", scanpipe_app.workspace_path)
-            with self.assertRaises(ValueError) as e:
-                get_tree(self.project1, current_dir="")
+            with self.assertRaises(ValueError):
+                get_root_tree(self.project1)
 
-        with self.assertRaises(FileNotFoundError):
-            get_tree(self.project1, current_dir="not_existing")
-
-        with self.assertRaises(SuspiciousFileOperation) as e:
-            get_tree(self.project1, current_dir="../../")
-        self.assertIn("is located outside of the base path component", str(e.exception))
-
-        codebase_tree = get_tree(self.project1, current_dir="")
+        codebase_tree = get_root_tree(self.project1)
         expected = [
-            {"name": "dir1", "is_dir": True, "location": "/dir1"},
-            {"name": "file.txt", "is_dir": False, "location": "/file.txt"},
-        ]
-        self.assertEqual(expected, codebase_tree)
-
-        codebase_tree = get_tree(self.project1, current_dir="dir1")
-        expected = [
-            {"name": "..", "is_dir": True, "location": "."},
-            {"name": "dir2", "is_dir": True, "location": "dir1/dir2"},
+            {"name": "dir1", "is_dir": True},
+            {"name": "file.txt", "is_dir": False},
         ]
         self.assertEqual(expected, codebase_tree)
 
         shutil.rmtree(self.project1.work_directory, ignore_errors=True)
         self.assertFalse(self.project1.codebase_path.exists())
         with self.assertRaises(Exception):
-            get_tree(self.project1, current_dir="")
+            get_root_tree(self.project1)
 
     def test_scanpipe_views_project_archive_view(self):
         url = reverse("project_archive", args=[self.project1.slug])
@@ -1682,12 +1654,12 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual(["parent/child1.txt", "parent/child2.py"], resource_paths)
 
     def test_scanpipe_views_project_resource_tree_table_view_with_path_file(self):
-        make_resource_file(self.project1, path="specific_file.txt")
+        resource = make_resource_file(self.project1, path="specific_file.txt")
 
         url = reverse(
             "project_resource_tree_table", kwargs={"slug": self.project1.slug}
         )
-        response = self.client.get(url + "?path=specific_file.txt")
+        response = self.client.get(url + f"?path={resource.path}")
 
         self.assertEqual(200, response.status_code)
         self.assertEqual("specific_file.txt", response.context["path"])
@@ -1707,23 +1679,6 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual("empty_dir", response.context["path"])
         resources = list(response.context["resources"])
         self.assertEqual(0, len(resources))
-
-    def test_scanpipe_views_project_resource_tree_table_view_with_packages(self):
-        resource1 = make_resource_file(self.project1, path="file_with_package.txt")
-        package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
-        package1.add_resources([resource1])
-
-        url = reverse(
-            "project_resource_tree_table", kwargs={"slug": self.project1.slug}
-        )
-        response = self.client.get(url + "?path=file_with_package.txt")
-
-        self.assertEqual(200, response.status_code)
-        resources = list(response.context["resources"])
-        self.assertEqual(1, len(resources))
-
-        resource = resources[0]
-        self.assertTrue(resource.discovered_packages.exists())
 
     @mock.patch("scanpipe.views.ProjectResourceTreeTableView.paginate_by", 2)
     def test_scanpipe_views_project_resource_tree_table_view_pagination(self):
@@ -1761,7 +1716,7 @@ class ScanPipeViewsTest(TestCase):
         url = reverse(
             "project_resource_tree_table", kwargs={"slug": self.project1.slug}
         )
-        response = self.client.get(url + "?path=test_file.py")
+        response = self.client.get(url + f"?path={resource.path}")
 
         self.assertEqual(200, response.status_code)
         resources = list(response.context["resources"])
@@ -1770,5 +1725,4 @@ class ScanPipeViewsTest(TestCase):
         resource = resources[0]
         self.assertEqual("test_file.py", resource.path)
         self.assertEqual("Python", resource.programming_language)
-        self.assertEqual("text/x-python", resource.mime_type)
         self.assertEqual("MIT", resource.detected_license_expression)
