@@ -242,6 +242,47 @@ a[target="_blank"] .fa-up-right-from-square {
 .is-wider-x2 .dropdown-menu {
   min-width: 24rem;
 }
+.tooltip {
+  position: absolute;
+  background-color: rgb(var(--custom-tooltip-bg-rgb));
+  color: var(--bulma-white);
+  padding: var(--custom-tooltip-padding);
+  border-radius: var(--bulma-radius-small);
+  font-size: var(--bulma-size-small);
+  width: max-content;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  text-align: center;
+  word-wrap: break-word;
+  z-index: 9999;
+}
+.tooltip.visible {
+  opacity: 1;
+}
+.tooltip.top {
+  bottom: 100%;
+}
+.tooltip.bottom {
+  top: 100%;
+}
+.tooltip.left {
+  right: 0;
+}
+.tooltip.right {
+  left: 0;
+}
+.tooltip.center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+.tooltip:not(.top):not(.bottom) {
+  bottom: 100%;
+}
+.tooltip:not(.left):not(.right):not(.center) {
+  left: 50%;
+  transform: translateX(-50%);
+}
 .copy-to-clipboard {
   position: relative;
 }

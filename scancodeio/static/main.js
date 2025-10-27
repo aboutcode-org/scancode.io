@@ -356,6 +356,42 @@ class PaginationNavigator {
   }
 }
 
+// Tooltips
+
+function enableTooltips() {
+  // Enable tooltips on elements with 'has-tooltip' class
+  const elements = document.querySelectorAll('.has-tooltip');
+
+  elements.forEach(element => {
+    let tooltip = null;
+
+    element.addEventListener('mouseenter', () => {
+      // Get tooltip text from data-title or title attribute
+      const tooltipText = element.getAttribute('data-title') || element.getAttribute('title');
+      if (!tooltipText) return;
+
+      // Get position classes from data attribute
+      const positionClasses = element.getAttribute('data-tooltip-position') || '';
+
+      // Create tooltip
+      tooltip = document.createElement('span');
+      tooltip.classList.add('tooltip', 'visible');
+      if (positionClasses) {
+        tooltip.classList.add(...positionClasses.split(' '));
+      }
+      tooltip.textContent = tooltipText;
+      element.appendChild(tooltip);
+    });
+
+    element.addEventListener('mouseleave', () => {
+      if (tooltip && element.contains(tooltip)) {
+        element.removeChild(tooltip);
+        tooltip = null;
+      }
+    });
+  });
+}
+
 // Copy to Clipboard (using `navigator.clipboard`)
 
 function enableCopyToClipboard(selector) {
@@ -413,6 +449,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setupTextarea();
   setupHighlightControls();
   setupSelectCheckbox();
+  enableTooltips();
   enableCopyToClipboard(".copy-to-clipboard");
 
   const paginationContainer = document.querySelector("#pagination-header");
@@ -468,6 +505,7 @@ document.addEventListener('DOMContentLoaded', function () {
 document.body.addEventListener("htmx:afterSwap", function(evt) {
   // Call the following functions after a HTMX swap is done.
   setupTabs();
+  enableTooltips();
   enableCopyToClipboard(".copy-to-clipboard");
 });
 
