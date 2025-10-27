@@ -2168,7 +2168,6 @@ class ScanPipeD2DPipesTest(TestCase):
             ("not_protobuf.pyi", None),
             ("pb2_standalone.py", None),
         ]
-        
         for filename, expected in test_cases:
             with self.subTest(filename=filename):
                 result = d2d._extract_protobuf_base_name(filename)
@@ -2188,7 +2187,6 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1,
             path="from/valkey_glide-2.0.1/glide-core/src/protobuf/response.proto",
         )
-        
         to1 = make_resource_file(
             self.project1,
             path="to/glide/protobuf/command_request_pb2.py",
@@ -2213,12 +2211,9 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1,
             path="to/glide/protobuf/response_pb2.pyi",
         )
-        
         d2d.map_python_protobuf_files(self.project1)
-        
         relations = self.project1.codebaserelations.filter(map_type="protobuf_mapping")
         self.assertEqual(6, relations.count())
-        
         expected_mappings = [
             (from1, to1, "command_request"),
             (from1, to2, "command_request"),
@@ -2227,14 +2222,16 @@ class ScanPipeD2DPipesTest(TestCase):
             (from3, to5, "response"),
             (from3, to6, "response"),
         ]
-        
         for from_resource, to_resource, expected_base_name in expected_mappings:
             relation = relations.filter(
                 from_resource=from_resource,
                 to_resource=to_resource
             ).first()
             self.assertIsNotNone(relation)
-            self.assertEqual(expected_base_name, relation.extra_data["protobuf_base_name"])
+            self.assertEqual(
+                expected_base_name,
+                relation.extra_data["protobuf_base_name"]
+                )
 
     def test_scanpipe_pipes_d2d_map_python_protobuf_files_no_proto_files(self):
         """Test protobuf mapping when no .proto files exist."""
@@ -2242,9 +2239,7 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1,
             path="to/glide/protobuf/command_request_pb2.py",
         )
-        
         d2d.map_python_protobuf_files(self.project1)
-        
         relations = self.project1.codebaserelations.filter(map_type="protobuf_mapping")
         self.assertEqual(0, relations.count())
 
@@ -2254,8 +2249,6 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1,
             path="from/valkey_glide-2.0.1/glide-core/src/protobuf/command_request.proto",
         )
-        
         d2d.map_python_protobuf_files(self.project1)
-        
         relations = self.project1.codebaserelations.filter(map_type="protobuf_mapping")
         self.assertEqual(0, relations.count())

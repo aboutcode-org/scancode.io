@@ -2387,25 +2387,19 @@ def map_python_protobuf_files(project, logger=None):
         .has_no_relation()
         .filter(extension__in=[".py", ".pyi"])
     )
-
     to_resources_count = to_resources.count()
     from_resources_count = from_resources.count()
-
     if not from_resources_count:
         return
-
     if not to_resources_count:
         return
-
     proto_index = {}
     for proto_resource in from_resources:
         base_name = proto_resource.name.replace(".proto", "")
         proto_index[base_name] = proto_resource
-
     mapped_count = 0
     for to_resource in to_resources:
         base_name = _extract_protobuf_base_name(to_resource.name)
-        
         if base_name and base_name in proto_index:
             from_resource = proto_index[base_name]
             pipes.make_relation(
@@ -2420,12 +2414,9 @@ def map_python_protobuf_files(project, logger=None):
 def _extract_protobuf_base_name(filename):
     """Extract the base name from a protobuf-generated filename."""
     import re
-    
     name_without_ext = filename.rsplit(".", 1)[0]
     protobuf_pattern = r"^(.+)_pb[23]$"
     match = re.match(protobuf_pattern, name_without_ext)
-    
     if match:
         return match.group(1)
-    
     return None
