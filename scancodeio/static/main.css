@@ -484,7 +484,7 @@ body.full-screen #resource-viewer .message-header {
 }
 
 #resource-tree-container .resizable-container {
-  height: calc(100vh - 140px);
+  min-height: calc(100vh - 140px);
 }
 #resource-tree-container .chevron {
   transition: transform 0.2s ease;
@@ -534,11 +534,6 @@ body.full-screen #resource-viewer .message-header {
   min-width: 0;
   transition: opacity 0.2s ease;
   height: 100%;
-}
-#resource-tree-container .right-pane .table-scroll-area {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 #resource-tree-container .right-pane.collapsed {
   opacity: 0;

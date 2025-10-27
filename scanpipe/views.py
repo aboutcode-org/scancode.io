@@ -2803,30 +2803,12 @@ class ProjectResourceTreeTableView(
     generic.ListView,
 ):
     model = CodebaseResource
-    template_name = "scanpipe/tree/resource_right_pane_table.html"
+    template_name = "scanpipe/tree/resource_right_pane.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("resource", 100)
     context_object_name = "resources"
 
     def get_queryset(self):
         path = self.request.GET.get("path", "")
-
-        qs = super().get_queryset().filter(path=path)
-        if qs.exists() and not qs.first().is_dir:
-            return qs.only(
-                "path",
-                "status",
-                "type",
-                "size",
-                "name",
-                "extension",
-                "programming_language",
-                "mime_type",
-                "tag",
-                "detected_license_expression",
-                "compliance_alert",
-                "package_data",
-            ).prefetch_related("discovered_packages")
-
         return (
             super()
             .get_queryset()
@@ -2835,8 +2817,6 @@ class ProjectResourceTreeTableView(
             .only(
                 "path",
                 "status",
-                "type",
-                "name",
                 "programming_language",
                 "tag",
                 "detected_license_expression",
