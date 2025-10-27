@@ -2224,14 +2224,12 @@ class ScanPipeD2DPipesTest(TestCase):
         ]
         for from_resource, to_resource, expected_base_name in expected_mappings:
             relation = relations.filter(
-                from_resource=from_resource,
-                to_resource=to_resource
+                from_resource=from_resource, to_resource=to_resource
             ).first()
             self.assertIsNotNone(relation)
             self.assertEqual(
-                expected_base_name,
-                relation.extra_data["protobuf_base_name"]
-                )
+                expected_base_name, relation.extra_data["protobuf_base_name"]
+            )
 
     def test_scanpipe_pipes_d2d_map_python_protobuf_files_no_proto_files(self):
         """Test protobuf mapping when no .proto files exist."""

@@ -2377,9 +2377,7 @@ def map_python_pyx_to_binaries(project, logger=None):
 def map_python_protobuf_files(project, logger=None):
     """Map protobuf-generated .py/.pyi files to their source .proto files."""
     from_resources = (
-        project.codebaseresources.files()
-        .from_codebase()
-        .filter(extension=".proto")
+        project.codebaseresources.files().from_codebase().filter(extension=".proto")
     )
     to_resources = (
         project.codebaseresources.files()
@@ -2414,6 +2412,7 @@ def map_python_protobuf_files(project, logger=None):
 def _extract_protobuf_base_name(filename):
     """Extract the base name from a protobuf-generated filename."""
     import re
+
     name_without_ext = filename.rsplit(".", 1)[0]
     protobuf_pattern = r"^(.+)_pb[23]$"
     match = re.match(protobuf_pattern, name_without_ext)
