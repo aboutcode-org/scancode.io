@@ -505,8 +505,8 @@ document.addEventListener('DOMContentLoaded', function () {
 document.body.addEventListener("htmx:afterSwap", function(evt) {
   // Call the following functions after a HTMX swap is done.
   setupTabs();
-  enableTooltips();
   enableCopyToClipboard(".copy-to-clipboard");
+  enableTooltips();
 });
 
 // Toasts (requires bulma-toast.js)
