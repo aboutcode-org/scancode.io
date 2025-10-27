@@ -25,6 +25,15 @@
   {{ detected_values|json_script:"detected_values" }}
   <script>
   {
+    document.addEventListener('htmx:beforeSwap', function(evt) {
+      // Clean up editor before HTMX swaps content
+      if (window.editor) {
+        window.editor.destroy();
+        window.editor.container.remove();
+        window.editor = null;
+      }
+    });
+
     let editor = ace.edit("editor", {
       mode: "ace/mode/text",
       autoScrollEditorIntoView: true,
@@ -37,6 +46,9 @@
       foldStyle: "manual",
       fontFamily: "SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace",
     });
+
+    // Store globally for cleanup
+    window.editor = editor;
 
     function removeAllMarkers() {
       let session = editor.getSession();
