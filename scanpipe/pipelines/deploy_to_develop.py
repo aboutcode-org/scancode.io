@@ -295,6 +295,7 @@ class DeployToDevelop(Pipeline):
         symbols.
         """
         d2d.map_python_pyx_to_binaries(project=self.project, logger=self.log)
+        d2d.map_python_protobuf_files(project=self.project, logger=self.log)
 
     def match_directories_to_purldb(self):
         """Match selected directories in PurlDB."""
