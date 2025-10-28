@@ -24,7 +24,6 @@ import difflib
 import io
 import json
 import operator
-import zipfile
 from collections import Counter
 from contextlib import suppress
 from pathlib import Path
@@ -62,6 +61,7 @@ from django.views.generic.edit import UpdateView
 import saneyaml
 import xlsxwriter
 from django_filters.views import FilterView
+from django_htmx.http import HttpResponseClientRedirect
 from licensedcode.spans import Span
 from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
 
@@ -201,14 +201,6 @@ class PrefetchRelatedViewMixin:
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(*self.prefetch_related)
-
-
-class HTTPResponseHXRedirect(HttpResponseRedirect):
-    status_code = 200
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self["HX-Redirect"] = self["Location"]
 
 
 def render_as_yaml(value):
@@ -569,23 +561,21 @@ class ExportJSONMixin:
         return response
 
 
-class FormAjaxMixin:
-    def is_xhr(self):
-        return self.request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
-
+class HTMXFormMixin:
     def form_valid(self, form):
         response = super().form_valid(form)
 
-        if self.is_xhr():
-            return JsonResponse({"redirect_url": self.get_success_url()}, status=201)
+        if self.request.htmx:
+            return HttpResponseClientRedirect(self.get_success_url())
 
         return response
 
     def form_invalid(self, form):
         response = super().form_invalid(form)
 
-        if self.is_xhr():
-            return JsonResponse({"errors": str(form.errors)}, status=400)
+        if self.request.htmx:
+            # Re-render the form with errors
+            return self.render_to_response(self.get_context_data(form=form))
 
         return response
 
@@ -705,7 +695,7 @@ class ProjectListView(
         )
 
 
-class ProjectCreateView(ConditionalLoginRequired, FormAjaxMixin, generic.CreateView):
+class ProjectCreateView(ConditionalLoginRequired, generic.CreateView):
     model = Project
     form_class = ProjectForm
     template_name = "scanpipe/project_form.html"
@@ -723,6 +713,23 @@ class ProjectCreateView(ConditionalLoginRequired, FormAjaxMixin, generic.CreateV
         context["pipelines"] = pipelines
         context["pipelines_available_groups"] = pipelines_available_groups
         return context
+
+    @property
+    def is_xhr(self):
+        # The request is XMLHttpRequest when using the input upload progress
+        return self.request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if self.is_xhr:
+            return JsonResponse({"redirect_url": self.get_success_url()}, status=201)
+        return response
+
+    def form_invalid(self, form):
+        response = super().form_invalid(form)
+        if self.is_xhr:
+            return JsonResponse({"errors": str(form.errors)}, status=400)
+        return response
 
 
 class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
@@ -966,7 +973,7 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
 
 
 class ProjectSettingsWebhookCreateView(
-    ConditionalLoginRequired, FormAjaxMixin, UpdateView
+    ConditionalLoginRequired, HTMXFormMixin, UpdateView
 ):
     model = Project
     form_class = WebhookSubscriptionForm
@@ -979,7 +986,7 @@ class ProjectSettingsWebhookCreateView(
     def form_valid(self, form):
         form.save(project=self.object)
         messages.success(self.request, "Webhook added to the project.")
-        return HTTPResponseHXRedirect(self.get_success_url())
+        return HttpResponseClientRedirect(self.get_success_url())
 
 
 class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
@@ -1444,19 +1451,17 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
 
     @staticmethod
     def download_outputs_zip_response(project_qs, action_form):
+        """Generate and return a zip file response for selected projects."""
         output_format = action_form.cleaned_data["output_format"]
         output_function = output.FORMAT_TO_FUNCTION_MAPPING.get(output_format)
 
-        # In-memory file storage for the zip archive
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-            for project in project_qs:
-                output_file = output_function(project)
-                filename = output.safe_filename(f"{project.name}_{output_file.name}")
-                with open(output_file, "rb") as f:
-                    zip_file.writestr(filename, f.read())
+        files = []
+        for project in project_qs:
+            output_file = output_function(project)
+            filename = output.safe_filename(f"{project.name}_{output_file.name}")
+            files.append((filename, output_file))
 
-        zip_buffer.seek(0)
+        zip_buffer = output.make_zip_from_files(files)
         return FileResponse(
             zip_buffer,
             as_attachment=True,
@@ -1476,14 +1481,10 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
         )
 
 
-class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, UpdateView):
+class ProjectCloneView(ConditionalLoginRequired, HTMXFormMixin, UpdateView):
     model = Project
     form_class = ProjectCloneForm
     template_name = "scanpipe/forms/project_clone_form.html"
-
-    def form_valid(self, form):
-        super().form_valid(form)
-        return HTTPResponseHXRedirect(self.get_success_url())
 
 
 @conditional_login_required
@@ -1633,6 +1634,10 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
             output_file = output.to_attribution(project)
         elif format == "ort-package-list":
             output_file = output.to_ort_package_list_yml(project)
+        elif format == "all_formats":
+            output_file = output.to_all_formats(project)
+        elif format == "all_outputs":
+            output_file = output.to_all_outputs(project)
         else:
             raise Http404("Format not supported.")
 
@@ -2847,4 +2852,9 @@ class CodebaseResourceTableView(
         context["path_segments"] = [
             ("/".join(segments[: i + 1]), segment) for i, segment in enumerate(segments)
         ]
+
+        if path and "/" in path:
+            parent_segments = path.rstrip("/").split("/")[:-1]
+            context["parent_path"] = "/".join(parent_segments)
+
         return context

@@ -99,7 +99,9 @@
         <div class="columns">
           {% if codebase_root %}
             <div class="column">
-              <div hx-get="{% url 'project_codebase' project.slug %}" hx-trigger="load">
+              <div
+                hx-get="{% url 'project_codebase' project.slug %}"
+                hx-trigger="load">
                 <i class="fa-solid fa-spinner fa-pulse" aria-hidden="true"></i>
               </div>
             </div>
@@ -113,13 +115,25 @@
       {% endif %}
 
       <div class="columns">
-        <div hx-get="{% url 'project_resource_status_summary' project.slug %}" hx-trigger="load" hx-swap="outerHTML"></div>
-        <div hx-get="{% url 'project_license_detection_summary' project.slug %}" hx-trigger="load" hx-swap="outerHTML"></div>
+        <div
+          hx-get="{% url 'project_resource_status_summary' project.slug %}"
+          hx-trigger="load"
+          hx-swap="outerHTML">
+        </div>
+        <div
+          hx-get="{% url 'project_license_detection_summary' project.slug %}"
+          hx-trigger="load"
+          hx-swap="outerHTML">
+        </div>
       </div>
 
       {% if license_policies_enabled %}
         <div class="columns">
-          <div hx-get="{% url 'project_compliance_panel' project.slug %}" hx-trigger="load" hx-swap="outerHTML"></div>
+          <div
+            hx-get="{% url 'project_compliance_panel' project.slug %}"
+            hx-trigger="load"
+            hx-swap="outerHTML">
+          </div>
         </div>
       {% endif %}
 
@@ -161,13 +175,21 @@
     {% if project.resource_count or project.package_count %}
       <section id="charts" class="mx-5 pt-5">
         {% if project.resource_count < 5000 and project.package_count < 5000 %}
-          <div hx-get="{% url 'project_charts' project.slug %}?file-filter={{ file_filter }}" hx-trigger="load" hx-target="#charts"></div>
+          <div
+            hx-get="{% url 'project_charts' project.slug %}?file-filter={{ file_filter }}"
+            hx-trigger="load"
+            hx-target="#charts">
+          </div>
           <i class="fa-solid fa-spinner fa-pulse" aria-hidden="true"></i>
           Loading the charts...
         {% else %}
-          <button class="button is-info is-outlined is-fullwidth mt-5 mb-6" hx-get="{% url 'project_charts' project.slug %}?file-filter={{ file_filter }}" hx-trigger="click" hx-swap="outerHTML">
+          <button
+            class="button is-info is-outlined is-fullwidth mt-5 mb-6"
+            hx-get="{% url 'project_charts' project.slug %}?file-filter={{ file_filter }}"
+            hx-trigger="click"
+            hx-swap="outerHTML">
             <span class="icon">
-              <i class="fa-solid fa-chart-pie"></i>
+                <i class="fa-solid fa-chart-pie"></i>
             </span>
             <span>Load the charts</span>
           </button>

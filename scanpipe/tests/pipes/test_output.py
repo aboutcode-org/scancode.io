@@ -26,6 +26,7 @@ import json
 import shutil
 import tempfile
 import uuid
+import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 from unittest import mock
@@ -747,6 +748,38 @@ class ScanPipeOutputPipesTest(TestCase):
         # Check that input components are present
         self.assertIn(f"input-{input1.uuid}", component_refs)
         self.assertIn(f"input-{input2.uuid}", component_refs)
+    def test_scanpipe_pipes_outputs_to_all_formats(self):
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+        project = Project.objects.get(name="asgiref")
+
+        with self.assertNumQueries(35):
+            output_file = output.to_all_formats(project=project)
+
+        self.assertEqual("asgiref_outputs.zip", output_file.name)
+
+        with zipfile.ZipFile(output_file, "r") as zip_ref:
+            zip_contents = zip_ref.namelist()
+            file_count = len(zip_contents)
+
+        expected_file_count = len(output.FORMAT_TO_FUNCTION_MAPPING)
+        self.assertEqual(expected_file_count, file_count)
+
+    def test_scanpipe_pipes_outputs_to_all_outputs(self):
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+        project = Project.objects.get(name="asgiref")
+
+        with self.assertNumQueries(0):
+            output_file = output.to_all_outputs(project=project)
+
+        self.assertEqual("asgiref_outputs.zip", output_file.name)
+
+        with zipfile.ZipFile(output_file, "r") as zip_ref:
+            zip_contents = zip_ref.namelist()
+            file_count = len(zip_contents)
+
+        self.assertEqual(len(project.output_root), file_count)
 
     def test_scanpipe_pipes_outputs_make_unknown_license_object(self):
         licensing = get_licensing()

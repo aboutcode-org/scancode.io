@@ -4,20 +4,7 @@
 {% block title %}ScanCode.io: {{ project.name }} - Dependency tree{% endblock %}
 
 {% block extrahead %}
-<link rel="stylesheet" href="{% static 'iamkate-tree-views/tree.css' %}" crossorigin="anonymous">
-<style>
-  .tree {
-    line-height: 1.8rem;
-    --spacing : 2rem;
-  }
-  .tree summary {
-    display: inline-block;
-  }
-  .tree summary::before{
-    background-color: rgb(72, 199, 142);
-    background-image: url('{% static "iamkate-tree-views/expand-collapse.svg" %}');
-  }
-</style>
+  <link rel="stylesheet" href="{% static 'iamkate-tree-views/tree.css' %}" crossorigin="anonymous">
 {% endblock %}
 
 {% block content %}
@@ -68,7 +55,7 @@
         </button>
       </div>
 
-      <ul id="tree" class="tree">
+      <ul id="dependency-tree" class="tree">
         <li>
           <details open>
             <summary class="has-text-weight-semibold">

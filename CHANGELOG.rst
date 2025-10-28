@@ -1,6 +1,50 @@
 Changelog
 =========
 
+v35.4.1 (2025-10-24)
+--------------------
+
+- Add ability to download all output results formats as a zipfile for a given project.
+  https://github.com/aboutcode-org/scancode.io/issues/1880
+
+- Add support for tagging inputs in the run management command
+  Add ability to skip the SQLite auto db in combined_run
+  Add documentation to leverage PostgreSQL service
+  https://github.com/aboutcode-org/scancode.io/pull/1916
+
+- Refine d2d pipeline for scala and kotlin.
+  https://github.com/aboutcode-org/scancode.io/issues/1898
+
+- Add utilities to create/init FederatedCode data repo.
+  https://github.com/aboutcode-org/scancode.io/issues/1896
+
+- Add a verify-project CLI management command.
+  https://github.com/aboutcode-org/scancode.io/issues/1903
+
+- Add support for multiple inputs in the run management command.
+  https://github.com/aboutcode-org/scancode.io/issues/1916
+
+- Add the django-htmx app to the stack.
+  https://github.com/aboutcode-org/scancode.io/issues/1917
+
+- Adjust the resource tree view table rendering.
+  https://github.com/aboutcode-org/scancode.io/issues/1840
+
+- Add ".." navigation option in table to navigate to parent resource.
+  https://github.com/aboutcode-org/scancode.io/issues/1869
+
+- Add ability to download all output results formats.
+  https://github.com/aboutcode-org/scancode.io/issues/1880
+
+- Update Java D2D Pipeline to Include Checksum Mapped Sources for Accurate Java Mapping.
+  https://github.com/aboutcode-org/scancode.io/issues/1870
+
+- Auto-detect pipeline from provided input.
+  https://github.com/aboutcode-org/scancode.io/issues/1883
+
+- Migrate SCA workflows verification to new verify-project management command.
+  https://github.com/aboutcode-org/scancode.io/issues/1902
+
 v35.4.0 (2025-09-30)
 --------------------
 

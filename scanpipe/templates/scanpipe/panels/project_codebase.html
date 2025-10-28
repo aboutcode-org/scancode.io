@@ -6,7 +6,11 @@
         <span class="tag ml-2">
           {% for dir_name, full_path in codebase_breadcrumbs.items %}
             {% if not forloop.last %}
-              <a href="#" hx-target="#codebase-navigation" hx-swap="outerHTML" hx-get="{{ project_details_url }}codebase/?current_dir={{ full_path }}">
+              <a
+                href="#"
+                hx-get="{{ project_details_url }}codebase/?current_dir={{ full_path }}"
+                hx-target="#codebase-navigation"
+                hx-swap="outerHTML">
                 {{ dir_name }}
               </a>
               <span class="mr-1">/</span>

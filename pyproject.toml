@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scancodeio"
-version = "35.4.0"
+version = "35.4.1"
 description = "Automate software composition analysis pipelines"
 readme = "README.rst"
 requires-python = ">=3.10,<3.14"
@@ -44,6 +44,7 @@ dependencies = [
   "django-filter==25.1",
   "djangorestframework==3.16.1",
   "django-taggit==6.1.0",
+  "django-htmx==1.26.0",
   # Database
   "psycopg[binary]==3.2.10",
   # wait_for_database Django management command
