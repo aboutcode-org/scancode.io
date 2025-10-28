@@ -3,10 +3,34 @@ set -e
 
 FROM_PATH="$1"
 TO_PATH="$2"
-D2D_OPTIONS="$3"
-OUTPUT_FILE="$4"
-SPIN_DB="$5"
-DB_PORT="$6"
+OUTPUT_FILE="$3"
+
+D2D_OPTIONS=""
+SPIN_DB=false
+DB_PORT=5432
+
+
+shift 3
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --options)
+      D2D_OPTIONS="$2"
+      shift 2
+      ;;
+    --spin-db)
+      SPIN_DB=true
+      shift 1
+      ;;
+    --port)
+      DB_PORT="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown parameter: $1"
+      exit 1
+      ;;
+  esac
+done
 
 if [ -z "$FROM_PATH" ] || [ -z "$TO_PATH" ] || [ -z "$OUTPUT_FILE" ]; then
   echo "Missing required arguments!"
@@ -28,7 +52,7 @@ echo "DB_PORT: $DB_PORT"
 
 DB_STARTED=false
 
-if [ "$SPIN_DB" = "true" ]; then
+if [ "$SPIN_DB" = true ]; then
   echo "Starting Postgres container on port $DB_PORT..."
 
   docker run -d \

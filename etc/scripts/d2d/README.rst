@@ -12,7 +12,7 @@ Usage
 
 .. code-block:: bash
 
-   ./run_mapping.sh <from-path> <to-path> [options] <output-file> <spin-db> [db-port]
+   ./map-deploy-to-develop.sh <from-path> <to-path> <output-file> [options] <spin-db> [db-port]
 
 Arguments
 ---------
@@ -41,13 +41,13 @@ Run mapping without database:
 
 .. code-block:: bash
 
-   ./run_mapping.sh ./from.tar.gz ./to.whl "" results.txt false
+   ./map-deploy-to-develop.sh ./from.tar.gz ./to.whl results.txt
 
 Run mapping with database on a custom port:
 
 .. code-block:: bash
 
-   ./run_mapping.sh ./from.tar.gz ./to.whl "Python,Java" output.txt true 5555
+   ./map-deploy-to-develop.sh ./from.tar.gz ./to.whl output.txt --options "Python,Java" --spin-db --port 5433
 
 Script Actions
 --------------
@@ -83,10 +83,10 @@ Ensure the script has execute permissions:
 .. code-block:: bash
 
       sudo su -
-      chmod +x run_d2d.sh
+      chmod +x map-deploy-to-develop.sh
 
 Then execute:
 
 .. code-block:: bash
 
-      ./run_d2d.sh ...
+      ./map-deploy-to-develop.sh ...
