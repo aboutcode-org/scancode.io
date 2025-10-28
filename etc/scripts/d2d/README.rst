@@ -41,13 +41,13 @@ Run mapping without database:
 
 .. code-block:: bash
 
-   ./map-deploy-to-develop.sh ./from.tar.gz ./to.whl results.txt
+   ./map-deploy-to-develop.sh ./from.tar.gz ./to.whl results.json
 
 Run mapping with database on a custom port:
 
 .. code-block:: bash
 
-   ./map-deploy-to-develop.sh ./from.tar.gz ./to.whl output.txt --options "Python,Java" --spin-db --port 5433
+   ./map-deploy-to-develop.sh ./from.tar.gz ./to.whl output.json --options "Python,Java" --spin-db --port 5433
 
 Script Actions
 --------------
