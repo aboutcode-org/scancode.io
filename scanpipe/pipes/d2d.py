@@ -263,7 +263,7 @@ def find_jvm_packages(project, jvm_lang: jvm.JvmLanguage, logger=None):
     Note: we use the same API as the ScanCode scans by design
     """
     resources = (
-        project.codebaseresources.files().no_status().from_codebase().has_no_relation()
+        project.codebaseresources.files().no_status().from_codebase()
     )
 
     from_jvm_resources = resources.filter(extension__in=jvm_lang.source_extensions)

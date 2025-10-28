@@ -399,7 +399,6 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1,
             path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/"
             "AbstractConfigurationProvider.java",
-            extra_data={"java_package": "org.apache.flume.node"},
             sha1=sha1,
         )
         to1 = make_resource_file(
@@ -424,6 +423,14 @@ class ScanPipeD2DPipesTest(TestCase):
         relation1 = to1.related_from.get()
         self.assertEqual("sha1", relation1.map_type)
         self.assertEqual(from1, relation1.from_resource)
+
+        # The "java_package" field in extra_data is required for mapping
+        # Java packages to classes.
+        # Simulate the "find_jvm_packages" call by updating extra_data in
+        # the from1 resource
+        # Note that "find_java_packages" is called before
+        # "map_java_to_class"
+        from1.update_extra_data({"java_package": "org.apache.flume.node"})
 
         # Now run map_java_to_class
         d2d.map_jvm_to_class(
