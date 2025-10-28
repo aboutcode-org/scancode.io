@@ -2795,6 +2795,28 @@ class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
         return render(request, self.template_name, context)
 
 
+class CodebaseResourceSearchView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    generic.ListView,
+):
+    model = CodebaseResource
+    template_name = "scanpipe/panels/resource_search_results.html"
+    context_object_name = "search_results"
+    paginate_by = 30
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        search_query = self.request.GET.get("search", "").strip()
+        qs = qs.filter(path__icontains=search_query)
+        return qs.only("path", "type", "name").order_by("path")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["query"] = self.request.GET.get("search", "")
+        return context
+
+
 class CodebaseResourceTableView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
