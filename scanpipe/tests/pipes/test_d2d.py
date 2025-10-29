@@ -448,6 +448,22 @@ class ScanPipeD2DPipesTest(TestCase):
         expected = "No ('.java',) resources to map."
         self.assertIn(expected, buffer.getvalue())
 
+    def test_scanpipe_pipes_d2d_java_ignore_pattern(self):
+        make_resource_file(self.project1, path="to/module-info.class")
+        make_resource_file(self.project1, path="to/META-INF/MANIFEST.MF")
+        make_resource_file(self.project1, path="to/test.class")
+        make_resource_file(self.project1, path="to/META-INF/others.txt")
+        buffer = io.StringIO()
+
+        java_config = d2d_config.get_ecosystem_config(ecosystem="Java")
+        d2d.ignore_unmapped_resources_from_config(
+            project=self.project1,
+            patterns_to_ignore=java_config.deployed_resource_path_exclusions,
+            logger=buffer.write,
+        )
+        expected = "Ignoring 3 to/ resources with ecosystem specific configurations."
+        self.assertIn(expected, buffer.getvalue())
+
     def test_scanpipe_pipes_d2d_map_jar_to_java_source(self):
         from1 = make_resource_file(
             self.project1,
