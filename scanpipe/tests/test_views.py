@@ -1653,19 +1653,15 @@ class ScanPipeViewsTest(TestCase):
         resource_paths = [r.path for r in resources]
         self.assertEqual(["parent/child1.txt", "parent/child2.py"], resource_paths)
 
-    def test_scanpipe_views_project_resource_tree_table_view_with_path_file(self):
+    def test_scanpipe_views_project_resource_tree_view_with_path_file(self):
         resource = make_resource_file(self.project1, path="specific_file.txt")
 
-        url = reverse(
-            "project_resource_tree_table", kwargs={"slug": self.project1.slug}
-        )
+        url = reverse("project_resource_tree", kwargs={"slug": self.project1.slug})
         response = self.client.get(url + f"?path={resource.path}")
 
         self.assertEqual(200, response.status_code)
         self.assertEqual("specific_file.txt", response.context["path"])
-        resources = list(response.context["resources"])
-        self.assertEqual(1, len(resources))
-        self.assertEqual("specific_file.txt", resources[0].path)
+        self.assertEqual(resource, response.context["resource"])
 
     def test_scanpipe_views_project_resource_tree_table_view_empty_directory(self):
         make_resource_directory(self.project1, path="empty_dir")
@@ -1703,26 +1699,3 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual(2, response.context["page_obj"].number)
         self.assertFalse(response.context["page_obj"].has_next())
         self.assertTrue(response.context["page_obj"].has_previous())
-
-    def test_scanpipe_views_project_resource_tree_table_view_field_selection(self):
-        resource = make_resource_file(
-            self.project1,
-            path="test_file.py",
-            programming_language="Python",
-            mime_type="text/x-python",
-            detected_license_expression="MIT",
-        )
-
-        url = reverse(
-            "project_resource_tree_table", kwargs={"slug": self.project1.slug}
-        )
-        response = self.client.get(url + f"?path={resource.path}")
-
-        self.assertEqual(200, response.status_code)
-        resources = list(response.context["resources"])
-        self.assertEqual(1, len(resources))
-
-        resource = resources[0]
-        self.assertEqual("test_file.py", resource.path)
-        self.assertEqual("Python", resource.programming_language)
-        self.assertEqual("MIT", resource.detected_license_expression)
