@@ -31,6 +31,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.exceptions import ValidationError
 from django.core.files.storage.filesystem import FileSystemStorage
@@ -2749,16 +2750,23 @@ class ProjectResourceTreeView(ConditionalLoginRequired, generic.DetailView):
             .order_by("type", "path")
         )
 
+        try:
+            resource = project.codebaseresources.get(path=path)
+        except ObjectDoesNotExist:
+            resource = None
+
         context = {
             "project": project,
             "path": path,
             "children": children,
+            "resource": resource,
         }
 
         if request.GET.get("tree_panel") == "true":
             return render(
                 request, "scanpipe/tree/resource_left_pane_tree.html", context
             )
+
         return render(request, self.template_name, context)
 
 

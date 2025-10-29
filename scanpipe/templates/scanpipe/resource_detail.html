@@ -16,7 +16,7 @@
     <div class="mx-5">
       {% block partial-content %}
         {% if request.htmx %}
-          {% include 'scanpipe/tree/resource_path_breadcrumb.html' %}
+          {% include 'scanpipe/tree/resource_path_breadcrumb.html' with path=object.path %}
         {% endif %}
         {% include 'scanpipe/tabset/tabset.html' %}
       {% endblock %}
