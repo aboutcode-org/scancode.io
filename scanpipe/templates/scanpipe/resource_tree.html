@@ -2,6 +2,11 @@
 {% load static humanize %}
 {% block title %}ScanCode.io: {{ project.name }} - Resources tree{% endblock %}
 
+{% block extrahead %}
+  <script src="{% static 'ace-1.43.3.min.js' %}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="{% static 'ace-1.43.3-ext-searchbox.min.js' %}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+{% endblock %}
+
 {% block content %}
   <div id="content-header" class="container is-max-widescreen mb-3">
     {% include 'scanpipe/includes/navbar_header.html' %}
@@ -12,27 +17,32 @@
     </section>
   </div>
 
-<div id="resource-tree-container" class="container is-fluid p-0">
-  <div class="resizable-container is-flex">
-    <div id="left-pane" class="left-pane px-2">
-      <div id="resource-tree">
-        {% include "scanpipe/panels/codebase_tree_panel.html" with children=children path=path %}
+  <div id="resource-tree-container" class="container is-fluid p-0">
+    <div class="resizable-container is-flex">
+      <div id="left-pane" class="left-pane px-2">
+        {% include "scanpipe/tree/resource_left_pane_header.html" only %}
+        <div id="resource-tree">
+          {% include "scanpipe/tree/resource_left_pane_tree.html" with children=children path=path %}
+        </div>
+      </div>
+      <div id="resizer" class="resizer"></div>
+      <div id="right-pane" class="right-pane px-3">
+        {% if path %}
+          <div
+            {% if resource.is_file %}
+              hx-get="{% url 'resource_detail' project.slug resource.path %}"
+            {% else %}
+              hx-get="{% url 'project_resource_tree_table' project.slug %}?path={{ path }}"
+            {% endif %}
+            hx-trigger="load"
+            hx-target="this">
+          </div>
+        {% else %}
+          {% include "scanpipe/tree/resource_right_pane.html" %}
+        {% endif %}
       </div>
     </div>
-    <div id="resizer" class="resizer"></div>
-    <div id="right-pane" class="right-pane px-2">
-      {% if path %}
-        <div
-          hx-get="{% url 'codebase_resource_table' project.slug %}?path={{ path }}"
-          hx-trigger="load"
-          hx-target="this">
-        </div>
-      {% else %}
-        {% include "scanpipe/panels/resource_table_panel.html" %}
-      {% endif %}
-    </div>
   </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
@@ -135,6 +145,22 @@
           document.body.style.userSelect = '';
         }
       });
+
+      // Show/hide left pane
+      const hidePaneButton = document.getElementById('hide-left-pane');
+      hidePaneButton.addEventListener('click', function() {
+        leftPane.classList.add('is-hidden');
+        resizer.classList.add('is-hidden');
+
+        const expandPaneButton = document.getElementById('expand-left-pane');
+        expandPaneButton.classList.remove('is-hidden');
+        expandPaneButton.addEventListener('click', function() {
+          leftPane.classList.remove('is-hidden');
+          resizer.classList.remove('is-hidden');
+          expandPaneButton.classList.add('is-hidden');
+        });
+      });
+
     });
   </script>
 {% endblock %}

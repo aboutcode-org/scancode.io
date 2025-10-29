@@ -1,22 +1,42 @@
-{% extends "scanpipe/base.html" %}
+{% extends request.htmx|yesno:"scanpipe/base_htmx.html,scanpipe/base.html" %}
 {% load static %}
 
 {% block title %}ScanCode.io: {{ project.name }} - {{ object.name }}{% endblock %}
+
+{% block extrahead %}
+  <script src="{% static 'ace-1.43.3.min.js' %}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="{% static 'ace-1.43.3-ext-searchbox.min.js' %}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+{% endblock %}
 
 {% block content %}
   <div class="container is-max-widescreen">
     {% include 'scanpipe/includes/navbar_header.html' %}
     <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
     {% include 'scanpipe/includes/breadcrumb_detail_view.html' with template_title="scanpipe/includes/resource_path_links.html" url_name="project_resources" %}
-    {% include 'scanpipe/tabset/tabset.html' %}
+    <div class="mx-5">
+      {% block partial-content %}
+        {% if request.htmx %}
+          {% include 'scanpipe/tree/resource_path_breadcrumb.html' with path=object.path %}
+        {% endif %}
+        {% include 'scanpipe/tabset/tabset.html' %}
+      {% endblock %}
+    </div>
   </div>
 {% endblock %}
 
 {% block scripts %}
-  <script src="{% static 'ace-1.42.0.min.js' %}" crossorigin="anonymous"></script>
-  <script src="{% static 'ace-1.42.0-ext-searchbox.min.js' %}" crossorigin="anonymous"></script>
   {{ detected_values|json_script:"detected_values" }}
   <script>
+  {
+    document.addEventListener('htmx:beforeSwap', function(evt) {
+      // Clean up editor before HTMX swaps content
+      if (window.editor) {
+        window.editor.destroy();
+        window.editor.container.remove();
+        window.editor = null;
+      }
+    });
+
     let editor = ace.edit("editor", {
       mode: "ace/mode/text",
       autoScrollEditorIntoView: true,
@@ -29,6 +49,9 @@
       foldStyle: "manual",
       fontFamily: "SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace",
     });
+
+    // Store globally for cleanup
+    window.editor = editor;
 
     function removeAllMarkers() {
       let session = editor.getSession();
@@ -124,6 +147,6 @@
       let is_full_screen = body.classList.toggle("full-screen");
       editor.resize()
     });
-
+  }
   </script>
 {% endblock %}
