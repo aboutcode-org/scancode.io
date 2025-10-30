@@ -183,22 +183,31 @@ See the :ref:`installation` chapter for the full list of installation options.
 Integrate with Your Workflows
 -----------------------------
 
-ScanCode.io can be part of your CI/CD workflow.
+ScanCode.io integrates seamlessly into CI/CD pipelines, enabling automated scans on
+commits, pull requests, releases, and scheduled events.
+
+**Supported platforms:**
+
+- **GitHub Actions** - Official action with built-in compliance checks
+- **GitLab** - Docker-based pipeline integration
+- **Jenkins** - Jenkinsfile integration with artifact archiving
+- **Azure Pipelines** - Azure DevOps pipeline support
+- **Any CI/CD system** - Direct Docker command integration
 
 GitHub Actions
 ^^^^^^^^^^^^^^
 
 Use the official `scancode-action <https://github.com/aboutcode-org/scancode-action>`_
-to integrate **ScanCode.io into your GitHub workflows** with ease.
+to integrate ScanCode.io into your GitHub workflows.
 
-This action lets you:
+**Features:**
 
-- **Run pipelines**
-- **Check for compliance issues**
-- **Detect vulnerabilities**
-- **Generate SBOMs and scan results**
+- Run pipelines automatically on repository events
+- Check for compliance issues and policy violations
+- Detect security vulnerabilities
+- Generate SBOMs in multiple formats (SPDX, CycloneDX)
 
-Example usage:
+**Example usage:**
 
 .. code-block:: yaml
 
@@ -212,8 +221,10 @@ Example usage:
           pipelines: "scan_codebase"
           output-formats: "json xlsx spdx cyclonedx"
 
-Full details available at:
-https://github.com/aboutcode-org/scancode-action
+**Learn more:** https://github.com/aboutcode-org/scancode-action
 
-.. tip::
-    Learn more about automation options in the :ref:`automation` section.
+Other CI/CD Platforms
+^^^^^^^^^^^^^^^^^^^^^
+
+For setup instructions and examples for other platforms, see the :ref:`automation`
+section.
