@@ -1305,6 +1305,30 @@ class ScanPipeD2DPipesTest(TestCase):
 
         self.assertEqual(1, expected)
 
+    def test_scan_ignored_to_files(self):
+        to_dir = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/META-INF/foo-bar"
+        )
+        to_input_location = self.data / "d2d/find_java_packages/Foo.java"
+        to_dir.mkdir(parents=True)
+        copy_input(to_input_location, to_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        foo_java = self.project1.codebaseresources.get(
+            path=("to/project.tar.zst-extract/META-INF/foo-bar/Foo.java")
+        )
+        foo_java.update(status=flag.IGNORED_FROM_CONFIG)
+
+        d2d.scan_ignored_to_files(self.project1)
+        foo_java.refresh_from_db()
+
+        expected = self.project1.codebaseresources.filter(
+            status=flag.IGNORED_FROM_CONFIG
+        ).count()
+
+        self.assertEqual(1, expected)
+
     def test_scan_unmapped_to_files(self):
         to_dir = (
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"

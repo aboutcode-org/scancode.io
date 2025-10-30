@@ -693,9 +693,8 @@ class PipelinesIntegrationTest(TestCase):
         expected_json = self._normalize_package_uids(expected_json)
         expected_data = self._without_keys(expected_json, self.exclude_from_diff)
         if sort_dependencies:
-            result_data = self._sort_dependencies(result_data)
+            expected_data = self._sort_dependencies(expected_data)
         expected_data = sort_for_os_compatibility(expected_data)
-
         self.assertEqual(expected_data, result_data)
 
     @skipIf(from_docker_image, "Random failure in the Docker context.")
