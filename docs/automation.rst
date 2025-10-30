@@ -75,8 +75,8 @@ Integrate ScanCode.io into your Jenkins pipelines with a simple Jenkinsfile.
 **Full documentation:**
 https://github.com/aboutcode-org/scancode-action/blob/main/jenkins/README.md
 
-GitLab CI/CD
-^^^^^^^^^^^^
+GitLab
+^^^^^^
 
 Run ScanCode.io scans in your GitLab pipelines.
 
