@@ -208,6 +208,15 @@ class KotlinLanguage(JvmLanguage):
         return str(path.parent / f"{class_name}{extension}")
 
 
+class GrammarLanguage(JvmLanguage):
+    name = "grammar"
+    source_extensions = (".g", ".g4")
+    binary_extensions = (".class",)
+    source_package_attribute_name = "grammar_package"
+    package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
+    binary_map_type = "grammar_to_class"
+
+
 def get_fully_qualified_path(jvm_package, filename):
     """
     Return a fully qualified path of a ``filename`` in a
