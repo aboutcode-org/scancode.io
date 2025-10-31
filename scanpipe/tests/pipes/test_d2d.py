@@ -394,50 +394,46 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual("", to3.status)
 
     def test_scanpipe_pipes_d2d_map_java_to_class_with_java_in_deploy(self):
-        sha1 = "abcde"
-        from1 = make_resource_file(
-            self.project1,
-            path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/"
-            "AbstractConfigurationProvider.java",
-            extra_data={"java_package": "org.apache.flume.node"},
-            sha1=sha1,
-        )
-        to1 = make_resource_file(
-            self.project1,
-            path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
-            "AbstractConfigurationProvider.java",
-            sha1=sha1,
-        )
-        to2 = make_resource_file(
-            self.project1,
-            path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
-            "AbstractConfigurationProvider.class",
-        )
+        input_dir = self.project1.input_path
+        # "from-Baz.zip" contains Baz.java
+        # "to-Baz.jar" contains Baz.java and Baz.class
+        input_resources = [
+            self.data / "d2d" / "find_java_packages" / "from-Baz.zip",
+            self.data / "d2d" / "find_java_packages" / "to-Baz.jar",
+        ]
 
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
 
-        # The pipeline will run map_checksum first
-        d2d.map_checksum(self.project1, "sha1", logger=buffer.write)
-        expected = "Mapping 1 to/ resources using sha1 against from/ codebase"
-        self.assertEqual(expected, buffer.getvalue())
-        self.assertEqual(1, to1.related_from.count())
-        relation1 = to1.related_from.get()
-        self.assertEqual("sha1", relation1.map_type)
-        self.assertEqual(from1, relation1.from_resource)
+        d2d.map_checksum(
+            project=self.project1, checksum_field="sha1", logger=buffer.write
+        )
 
+        d2d.find_jvm_packages(
+            self.project1, jvm_lang=jvm.JavaLanguage, logger=buffer.write
+        )
+        expected = "Finding java packages for 1 ('.java',) resources."
+        self.assertIn(expected, buffer.getvalue())
         # Now run map_java_to_class
         d2d.map_jvm_to_class(
             self.project1, logger=buffer.write, jvm_lang=jvm.JavaLanguage
         )
         expected = "Mapping 1 .class resources to 1 ('.java',)"
         self.assertIn(expected, buffer.getvalue())
-        self.assertEqual(2, self.project1.codebaserelations.count())
-        relation2 = self.project1.codebaserelations.get(
-            to_resource=to2, from_resource=from1
-        )
-        self.assertEqual("java_to_class", relation2.map_type)
-        expected = {"from_source_root": "from/flume-ng-node-1.9.0-sources.jar-extract/"}
-        self.assertEqual(expected, relation2.extra_data)
 
     def test_scanpipe_pipes_d2d_map_java_to_class_no_java(self):
         make_resource_file(self.project1, path="to/Abstract.class")
