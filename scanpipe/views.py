@@ -2740,7 +2740,7 @@ class ProjectResourceTreeView(ConditionalLoginRequired, generic.DetailView):
     def get(self, request, *args, **kwargs):
         slug = self.kwargs.get("slug")
         project = get_object_or_404(Project, slug=slug)
-        path = request.GET.get("path", "")
+        path = self.kwargs.get("path")
         parent_path = path if request.GET.get("tree_panel") == "true" else ""
 
         children = (

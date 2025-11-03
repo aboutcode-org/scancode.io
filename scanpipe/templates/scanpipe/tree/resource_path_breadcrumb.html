@@ -12,12 +12,12 @@
       {% if not forloop.last %}
         <li>
           <a
-            href="{% url 'project_resource_tree' project.slug %}?path={{ subpath }}"
+            href="{% url 'project_resource_tree' project.slug subpath %}"
             class="expand-in-tree"
             data-path="{{ subpath }}"
             hx-get="{% url 'project_resource_tree_table' project.slug %}?path={{ subpath }}"
             hx-target="#right-pane"
-            hx-push-url="{% url 'project_resource_tree' project.slug %}?path={{ subpath }}">
+            hx-push-url="{% url 'project_resource_tree' project.slug subpath %}">
             {{ segment }}
           </a>
         </li>

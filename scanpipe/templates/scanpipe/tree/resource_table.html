@@ -16,7 +16,7 @@
             data-path="{{ parent_path }}"
             hx-get="{% url 'project_resource_tree_table' project.slug %}{% if parent_path %}?path={{ parent_path }}{% endif %}"
             hx-target="#right-pane"
-            hx-push-url="{% url 'project_resource_tree' project.slug %}{% if parent_path %}?path={{ parent_path }}{% endif %}">
+            hx-push-url="{% url 'project_resource_tree' project.slug parent_path %}">
             <td colspan="5">
               <div class="is-flex is-align-items-center">
                 <span class="icon is-small mr-2">
@@ -41,11 +41,11 @@
                 {% if resource.is_dir %}
                   <a
                     class="expand-in-tree"
-                    href="{% url 'project_resource_tree' project.slug %}?path={{ resource.path }}"
+                    href="{% url 'project_resource_tree' project.slug resource.path %}"
                     data-path="{{ resource.path }}"
                     hx-get="{% url 'project_resource_tree_table' project.slug %}?path={{ resource.path }}"
                     hx-target="#right-pane"
-                    hx-push-url="{% url 'project_resource_tree' project.slug %}?path={{ resource.path }}">
+                    hx-push-url="{% url 'project_resource_tree' project.slug resource.path %}">
                     {{ resource.name }}
                   </a>
                 {% else %}
@@ -53,7 +53,7 @@
                     href="{% url 'resource_detail' project.slug resource.path %}"
                     hx-get="{% url 'resource_detail' project.slug resource.path %}"
                     hx-target="#right-pane"
-                    hx-push-url="{% url 'project_resource_tree' project.slug %}?path={{ resource.path }}">
+                    hx-push-url="{% url 'project_resource_tree' project.slug resource.path %}">
                     {{ resource.name }}
                   </a>
                 {% endif %}
@@ -86,7 +86,7 @@
           class="pagination-previous"
           hx-get="{% url 'project_resource_tree_table' project.slug %}?path={{ path }}&page={{ page_obj.previous_page_number }}"
           hx-target="#right-pane"
-          hx-push-url="{% url 'project_resource_tree' project.slug %}?path={{ path }}&page={{ page_obj.previous_page_number }}">
+          hx-push-url="{% url 'project_resource_tree' project.slug path %}?page={{ page_obj.previous_page_number }}">
           Previous
         </a>
       {% endif %}
@@ -95,7 +95,7 @@
           class="pagination-next"
           hx-get="{% url 'project_resource_tree_table' project.slug %}?path={{ path }}&page={{ page_obj.next_page_number }}"
           hx-target="#right-pane"
-          hx-push-url="{% url 'project_resource_tree' project.slug %}?path={{ path }}&page={{ page_obj.next_page_number }}">
+          hx-push-url="{% url 'project_resource_tree' project.slug path %}?page={{ page_obj.next_page_number }}">
           Next page
         </a>
       {% endif %}

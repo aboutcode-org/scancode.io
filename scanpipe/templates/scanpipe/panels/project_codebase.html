@@ -8,7 +8,7 @@
     </a>
   </div>
   {% for node in codebase_root_tree %}
-    <a class="panel-block" href="{% url 'project_resource_tree' project.slug %}?path={{ node.name }}">
+    <a class="panel-block" href="{% url 'project_resource_tree' project.slug node.name %}">
       <span class="panel-icon">
         <i class="{% if node.is_dir %}fa-solid fa-folder{% else %}fa-regular fa-file{% endif %}"></i>
       </span>

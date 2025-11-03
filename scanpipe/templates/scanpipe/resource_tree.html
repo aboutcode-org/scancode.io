@@ -65,7 +65,9 @@
         }
       } else {
         target.classList.remove("is-hidden");
-        const response = await fetch(url + "&tree_panel=true");
+        const fullUrl = new URL(url, window.location.origin);
+        fullUrl.searchParams.append('tree_panel', 'true');
+        const response = await fetch(fullUrl.toString());
         target.innerHTML = await response.text();
         target.dataset.loaded = "true";
         htmx.process(target);

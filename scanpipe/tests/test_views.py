@@ -672,12 +672,17 @@ class ScanPipeViewsTest(TestCase):
 
         (self.project1.codebase_path / "dir1").mkdir()
         (self.project1.codebase_path / "dir1/dir2").mkdir()
-        (self.project1.codebase_path / "file.txt").touch()
+        (self.project1.codebase_path / "file+.txt").touch()
 
         response = self.client.get(url)
-        resource_tree_url = reverse("project_resource_tree", args=[self.project1.slug])
-        self.assertContains(response, f"{resource_tree_url}?path=dir1")
-        self.assertContains(response, f"{resource_tree_url}?path=file.txt")
+        resource_tree_url = reverse(
+            "project_resource_tree", args=[self.project1.slug, "dir1"]
+        )
+        self.assertContains(response, resource_tree_url)
+        resource_tree_url = reverse(
+            "project_resource_tree", args=[self.project1.slug, "file+.txt"]
+        )
+        self.assertContains(response, resource_tree_url)
 
     def test_scanpipe_views_project_codebase_view_ordering(self):
         url = reverse("project_codebase", args=[self.project1.slug])
@@ -1622,8 +1627,11 @@ class ScanPipeViewsTest(TestCase):
         make_resource_file(self.project1, path="parent/dir1")
         make_resource_file(self.project1, path="parent/dir1/child2.txt")
 
-        url = reverse("project_resource_tree", kwargs={"slug": self.project1.slug})
-        response = self.client.get(url + "?path=parent&tree_panel=true")
+        url = reverse(
+            "project_resource_tree",
+            kwargs={"slug": self.project1.slug, "path": "parent"},
+        )
+        response = self.client.get(url + "?tree_panel=true")
         children = response.context["children"]
 
         child1 = children[0]
@@ -1656,8 +1664,11 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_resource_tree_view_with_path_file(self):
         resource = make_resource_file(self.project1, path="specific_file.txt")
 
-        url = reverse("project_resource_tree", kwargs={"slug": self.project1.slug})
-        response = self.client.get(url + f"?path={resource.path}")
+        url = reverse(
+            "project_resource_tree",
+            kwargs={"slug": self.project1.slug, "path": resource.path},
+        )
+        response = self.client.get(url)
 
         self.assertEqual(200, response.status_code)
         self.assertEqual("specific_file.txt", response.context["path"])
