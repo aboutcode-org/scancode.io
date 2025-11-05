@@ -1644,22 +1644,26 @@ class ScanPipeViewsTest(TestCase):
         self.assertTrue(dir1.has_children)
 
     def test_scanpipe_views_project_resource_tree_table_view_with_path_directory(self):
-        make_resource_directory(self.project1, path="parent")
-        make_resource_file(self.project1, path="parent/child1.txt")
-        make_resource_file(self.project1, path="parent/child2.py")
+        resource1 = make_resource_directory(self.project1, path="parent+special&chars")
+        make_resource_file(self.project1, path="parent+special&chars/child1.txt")
+        make_resource_file(self.project1, path="parent+special&chars/child2.py")
 
         url = reverse(
-            "project_resource_tree_table", kwargs={"slug": self.project1.slug}
+            "project_resource_tree_table",
+            kwargs={"slug": self.project1.slug, "path": resource1.path},
         )
-        response = self.client.get(url + "?path=parent")
+        response = self.client.get(url)
 
         self.assertEqual(200, response.status_code)
-        self.assertEqual("parent", response.context["path"])
+        self.assertEqual(resource1.path, response.context["path"])
         resources = list(response.context["resources"])
         self.assertEqual(2, len(resources))
 
         resource_paths = [r.path for r in resources]
-        self.assertEqual(["parent/child1.txt", "parent/child2.py"], resource_paths)
+        self.assertEqual(
+            ["parent+special&chars/child1.txt", "parent+special&chars/child2.py"],
+            resource_paths,
+        )
 
     def test_scanpipe_views_project_resource_tree_view_with_path_file(self):
         resource = make_resource_file(self.project1, path="specific_file.txt")
@@ -1678,10 +1682,10 @@ class ScanPipeViewsTest(TestCase):
         make_resource_directory(self.project1, path="empty_dir")
 
         url = reverse(
-            "project_resource_tree_table", kwargs={"slug": self.project1.slug}
+            "project_resource_tree_table",
+            kwargs={"slug": self.project1.slug, "path": "empty_dir"},
         )
-        response = self.client.get(url + "?path=empty_dir")
-
+        response = self.client.get(url)
         self.assertEqual(200, response.status_code)
         self.assertEqual("empty_dir", response.context["path"])
         resources = list(response.context["resources"])
@@ -1695,17 +1699,18 @@ class ScanPipeViewsTest(TestCase):
         make_resource_file(self.project1, path="parent/file3.txt", parent_path="parent")
 
         url = reverse(
-            "project_resource_tree_table", kwargs={"slug": self.project1.slug}
+            "project_resource_tree_table",
+            kwargs={"slug": self.project1.slug, "path": "parent"},
         )
 
-        response = self.client.get(url + "?path=parent")
+        response = self.client.get(url)
         self.assertEqual(200, response.status_code)
         self.assertTrue(response.context["is_paginated"])
         self.assertEqual(1, response.context["page_obj"].number)
         self.assertTrue(response.context["page_obj"].has_next())
         self.assertFalse(response.context["page_obj"].has_previous())
 
-        response = self.client.get(url + "?path=parent&page=2")
+        response = self.client.get(url + "?page=2")
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, response.context["page_obj"].number)
         self.assertFalse(response.context["page_obj"].has_next())

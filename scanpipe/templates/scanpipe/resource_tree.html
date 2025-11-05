@@ -32,7 +32,7 @@
             {% if resource.is_file %}
               hx-get="{% url 'resource_detail' project.slug resource.path %}"
             {% else %}
-              hx-get="{% url 'project_resource_tree_table' project.slug %}?path={{ path }}"
+              hx-get="{% url 'project_resource_tree_table' project.slug path %}"
             {% endif %}
             hx-trigger="load"
             hx-target="this">

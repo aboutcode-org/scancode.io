@@ -2740,7 +2740,7 @@ class ProjectResourceTreeView(ConditionalLoginRequired, generic.DetailView):
     def get(self, request, *args, **kwargs):
         slug = self.kwargs.get("slug")
         project = get_object_or_404(Project, slug=slug)
-        path = self.kwargs.get("path")
+        path = self.kwargs.get("path", "")
         parent_path = path if request.GET.get("tree_panel") == "true" else ""
 
         children = (
@@ -2781,7 +2781,7 @@ class ProjectResourceTreeTableView(
     context_object_name = "resources"
 
     def get_queryset(self):
-        path = self.request.GET.get("path", "")
+        path = self.kwargs.get("path", "")
         return (
             super()
             .get_queryset()
@@ -2800,7 +2800,7 @@ class ProjectResourceTreeTableView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        path = self.request.GET.get("path", "")
+        path = self.kwargs.get("path", "")
         context["path"] = path
 
         segments = path.strip("/").split("/")

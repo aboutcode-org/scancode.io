@@ -142,6 +142,11 @@ urlpatterns = [
         name="project_resource_tree",
     ),
     path(
+        "project/<slug:slug>/resource_tree_table/<path:path>/",
+        views.ProjectResourceTreeTableView.as_view(),
+        name="project_resource_tree_table",
+    ),
+    path(
         "project/<slug:slug>/resource_tree_table/",
         views.ProjectResourceTreeTableView.as_view(),
         name="project_resource_tree_table",

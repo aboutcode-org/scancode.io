@@ -15,7 +15,7 @@
             href="{% url 'project_resource_tree' project.slug subpath %}"
             class="expand-in-tree"
             data-path="{{ subpath }}"
-            hx-get="{% url 'project_resource_tree_table' project.slug %}?path={{ subpath }}"
+            hx-get="{% url 'project_resource_tree_table' project.slug subpath %}"
             hx-target="#right-pane"
             hx-push-url="{% url 'project_resource_tree' project.slug subpath %}">
             {{ segment }}
