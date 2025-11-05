@@ -340,6 +340,10 @@ a[target="_blank"] .fa-up-right-from-square {
 #content-header input[name="search"] {
   width: 225px;
 }
+.is-borderless {
+  --bulma-button-border-width: 0px;
+  --bulma-button-outer-shadow-a: 0;
+}
 button.as-link {
   height: auto;
   line-height: initial;
