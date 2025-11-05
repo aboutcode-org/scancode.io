@@ -146,6 +146,9 @@
   cursor: not-allowed;
   color: var(--bulma-text-weak);
 }
+.tabs.is-narrow {
+  --bulma-tabs-link-padding: 0.5em 0.75em;
+}
 .border-no-top-left-radius {
   border-bottom-left-radius: 6px;
   border-bottom-right-radius: 6px;
