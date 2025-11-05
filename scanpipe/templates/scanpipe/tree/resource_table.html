@@ -14,7 +14,7 @@
           <tr
             class="expand-in-tree is-clickable"
             data-path="{{ parent_path }}"
-            hx-get="{% url 'project_resource_tree_table' project.slug parent_path %}"
+            hx-get="{% url 'project_resource_tree_right_pane' project.slug parent_path %}"
             hx-target="#right-pane"
             hx-push-url="{% url 'project_resource_tree' project.slug parent_path %}">
             <td colspan="5">
@@ -43,7 +43,7 @@
                     class="expand-in-tree"
                     href="{% url 'project_resource_tree' project.slug resource.path %}"
                     data-path="{{ resource.path }}"
-                    hx-get="{% url 'project_resource_tree_table' project.slug resource.path %}"
+                    hx-get="{% url 'project_resource_tree_right_pane' project.slug resource.path %}"
                     hx-target="#right-pane"
                     hx-push-url="{% url 'project_resource_tree' project.slug resource.path %}">
                     {{ resource.name }}
@@ -84,7 +84,7 @@
       {% if page_obj.has_previous %}
         <a
           class="pagination-previous"
-          hx-get="{% url 'project_resource_tree_table' project.slug path %}?page={{ page_obj.previous_page_number }}"
+          hx-get="{% url 'project_resource_tree_right_pane' project.slug path %}?page={{ page_obj.previous_page_number }}"
           hx-target="#right-pane"
           hx-push-url="{% url 'project_resource_tree' project.slug path %}?page={{ page_obj.previous_page_number }}">
           Previous
@@ -93,7 +93,7 @@
       {% if page_obj.has_next %}
         <a
           class="pagination-next"
-          hx-get="{% url 'project_resource_tree_table' project.slug path%}?page={{ page_obj.next_page_number }}"
+          hx-get="{% url 'project_resource_tree_right_pane' project.slug path%}?page={{ page_obj.next_page_number }}"
           hx-target="#right-pane"
           hx-push-url="{% url 'project_resource_tree' project.slug path %}?page={{ page_obj.next_page_number }}">
           Next page

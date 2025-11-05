@@ -143,13 +143,13 @@ urlpatterns = [
     ),
     path(
         "project/<slug:slug>/resource_tree_table/<path:path>/",
-        views.ProjectResourceTreeTableView.as_view(),
-        name="project_resource_tree_table",
+        views.ProjectResourceTreeRightPaneView.as_view(),
+        name="project_resource_tree_right_pane",
     ),
     path(
         "project/<slug:slug>/resource_tree_table/",
-        views.ProjectResourceTreeTableView.as_view(),
-        name="project_resource_tree_table",
+        views.ProjectResourceTreeRightPaneView.as_view(),
+        name="project_resource_tree_right_pane",
     ),
     path(
         "run/<uuid:uuid>/",

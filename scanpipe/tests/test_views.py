@@ -1643,13 +1643,15 @@ class ScanPipeViewsTest(TestCase):
         self.assertFalse(child1.has_children)
         self.assertTrue(dir1.has_children)
 
-    def test_scanpipe_views_project_resource_tree_table_view_with_path_directory(self):
+    def test_scanpipe_views_project_resource_tree_right_pane_view_with_path_directory(
+        self,
+    ):
         resource1 = make_resource_directory(self.project1, path="parent+special&chars")
         make_resource_file(self.project1, path="parent+special&chars/child1.txt")
         make_resource_file(self.project1, path="parent+special&chars/child2.py")
 
         url = reverse(
-            "project_resource_tree_table",
+            "project_resource_tree_right_pane",
             kwargs={"slug": self.project1.slug, "path": resource1.path},
         )
         response = self.client.get(url)
@@ -1678,11 +1680,11 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual("specific_file.txt", response.context["path"])
         self.assertEqual(resource, response.context["resource"])
 
-    def test_scanpipe_views_project_resource_tree_table_view_empty_directory(self):
+    def test_scanpipe_views_project_resource_tree_right_pane_view_empty_directory(self):
         make_resource_directory(self.project1, path="empty_dir")
 
         url = reverse(
-            "project_resource_tree_table",
+            "project_resource_tree_right_pane",
             kwargs={"slug": self.project1.slug, "path": "empty_dir"},
         )
         response = self.client.get(url)
@@ -1691,15 +1693,15 @@ class ScanPipeViewsTest(TestCase):
         resources = list(response.context["resources"])
         self.assertEqual(0, len(resources))
 
-    @mock.patch("scanpipe.views.ProjectResourceTreeTableView.paginate_by", 2)
-    def test_scanpipe_views_project_resource_tree_table_view_pagination(self):
+    @mock.patch("scanpipe.views.ProjectResourceTreeRightPaneView.paginate_by", 2)
+    def test_scanpipe_views_project_resource_tree_right_pane_view_pagination(self):
         make_resource_directory(self.project1, path="parent")
         make_resource_file(self.project1, path="parent/file1.txt", parent_path="parent")
         make_resource_file(self.project1, path="parent/file2.txt", parent_path="parent")
         make_resource_file(self.project1, path="parent/file3.txt", parent_path="parent")
 
         url = reverse(
-            "project_resource_tree_table",
+            "project_resource_tree_right_pane",
             kwargs={"slug": self.project1.slug, "path": "parent"},
         )
 

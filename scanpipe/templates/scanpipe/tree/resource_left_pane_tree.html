@@ -10,7 +10,7 @@
             class="is-flex is-align-items-center folder-meta is-clickable"
             data-folder-click
             data-path="{{ node.path }}"
-            hx-get="{% url 'project_resource_tree_table' project.slug node.path %}"
+            hx-get="{% url 'project_resource_tree_right_pane' project.slug node.path %}"
             hx-target="#right-pane"
             hx-push-url="{% url 'project_resource_tree' project.slug node.path %}">
             <span class="icon is-small mr-2">

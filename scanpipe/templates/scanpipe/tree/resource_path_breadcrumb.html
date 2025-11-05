@@ -6,7 +6,7 @@
     data-tooltip-position="bottom right">
     <i class="fa-solid fa-square-caret-right"></i>
   </button>
-  {% if path_segments %}
+  {% if path %}
     <ul>
       {% for subpath, segment in path_segments %}
         {% if not forloop.last %}
@@ -15,7 +15,7 @@
               href="{% url 'project_resource_tree' project.slug subpath %}"
               class="expand-in-tree"
               data-path="{{ subpath }}"
-              hx-get="{% url 'project_resource_tree_table' project.slug subpath %}"
+              hx-get="{% url 'project_resource_tree_right_pane' project.slug subpath %}"
               hx-target="#right-pane"
               hx-push-url="{% url 'project_resource_tree' project.slug subpath %}">
               {{ segment }}

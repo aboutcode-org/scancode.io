@@ -2161,7 +2161,7 @@ class CodebaseResourceDetailsView(
         matched_snippet_annotations = self.get_matched_snippet_annotations(resource)
         context["detected_values"]["matched snippets"] = matched_snippet_annotations
 
-        # Compatibility with ProjectResourceTreeTableView
+        # Compatibility with ProjectResourceTreeRightPaneView
         segments = resource.path.strip("/").split("/")
         context["path_segments"] = [
             ("/".join(segments[: i + 1]), segment) for i, segment in enumerate(segments)
@@ -2770,7 +2770,7 @@ class ProjectResourceTreeView(ConditionalLoginRequired, generic.DetailView):
         return render(request, self.template_name, context)
 
 
-class ProjectResourceTreeTableView(
+class ProjectResourceTreeRightPaneView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
     generic.ListView,
