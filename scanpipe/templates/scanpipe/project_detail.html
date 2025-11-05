@@ -21,6 +21,9 @@
             </li>
             <li class="is-active">
               <a href="#" aria-current="page">{{ project.name }}</a>
+              <button class="button is-borderless has-text-grey copy-to-clipboard p-2" aria-label="Copy name" data-copy="{{ project.name }}" data-copy-feedback="Name copied!">
+                <i class="fa-regular fa-clone"></i>
+              </button>
             </li>
           </ul>
         </nav>

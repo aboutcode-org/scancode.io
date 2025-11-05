@@ -2161,7 +2161,7 @@ class CodebaseResourceDetailsView(
         matched_snippet_annotations = self.get_matched_snippet_annotations(resource)
         context["detected_values"]["matched snippets"] = matched_snippet_annotations
 
-        # Compatibility with ProjectResourceTreeTableView
+        # Compatibility with ProjectResourceTreeRightPaneView
         segments = resource.path.strip("/").split("/")
         context["path_segments"] = [
             ("/".join(segments[: i + 1]), segment) for i, segment in enumerate(segments)
@@ -2740,7 +2740,7 @@ class ProjectResourceTreeView(ConditionalLoginRequired, generic.DetailView):
     def get(self, request, *args, **kwargs):
         slug = self.kwargs.get("slug")
         project = get_object_or_404(Project, slug=slug)
-        path = request.GET.get("path", "")
+        path = self.kwargs.get("path", "")
         parent_path = path if request.GET.get("tree_panel") == "true" else ""
 
         children = (
@@ -2770,7 +2770,7 @@ class ProjectResourceTreeView(ConditionalLoginRequired, generic.DetailView):
         return render(request, self.template_name, context)
 
 
-class ProjectResourceTreeTableView(
+class ProjectResourceTreeRightPaneView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
     generic.ListView,
@@ -2781,7 +2781,7 @@ class ProjectResourceTreeTableView(
     context_object_name = "resources"
 
     def get_queryset(self):
-        path = self.request.GET.get("path", "")
+        path = self.kwargs.get("path", "")
         return (
             super()
             .get_queryset()
@@ -2800,7 +2800,7 @@ class ProjectResourceTreeTableView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        path = self.request.GET.get("path", "")
+        path = self.kwargs.get("path", "")
         context["path"] = path
 
         segments = path.strip("/").split("/")

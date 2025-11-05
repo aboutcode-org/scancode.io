@@ -146,6 +146,9 @@
   cursor: not-allowed;
   color: var(--bulma-text-weak);
 }
+.tabs.is-narrow {
+  --bulma-tabs-link-padding: 0.5em 0.75em;
+}
 .border-no-top-left-radius {
   border-bottom-left-radius: 6px;
   border-bottom-right-radius: 6px;
@@ -339,6 +342,10 @@ a[target="_blank"] .fa-up-right-from-square {
 }
 #content-header input[name="search"] {
   width: 225px;
+}
+.is-borderless {
+  --bulma-button-border-width: 0px;
+  --bulma-button-outer-shadow-a: 0;
 }
 button.as-link {
   height: auto;

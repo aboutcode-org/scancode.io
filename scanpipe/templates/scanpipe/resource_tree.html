@@ -27,19 +27,17 @@
       </div>
       <div id="resizer" class="resizer"></div>
       <div id="right-pane" class="right-pane px-3">
-        {% if path %}
           <div
             {% if resource.is_file %}
               hx-get="{% url 'resource_detail' project.slug resource.path %}"
+            {% elif path %}
+              hx-get="{% url 'project_resource_tree_right_pane' project.slug path %}"
             {% else %}
-              hx-get="{% url 'project_resource_tree_table' project.slug %}?path={{ path }}"
+              hx-get="{% url 'project_resource_tree_right_pane' project.slug %}"
             {% endif %}
             hx-trigger="load"
             hx-target="this">
           </div>
-        {% else %}
-          {% include "scanpipe/tree/resource_right_pane.html" %}
-        {% endif %}
       </div>
     </div>
   </div>
@@ -65,7 +63,9 @@
         }
       } else {
         target.classList.remove("is-hidden");
-        const response = await fetch(url + "&tree_panel=true");
+        const fullUrl = new URL(url, window.location.origin);
+        fullUrl.searchParams.append('tree_panel', 'true');
+        const response = await fetch(fullUrl.toString());
         target.innerHTML = await response.text();
         target.dataset.loaded = "true";
         htmx.process(target);
