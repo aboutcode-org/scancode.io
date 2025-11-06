@@ -1305,7 +1305,7 @@ class ScanPipeD2DPipesTest(TestCase):
 
         self.assertEqual(1, expected)
 
-    def test_scan_ignored_to_files(self):
+    def test_scanpipe_pipes_d2d_scan_ignored_to_files(self):
         to_dir = (
             self.project1.codebase_path / "to/project.tar.zst-extract/META-INF/foo-bar"
         )
