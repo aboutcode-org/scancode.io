@@ -104,6 +104,7 @@ class DeployToDevelop(Pipeline):
             cls.perform_house_keeping_tasks,
             cls.match_purldb_resources_post_process,
             cls.remove_packages_without_resources,
+            cls.scan_ignored_to_files,
             cls.scan_unmapped_to_files,
             cls.scan_mapped_from_for_files,
             cls.collect_and_create_license_detections,
@@ -410,6 +411,16 @@ class DeployToDevelop(Pipeline):
             codebase_resources__isnull=True
         )
         package_without_resources.delete()
+
+    def scan_ignored_to_files(self):
+        """
+        Scan status="ignored-from-config" ``to/`` files for copyrights,
+        licenses, emails, and urls. These files are ignored based on
+        ecosystem specific configurations. These files are not used for the
+        D2D purpose, but scanning them may provide useful information about
+        the deployed codebase.
+        """
+        d2d.scan_ignored_to_files(project=self.project, logger=self.log)
 
     def scan_unmapped_to_files(self):
         """

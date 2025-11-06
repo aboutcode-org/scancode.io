@@ -1507,6 +1507,23 @@ def flag_undeployed_resources(project):
     from_unmapped.update(status=flag.NOT_DEPLOYED)
 
 
+def scan_ignored_to_files(project, logger=None):
+    """
+    Scan status="ignored-from-config" ``to/`` files for copyrights, licenses,
+    emails, and urls.
+    """
+    scan_files = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .filter(status=flag.IGNORED_FROM_CONFIG)
+    )
+    scancode.scan_for_files(project, scan_files, progress_logger=logger)
+
+    project.codebaseresources.files().to_codebase().filter(status=flag.SCANNED).update(
+        status=flag.IGNORED_FROM_CONFIG
+    )
+
+
 def scan_unmapped_to_files(project, logger=None):
     """
     Scan unmapped/matched ``to/`` files for copyrights, licenses,

@@ -470,6 +470,22 @@ class ScanPipeD2DPipesTest(TestCase):
         expected = "No ('.java',) resources to map."
         self.assertIn(expected, buffer.getvalue())
 
+    def test_scanpipe_pipes_d2d_java_ignore_pattern(self):
+        make_resource_file(self.project1, path="to/module-info.class")
+        make_resource_file(self.project1, path="to/META-INF/MANIFEST.MF")
+        make_resource_file(self.project1, path="to/test.class")
+        make_resource_file(self.project1, path="to/META-INF/others.txt")
+        buffer = io.StringIO()
+
+        java_config = d2d_config.get_ecosystem_config(ecosystem="Java")
+        d2d.ignore_unmapped_resources_from_config(
+            project=self.project1,
+            patterns_to_ignore=java_config.deployed_resource_path_exclusions,
+            logger=buffer.write,
+        )
+        expected = "Ignoring 3 to/ resources with ecosystem specific configurations."
+        self.assertIn(expected, buffer.getvalue())
+
     def test_scanpipe_pipes_d2d_map_jar_to_java_source(self):
         from1 = make_resource_file(
             self.project1,
@@ -1307,6 +1323,30 @@ class ScanPipeD2DPipesTest(TestCase):
         d2d.flag_undeployed_resources(self.project1)
         expected = self.project1.codebaseresources.filter(
             status=flag.NOT_DEPLOYED
+        ).count()
+
+        self.assertEqual(1, expected)
+
+    def test_scanpipe_pipes_d2d_scan_ignored_to_files(self):
+        to_dir = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/META-INF/foo-bar"
+        )
+        to_input_location = self.data / "d2d/find_java_packages/Foo.java"
+        to_dir.mkdir(parents=True)
+        copy_input(to_input_location, to_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        foo_java = self.project1.codebaseresources.get(
+            path=("to/project.tar.zst-extract/META-INF/foo-bar/Foo.java")
+        )
+        foo_java.update(status=flag.IGNORED_FROM_CONFIG)
+
+        d2d.scan_ignored_to_files(self.project1)
+        foo_java.refresh_from_db()
+
+        expected = self.project1.codebaseresources.filter(
+            status=flag.IGNORED_FROM_CONFIG
         ).count()
 
         self.assertEqual(1, expected)
