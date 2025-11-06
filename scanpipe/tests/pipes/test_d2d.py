@@ -435,6 +435,32 @@ class ScanPipeD2DPipesTest(TestCase):
         expected = "Mapping 1 .class resources to 1 ('.java',)"
         self.assertIn(expected, buffer.getvalue())
 
+    def test_scanpipe_pipes_d2d_map_grammar_to_class(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/antlr4-4.5.1-beta-1/tool/src/org/antlr/v4/parse/BlockSetTransformer.g",
+            extra_data={"grammar_package": "org.antlr.v4.parse"},
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/org/antlr/v4/parse/BlockSetTransformer.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.GrammarLanguage
+        )
+
+        expected = "Mapping 1 .class resources to 1 ('.g', '.g4')"
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(1, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("grammar_to_class", r1.map_type)
+        expected = {"from_source_root": "from/antlr4-4.5.1-beta-1/tool/src/"}
+        self.assertEqual(expected, r1.extra_data)
+
     def test_scanpipe_pipes_d2d_map_java_to_class_no_java(self):
         make_resource_file(self.project1, path="to/Abstract.class")
         buffer = io.StringIO()
