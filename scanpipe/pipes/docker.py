@@ -190,7 +190,6 @@ def create_codebase_resources(project, image: Image) -> None:
     for layer_index, layer in enumerate(image.layers, start=1):
         layer_tag = get_layer_tag(image.image_id, layer.layer_id, layer_index)
 
-        layer_file_count = 0
         for resource in layer.get_resources(with_dir=True):
             pipes.make_codebase_resource(
                 project=project,
@@ -198,14 +197,10 @@ def create_codebase_resources(project, image: Image) -> None:
                 rootfs_path=resource.path,
                 tag=layer_tag,
             )
-            if resource.is_file:
-                layer_file_count += 1
 
         layer_data = layer.to_dict()
-        layer_data["file_count"] = layer_file_count
         layer_data.pop("extracted_location", None)
         layer_data.pop("archive_location", None)
-
         pipes.make_codebase_resource(
             project=project,
             location=str(layer.extracted_location),

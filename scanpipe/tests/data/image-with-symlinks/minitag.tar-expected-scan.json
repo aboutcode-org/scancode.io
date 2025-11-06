@@ -169,7 +169,6 @@
           "variant": null,
           "layer_id": "887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0",
           "created_by": "/bin/sh -c #(nop) ADD file:783bda715f24a7fcabfe87ca07ae47e5cca3d35b99dd78e3155748e41477acb2 in / ",
-          "file_count": 8,
           "os_version": null,
           "architecture": null,
           "docker_version": null,
