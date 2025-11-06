@@ -169,10 +169,33 @@ def get_layer_tag(image_id, layer_id, layer_index, id_length=6):
     return f"img-{short_image_id}-layer-{layer_index:02}-{short_layer_id}"
 
 
-def create_codebase_resources(project, image):
-    """Create the CodebaseResource for an `image` in a `project`."""
+def create_codebase_resources(project, image: Image) -> None:
+    """
+    Create codebase resources for the provided image and its layers.
+
+    Creates a codebase resource for the extracted image root directory and each
+    extracted layer directory, ensuring the structure is properly indexed for tree
+    rendering.
+
+    Args:
+        project: The project instance.
+        image: The image object with the extracted_location attribute.
+
+    """
+    pipes.make_codebase_resource(
+        project=project,
+        location=str(project.codebase_path / Path(image.extracted_location).name),
+    )
+
     for layer_index, layer in enumerate(image.layers, start=1):
         layer_tag = get_layer_tag(image.image_id, layer.layer_id, layer_index)
+
+        pipes.make_codebase_resource(
+            project=project,
+            location=str(layer.extracted_location),
+            tag=layer_tag,
+            extra_data={"layer": {"created_by": layer.created_by}},
+        )
 
         for resource in layer.get_resources(with_dir=True):
             pipes.make_codebase_resource(
