@@ -588,7 +588,7 @@
           "variant": null,
           "layer_id": "cb3279093e638ddfd56bff4d3d89c5a3ed6dd59dbcfbc2f3107045635996b822",
           "created_by": "bazel build ...",
-          "file_count": 458,
+          "file_count": 457,
           "os_version": null,
           "architecture": null,
           "docker_version": null,
