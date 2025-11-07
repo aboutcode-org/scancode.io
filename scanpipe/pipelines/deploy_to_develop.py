@@ -83,6 +83,8 @@ class DeployToDevelop(Pipeline):
             cls.find_grammar_packages,
             cls.map_grammar_to_class,
             cls.map_jar_to_grammar_source,
+            cls.find_xtend_packages,
+            cls.map_xtend_to_class,
             cls.map_javascript,
             cls.map_javascript_symbols,
             cls.map_javascript_strings,
@@ -257,6 +259,20 @@ class DeployToDevelop(Pipeline):
         """Map .jar files to their related source directory."""
         d2d.map_jar_to_jvm_source(
             project=self.project, jvm_lang=jvm.GrammarLanguage, logger=self.log
+        )
+
+    @optional_step("Xtend")
+    def find_xtend_packages(self):
+        """Find the java package of the xtend source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.XtendLanguage, logger=self.log
+        )
+
+    @optional_step("Xtend")
+    def map_xtend_to_class(self):
+        """Map a .class compiled file to its xtend source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.XtendLanguage, logger=self.log
         )
 
     @optional_step("JavaScript")
