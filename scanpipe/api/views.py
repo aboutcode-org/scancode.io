@@ -424,7 +424,7 @@ class ProjectViewSet(
                 remove_output=request.data.get("remove_output"),
             )
         except RunInProgressError as error:
-            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"status": str(error)}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"status": f"The project {project} has been archived."})
 
@@ -437,13 +437,15 @@ class ProjectViewSet(
             return Response({"status": message})
 
         try:
-            project.reset(keep_input=True)
-        except RunInProgressError as error:
-            return Response(error, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            message = (
-                f"All data, except inputs, for the {project} project have been removed."
+            project.reset(
+                keep_input=request.data.get("keep_input", True),
+                restore_pipelines=request.data.get("restore_pipelines", False),
+                execute_now=request.data.get("execute_now", False),
             )
+        except RunInProgressError as error:
+            return Response({"status": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            message = f"The {project} project has been reset."
             return Response({"status": message})
 
     @action(detail=True, methods=["get"])

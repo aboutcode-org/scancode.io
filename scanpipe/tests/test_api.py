@@ -963,8 +963,7 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         expected = {
-            "status": "All data, except inputs, for the Analysis project have been "
-            "removed."
+            "status": "The Analysis project has been reset."
         }
         self.assertEqual(expected, response.data)
         self.assertEqual(0, self.project1.runs.count())
