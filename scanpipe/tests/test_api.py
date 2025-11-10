@@ -909,10 +909,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         response = self.csrf_client.delete(self.project1_detail_url)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
-        expected = (
-            "Cannot execute this action until all associated pipeline runs are "
-            "completed."
-        )
+        expected = "Cannot delete project while a run is in progress."
         self.assertEqual(expected, response.data["status"])
 
         run.set_task_ended(exitcode=0)

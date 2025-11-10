@@ -1,6 +1,12 @@
 Changelog
 =========
 
+v35.4.2 (unreleased)
+--------------------
+
+- Add arguments support for the reset action in REST API.
+  https://github.com/aboutcode-org/scancode.io/issues/1948
+
 v35.4.1 (2025-10-24)
 --------------------
 

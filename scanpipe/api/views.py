@@ -21,6 +21,7 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
+import logging
 
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
@@ -58,6 +59,7 @@ from scanpipe.pipes import output
 from scanpipe.pipes.compliance import get_project_compliance_alerts
 from scanpipe.views import project_results_json_response
 
+logger = logging.getLogger(__name__)
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
@@ -401,8 +403,11 @@ class ProjectViewSet(
     def destroy(self, request, *args, **kwargs):
         try:
             return super().destroy(request, *args, **kwargs)
-        except RunInProgressError as error:
-            return Response({"status": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        except RunInProgressError:
+            return Response(
+                {"status": "Cannot delete project while a run is in progress."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     @action(detail=True, methods=["get", "post"])
     def archive(self, request, *args, **kwargs):
@@ -423,10 +428,13 @@ class ProjectViewSet(
                 remove_codebase=request.data.get("remove_codebase"),
                 remove_output=request.data.get("remove_output"),
             )
-        except RunInProgressError as error:
-            return Response({"status": str(error)}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response({"status": f"The project {project} has been archived."})
+        except RunInProgressError:
+            return Response(
+                {"status": "Cannot archive project while a run is in progress."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response({"status": f"The project {project} has been archived."})
 
     @action(detail=True, methods=["get", "post"])
     def reset(self, request, *args, **kwargs):
@@ -442,8 +450,11 @@ class ProjectViewSet(
                 restore_pipelines=request.data.get("restore_pipelines", False),
                 execute_now=request.data.get("execute_now", False),
             )
-        except RunInProgressError as error:
-            return Response({"status": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        except RunInProgressError:
+            return Response(
+                {"status": "Cannot reset project while a run is in progress."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         else:
             message = f"The {project} project has been reset."
             return Response({"status": message})
