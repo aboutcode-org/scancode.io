@@ -1036,6 +1036,16 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual("tag", input_source.tag)
 
         data = {
+            "input_urls": ["docker://alpine", "docker://postgresql"],
+        }
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual({"status": "Input(s) added."}, response.data)
+        input_sources = self.project1.inputsources.filter(
+            download_url__startswith="docker://"
+        )
+        self.assertEqual(2, len(input_sources))
+
+        data = {
             "upload_file": io.BytesIO(b"Content"),
             "upload_file_tag": "tag value",
         }
