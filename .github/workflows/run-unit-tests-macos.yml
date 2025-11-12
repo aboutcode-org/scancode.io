@@ -41,6 +41,9 @@ jobs:
           password: ${{ env.POSTGRES_PASSWORD }}
           port: 5432
 
+      - name: Install libmagic
+        run: brew install libmagic
+
       - name: Install Python dependencies
         run: make dev envfile
 
