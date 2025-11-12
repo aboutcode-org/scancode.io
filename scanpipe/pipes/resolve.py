@@ -22,6 +22,8 @@
 
 import json
 import logging
+import re
+import requests
 import sys
 import uuid
 from pathlib import Path
@@ -43,6 +45,9 @@ from scanpipe.pipes import flag
 from scanpipe.pipes import spdx
 from scanpipe.pipes import update_or_create_dependency
 from scanpipe.pipes import update_or_create_package
+
+from scanpipe.pipes import fetch
+from scanpipe.pipes import scancode
 
 """
 Resolve packages from manifest, lockfile, and SBOM.
@@ -521,3 +526,166 @@ def extract_headers(input_location, extract_fields):
         return extracted_headers
 
     return {}
+
+
+def parse_maven_filename(filename):
+    """Parse a Maven's jar filename to extract artifactId and version."""
+    # Remove the .jar extension
+    base = filename.rsplit('.', 1)[0]
+
+    # Common classifiers pattern
+    common_classifiers = {
+        'sources', 'javadoc', 'tests', 'test', 'test-sources',
+        'src', 'bin', 'docs', 'javadocs', 'client', 'server',
+        'linux', 'windows', 'macos', 'linux-x86_64', 'windows-x86_64'
+    }
+
+    # Remove known classifier if present
+    for classifier in common_classifiers:
+        if base.endswith(f"-{classifier}"):
+            base = base[:-(len(classifier) + 1)]
+            break
+
+    # Match artifactId and version
+    match = re.match(r'^(.*)-(\d[\w.\-]+)$', base)
+    if match:
+        artifact_id = match.group(1)
+        version = match.group(2)
+        return artifact_id, version
+    else:
+        return None, None
+
+
+def get_pom_url_list(input_source, packages):
+    pom_url_list = []
+    if packages:
+        for package in packages:
+            package_ns = package.get("namespace", "")
+            package_name = package.get("name", "")
+            package_version = package.get("version", "")
+            pom_url = f"https://repo1.maven.org/maven2/{package_ns.replace('.', '/')}/{package_name}/{package_version}/{package_name}-{package_version}.pom".lower()
+            pom_url_list.append(pom_url)
+    else:
+        # Check what's the input source
+        input_source_url = input_source.get("download_url", "")
+
+        if input_source_url and "maven.org/" in input_source_url:
+            base_url = input_source_url.rsplit('/', 1)[0]
+            pom_url = base_url + "/" + "-".join(base_url.rstrip("/").split("/")[-2:]) + ".pom"
+            pom_url_list.append(pom_url)
+        else:
+            # Construct a pom_url from filename
+            input_filename = input_source.get("filename", "")
+            if input_filename.endswith(".jar"):
+                artifact_id, version = parse_maven_filename(input_filename)
+                if not artifact_id or not version:
+                    return []
+                pom_url_list = construct_pom_url_from_filename(artifact_id, version)
+            else:
+                # Only work with input that's a .jar file
+                return []
+
+    return pom_url_list
+
+
+def construct_pom_url_from_filename(artifact_id, version):
+    """Construct a pom.xml URL from the given Maven filename."""
+    # Search Maven Central for the artifact to get its groupId
+    url = f"https://search.maven.org/solrsearch/select?q=a:{artifact_id}&wt=json"
+    pom_url_list = []
+    group_ids = []
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        # Extract all 'g' fields from the docs array that represent
+        # groupIds
+        group_ids = [doc['g'] for doc in data['response']['docs']]
+    except requests.RequestException as e:
+        print(f"Error fetching data: {e}")
+        return []
+    except KeyError as e:
+        print(f"Error parsing JSON: {e}")
+        return []
+
+    for group_id in group_ids:
+        pom_url = f"https://repo1.maven.org/maven2/{group_id.replace('.', '/')}/{artifact_id}/{version}/{artifact_id}-{version}.pom".lower()
+        if is_maven_pom_url(pom_url):
+            pom_url_list.append(pom_url)
+    if len(pom_url_list) > 1:
+        # If multiple valid POM URLs are found, it means the same
+        # artifactId and version exist under different groupIds. Since we
+        # can't confidently determine the correct groupId, we return an
+        # empty list to avoid fetching the wrong POM.
+        return []
+
+    return pom_url_list
+
+
+def is_maven_pom_url(url):
+    """
+    Return True if the url is a accessible, False otherwise
+    Maven Central has a fallback mechanism that serves a generic/error page
+    instead of returning a proper 404.
+    """
+    try:
+        response = requests.get(url, timeout=5)
+        if response.status_code != 200:
+            return False
+        # Check content-type
+        content_type = response.headers.get('content-type', '').lower()
+        is_xml = 'xml' in content_type or 'text/xml' in content_type
+
+        # Check content
+        content = response.text.strip()
+        is_pom = content.startswith('<?xml') and '<project' in content
+
+        if is_xml and is_pom:
+            return True
+        else:
+            # It's probably the Maven Central error page
+            return False
+    except requests.RequestException:
+        return False
+
+
+def download_and_scan_pom_file(pom_url_list):
+    scanned_pom_packages = []
+    scanned_pom_deps = []
+    for pom_url in pom_url_list:
+        downloaded_pom = fetch.fetch_http(pom_url)
+        scanned_pom_output_path = str(downloaded_pom.path) + "-output.json"
+
+        # Run a package scan on the fetched pom.xml
+        _scanning_errors = scancode.run_scan(
+            location=str(downloaded_pom.path),
+            output_file=scanned_pom_output_path,
+            run_scan_args={
+                "copyright": True,
+                "email": True,
+                "info": True,
+                "license": True,
+                "license_text": True,
+                "license_diagnostics": True,
+                "license_text_diagnostics": True,
+                "license_references": True,
+                "package": True,
+                "url": True,
+            },
+        )
+
+        with open(scanned_pom_output_path, 'r') as scanned_pom_file:
+            scanned_pom_data = json.load(scanned_pom_file)
+            scanned_packages = scanned_pom_data.get("packages", [])
+            scanned_dependencies = scanned_pom_data.get("dependencies", [])
+            if scanned_packages:
+                for scanned_package in scanned_packages:
+                    # Replace the 'datafile_path' with the pom_url
+                    scanned_package['datafile_paths'] = [pom_url]
+                    scanned_pom_packages.append(scanned_package)
+            if scanned_dependencies:
+                for scanned_dep in scanned_dependencies:
+                    # Replace the 'datafile_path' with the empty list
+                    scanned_dep['datafile_path'] = scanned_pom_output_path
+                    scanned_pom_deps.append(scanned_dep)
+    return scanned_pom_packages, scanned_pom_deps
