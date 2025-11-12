@@ -22,7 +22,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:13
+        image: postgres:17
         env:
           POSTGRES_DB: ${{ env.POSTGRES_DB }}
           POSTGRES_USER: ${{ env.POSTGRES_USER }}
