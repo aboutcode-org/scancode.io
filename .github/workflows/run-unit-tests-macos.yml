@@ -17,7 +17,7 @@ env:
 
 jobs:
   run-unit-tests:
-    runs-on: macos-14
+    runs-on: macos-15
 
     strategy:
       matrix:
@@ -32,9 +32,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up PostgreSQL
         uses: ikalnytskyi/action-setup-postgres@v8
-        id: postgres
         with:
           postgres-version: "17"
           database: ${{ env.POSTGRES_DB }}
