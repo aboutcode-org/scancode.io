@@ -33,10 +33,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: ikalnytskyi/action-setup-postgres@v7
+        uses: ikalnytskyi/action-setup-postgres@v8
         id: postgres
         with:
-          postgres-version: "14"  # 13 is not supported.
+          postgres-version: "17"
           database: ${{ env.POSTGRES_DB }}
           username: ${{ env.POSTGRES_USER }}
           password: ${{ env.POSTGRES_PASSWORD }}
