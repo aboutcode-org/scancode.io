@@ -685,7 +685,7 @@ def download_and_scan_pom_file(pom_url_list):
                     scanned_pom_packages.append(scanned_package)
             if scanned_dependencies:
                 for scanned_dep in scanned_dependencies:
-                    # Replace the 'datafile_path' with the empty list
-                    scanned_dep['datafile_path'] = scanned_pom_output_path
+                    # Replace the 'datafile_path' with the pom_url
+                    scanned_dep['datafile_path'] = pom_url
                     scanned_pom_deps.append(scanned_dep)
     return scanned_pom_packages, scanned_pom_deps
