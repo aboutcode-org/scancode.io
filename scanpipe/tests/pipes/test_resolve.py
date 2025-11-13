@@ -373,3 +373,30 @@ class ScanPipeResolvePipesTest(TestCase):
         ]
         headers = resolve.get_manifest_headers(resource)
         self.assertEqual(expected, list(headers.keys()))
+
+    def test_scanpipe_resolve_parse_maven_filename(self):
+        test1 = "wisp-logging-2025.11.11.195957-97a44b0-sources.jar"
+        test2 = "guava-33.5.0-jre-javadoc.jar"
+        test3 = "junit-4.13.2.jar"
+        test4 = "guava-33.5.0-jre.jar"
+
+        expected1_name = "wisp-logging"
+        expected1_version = "2025.11.11.195957-97a44b0"
+        expected2_name = "guava"
+        expected2_version = "33.5.0-jre"
+        expected3_name = "junit"
+        expected3_version = "4.13.2"
+
+        result1_name, result1_version = resolve.parse_maven_filename(test1)
+        result2_name, result2_version = resolve.parse_maven_filename(test2)
+        result3_name, result3_version = resolve.parse_maven_filename(test3)
+        result4_name, result4_version = resolve.parse_maven_filename(test4)
+
+        self.assertEqual(result1_name, expected1_name)
+        self.assertEqual(result1_version, expected1_version)
+        self.assertEqual(result2_name, expected2_name)
+        self.assertEqual(result2_version, expected2_version)
+        self.assertEqual(result3_name, expected3_name)
+        self.assertEqual(result3_version, expected3_version)
+        self.assertEqual(result4_name, expected2_name)
+        self.assertEqual(result4_version, expected2_version)

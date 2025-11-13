@@ -23,7 +23,6 @@
 import json
 import logging
 import re
-import requests
 import sys
 import uuid
 from pathlib import Path
@@ -32,6 +31,7 @@ from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
 
 import python_inspector.api as python_inspector
+import requests
 import saneyaml
 from attributecode.model import About
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
@@ -41,13 +41,12 @@ from packageurl import PackageURL
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import cyclonedx
+from scanpipe.pipes import fetch
 from scanpipe.pipes import flag
+from scanpipe.pipes import scancode
 from scanpipe.pipes import spdx
 from scanpipe.pipes import update_or_create_dependency
 from scanpipe.pipes import update_or_create_package
-
-from scanpipe.pipes import fetch
-from scanpipe.pipes import scancode
 
 """
 Resolve packages from manifest, lockfile, and SBOM.
@@ -531,26 +530,42 @@ def extract_headers(input_location, extract_fields):
 def parse_maven_filename(filename):
     """Parse a Maven's jar filename to extract artifactId and version."""
     # Remove the .jar extension
-    base = filename.rsplit('.', 1)[0]
+    base = filename.rsplit(".", 1)[0]
 
     # Common classifiers pattern
     common_classifiers = {
-        'sources', 'javadoc', 'tests', 'test', 'test-sources',
-        'src', 'bin', 'docs', 'javadocs', 'client', 'server',
-        'linux', 'windows', 'macos', 'linux-x86_64', 'windows-x86_64'
+        "sources",
+        "javadoc",
+        "tests",
+        "test",
+        "test-sources",
+        "src",
+        "bin",
+        "docs",
+        "javadocs",
+        "client",
+        "server",
+        "linux",
+        "windows",
+        "macos",
+        "linux-x86_64",
+        "windows-x86_64",
     }
 
     # Remove known classifier if present
     for classifier in common_classifiers:
         if base.endswith(f"-{classifier}"):
-            base = base[:-(len(classifier) + 1)]
+            base = base[: -(len(classifier) + 1)]
             break
 
     # Match artifactId and version
-    match = re.match(r'^(.*)-(\d[\w.\-]+)$', base)
+    match = re.match(r"^(.*?)-((\d[\w.\-]*))$", base)
+
     if match:
         artifact_id = match.group(1)
         version = match.group(2)
+        print("artifact_id", artifact_id)
+        print("version", version)
         return artifact_id, version
     else:
         return None, None
@@ -564,15 +579,21 @@ def get_pom_url_list(input_source, packages):
             package_ns = package.get("namespace", "")
             package_name = package.get("name", "")
             package_version = package.get("version", "")
-            pom_url = f"https://repo1.maven.org/maven2/{package_ns.replace('.', '/')}/{package_name}/{package_version}/{package_name}-{package_version}.pom".lower()
+            pom_url = (
+                f"https://repo1.maven.org/maven2/{package_ns.replace('.', '/')}/"
+                f"{package_name}/{package_version}/"
+                f"{package_name}-{package_version}.pom".lower()
+            )
             pom_url_list.append(pom_url)
     else:
         # Check what's the input source
         input_source_url = input_source.get("download_url", "")
 
         if input_source_url and "maven.org/" in input_source_url:
-            base_url = input_source_url.rsplit('/', 1)[0]
-            pom_url = base_url + "/" + "-".join(base_url.rstrip("/").split("/")[-2:]) + ".pom"
+            base_url = input_source_url.rsplit("/", 1)[0]
+            pom_url = (
+                base_url + "/" + "-".join(base_url.rstrip("/").split("/")[-2:]) + ".pom"
+            )
             pom_url_list.append(pom_url)
         else:
             # Construct a pom_url from filename
@@ -596,12 +617,12 @@ def construct_pom_url_from_filename(artifact_id, version):
     pom_url_list = []
     group_ids = []
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=5)
         response.raise_for_status()
         data = response.json()
         # Extract all 'g' fields from the docs array that represent
         # groupIds
-        group_ids = [doc['g'] for doc in data['response']['docs']]
+        group_ids = [doc["g"] for doc in data["response"]["docs"]]
     except requests.RequestException as e:
         print(f"Error fetching data: {e}")
         return []
@@ -610,7 +631,10 @@ def construct_pom_url_from_filename(artifact_id, version):
         return []
 
     for group_id in group_ids:
-        pom_url = f"https://repo1.maven.org/maven2/{group_id.replace('.', '/')}/{artifact_id}/{version}/{artifact_id}-{version}.pom".lower()
+        pom_url = (
+            f"https://repo1.maven.org/maven2/{group_id.replace('.', '/')}/"
+            f"{artifact_id}/{version}/{artifact_id}-{version}.pom".lower()
+        )
         if is_maven_pom_url(pom_url):
             pom_url_list.append(pom_url)
     if len(pom_url_list) > 1:
@@ -632,12 +656,12 @@ def is_maven_pom_url(url):
         if response.status_code != 200:
             return False
         # Check content-type
-        content_type = response.headers.get('content-type', '').lower()
-        is_xml = 'xml' in content_type or 'text/xml' in content_type
+        content_type = response.headers.get("content-type", "").lower()
+        is_xml = "xml" in content_type or "text/xml" in content_type
 
         # Check content
         content = response.text.strip()
-        is_pom = content.startswith('<?xml') and '<project' in content
+        is_pom = content.startswith("<?xml") and "<project" in content
 
         if is_xml and is_pom:
             return True
@@ -665,19 +689,19 @@ def download_and_scan_pom_file(pom_url_list):
             },
         )
 
-        with open(scanned_pom_output_path, 'r') as scanned_pom_file:
+        with open(scanned_pom_output_path) as scanned_pom_file:
             scanned_pom_data = json.load(scanned_pom_file)
             scanned_packages = scanned_pom_data.get("packages", [])
             scanned_dependencies = scanned_pom_data.get("dependencies", [])
             if scanned_packages:
                 for scanned_package in scanned_packages:
                     # Replace the 'datafile_path' with the pom_url
-                    scanned_package['datafile_paths'] = [pom_url]
+                    scanned_package["datafile_paths"] = [pom_url]
                     scanned_pom_packages.append(scanned_package)
             if scanned_dependencies:
                 for scanned_dep in scanned_dependencies:
                     # Replace the 'datafile_path' with empty string
                     # See https://github.com/aboutcode-org/scancode.io/issues/1763#issuecomment-3525165830
-                    scanned_dep['datafile_path'] = ""
+                    scanned_dep["datafile_path"] = ""
                     scanned_pom_deps.append(scanned_dep)
     return scanned_pom_packages, scanned_pom_deps
