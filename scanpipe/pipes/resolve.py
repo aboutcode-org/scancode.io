@@ -557,6 +557,7 @@ def parse_maven_filename(filename):
 
 
 def get_pom_url_list(input_source, packages):
+    """Generate Maven POM URLs from package metadata or input source."""
     pom_url_list = []
     if packages:
         for package in packages:
@@ -623,11 +624,9 @@ def construct_pom_url_from_filename(artifact_id, version):
 
 
 def is_maven_pom_url(url):
-    """
-    Return True if the url is a accessible, False otherwise
-    Maven Central has a fallback mechanism that serves a generic/error page
-    instead of returning a proper 404.
-    """
+    """Return True if the url is a accessible, False otherwise"""
+    # Maven Central has a fallback mechanism that serves a generic/error
+    # page instead of returning a proper 404.
     try:
         response = requests.get(url, timeout=5)
         if response.status_code != 200:
@@ -650,6 +649,7 @@ def is_maven_pom_url(url):
 
 
 def download_and_scan_pom_file(pom_url_list):
+    """Fetch and scan the pom file from the input pom_url_list"""
     scanned_pom_packages = []
     scanned_pom_deps = []
     for pom_url in pom_url_list:
@@ -661,16 +661,7 @@ def download_and_scan_pom_file(pom_url_list):
             location=str(downloaded_pom.path),
             output_file=scanned_pom_output_path,
             run_scan_args={
-                "copyright": True,
-                "email": True,
-                "info": True,
-                "license": True,
-                "license_text": True,
-                "license_diagnostics": True,
-                "license_text_diagnostics": True,
-                "license_references": True,
                 "package": True,
-                "url": True,
             },
         )
 
@@ -685,7 +676,8 @@ def download_and_scan_pom_file(pom_url_list):
                     scanned_pom_packages.append(scanned_package)
             if scanned_dependencies:
                 for scanned_dep in scanned_dependencies:
-                    # Replace the 'datafile_path' with the pom_url
-                    scanned_dep['datafile_path'] = pom_url
+                    # Replace the 'datafile_path' with empty string
+                    # See https://github.com/aboutcode-org/scancode.io/issues/1763#issuecomment-3525165830
+                    scanned_dep['datafile_path'] = ""
                     scanned_pom_deps.append(scanned_dep)
     return scanned_pom_packages, scanned_pom_deps
