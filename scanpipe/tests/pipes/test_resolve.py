@@ -400,3 +400,189 @@ class ScanPipeResolvePipesTest(TestCase):
         self.assertEqual(result3_version, expected3_version)
         self.assertEqual(result4_name, expected2_name)
         self.assertEqual(result4_version, expected2_version)
+
+    @mock.patch("requests.get")
+    def test_scanpipe_resolve_is_maven_pom_url_valid(self, mock_get):
+        mock_response = mock.Mock()
+        mock_response.status_code = 200
+        mock_response.headers = {"content-type": "application/xml"}
+        mock_response.text = '<?xml version="1.0"?><project></project>'
+        mock_get.return_value = mock_response
+
+        result = resolve.is_maven_pom_url(
+            "https://repo1.maven.org/maven2/example/example.pom"
+        )
+        self.assertTrue(result)
+
+    @mock.patch("requests.get")
+    def test_scanpipe_resolve_is_maven_pom_url_404(self, mock_get):
+        mock_response = mock.Mock()
+        mock_response.status_code = 404
+        mock_get.return_value = mock_response
+
+        result = resolve.is_maven_pom_url(
+            "https://repo.maven.apache.org/maven2/example/404.pom"
+        )
+        self.assertFalse(result)
+
+    @mock.patch("requests.get")
+    def test_scanpipe_resolve_is_maven_pom_url_error(self, mock_get):
+        mock_response = mock.Mock()
+        mock_response.status_code = 200
+        mock_response.headers = {"content-type": "text/html"}
+        mock_response.text = "<html>Error page</html>"
+        mock_get.return_value = mock_response
+
+        result = resolve.is_maven_pom_url(
+            "https://repo.maven.apache.org/maven2/example/error.pom"
+        )
+        self.assertFalse(result)
+
+    @mock.patch("scanpipe.pipes.resolve.fetch.fetch_http")
+    def test_scanpipe_resolve_download_pom_files(self, mock_fetch_http):
+        mock_response = mock.Mock()
+        mock_response.path = "/safe/example1.pom"
+        mock_fetch_http.return_value = mock_response
+
+        pom_urls = ["https://repo1.maven.org/maven2/example/example1.pom"]
+
+        expected = [
+            {
+                "pom_file_path": "/safe/example1.pom",
+                "output_path": "/safe/example1.pom-output.json",
+                "pom_url": "https://repo1.maven.org/maven2/example/example1.pom",
+            }
+        ]
+
+        result = resolve.download_pom_files(pom_urls)
+        self.assertEqual(result, expected)
+
+    @mock.patch("scanpipe.pipes.resolve.scancode.run_scan")
+    @mock.patch("builtins.open", new_callable=mock.mock_open)
+    @mock.patch("json.load")
+    def test_scanpipe_resolve_scan_pom_files(
+        self, mock_json_load, mock_open, mock_run_scan
+    ):
+        mock_json_load.return_value = {
+            "packages": [
+                {
+                    "name": "example-package",
+                    "version": "1.0.0",
+                    "datafile_paths": ["/safe/mock_pom.xml"],
+                }
+            ],
+            "dependencies": [
+                {
+                    "name": "example-dep",
+                    "version": "2.0.0",
+                    "datafile_path": "/safe/mock_pom.xml",
+                }
+            ],
+        }
+
+        pom_file_list = [
+            {
+                "pom_file_path": "/safe/mock.pom",
+                "output_path": "/safe/mock.pom-output.json",
+                "pom_url": "https://repo1.maven.org/maven2/example/example.pom",
+            }
+        ]
+
+        expected_packages = [
+            {
+                "name": "example-package",
+                "version": "1.0.0",
+                "datafile_paths": [
+                    "https://repo1.maven.org/maven2/example/example.pom"
+                ],
+            }
+        ]
+        expected_deps = [
+            {"name": "example-dep", "version": "2.0.0", "datafile_path": ""}
+        ]
+
+        packages, deps = resolve.scan_pom_files(pom_file_list)
+
+        self.assertEqual(packages, expected_packages)
+        self.assertEqual(deps, expected_deps)
+
+        mock_run_scan.assert_called_once_with(
+            location="/safe/mock.pom",
+            output_file="/safe/mock.pom-output.json",
+            run_scan_args={"package": True},
+        )
+        mock_open.assert_called_once_with("/safe/mock.pom-output.json")
+        mock_json_load.assert_called_once()
+
+    @mock.patch("scanpipe.pipes.resolve.is_maven_pom_url")
+    @mock.patch("scanpipe.pipes.resolve.requests.get")
+    def test_scanpipe_resolve_construct_pom_url_from_filename(
+        self, mock_get, mock_is_maven_pom_url
+    ):
+        # Setup mock response from Maven Central
+        mock_response = mock.Mock()
+        mock_response.raise_for_status.return_value = None
+        mock_response.json.return_value = {
+            "response": {"docs": [{"g": "org.apache.commons"}]}
+        }
+        mock_get.return_value = mock_response
+        mock_is_maven_pom_url.return_value = True
+
+        # Inputs
+        artifact_id = "commons-lang3"
+        version = "3.12.0"
+
+        expected_url = [
+            "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.pom"
+        ]
+
+        result = resolve.construct_pom_url_from_filename(artifact_id, version)
+
+        self.assertEqual(result, expected_url)
+        mock_get.assert_called_once_with(
+            "https://search.maven.org/solrsearch/select?q=a:commons-lang3&wt=json",
+            timeout=5,
+        )
+        mock_is_maven_pom_url.assert_called_once_with(expected_url[0])
+
+    def test_scanpipe_resolve_get_pom_url_list_with_packages(self):
+        packages = [
+            {
+                "namespace": "org.apache.commons",
+                "name": "commons-lang3",
+                "version": "3.12.0",
+            }
+        ]
+        result = resolve.get_pom_url_list({}, packages)
+        expected = [
+            "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.pom"
+        ]
+        self.assertEqual(result, expected)
+
+    def test_scanpipe_resolve_get_pom_url_list_with_maven_download_url(self):
+        input_source = {
+            "download_url": "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+        }
+        result = resolve.get_pom_url_list(input_source, [])
+        expected = [
+            "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.pom"
+        ]
+        self.assertEqual(result, expected)
+
+    @mock.patch("scanpipe.pipes.resolve.construct_pom_url_from_filename")
+    @mock.patch("scanpipe.pipes.resolve.parse_maven_filename")
+    def test_scanpipe_resolve_get_pom_url_list_with_jar_filename(
+        self, mock_parse, mock_construct
+    ):
+        input_source = {"filename": "commons-lang3-3.12.0.jar"}
+        mock_parse.return_value = ("commons-lang3", "3.12.0")
+        mock_construct.return_value = [
+            "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.pom"
+        ]
+        result = resolve.get_pom_url_list(input_source, [])
+        self.assertEqual(result, mock_construct.return_value)
+
+    def test_scanpipe_resolve_get_pom_url_list_with_invalid_filename(self):
+        input_source = {"filename": "not-a-jar.txt"}
+        result = resolve.get_pom_url_list(input_source, [])
+        self.assertEqual(result, [])

@@ -586,10 +586,13 @@ def get_pom_url_list(input_source, packages):
             )
             pom_url_list.append(pom_url)
     else:
+        from urllib.parse import urlparse
+
         # Check what's the input source
         input_source_url = input_source.get("download_url", "")
 
-        if input_source_url and "maven.org/" in input_source_url:
+        parsed_url = urlparse(input_source_url)
+        if input_source_url and parsed_url.netloc.endswith("maven.org"):
             base_url = input_source_url.rsplit("/", 1)[0]
             pom_url = (
                 base_url + "/" + "-".join(base_url.rstrip("/").split("/")[-2:]) + ".pom"
@@ -672,17 +675,32 @@ def is_maven_pom_url(url):
         return False
 
 
-def download_and_scan_pom_file(pom_url_list):
+def download_pom_files(pom_url_list):
+    """Fetch the pom file from the input pom_url_list"""
+    pom_file_list = []
+    for pom_url in pom_url_list:
+        pom_file_dict = {}
+        downloaded_pom = fetch.fetch_http(pom_url)
+        print("download_pom.path", str(downloaded_pom.path))
+        pom_file_dict["pom_file_path"] = str(downloaded_pom.path)
+        pom_file_dict["output_path"] = str(downloaded_pom.path) + "-output.json"
+        pom_file_dict["pom_url"] = pom_url
+        pom_file_list.append(pom_file_dict)
+    return pom_file_list
+
+
+def scan_pom_files(pom_file_list):
     """Fetch and scan the pom file from the input pom_url_list"""
     scanned_pom_packages = []
     scanned_pom_deps = []
-    for pom_url in pom_url_list:
-        downloaded_pom = fetch.fetch_http(pom_url)
-        scanned_pom_output_path = str(downloaded_pom.path) + "-output.json"
+    for pom_file_dict in pom_file_list:
+        pom_file_path = pom_file_dict.get("pom_file_path", "")
+        scanned_pom_output_path = pom_file_dict.get("output_path", "")
+        pom_url = pom_file_dict.get("pom_url", "")
 
         # Run a package scan on the fetched pom.xml
         _scanning_errors = scancode.run_scan(
-            location=str(downloaded_pom.path),
+            location=pom_file_path,
             output_file=scanned_pom_output_path,
             run_scan_args={
                 "package": True,

@@ -23,8 +23,9 @@
 import json
 
 from scanpipe.pipelines.scan_single_package import ScanSinglePackage
-from scanpipe.pipes.resolve import download_and_scan_pom_file
+from scanpipe.pipes.resolve import download_pom_files
 from scanpipe.pipes.resolve import get_pom_url_list
+from scanpipe.pipes.resolve import scan_pom_files
 
 
 class ScanMavenPackage(ScanSinglePackage):
@@ -51,7 +52,7 @@ class ScanMavenPackage(ScanSinglePackage):
         )
 
     def fetch_and_scan_remote_pom(self):
-        """Fetch the pom.xml file from from maven.org if not present in codebase."""
+        """Fetch the .pom file from from maven.org if not present in codebase."""
         with open(self.scan_output_location) as file:
             data = json.load(file)
             # Return and do nothing if data has pom.xml
@@ -61,9 +62,8 @@ class ScanMavenPackage(ScanSinglePackage):
             packages = data.get("packages", [])
 
         pom_url_list = get_pom_url_list(self.project.input_sources[0], packages)
-        scanned_pom_packages, scanned_dependencies = download_and_scan_pom_file(
-            pom_url_list
-        )
+        pom_file_list = download_pom_files(pom_url_list)
+        scanned_pom_packages, scanned_dependencies = scan_pom_files(pom_file_list)
 
         updated_pacakges = packages + scanned_pom_packages
         # Replace/Update the package and dependencies section
