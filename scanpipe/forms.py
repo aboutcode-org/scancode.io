@@ -29,6 +29,8 @@ from packageurl import PackageURL
 from taggit.forms import TagField
 from taggit.forms import TagWidget
 
+from scanpipe.models import CodebaseRelation
+from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.models import WebhookSubscription
@@ -725,3 +727,275 @@ class WebhookSubscriptionForm(forms.ModelForm):
 
     def save(self, project):
         return project.add_webhook_subscription(**self.cleaned_data)
+
+
+class OriginCurationForm(forms.ModelForm):
+    """Form for editing origin curation on a CodebaseRelation."""
+
+    class Meta:
+        model = CodebaseRelation
+        fields = [
+            "map_type",
+            "curation_status",
+            "confidence_level",
+            "curation_notes",
+        ]
+        widgets = {
+            "map_type": forms.Select(attrs={"class": "select"}),
+            "curation_status": forms.Select(attrs={"class": "select"}),
+            "confidence_level": forms.Select(attrs={"class": "select"}),
+            "curation_notes": forms.Textarea(
+                attrs={"class": "textarea is-dynamic", "rows": 4}
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("project", None)  # Accept but don't use project parameter
+        super().__init__(*args, **kwargs)
+        # Note: from_resource and to_resource are non-editable in the model
+        # They are displayed as read-only in the template
+
+
+class OriginCurateCreateForm(forms.Form):
+    """Form for manually creating a new CodebaseRelation."""
+
+    from_resource = forms.ModelChoiceField(
+        queryset=CodebaseResource.objects.none(),
+        widget=forms.Select(attrs={"class": "select"}),
+        help_text="Source resource (from development codebase).",
+    )
+    to_resource = forms.ModelChoiceField(
+        queryset=CodebaseResource.objects.none(),
+        widget=forms.Select(attrs={"class": "select"}),
+        help_text="Target resource (from deployment codebase).",
+    )
+    map_type = forms.ChoiceField(
+        widget=forms.Select(attrs={"class": "select"}),
+        help_text="Type of mapping used to establish this relation.",
+    )
+    curation_status = forms.ChoiceField(
+        required=False,
+        choices=[
+            ("", "---------"),
+            ("pending", "Pending"),
+            ("approved", "Approved"),
+            ("rejected", "Rejected"),
+        ],
+        widget=forms.Select(attrs={"class": "select"}),
+    )
+    confidence_level = forms.ChoiceField(
+        required=False,
+        choices=[
+            ("", "---------"),
+            ("low", "Low"),
+            ("medium", "Medium"),
+            ("high", "High"),
+            ("verified", "Verified"),
+        ],
+        widget=forms.Select(attrs={"class": "select"}),
+    )
+    curation_notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"class": "textarea is-dynamic", "rows": 4}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        project = kwargs.pop("project", None)
+        super().__init__(*args, **kwargs)
+        if project:
+            # Set querysets for resources
+            self.fields[
+                "from_resource"
+            ].queryset = project.codebaseresources.files().order_by("path")
+            self.fields[
+                "to_resource"
+            ].queryset = project.codebaseresources.files().order_by("path")
+
+        # Set map_type choices from filters
+        from scanpipe.filters import MAP_TYPE_CHOICES
+
+        self.fields["map_type"].choices = [("", "---------")] + list(MAP_TYPE_CHOICES)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        from_resource = cleaned_data.get("from_resource")
+        to_resource = cleaned_data.get("to_resource")
+        map_type = cleaned_data.get("map_type")
+
+        if from_resource and to_resource:
+            if from_resource.project != to_resource.project:
+                raise ValidationError(
+                    "From and to resources must belong to the same project."
+                )
+
+            # Check if relation already exists
+            if map_type:
+                existing = CodebaseRelation.objects.filter(
+                    project=from_resource.project,
+                    from_resource=from_resource,
+                    to_resource=to_resource,
+                    map_type=map_type,
+                ).exists()
+                if existing:
+                    raise ValidationError(
+                        f"A relation with this map_type '{map_type}' already exists "
+                        f"between these resources."
+                    )
+
+        return cleaned_data
+
+    def save(self, project, user=None):
+        """Create the CodebaseRelation and optionally curate it."""
+        from scanpipe.pipes import make_relation
+
+        cleaned_data = self.cleaned_data
+        relation = make_relation(
+            from_resource=cleaned_data["from_resource"],
+            to_resource=cleaned_data["to_resource"],
+            map_type=cleaned_data["map_type"],
+        )
+
+        # Apply curation if provided
+        if cleaned_data.get("curation_status") or cleaned_data.get("curation_notes"):
+            relation.curation_status = cleaned_data.get("curation_status") or None
+            relation.curation_notes = cleaned_data.get("curation_notes") or ""
+            relation.confidence_level = cleaned_data.get("confidence_level") or ""
+            if user and hasattr(user, "is_authenticated") and user.is_authenticated:
+                relation.curated_by = user
+                from django.utils import timezone
+
+                relation.curated_at = timezone.now()
+            relation.save()
+
+        return relation
+
+
+class BulkCurationForm(BaseProjectActionForm):
+    """Form for bulk curation operations on relations."""
+
+    prefix = "bulk_curate"
+    action = forms.ChoiceField(
+        choices=[
+            ("approve", "Approve selected"),
+            ("reject", "Reject selected"),
+            ("mark_pending", "Mark as pending"),
+            ("set_confidence", "Set confidence level"),
+        ],
+        widget=forms.RadioSelect,
+        required=True,
+    )
+    confidence_level = forms.ChoiceField(
+        required=False,
+        choices=[
+            ("", "---------"),
+            ("low", "Low"),
+            ("medium", "Medium"),
+            ("high", "High"),
+            ("verified", "Verified"),
+        ],
+        widget=forms.Select(attrs={"class": "select"}),
+        help_text="Required when action is 'Set confidence level'.",
+    )
+    curation_notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"class": "textarea is-dynamic", "rows": 3}),
+        help_text="Optional notes to add to all selected relations.",
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        action = cleaned_data.get("action")
+        confidence_level = cleaned_data.get("confidence_level")
+
+        if action == "set_confidence" and not confidence_level:
+            raise ValidationError(
+                "Confidence level is required when setting confidence level."
+            )
+
+        return cleaned_data
+
+
+class OriginPropagationForm(forms.Form):
+    """Form for origin propagation settings."""
+
+    relation_uuid = forms.UUIDField(
+        widget=forms.HiddenInput,
+        required=True,
+    )
+    strategy = forms.ChoiceField(
+        choices=[
+            ("similar", "Similar Resources (path/checksum similarity)"),
+            ("directory", "Directory Structure (sibling files)"),
+            ("package", "Package (all resources in same package)"),
+            ("pattern", "Pattern (path pattern matching)"),
+        ],
+        widget=forms.RadioSelect,
+        required=True,
+        help_text="Select the propagation strategy to use.",
+    )
+    similarity_threshold = forms.DecimalField(
+        required=False,
+        min_value=0.0,
+        max_value=1.0,
+        initial=0.8,
+        widget=forms.NumberInput(attrs={"class": "input", "step": "0.1"}),
+        help_text=(
+            "Similarity threshold (0.0-1.0) for 'similar' strategy. "
+            "Higher = more strict."
+        ),
+    )
+    pattern = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={"class": "input"}),
+        help_text=(
+            "Path pattern (glob or regex) for 'pattern' strategy. "
+            "Example: '*.js' or '^src/.*\\.py$'"
+        ),
+    )
+    preview_only = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": "checkbox"}),
+        help_text="Preview only (don't apply changes).",
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        strategy = cleaned_data.get("strategy")
+        similarity_threshold = cleaned_data.get("similarity_threshold")
+        pattern = cleaned_data.get("pattern")
+
+        if strategy == "similar" and similarity_threshold is None:
+            cleaned_data["similarity_threshold"] = 0.8  # Default
+
+        if strategy == "pattern" and not pattern:
+            raise ValidationError("Pattern is required for pattern strategy.")
+
+        return cleaned_data
+
+
+class OriginDeployForm(forms.Form):
+    """Form for deploying origin curations to FederatedCode."""
+
+    merge_strategy = forms.ChoiceField(
+        choices=[
+            ("latest", "Latest (use most recent curation)"),
+            ("priority", "Priority (new curations override existing)"),
+            ("manual", "Manual (requires review for conflicts)"),
+        ],
+        widget=forms.RadioSelect,
+        initial="latest",
+        help_text="Select how to handle conflicts with existing curations.",
+    )
+    include_history = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": "checkbox"}),
+        help_text="Include full curation history in export.",
+    )
+    preview_only = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": "checkbox"}),
+        help_text="Preview only (don't deploy).",
+    )

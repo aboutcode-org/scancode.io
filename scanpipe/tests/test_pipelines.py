@@ -29,6 +29,7 @@ from contextlib import redirect_stderr
 from pathlib import Path
 from unittest import mock
 from unittest import skipIf
+from unittest import skipUnless
 
 from django.conf import settings
 from django.test import TestCase
@@ -63,6 +64,13 @@ from scanpipe.tests.pipelines.download_inputs import DownloadInput
 from scanpipe.tests.pipelines.profile_step import ProfileStep
 from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
 from scanpipe.tests.pipelines.with_groups import WithGroups
+
+try:
+    from source_inspector import symbols_ctags
+except ImportError:  # pragma: no cover - optional dependency
+    symbols_ctags = None
+
+CTAGS_INSTALLED = bool(symbols_ctags) and symbols_ctags.is_ctags_installed()
 
 from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
 
@@ -541,6 +549,12 @@ class PipelinesIntegrationTest(TestCase):
         "settings",
         "description",
         "traceback",
+        "uuid",
+        "curation_status",
+        "confidence_level",
+        "curation_notes",
+        "curated_by",
+        "curated_at",
     ]
 
     def _without_keys(self, data, exclude_keys):
@@ -1863,6 +1877,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertIn("Couldn't index 1 unsupported PURLs", run.log)
 
     @skipIf(sys.platform == "darwin", "Not supported on macOS")
+    @skipUnless(CTAGS_INSTALLED, "Universal Ctags is required")
     def test_scanpipe_collect_symbols_ctags_pipeline_integration(self):
         pipeline_name = "collect_symbols_ctags"
         project1 = make_project()

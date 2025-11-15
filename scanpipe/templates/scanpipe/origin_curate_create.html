@@ -1,0 +1,103 @@
+{% extends "scanpipe/base.html" %}
+
+{% block title %}ScanCode.io: {{ project.name }} - Add Relation{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Add Relation" %}
+      </div>
+    </section>
+  </div>
+
+  <div class="container is-max-widescreen mb-3">
+    <div class="box">
+      <h2 class="title is-4">Create New Relation</h2>
+      <form method="post">
+        {% csrf_token %}
+        
+        <div class="field">
+          <label class="label">{{ form.from_resource.label }}</label>
+          <div class="control">
+            {{ form.from_resource }}
+          </div>
+          {% if form.from_resource.help_text %}
+            <p class="help">{{ form.from_resource.help_text }}</p>
+          {% endif %}
+          {% if form.from_resource.errors %}
+            <p class="help is-danger">{{ form.from_resource.errors }}</p>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label class="label">{{ form.to_resource.label }}</label>
+          <div class="control">
+            {{ form.to_resource }}
+          </div>
+          {% if form.to_resource.help_text %}
+            <p class="help">{{ form.to_resource.help_text }}</p>
+          {% endif %}
+          {% if form.to_resource.errors %}
+            <p class="help is-danger">{{ form.to_resource.errors }}</p>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label class="label">{{ form.map_type.label }}</label>
+          <div class="control">
+            {{ form.map_type }}
+          </div>
+          {% if form.map_type.help_text %}
+            <p class="help">{{ form.map_type.help_text }}</p>
+          {% endif %}
+          {% if form.map_type.errors %}
+            <p class="help is-danger">{{ form.map_type.errors }}</p>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label class="label">{{ form.curation_status.label }}</label>
+          <div class="control">
+            {{ form.curation_status }}
+          </div>
+          {% if form.curation_status.errors %}
+            <p class="help is-danger">{{ form.curation_status.errors }}</p>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label class="label">{{ form.confidence_level.label }}</label>
+          <div class="control">
+            {{ form.confidence_level }}
+          </div>
+          {% if form.confidence_level.errors %}
+            <p class="help is-danger">{{ form.confidence_level.errors }}</p>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label class="label">{{ form.curation_notes.label }}</label>
+          <div class="control">
+            {{ form.curation_notes }}
+          </div>
+          {% if form.curation_notes.errors %}
+            <p class="help is-danger">{{ form.curation_notes.errors }}</p>
+          {% endif %}
+        </div>
+
+        <div class="field is-grouped">
+          <div class="control">
+            <button type="submit" class="button is-link">Create Relation</button>
+          </div>
+          <div class="control">
+            <a href="{% url 'origin_review' project.slug %}" class="button">Cancel</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+
+

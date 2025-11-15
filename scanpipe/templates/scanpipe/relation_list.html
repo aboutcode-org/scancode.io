@@ -9,7 +9,15 @@
     <section class="mx-5">
       <div class="is-flex is-justify-content-space-between">
         {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Relations" %}
-        {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" placeholder="Search to/ resources" %}
+        <div class="is-flex">
+          <a href="{% url 'origin_review' project.slug %}" class="button is-small is-link mr-2">
+            <span class="icon is-small">
+              <i class="fa-solid fa-clipboard-check"></i>
+            </span>
+            <span>Origin Review</span>
+          </a>
+          {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" placeholder="Search to/ resources" %}
+        </div>
       </div>
       {% include 'scanpipe/includes/pagination_header_relations.html' %}
       {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}

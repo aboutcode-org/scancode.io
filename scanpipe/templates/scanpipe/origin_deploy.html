@@ -1,0 +1,155 @@
+{% extends "scanpipe/base.html" %}
+{% load humanize %}
+
+{% block title %}ScanCode.io: {{ project.name }} - Deploy Origin Curations{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Deploy Curations" %}
+      </div>
+    </section>
+  </div>
+
+  <div class="container is-fluid mb-3">
+    <div class="box">
+      <h2 class="title is-4">Deploy Origin Curations to FederatedCode</h2>
+
+      {% if not federatedcode_configured %}
+        <div class="notification is-warning">
+          <p><strong>FederatedCode is not configured.</strong></p>
+          <p>Please contact your administrator to configure FederatedCode settings.</p>
+        </div>
+      {% elif not federatedcode_available %}
+        <div class="notification is-warning">
+          <p><strong>FederatedCode Git account is not available.</strong></p>
+          <p>Please check the FederatedCode configuration and network connectivity.</p>
+        </div>
+      {% elif not has_purl %}
+        <div class="notification is-warning">
+          <p><strong>Project PURL is required.</strong></p>
+          <p>Please set a PURL for this project before deploying to FederatedCode.</p>
+        </div>
+      {% elif curated_count == 0 %}
+        <div class="notification is-info">
+          <p><strong>No curated relations to deploy.</strong></p>
+          <p>You need to curate some relations before deploying to FederatedCode.</p>
+          <a href="{% url 'origin_review' project.slug %}" class="button is-link mt-3">
+            Go to Origin Review
+          </a>
+        </div>
+      {% else %}
+        <div class="notification is-info">
+          <p>
+            <strong>{{ curated_count|intcomma }} curated relation{{ curated_count|pluralize }}</strong>
+            {% if curation_history_count > 0 %}
+              with <strong>{{ curation_history_count|intcomma }} curation action{{ curation_history_count|pluralize }}</strong>
+            {% endif %}
+            ready for deployment.
+          </p>
+        </div>
+
+        <form method="post">
+          {% csrf_token %}
+
+          <div class="field">
+            <label class="label">Merge Strategy</label>
+            <div class="control">
+              {% for choice in form.merge_strategy %}
+                <label class="radio">
+                  {{ choice.tag }}
+                  {{ choice.choice_label }}
+                </label>
+              {% endfor %}
+            </div>
+            {% if form.merge_strategy.help_text %}
+              <p class="help">{{ form.merge_strategy.help_text }}</p>
+            {% endif %}
+            {% if form.merge_strategy.errors %}
+              <p class="help is-danger">{{ form.merge_strategy.errors }}</p>
+            {% endif %}
+          </div>
+
+          <div class="field">
+            <label class="checkbox">
+              {{ form.include_history }}
+              {{ form.include_history.label }}
+            </label>
+            {% if form.include_history.help_text %}
+              <p class="help">{{ form.include_history.help_text }}</p>
+            {% endif %}
+          </div>
+
+          <div class="field">
+            <label class="checkbox">
+              {{ form.preview_only }}
+              {{ form.preview_only.label }}
+            </label>
+            {% if form.preview_only.help_text %}
+              <p class="help">{{ form.preview_only.help_text }}</p>
+            {% endif %}
+          </div>
+
+          <div class="field is-grouped">
+            <div class="control">
+              <button type="submit" class="button is-primary">
+                <span class="icon is-small">
+                  <i class="fa-solid fa-upload"></i>
+                </span>
+                <span>Deploy Curations</span>
+              </button>
+            </div>
+            <div class="control">
+              <a href="{% url 'origin_review' project.slug %}" class="button">
+                Cancel
+              </a>
+            </div>
+          </div>
+        </form>
+
+        {% if preview_data %}
+          <hr>
+          <h3 class="title is-5 mt-5">Preview</h3>
+          <div class="content">
+            <p>
+              <strong>Total Relations:</strong> {{ preview_data.metadata.total_curated_relations|intcomma }}<br>
+              <strong>Total History Entries:</strong> {{ preview_data.metadata.total_curation_actions|intcomma }}<br>
+              <strong>Export Date:</strong> {{ preview_data.metadata.export_date|date:"Y-m-d H:i:s" }}
+            </p>
+
+            <details class="mt-4">
+              <summary class="is-clickable has-text-weight-semibold">
+                View Sample Relations (first 5)
+              </summary>
+              <table class="table is-bordered is-striped is-narrow mt-3">
+                <thead>
+                  <tr>
+                    <th>From Resource</th>
+                    <th>To Resource</th>
+                    <th>Map Type</th>
+                    <th>Status</th>
+                    <th>Confidence</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for relation in preview_data.relations|slice:":5" %}
+                    <tr>
+                      <td class="break-all">{{ relation.from_resource_path }}</td>
+                      <td class="break-all">{{ relation.to_resource_path }}</td>
+                      <td>{{ relation.map_type }}</td>
+                      <td>{{ relation.curation_status|capfirst }}</td>
+                      <td>{{ relation.confidence_level|capfirst|default:"—" }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </details>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+

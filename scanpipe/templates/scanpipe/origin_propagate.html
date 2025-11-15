@@ -1,0 +1,176 @@
+{% extends "scanpipe/base.html" %}
+{% load humanize %}
+
+{% block title %}ScanCode.io: {{ project.name }} - Propagate Origin{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Propagate Origin" %}
+      </div>
+    </section>
+  </div>
+
+  <div class="container is-max-widescreen mb-3">
+    <div class="box">
+      <h2 class="title is-4">Propagate Origin Determination</h2>
+      <p class="subtitle is-6">
+        Propagate an origin determination to similar resources using various strategies.
+      </p>
+
+      <form method="post">
+        {% csrf_token %}
+        
+        {{ form.relation_uuid }}
+
+        <div class="field">
+          <label class="label">{{ form.strategy.label }}</label>
+          <div class="control">
+            {{ form.strategy }}
+          </div>
+          {% if form.strategy.help_text %}
+            <p class="help">{{ form.strategy.help_text }}</p>
+          {% endif %}
+          {% if form.strategy.errors %}
+            <p class="help is-danger">{{ form.strategy.errors }}</p>
+          {% endif %}
+        </div>
+
+        <div class="field" id="similarity-field" style="display: none;">
+          <label class="label">{{ form.similarity_threshold.label }}</label>
+          <div class="control">
+            {{ form.similarity_threshold }}
+          </div>
+          {% if form.similarity_threshold.help_text %}
+            <p class="help">{{ form.similarity_threshold.help_text }}</p>
+          {% endif %}
+          {% if form.similarity_threshold.errors %}
+            <p class="help is-danger">{{ form.similarity_threshold.errors }}</p>
+          {% endif %}
+        </div>
+
+        <div class="field" id="pattern-field" style="display: none;">
+          <label class="label">{{ form.pattern.label }}</label>
+          <div class="control">
+            {{ form.pattern }}
+          </div>
+          {% if form.pattern.help_text %}
+            <p class="help">{{ form.pattern.help_text }}</p>
+          {% endif %}
+          {% if form.pattern.errors %}
+            <p class="help is-danger">{{ form.pattern.errors }}</p>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label class="checkbox">
+            {{ form.preview_only }}
+            {{ form.preview_only.label }}
+          </label>
+          {% if form.preview_only.help_text %}
+            <p class="help">{{ form.preview_only.help_text }}</p>
+          {% endif %}
+        </div>
+
+        <div class="field is-grouped">
+          <div class="control">
+            <button type="submit" class="button is-link">Preview/Apply</button>
+          </div>
+          <div class="control">
+            <a href="{% url 'origin_review' project.slug %}" class="button">Cancel</a>
+          </div>
+        </div>
+      </form>
+
+      {% if preview_data %}
+        <hr>
+        <h3 class="title is-5">Preview</h3>
+        <p class="subtitle is-6">
+          Source relation: 
+          <a href="{% url 'origin_curate' project.slug preview_data.relation.uuid %}">
+            {{ preview_data.relation.to_resource.path }} → {{ preview_data.relation.from_resource.path }}
+          </a>
+        </p>
+        <p>
+          <strong>{{ preview_data.count }}</strong> candidate relation{{ preview_data.count|pluralize }} found.
+        </p>
+
+        {% if preview_data.candidates %}
+          <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth mt-3">
+            <thead>
+              <tr>
+                <th>To Resource</th>
+                <th>From Resource</th>
+                <th>Map Type</th>
+                <th>Confidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for to_res, from_res, map_type, confidence in preview_data.candidates %}
+                <tr>
+                  <td class="break-all">
+                    <a href="{% url 'resource_detail' project.slug to_res.path %}">
+                      {{ to_res.path }}
+                    </a>
+                  </td>
+                  <td class="break-all">
+                    <a href="{% url 'resource_detail' project.slug from_res.path %}">
+                      {{ from_res.path }}
+                    </a>
+                  </td>
+                  <td>{{ map_type }}</td>
+                  <td>{{ confidence|capfirst }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          {% if not form.preview_only.value %}
+            <div class="notification is-info mt-3">
+              <p>Uncheck "Preview only" and submit to apply these changes.</p>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="notification is-warning mt-3">
+            <p>No candidates found for this strategy and relation.</p>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const strategyRadios = document.querySelectorAll('input[name="strategy"]');
+      const similarityField = document.getElementById("similarity-field");
+      const patternField = document.getElementById("pattern-field");
+
+      function toggleFields() {
+        const selectedStrategy = document.querySelector('input[name="strategy"]:checked')?.value;
+        
+        if (selectedStrategy === "similar") {
+          similarityField.style.display = "block";
+          patternField.style.display = "none";
+        } else if (selectedStrategy === "pattern") {
+          similarityField.style.display = "none";
+          patternField.style.display = "block";
+        } else {
+          similarityField.style.display = "none";
+          patternField.style.display = "none";
+        }
+      }
+
+      strategyRadios.forEach(radio => {
+        radio.addEventListener("change", toggleFields);
+      });
+
+      toggleFields(); // Initial state
+    });
+  </script>
+{% endblock %}
+
+
