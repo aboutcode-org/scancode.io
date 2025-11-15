@@ -1,0 +1,30 @@
+<div class="content">
+  {% if object.curations.all %}
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Curator</th>
+          <th>Status</th>
+          <th>Confidence</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for curation in object.curations.all %}
+          <tr>
+            <td>{{ curation.created_date|date:"Y-m-d H:i" }}</td>
+            <td>{{ curation.curator.username|default:"—" }}</td>
+            <td>{{ curation.curation_status|capfirst }}</td>
+            <td>{{ curation.confidence_level|capfirst|default:"—" }}</td>
+            <td>{{ curation.notes|default:"—" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="has-text-grey">No curation history available.</p>
+  {% endif %}
+</div>
+
+

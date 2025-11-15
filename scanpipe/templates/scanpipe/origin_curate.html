@@ -1,0 +1,49 @@
+{% extends "scanpipe/base.html" %}
+{% load humanize %}
+
+{% block title %}ScanCode.io: {{ project.name }} - Curate Relation{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Curate Relation" %}
+      </div>
+    </section>
+  </div>
+
+  <div class="container is-max-widescreen mb-3">
+    <div class="box">
+      <div class="is-flex is-justify-content-space-between mb-3">
+        <h2 class="title is-4">Relation Details</h2>
+        <div class="buttons">
+          <a href="{% url 'origin_propagate' project.slug %}?relation_uuid={{ object.uuid }}" class="button is-info is-outlined">
+            <span class="icon is-small">
+              <i class="fa-solid fa-share-nodes"></i>
+            </span>
+            <span>Propagate</span>
+          </a>
+          <a href="{% url 'origin_review' project.slug %}" class="button">Back to Review</a>
+        </div>
+      </div>
+      <div class="content">
+        <p><strong>To Resource:</strong> 
+          <a href="{% url 'resource_detail' project.slug object.to_resource.path %}">
+            {{ object.to_resource.path }}
+          </a>
+        </p>
+        <p><strong>From Resource:</strong> 
+          <a href="{% url 'resource_detail' project.slug object.from_resource.path %}">
+            {{ object.from_resource.path }}
+          </a>
+        </p>
+        <p><strong>Map Type:</strong> {{ object.map_type }}</p>
+        <p><strong>Status:</strong> {{ object.status }}</p>
+      </div>
+    </div>
+
+    {% include 'scanpipe/tabset/tabset.html' with tabset_data=tabset_data object=object %}
+  </div>
+{% endblock %}
+

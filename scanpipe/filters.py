@@ -931,6 +931,8 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "status",
         "map_type",
+        "curation_status",
+        "confidence_level",
     ]
 
     search = QuerySearchFilter(
@@ -944,11 +946,35 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "from_resource",
             "to_resource",
             "map_type",
+            "curated_at",
         ],
     )
     map_type = django_filters.ChoiceFilter(choices=MAP_TYPE_CHOICES)
     status = StatusFilter(field_name="to_resource__status")
     extra_data = django_filters.CharFilter(lookup_expr="icontains")
+    curation_status = django_filters.ChoiceFilter(
+        choices=[
+            ("pending", "Pending"),
+            ("approved", "Approved"),
+            ("rejected", "Rejected"),
+        ],
+    )
+    confidence_level = django_filters.ChoiceFilter(
+        choices=[
+            ("low", "Low"),
+            ("medium", "Medium"),
+            ("high", "High"),
+            ("verified", "Verified"),
+        ],
+    )
+    curated_by = django_filters.CharFilter(
+        field_name="curated_by__username",
+        lookup_expr="icontains",
+    )
+    requires_review = django_filters.BooleanFilter(
+        method="filter_requires_review",
+        label="Requires Review",
+    )
 
     class Meta:
         model = CodebaseRelation
@@ -957,6 +983,10 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "map_type",
             "status",
             "extra_data",
+            "curation_status",
+            "confidence_level",
+            "curated_by",
+            "requires_review",
         ]
 
     def __init__(self, *args, **kwargs):
@@ -966,3 +996,9 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             qs = CodebaseResource.objects.filter(project=project)
             status_filter = self.filters["status"]
             status_filter.extra["choices"] = status_filter.get_status_choices(qs)
+
+    def filter_requires_review(self, queryset, name, value):
+        """Filter relations where to_resource status is 'requires-review'."""
+        if value:
+            return queryset.filter(to_resource__status="requires-review")
+        return queryset

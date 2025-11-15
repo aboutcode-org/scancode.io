@@ -2104,9 +2104,9 @@ class ScanPipeModelsTest(TestCase):
         topdown_paths = list(r.path for r in asgiref_root.walk(topdown=True))
         expected_topdown_paths = [
             "asgiref-3.3.0.whl-extract/asgiref",
+            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
             "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
             "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
             "asgiref-3.3.0.whl-extract/asgiref/local.py",
             "asgiref-3.3.0.whl-extract/asgiref/server.py",
             "asgiref-3.3.0.whl-extract/asgiref/sync.py",
@@ -2124,9 +2124,9 @@ class ScanPipeModelsTest(TestCase):
 
         bottom_up_paths = list(r.path for r in asgiref_root.walk(topdown=False))
         expected_bottom_up_paths = [
+            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
             "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
             "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
             "asgiref-3.3.0.whl-extract/asgiref/local.py",
             "asgiref-3.3.0.whl-extract/asgiref/server.py",
             "asgiref-3.3.0.whl-extract/asgiref/sync.py",

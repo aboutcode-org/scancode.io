@@ -1,0 +1,85 @@
+<div class="modal" id="bulk-curation-modal">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Bulk Curation Actions</p>
+      <button class="delete" aria-label="close"></button>
+    </header>
+    <form method="post" action="{% url 'origin_bulk_curate' project.slug %}">
+      {% csrf_token %}
+      <section class="modal-card-body">
+        <div class="field">
+          <label class="label">Action</label>
+          <div class="control">
+            {{ form.action }}
+          </div>
+        </div>
+        <div class="field" id="confidence-field" style="display: none;">
+          <label class="label">Confidence Level</label>
+          <div class="control">
+            {{ form.confidence_level }}
+          </div>
+          {% if form.confidence_level.help_text %}
+            <p class="help">{{ form.confidence_level.help_text }}</p>
+          {% endif %}
+        </div>
+        <div class="field">
+          <label class="label">Notes (optional)</label>
+          <div class="control">
+            {{ form.curation_notes }}
+          </div>
+          {% if form.curation_notes.help_text %}
+            <p class="help">{{ form.curation_notes.help_text }}</p>
+          {% endif %}
+        </div>
+        <input type="hidden" name="selected_ids" id="bulk-selected-ids" value="">
+        {{ form.select_across }}
+        {{ form.url_query }}
+      </section>
+      <footer class="modal-card-foot">
+        <button type="submit" class="button is-link">Apply</button>
+        <button type="button" class="button close-modal">Cancel</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const form = document.querySelector("#bulk-curation-modal form");
+    const actionField = form.querySelector('input[name="action"]:checked, select[name="action"]');
+    const confidenceField = document.getElementById("confidence-field");
+    
+    // Show/hide confidence field based on action
+    function toggleConfidenceField() {
+      const selectedAction = form.querySelector('input[name="action"]:checked')?.value || 
+                            form.querySelector('select[name="action"]')?.value;
+      if (selectedAction === "set_confidence") {
+        confidenceField.style.display = "block";
+        confidenceField.querySelector('select').required = true;
+      } else {
+        confidenceField.style.display = "none";
+        confidenceField.querySelector('select').required = false;
+      }
+    }
+    
+    // Listen for action changes
+    form.querySelectorAll('input[name="action"]').forEach(radio => {
+      radio.addEventListener("change", toggleConfidenceField);
+    });
+    if (form.querySelector('select[name="action"]')) {
+      form.querySelector('select[name="action"]').addEventListener("change", toggleConfidenceField);
+    }
+    
+    // Set selected IDs when modal opens
+    document.querySelector('[data-target="bulk-curation-modal"]')?.addEventListener("click", function() {
+      const selected = Array.from(document.querySelectorAll(".relation-checkbox:checked"))
+        .map(cb => cb.value)
+        .join(",");
+      document.getElementById("bulk-selected-ids").value = selected;
+    });
+    
+    toggleConfidenceField();
+  });
+</script>
+

@@ -1,0 +1,75 @@
+<div class="content">
+  <form method="post">
+    {% csrf_token %}
+    <div class="field">
+      <label class="label">{{ curation_form.from_resource.label }}</label>
+      <div class="control">
+        {{ curation_form.from_resource }}
+      </div>
+      {% if curation_form.from_resource.errors %}
+        <p class="help is-danger">{{ curation_form.from_resource.errors }}</p>
+      {% endif %}
+    </div>
+
+    <div class="field">
+      <label class="label">{{ curation_form.to_resource.label }}</label>
+      <div class="control">
+        {{ curation_form.to_resource }}
+      </div>
+      {% if curation_form.to_resource.errors %}
+        <p class="help is-danger">{{ curation_form.to_resource.errors }}</p>
+      {% endif %}
+    </div>
+
+    <div class="field">
+      <label class="label">{{ curation_form.map_type.label }}</label>
+      <div class="control">
+        {{ curation_form.map_type }}
+      </div>
+      {% if curation_form.map_type.errors %}
+        <p class="help is-danger">{{ curation_form.map_type.errors }}</p>
+      {% endif %}
+    </div>
+
+    <div class="field">
+      <label class="label">{{ curation_form.curation_status.label }}</label>
+      <div class="control">
+        {{ curation_form.curation_status }}
+      </div>
+      {% if curation_form.curation_status.errors %}
+        <p class="help is-danger">{{ curation_form.curation_status.errors }}</p>
+      {% endif %}
+    </div>
+
+    <div class="field">
+      <label class="label">{{ curation_form.confidence_level.label }}</label>
+      <div class="control">
+        {{ curation_form.confidence_level }}
+      </div>
+      {% if curation_form.confidence_level.errors %}
+        <p class="help is-danger">{{ curation_form.confidence_level.errors }}</p>
+      {% endif %}
+    </div>
+
+    <div class="field">
+      <label class="label">{{ curation_form.curation_notes.label }}</label>
+      <div class="control">
+        {{ curation_form.curation_notes }}
+      </div>
+      {% if curation_form.curation_notes.errors %}
+        <p class="help is-danger">{{ curation_form.curation_notes.errors }}</p>
+      {% endif %}
+    </div>
+
+    <div class="field is-grouped">
+      <div class="control">
+        <button type="submit" class="button is-link">Save Curation</button>
+      </div>
+      <div class="control">
+        <a href="{% url 'origin_review' project.slug %}" class="button">Cancel</a>
+      </div>
+    </div>
+  </form>
+</div>
+
+
