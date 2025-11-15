@@ -80,7 +80,12 @@ from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddLabelsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import BaseProjectActionForm
+from scanpipe.forms import BulkCurationForm
 from scanpipe.forms import EditInputSourceTagForm
+from scanpipe.forms import OriginCurateCreateForm
+from scanpipe.forms import OriginCurationForm
+from scanpipe.forms import OriginDeployForm
+from scanpipe.forms import OriginPropagationForm
 from scanpipe.forms import PipelineRunStepSelectionForm
 from scanpipe.forms import ProjectArchiveForm
 from scanpipe.forms import ProjectCloneForm
@@ -380,7 +385,7 @@ class TabSetMixin:
             if isinstance(value, list):
                 return len(value)
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs):  # noqa: C901
         context = super().get_context_data(**kwargs)
         context["tabset_data"] = self.get_tabset_data()
         return context
@@ -456,7 +461,7 @@ class TableColumnsMixin:
         """Return a formatted label for display based on the `field_name`."""
         return field_name.replace("_", " ").capitalize().replace("url", "URL")
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs):  # noqa: C901
         context = super().get_context_data(**kwargs)
         context["columns_data"] = self.get_columns_data()
         context["request_query_string"] = self.request.GET.urlencode()
@@ -873,7 +878,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
 
         return context
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):  # noqa: C901
         project = self.get_object()
 
         if "add-inputs-submit" in request.POST:
@@ -1329,7 +1334,7 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
     }
     success_url = reverse_lazy("project_list")
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):  # noqa: C901
         action_kwargs = {}
 
         action = request.POST.get("action")
@@ -1626,6 +1631,8 @@ class ProjectRelatedViewMixin:
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Ensure project is loaded
+        self.get_project()
         context["project"] = self.project
         context["model_label"] = self.model_label
         return context
@@ -1949,6 +1956,720 @@ class CodebaseRelationListView(
         kwargs = super().get_filterset_kwargs(filterset_class)
         kwargs.update({"project": self.project})
         return kwargs
+
+
+class OriginReviewView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    PrefetchRelatedViewMixin,
+    TableColumnsMixin,
+    ExportXLSXMixin,
+    ExportJSONMixin,
+    PaginatedFilterView,
+):
+    """Enhanced review interface for origin determinations with bulk actions."""
+
+    model = CodebaseRelation
+    filterset_class = RelationFilterSet
+    template_name = "scanpipe/origin_review.html"
+    prefetch_related = [
+        Prefetch(
+            "to_resource",
+            queryset=unordered_resources.only("path", "is_text", "status"),
+        ),
+        Prefetch(
+            "from_resource",
+            queryset=unordered_resources.only("path", "is_text", "status"),
+        ),
+        Prefetch(
+            "curated_by",
+            queryset=apps.get_model(settings.AUTH_USER_MODEL).objects.only("username"),
+        ),
+    ]
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("relation", 100)
+    table_columns = [
+        {
+            "field_name": "checkbox",
+            "template": "scanpipe/includes/checkbox_column.html",
+        },
+        "to_resource",
+        {
+            "field_name": "status",
+            "filter_fieldname": "status",
+        },
+        {
+            "field_name": "map_type",
+            "filter_fieldname": "map_type",
+        },
+        {
+            "field_name": "curation_status",
+            "filter_fieldname": "curation_status",
+        },
+        {
+            "field_name": "confidence_level",
+            "filter_fieldname": "confidence_level",
+        },
+        "from_resource",
+        {
+            "field_name": "curated_by",
+        },
+        {
+            "field_name": "curated_at",
+        },
+        {
+            "field_name": "actions",
+            "template": "scanpipe/includes/origin_review_actions.html",
+        },
+    ]
+
+    def get_filterset_kwargs(self, filterset_class):
+        """Add the project in the filterset kwargs for computing status choices."""
+        kwargs = super().get_filterset_kwargs(filterset_class)
+        kwargs.update({"project": self.project})
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["bulk_curation_form"] = BulkCurationForm()
+        return context
+
+
+@method_decorator(require_POST, name="dispatch")
+class OriginBulkCurationView(
+    ConditionalLoginRequired, ProjectRelatedViewMixin, generic.View
+):
+    """Handle bulk curation actions on relations."""
+
+    @staticmethod
+    def _parse_selected_ids(request):
+        selected = request.POST.get("selected_ids", "")
+        return [relation_uuid for relation_uuid in selected.split(",") if relation_uuid]
+
+    def _apply_bulk_action(
+        self,
+        relation,
+        action,
+        cleaned_data,
+        project,
+        user,
+    ):
+        from django.utils import timezone
+
+        from scanpipe.models import OriginCuration
+
+        # Store previous values for history
+        prev_from = relation.from_resource
+        prev_to = relation.to_resource
+        prev_map_type = relation.map_type
+
+        # Update relation based on action
+        status_mapping = {
+            "approve": "approved",
+            "reject": "rejected",
+            "mark_pending": "pending",
+        }
+        if action in status_mapping:
+            relation.curation_status = status_mapping[action]
+        elif action == "set_confidence":
+            relation.confidence_level = cleaned_data.get("confidence_level")
+
+        notes = cleaned_data.get("curation_notes")
+        if notes:
+            if relation.curation_notes:
+                relation.curation_notes += f"\n\n{notes}"
+            else:
+                relation.curation_notes = notes
+
+        if user.is_authenticated:
+            relation.curated_by = user
+            relation.curated_at = timezone.now()
+            relation.save(
+                update_fields=[
+                    "curation_status",
+                    "confidence_level",
+                    "curation_notes",
+                    "curated_by",
+                    "curated_at",
+                ]
+            )
+        else:
+            relation.save(
+                update_fields=[
+                    "curation_status",
+                    "confidence_level",
+                    "curation_notes",
+                ]
+            )
+
+        OriginCuration.objects.create(
+            project=project,
+            relation=relation,
+            curator=user if user.is_authenticated else None,
+            curation_status=relation.curation_status or "pending",
+            confidence_level=relation.confidence_level or "",
+            notes=notes or "",
+            previous_from_resource=prev_from,
+            previous_to_resource=prev_to,
+            previous_map_type=prev_map_type,
+        )
+
+        return True
+
+    def post(self, request, *args, **kwargs):
+        # Ensure project is loaded
+        project = self.get_project()
+        form = BulkCurationForm(request.POST)
+        if not form.is_valid():
+            messages.error(request, "Invalid form data.")
+            return redirect("origin_review", slug=project.slug)
+
+        selected_ids = self._parse_selected_ids(request)
+        if not selected_ids:
+            messages.warning(request, "No relations selected.")
+            return redirect("origin_review", slug=project.slug)
+
+        action = form.cleaned_data["action"]
+        relations = project.codebaserelations.filter(uuid__in=selected_ids)
+
+        if not relations.exists():
+            messages.warning(request, "Selected relations were not found.")
+            return redirect("origin_review", slug=project.slug)
+
+        count = sum(
+            1
+            for relation in relations
+            if self._apply_bulk_action(
+                relation=relation,
+                action=action,
+                cleaned_data=form.cleaned_data,
+                project=project,
+                user=request.user,
+            )
+        )
+
+        if count:
+            messages.success(
+                request,
+                f"Successfully updated {count} relation{'s' if count != 1 else ''}.",
+            )
+
+        return redirect("origin_review", slug=project.slug)
+
+
+class OriginCurateView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    PrefetchRelatedViewMixin,
+    TabSetMixin,
+    generic.DetailView,
+):
+    """View for curating a single CodebaseRelation."""
+
+    model = CodebaseRelation
+    slug_field = "uuid"
+    slug_url_kwarg = "uuid"
+    template_name = "scanpipe/origin_curate.html"
+    prefetch_related = [
+        Prefetch(
+            "to_resource",
+            queryset=unordered_resources.only("path", "is_text", "status"),
+        ),
+        Prefetch(
+            "from_resource",
+            queryset=unordered_resources.only("path", "is_text", "status"),
+        ),
+        Prefetch(
+            "curated_by",
+            queryset=apps.get_model(settings.AUTH_USER_MODEL).objects.only("username"),
+        ),
+        Prefetch(
+            "curations",
+            queryset=apps.get_model("scanpipe.OriginCuration")
+            .objects.select_related("curator")
+            .order_by("-created_date"),
+        ),
+    ]
+
+    tabset = {
+        "essentials": {
+            "fields": [
+                "to_resource",
+                "from_resource",
+                "map_type",
+                "status",
+            ],
+            "icon_class": "fa-solid fa-circle-check",
+        },
+        "curation": {
+            "template": "scanpipe/tabset/tab_curation.html",
+            "icon_class": "fa-solid fa-edit",
+        },
+        "history": {
+            "template": "scanpipe/tabset/tab_curation_history.html",
+            "icon_class": "fa-solid fa-history",
+        },
+    }
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("project")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        relation = self.object
+        project = self.get_project()
+
+        # Initialize form with instance or POST data
+        if self.request.method == "POST":
+            curation_form = OriginCurationForm(
+                self.request.POST,
+                instance=relation,
+                project=project,
+            )
+        else:
+            curation_form = OriginCurationForm(
+                instance=relation,
+                project=project,
+            )
+
+        context["curation_form"] = curation_form
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """Handle form submission for curation."""
+        self.object = self.get_object()
+        project = self.get_project()
+        form = OriginCurationForm(
+            request.POST,
+            instance=self.object,
+            project=project,
+        )
+
+        if form.is_valid():
+            relation = form.save(commit=False)
+
+            # Store previous values for history
+            from django.utils import timezone
+
+            from scanpipe.models import OriginCuration
+
+            prev_from = relation.from_resource
+            prev_to = relation.to_resource
+            prev_map_type = relation.map_type
+
+            # Update curation fields
+            relation.curated_by = request.user
+            relation.curated_at = timezone.now()
+            relation.save()
+
+            # Create curation history record
+            OriginCuration.objects.create(
+                project=project,
+                relation=relation,
+                curator=request.user,
+                curation_status=relation.curation_status or "pending",
+                confidence_level=relation.confidence_level or "",
+                notes=relation.curation_notes or "",
+                previous_from_resource=prev_from,
+                previous_to_resource=prev_to,
+                previous_map_type=prev_map_type,
+            )
+
+            messages.success(request, "Relation curated successfully.")
+            return redirect("origin_curate", slug=project.slug, uuid=relation.uuid)
+
+        # Form is invalid, re-render with errors
+        context = super().get_context_data()
+        context["curation_form"] = form
+        return self.render_to_response(context)
+
+
+class OriginCurateCreateView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    FormView,
+):
+    """View for manually creating a new CodebaseRelation."""
+
+    form_class = OriginCurateCreateForm
+    template_name = "scanpipe/origin_curate_create.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["project"] = self.get_project()
+        return kwargs
+
+    def form_valid(self, form):
+        project = self.get_project()
+        relation = form.save(project=project, user=self.request.user)
+        messages.success(self.request, "Relation created successfully.")
+        return redirect("origin_curate", slug=project.slug, uuid=relation.uuid)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = self.get_form()
+        return context
+
+
+class OriginPropagateView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    FormView,
+):
+    """View for propagating origin determinations."""
+
+    form_class = OriginPropagationForm
+    template_name = "scanpipe/origin_propagate.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        relation_uuid = self.request.GET.get("relation_uuid") or self.request.POST.get(
+            "relation_uuid"
+        )
+        if relation_uuid:
+            kwargs["initial"] = {"relation_uuid": relation_uuid}
+        return kwargs
+
+    def _resolve_relation_uuid(self, form):
+        if self.request.method == "GET":
+            relation_uuid = self.request.GET.get("relation_uuid")
+        else:
+            if hasattr(form, "cleaned_data") and form.cleaned_data:
+                relation_uuid = form.cleaned_data.get("relation_uuid")
+            else:
+                relation_uuid = form.data.get("relation_uuid")
+        if not relation_uuid and hasattr(form, "initial"):
+            relation_uuid = form.initial.get("relation_uuid")
+        return relation_uuid
+
+    @staticmethod
+    def _as_float(value, default=0.8):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
+
+    def _extract_preview_params(self, form):
+        if hasattr(form, "cleaned_data") and form.cleaned_data:
+            cleaned = form.cleaned_data
+            return (
+                cleaned.get("strategy"),
+                cleaned.get("preview_only", True),
+                self._as_float(cleaned.get("similarity_threshold"), 0.8),
+                cleaned.get("pattern") or None,
+            )
+        data = form.data
+        return (
+            data.get("strategy"),
+            data.get("preview_only") == "on",
+            self._as_float(data.get("similarity_threshold"), 0.8),
+            data.get("pattern") or None,
+        )
+
+    def _build_preview_data(self, project, form):
+        relation_uuid = self._resolve_relation_uuid(form)
+        if not relation_uuid:
+            return None
+
+        try:
+            relation = project.codebaserelations.get(uuid=relation_uuid)
+        except CodebaseRelation.DoesNotExist:
+            messages.error(self.request, "Relation not found.")
+            return None
+
+        strategy, preview_only, similarity_threshold, pattern = (
+            self._extract_preview_params(form)
+        )
+        should_preview = strategy and (preview_only or self.request.method == "GET")
+        if not should_preview:
+            return None
+
+        from scanpipe.pipes.origin_propagation import get_propagation_candidates
+
+        try:
+            candidates = get_propagation_candidates(
+                project=project,
+                relation=relation,
+                strategy=strategy,
+                similarity_threshold=similarity_threshold,
+                pattern=pattern,
+                logger=None,
+            )
+        except Exception as error:  # pragma: no cover - defensive
+            messages.error(self.request, f"Error generating preview: {error}")
+            return None
+
+        return {
+            "relation": relation,
+            "candidates": candidates,
+            "count": len(candidates),
+        }
+
+    def get_context_data(self, **kwargs):
+        # Ensure project is loaded
+        project = self.get_project()
+        context = super().get_context_data(**kwargs)
+        form = context.get("form") or self.get_form()
+        context["preview_data"] = self._build_preview_data(project, form)
+        return context
+
+    def form_valid(self, form):
+        relation_uuid = form.cleaned_data["relation_uuid"]
+        strategy = form.cleaned_data["strategy"]
+        preview_only = form.cleaned_data.get("preview_only", False)
+
+        project = self.get_project()
+
+        try:
+            relation = project.codebaserelations.get(uuid=relation_uuid)
+        except CodebaseRelation.DoesNotExist:
+            messages.error(self.request, "Relation not found.")
+            return self.form_invalid(form)
+
+        if preview_only:
+            # Just show preview, don't apply
+            messages.info(self.request, "Preview mode - no changes applied.")
+            return self.render_to_response(self.get_context_data(form=form))
+
+        # Apply propagation
+        from scanpipe.pipes import origin_propagation
+
+        similarity_threshold = float(form.cleaned_data.get("similarity_threshold", 0.8))
+        pattern = form.cleaned_data.get("pattern")
+
+        try:
+            # Only pass authenticated user
+            user = self.request.user if self.request.user.is_authenticated else None
+
+            if strategy == "similar":
+                count, relations, batch = (
+                    origin_propagation.propagate_origin_to_similar_resources(
+                        project=project,
+                        relation=relation,
+                        similarity_threshold=similarity_threshold,
+                        user=user,
+                        logger=None,
+                    )
+                )
+            elif strategy == "directory":
+                count, relations, batch = (
+                    origin_propagation.propagate_origin_by_directory_structure(
+                        project=project,
+                        relation=relation,
+                        user=user,
+                        logger=None,
+                    )
+                )
+            elif strategy == "package":
+                count, relations, batch = (
+                    origin_propagation.propagate_origin_by_package(
+                        project=project,
+                        relation=relation,
+                        user=user,
+                        logger=None,
+                    )
+                )
+            elif strategy == "pattern":
+                if not pattern:
+                    messages.error(
+                        self.request, "Pattern is required for pattern strategy."
+                    )
+                    return self.form_invalid(form)
+                count, relations, batch = (
+                    origin_propagation.propagate_origin_by_pattern(
+                        project=project,
+                        relation=relation,
+                        pattern=pattern,
+                        user=user,
+                        logger=None,
+                    )
+                )
+            else:
+                messages.error(self.request, "Invalid strategy.")
+                return self.form_invalid(form)
+
+            messages.success(
+                self.request,
+                f"Propagation complete: {count} "
+                f"relation{'s' if count != 1 else ''} created.",
+            )
+
+            if batch:
+                return redirect("origin_propagate", slug=project.slug)
+
+            return redirect("origin_review", slug=project.slug)
+
+        except Exception as e:
+            messages.error(self.request, f"Error during propagation: {str(e)}")
+            return self.form_invalid(form)
+
+
+class OriginDeployView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    FormView,
+):
+    """View for deploying origin curations to FederatedCode."""
+
+    form_class = OriginDeployForm
+    template_name = "scanpipe/origin_deploy.html"
+
+    def get_context_data(self, **kwargs):
+        """Add preview data and deployment status."""
+        project = self.get_project()
+        context = super().get_context_data(**kwargs)
+
+        form = context.get("form") or self.get_form()
+        include_history = True
+
+        if hasattr(self, "_include_history_override"):
+            include_history = self._include_history_override
+        elif self.request.method == "POST":
+            if hasattr(form, "cleaned_data") and form.cleaned_data:
+                include_history = form.cleaned_data.get("include_history", True)
+            else:
+                include_history = form.data.get("include_history") == "on"
+
+        # Get curation statistics
+        curated_count = (
+            project.codebaserelations.filter(curation_status__isnull=False)
+            .exclude(curation_status="")
+            .count()
+        )
+
+        from scanpipe.models import OriginCuration
+
+        curation_history_count = OriginCuration.objects.filter(project=project).count()
+
+        # Check FederatedCode eligibility
+        from scanpipe.pipes import federatedcode
+
+        federatedcode_configured = federatedcode.is_configured()
+        federatedcode_available = (
+            federatedcode.is_available() if federatedcode_configured else False
+        )
+
+        # Check if project has PURL (required for FederatedCode)
+        has_purl = bool(project.purl)
+
+        # Get preview of curations to deploy
+        preview_data = None
+        if curated_count > 0:
+            from scanpipe.pipes.federatedcode import export_origin_curations
+
+            preview_data = export_origin_curations(
+                project, logger=None, include_history=include_history
+            )
+
+        context.update(
+            {
+                "curated_count": curated_count,
+                "curation_history_count": curation_history_count,
+                "federatedcode_configured": federatedcode_configured,
+                "federatedcode_available": federatedcode_available,
+                "has_purl": has_purl,
+                "preview_data": preview_data,
+                "include_history": include_history,
+            }
+        )
+
+        return context
+
+    def form_valid(self, form):
+        """Handle deployment form submission."""
+        project = self.get_project()
+        merge_strategy = form.cleaned_data["merge_strategy"]
+        include_history = form.cleaned_data["include_history"]
+        preview_only = form.cleaned_data["preview_only"]
+
+        # Check prerequisites
+        from scanpipe.pipes import federatedcode
+
+        if not federatedcode.is_configured():
+            messages.error(
+                self.request,
+                "FederatedCode is not configured. Please contact administrator.",
+            )
+            return self.form_invalid(form)
+
+        if not federatedcode.is_available():
+            messages.error(
+                self.request,
+                (
+                    "FederatedCode Git account is not available. "
+                    "Please check configuration."
+                ),
+            )
+            return self.form_invalid(form)
+
+        if not project.purl:
+            messages.error(
+                self.request,
+                "Project PURL is required for FederatedCode deployment. "
+                "Please set a PURL for this project.",
+            )
+            return self.form_invalid(form)
+
+        curated_count = (
+            project.codebaserelations.filter(curation_status__isnull=False)
+            .exclude(curation_status="")
+            .count()
+        )
+
+        if curated_count == 0:
+            messages.warning(self.request, "No curated relations to deploy.")
+            return redirect("origin_review", slug=project.slug)
+
+        if preview_only:
+            # Just show preview
+            history_text = (
+                "including history" if include_history else "excluding history"
+            )
+            messages.info(
+                self.request,
+                f"Preview mode: {curated_count} curated relations ready for deployment "
+                f"({history_text}).",
+            )
+            self._include_history_override = include_history
+            try:
+                return self.render_to_response(self.get_context_data(form=form))
+            finally:
+                if hasattr(self, "_include_history_override"):
+                    delattr(self, "_include_history_override")
+
+        # Actually deploy by running the pipeline
+        try:
+            # Check if PublishToFederatedCode pipeline exists
+
+            # Persist deployment choices for pipeline consumption
+            extra_data = (project.extra_data or {}).copy()
+            extra_data["origin_deploy"] = {
+                "merge_strategy": merge_strategy,
+                "include_history": include_history,
+            }
+            project.extra_data = extra_data
+            project.save(update_fields=["extra_data"])
+
+            # Create a run for the pipeline
+            run = project.add_pipeline(
+                pipeline_name="publish_to_federatedcode",
+                execute_now=True,
+            )
+
+            messages.success(
+                self.request,
+                f"Deployment started using the '{merge_strategy}' strategy "
+                f"{'with' if include_history else 'without'} history. "
+                f"Pipeline run: {run.uuid}.",
+            )
+            return redirect("run_detail", uuid=run.uuid)
+
+        except Exception as e:
+            messages.error(
+                self.request,
+                f"Error starting deployment: {str(e)}. "
+                "Please ensure the PublishToFederatedCode pipeline is available.",
+            )
+            return self.form_invalid(form)
 
 
 class CodebaseResourceDetailsView(

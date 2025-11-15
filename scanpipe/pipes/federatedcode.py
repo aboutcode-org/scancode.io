@@ -358,3 +358,256 @@ def write_data_as_yaml(base_path, file_path, data):
     write_to.parent.mkdir(parents=True, exist_ok=True)
     with open(write_to, encoding="utf-8", mode="w") as f:
         f.write(saneyaml.dump(data))
+
+
+def export_origin_curations(project, logger=None, include_history=True):
+    """
+    Export origin curations for a project to a structured data format.
+
+    Returns a dictionary containing:
+    - relations: List of curated relations with metadata
+    - curation_history: Full history of curation actions
+    - metadata: Project and export information
+
+    This data can be serialized to YAML for FederatedCode deployment.
+    """
+    from scanpipe.models import OriginCuration
+
+    relations_data = []
+    curated_relations = (
+        project.codebaserelations.filter(curation_status__isnull=False)
+        .exclude(curation_status="")
+        .select_related("from_resource", "to_resource", "curated_by")
+    )
+
+    for relation in curated_relations:
+        relation_data = {
+            "uuid": str(relation.uuid),
+            "from_resource_path": relation.from_resource.path,
+            "to_resource_path": relation.to_resource.path,
+            "map_type": relation.map_type,
+            "curation_status": relation.curation_status,
+            "confidence_level": relation.confidence_level or "",
+            "curation_notes": relation.curation_notes or "",
+            "curated_by": relation.curated_by.username if relation.curated_by else "",
+            "curated_at": relation.curated_at.isoformat()
+            if relation.curated_at
+            else "",
+        }
+        if relation.extra_data:
+            relation_data["extra_data"] = relation.extra_data
+        relations_data.append(relation_data)
+
+    # Get full curation history if requested
+    curation_history = []
+    if include_history:
+        curations = (
+            OriginCuration.objects.filter(project=project)
+            .select_related("relation", "curator")
+            .order_by("-created_date")
+        )
+
+        for curation in curations:
+            history_entry = {
+                "relation_uuid": str(curation.relation.uuid),
+                "curator": curation.curator.username if curation.curator else "",
+                "created_date": curation.created_date.isoformat(),
+                "curation_status": curation.curation_status,
+                "confidence_level": curation.confidence_level or "",
+                "notes": curation.notes or "",
+                "previous_from_resource_path": (
+                    curation.previous_from_resource.path
+                    if curation.previous_from_resource
+                    else ""
+                ),
+                "previous_to_resource_path": (
+                    curation.previous_to_resource.path
+                    if curation.previous_to_resource
+                    else ""
+                ),
+                "previous_map_type": curation.previous_map_type or "",
+            }
+            curation_history.append(history_entry)
+
+    export_data = {
+        "metadata": {
+            "project_name": project.name,
+            "project_slug": project.slug,
+            "export_date": project.created_date.isoformat(),
+            "tool": "pkg:github/aboutcode-org/scancode.io",
+            "tool_version": VERSION,
+            "total_curated_relations": len(relations_data),
+            "total_curation_actions": len(curation_history),
+        },
+        "relations": relations_data,
+        "curation_history": curation_history,
+    }
+
+    if logger:
+        logger(
+            f"Exported {len(relations_data)} curated relations "
+            f"with {len(curation_history)} curation history entries."
+        )
+
+    return export_data
+
+
+def add_origin_curations(
+    project,
+    repo,
+    package_scan_file,
+    include_history=True,
+    merge_strategy="latest",
+    logger=None,
+):
+    """
+    Add origin curations to the local Git repository alongside scan results.
+
+    The curations file will be placed in the same directory as the scan file,
+    with the name `origin-curations.yaml`.
+    """
+    # Get the directory of the scan file
+    relative_scan_file_path = Path(*package_scan_file.parts[1:])
+    curation_file_path = relative_scan_file_path.parent / "origin-curations.yaml"
+
+    # Export curations
+    curation_data = export_origin_curations(
+        project, logger=logger, include_history=include_history
+    )
+
+    # Merge with existing data if present
+    full_curation_path = Path(repo.working_dir) / curation_file_path
+    if full_curation_path.exists():
+        try:
+            with open(full_curation_path, encoding="utf-8") as existing_file:
+                existing_data = saneyaml.load(existing_file.read()) or {}
+        except Exception as e:
+            if logger:
+                logger(f"Unable to read existing curation file: {e}")
+            existing_data = {}
+        if existing_data:
+            curation_data = merge_curations(
+                existing_curations=existing_data,
+                new_curations=curation_data,
+                strategy=merge_strategy,
+                logger=logger,
+            )
+
+    if not include_history and isinstance(curation_data, dict):
+        curation_data["curation_history"] = []
+
+    # Write to repository
+    write_data_as_yaml(
+        base_path=repo.working_dir,
+        file_path=curation_file_path,
+        data=curation_data,
+    )
+
+    if logger:
+        logger(f"Origin curations written to {curation_file_path}")
+
+    return curation_file_path
+
+
+def merge_curations(  # noqa: C901 - complex merge logic
+    existing_curations, new_curations, strategy="latest", logger=None
+):
+    """
+    Merge curations from different sources with conflict resolution.
+
+    Args:
+        existing_curations: Dictionary with existing curation data
+        new_curations: Dictionary with new curation data to merge
+        strategy: Merge strategy - "latest", "priority", or "manual"
+        logger: Optional logger function
+
+    Returns:
+        Merged curation data dictionary
+
+    """
+    if strategy == "latest":
+        # Use the most recent curation for each relation
+        merged_relations = {}
+        merged_history = []
+
+        # Process existing curations
+        for relation in existing_curations.get("relations", []):
+            merged_relations[relation["uuid"]] = relation
+
+        # Process new curations (overwrite if newer)
+        for relation in new_curations.get("relations", []):
+            existing = merged_relations.get(relation["uuid"])
+            if not existing:
+                merged_relations[relation["uuid"]] = relation
+            else:
+                # Compare timestamps - use newer one
+                existing_time = existing.get("curated_at", "")
+                new_time = relation.get("curated_at", "")
+                if new_time > existing_time:
+                    merged_relations[relation["uuid"]] = relation
+                    if logger:
+                        logger(
+                            f"Updated relation {relation['uuid']} "
+                            f"with newer curation (latest strategy)"
+                        )
+
+        # Merge history (preserve all entries)
+        merged_history.extend(existing_curations.get("curation_history", []))
+        merged_history.extend(new_curations.get("curation_history", []))
+
+        # Sort history by date
+        merged_history.sort(key=lambda x: x.get("created_date", ""), reverse=True)
+
+        return {
+            "metadata": {
+                **existing_curations.get("metadata", {}),
+                "merge_strategy": strategy,
+                "merged_at": new_curations.get("metadata", {}).get("export_date", ""),
+            },
+            "relations": list(merged_relations.values()),
+            "curation_history": merged_history,
+        }
+
+    elif strategy == "priority":
+        # Priority-based: new curations take precedence
+        merged_relations = {}
+        merged_history = []
+
+        # Add existing relations
+        for relation in existing_curations.get("relations", []):
+            merged_relations[relation["uuid"]] = relation
+
+        # Overwrite with new curations (priority)
+        for relation in new_curations.get("relations", []):
+            if relation["uuid"] in merged_relations:
+                if logger:
+                    logger(
+                        f"Overwriting relation {relation['uuid']} "
+                        f"with new curation (priority strategy)"
+                    )
+            merged_relations[relation["uuid"]] = relation
+
+        # Merge history
+        merged_history.extend(existing_curations.get("curation_history", []))
+        merged_history.extend(new_curations.get("curation_history", []))
+        merged_history.sort(key=lambda x: x.get("created_date", ""), reverse=True)
+
+        return {
+            "metadata": {
+                **new_curations.get("metadata", {}),
+                "merge_strategy": strategy,
+            },
+            "relations": list(merged_relations.values()),
+            "curation_history": merged_history,
+        }
+
+    else:  # manual
+        # Manual merge: return both for manual review
+        return {
+            "metadata": {
+                "merge_strategy": strategy,
+                "requires_manual_review": True,
+            },
+            "existing_curations": existing_curations,
+            "new_curations": new_curations,
+        }

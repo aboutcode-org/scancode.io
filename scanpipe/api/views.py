@@ -28,6 +28,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Q
 from django.http import FileResponse
+from django.utils import timezone
 
 import django_filters
 from rest_framework import mixins
@@ -37,7 +38,8 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from scanpipe.api.serializers import CodebaseRelationSerializer
+from scanpipe.api.serializers import CodebaseRelationCurationSerializer
+from scanpipe.api.serializers import CodebaseRelationWriteSerializer
 from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
@@ -51,6 +53,7 @@ from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectMessageFilterSet
 from scanpipe.filters import RelationFilterSet
 from scanpipe.filters import ResourceFilterSet
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
@@ -297,14 +300,222 @@ class ProjectViewSet(
             request, queryset, DependencyFilterSet, DiscoveredDependencySerializer
         )
 
-    @action(detail=True, filterset_class=None)
+    @action(
+        detail=True,
+        filterset_class=None,
+        methods=["get", "post"],
+        url_path="relations",
+        url_name="relations",
+    )
     def relations(self, request, *args, **kwargs):
+        """List or create relations for a project."""
         project = self.get_object()
+
+        if request.method == "POST":
+            # Create new relation
+            serializer = CodebaseRelationWriteSerializer(
+                data=request.data, context={"project": project, "request": request}
+            )
+            if serializer.is_valid():
+                relation = serializer.save()
+                # Create curation history if curation fields provided
+                if any(
+                    key in request.data
+                    for key in ["curation_status", "confidence_level", "curation_notes"]
+                ):
+                    from scanpipe.models import OriginCuration
+
+                    curator = request.user if request.user.is_authenticated else None
+                    OriginCuration.objects.create(
+                        project=project,
+                        relation=relation,
+                        curator=curator,
+                        curation_status=relation.curation_status or "pending",
+                        confidence_level=relation.confidence_level or "",
+                        notes=relation.curation_notes or "",
+                        previous_from_resource=relation.from_resource,
+                        previous_to_resource=relation.to_resource,
+                        previous_map_type=relation.map_type,
+                    )
+                return Response(
+                    CodebaseRelationCurationSerializer(relation).data,
+                    status=status.HTTP_201_CREATED,
+                )
+            return ErrorResponse(
+                serializer.errors, status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+        # GET - list relations
         queryset = project.codebaserelations.select_related(
             "from_resource", "to_resource"
         )
         return self.get_filtered_response(
-            request, queryset, RelationFilterSet, CodebaseRelationSerializer
+            request, queryset, RelationFilterSet, CodebaseRelationCurationSerializer
+        )
+
+    @action(
+        detail=True,
+        methods=["get", "patch", "delete"],
+        url_path="relations/(?P<relation_uuid>[^/.]+)",
+        url_name="relation-detail",
+    )
+    def relation_detail(self, request, relation_uuid=None, *args, **kwargs):
+        """Retrieve, update, or delete a specific relation."""
+        project = self.get_object()
+
+        try:
+            relation = project.codebaserelations.get(uuid=relation_uuid)
+        except CodebaseRelation.DoesNotExist:
+            return ErrorResponse(
+                "Relation not found.", status_code=status.HTTP_404_NOT_FOUND
+            )
+
+        if request.method == "GET":
+            serializer = CodebaseRelationCurationSerializer(relation)
+            return Response(serializer.data)
+
+        elif request.method == "PATCH":
+            # Store previous values for history
+            from scanpipe.models import OriginCuration
+
+            prev_from = relation.from_resource
+            prev_to = relation.to_resource
+            prev_map_type = relation.map_type
+
+            serializer = CodebaseRelationWriteSerializer(
+                relation,
+                data=request.data,
+                partial=True,
+                context={"project": project, "request": request},
+            )
+            if serializer.is_valid():
+                relation = serializer.save()
+
+                # Create curation history if curation fields changed
+                curation_fields_changed = any(
+                    key in request.data
+                    for key in ["curation_status", "confidence_level", "curation_notes"]
+                )
+                if curation_fields_changed:
+                    OriginCuration.objects.create(
+                        project=project,
+                        relation=relation,
+                        curator=request.user if request.user.is_authenticated else None,
+                        curation_status=relation.curation_status or "pending",
+                        confidence_level=relation.confidence_level or "",
+                        notes=relation.curation_notes or "",
+                        previous_from_resource=prev_from,
+                        previous_to_resource=prev_to,
+                        previous_map_type=prev_map_type,
+                    )
+
+                return Response(CodebaseRelationCurationSerializer(relation).data)
+            return ErrorResponse(
+                serializer.errors, status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+        elif request.method == "DELETE":
+            relation.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="relations/bulk-curate",
+        url_name="relations-bulk-curate",
+    )
+    def relations_bulk_curate(self, request, *args, **kwargs):  # noqa: C901
+        """Bulk curate multiple relations."""
+        project = self.get_object()
+
+        relation_uuids = request.data.get("relation_uuids", [])
+        if not relation_uuids:
+            return ErrorResponse(
+                "relation_uuids is required.", status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+        action = request.data.get("action")
+        if action not in ["approve", "reject", "mark_pending", "set_confidence"]:
+            return ErrorResponse(
+                "Invalid action. Must be one of: approve, reject, "
+                "mark_pending, set_confidence",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        relations = project.codebaserelations.filter(uuid__in=relation_uuids)
+        if not relations.exists():
+            return ErrorResponse(
+                "No relations found.", status_code=status.HTTP_404_NOT_FOUND
+            )
+
+        count = 0
+        from scanpipe.models import OriginCuration
+
+        for relation in relations:
+            # Store previous values
+            prev_from = relation.from_resource
+            prev_to = relation.to_resource
+            prev_map_type = relation.map_type
+
+            # Update based on action
+            if action == "approve":
+                relation.curation_status = "approved"
+            elif action == "reject":
+                relation.curation_status = "rejected"
+            elif action == "mark_pending":
+                relation.curation_status = "pending"
+            elif action == "set_confidence":
+                confidence_level = request.data.get("confidence_level")
+                if not confidence_level:
+                    return ErrorResponse(
+                        "confidence_level is required for set_confidence action.",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+                relation.confidence_level = confidence_level
+
+            # Add notes if provided
+            if request.data.get("curation_notes"):
+                if relation.curation_notes:
+                    relation.curation_notes += f"\n\n{request.data['curation_notes']}"
+                else:
+                    relation.curation_notes = request.data["curation_notes"]
+
+            if request.user.is_authenticated:
+                relation.curated_by = request.user
+                relation.curated_at = timezone.now()
+            relation.save(
+                update_fields=[
+                    "curation_status",
+                    "confidence_level",
+                    "curation_notes",
+                    "curated_by",
+                    "curated_at",
+                ]
+            )
+
+            # Create curation history
+            OriginCuration.objects.create(
+                project=project,
+                relation=relation,
+                curator=request.user if request.user.is_authenticated else None,
+                curation_status=relation.curation_status or "pending",
+                confidence_level=relation.confidence_level or "",
+                notes=request.data.get("curation_notes", ""),
+                previous_from_resource=prev_from,
+                previous_to_resource=prev_to,
+                previous_map_type=prev_map_type,
+            )
+
+            count += 1
+
+        return Response(
+            {
+                "status": (
+                    f"Successfully updated {count} relation{'s' if count != 1 else ''}."
+                ),
+                "count": count,
+            },
+            status=status.HTTP_200_OK,
         )
 
     @action(detail=True, filterset_class=None)
