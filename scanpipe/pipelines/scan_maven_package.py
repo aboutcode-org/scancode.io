@@ -47,6 +47,7 @@ class ScanMavenPackage(ScanSinglePackage):
             cls.extract_archives,
             cls.run_scan,
             cls.fetch_and_scan_remote_pom,
+            cls.update_package_license_from_resource_if_missing,
             cls.load_inventory_from_toolkit_scan,
             cls.make_summary_from_scan_results,
         )
@@ -65,9 +66,9 @@ class ScanMavenPackage(ScanSinglePackage):
         pom_file_list = download_pom_files(pom_url_list)
         scanned_pom_packages, scanned_dependencies = scan_pom_files(pom_file_list)
 
-        updated_pacakges = packages + scanned_pom_packages
+        updated_packages = packages + scanned_pom_packages
         # Replace/Update the package and dependencies section
-        data["packages"] = updated_pacakges
+        data["packages"] = updated_packages
         data["dependencies"] = scanned_dependencies
         with open(self.scan_output_location, "w") as file:
             json.dump(data, file, indent=2)

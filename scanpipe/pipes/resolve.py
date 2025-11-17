@@ -723,3 +723,32 @@ def scan_pom_files(pom_file_list):
                     scanned_dep["datafile_path"] = ""
                     scanned_pom_deps.append(scanned_dep)
     return scanned_pom_packages, scanned_pom_deps
+
+
+def update_package_license_from_resource_if_missing(packages, resources):
+    """Populate missing licenses to packages based on resource data."""
+    from license_expression import Licensing
+
+    updated_packages = []
+    for package in packages:
+        if not package.get("declared_license_expression"):
+            package_uid = package.get("package_uid")
+            detected_lic_list = []
+            for resource in resources:
+                if (
+                    resource.get("detected_license_expression")
+                    and package_uid in resource["for_packages"]
+                ):
+                    if (
+                        resource.get("detected_license_expression")
+                        not in detected_lic_list
+                    ):
+                        detected_lic_list.append(
+                            resource.get("detected_license_expression")
+                        )
+            license_expression = " AND ".join(detected_lic_list)
+            if license_expression:
+                declared_license_expression = str(Licensing().dedup(license_expression))
+                package["declared_license_expression"] = declared_license_expression
+        updated_packages.append(package)
+    return updated_packages

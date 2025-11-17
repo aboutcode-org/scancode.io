@@ -586,3 +586,56 @@ class ScanPipeResolvePipesTest(TestCase):
         input_source = {"filename": "not-a-jar.txt"}
         result = resolve.get_pom_url_list(input_source, [])
         self.assertEqual(result, [])
+
+    def test_scanpipe_resolve_update_package_license_from_resource_if_missing(self):
+        packages = [
+            {"package_uid": "pkg1", "declared_license_expression": ""},
+            {"package_uid": "pkg2", "declared_license_expression": None},
+            {"package_uid": "pkg3", "declared_license_expression": "MIT"},
+        ]
+        resources = [
+            {
+                "for_packages": ["pkg1", "pkg2"],
+                "detected_license_expression": "GPL-2.0",
+            },
+            {"for_packages": ["pkg1"], "detected_license_expression": "MIT"},
+        ]
+
+        expected_pkg1_expr = "GPL-2.0 AND MIT"
+        expected_pkg2_expr = "GPL-2.0"
+
+        updated = resolve.update_package_license_from_resource_if_missing(
+            packages, resources
+        )
+
+        self.assertEqual(updated[0]["declared_license_expression"], expected_pkg1_expr)
+        self.assertEqual(updated[1]["declared_license_expression"], expected_pkg2_expr)
+        self.assertEqual(updated[2]["declared_license_expression"], "MIT")
+
+    def test_scanpipe_resolve_update_package_license_from_resource_if_missing_no_match(
+        self,
+    ):
+        packages = [{"package_uid": "pkgX", "declared_license_expression": None}]
+        resources = [{"for_packages": ["pkgY"], "detected_license_expression": "MIT"}]
+
+        updated = resolve.update_package_license_from_resource_if_missing(
+            packages, resources
+        )
+        self.assertEqual(updated[0]["declared_license_expression"], None)
+
+    def test_scanpipe_resolve_update_package_license_from_resource_if_missing_no_change(
+        self,
+    ):
+        packages = [
+            {"package_uid": "pkg1", "declared_license_expression": "GPL-2.0"},
+            {"package_uid": "pkg2", "declared_license_expression": "Apache-2.0"},
+        ]
+        resources = [
+            {"for_packages": ["pkg1", "pkg2"], "detected_license_expression": "MIT"},
+        ]
+
+        updated = resolve.update_package_license_from_resource_if_missing(
+            packages, resources
+        )
+        self.assertEqual(updated[0]["declared_license_expression"], "GPL-2.0")
+        self.assertEqual(updated[1]["declared_license_expression"], "Apache-2.0")

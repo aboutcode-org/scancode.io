@@ -31,6 +31,7 @@ from scanpipe.pipes import input
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import is_archive
+from scanpipe.pipes.resolve import update_package_license_from_resource_if_missing
 
 
 class ScanSinglePackage(Pipeline):
@@ -51,6 +52,7 @@ class ScanSinglePackage(Pipeline):
             cls.extract_input_to_codebase_directory,
             cls.extract_archives,
             cls.run_scan,
+            cls.update_package_license_from_resource_if_missing,
             cls.load_inventory_from_toolkit_scan,
             cls.make_summary_from_scan_results,
         )
@@ -125,6 +127,23 @@ class ScanSinglePackage(Pipeline):
 
         if not scan_output_path.exists():
             raise FileNotFoundError("ScanCode output not available.")
+
+    def update_package_license_from_resource_if_missing(self):
+        """Update PACKAGE license from the license detected in RESOURCES if missing."""
+        with open(self.scan_output_location) as file:
+            data = json.load(file)
+            packages = data.get("packages", [])
+            resources = data.get("files", [])
+            if not packages or not resources:
+                return
+
+        updated_packages = update_package_license_from_resource_if_missing(
+            packages, resources
+        )
+        # Update the package section
+        data["packages"] = updated_packages
+        with open(self.scan_output_location, "w") as file:
+            json.dump(data, file, indent=2)
 
     def load_inventory_from_toolkit_scan(self):
         """Process a JSON Scan results to populate codebase resources and packages."""
