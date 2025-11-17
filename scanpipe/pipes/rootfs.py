@@ -89,6 +89,19 @@ class RootFs:
 
     def __attrs_post_init__(self, *args, **kwargs):
         self.distro = Distro.from_rootfs(self.location)
+        if not self.distro:
+            os_release_path = os.path.join(self.location, "etc", "os-release")
+            if os.path.exists(os_release_path):
+                with open(os_release_path) as f:
+                    data = dict(line.split("=", 1) for line in f if "=" in line)
+                distro_id = data.get("ID", "").strip('"')
+                version_id = data.get("VERSION_ID", "").strip('"')
+                if distro_id in SUPPORTED_DISTROS:
+                    self.distro = Distro(
+                        identifier=distro_id,
+                        version=version_id,
+                    )
+                    logger.info(f"Fallback distro detection: {distro_id}")
 
     @classmethod
     def from_project_codebase(cls, project):
