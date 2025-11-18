@@ -593,7 +593,11 @@ def get_pom_url_list(input_source, packages):
         input_source_url = input_source.get("download_url", "")
 
         parsed_url = urlparse(input_source_url)
-        if input_source_url and parsed_url.netloc.endswith("maven.org"):
+        maven_hosts = {
+            "repo1.maven.org",
+            "repo.maven.apache.org",
+        }
+        if input_source_url and parsed_url.netloc in maven_hosts:
             base_url = input_source_url.rsplit("/", 1)[0]
             pom_url = (
                 base_url + "/" + "-".join(base_url.rstrip("/").split("/")[-2:]) + ".pom"
