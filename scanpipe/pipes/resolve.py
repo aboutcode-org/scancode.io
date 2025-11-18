@@ -576,16 +576,17 @@ def get_pom_url_list(input_source, packages):
     pom_url_list = []
     if packages:
         for package in packages:
-            package_ns = package.get("namespace", "")
-            package_name = package.get("name", "")
-            package_version = package.get("version", "")
-            pom_url = (
-                f"https://repo1.maven.org/maven2/{package_ns.replace('.', '/')}/"
-                f"{package_name}/{package_version}/"
-                f"{package_name}-{package_version}.pom".lower()
-            )
-            pom_url_list.append(pom_url)
-    else:
+            if package.get("type") == "maven":
+                package_ns = package.get("namespace", "")
+                package_name = package.get("name", "")
+                package_version = package.get("version", "")
+                pom_url = (
+                    f"https://repo1.maven.org/maven2/{package_ns.replace('.', '/')}/"
+                    f"{package_name}/{package_version}/"
+                    f"{package_name}-{package_version}.pom".lower()
+                )
+                pom_url_list.append(pom_url)
+    if not pom_url_list:
         from urllib.parse import urlparse
 
         # Check what's the input source

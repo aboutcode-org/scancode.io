@@ -548,6 +548,7 @@ class ScanPipeResolvePipesTest(TestCase):
     def test_scanpipe_resolve_get_pom_url_list_with_packages(self):
         packages = [
             {
+                "type": "maven",
                 "namespace": "org.apache.commons",
                 "name": "commons-lang3",
                 "version": "3.12.0",
@@ -557,6 +558,19 @@ class ScanPipeResolvePipesTest(TestCase):
         expected = [
             "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.pom"
         ]
+        self.assertEqual(result, expected)
+
+    def test_scanpipe_resolve_get_pom_url_list_with_non_maven_packages(self):
+        packages = [
+            {
+                "type": "jar",
+                "namespace": "",
+                "name": "spring-context",
+                "version": "7.0.0",
+            }
+        ]
+        result = resolve.get_pom_url_list({}, packages)
+        expected = []
         self.assertEqual(result, expected)
 
     def test_scanpipe_resolve_get_pom_url_list_with_maven_download_url(self):
