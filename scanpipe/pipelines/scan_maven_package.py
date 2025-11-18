@@ -30,9 +30,9 @@ from scanpipe.pipes.resolve import scan_pom_files
 
 class ScanMavenPackage(ScanSinglePackage):
     """
-    Scan a single package archive (or package manifest file).
+    Scan a single maven package archive.
 
-    This pipeline scans a single package for package metadata,
+    This pipeline scans a single maven package for package metadata,
     declared dependencies, licenses, license clarity score and copyrights.
 
     The output is a summary of the scan results in JSON format.
