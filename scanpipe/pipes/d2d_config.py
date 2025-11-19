@@ -80,12 +80,18 @@ ECOSYSTEM_CONFIGS = {
             ".odt",
             ".odp",
         ],
+        deployed_resource_path_exclusions=["*.properties", "*.html"],
     ),
     "Java": EcosystemConfig(
         ecosystem_option="Java",
         matchable_package_extensions=[".jar", ".war"],
         matchable_resource_extensions=[".class"],
-        deployed_resource_path_exclusions=["*META-INF/*", "*/module-info.class"],
+        deployed_resource_path_exclusions=[
+            "*META-INF/*",
+            "*/module-info.class",
+            "*/OSGI-INF/*.xml",
+            "*/OSGI-INF/*.json",
+        ],
     ),
     "Scala": EcosystemConfig(
         ecosystem_option="Scala",
@@ -96,6 +102,7 @@ ECOSYSTEM_CONFIGS = {
         ecosystem_option="Kotlin",
         matchable_package_extensions=[".jar", ".war"],
         matchable_resource_extensions=[".class"],
+        deployed_resource_path_exclusions=["*META-INF/*", "*.knm"],
     ),
     "JavaScript": EcosystemConfig(
         ecosystem_option="JavaScript",
