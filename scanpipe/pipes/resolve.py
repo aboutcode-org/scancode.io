@@ -596,6 +596,7 @@ def get_pom_url_list(input_source, packages):
         maven_hosts = {
             "repo1.maven.org",
             "repo.maven.apache.org",
+            "maven.google.com",
         }
         if input_source_url and parsed_url.netloc in maven_hosts:
             base_url = input_source_url.rsplit("/", 1)[0]
@@ -606,13 +607,13 @@ def get_pom_url_list(input_source, packages):
         else:
             # Construct a pom_url from filename
             input_filename = input_source.get("filename", "")
-            if input_filename.endswith(".jar"):
+            if input_filename.endswith(".jar") or input_filename.endswith(".aar"):
                 artifact_id, version = parse_maven_filename(input_filename)
                 if not artifact_id or not version:
                     return []
                 pom_url_list = construct_pom_url_from_filename(artifact_id, version)
             else:
-                # Only work with input that's a .jar file
+                # Only work with input that's a .jar or .aar file
                 return []
 
     return pom_url_list
