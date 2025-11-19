@@ -144,7 +144,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "analyze_root_filesystem_or_vm_image",
             "scan_single_package",
         ]
-        self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
+        self.assertEqual(expected, project.pipelines)
         run = project.runs.get(pipeline_name="analyze_root_filesystem_or_vm_image")
         self.assertEqual(["group1", "group2"], run.selected_groups)
 
@@ -422,7 +422,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "analyze_root_filesystem_or_vm_image",
             "scan_single_package",
         ]
-        self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
+        self.assertEqual(expected, project.pipelines)
         run = project.runs.get(pipeline_name="analyze_root_filesystem_or_vm_image")
         self.assertEqual(["group1", "group2"], run.selected_groups)
 
@@ -1474,6 +1474,56 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = ("file.ext", "tag1,tag2")
         self.assertEqual(expected, extract_tag("file.ext:tag1,tag2"))
 
+    @mock.patch("scanpipe.pipes.kubernetes.get_images_from_kubectl")
+    def test_scanpipe_management_command_analyze_kubernetes_from_kubectl(
+        self, mock_get_images
+    ):
+        mock_get_images.return_value = ["nginx:latest", "redis:alpine"]
+
+        project_name = "kube-from-cluster-single"
+        out = StringIO()
+        call_command(
+            "analyze-kubernetes",
+            project_name,
+            "--label",
+            "label1",
+            "--notes",
+            "Notes",
+            "--find-vulnerabilities",
+            stdout=out,
+        )
+        self.assertIn("Extracting images from Kubernetes cluster", out.getvalue())
+        self.assertEqual(1, Project.objects.count())
+        project = Project.objects.get(name=project_name)
+        self.assertEqual(["label1"], list(project.labels.names()))
+        self.assertEqual("Notes", project.notes)
+        self.assertEqual(
+            ["analyze_docker_image", "find_vulnerabilities"], project.pipelines
+        )
+        expected = ["docker://nginx:latest", "docker://redis:alpine"]
+        download_urls = project.inputsources.values_list("download_url", flat=True)
+        self.assertEqual(expected, sorted(download_urls))
+        project.delete()
+
+        project_name = "kube-from-cluster-multi"
+        out = StringIO()
+        call_command(
+            "analyze-kubernetes",
+            project_name,
+            "--multi",
+            stdout=out,
+        )
+        self.assertIn("Extracting images from Kubernetes cluster", out.getvalue())
+        self.assertEqual(2, Project.objects.count())
+        expected = [
+            "kube-from-cluster-multi: nginx:latest",
+            "kube-from-cluster-multi: redis:alpine",
+        ]
+        names = Project.objects.values_list("name", flat=True)
+        self.assertEqual(expected, sorted(names))
+        for project in Project.objects.all():
+            self.assertEqual(1, project.inputsources.count())
+
 
 class ScanPipeManagementCommandMixinTest(TestCase):
     class CreateProjectCommand(
@@ -1525,7 +1575,7 @@ class ScanPipeManagementCommandMixinTest(TestCase):
             "analyze_root_filesystem_or_vm_image",
             "scan_single_package",
         ]
-        self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
+        self.assertEqual(expected, project.pipelines)
         run = project.runs.get(pipeline_name="analyze_root_filesystem_or_vm_image")
         self.assertEqual(["group1", "group2"], run.selected_groups)
 
