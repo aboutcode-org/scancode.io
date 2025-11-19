@@ -26,6 +26,7 @@ from django.utils.text import slugify
 
 from scanpipe.management.commands import CreateProjectCommandMixin
 from scanpipe.management.commands import execute_project
+from scanpipe.pipes.kubernetes import get_images_from_kubectl
 
 # As a single project:
 # scanpipe analyze-kubernetes kube-analysis-single --execute
@@ -33,12 +34,9 @@ from scanpipe.management.commands import execute_project
 # As multiple projects:
 # scanpipe analyze-kubernetes kube-analysis-multi --multi --execute
 
-
-def get_images():
-    # kubectl get pods -o jsonpath="{.items[*].spec.containers[*].image}"
-    # nginx:latest redis:alpine
-    images = ["nginx:latest", "redis:alpine"]
-    return images
+# Kubectl mode (from running cluster):
+# scanpipe analyze-kubernetes kube-from-cluster --execute
+# scanpipe analyze-kubernetes kube-from-cluster --namespace default --execute
 
 
 class Command(CreateProjectCommandMixin, BaseCommand):
@@ -62,6 +60,17 @@ class Command(CreateProjectCommandMixin, BaseCommand):
             action="store_true",
             help="Execute the pipelines right after the project creation.",
         )
+        # Additional kubectl options
+        parser.add_argument(
+            "--namespace",
+            type=str,
+            help="Kubernetes namespace to query (for --kubectl mode).",
+        )
+        parser.add_argument(
+            "--context",
+            type=str,
+            help="Kubernetes context to use (for --kubectl mode).",
+        )
 
     def handle(self, *args, **options):
         self.verbosity = options["verbosity"]
@@ -77,7 +86,9 @@ class Command(CreateProjectCommandMixin, BaseCommand):
         if options["find_vulnerabilities"]:
             pipelines.append("find_vulnerabilities")
 
-        images = get_images()
+        images = self.get_images(**options)
+        if not images:
+            raise CommandError("No images found.")
 
         create_project_options = {
             "pipelines": pipelines,
@@ -105,7 +116,26 @@ class Command(CreateProjectCommandMixin, BaseCommand):
 
         if execute:
             for project in created_projects:
-                try:
-                    execute_project(project=project, run_async=run_async, command=self)
-                except CommandError as error:
-                    self.stderr.write(str(error))
+                execute_project(project=project, run_async=run_async, command=self)
+
+    def get_images(self, **options):
+        namespace = options.get("namespace")
+        context = options.get("context")
+
+        if self.verbosity >= 1:
+            self.stdout.write(
+                "Extracting images from Kubernetes cluster using kubectl..."
+            )
+
+        try:
+            images = get_images_from_kubectl(namespace=namespace, context=context)
+        except Exception as e:
+            raise CommandError(e)
+
+        if self.verbosity >= 1:
+            self.stdout.write(
+                self.style.SUCCESS(f"Found {len(images)} unique images in the cluster"),
+            )
+            self.stdout.write("\n".join(images))
+
+        return images
