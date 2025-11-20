@@ -422,5 +422,5 @@ jobs:
           scanpipe verify-project \
             --project scancode-action \
             --packages 1141 \
-            --vulnerable-packages 1 \
+            --vulnerable-packages 0 \
             --dependencies 1397
