@@ -19,6 +19,7 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
+import sys
 
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
@@ -59,6 +60,14 @@ class Command(CreateProjectCommandMixin, BaseCommand):
             "--execute",
             action="store_true",
             help="Execute the pipelines right after the project creation.",
+        )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help=(
+                "Do not create any projects."
+                "Print the images and projects that would be created."
+            ),
         )
         # Additional kubectl options
         parser.add_argument(
@@ -121,6 +130,7 @@ class Command(CreateProjectCommandMixin, BaseCommand):
     def get_images(self, **options):
         namespace = options.get("namespace")
         context = options.get("context")
+        dry_run = options.get("dry_run")
 
         if self.verbosity >= 1:
             self.stdout.write(
@@ -132,10 +142,14 @@ class Command(CreateProjectCommandMixin, BaseCommand):
         except Exception as e:
             raise CommandError(e)
 
-        if self.verbosity >= 1:
+        if self.verbosity >= 1 or dry_run:
             self.stdout.write(
-                self.style.SUCCESS(f"Found {len(images)} unique images in the cluster"),
+                self.style.SUCCESS(f"Found {len(images)} images in the cluster:"),
             )
             self.stdout.write("\n".join(images))
+
+        if dry_run:
+            self.stdout.write("Dry run mode, no projects were created.")
+            sys.exit(0)
 
         return images
