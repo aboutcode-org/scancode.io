@@ -345,33 +345,31 @@ jobs:
             --vulnerable-packages 1 \
             --dependencies 628
 
-  # FIXME: Loading CycloneDX SBOM in YAML format fails for unclear reasons.
-  # load-ort-mime-types-cyclonedx-xml-sbom-into-scancode-io:
-  #   needs: generate-mime-types-sboms-from-ort-from-scan-result
-  #   runs-on: ubuntu-24.04
-  #   steps:
-  #     - name: Download ORT CycloneDX JSON SBOM for mime-types 2.1.26
-  #       uses: actions/download-artifact@v5
-  #       with:
-  #         name: npm-mime-types-2.1.26-ort-sboms
+  load-ort-mime-types-cyclonedx-xml-sbom-into-scancode-io:
+    needs: generate-mime-types-sboms-from-ort-from-scan-result
+    runs-on: ubuntu-24.04
+    steps:
+     - name: Download ORT CycloneDX JSON SBOM for mime-types 2.1.26
+       uses: actions/download-artifact@v5
+       with:
+         name: npm-mime-types-2.1.26-ort-sboms
 
-  #     - name: Import SBOM into ScanCode.io
-  #       uses: aboutcode-org/scancode-action@main
-  #       with:
-  #         pipelines: "load_sbom"
-  #         inputs-path: "bom.cyclonedx.xml"
-  #         output-formats: "cyclonedx"
-  #         scancodeio-repo-branch: "main"
+     - name: Import SBOM into ScanCode.io
+       uses: aboutcode-org/scancode-action@main
+       with:
+         pipelines: "load_sbom"
+         inputs-path: "bom.cyclonedx.xml"
+         output-formats: "cyclonedx"
+         scancodeio-repo-branch: "main"
 
-  #     - name: Verify SBOM analysis results in ScanCode.io
-  #       shell: bash
-  #       run: |
-  #         # FIXME Number of packages and dependencies detected is wrong
-  #           scanpipe verify-project \
-  #             --project scancode-action \
-  #             --packages 405 \
-  #             --vulnerable-packages 0 \
-  #             --dependencies 0
+     - name: Verify SBOM analysis results in ScanCode.io
+       shell: bash
+       run: |
+           scanpipe verify-project \
+             --project scancode-action \
+             --packages 380 \
+             --vulnerable-packages 17 \
+             --dependencies 628
 
   load-mime-types-spdx-json-sbom-into-scancode-io:
     needs: generate-mime-types-sboms-from-ort-from-scan-result
