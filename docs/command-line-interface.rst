@@ -56,6 +56,8 @@ ScanPipe's own commands are listed under the ``[scanpipe]`` section::
     [scanpipe]
       add-input
       add-pipeline
+      add-webhook
+      analyze-kubernetes
       archive-project
       batch-create
       check-compliance
@@ -390,6 +392,119 @@ Example usage:
 
    $ scanpipe add-webhook my_project https://example.com/webhook --inactive
 
+
+.. _cli_analyze_kubernetes:
+
+`$ scanpipe analyze-kubernetes <name>`
+--------------------------------------
+
+Analyzes all Docker images from a Kubernetes cluster by extracting image references
+using ``kubectl`` and creating projects to scan them.
+
+This command connects to your Kubernetes cluster, retrieves all container images
+(including init containers) from running pods, and creates projects to analyze each
+image for packages, dependencies, and optionally vulnerabilities.
+
+Required arguments:
+
+- ``name`` Project name or prefix for the created projects.
+
+Optional arguments:
+
+- ``--multi`` Create multiple projects (one per image) instead of a single project
+  containing all images. When used, each project is named ``<name>: <image-reference>``.
+
+- ``--find-vulnerabilities`` Run the ``find_vulnerabilities`` pipeline during the
+  analysis to detect known security vulnerabilities in discovered packages.
+
+- ``--execute`` Execute the pipelines right after project creation.
+
+- ``--async`` Add the pipeline run to the tasks queue for execution by a worker instead
+  of running in the current thread.
+  Applies only when ``--execute`` is provided.
+
+- ``--namespace NAMESPACE`` Limit the image extraction to a specific Kubernetes
+  namespace. If not provided, images from all namespaces are collected.
+
+- ``--context CONTEXT`` Use a specific Kubernetes context. If not provided, the
+  current context is used.
+
+- ``--notes NOTES`` Optional notes about the project(s).
+
+- ``--label LABELS`` Optional labels for the project(s). Multiple labels can be
+  provided by using this argument multiple times.
+
+- ``--dry-run`` Do not create any projects; just print the images and projects that
+  would be created.
+
+- ``--no-global-webhook`` Skip the creation of the global webhook. This option is
+  only useful if a global webhook is defined in the settings.
+
+.. note::
+    This command requires ``kubectl`` to be installed and configured with access to
+    your Kubernetes cluster.
+
+Example: Analyze All Cluster Images
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To analyze all images from all namespaces in your current Kubernetes cluster::
+
+    $ scanpipe analyze-kubernetes cluster-audit --multi --execute
+
+This creates separate projects for each unique image found in the cluster.
+
+Example: Analyze Production Namespace with Vulnerability Scanning
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To scan all images in the ``production`` namespace and check for vulnerabilities::
+
+    $ scanpipe analyze-kubernetes prod-security-scan \
+        --namespace production \
+        --find-vulnerabilities \
+        --multi \
+        --label "production" \
+        --label "security-audit" \
+        --execute
+
+Example: Dry Run Before Creating Projects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To preview which images would be analyzed without creating any projects::
+
+    $ scanpipe analyze-kubernetes cluster-preview \
+        --namespace default \
+        --dry-run
+
+This displays all images that would be scanned, allowing you to verify the scope
+before running the actual analysis.
+
+Example: Analyze Specific Cluster Context
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To analyze images from a specific Kubernetes cluster when you have multiple contexts
+configured::
+
+    $ scanpipe analyze-kubernetes staging-audit \
+        --context staging-cluster \
+        --namespace default \
+        --multi \
+        --execute --async
+
+Example: Single Project for All Images
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To create one project containing all images from the cluster::
+
+    $ scanpipe analyze-kubernetes full-cluster-scan \
+        --find-vulnerabilities \
+        --execute
+
+This creates a single project named ``full-cluster-scan`` that analyzes all discovered
+images together.
+
+.. tip::
+    Use ``--multi`` when analyzing large clusters to create separate projects per image,
+    making it easier to track and review results for individual container images.
 
 `$ scanpipe execute --project PROJECT`
 --------------------------------------
