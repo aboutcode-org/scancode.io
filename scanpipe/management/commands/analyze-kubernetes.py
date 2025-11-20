@@ -19,6 +19,7 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
+
 import sys
 
 from django.core.management.base import BaseCommand
@@ -28,16 +29,6 @@ from django.utils.text import slugify
 from scanpipe.management.commands import CreateProjectCommandMixin
 from scanpipe.management.commands import execute_project
 from scanpipe.pipes.kubernetes import get_images_from_kubectl
-
-# As a single project:
-# scanpipe analyze-kubernetes kube-analysis-single --execute
-
-# As multiple projects:
-# scanpipe analyze-kubernetes kube-analysis-multi --multi --execute
-
-# Kubectl mode (from running cluster):
-# scanpipe analyze-kubernetes kube-from-cluster --execute
-# scanpipe analyze-kubernetes kube-from-cluster --namespace default --execute
 
 
 class Command(CreateProjectCommandMixin, BaseCommand):
