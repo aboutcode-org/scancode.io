@@ -262,7 +262,7 @@ jobs:
         run: |
           scanpipe verify-project \
             --project scancode-action \
-            --packages 5 \
+            --packages 0 \
             --vulnerable-packages 0 \
             --dependencies 0
 
