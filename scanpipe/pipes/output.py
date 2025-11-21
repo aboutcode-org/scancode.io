@@ -741,15 +741,16 @@ def to_spdx(project, version=spdx.SPDX_SPEC_VERSION_2_3, include_files=False):
         packages_as_spdx.extend(project_inputs_as_spdx_packages)
 
     # Use the Project's input as the root element that the SPDX document describes.
-    # This ensures "documentDescribes" points only to the main subject of the SBOM,
-    # not to every dependency or file in the project.
+    # This ensures the "describes" field (which generates DESCRIBES relationships
+    # in SPDX 2.3+ or documentDescribes in SPDX 2.2) points only to the main subject
+    # of the SBOM, not to every dependency or file in the project.
     # See https://github.com/spdx/spdx-spec/issues/395 and
     # https://github.com/aboutcode-org/scancode.io/issues/564#issuecomment-3269296563
     # for detailed context.
     if len(project_inputs_as_spdx_packages) == 1:
         describe_spdx_id = project_inputs_as_spdx_packages[0].spdx_id
 
-    # Fallback to the Project as the SPDX root element for the "documentDescribes",
+    # Fallback to the Project as the SPDX root element for the "describes" field,
     # if more than one input, or if no inputs, are available.
     else:
         project_as_root_package = spdx.Package(
