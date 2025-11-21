@@ -1533,6 +1533,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         return self.resource_count == 1
 
+    @property
+    def pipelines(self):
+        """Return the list of pipeline names assigned to this Project."""
+        return list(self.runs.values_list("pipeline_name", flat=True))
+
     def get_policies_dict(self):
         """
         Load and return the policies from the following locations in that order:

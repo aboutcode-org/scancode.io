@@ -24,7 +24,6 @@ import json
 import logging
 import os
 import re
-import subprocess
 import tempfile
 from collections import namedtuple
 from pathlib import Path
@@ -44,6 +43,8 @@ from packageurl.contrib import purl2url
 from plugincode.location_provider import get_location
 from requests import auth as request_auth
 
+from scanpipe.pipes import run_command_safely
+
 logger = logging.getLogger("scanpipe.pipes")
 
 Download = namedtuple("Download", "uri directory filename path size sha1 md5")
@@ -58,43 +59,6 @@ Download = namedtuple("Download", "uri directory filename path size sha1 md5")
 # (e.g., https://cdn.kernel.org/) may take longer to respond to HTTP requests under
 # certain conditions.
 HTTP_REQUEST_TIMEOUT = 30
-
-
-def run_command_safely(command_args):
-    """
-    Execute the external commands following security best practices.
-
-    This function is using the subprocess.run function which simplifies running external
-    commands. It provides a safer and more straightforward API compared to older methods
-    like subprocess.Popen.
-
-    WARNING: Please note that the `--option=value` syntax is required for args entries,
-    and not the `--option value` format.
-
-    - This does not use the Shell (shell=False) to prevent injection vulnerabilities.
-    - The command should be provided as a list of ``command_args`` arguments.
-    - Only full paths to executable commands should be provided to avoid any ambiguity.
-
-    WARNING: If you're incorporating user input into the command, make
-    sure to sanitize and validate the input to prevent any malicious commands from
-    being executed.
-
-    Raise a SubprocessError if the exit code was non-zero.
-    """
-    completed_process = subprocess.run(  # noqa: S603
-        command_args,
-        capture_output=True,
-        text=True,
-    )
-
-    if completed_process.returncode:
-        error_msg = (
-            f'Error while executing cmd="{completed_process.args}": '
-            f'"{completed_process.stderr.strip()}"'
-        )
-        raise subprocess.SubprocessError(error_msg)
-
-    return completed_process.stdout
 
 
 def get_request_session(uri):

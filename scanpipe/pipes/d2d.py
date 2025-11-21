@@ -262,9 +262,7 @@ def find_jvm_packages(project, jvm_lang: jvm.JvmLanguage, logger=None):
 
     Note: we use the same API as the ScanCode scans by design
     """
-    resources = (
-        project.codebaseresources.files().no_status().from_codebase().has_no_relation()
-    )
+    resources = project.codebaseresources.files().no_status().from_codebase()
 
     from_jvm_resources = resources.filter(extension__in=jvm_lang.source_extensions)
 
@@ -1509,6 +1507,23 @@ def flag_undeployed_resources(project):
     from_unmapped.update(status=flag.NOT_DEPLOYED)
 
 
+def scan_ignored_to_files(project, logger=None):
+    """
+    Scan status="ignored-from-config" ``to/`` files for copyrights, licenses,
+    emails, and urls.
+    """
+    scan_files = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .filter(status=flag.IGNORED_FROM_CONFIG)
+    )
+    scancode.scan_for_files(project, scan_files, progress_logger=logger)
+
+    project.codebaseresources.files().to_codebase().filter(status=flag.SCANNED).update(
+        status=flag.IGNORED_FROM_CONFIG
+    )
+
+
 def scan_unmapped_to_files(project, logger=None):
     """
     Scan unmapped/matched ``to/`` files for copyrights, licenses,
@@ -2387,17 +2402,18 @@ def map_python_protobuf_files(project, logger=None):
     )
     to_resources_count = to_resources.count()
     from_resources_count = from_resources.count()
-    if not from_resources_count:
+
+    if not from_resources_count or not to_resources_count:
         return
-    if not to_resources_count:
-        return
+
     proto_index = {}
     for proto_resource in from_resources:
         base_name = proto_resource.name.replace(".proto", "")
         proto_index[base_name] = proto_resource
+
     mapped_count = 0
     for to_resource in to_resources:
-        base_name = _extract_protobuf_base_name(to_resource.name)
+        base_name = extract_protobuf_base_name(to_resource.name)
         if base_name and base_name in proto_index:
             from_resource = proto_index[base_name]
             pipes.make_relation(
@@ -2409,13 +2425,10 @@ def map_python_protobuf_files(project, logger=None):
             mapped_count += 1
 
 
-def _extract_protobuf_base_name(filename):
+def extract_protobuf_base_name(filename):
     """Extract the base name from a protobuf-generated filename."""
-    import re
-
     name_without_ext = filename.rsplit(".", 1)[0]
     protobuf_pattern = r"^(.+)_pb[23]$"
     match = re.match(protobuf_pattern, name_without_ext)
     if match:
         return match.group(1)
-    return None

@@ -69,6 +69,9 @@
   --bulma-title-size: 1.5rem;
   color: var(--bulma-title-color);
 }
+.breadcrumb {
+  --bulma-breadcrumb-item-separator-color: var(--bulma-text);
+}
 .heading {
   font-size: var(--bulma-size-medium);
   font-weight: var(--bulma-weight-semibold);
@@ -142,6 +145,9 @@
   pointer-events: none;
   cursor: not-allowed;
   color: var(--bulma-text-weak);
+}
+.tabs.is-narrow {
+  --bulma-tabs-link-padding: 0.5em 0.75em;
 }
 .border-no-top-left-radius {
   border-bottom-left-radius: 6px;
@@ -239,6 +245,47 @@ a[target="_blank"] .fa-up-right-from-square {
 .is-wider-x2 .dropdown-menu {
   min-width: 24rem;
 }
+.tooltip {
+  position: absolute;
+  background-color: rgb(var(--custom-tooltip-bg-rgb));
+  color: var(--bulma-white);
+  padding: var(--custom-tooltip-padding);
+  border-radius: var(--bulma-radius-small);
+  font-size: var(--bulma-size-small);
+  width: max-content;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  text-align: center;
+  word-wrap: break-word;
+  z-index: 9999;
+}
+.tooltip.visible {
+  opacity: 1;
+}
+.tooltip.top {
+  bottom: 100%;
+}
+.tooltip.bottom {
+  top: 100%;
+}
+.tooltip.left {
+  right: 0;
+}
+.tooltip.right {
+  left: 0;
+}
+.tooltip.center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+.tooltip:not(.top):not(.bottom) {
+  bottom: 100%;
+}
+.tooltip:not(.left):not(.right):not(.center) {
+  left: 50%;
+  transform: translateX(-50%);
+}
 .copy-to-clipboard {
   position: relative;
 }
@@ -295,6 +342,10 @@ a[target="_blank"] .fa-up-right-from-square {
 }
 #content-header input[name="search"] {
   width: 225px;
+}
+.is-borderless {
+  --bulma-button-border-width: 0px;
+  --bulma-button-outer-shadow-a: 0;
 }
 button.as-link {
   height: auto;
@@ -481,7 +532,7 @@ body.full-screen #resource-viewer .message-header {
 }
 
 #resource-tree-container .resizable-container {
-  height: calc(100vh - 140px);
+  min-height: calc(100vh - 140px);
 }
 #resource-tree-container .chevron {
   transition: transform 0.2s ease;
@@ -530,14 +581,7 @@ body.full-screen #resource-viewer .message-header {
   flex: 1;
   min-width: 0;
   transition: opacity 0.2s ease;
-  display: flex;
-  flex-direction: column;
   height: 100%;
-}
-#resource-tree-container .right-pane .table-scroll-area {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 #resource-tree-container .right-pane.collapsed {
   opacity: 0;

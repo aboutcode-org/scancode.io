@@ -1,0 +1,124 @@
+{% if resources %}
+  <table class="table is-bordered is-hoverable is-fullwidth">
+    <thead class="is-sticky">
+        <tr>
+          <th style="min-width:200px;">Name</th>
+          <th>Status</th>
+          <th>Language</th>
+          <th>License</th>
+          <th>Alert</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if parent_path %}
+          <tr
+            class="expand-in-tree is-clickable"
+            data-path="{{ parent_path }}"
+            hx-get="{% url 'project_resource_tree_right_pane' project.slug parent_path %}"
+            hx-target="#right-pane"
+            hx-push-url="{% url 'project_resource_tree' project.slug parent_path %}">
+            <td colspan="5">
+              <div class="is-flex is-align-items-center">
+                <span class="icon is-small mr-2">
+                  <i class="fas fa-folder"></i>
+                </span>
+                <span class="has-text-weight-semibold">..</span>
+              </div>
+            </td>
+          </tr>
+        {% endif %}
+        {% for resource in resources %}
+          <tr>
+            <td class="break-all" style="min-width: 100px;">
+              <div class="is-flex is-align-items-center">
+                <span class="icon is-small mr-2">
+                  {% if resource.is_dir %}
+                    <i class="fas fa-folder"></i>
+                  {% else %}
+                    <i class="far fa-file"></i>
+                  {% endif %}
+                </span>
+                {% if resource.is_dir %}
+                  <a
+                    class="expand-in-tree"
+                    href="{% url 'project_resource_tree' project.slug resource.path %}"
+                    data-path="{{ resource.path }}"
+                    hx-get="{% url 'project_resource_tree_right_pane' project.slug resource.path %}"
+                    hx-target="#right-pane"
+                    hx-push-url="{% url 'project_resource_tree' project.slug resource.path %}">
+                    {{ resource.name }}
+                  </a>
+                {% else %}
+                  <a
+                    href="{% url 'resource_detail' project.slug resource.path %}"
+                    hx-get="{% url 'resource_detail' project.slug resource.path %}"
+                    hx-target="#right-pane"
+                    hx-push-url="{% url 'project_resource_tree' project.slug resource.path %}">
+                    {{ resource.name }}
+                  </a>
+                {% endif %}
+                {% if resource.tag %}
+                  <span class="tag is-rounded ml-2">{{ resource.tag }}</span>
+                {% endif %}
+              </div>
+            </td>
+            <td>
+              {{ resource.status }}
+            </td>
+            <td class="break-all">
+              {{ resource.programming_language }}
+            </td>
+            <td>
+              {{ resource.detected_license_expression }}
+            </td>
+            <td>
+              {{ resource.compliance_alert }}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+  </table>
+
+  {% if is_paginated %}
+    <nav class="pagination is-centered mt-4" role="navigation">
+      {% if page_obj.has_previous %}
+        <a
+          class="pagination-previous"
+          hx-get="{% url 'project_resource_tree_right_pane' project.slug path %}?page={{ page_obj.previous_page_number }}"
+          hx-target="#right-pane"
+          hx-push-url="{% url 'project_resource_tree' project.slug path %}?page={{ page_obj.previous_page_number }}">
+          Previous
+        </a>
+      {% endif %}
+      {% if page_obj.has_next %}
+        <a
+          class="pagination-next"
+          hx-get="{% url 'project_resource_tree_right_pane' project.slug path%}?page={{ page_obj.next_page_number }}"
+          hx-target="#right-pane"
+          hx-push-url="{% url 'project_resource_tree' project.slug path %}?page={{ page_obj.next_page_number }}">
+          Next page
+        </a>
+      {% endif %}
+      <ul class="pagination-list">
+        <li>
+          <span class="pagination-ellipsis">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+          </span>
+        </li>
+      </ul>
+    </nav>
+  {% endif %}
+{% else %}
+  <div class="has-text-centered p-6">
+    <div class="icon is-large has-text-grey-light mb-3">
+      <i class="fas fa-folder-open fa-3x"></i>
+    </div>
+    <p class="has-text-grey">
+      {% if path %}
+        No resources found in this directory.
+      {% else %}
+        Select a file or folder from the tree to view its contents.
+      {% endif %}
+    </p>
+  </div>
+{% endif %}

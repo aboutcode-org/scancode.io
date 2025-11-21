@@ -909,10 +909,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         response = self.csrf_client.delete(self.project1_detail_url)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
-        expected = (
-            "Cannot execute this action until all associated pipeline runs are "
-            "completed."
-        )
+        expected = "Cannot delete project while a run is in progress."
         self.assertEqual(expected, response.data["status"])
 
         run.set_task_ended(exitcode=0)
@@ -962,10 +959,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        expected = {
-            "status": "All data, except inputs, for the Analysis project have been "
-            "removed."
-        }
+        expected = {"status": "The Analysis project has been reset."}
         self.assertEqual(expected, response.data)
         self.assertEqual(0, self.project1.runs.count())
         self.assertEqual(0, self.project1.codebaseresources.count())
@@ -1040,6 +1034,16 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual("", input_source.filename)
         self.assertEqual(data["input_urls"], input_source.download_url)
         self.assertEqual("tag", input_source.tag)
+
+        data = {
+            "input_urls": ["docker://alpine", "docker://postgresql"],
+        }
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual({"status": "Input(s) added."}, response.data)
+        input_sources = self.project1.inputsources.filter(
+            download_url__startswith="docker://"
+        )
+        self.assertEqual(2, len(input_sources))
 
         data = {
             "upload_file": io.BytesIO(b"Content"),

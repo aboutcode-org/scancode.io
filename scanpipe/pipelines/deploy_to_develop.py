@@ -80,6 +80,11 @@ class DeployToDevelop(Pipeline):
             cls.find_kotlin_packages,
             cls.map_kotlin_to_class,
             cls.map_jar_to_kotlin_source,
+            cls.find_grammar_packages,
+            cls.map_grammar_to_class,
+            cls.map_jar_to_grammar_source,
+            cls.find_xtend_packages,
+            cls.map_xtend_to_class,
             cls.map_javascript,
             cls.map_javascript_symbols,
             cls.map_javascript_strings,
@@ -101,6 +106,7 @@ class DeployToDevelop(Pipeline):
             cls.perform_house_keeping_tasks,
             cls.match_purldb_resources_post_process,
             cls.remove_packages_without_resources,
+            cls.scan_ignored_to_files,
             cls.scan_unmapped_to_files,
             cls.scan_mapped_from_for_files,
             cls.collect_and_create_license_detections,
@@ -233,6 +239,41 @@ class DeployToDevelop(Pipeline):
         """Map .jar files to their related source directory."""
         d2d.map_jar_to_jvm_source(
             project=self.project, jvm_lang=jvm.KotlinLanguage, logger=self.log
+        )
+
+    @optional_step("Grammar")
+    def find_grammar_packages(self):
+        """Find the java package of the .g/.g4 source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.GrammarLanguage, logger=self.log
+        )
+
+    @optional_step("Grammar")
+    def map_grammar_to_class(self):
+        """Map a .class compiled file to its .g/.g4 source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.GrammarLanguage, logger=self.log
+        )
+
+    @optional_step("Grammar")
+    def map_jar_to_grammar_source(self):
+        """Map .jar files to their related source directory."""
+        d2d.map_jar_to_jvm_source(
+            project=self.project, jvm_lang=jvm.GrammarLanguage, logger=self.log
+        )
+
+    @optional_step("Xtend")
+    def find_xtend_packages(self):
+        """Find the java package of the xtend source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.XtendLanguage, logger=self.log
+        )
+
+    @optional_step("Xtend")
+    def map_xtend_to_class(self):
+        """Map a .class compiled file to its xtend source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.XtendLanguage, logger=self.log
         )
 
     @optional_step("JavaScript")
@@ -387,6 +428,16 @@ class DeployToDevelop(Pipeline):
             codebase_resources__isnull=True
         )
         package_without_resources.delete()
+
+    def scan_ignored_to_files(self):
+        """
+        Scan status="ignored-from-config" ``to/`` files for copyrights,
+        licenses, emails, and urls. These files are ignored based on
+        ecosystem specific configurations. These files are not used for the
+        D2D purpose, but scanning them may provide useful information about
+        the deployed codebase.
+        """
+        d2d.scan_ignored_to_files(project=self.project, logger=self.log)
 
     def scan_unmapped_to_files(self):
         """

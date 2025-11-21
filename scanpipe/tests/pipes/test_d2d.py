@@ -394,50 +394,100 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual("", to3.status)
 
     def test_scanpipe_pipes_d2d_map_java_to_class_with_java_in_deploy(self):
-        sha1 = "abcde"
-        from1 = make_resource_file(
-            self.project1,
-            path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/"
-            "AbstractConfigurationProvider.java",
-            extra_data={"java_package": "org.apache.flume.node"},
-            sha1=sha1,
-        )
-        to1 = make_resource_file(
-            self.project1,
-            path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
-            "AbstractConfigurationProvider.java",
-            sha1=sha1,
-        )
-        to2 = make_resource_file(
-            self.project1,
-            path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
-            "AbstractConfigurationProvider.class",
-        )
+        input_dir = self.project1.input_path
+        # "from-Baz.zip" contains Baz.java
+        # "to-Baz.jar" contains Baz.java and Baz.class
+        input_resources = [
+            self.data / "d2d" / "find_java_packages" / "from-Baz.zip",
+            self.data / "d2d" / "find_java_packages" / "to-Baz.jar",
+        ]
 
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
 
-        # The pipeline will run map_checksum first
-        d2d.map_checksum(self.project1, "sha1", logger=buffer.write)
-        expected = "Mapping 1 to/ resources using sha1 against from/ codebase"
-        self.assertEqual(expected, buffer.getvalue())
-        self.assertEqual(1, to1.related_from.count())
-        relation1 = to1.related_from.get()
-        self.assertEqual("sha1", relation1.map_type)
-        self.assertEqual(from1, relation1.from_resource)
+        d2d.map_checksum(
+            project=self.project1, checksum_field="sha1", logger=buffer.write
+        )
 
+        d2d.find_jvm_packages(
+            self.project1, jvm_lang=jvm.JavaLanguage, logger=buffer.write
+        )
+        expected = "Finding java packages for 1 ('.java',) resources."
+        self.assertIn(expected, buffer.getvalue())
         # Now run map_java_to_class
         d2d.map_jvm_to_class(
             self.project1, logger=buffer.write, jvm_lang=jvm.JavaLanguage
         )
         expected = "Mapping 1 .class resources to 1 ('.java',)"
         self.assertIn(expected, buffer.getvalue())
-        self.assertEqual(2, self.project1.codebaserelations.count())
-        relation2 = self.project1.codebaserelations.get(
-            to_resource=to2, from_resource=from1
+
+    def test_scanpipe_pipes_d2d_map_grammar_to_class(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/antlr4-4.5.1-beta-1/tool/src/org/antlr/v4/parse/BlockSetTransformer.g",
+            extra_data={"grammar_package": "org.antlr.v4.parse"},
         )
-        self.assertEqual("java_to_class", relation2.map_type)
-        expected = {"from_source_root": "from/flume-ng-node-1.9.0-sources.jar-extract/"}
-        self.assertEqual(expected, relation2.extra_data)
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/org/antlr/v4/parse/BlockSetTransformer.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.GrammarLanguage
+        )
+
+        expected = "Mapping 1 .class resources to 1 ('.g', '.g4')"
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(1, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("grammar_to_class", r1.map_type)
+        expected = {"from_source_root": "from/antlr4-4.5.1-beta-1/tool/src/"}
+        self.assertEqual(expected, r1.extra_data)
+
+    def test_scanpipe_pipes_d2d_map_xtend_to_class(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/org.openhab.binding.urtsi/src/main/java/org/openhab/"
+            + "binding/urtsi/internal/UrtsiDevice.xtend",
+            extra_data={"xtend_package": "org.openhab.binding.urtsi.internal"},
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/org.openhab.binding.urtsi-1.6.2.jar-extract/org/"
+            + "openhab/binding/urtsi/internal/UrtsiDevice.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.XtendLanguage
+        )
+
+        expected = "Mapping 1 .class resources to 1 ('.xtend',)"
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(1, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("xtend_to_class", r1.map_type)
+        expected = {"from_source_root": "from/org.openhab.binding.urtsi/src/main/java/"}
+        self.assertEqual(expected, r1.extra_data)
 
     def test_scanpipe_pipes_d2d_map_java_to_class_no_java(self):
         make_resource_file(self.project1, path="to/Abstract.class")
@@ -446,6 +496,22 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1, logger=buffer.write, jvm_lang=jvm.JavaLanguage
         )
         expected = "No ('.java',) resources to map."
+        self.assertIn(expected, buffer.getvalue())
+
+    def test_scanpipe_pipes_d2d_java_ignore_pattern(self):
+        make_resource_file(self.project1, path="to/module-info.class")
+        make_resource_file(self.project1, path="to/META-INF/MANIFEST.MF")
+        make_resource_file(self.project1, path="to/test.class")
+        make_resource_file(self.project1, path="to/META-INF/others.txt")
+        buffer = io.StringIO()
+
+        java_config = d2d_config.get_ecosystem_config(ecosystem="Java")
+        d2d.ignore_unmapped_resources_from_config(
+            project=self.project1,
+            patterns_to_ignore=java_config.deployed_resource_path_exclusions,
+            logger=buffer.write,
+        )
+        expected = "Ignoring 3 to/ resources with ecosystem specific configurations."
         self.assertIn(expected, buffer.getvalue())
 
     def test_scanpipe_pipes_d2d_map_jar_to_java_source(self):
@@ -1285,6 +1351,30 @@ class ScanPipeD2DPipesTest(TestCase):
         d2d.flag_undeployed_resources(self.project1)
         expected = self.project1.codebaseresources.filter(
             status=flag.NOT_DEPLOYED
+        ).count()
+
+        self.assertEqual(1, expected)
+
+    def test_scanpipe_pipes_d2d_scan_ignored_to_files(self):
+        to_dir = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/META-INF/foo-bar"
+        )
+        to_input_location = self.data / "d2d/find_java_packages/Foo.java"
+        to_dir.mkdir(parents=True)
+        copy_input(to_input_location, to_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        foo_java = self.project1.codebaseresources.get(
+            path=("to/project.tar.zst-extract/META-INF/foo-bar/Foo.java")
+        )
+        foo_java.update(status=flag.IGNORED_FROM_CONFIG)
+
+        d2d.scan_ignored_to_files(self.project1)
+        foo_java.refresh_from_db()
+
+        expected = self.project1.codebaseresources.filter(
+            status=flag.IGNORED_FROM_CONFIG
         ).count()
 
         self.assertEqual(1, expected)
@@ -2170,7 +2260,7 @@ class ScanPipeD2DPipesTest(TestCase):
         ]
         for filename, expected in test_cases:
             with self.subTest(filename=filename):
-                result = d2d._extract_protobuf_base_name(filename)
+                result = d2d.extract_protobuf_base_name(filename)
                 self.assertEqual(expected, result)
 
     def test_scanpipe_pipes_d2d_map_python_protobuf_files(self):

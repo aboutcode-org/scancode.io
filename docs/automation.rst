@@ -3,11 +3,131 @@
 Automation
 ==========
 
-To **automate ScanCode.io scans and schedule** them for regular execution or in
-response to **specific events**, such as commits or releases, you can explore
-various available options:
+**Automate ScanCode.io scans** by integrating them into your CI/CD pipelines or
+scheduling them to run on specific events such as commits, pull requests, or releases.
 
-1. Utilize an external ScanCode.io server (REST API)
+CI/CD Integrations
+------------------
+
+Seamlessly integrate ScanCode.io into your development workflow to automatically scan
+code for licenses, vulnerabilities, and compliance issues.
+
+GitHub Actions
+^^^^^^^^^^^^^^
+
+Use the official `scancode-action <https://github.com/aboutcode-org/scancode-action>`_
+to integrate ScanCode.io into your GitHub workflows.
+
+**Features:**
+
+- Run ScanCode.io pipelines automatically
+- Check for compliance issues and policy violations
+- Detect security vulnerabilities
+- Generate SBOMs in multiple formats (SPDX, CycloneDX)
+- Export results in JSON and XLSX formats
+
+**Example usage:**
+
+.. code-block:: yaml
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: scancode-inputs
+      - uses: aboutcode-org/scancode-action@main
+        with:
+          pipelines: "scan_codebase"
+          output-formats: "json xlsx spdx cyclonedx"
+
+
+**Documentation:**
+https://github.com/aboutcode-org/scancode-action
+
+Jenkins
+^^^^^^^
+
+Integrate ScanCode.io into your Jenkins pipelines with a simple Jenkinsfile.
+
+**Quick example:**
+
+.. code-block:: groovy
+
+    pipeline {
+        agent any
+
+        stages {
+            stage('Scan') {
+                steps {
+                    sh '''
+                        docker run --rm \
+                          -v "${WORKSPACE}":/codedrop \
+                          ghcr.io/aboutcode-org/scancode.io:latest \
+                          run scan_codebase /codedrop \
+                          > scancode_results.json
+                    '''
+                    archiveArtifacts 'scancode_results.json'
+                }
+            }
+        }
+    }
+
+**Full documentation:**
+https://github.com/aboutcode-org/scancode-action/blob/main/jenkins/README.md
+
+GitLab
+^^^^^^
+
+Run ScanCode.io scans in your GitLab pipelines.
+
+**Full documentation:**
+https://github.com/aboutcode-org/scancode-action/blob/main/gitlab/README.md
+
+Azure Pipelines
+^^^^^^^^^^^^^^^
+
+Run ScanCode.io scans in Azure DevOps pipelines.
+
+**Full documentation:**
+https://github.com/aboutcode-org/scancode-action/blob/main/azure-pipelines/README.md
+
+Other CI/CD Systems
+^^^^^^^^^^^^^^^^^^^
+
+ScanCode.io can be integrated into **any CI/CD system** that supports Docker using the
+:ref:`RUN command <cli_run>`.
+
+**Requirements:**
+
+- Docker must be installed and available in your CI/CD environment
+- Sufficient disk space for Docker images and scan results
+
+**Basic command:**
+
+.. code-block:: bash
+
+    docker run --rm \
+      -v "$(pwd)":/codedrop \
+      ghcr.io/aboutcode-org/scancode.io:latest \
+      run [PIPELINE] [INPUTS] \
+      > scancode_results.json
+
+Replace ``[PIPELINE]`` with your desired pipeline (e.g., ``scan_codebase``,
+``scan_single_package``) and ``[INPUTS]`` with the path to scan.
+
+See :ref:`available pipelines <built_in_pipelines>` for more options.
+
+**Example with specific pipeline:**
+
+.. code-block:: bash
+
+    docker run --rm \
+      -v "$(pwd)":/codedrop \
+      ghcr.io/aboutcode-org/scancode.io:latest \
+      run scan_codebase /codedrop \
+      > scancode_results.json
+
+2. Utilize an external ScanCode.io server (REST API)
 ----------------------------------------------------
 
 If you have access to an external ScanCode.io server, you can interact with it
@@ -72,18 +192,6 @@ automation methods such as a cron job or a git hook::
 
     By providing the required environment variables in this manner, you can execute the
     script with the appropriate configurations and credentials.
-
-2. Integrating ScanCode.io with GitHub Workflows
-------------------------------------------------
-
-Seamlessly integrate ScanCode.io into your GitHub Workflows to enable automated scans
-as an integral part of your development process.
-
-Visit the `scancode-action repository <https://github.com/aboutcode-org/scancode-action>`_
-to explore and learn more about the GitHub Action for ScanCode.io.
-The repository provides detailed information, usage instructions,
-and configuration options to help you incorporate code scanning effortlessly into your
-workflows.
 
 3. Run a Local ScanCode.io app on your machine (management commands)
 --------------------------------------------------------------------

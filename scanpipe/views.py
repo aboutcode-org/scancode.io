@@ -26,12 +26,12 @@ import json
 import operator
 from collections import Counter
 from contextlib import suppress
-from pathlib import Path
 
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.exceptions import ValidationError
 from django.core.files.storage.filesystem import FileSystemStorage
@@ -1195,14 +1195,14 @@ class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.Detai
         return context
 
 
-class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
+class ProjectCodebasePanelView(ConditionalLoginRequired, generic.DetailView):
     model = Project
     template_name = "scanpipe/panels/project_codebase.html"
 
     @staticmethod
-    def get_tree(project, current_dir):
+    def get_root_tree(project):
         """
-        Return the direct content of the ``current_dir`` as a flat tree.
+        Return the direct content of the project codebase root directory as a flat tree.
 
         The lookups are scoped to the ``project`` codebase/ work directory.
         The security is handled by the FileSystemStorage and will raise a
@@ -1215,60 +1215,20 @@ class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
         # Raises ValueError if the codebase_root is not within the workspace_path
         codebase_root.relative_to(scanpipe_app.workspace_path)
         fs_storage = FileSystemStorage(location=codebase_root)
-        directories, files = fs_storage.listdir(current_dir)
-
-        def get_node(name, is_dir, location):
-            return {
-                "name": name,
-                "is_dir": is_dir,
-                "location": location,
-            }
+        directories, files = fs_storage.listdir(".")
 
         tree = []
-        root_directory = "."
-        include_parent = current_dir and current_dir != root_directory
-        if include_parent:
-            tree.append(
-                get_node(name="..", is_dir=True, location=str(Path(current_dir).parent))
-            )
-
         for resources, is_dir in [(sorted(directories), True), (sorted(files), False)]:
-            tree.extend(
-                get_node(name=name, is_dir=is_dir, location=f"{current_dir}/{name}")
-                for name in resources
-            )
+            tree.extend({"name": name, "is_dir": is_dir} for name in resources)
 
         return tree
 
-    @staticmethod
-    def get_breadcrumbs(current_dir):
-        breadcrumbs = {}
-        path_segments = current_dir.removeprefix("./").split("/")
-        last_path = ""
-
-        for segment in path_segments:
-            if segment:
-                last_path += f"{segment}/"
-                breadcrumbs[segment] = last_path
-
-        return breadcrumbs
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        current_dir = self.request.GET.get("current_dir") or "."
-
         try:
-            codebase_tree = self.get_tree(self.object, current_dir)
-        except FileNotFoundError:
-            raise Http404(f"{current_dir} not found")
+            context["codebase_root_tree"] = self.get_root_tree(self.object)
         except (ValueError, SuspiciousFileOperation) as error:
             raise Http404(error)
-
-        context["current_dir"] = current_dir
-        context["codebase_tree"] = codebase_tree
-        context["codebase_breadcrumbs"] = self.get_breadcrumbs(current_dir)
-        context["project_details_url"] = self.object.get_absolute_url()
-
         return context
 
 
@@ -2201,6 +2161,12 @@ class CodebaseResourceDetailsView(
         matched_snippet_annotations = self.get_matched_snippet_annotations(resource)
         context["detected_values"]["matched snippets"] = matched_snippet_annotations
 
+        # Compatibility with ProjectResourceTreeRightPaneView
+        segments = resource.path.strip("/").split("/")
+        context["path_segments"] = [
+            ("/".join(segments[: i + 1]), segment) for i, segment in enumerate(segments)
+        ]
+
         return context
 
 
@@ -2708,7 +2674,7 @@ class LicenseDetailsView(
 
 class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
     model = Project
-    template_name = "scanpipe/project_dependency_tree.html"
+    template_name = "scanpipe/dependency_tree.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2768,13 +2734,13 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
         return node
 
 
-class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
+class ProjectResourceTreeView(ConditionalLoginRequired, generic.DetailView):
     template_name = "scanpipe/resource_tree.html"
 
     def get(self, request, *args, **kwargs):
         slug = self.kwargs.get("slug")
         project = get_object_or_404(Project, slug=slug)
-        path = request.GET.get("path", "")
+        path = self.kwargs.get("path", "")
         parent_path = path if request.GET.get("tree_panel") == "true" else ""
 
         children = (
@@ -2784,47 +2750,38 @@ class CodebaseResourceTreeView(ConditionalLoginRequired, generic.DetailView):
             .order_by("type", "path")
         )
 
+        try:
+            resource = project.codebaseresources.get(path=path)
+        except ObjectDoesNotExist:
+            resource = None
+
         context = {
             "project": project,
             "path": path,
             "children": children,
+            "resource": resource,
         }
 
         if request.GET.get("tree_panel") == "true":
-            return render(request, "scanpipe/panels/codebase_tree_panel.html", context)
+            return render(
+                request, "scanpipe/tree/resource_left_pane_tree.html", context
+            )
+
         return render(request, self.template_name, context)
 
 
-class CodebaseResourceTableView(
+class ProjectResourceTreeRightPaneView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
     generic.ListView,
 ):
     model = CodebaseResource
-    template_name = "scanpipe/panels/resource_table_panel.html"
+    template_name = "scanpipe/tree/resource_right_pane.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("resource", 100)
     context_object_name = "resources"
 
     def get_queryset(self):
-        path = self.request.GET.get("path", "")
-
-        qs = super().get_queryset().filter(path=path)
-        if qs.exists() and not qs.first().is_dir:
-            return qs.only(
-                "path",
-                "status",
-                "type",
-                "size",
-                "name",
-                "extension",
-                "programming_language",
-                "mime_type",
-                "tag",
-                "detected_license_expression",
-                "compliance_alert",
-                "package_data",
-            ).prefetch_related("discovered_packages")
-
+        path = self.kwargs.get("path", "")
         return (
             super()
             .get_queryset()
@@ -2833,21 +2790,19 @@ class CodebaseResourceTableView(
             .only(
                 "path",
                 "status",
-                "type",
-                "name",
                 "programming_language",
                 "tag",
                 "detected_license_expression",
                 "compliance_alert",
             )
-            .prefetch_related("discovered_packages")
             .order_by("type", "path")
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        path = self.request.GET.get("path", "")
+        path = self.kwargs.get("path", "")
         context["path"] = path
+
         segments = path.strip("/").split("/")
         context["path_segments"] = [
             ("/".join(segments[: i + 1]), segment) for i, segment in enumerate(segments)

@@ -693,9 +693,8 @@ class PipelinesIntegrationTest(TestCase):
         expected_json = self._normalize_package_uids(expected_json)
         expected_data = self._without_keys(expected_json, self.exclude_from_diff)
         if sort_dependencies:
-            result_data = self._sort_dependencies(result_data)
+            expected_data = self._sort_dependencies(expected_data)
         expected_data = sort_for_os_compatibility(expected_data)
-
         self.assertEqual(expected_data, result_data)
 
     @skipIf(from_docker_image, "Random failure in the Docker context.")
@@ -1145,7 +1144,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(510, project1.codebaseresources.count())
+        self.assertEqual(512, project1.codebaseresources.count())
         self.assertEqual(14, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
 
@@ -1195,7 +1194,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(29, project1.codebaseresources.count())
+        self.assertEqual(31, project1.codebaseresources.count())
         self.assertEqual(101, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
 
@@ -1218,9 +1217,13 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(16, project1.codebaseresources.count())
+        self.assertEqual(18, project1.codebaseresources.count())
         self.assertEqual(2, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
+
+        # Ensure all extracted resources exists as CodebaseResource
+        fs_resource_count = sum(1 for _ in project1.codebase_path.rglob("*"))
+        self.assertEqual(18, fs_resource_count)
 
         result_file = output.to_json(project1)
         expected_file = self.data / "docker" / "debian_scan_codebase.json"
@@ -1241,7 +1244,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(2458, project1.codebaseresources.count())
+        self.assertEqual(2461, project1.codebaseresources.count())
         self.assertEqual(6, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
 
