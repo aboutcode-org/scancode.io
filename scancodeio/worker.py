@@ -54,6 +54,21 @@ class ScanCodeIOWorker(Worker):
         scanpipe_app.sync_runs_and_jobs()
 
 
+class ScanCodeIOTlsWorker(ScanCodeIOWorker):
+    """
+    Modified version of RQ Worker including ScanCode.io customizations for
+    maintainance task and TLS.
+    """
+
+    def execute_job(self, job, queue):
+        """
+        Terminate existing connection to avoid issues with TLS.
+        https://github.com/aboutcode-org/scancode.io/issues/1523
+        """
+        connection.close()
+        super().execute_job(job, queue)
+
+
 class ScanCodeIOQueue(Queue):
     """Modified version of RQ Queue including ScanCode.io customizations."""
 
