@@ -461,6 +461,34 @@ class ScanPipeD2DPipesTest(TestCase):
         expected = {"from_source_root": "from/antlr4-4.5.1-beta-1/tool/src/"}
         self.assertEqual(expected, r1.extra_data)
 
+    def test_scanpipe_pipes_d2d_map_xtend_to_class(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/org.openhab.binding.urtsi/src/main/java/org/openhab/"
+            + "binding/urtsi/internal/UrtsiDevice.xtend",
+            extra_data={"xtend_package": "org.openhab.binding.urtsi.internal"},
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/org.openhab.binding.urtsi-1.6.2.jar-extract/org/"
+            + "openhab/binding/urtsi/internal/UrtsiDevice.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.XtendLanguage
+        )
+
+        expected = "Mapping 1 .class resources to 1 ('.xtend',)"
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(1, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("xtend_to_class", r1.map_type)
+        expected = {"from_source_root": "from/org.openhab.binding.urtsi/src/main/java/"}
+        self.assertEqual(expected, r1.extra_data)
+
     def test_scanpipe_pipes_d2d_map_java_to_class_no_java(self):
         make_resource_file(self.project1, path="to/Abstract.class")
         buffer = io.StringIO()
