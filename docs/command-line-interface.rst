@@ -145,6 +145,7 @@ Optional arguments:
 - ``--no-global-webhook`` Skip the creation of the global webhook. This option is
   only useful if a global webhook is defined in the settings.
 
+
 .. _cli_batch_create:
 
 `$ scanpipe batch-create [--input-directory INPUT_DIRECTORY] [--input-list FILENAME.csv]`
@@ -532,6 +533,7 @@ Displays status information about the ``PROJECT`` project.
     The full logs of each pipeline execution are displayed by default.
     This can be disabled providing the ``--verbosity 0`` option.
 
+
 .. _cli_output:
 
 `$ scanpipe output --project PROJECT --format {json,csv,xlsx,spdx,cyclonedx,attribution,...}`
@@ -556,6 +558,7 @@ your outputs on the host machine when running with Docker.
 
 .. tip:: To specify a CycloneDX spec version (default to latest), use the syntax
   ``cyclonedx:VERSION`` as format value. For example: ``--format cyclonedx:1.5``.
+
 
 .. _cli_report:
 
@@ -598,6 +601,7 @@ worksheet::
 
    $ scanpipe report --model package --search audit
 
+
 .. _cli_check_compliance:
 
 `$ scanpipe check-compliance --project PROJECT`
@@ -630,16 +634,41 @@ Optional arguments:
 - ``--no-input`` Does not prompt the user for input of any kind.
 
 
+.. _cli_reset_project:
+
 `$ scanpipe reset-project --project PROJECT`
 --------------------------------------------
 
-Resets a project removing all database entrie and all data on disks except for
-the input/ directory.
+Resets a project removing all database entries and all data on disks except for
+the :guilabel:`input/` directory.
 
 Optional arguments:
 
+- ``--remove-input`` Remove the :guilabel:`input/` directory and input sources when
+  resetting the project.
+- ``--remove-webhook`` Remove webhook subscriptions when resetting the project.
+- ``--restore-pipelines`` Restore all pipelines that were previously existing on the
+  project.
+- ``--execute-now`` Execute the restored pipelines immediately after restoration.
+  Applies only when ``--restore-pipelines`` is provided.
 - ``--no-input`` Does not prompt the user for input of any kind.
 
+Example usage:
+
+1. Reset a project while preserving input files and webhooks (default behavior)::
+
+   $ scanpipe reset-project --project foo
+
+2. Reset a project and remove all data including input files::
+
+   $ scanpipe reset-project --project foo --remove-input
+
+3. Reset a project and restore its original pipelines for re-execution::
+
+   $ scanpipe reset-project --project foo --restore-pipelines --execute-now
+
+
+.. _cli_delete_project:
 
 `$ scanpipe delete-project --project PROJECT`
 ---------------------------------------------
@@ -714,6 +743,7 @@ Optional arguments:
 - ``--no-input`` Does not prompt the user for input of any kind.
 - ``--admin`` Specifies that the user should be created as an admin user.
 - ``--super`` Specifies that the user should be created as a superuser.
+
 
 .. _cli_run:
 

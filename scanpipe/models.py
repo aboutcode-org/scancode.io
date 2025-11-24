@@ -743,7 +743,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     ):
         """
         Reset the project by deleting all related database objects and all work
-        directories except the input directory—when the `keep_input` option is True.
+        directories except the input directory when the `keep_input` option is True.
         """
         self._raise_if_run_in_progress()
 

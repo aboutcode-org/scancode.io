@@ -227,25 +227,29 @@ class ScanPipeModelsTest(TestCase):
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
         make_message(self.project1, description="Error")
+        self.project1.add_webhook_subscription(target_url="https://localhost")
 
         self.assertEqual(1, self.project1.projectmessages.count())
         self.assertEqual(1, self.project1.runs.count())
         self.assertEqual(1, self.project1.discoveredpackages.count())
         self.assertEqual(1, self.project1.codebaseresources.count())
         self.assertEqual(1, self.project1.inputsources.count())
+        self.assertEqual(1, self.project1.webhooksubscriptions.count())
 
         self.project1.reset(restore_pipelines=True, execute_now=False)
         self.assertEqual(0, self.project1.projectmessages.count())
         self.assertEqual(1, self.project1.runs.count())
         self.assertEqual(0, self.project1.discoveredpackages.count())
         self.assertEqual(0, self.project1.codebaseresources.count())
+        self.assertEqual(1, self.project1.webhooksubscriptions.count())
 
-        self.project1.reset()
+        self.project1.reset(keep_webhook=False)
         self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
         self.assertEqual(0, self.project1.projectmessages.count())
         self.assertEqual(0, self.project1.runs.count())
         self.assertEqual(0, self.project1.discoveredpackages.count())
         self.assertEqual(0, self.project1.codebaseresources.count())
+        self.assertEqual(0, self.project1.webhooksubscriptions.count())
 
         # The InputSource objects are kept
         self.assertEqual(1, self.project1.inputsources.count())
