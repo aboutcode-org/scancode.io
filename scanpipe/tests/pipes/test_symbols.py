@@ -24,6 +24,7 @@ import json
 import sys
 from pathlib import Path
 from unittest import skipIf
+from unittest import skipUnless
 
 from django.test import TestCase
 
@@ -31,6 +32,13 @@ from scanpipe import pipes
 from scanpipe.models import Project
 from scanpipe.pipes import symbols
 from scanpipe.pipes.input import copy_input
+
+try:
+    from source_inspector import symbols_ctags
+except ImportError:  # pragma: no cover - optional dependency
+    symbols_ctags = None
+
+CTAGS_INSTALLED = bool(symbols_ctags) and symbols_ctags.is_ctags_installed()
 
 
 @skipIf(sys.platform == "darwin", "Not supported on macOS")
@@ -40,6 +48,7 @@ class ScanPipeSymbolsPipesTest(TestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
 
+    @skipUnless(CTAGS_INSTALLED, "Universal Ctags is required")
     def test_scanpipe_pipes_symbols_collect_and_store_resource_symbols_ctags(self):
         dir = self.project1.codebase_path / "codefile"
         dir.mkdir(parents=True)

@@ -47,6 +47,7 @@ class PublishToFederatedCode(Pipeline):
             cls.get_package_repository,
             cls.clone_repository,
             cls.add_scan_result,
+            cls.add_origin_curations,
             cls.commit_and_push_changes,
             cls.delete_working_dir,
         )
@@ -86,11 +87,61 @@ class PublishToFederatedCode(Pipeline):
             logger=self.log,
         )
 
+    def add_origin_curations(self):
+        """Add origin curations to the local Git repository."""
+        deploy_options = {}
+        if getattr(self.project, "extra_data", None):
+            deploy_options = self.project.extra_data.get("origin_deploy", {}) or {}
+
+        include_history = deploy_options.get("include_history", True)
+        merge_strategy = deploy_options.get("merge_strategy", "latest")
+
+        # Check if there are any curated relations
+        curated_count = (
+            self.project.codebaserelations.filter(curation_status__isnull=False)
+            .exclude(curation_status="")
+            .count()
+        )
+
+        if curated_count > 0:
+            self.relative_curation_file_path = federatedcode.add_origin_curations(
+                project=self.project,
+                repo=self.repo,
+                package_scan_file=self.package_scan_file,
+                include_history=include_history,
+                merge_strategy=merge_strategy,
+                logger=self.log,
+            )
+            self.log(
+                f"Origin curations ({curated_count} relations) added to repository "
+                f"using '{merge_strategy}' strategy "
+                f"{'with' if include_history else 'without'} history."
+            )
+        else:
+            self.relative_curation_file_path = None
+            self.log("No curated relations to export.")
+
+        # Clean up deploy options to avoid re-use on future runs
+        if getattr(self.project, "extra_data", None) and self.project.extra_data.get(
+            "origin_deploy"
+        ):
+            extra_data = self.project.extra_data
+            extra_data.pop("origin_deploy", None)
+            self.project.extra_data = extra_data
+            self.project.save(update_fields=["extra_data"])
+
     def commit_and_push_changes(self):
         """Commit and push changes to remote repository."""
+        files_to_commit = [str(self.relative_file_path)]
+        if (
+            hasattr(self, "relative_curation_file_path")
+            and self.relative_curation_file_path
+        ):
+            files_to_commit.append(str(self.relative_curation_file_path))
+
         federatedcode.commit_and_push_changes(
             repo=self.repo,
-            files_to_commit=[str(self.relative_file_path)],
+            files_to_commit=files_to_commit,
             purls=[self.project.purl],
             logger=self.log,
         )

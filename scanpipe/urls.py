@@ -92,6 +92,36 @@ urlpatterns = [
         name="project_relations",
     ),
     path(
+        "project/<slug:slug>/origin-review/",
+        views.OriginReviewView.as_view(),
+        name="origin_review",
+    ),
+    path(
+        "project/<slug:slug>/origin-curate/<uuid:uuid>/",
+        views.OriginCurateView.as_view(),
+        name="origin_curate",
+    ),
+    path(
+        "project/<slug:slug>/origin-curate/add/",
+        views.OriginCurateCreateView.as_view(),
+        name="origin_curate_add",
+    ),
+    path(
+        "project/<slug:slug>/origin-bulk-curate/",
+        views.OriginBulkCurationView.as_view(),
+        name="origin_bulk_curate",
+    ),
+    path(
+        "project/<slug:slug>/origin-propagate/",
+        views.OriginPropagateView.as_view(),
+        name="origin_propagate",
+    ),
+    path(
+        "project/<slug:slug>/origin-deploy/",
+        views.OriginDeployView.as_view(),
+        name="origin_deploy",
+    ),
+    path(
         "project/<slug:slug>/messages/",
         views.ProjectMessageListView.as_view(),
         name="project_messages",

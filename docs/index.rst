@@ -20,6 +20,7 @@ In this documentation, you’ll find:
     introduction
     installation
     user-interface
+    origin-curation-guide
     faq
     contributing
     changelog
@@ -37,6 +38,7 @@ In this documentation, you’ll find:
     tutorial_vulnerablecode_integration
     tutorial_web_ui_symbol_and_string_collection
     tutorial_cli_end_to_end_scanning_to_dejacode
+    tutorial_origin_curation_workflow
 
 .. toctree::
     :maxdepth: 2
@@ -52,6 +54,8 @@ In this documentation, you’ll find:
     output-files
     command-line-interface
     rest-api
+    api/origin-curation-api
+    developer/origin-curation-architecture
     automation
     webhooks
     application-settings

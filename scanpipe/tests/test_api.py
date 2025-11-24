@@ -36,6 +36,8 @@ import openpyxl
 from rest_framework import status
 from rest_framework.exceptions import ErrorDetail
 from rest_framework.test import APIClient
+from rest_framework.test import APIRequestFactory
+from rest_framework.test import force_authenticate
 
 from scanpipe.api.serializers import CodebaseRelationSerializer
 from scanpipe.api.serializers import CodebaseResourceSerializer
@@ -45,10 +47,12 @@ from scanpipe.api.serializers import ProjectMessageSerializer
 from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import get_model_serializer
 from scanpipe.api.serializers import get_serializer_fields
+from scanpipe.api.views import ProjectViewSet
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import OriginCuration
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
@@ -843,14 +847,22 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(1, len(response.data["results"]))
 
         relation = response.data["results"][0]
-        expected = {
+        expected_subset = {
             "to_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
             "status": "",
             "map_type": "java_to_class",
             "score": "",
             "from_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
         }
-        self.assertEqual(expected, relation)
+        subset = {key: relation[key] for key in expected_subset}
+        self.assertEqual(expected_subset, subset)
+
+        self.assertIn("uuid", relation)
+        self.assertEqual("", relation["curation_status"])
+        self.assertEqual("", relation["confidence_level"])
+        self.assertEqual("", relation["curation_notes"])
+        self.assertIsNone(relation["curated_by"])
+        self.assertIsNone(relation["curated_at"])
 
     def test_scanpipe_api_project_action_relations_filterset(self):
         url = reverse("project-relations", args=[self.project1.uuid])
@@ -860,6 +872,76 @@ class ScanPipeAPITest(TransactionTestCase):
         map_type = self.codebase_relation1.map_type
         response = self.csrf_client.get(url + f"?map_type={map_type}")
         self.assertEqual(1, response.data["count"])
+
+    def test_scanpipe_api_project_action_relations_create_with_curation(self):
+        factory = APIRequestFactory()
+        url = reverse("project-relations", kwargs={"pk": self.project1.uuid})
+        data = {
+            "from_resource_path": self.resource1.path,
+            "to_resource_path": self.resource1.path,
+            "map_type": "manual",
+            "curation_status": "approved",
+            "confidence_level": "verified",
+            "curation_notes": "Manually linked",
+        }
+
+        request = factory.post(url, data, format="json")
+        force_authenticate(request, user=self.user)
+        view = ProjectViewSet.as_view({"post": "relations"})
+        response = view(request, pk=str(self.project1.uuid))
+        response.render()
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code, response.data)
+
+        relation_uuid = response.data["uuid"]
+        relation = CodebaseRelation.objects.get(uuid=relation_uuid)
+        self.assertEqual("approved", relation.curation_status)
+        self.assertEqual("verified", relation.confidence_level)
+        self.assertEqual("Manually linked", relation.curation_notes)
+        self.assertEqual(self.user, relation.curated_by)
+        self.assertIsNotNone(relation.curated_at)
+
+        history_entry = OriginCuration.objects.get(relation=relation)
+        self.assertEqual("approved", history_entry.curation_status)
+        self.assertEqual("verified", history_entry.confidence_level)
+        self.assertEqual("Manually linked", history_entry.notes)
+        self.assertEqual(self.user, history_entry.curator)
+
+        self.assertEqual("approved", response.data["curation_status"])
+        self.assertEqual("verified", response.data["confidence_level"])
+        self.assertEqual("Manually linked", response.data["curation_notes"])
+        self.assertEqual(self.user.username, response.data["curated_by"])
+        self.assertIsNotNone(response.data["curated_at"])
+
+    def test_scanpipe_api_project_action_relations_bulk_curate(self):
+        factory = APIRequestFactory()
+        url = reverse(
+            "project-relations-bulk-curate", kwargs={"pk": self.project1.uuid}
+        )
+        data = {
+            "relation_uuids": [str(self.codebase_relation1.uuid)],
+            "action": "set_confidence",
+            "confidence_level": "high",
+            "curation_notes": "Bulk note",
+        }
+
+        request = factory.post(url, data, format="json")
+        force_authenticate(request, user=self.user)
+        view = ProjectViewSet.as_view({"post": "relations_bulk_curate"})
+        response = view(request, pk=str(self.project1.uuid))
+        response.render()
+        self.assertEqual(status.HTTP_200_OK, response.status_code, response.data)
+        self.assertEqual(1, response.data["count"])
+
+        self.codebase_relation1.refresh_from_db()
+        self.assertEqual("high", self.codebase_relation1.confidence_level)
+        self.assertEqual("Bulk note", self.codebase_relation1.curation_notes)
+        self.assertEqual(self.user, self.codebase_relation1.curated_by)
+
+        history_entry = OriginCuration.objects.filter(
+            relation=self.codebase_relation1
+        ).latest("created_date")
+        self.assertEqual("Bulk note", history_entry.notes)
+        self.assertEqual(self.user, history_entry.curator)
 
     def test_scanpipe_api_project_action_messages(self):
         url = reverse("project-messages", args=[self.project1.uuid])

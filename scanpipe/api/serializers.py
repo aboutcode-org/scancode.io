@@ -21,6 +21,7 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from django.apps import apps
+from django.utils import timezone
 
 from rest_framework import serializers
 from rest_framework.reverse import reverse
@@ -487,6 +488,8 @@ class DiscoveredLicenseSerializer(serializers.ModelSerializer):
 class CodebaseRelationSerializer(serializers.ModelSerializer):
     from_resource = serializers.ReadOnlyField(source="from_resource.path")
     to_resource = serializers.ReadOnlyField(source="to_resource.path")
+    status = serializers.SerializerMethodField()
+    score = serializers.SerializerMethodField()
 
     class Meta:
         model = CodebaseRelation
@@ -497,6 +500,158 @@ class CodebaseRelationSerializer(serializers.ModelSerializer):
             "score",
             "from_resource",
         ]
+
+    def get_status(self, obj):
+        return obj.status
+
+    def get_score(self, obj):
+        return obj.score
+
+
+class CodebaseRelationCurationSerializer(CodebaseRelationSerializer):
+    uuid = serializers.UUIDField(read_only=True)
+    curation_status = serializers.CharField(required=False, allow_blank=True)
+    confidence_level = serializers.CharField(required=False, allow_blank=True)
+    curation_notes = serializers.CharField(required=False, allow_blank=True)
+    curated_by = serializers.SerializerMethodField()
+    curated_at = serializers.DateTimeField(read_only=True)
+
+    class Meta(CodebaseRelationSerializer.Meta):
+        fields = CodebaseRelationSerializer.Meta.fields + [
+            "uuid",
+            "curation_status",
+            "confidence_level",
+            "curation_notes",
+            "curated_by",
+            "curated_at",
+        ]
+
+    def get_curated_by(self, obj):
+        user = getattr(obj, "curated_by", None)
+        return getattr(user, "username", None)
+
+
+class CodebaseRelationWriteSerializer(serializers.ModelSerializer):
+    """Serializer for writing/updating relations with resource paths."""
+
+    from_resource_path = serializers.CharField(write_only=True)
+    to_resource_path = serializers.CharField(write_only=True)
+    from_resource = serializers.StringRelatedField(read_only=True)
+    to_resource = serializers.StringRelatedField(read_only=True)
+    uuid = serializers.UUIDField(read_only=True)
+    curation_status = serializers.ChoiceField(
+        choices=["pending", "approved", "rejected"],
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+    )
+    confidence_level = serializers.ChoiceField(
+        choices=["low", "medium", "high", "verified"],
+        required=False,
+        allow_blank=True,
+    )
+    curation_notes = serializers.CharField(required=False, allow_blank=True)
+    curated_by = serializers.StringRelatedField(read_only=True)
+    curated_at = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        model = CodebaseRelation
+        fields = [
+            "uuid",
+            "from_resource_path",
+            "to_resource_path",
+            "from_resource",
+            "to_resource",
+            "map_type",
+            "curation_status",
+            "confidence_level",
+            "curation_notes",
+            "curated_by",
+            "curated_at",
+        ]
+
+    def validate_from_resource_path(self, value):
+        """Validate that from_resource exists in the project."""
+        project = self.context["project"]
+        try:
+            project.codebaseresources.get(path=value)
+            return value
+        except CodebaseResource.DoesNotExist:
+            raise serializers.ValidationError(
+                f"Resource with path '{value}' not found in project."
+            )
+
+    def validate_to_resource_path(self, value):
+        """Validate that to_resource exists in the project."""
+        project = self.context["project"]
+        try:
+            project.codebaseresources.get(path=value)
+            return value
+        except CodebaseResource.DoesNotExist:
+            raise serializers.ValidationError(
+                f"Resource with path '{value}' not found in project."
+            )
+
+    def create(self, validated_data):
+        """Create a new relation."""
+        project = self.context["project"]
+        from_resource_path = validated_data.pop("from_resource_path")
+        to_resource_path = validated_data.pop("to_resource_path")
+
+        from_resource = project.codebaseresources.get(path=from_resource_path)
+        to_resource = project.codebaseresources.get(path=to_resource_path)
+
+        relation = CodebaseRelation.objects.create(
+            project=project,
+            from_resource=from_resource,
+            to_resource=to_resource,
+            **validated_data,
+        )
+
+        user = self.context["request"].user
+        if user.is_authenticated and any(
+            key in validated_data
+            for key in ["curation_status", "confidence_level", "curation_notes"]
+        ):
+            relation.curated_by = user
+            relation.curated_at = timezone.now()
+            relation.save(update_fields=["curated_by", "curated_at"])
+
+        return relation
+
+    def update(self, instance, validated_data):
+        """Update an existing relation."""
+        from_resource_path = validated_data.pop("from_resource_path", None)
+        to_resource_path = validated_data.pop("to_resource_path", None)
+
+        if from_resource_path:
+            instance.from_resource = self.context["project"].codebaseresources.get(
+                path=from_resource_path
+            )
+        if to_resource_path:
+            instance.to_resource = self.context["project"].codebaseresources.get(
+                path=to_resource_path
+            )
+
+        # Update curation fields
+        if "curation_status" in validated_data:
+            instance.curation_status = validated_data["curation_status"]
+        if "confidence_level" in validated_data:
+            instance.confidence_level = validated_data["confidence_level"]
+        if "curation_notes" in validated_data:
+            instance.curation_notes = validated_data["curation_notes"]
+
+        # Update curated_by and curated_at if curation fields changed
+        user = self.context["request"].user
+        if user.is_authenticated and any(
+            key in validated_data
+            for key in ["curation_status", "confidence_level", "curation_notes"]
+        ):
+            instance.curated_by = user
+            instance.curated_at = timezone.now()
+
+        instance.save()
+        return instance
 
 
 class ProjectMessageSerializer(serializers.ModelSerializer):

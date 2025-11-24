@@ -28,6 +28,7 @@ from pathlib import Path
 from unittest import mock
 
 from django.apps import apps
+from django.contrib.auth import get_user_model
 from django.http import FileResponse
 from django.http.response import Http404
 from django.test import TestCase
@@ -37,12 +38,14 @@ from django.urls.exceptions import NoReverseMatch
 
 import openpyxl
 import requests
+from rest_framework import status
 
 from scanpipe.forms import BaseProjectActionForm
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import OriginCuration
 from scanpipe.models import Project
 from scanpipe.pipes import make_relation
 from scanpipe.pipes import update_or_create_dependency
@@ -821,7 +824,7 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(7):
             self.client.get(url)
 
-        with self.assertNumQueries(13):
+        with self.assertNumQueries(14):
             self.client.get(self.project1.get_absolute_url())
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
@@ -886,6 +889,56 @@ class ScanPipeViewsTest(TestCase):
 
         response = self.client.get(url)
         self.assertEqual(405, response.status_code)
+
+    def test_origin_bulk_curation_view_updates_relations(self):
+        user_model = get_user_model()
+        curator = user_model.objects.create_user(
+            "curator",
+            password="secret",  # noqa: S106
+            is_staff=True,
+        )
+        self.client.force_login(curator)
+
+        from_resource = CodebaseResource.objects.create(
+            project=self.project1,
+            path="from/path.py",
+        )
+        to_resource = CodebaseResource.objects.create(
+            project=self.project1,
+            path="to/path.py",
+        )
+        relation = CodebaseRelation.objects.create(
+            project=self.project1,
+            from_resource=from_resource,
+            to_resource=to_resource,
+            map_type="manual",
+        )
+
+        url = reverse("origin_bulk_curate", args=[self.project1.slug])
+        data = {
+            "bulk_curate-action": "approve",
+            "selected_ids": str(relation.uuid),
+            "bulk_curate-curation_notes": "Reviewed",
+        }
+
+        response = self.client.post(url, data, follow=True)
+        self.assertRedirects(
+            response,
+            reverse("origin_review", args=[self.project1.slug]),
+            target_status_code=status.HTTP_200_OK,
+        )
+
+        relation.refresh_from_db()
+        self.assertEqual("approved", relation.curation_status)
+        self.assertEqual("Reviewed", relation.curation_notes)
+        self.assertEqual(curator, relation.curated_by)
+        self.assertIsNotNone(relation.curated_at)
+
+        history = OriginCuration.objects.filter(relation=relation)
+        self.assertEqual(1, history.count())
+        entry = history.first()
+        self.assertEqual("approved", entry.curation_status)
+        self.assertEqual(curator, entry.curator)
 
     def test_scanpipe_views_run_status_view(self):
         run = self.project1.add_pipeline("analyze_docker_image")

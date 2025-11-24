@@ -118,9 +118,9 @@ class ScanPipeCodebasePipesTest(TestCase):
             "asgiref-3.3.0-py3-none-any.whl",
             "asgiref-3.3.0-py3-none-any.whl-extract",
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
@@ -140,9 +140,9 @@ class ScanPipeCodebasePipesTest(TestCase):
         bottom_up_paths = list(r.path for r in project_codebase.walk(topdown=False))
         expected_bottom_up_paths = [
             "asgiref-3.3.0-py3-none-any.whl",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
             "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",

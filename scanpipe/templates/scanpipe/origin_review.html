@@ -1,0 +1,179 @@
+{% extends "scanpipe/base.html" %}
+{% load humanize %}
+
+{% block title %}ScanCode.io: {{ project.name }} - Origin Review{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Origin Review" %}
+        {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" placeholder="Search to/ resources" %}
+      </div>
+      {% include 'scanpipe/includes/pagination_header_relations.html' %}
+      {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
+    </section>
+  </div>
+
+  {% if object_list %}
+    <div class="container is-fluid mb-3">
+      {% include 'scanpipe/modals/origin_bulk_curation_modal.html' with form=bulk_curation_form %}
+      
+      <div class="mb-3">
+        <button class="button is-small modal-button" data-target="bulk-curation-modal" aria-haspopup="true">
+          <span class="icon is-small">
+            <i class="fa-solid fa-check-double"></i>
+          </span>
+          <span>Bulk Actions</span>
+        </button>
+        <a href="{% url 'origin_curate_add' project.slug %}" class="button is-small is-link">
+          <span class="icon is-small">
+            <i class="fa-solid fa-plus"></i>
+          </span>
+          <span>Add Relation</span>
+        </a>
+        <a href="{% url 'origin_deploy' project.slug %}" class="button is-small is-success">
+          <span class="icon is-small">
+            <i class="fa-solid fa-upload"></i>
+          </span>
+          <span>Deploy to FederatedCode</span>
+        </a>
+      </div>
+
+      <table class="table is-bordered is-narrow is-hoverable is-fullwidth">
+        <thead class="is-sticky">
+          <tr>
+            <th class="p-2">
+              <input type="checkbox" id="select-all">
+            </th>
+            <th>To Resource</th>
+            <th>Status</th>
+            <th>Map Type</th>
+            <th>Curation Status</th>
+            <th>Confidence</th>
+            <th>From Resource</th>
+            <th>Curated By</th>
+            <th>Curated At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for relation in object_list %}
+            <tr>
+              <td class="p-2">
+                <input type="checkbox" name="selected_ids" value="{{ relation.uuid }}" class="relation-checkbox">
+              </td>
+              <td class="break-all">
+                <a href="{% url 'resource_detail' project.slug relation.to_resource.path %}#viewer">
+                  {{ relation.to_resource.path }}
+                </a>
+              </td>
+              <td>
+                <a href="?status={{ relation.to_resource.status }}" class="is-black-link">
+                  {{ relation.to_resource.status }}
+                </a>
+              </td>
+              <td>
+                <a href="?map_type={{ relation.map_type }}" class="is-black-link">
+                  {{ relation.map_type }}
+                </a>
+              </td>
+              <td>
+                {% if relation.curation_status %}
+                  <a href="?curation_status={{ relation.curation_status }}" class="is-black-link">
+                    {{ relation.curation_status|capfirst }}
+                  </a>
+                {% else %}
+                  <span class="has-text-grey">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if relation.confidence_level %}
+                  <a href="?confidence_level={{ relation.confidence_level }}" class="is-black-link">
+                    {{ relation.confidence_level|capfirst }}
+                  </a>
+                {% else %}
+                  <span class="has-text-grey">—</span>
+                {% endif %}
+              </td>
+              <td class="break-all">
+                <a href="{% url 'resource_detail' project.slug relation.from_resource.path %}#viewer">
+                  {{ relation.from_resource.path }}
+                </a>
+              </td>
+              <td>
+                {% if relation.curated_by %}
+                  {{ relation.curated_by.username }}
+                {% else %}
+                  <span class="has-text-grey">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if relation.curated_at %}
+                  {{ relation.curated_at|date:"Y-m-d H:i" }}
+                {% else %}
+                  <span class="has-text-grey">—</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="buttons has-addons" style="display: flex; flex-direction: row; flex-wrap: nowrap;">
+                  <a href="{% url 'origin_curate' project.slug relation.uuid %}" class="button is-small is-link is-outlined">
+                    <span class="icon is-small">
+                      <i class="fa-solid fa-edit"></i>
+                    </span>
+                    <span>Review</span>
+                  </a>
+                  <a href="{% url 'origin_propagate' project.slug %}?relation_uuid={{ relation.uuid }}" class="button is-small is-info is-outlined">
+                    <span class="icon is-small">
+                      <i class="fa-solid fa-share-nodes"></i>
+                    </span>
+                    <span>Propagate</span>
+                  </a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% if is_paginated %}
+        {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="container is-fluid mb-3">
+      <article class="box has-text-centered border-dashed">
+        No relations found. <a href="?">Clear search and filters</a>
+      </article>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const selectAll = document.getElementById("select-all");
+      const checkboxes = document.querySelectorAll(".relation-checkbox");
+      
+      if (selectAll) {
+        selectAll.addEventListener("change", function() {
+          checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+          });
+        });
+      }
+
+      // Update select-all when individual checkboxes change
+      checkboxes.forEach(checkbox => {
+        checkbox.addEventListener("change", function() {
+          const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+          if (selectAll) {
+            selectAll.checked = allChecked;
+          }
+        });
+      });
+    });
+  </script>
+{% endblock %}
+

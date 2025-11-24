@@ -3241,32 +3241,215 @@ class CodebaseRelation(
     map_type = models.CharField(
         max_length=30,
     )
-
-    class Meta:
-        ordering = ["from_resource__path", "to_resource__path"]
-        indexes = [
-            models.Index(fields=["map_type"]),
-        ]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["from_resource", "to_resource", "map_type"],
-                name="%(app_label)s_%(class)s_unique_relation",
-            ),
-        ]
-
-    def __str__(self):
-        return f"{self.from_resource.pk} > {self.to_resource.pk} using {self.map_type}"
+    # Curation fields
+    curation_status = models.CharField(
+        max_length=20,
+        blank=True,
+        choices=[
+            ("pending", _("Pending")),
+            ("approved", _("Approved")),
+            ("rejected", _("Rejected")),
+        ],
+        help_text=_("Curation status for this relation."),
+    )
+    curated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="curated_relations",
+        help_text=_("User who curated this relation."),
+    )
+    curated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("Timestamp when this relation was curated."),
+    )
+    curation_notes = models.TextField(
+        blank=True,
+        help_text=_("Notes or comments about the curation."),
+    )
+    confidence_level = models.CharField(
+        max_length=20,
+        blank=True,
+        choices=[
+            ("low", _("Low")),
+            ("medium", _("Medium")),
+            ("high", _("High")),
+            ("verified", _("Verified")),
+        ],
+        help_text=_("Confidence level for this origin determination."),
+    )
 
     @property
     def status(self):
-        return self.to_resource.status
+        """Return the deployment resource status for convenience."""
+        if hasattr(self, "to_resource") and self.to_resource:
+            return self.to_resource.status
+        return ""
 
     @property
     def score(self):
-        score = self.extra_data.get("path_score", "")
-        if diff_ratio := self.extra_data.get("diff_ratio", ""):
-            score += f" diff_ratio: {diff_ratio}"
-        return score
+        """Return a human-friendly score string based on extra_data."""
+        if not self.extra_data:
+            return ""
+
+        score_value = self.extra_data.get("path_score") or ""
+        diff_ratio = self.extra_data.get("diff_ratio")
+        parts = []
+
+        if score_value:
+            parts.append(str(score_value))
+
+        if diff_ratio:
+            parts.append(f"diff_ratio: {diff_ratio}")
+
+        return " ".join(parts)
+
+
+class OriginCuration(UUIDPKModel, ProjectRelatedModel, models.Model):
+    """
+    Audit trail for origin curation changes.
+    Tracks the history of curation actions on CodebaseRelation objects.
+    """
+
+    relation = models.ForeignKey(
+        CodebaseRelation,
+        on_delete=models.CASCADE,
+        related_name="curations",
+        help_text=_("The relation being curated."),
+    )
+    curator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="origin_curations",
+        help_text=_("User who performed this curation."),
+    )
+    created_date = models.DateTimeField(
+        auto_now_add=True,
+        help_text=_("When this curation was created."),
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text=_("Notes or comments about this curation action."),
+    )
+    curation_status = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", _("Pending")),
+            ("approved", _("Approved")),
+            ("rejected", _("Rejected")),
+        ],
+        help_text=_("Curation status set by this action."),
+    )
+    confidence_level = models.CharField(
+        max_length=20,
+        blank=True,
+        choices=[
+            ("low", _("Low")),
+            ("medium", _("Medium")),
+            ("high", _("High")),
+            ("verified", _("Verified")),
+        ],
+        help_text=_("Confidence level set by this action."),
+    )
+    # Track previous values for history
+    previous_from_resource = models.ForeignKey(
+        CodebaseResource,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="previous_from_curations",
+        help_text=_("Previous from_resource value (for tracking changes)."),
+    )
+    previous_to_resource = models.ForeignKey(
+        CodebaseResource,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="previous_to_curations",
+        help_text=_("Previous to_resource value (for tracking changes)."),
+    )
+    previous_map_type = models.CharField(
+        max_length=30,
+        blank=True,
+        help_text=_("Previous map_type value (for tracking changes)."),
+    )
+
+    class Meta:
+        ordering = ["-created_date"]
+        indexes = [
+            models.Index(fields=["relation", "-created_date"]),
+            models.Index(fields=["curator", "-created_date"]),
+        ]
+
+    def __str__(self):
+        return f"Curation {self.uuid} for relation {self.relation.uuid}"
+
+
+class PropagationBatch(UUIDPKModel, ProjectRelatedModel, models.Model):
+    """Track batches of propagated relations for undo capability."""
+
+    source_relation = models.ForeignKey(
+        CodebaseRelation,
+        on_delete=models.CASCADE,
+        related_name="propagation_batches",
+        help_text=_("The source relation that was propagated."),
+    )
+    strategy = models.CharField(
+        max_length=50,
+        help_text=_(
+            "Propagation strategy used (similar, directory, package, pattern)."
+        ),
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="propagation_batches",
+        help_text=_("User who performed this propagation."),
+    )
+    created_date = models.DateTimeField(
+        auto_now_add=True,
+        help_text=_("When this propagation was created."),
+    )
+    relation_count = models.IntegerField(
+        default=0,
+        help_text=_("Number of relations created in this batch."),
+    )
+    extra_data = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=_(
+            "Additional data about the propagation (pattern, threshold, etc.)."
+        ),
+    )
+
+    class Meta:
+        ordering = ["-created_date"]
+        indexes = [
+            models.Index(fields=["source_relation", "-created_date"]),
+            models.Index(fields=["created_by", "-created_date"]),
+        ]
+
+    def __str__(self):
+        return f"Propagation batch {self.uuid} for relation {self.source_relation.uuid}"
+
+    def undo(self, logger=None):
+        """Delete all relations created in this batch."""
+        # Find relations created by this batch
+        # Relations have extra_data with propagation_batch UUID
+        relations = self.project.codebaserelations.filter(
+            extra_data__propagation_batch=str(self.uuid)
+        )
+        count = relations.count()
+        relations.delete()
+
+        if logger:
+            logger(f"Undone propagation batch {self.uuid}: {count} relations deleted.")
+
+        return count
 
 
 class VulnerabilityMixin(models.Model):
