@@ -804,10 +804,12 @@ class ScanPipeManagementCommandTest(TestCase):
         project.add_pipeline("analyze_docker_image")
         CodebaseResource.objects.create(project=project, path="filename.ext")
         DiscoveredPackage.objects.create(project=project)
+        project.add_webhook_subscription(target_url="https://localhost")
 
         self.assertEqual(1, project.runs.count())
         self.assertEqual(1, project.codebaseresources.count())
         self.assertEqual(1, project.discoveredpackages.count())
+        self.assertEqual(1, project.webhooksubscriptions.count())
 
         (project.input_path / "input_file").touch()
         (project.codebase_path / "codebase_file").touch()
@@ -823,17 +825,33 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
         call_command("reset-project", *options, stdout=out)
         out_value = out.getvalue().strip()
-
-        expected = (
-            "All data, except inputs, for the my_project project have been removed."
-        )
-        self.assertEqual(expected, out_value)
+        self.assertEqual("The my_project project has been reset.", out_value)
 
         self.assertEqual(0, project.runs.count())
         self.assertEqual(0, project.codebaseresources.count())
         self.assertEqual(0, project.discoveredpackages.count())
         self.assertEqual(1, len(Project.get_root_content(project.input_path)))
         self.assertEqual(0, len(Project.get_root_content(project.codebase_path)))
+        self.assertEqual(1, project.webhooksubscriptions.count())
+
+        project.add_pipeline("analyze_docker_image")
+        self.assertEqual(1, project.runs.count())
+        out = StringIO()
+        options += [
+            "--remove-input",
+            "--remove-webhook",
+            "--restore-pipelines",
+        ]
+        call_command("reset-project", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        self.assertEqual("The my_project project has been reset.", out_value)
+
+        self.assertEqual(1, project.runs.count())
+        self.assertEqual(0, project.codebaseresources.count())
+        self.assertEqual(0, project.discoveredpackages.count())
+        self.assertEqual(0, len(Project.get_root_content(project.input_path)))
+        self.assertEqual(0, len(Project.get_root_content(project.codebase_path)))
+        self.assertEqual(0, project.webhooksubscriptions.count())
 
     def test_scanpipe_management_command_flush_projects(self):
         project1 = make_project("project1")

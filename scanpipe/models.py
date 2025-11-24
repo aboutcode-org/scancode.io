@@ -678,7 +678,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         self.update(is_archived=True)
 
-    def delete_related_objects(self, keep_input=False, keep_labels=False):
+    def delete_related_objects(
+        self, keep_input=False, keep_labels=False, keep_webhook=False
+    ):
         """
         Delete all related object instances using the private `_raw_delete` model API.
         This bypass the objects collection, cascade deletions, and signals.
@@ -700,7 +702,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         relationships = [
             self.webhookdeliveries,
-            self.webhooksubscriptions,
             self.projectmessages,
             self.codebaserelations,
             self.discovereddependencies,
@@ -711,6 +712,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         if not keep_input:
             relationships.append(self.inputsources)
+
+        if not keep_webhook:
+            relationships.append(self.webhooksubscriptions)
 
         for qs in relationships:
             count = qs.all()._raw_delete(qs.db)
@@ -730,10 +734,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         return super().delete(*args, **kwargs)
 
-    def reset(self, keep_input=True, restore_pipelines=False, execute_now=False):
+    def reset(
+        self,
+        keep_input=True,
+        keep_webhook=True,
+        restore_pipelines=False,
+        execute_now=False,
+    ):
         """
         Reset the project by deleting all related database objects and all work
-        directories except the input directory—when the `keep_input` option is True.
+        directories except the input directory when the `keep_input` option is True.
         """
         self._raise_if_run_in_progress()
 
@@ -748,7 +758,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
                 for run in self.runs.all()
             ]
 
-        self.delete_related_objects(keep_input=keep_input, keep_labels=True)
+        self.delete_related_objects(
+            keep_input=keep_input, keep_labels=True, keep_webhook=keep_webhook
+        )
 
         work_directories = [
             self.codebase_path,
