@@ -652,6 +652,32 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(new_project, cloned_subscription.project)
         self.assertNotEqual(cloned_subscription.pk, subscription1.pk)
 
+    def test_scanpipe_project_vulnerability_properties(self):
+        v1 = {"vulnerability_id": "VCID-1"}
+        v2 = {"vulnerability_id": "VCID-2"}
+        v3 = {"vulnerability_id": "VCID-3"}
+        project = make_project()
+        make_package(project, "pkg:type/0")
+        p1 = make_package(project, "pkg:type/a", affected_by_vulnerabilities=[v1, v2])
+        p2 = make_package(project, "pkg:type/b", affected_by_vulnerabilities=[v3])
+        make_dependency(project)
+        d1 = make_dependency(project, affected_by_vulnerabilities=[v1])
+        d2 = make_dependency(project, affected_by_vulnerabilities=[v3])
+
+        self.assertQuerySetEqual(project.vulnerable_packages.order_by("id"), [p1, p2])
+        self.assertQuerySetEqual(
+            project.vulnerable_dependencies.order_by("id"), [d1, d2]
+        )
+        self.assertEqual([v1, v2, v3], project.package_vulnerabilities)
+        self.assertEqual([v1, v3], project.dependency_vulnerabilities)
+
+        expected = {
+            "VCID-1": {"vulnerability_id": "VCID-1", "affects": [p1, d1]},
+            "VCID-2": {"vulnerability_id": "VCID-2", "affects": [p1]},
+            "VCID-3": {"vulnerability_id": "VCID-3", "affects": [p2, d2]},
+        }
+        self.assertEqual(expected, project.vulnerabilities)
+
     def test_scanpipe_project_get_codebase_config_directory(self):
         self.assertIsNone(self.project1.get_codebase_config_directory())
         (self.project1.codebase_path / settings.SCANCODEIO_CONFIG_DIR).mkdir()
@@ -2059,6 +2085,15 @@ class ScanPipeModelsTest(TestCase):
         )
         self.assertNotIn(p1, DiscoveredPackage.objects.vulnerable())
         self.assertIn(p2, DiscoveredPackage.objects.vulnerable())
+
+        self.assertEqual(
+            [p2], list(self.project1.discoveredpackages.vulnerable_ordered())
+        )
+
+        expected = [{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
+        self.assertEqual(
+            expected, self.project1.discoveredpackages.get_vulnerabilities_list()
+        )
 
     def test_scanpipe_discovered_package_queryset_dependency_methods(self):
         project = make_project("project")
