@@ -167,7 +167,6 @@ jobs:
       - name: Verify SBOM analysis results in ScanCode.io
         shell: bash
         run: |
-          # FIXME Number of packages and dependencies detected is wrong
           scanpipe verify-project \
             --project scancode-action \
             --packages 380 \
