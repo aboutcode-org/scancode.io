@@ -3328,29 +3328,37 @@ class VulnerabilityMixin(models.Model):
 
 
 class VulnerabilityQuerySetMixin:
+    AFFECTED_BY_FIELD = "affected_by_vulnerabilities"
+
     def vulnerable(self):
-        return self.filter(~Q(affected_by_vulnerabilities__in=EMPTY_VALUES))
+        return self.filter(~Q(**{f"{self.AFFECTED_BY_FIELD}__in": EMPTY_VALUES}))
 
     def vulnerable_ordered(self):
         return (
             self.vulnerable()
-            .only_package_url_fields(extra=["affected_by_vulnerabilities"])
+            .only_package_url_fields(extra=[self.AFFECTED_BY_FIELD])
             .order_by_package_url()
         )
 
     def get_vulnerabilities_list(self):
         """
-        Return a flat list of all vulnerabilities from the queryset.
+        Return a deduplicated, sorted flat list of all vulnerabilities from the
+        queryset.
 
         Extracts and flattens the affected_by_vulnerabilities field from
-        all objects in the queryset.
+        all objects in the queryset. Removes duplicates based on vulnerability_id
+        while preserving the first occurrence of each unique vulnerability.
         """
-        vulnerabilities_lists = self.values_list(
-            "affected_by_vulnerabilities", flat=True
-        )
+        vulnerabilities_lists = self.values_list(self.AFFECTED_BY_FIELD, flat=True)
+        flatten_vulnerabilities = chain.from_iterable(vulnerabilities_lists)
+
+        # Deduplicate by vulnerability_id while preserving order
+        unique_vulnerabilities = {
+            vuln["vulnerability_id"]: vuln for vuln in flatten_vulnerabilities
+        }
+
         return sorted(
-            chain.from_iterable(vulnerabilities_lists),
-            key=itemgetter("vulnerability_id"),
+            unique_vulnerabilities.values(), key=itemgetter("vulnerability_id")
         )
 
     def get_vulnerabilities_dict(self):
@@ -3371,9 +3379,8 @@ class VulnerabilityQuerySetMixin:
 
         """
         vulnerabilities_dict = {}
-        optimized_qs = self.only("id", "affected_by_vulnerabilities")
 
-        for obj in optimized_qs:
+        for obj in self.vulnerable_ordered():
             for vulnerability in obj.affected_by_vulnerabilities:
                 vcid = vulnerability.get("vulnerability_id")
                 if not vcid:
@@ -3415,7 +3422,7 @@ class DiscoveredPackageQuerySet(
         if not extra:
             extra = []
 
-        return self.only("uuid", *PACKAGE_URL_FIELDS, *extra)
+        return self.only("uuid", *PACKAGE_URL_FIELDS, "project_id", *extra)
 
     def filter(self, *args, **kwargs):
         """Add support for using ``package_url`` as a field lookup."""
@@ -4036,7 +4043,7 @@ class DiscoveredDependencyQuerySet(
         if not extra:
             extra = []
 
-        return self.only("dependency_uid", *PACKAGE_URL_FIELDS, *extra)
+        return self.only("dependency_uid", *PACKAGE_URL_FIELDS, "project_id", *extra)
 
 
 class DiscoveredDependency(
