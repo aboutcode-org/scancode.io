@@ -20,12 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-import json
-
 from scanpipe.pipelines.scan_single_package import ScanSinglePackage
-from scanpipe.pipes.resolve import download_pom_files
-from scanpipe.pipes.resolve import get_pom_url_list
-from scanpipe.pipes.resolve import scan_pom_files
+from scanpipe.pipes.maven import fetch_and_scan_remote_pom
+from scanpipe.pipes.maven import update_package_license_from_resource_if_missing
 
 
 class ScanMavenPackage(ScanSinglePackage):
@@ -47,28 +44,27 @@ class ScanMavenPackage(ScanSinglePackage):
             cls.extract_archives,
             cls.run_scan,
             cls.fetch_and_scan_remote_pom,
-            cls.update_package_license_from_resource_if_missing,
             cls.load_inventory_from_toolkit_scan,
+            cls.update_package_license_from_resource_if_missing,
             cls.make_summary_from_scan_results,
         )
 
     def fetch_and_scan_remote_pom(self):
-        """Fetch the .pom file from from maven.org if not present in codebase."""
-        with open(self.scan_output_location) as file:
-            data = json.load(file)
-            # Return and do nothing if data has pom.xml
-            for file in data["files"]:
-                if "pom.xml" in file["path"]:
-                    return
-            packages = data.get("packages", [])
+        """Fetch and scan remote POM files."""
+        scanning_errors = fetch_and_scan_remote_pom(
+            self.project, self.scan_output_location
+        )
+        if scanning_errors:
+            for scanning_error in scanning_errors:
+                for resource_path, errors in scanning_error.items():
+                    self.project.add_error(
+                        description="\n".join(errors),
+                        model=self.pipeline_name,
+                        details={
+                            "resource_path": resource_path.removeprefix("codebase/")
+                        },
+                    )
 
-        pom_url_list = get_pom_url_list(self.project.input_sources[0], packages)
-        pom_file_list = download_pom_files(pom_url_list)
-        scanned_pom_packages, scanned_dependencies = scan_pom_files(pom_file_list)
-
-        updated_packages = packages + scanned_pom_packages
-        # Replace/Update the package and dependencies section
-        data["packages"] = updated_packages
-        data["dependencies"] = scanned_dependencies
-        with open(self.scan_output_location, "w") as file:
-            json.dump(data, file, indent=2)
+    def update_package_license_from_resource_if_missing(self):
+        """Update PACKAGE license from the license detected in RESOURCES if missing."""
+        update_package_license_from_resource_if_missing(self.project)
