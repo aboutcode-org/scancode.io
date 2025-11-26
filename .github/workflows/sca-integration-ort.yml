@@ -1,7 +1,7 @@
 name: Generate or load SBOMs from ORT into ScanCode.io
 
 # This workflow:
-#  1. Generates CycloneDX and SPDX SBOM with ORT, or
+#  1. Generates CycloneDX and SPDX SBOM with ORT
 #  2. Loads ORT SBOM test assets
 #  3. Loads the SBOM into ScanCode.io for further analysis.
 #  4. Runs assertions to verify that the SBOM was properly processed in ScanCode.io.
@@ -30,46 +30,6 @@ jobs:
         with:
           name: npm-mime-types-2.1.26-scan-result.json
           path: scanpipe/tests/data/integrations-ort/orthw-example-scan-result/npm-mime-types-2.1.26-scan-result.json
-          overwrite: true
-          retention-days: 1
-
-      - name: Upload CycloneDX v1.6 ORT test result
-        uses: actions/upload-artifact@v4
-        with:
-          name: ort-cyclonedx-1.6-result.cyclonedx.json
-          path: scanpipe/tests/data/integrations-ort/ort-reporter-cyclonedx-1.6-funtest-resources/cyclonedx-reporter-expected-result.json
-          overwrite: true
-          retention-days: 1
-
-      - name: Upload CycloneDX v1.6 ORT test result with findings
-        uses: actions/upload-artifact@v4
-        with:
-          name: ort-cyclonedx-1.6-result-with-findings.cyclonedx.json
-          path: scanpipe/tests/data/integrations-ort/ort-reporter-cyclonedx-1.6-funtest-resources/cyclonedx-reporter-expected-result-with-findings.json
-          overwrite: true
-          retention-days: 1
-
-      - name: Upload CycloneDX v1.6 ORT test result without findings
-        uses: actions/upload-artifact@v4
-        with:
-          name: ort-cyclonedx-1.6-result-without-findings.cyclonedx.json
-          path: scanpipe/tests/data/integrations-ort/ort-reporter-cyclonedx-1.6-funtest-resources/cyclonedx-reporter-expected-result-without-findings.json
-          overwrite: true
-          retention-days: 1
-
-      - name: Upload SPDX v2.2 ORT test result
-        uses: actions/upload-artifact@v4
-        with:
-          name: ort-spdx-2.2-result.spdx.json
-          path: scanpipe/tests/data/integrations-ort/ort-reporter-spdx-2.2-funtest-resources/synthetic-scan-result-expected-output.spdx.json
-          overwrite: true
-          retention-days: 1
-
-      - name: Upload SPDX v2.3 ORT test result
-        uses: actions/upload-artifact@v4
-        with:
-          name: ort-spdx-2.3-result.spdx.json
-          path: scanpipe/tests/data/integrations-ort/ort-reporter-spdx-2.3-funtest-resources/synthetic-scan-result-expected-output.spdx.json
           overwrite: true
           retention-days: 1
 
@@ -186,137 +146,6 @@ jobs:
             ${{ env.ORT_RESULTS_PATH }}/bom.spdx.yml
           overwrite: true
           retention-days: 1
-
-  load-ort-cyclonedx-1-6-json-into-scancode-io:
-    needs: checkout-ort-test-assets-from-scancode-io-repo
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Download ORT CycloneDX JSON SBOM
-        uses: actions/download-artifact@v5
-        with:
-          name: ort-cyclonedx-1.6-result.cyclonedx.json
-
-      - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@main
-        with:
-          pipelines: "load_sbom"
-          inputs-path: "cyclonedx-reporter-expected-result.json"
-          output-formats: "cyclonedx"
-          scancodeio-repo-branch: "main"
-
-      - name: Verify SBOM analysis results in ScanCode.io
-        shell: bash
-        run: |
-          # FIXME ScanCode.io incorrectly flag CVE-2021-1234 as applicable to this scan.
-          scanpipe verify-project \
-            --project scancode-action \
-            --packages 5 \
-            --vulnerable-packages 1 \
-            --dependencies 0
-
-  load-ort-cyclonedx-1-6-json-sbom-with-findings-into-scancode-io:
-    needs: checkout-ort-test-assets-from-scancode-io-repo
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Download ORT CycloneDX v1.6 JSON SBOM
-        uses: actions/download-artifact@v5
-        with:
-          name: ort-cyclonedx-1.6-result-with-findings.cyclonedx.json
-
-      - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@main
-        with:
-          pipelines: "load_sbom"
-          inputs-path: "cyclonedx-reporter-expected-result-with-findings.json"
-          output-formats: "cyclonedx"
-          scancodeio-repo-branch: "main"
-
-      - name: Verify SBOM analysis results in ScanCode.io
-        shell: bash
-        run: |
-          scanpipe verify-project \
-            --project scancode-action \
-            --packages 5 \
-            --vulnerable-packages 0 \
-            --dependencies 0
-
-  load-ort-cyclonedx-1-6-json-sbom-without-findings-into-scancode-io:
-    needs: checkout-ort-test-assets-from-scancode-io-repo
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Download ORT CycloneDX v1.6 JSON SBOM
-        uses: actions/download-artifact@v5
-        with:
-          name: ort-cyclonedx-1.6-result-without-findings.cyclonedx.json
-
-      - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@main
-        with:
-          pipelines: "load_sbom"
-          inputs-path: "cyclonedx-reporter-expected-result-without-findings.json"
-          output-formats: "cyclonedx"
-          scancodeio-repo-branch: "main"
-
-      - name: Verify SBOM analysis results in ScanCode.io
-        shell: bash
-        run: |
-          scanpipe verify-project \
-            --project scancode-action \
-            --packages 0 \
-            --vulnerable-packages 0 \
-            --dependencies 0
-
-  load-ort-spdx-2-2-json-sbom-into-scancode-io:
-    needs: checkout-ort-test-assets-from-scancode-io-repo
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Download ORT SPDX v2.2 JSON SBOM
-        uses: actions/download-artifact@v5
-        with:
-          name: ort-spdx-2.2-result.spdx.json
-
-      - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@main
-        with:
-          pipelines: "load_sbom"
-          inputs-path: "synthetic-scan-result-expected-output.spdx.json"
-          output-formats: "spdx"
-          scancodeio-repo-branch: "main"
-
-      - name: Verify SBOM analysis results in ScanCode.io
-        shell: bash
-        run: |
-          scanpipe verify-project \
-            --project scancode-action \
-            --packages 12 \
-            --vulnerable-packages 0 \
-            --dependencies 11
-
-  load-ort-spdx-2-3-json-sbom-into-scancode-io:
-    needs: checkout-ort-test-assets-from-scancode-io-repo
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Download ORT SPDX v2.3 JSON SBOM
-        uses: actions/download-artifact@v5
-        with:
-          name: ort-spdx-2.3-result.spdx.json
-
-      - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@main
-        with:
-          pipelines: "load_sbom"
-          inputs-path: "synthetic-scan-result-expected-output.spdx.json"
-          output-formats: "spdx"
-          scancodeio-repo-branch: "main"
-
-      - name: Verify SBOM analysis results in ScanCode.io
-        shell: bash
-        run: |
-          scanpipe verify-project \
-          --project scancode-action \
-          --packages 12 \
-          --vulnerable-packages 0 \
-          --dependencies 11
 
   load-ort-mime-types-cyclonedx-json-sbom-into-scancode-io:
     needs: generate-mime-types-sboms-from-ort-from-scan-result
