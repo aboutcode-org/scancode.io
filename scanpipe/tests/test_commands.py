@@ -1442,7 +1442,7 @@ class ScanPipeManagementCommandTest(TestCase):
         make_dependency(project)
 
         out = StringIO()
-        call_command(
+        options = [
             "verify-project",
             "--project",
             project.name,
@@ -1454,30 +1454,32 @@ class ScanPipeManagementCommandTest(TestCase):
             "1",
             "--vulnerable-dependencies",
             "0",
-            stdout=out,
-        )
+        ]
+        call_command(*options, stdout=out)
         self.assertIn("Project verification passed.", out.getvalue())
 
-        out = StringIO()
+        options = [
+            "verify-project",
+            "--project",
+            project.name,
+            "--packages",
+            "5",
+            "--vulnerable-packages",
+            "10",
+            "--dependencies",
+            "5",
+            "--vulnerabilities",
+            "13",
+        ]
         expected = (
             "Project verification failed:\n"
             "Expected at least 5 packages, found 1\n"
             "Expected at least 10 vulnerable packages, found 0\n"
-            "Expected at least 5 dependencies, found 1"
+            "Expected at least 5 dependencies, found 1\n"
+            "Expected at least 13 vulnerabilities on the project, found 0"
         )
         with self.assertRaisesMessage(CommandError, expected):
-            call_command(
-                "verify-project",
-                "--project",
-                project.name,
-                "--packages",
-                "5",
-                "--vulnerable-packages",
-                "10",
-                "--dependencies",
-                "5",
-                stdout=out,
-            )
+            call_command(*options)
 
     def test_scanpipe_management_command_extract_tag_from_input_file(self):
         extract_tag = commands.extract_tag_from_input_file

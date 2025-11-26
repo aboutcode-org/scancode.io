@@ -803,29 +803,50 @@ See the :ref:`cli_output` for more information about supported output formats.
 
 Verifies the analysis results of a project against expected package and dependency
 counts.
-This command is designed to ensure that a project’s scan results meet specific
+This command is designed to ensure that a project's scan results meet specific
 expectations — for example, that a minimum number of packages or dependencies were
-discovered, and that no unexpected vulnerabilities were introduced.
+discovered, or that vulnerability counts match expected baselines.
 
 Optional arguments:
 
-- ``--packages`` Minimum number of discovered packages expected.
+- ``--packages`` Expected number of discovered packages.
 
-- ``--vulnerable-packages`` Minimum number of vulnerable packages expected.
+- ``--vulnerable-packages`` Expected number of vulnerable packages.
 
-- ``--dependencies`` Minimum number of discovered dependencies expected.
+- ``--dependencies`` Expected number of discovered dependencies.
 
-- ``--vulnerable-dependencies`` Minimum number of vulnerable dependencies expected.
+- ``--vulnerable-dependencies`` Expected number of vulnerable dependencies.
 
-If any of these expectations are not met, the command exits with a non-zero status
-and prints a summary of all issues found.
+- ``--vulnerabilities`` Expected number of unique vulnerabilities.
+  Combines vulnerabilities from both packages and dependencies.
+
+- ``--strict`` Assert on strict count equality instead of minimum threshold.
+  When not provided, the command checks that actual counts are at least the expected
+  values (greater than or equal). With ``--strict``, actual counts must match expected
+  values exactly.
+
+By default, the command verifies that actual counts meet or exceed the expected values.
+Only the metrics explicitly provided via command-line arguments are validated.
+
+If any expectations are not met, the command exits with a non-zero status and prints
+a summary of all issues found.
 
 Example usage:
 
-.. code-block:: bash
+1. Verify minimum thresholds (default behavior)::
 
-    $ scanpipe verify-project --project my_project --packages 100 --dependencies 50
+   $ scanpipe verify-project --project my_project --packages 100 --dependencies 50
+
+2. Verify exact counts with strict mode::
+
+   $ scanpipe verify-project --project my_project --vulnerabilities 14 --strict
+
+3. Verify only specific metrics::
+
+   $ scanpipe verify-project --project my_project --vulnerable-packages 5
 
 .. tip::
     This command is particularly useful for **CI/CD pipelines** that need to validate
-    SBOM or vulnerability scan results against known baselines.
+    SBOM or vulnerability scan results against known baselines. Use non-strict mode
+    to ensure minimum quality thresholds, or strict mode to detect unexpected changes
+    in scan results.

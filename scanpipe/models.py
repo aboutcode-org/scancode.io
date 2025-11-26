@@ -29,6 +29,7 @@ import uuid
 from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
+from itertools import chain
 from itertools import groupby
 from operator import itemgetter
 from pathlib import Path
@@ -1486,12 +1487,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     @cached_property
     def vulnerable_package_count(self):
         """Return the number of vulnerable packages related to this project."""
-        return self.discoveredpackages.vulnerable().count()
+        return self.vulnerable_packages.count()
 
     @cached_property
     def vulnerable_dependency_count(self):
         """Return the number of vulnerable dependencies related to this project."""
-        return self.discovereddependencies.vulnerable().count()
+        return self.vulnerable_dependencies.count()
 
     @cached_property
     def dependency_count(self):
@@ -1536,6 +1537,49 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     def relation_count(self):
         """Return the number of relations related to this project."""
         return self.codebaserelations.count()
+
+    @cached_property
+    def vulnerable_packages(self):
+        """Return a QuerySet of vulnerable packages."""
+        return self.discoveredpackages.vulnerable()
+
+    @cached_property
+    def vulnerable_dependencies(self):
+        """Return a QuerySet of vulnerable dependencies."""
+        return self.discovereddependencies.vulnerable()
+
+    @property
+    def package_vulnerabilities(self):
+        """Return the list of package vulnerabilities."""
+        return self.vulnerable_packages.get_vulnerabilities_list()
+
+    @property
+    def dependency_vulnerabilities(self):
+        """Return the list of dependency vulnerabilities."""
+        return self.vulnerable_dependencies.get_vulnerabilities_list()
+
+    @property
+    def vulnerabilities(self):
+        """
+        Return a dict of all vulnerabilities affecting this project.
+
+        Combines package and dependency vulnerabilities, keyed by vulnerability_id.
+        Each vulnerability includes an "affects" list of all affected packages
+        and dependencies.
+        """
+        vulnerabilities_dict = {}
+        # Process both packages and dependencies
+        querysets = [self.vulnerable_packages, self.vulnerable_dependencies]
+
+        for queryset in querysets:
+            vulnerabilities = queryset.get_vulnerabilities_dict()
+            for vcid, vuln_data in vulnerabilities.items():
+                if vcid in vulnerabilities_dict:
+                    vulnerabilities_dict[vcid]["affects"].extend(vuln_data["affects"])
+                else:
+                    vulnerabilities_dict[vcid] = vuln_data
+
+        return vulnerabilities_dict
 
     @cached_property
     def has_single_resource(self):
@@ -3284,15 +3328,69 @@ class VulnerabilityMixin(models.Model):
 
 
 class VulnerabilityQuerySetMixin:
+    AFFECTED_BY_FIELD = "affected_by_vulnerabilities"
+
     def vulnerable(self):
-        return self.filter(~Q(affected_by_vulnerabilities__in=EMPTY_VALUES))
+        return self.filter(~Q(**{f"{self.AFFECTED_BY_FIELD}__in": EMPTY_VALUES}))
 
     def vulnerable_ordered(self):
         return (
             self.vulnerable()
-            .only_package_url_fields(extra=["affected_by_vulnerabilities"])
+            .only_package_url_fields(extra=[self.AFFECTED_BY_FIELD])
             .order_by_package_url()
         )
+
+    def get_vulnerabilities_list(self):
+        """
+        Return a deduplicated, sorted flat list of all vulnerabilities from the
+        queryset.
+
+        Extracts and flattens the affected_by_vulnerabilities field from
+        all objects in the queryset. Removes duplicates based on vulnerability_id
+        while preserving the first occurrence of each unique vulnerability.
+        """
+        vulnerabilities_lists = self.values_list(self.AFFECTED_BY_FIELD, flat=True)
+        flatten_vulnerabilities = chain.from_iterable(vulnerabilities_lists)
+
+        # Deduplicate by vulnerability_id while preserving order
+        unique_vulnerabilities = {
+            vuln["vulnerability_id"]: vuln for vuln in flatten_vulnerabilities
+        }
+
+        return sorted(
+            unique_vulnerabilities.values(), key=itemgetter("vulnerability_id")
+        )
+
+    def get_vulnerabilities_dict(self):
+        """
+        Return a dict of vulnerabilities keyed by vulnerability_id.
+
+        Each vulnerability includes an "affects" list containing all
+        objects from this queryset affected by that vulnerability.
+
+        Returns:
+            dict: {
+                'VCID-1': {
+                    'vulnerability_id': 'VCID-1',
+                    'affects': [obj1, obj2, ...]
+                },
+                ...
+            }
+
+        """
+        vulnerabilities_dict = {}
+
+        for obj in self.vulnerable_ordered():
+            for vulnerability in obj.affected_by_vulnerabilities:
+                vcid = vulnerability.get("vulnerability_id")
+                if not vcid:
+                    continue
+
+                if vcid not in vulnerabilities_dict:
+                    vulnerabilities_dict[vcid] = {**vulnerability, "affects": []}
+                vulnerabilities_dict[vcid]["affects"].append(obj)
+
+        return vulnerabilities_dict
 
 
 class DiscoveredPackageQuerySet(
@@ -3324,7 +3422,7 @@ class DiscoveredPackageQuerySet(
         if not extra:
             extra = []
 
-        return self.only("uuid", *PACKAGE_URL_FIELDS, *extra)
+        return self.only("uuid", *PACKAGE_URL_FIELDS, "project_id", *extra)
 
     def filter(self, *args, **kwargs):
         """Add support for using ``package_url`` as a field lookup."""
@@ -3945,7 +4043,7 @@ class DiscoveredDependencyQuerySet(
         if not extra:
             extra = []
 
-        return self.only("dependency_uid", *PACKAGE_URL_FIELDS, *extra)
+        return self.only("dependency_uid", *PACKAGE_URL_FIELDS, "project_id", *extra)
 
 
 class DiscoveredDependency(
