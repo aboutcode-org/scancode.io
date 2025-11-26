@@ -54,6 +54,15 @@ class Command(ProjectCommand):
             default=0,
             help="Minimum number of vulnerable dependencies expected (default: 0)",
         )
+        parser.add_argument(
+            "--vulnerabilities",
+            type=int,
+            default=0,
+            help=(
+                "Minimum number of unique vulnerabilities expected (default: 0). "
+                "Combines vulnerabilities from both packages and dependencies"
+            ),
+        )
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
@@ -62,6 +71,7 @@ class Command(ProjectCommand):
         expected_vulnerable_packages = options["vulnerable_packages"]
         expected_dependencies = options["dependencies"]
         expected_vulnerable_dependencies = options["vulnerable_dependencies"]
+        expected_vulnerabilities = options["vulnerabilities"]
 
         project = self.project
         packages = project.discoveredpackages
@@ -70,7 +80,7 @@ class Command(ProjectCommand):
         dependencies = project.discovereddependencies.all()
         dependency_count = dependencies.count()
         vulnerable_dependency_count = dependencies.vulnerable().count()
-
+        vulnerability_count = len(project.vulnerabilities)
         errors = []
 
         if package_count < expected_packages:
@@ -91,6 +101,12 @@ class Command(ProjectCommand):
             errors.append(
                 f"Expected at least {expected_vulnerable_dependencies} "
                 f"vulnerable dependencies, found {vulnerable_dependency_count}"
+            )
+        if vulnerability_count < expected_vulnerabilities:
+            errors.append(
+                f"Expected at least {expected_vulnerabilities} "
+                f"vulnerabilities total on the project, "
+                f"found {vulnerability_count}"
             )
 
         if errors:

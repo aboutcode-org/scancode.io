@@ -1463,7 +1463,8 @@ class ScanPipeManagementCommandTest(TestCase):
             "Project verification failed:\n"
             "Expected at least 5 packages, found 1\n"
             "Expected at least 10 vulnerable packages, found 0\n"
-            "Expected at least 5 dependencies, found 1"
+            "Expected at least 5 dependencies, found 1\n"
+            "Expected at least 13 vulnerabilities total on the project, found 0"
         )
         with self.assertRaisesMessage(CommandError, expected):
             call_command(
@@ -1476,6 +1477,8 @@ class ScanPipeManagementCommandTest(TestCase):
                 "10",
                 "--dependencies",
                 "5",
+                "--vulnerabilities",
+                "13",
                 stdout=out,
             )
 

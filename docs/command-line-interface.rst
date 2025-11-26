@@ -817,6 +817,9 @@ Optional arguments:
 
 - ``--vulnerable-dependencies`` Minimum number of vulnerable dependencies expected.
 
+- ``--vulnerabilities`` Minimum number of unique vulnerabilities expected.
+  Combines vulnerabilities from both packages and dependencies
+
 If any of these expectations are not met, the command exits with a non-zero status
 and prints a summary of all issues found.
 
