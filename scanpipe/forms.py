@@ -287,6 +287,11 @@ class ProjectResetForm(BaseProjectActionForm):
         initial=True,
         required=False,
     )
+    keep_webhook = forms.BooleanField(
+        label="Keep webhook subscriptions",
+        initial=True,
+        required=False,
+    )
     restore_pipelines = forms.BooleanField(
         label="Restore existing pipelines",
         initial=False,
@@ -301,6 +306,7 @@ class ProjectResetForm(BaseProjectActionForm):
     def get_action_kwargs(self):
         return {
             "keep_input": self.cleaned_data["keep_input"],
+            "keep_webhook": self.cleaned_data["keep_webhook"],
             "restore_pipelines": self.cleaned_data["restore_pipelines"],
             "execute_now": self.cleaned_data["execute_now"],
         }

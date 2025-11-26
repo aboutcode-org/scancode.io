@@ -461,6 +461,34 @@ class ScanPipeD2DPipesTest(TestCase):
         expected = {"from_source_root": "from/antlr4-4.5.1-beta-1/tool/src/"}
         self.assertEqual(expected, r1.extra_data)
 
+    def test_scanpipe_pipes_d2d_map_xtend_to_class(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/org.openhab.binding.urtsi/src/main/java/org/openhab/"
+            + "binding/urtsi/internal/UrtsiDevice.xtend",
+            extra_data={"xtend_package": "org.openhab.binding.urtsi.internal"},
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/org.openhab.binding.urtsi-1.6.2.jar-extract/org/"
+            + "openhab/binding/urtsi/internal/UrtsiDevice.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.XtendLanguage
+        )
+
+        expected = "Mapping 1 .class resources to 1 ('.xtend',)"
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(1, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("xtend_to_class", r1.map_type)
+        expected = {"from_source_root": "from/org.openhab.binding.urtsi/src/main/java/"}
+        self.assertEqual(expected, r1.extra_data)
+
     def test_scanpipe_pipes_d2d_map_java_to_class_no_java(self):
         make_resource_file(self.project1, path="to/Abstract.class")
         buffer = io.StringIO()
@@ -2217,3 +2245,98 @@ class ScanPipeD2DPipesTest(TestCase):
             expected_extra_data = json.load(f)
 
         self.assertEqual(expected_extra_data, asdict(pipeline.ecosystem_config))
+
+    def test_scanpipe_pipes_d2d_extract_protobuf_base_name(self):
+        """Test the protobuf base name extraction function."""
+        test_cases = [
+            ("command_request_pb2.py", "command_request"),
+            ("connection_request_pb2.pyi", "connection_request"),
+            ("response_pb2.py", "response"),
+            ("user_pb3.py", "user"),
+            ("data_pb2.pyi", "data"),
+            ("regular_file.py", None),
+            ("not_protobuf.pyi", None),
+            ("pb2_standalone.py", None),
+        ]
+        for filename, expected in test_cases:
+            with self.subTest(filename=filename):
+                result = d2d.extract_protobuf_base_name(filename)
+                self.assertEqual(expected, result)
+
+    def test_scanpipe_pipes_d2d_map_python_protobuf_files(self):
+        """Test protobuf file mapping functionality."""
+        from1 = make_resource_file(
+            self.project1,
+            path="from/valkey_glide-2.0.1/glide-core/src/protobuf/command_request.proto",
+        )
+        from2 = make_resource_file(
+            self.project1,
+            path="from/valkey_glide-2.0.1/glide-core/src/protobuf/connection_request.proto",
+        )
+        from3 = make_resource_file(
+            self.project1,
+            path="from/valkey_glide-2.0.1/glide-core/src/protobuf/response.proto",
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/glide/protobuf/command_request_pb2.py",
+        )
+        to2 = make_resource_file(
+            self.project1,
+            path="to/glide/protobuf/command_request_pb2.pyi",
+        )
+        to3 = make_resource_file(
+            self.project1,
+            path="to/glide/protobuf/connection_request_pb2.py",
+        )
+        to4 = make_resource_file(
+            self.project1,
+            path="to/glide/protobuf/connection_request_pb2.pyi",
+        )
+        to5 = make_resource_file(
+            self.project1,
+            path="to/glide/protobuf/response_pb2.py",
+        )
+        to6 = make_resource_file(
+            self.project1,
+            path="to/glide/protobuf/response_pb2.pyi",
+        )
+        d2d.map_python_protobuf_files(self.project1)
+        relations = self.project1.codebaserelations.filter(map_type="protobuf_mapping")
+        self.assertEqual(6, relations.count())
+        expected_mappings = [
+            (from1, to1, "command_request"),
+            (from1, to2, "command_request"),
+            (from2, to3, "connection_request"),
+            (from2, to4, "connection_request"),
+            (from3, to5, "response"),
+            (from3, to6, "response"),
+        ]
+        for from_resource, to_resource, expected_base_name in expected_mappings:
+            relation = relations.filter(
+                from_resource=from_resource, to_resource=to_resource
+            ).first()
+            self.assertIsNotNone(relation)
+            self.assertEqual(
+                expected_base_name, relation.extra_data["protobuf_base_name"]
+            )
+
+    def test_scanpipe_pipes_d2d_map_python_protobuf_files_no_proto_files(self):
+        """Test protobuf mapping when no .proto files exist."""
+        make_resource_file(
+            self.project1,
+            path="to/glide/protobuf/command_request_pb2.py",
+        )
+        d2d.map_python_protobuf_files(self.project1)
+        relations = self.project1.codebaserelations.filter(map_type="protobuf_mapping")
+        self.assertEqual(0, relations.count())
+
+    def test_scanpipe_pipes_d2d_map_python_protobuf_files_no_py_files(self):
+        """Test protobuf mapping when no .py/.pyi files exist."""
+        make_resource_file(
+            self.project1,
+            path="from/valkey_glide-2.0.1/glide-core/src/protobuf/command_request.proto",
+        )
+        d2d.map_python_protobuf_files(self.project1)
+        relations = self.project1.codebaserelations.filter(map_type="protobuf_mapping")
+        self.assertEqual(0, relations.count())

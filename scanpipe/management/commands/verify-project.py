@@ -33,26 +33,40 @@ class Command(ProjectCommand):
         parser.add_argument(
             "--packages",
             type=int,
-            default=0,
-            help="Minimum number of packages expected (default: 0)",
+            default=None,
+            help="Expected number of packages",
         )
         parser.add_argument(
             "--vulnerable-packages",
             type=int,
-            default=0,
-            help="Minimum number of vulnerable packages expected (default: 0)",
+            default=None,
+            help="Expected number of vulnerable packages",
         )
         parser.add_argument(
             "--dependencies",
             type=int,
-            default=0,
-            help="Minimum number of dependencies expected (default: 0)",
+            default=None,
+            help="Expected number of dependencies",
         )
         parser.add_argument(
             "--vulnerable-dependencies",
             type=int,
-            default=0,
-            help="Minimum number of vulnerable dependencies expected (default: 0)",
+            default=None,
+            help="Expected number of vulnerable dependencies",
+        )
+        parser.add_argument(
+            "--vulnerabilities",
+            type=int,
+            default=None,
+            help=(
+                "Expected number of unique vulnerabilities. "
+                "Combines vulnerabilities from both packages and dependencies"
+            ),
+        )
+        parser.add_argument(
+            "--strict",
+            action="store_true",
+            help="Assert on strict count equality instead of minimum threshold",
         )
 
     def handle(self, *args, **options):
@@ -62,38 +76,66 @@ class Command(ProjectCommand):
         expected_vulnerable_packages = options["vulnerable_packages"]
         expected_dependencies = options["dependencies"]
         expected_vulnerable_dependencies = options["vulnerable_dependencies"]
+        expected_vulnerabilities = options["vulnerabilities"]
+        strict = options["strict"]
 
         project = self.project
         packages = project.discoveredpackages
-        package_count = packages.count()
-        vulnerable_package_count = packages.vulnerable().count()
-        dependencies = project.discovereddependencies.all()
-        dependency_count = dependencies.count()
-        vulnerable_dependency_count = dependencies.vulnerable().count()
+        dependencies = project.discovereddependencies
+        vulnerabilities = project.vulnerabilities
+
+        # Check all counts (only if expected value is provided)
+        checks = [
+            (
+                packages.count(),
+                expected_packages,
+                "packages",
+            ),
+            (
+                packages.vulnerable().count(),
+                expected_vulnerable_packages,
+                "vulnerable packages",
+            ),
+            (
+                dependencies.count(),
+                expected_dependencies,
+                "dependencies",
+            ),
+            (
+                dependencies.vulnerable().count(),
+                expected_vulnerable_dependencies,
+                "vulnerable dependencies",
+            ),
+            (
+                len(vulnerabilities),
+                expected_vulnerabilities,
+                "vulnerabilities on the project",
+            ),
+        ]
 
         errors = []
-
-        if package_count < expected_packages:
-            errors.append(
-                f"Expected at least {expected_packages} packages, found {package_count}"
-            )
-        if vulnerable_package_count < expected_vulnerable_packages:
-            errors.append(
-                f"Expected at least {expected_vulnerable_packages} vulnerable packages,"
-                f" found {vulnerable_package_count}"
-            )
-        if dependency_count < expected_dependencies:
-            errors.append(
-                f"Expected at least {expected_dependencies} dependencies, "
-                f"found {dependency_count}"
-            )
-        if vulnerable_dependency_count < expected_vulnerable_dependencies:
-            errors.append(
-                f"Expected at least {expected_vulnerable_dependencies} "
-                f"vulnerable dependencies, found {vulnerable_dependency_count}"
-            )
+        for actual, expected, label in checks:
+            if expected is not None:  # Only check if value was provided
+                if error := self.check_count(actual, expected, label, strict):
+                    errors.append(error)
 
         if errors:
             raise CommandError("Project verification failed:\n" + "\n".join(errors))
 
         self.stdout.write("Project verification passed.", self.style.SUCCESS)
+
+    @staticmethod
+    def check_count(actual, expected, label, strict):
+        """
+        Check if actual count meets expectations.
+
+        In strict mode, checks for exact equality.
+        Otherwise, checks if actual is at least the expected value.
+
+        Returns an error message string if check fails.
+        """
+        if strict and actual != expected:
+            return f"Expected exactly {expected} {label}, found {actual}"
+
+        if not strict and actual < expected:
+            return f"Expected at least {expected} {label}, found {actual}"

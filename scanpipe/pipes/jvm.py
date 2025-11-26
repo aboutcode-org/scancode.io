@@ -217,6 +217,15 @@ class GrammarLanguage(JvmLanguage):
     binary_map_type = "grammar_to_class"
 
 
+class XtendLanguage(JvmLanguage):
+    name = "xtend"
+    source_extensions = (".xtend",)
+    binary_extensions = (".class",)
+    source_package_attribute_name = "xtend_package"
+    package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
+    binary_map_type = "xtend_to_class"
+
+
 def get_fully_qualified_path(jvm_package, filename):
     """
     Return a fully qualified path of a ``filename`` in a

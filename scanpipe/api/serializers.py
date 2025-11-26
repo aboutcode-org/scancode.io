@@ -582,6 +582,12 @@ class ProjectResetSerializer(serializers.Serializer):
         initial=True,
         help_text="Keep the input directory and input sources when resetting.",
     )
+    keep_webhook = serializers.BooleanField(
+        required=False,
+        default=True,
+        initial=True,
+        help_text="Keep webhook subscriptions when resetting.",
+    )
     restore_pipelines = serializers.BooleanField(
         required=False,
         default=False,

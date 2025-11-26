@@ -83,6 +83,8 @@ class DeployToDevelop(Pipeline):
             cls.find_grammar_packages,
             cls.map_grammar_to_class,
             cls.map_jar_to_grammar_source,
+            cls.find_xtend_packages,
+            cls.map_xtend_to_class,
             cls.map_javascript,
             cls.map_javascript_symbols,
             cls.map_javascript_strings,
@@ -260,6 +262,20 @@ class DeployToDevelop(Pipeline):
             project=self.project, jvm_lang=jvm.GrammarLanguage, logger=self.log
         )
 
+    @optional_step("Xtend")
+    def find_xtend_packages(self):
+        """Find the java package of the xtend source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.XtendLanguage, logger=self.log
+        )
+
+    @optional_step("Xtend")
+    def map_xtend_to_class(self):
+        """Map a .class compiled file to its xtend source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.XtendLanguage, logger=self.log
+        )
+
     @optional_step("JavaScript")
     def map_javascript(self):
         """
@@ -320,6 +336,7 @@ class DeployToDevelop(Pipeline):
         symbols.
         """
         d2d.map_python_pyx_to_binaries(project=self.project, logger=self.log)
+        d2d.map_python_protobuf_files(project=self.project, logger=self.log)
 
     def match_directories_to_purldb(self):
         """Match selected directories in PurlDB."""
