@@ -201,3 +201,38 @@ for details on:
 - :ref:`HTTP request headers <scancodeio_settings_fetch_headers>` (e.g., for GitHub tokens)
 - :ref:`.netrc file <scancodeio_settings_netrc_location>`
 - :ref:`Docker private registries <scancodeio_settings_skopeo_credentials>`
+
+.. _inputs_artifactory:
+
+JFrog Artifactory
+-----------------
+
+ScanCode.io can fetch artifacts from **JFrog Artifactory** repositories using
+standard download URLs.
+
+The URL format follows Artifactory's REST API pattern::
+
+    https://<artifactory-host>/artifactory/<repo-key>/<artifact-path>
+
+Example::
+
+    https://mycompany.jfrog.io/artifactory/libs-release/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar
+
+For **authentication**, configure credentials in your ``.env`` file using one of
+these methods:
+
+Using Basic Authentication::
+
+    SCANCODEIO_FETCH_BASIC_AUTH="mycompany.jfrog.io=username,password"
+
+Using API Key (via headers)::
+
+    SCANCODEIO_FETCH_HEADERS="mycompany.jfrog.io=X-JFrog-Art-Api=<YOUR_API_KEY>"
+
+Using Access Token::
+
+    SCANCODEIO_FETCH_HEADERS="mycompany.jfrog.io=Authorization=Bearer <YOUR_TOKEN>"
+
+.. tip::
+    You can also use a :ref:`.netrc file <scancodeio_settings_netrc_location>` for
+    authentication if your organization already maintains one.
