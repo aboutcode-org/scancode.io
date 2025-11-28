@@ -121,6 +121,9 @@ ScanCode.io supports **multiple input types** for your projects:
   repositories.
   See :ref:`inputs_artifactory`.
 
+- **Sonatype Nexus**: Fetch artifacts from Nexus Repository Manager instances.
+  See :ref:`inputs_nexus`.
+
 For complete details on all input methods, refer to the :ref:`inputs` documentation.
 
 What is the difference between scan_codebase and scan_single_package pipelines?

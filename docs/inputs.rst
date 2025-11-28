@@ -255,3 +255,41 @@ Using Access Token::
 .. tip::
     You can also use a :ref:`.netrc file <scancodeio_settings_netrc_location>` for
     authentication if your organization already maintains one.
+
+.. _inputs_nexus:
+
+Sonatype Nexus
+--------------
+
+ScanCode.io can fetch artifacts from **Sonatype Nexus Repository** (versions 2 and 3)
+using standard download URLs.
+
+For **Nexus 3**, the URL format follows the repository path pattern::
+
+    https://<nexus-host>/repository/<repo-name>/<path-to-artifact>
+
+Example for a Maven artifact::
+
+    https://nexus.mycompany.com/repository/maven-central/ch/qos/logback/logback-core/1.4.0/logback-core-1.4.0.jar
+
+Example for a PyPI package::
+
+    https://nexus.mycompany.com/repository/pypi-proxy/packages/urllib3/1.26.7/urllib3-1.26.7-py2.py3-none-any.whl
+
+Example for an npm package::
+
+    https://nexus.mycompany.com/repository/npm-proxy/redis/-/redis-2.8.0.tgz
+
+For **authentication**, configure credentials in your ``.env`` file:
+
+Using Basic Authentication::
+
+    SCANCODEIO_FETCH_BASIC_AUTH="nexus.mycompany.com=username,password"
+
+Using a Bearer Token::
+
+    SCANCODEIO_FETCH_HEADERS="nexus.mycompany.com=Authorization=Bearer <YOUR_TOKEN>"
+
+.. tip::
+    You can also use a :ref:`.netrc file <scancodeio_settings_netrc_location>` for
+    authentication if your organization already maintains one.
