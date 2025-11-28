@@ -38,6 +38,7 @@ import requests
 from commoncode import command
 from commoncode.hash import multi_checksums
 from commoncode.text import python_safe_name
+from fetchcode.pypi import Pypi as PyPIFetcher
 from packageurl import PackageURL
 from packageurl.contrib import purl2url
 from plugincode.location_provider import get_location
@@ -324,11 +325,17 @@ def fetch_git_repo(url, to=None):
 
 def fetch_package_url(url):
     # Ensure the provided Package URL is valid, or raise a ValueError.
-    PackageURL.from_string(url)
+    purl = PackageURL.from_string(url)
 
     # Resolve a Download URL using purl2url.
     if download_url := purl2url.get_download_url(url):
         return fetch_http(download_url)
+
+    # PyPI is not supported by purl2url.
+    # It requires an API call to resolve download URLs.
+    if purl.type == "pypi":
+        if download_url := PyPIFetcher.get_download_url(url, preferred_type="sdist"):
+            return fetch_http(download_url)
 
     raise ValueError(f"Could not resolve a download URL for {url}.")
 
