@@ -67,6 +67,7 @@ dependencies = [
   "fingerprints==1.2.3",
   "normality==2.6.1",
   # FetchCode
+  "fetchcode==0.8.0",
   "fetchcode-container==1.2.3.210512; sys_platform == 'linux'",
   # Inspectors
   "elf-inspector==0.0.3",
