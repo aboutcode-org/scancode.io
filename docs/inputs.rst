@@ -81,6 +81,25 @@ Fetches packages from the `npm registry <https://www.npmjs.com/>`_::
 
 Resolves to: ``https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz``
 
+PyPI (Python)
+^^^^^^^^^^^^^
+
+Fetches packages from `PyPI <https://pypi.org/>`_::
+
+    pkg:pypi/django@5.0
+
+Resolves to: ``https://files.pythonhosted.org/packages/.../Django-5.0.tar.gz``
+
+.. note::
+    When multiple distributions are available, the **sdist** (source distribution) is
+    used as the preferred choice.
+
+If no version is provided, the **latest available release** will be fetched::
+
+    pkg:pypi/django
+
+Resolves to: ``https://files.pythonhosted.org/packages/.../django-5.2.8.tar.gz``
+
 Hackage (Haskell)
 ^^^^^^^^^^^^^^^^^
 
