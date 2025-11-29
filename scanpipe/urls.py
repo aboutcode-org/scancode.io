@@ -152,6 +152,11 @@ urlpatterns = [
         name="project_resource_tree_right_pane",
     ),
     path(
+        "project/<slug:slug>/resource_tree_search/",
+        views.ProjectResourceSearchView.as_view(),
+        name="project_resource_tree_search",
+    ),
+    path(
         "run/<uuid:uuid>/",
         views.run_detail_view,
         name="run_detail",

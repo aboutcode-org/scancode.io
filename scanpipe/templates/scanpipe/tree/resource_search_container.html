@@ -1,0 +1,29 @@
+<div class="mb-3 search-container">
+  <div class="field has-addons">
+    <div class="control has-icons-left is-expanded">
+      <input 
+        id="file-search-input" 
+        class="input is-small" 
+        type="text" 
+        placeholder="Go to file..."
+        autocomplete="off"
+        hx-get="{% url 'project_resource_tree_search' project.slug %}"
+        hx-target="#search-results"
+        hx-trigger="input changed"
+        hx-include="this"
+        name="search"
+      >
+      <span class="icon is-small is-left">
+        <i class="fas fa-search"></i>
+      </span>
+    </div>
+    <div class="control">
+      <button id="clear-search" class="button is-small" type="button">
+        <span class="icon is-small">
+          <i class="fas fa-times"></i>
+        </span>
+      </button>
+    </div>
+  </div>
+  <div id="search-results" class="search-dropdown is-hidden"></div>
+</div>
