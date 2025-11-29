@@ -601,3 +601,22 @@ body.full-screen #resource-viewer .message-header {
   background-color: var(--bulma-background);
   border-radius: var(--bulma-radius);
 }
+#resource-tree-container .search-container {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+#resource-tree-container .search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  border: 1px solid var(--bulma-border);
+  border-radius: var(--bulma-radius);
+  background: var(--bulma-scheme-main);
+  box-shadow: var(--bulma-shadow);
+  max-height: 400px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
