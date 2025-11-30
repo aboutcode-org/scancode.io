@@ -182,6 +182,22 @@ class ScalaLanguage(JvmLanguage):
     package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
     binary_map_type = "scala_to_class"
 
+    @classmethod
+    def get_normalized_path(cls, path, extension):
+        if not path.endswith(cls.binary_extensions):
+            raise ValueError(
+                f"Only path ending with {cls.binary_extensions} are supported."
+            )
+        path_obj = Path(path.strip("/"))
+        class_name = path_obj.name
+        
+        if "$" in class_name:
+            class_name, _, _ = class_name.partition("$")
+        else:
+            class_name, _, _ = class_name.partition(".")
+        
+        return str(path_obj.parent / f"{class_name}{extension}")
+
 
 class KotlinLanguage(JvmLanguage):
     name = "kotlin"
