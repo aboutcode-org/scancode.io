@@ -97,7 +97,6 @@ def get_data_from_manifests(project, package_registry, manifest_resources, model
         )
         return []
 
-    # Group manifest resources by package type for batch processing
     manifests_by_type = {}
     for resource in manifest_resources:
         package_type = get_default_package_type(resource.location)
@@ -106,7 +105,6 @@ def get_data_from_manifests(project, package_registry, manifest_resources, model
                 manifests_by_type[package_type] = []
             manifests_by_type[package_type].append(resource)
 
-    # Process PyPI manifests together in a single batch
     if "pypi" in manifests_by_type:
         pypi_resources = manifests_by_type["pypi"]
         pypi_locations = [resource.location for resource in pypi_resources]
@@ -116,14 +114,10 @@ def get_data_from_manifests(project, package_registry, manifest_resources, model
             try:
                 packages = resolver(input_locations=pypi_locations)
                 if packages:
-                    # Associate packages with their source resources
-                    # Since we're processing multiple files together, we need to
-                    # associate each package with all the manifest resources
                     for package_data in packages:
                         package_data["codebase_resources"] = pypi_resources
                     resolved_packages.extend(packages)
                     
-                    # Collect headers for each manifest
                     for resource in pypi_resources:
                         if headers := get_manifest_headers(resource):
                             sboms_headers[resource.name] = headers
@@ -142,10 +136,8 @@ def get_data_from_manifests(project, package_registry, manifest_resources, model
                         object_instance=resource,
                     )
         
-        # Remove pypi from the dict so we don't process it again below
         del manifests_by_type["pypi"]
 
-    # Process other manifest types individually (SPDX, CycloneDX, About files)
     for package_type, resources in manifests_by_type.items():
         for resource in resources:
             packages = resolve_manifest_resources(resource, package_registry)
