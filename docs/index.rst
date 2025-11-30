@@ -37,6 +37,8 @@ In this documentation, you’ll find:
     tutorial_vulnerablecode_integration
     tutorial_web_ui_symbol_and_string_collection
     tutorial_cli_end_to_end_scanning_to_dejacode
+    tutorial_custom_attribution
+
 
 .. toctree::
     :maxdepth: 2
