@@ -863,11 +863,11 @@ class ScanPipeD2DPipesTest(TestCase):
 
     def test_scanpipe_pipes_d2d_map_path_with_compound_extensions(self):
         """Test basename matching for compound extensions like .cpp.o -> .cpp."""
-        from1 = make_resource_file(
+        make_resource_file(
             self.project1,
             path="from/src/nrlmsise_interface.cpp",
         )
-        from2 = make_resource_file(
+        make_resource_file(
             self.project1,
             path="from/src/headers.h",
         )
@@ -885,6 +885,17 @@ class ScanPipeD2DPipesTest(TestCase):
         d2d.map_path(self.project1, logger=buffer.write)
 
         relations = self.project1.codebaserelations.filter(map_type="basename")
+        self.assertGreaterEqual(
+            relations.count(), 2, "Should have basename matches for compound extensions"
+        )
+
+        cpp_relation = relations.filter(to_resource=to1).first()
+        if cpp_relation:
+            self.assertEqual("basename", cpp_relation.map_type)
+
+        h_relation = relations.filter(to_resource=to2).first()
+        if h_relation:
+            self.assertEqual("basename", h_relation.map_type)
 
     def test_scanpipe_pipes_d2d_map_path_with_bak_files(self):
         """Test basename matching for backup files (.bak)."""
@@ -910,7 +921,9 @@ class ScanPipeD2DPipesTest(TestCase):
         d2d.map_path(self.project1, logger=buffer.write)
 
         relations = self.project1.codebaserelations.filter(map_type="basename")
-        self.assertGreaterEqual(relations.count(), 2, "Should have basename matches for .bak files")
+        self.assertGreaterEqual(
+            relations.count(), 2, "Should have basename matches for .bak files"
+        )
 
         button_relation = relations.filter(to_resource=to1).first()
         if button_relation:

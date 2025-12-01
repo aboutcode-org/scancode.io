@@ -242,7 +242,9 @@ def find_basename_matches(to_resource, from_resources, from_resources_index):
     matches = []
 
     if to_ext == ".bak":
-        matches.extend(match_bak_file(to_path, to_basename, from_resources, from_resources_index))
+        matches.extend(
+            match_bak_file(to_path, to_basename, from_resources, from_resources_index)
+        )
     else:
         if "." in to_ext and to_ext.count(".") > 1:
             base_ext = to_ext.rsplit(".", 1)[0]
@@ -251,11 +253,17 @@ def find_basename_matches(to_resource, from_resources, from_resources_index):
 
         matches.extend(
             match_by_extension_mapping(
-                to_path, to_basename, possible_source_exts, from_resources, from_resources_index
+                to_path,
+                to_basename,
+                possible_source_exts,
+                from_resources,
+                from_resources_index,
             )
         )
 
-    matches.extend(match_by_exact_basename(to_path, to_basename, to_ext, from_resources))
+    matches.extend(
+        match_by_exact_basename(to_path, to_basename, to_ext, from_resources)
+    )
 
     if not matches:
         return None
@@ -548,7 +556,9 @@ def _map_path_resource(
             to_resource, from_resources, from_resources_index
         )
         if basename_matches:
-            create_basename_relations(to_resource, basename_matches, diff_ratio_threshold)
+            create_basename_relations(
+                to_resource, basename_matches, diff_ratio_threshold
+            )
         return
 
     # Don't path map resource solely based on the file name.
