@@ -190,12 +190,12 @@ class ScalaLanguage(JvmLanguage):
             )
         path_obj = Path(path.strip("/"))
         class_name = path_obj.name
-        
+
         if "$" in class_name:
             class_name, _, _ = class_name.partition("$")
         else:
             class_name, _, _ = class_name.partition(".")
-        
+
         return str(path_obj.parent / f"{class_name}{extension}")
 
 
