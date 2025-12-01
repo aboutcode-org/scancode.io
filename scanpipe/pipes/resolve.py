@@ -108,7 +108,7 @@ def get_data_from_manifests(project, package_registry, manifest_resources, model
     if "pypi" in manifests_by_type:
         pypi_resources = manifests_by_type["pypi"]
         pypi_locations = [resource.location for resource in pypi_resources]
-        
+
         resolver = package_registry.get("pypi")
         if resolver:
             try:
@@ -117,7 +117,7 @@ def get_data_from_manifests(project, package_registry, manifest_resources, model
                     for package_data in packages:
                         package_data["codebase_resources"] = pypi_resources
                     resolved_packages.extend(packages)
-                    
+
                     for resource in pypi_resources:
                         if headers := get_manifest_headers(resource):
                             sboms_headers[resource.name] = headers
@@ -135,7 +135,7 @@ def get_data_from_manifests(project, package_registry, manifest_resources, model
                         model=model,
                         object_instance=resource,
                     )
-        
+
         del manifests_by_type["pypi"]
 
     for package_type, resources in manifests_by_type.items():
@@ -267,13 +267,14 @@ def get_manifest_resources(project):
 def resolve_pypi_packages(input_location=None, input_locations=None):
     """
     Resolve the PyPI packages from requirement file(s).
-    
+
     Args:
         input_location: Single requirement file path (for backward compatibility)
         input_locations: List of requirement file paths (for batch processing)
-    
+
     Returns:
         List of resolved package data dictionaries
+
     """
     # Handle both single file and multiple files
     if input_locations:
@@ -282,7 +283,7 @@ def resolve_pypi_packages(input_location=None, input_locations=None):
         requirement_files = [input_location]
     else:
         raise ValueError("Either input_location or input_locations must be provided")
-    
+
     python_version = f"{sys.version_info.major}{sys.version_info.minor}"
     operating_system = "linux"
 

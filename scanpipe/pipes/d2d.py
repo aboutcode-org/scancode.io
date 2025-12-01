@@ -168,24 +168,28 @@ def _map_jvm_to_class_resource(
         normalized_path = jvm_lang.get_normalized_path(
             path=to_resource.path, extension=extension
         )
+
         match = pathmap.find_paths(path=normalized_path, index=from_classes_index)
-        if not match:
-            if jvm_lang.name == "scala":
-                package_path = str(Path(normalized_path).parent)
-                potential_sources = from_resources.filter(
-                    path__startswith=package_path,
-                    extension__in=jvm_lang.source_extensions
+
+        if not match and jvm_lang.name == "scala":
+            package_path = str(Path(to_resource.path).parent)
+            potential_sources = from_resources.filter(
+                path__startswith=package_path.replace("to/", "from/"),
+                extension__in=jvm_lang.source_extensions,
+            )
+            for from_resource in potential_sources:
+                from_source_root_parts = from_resource.path.strip("/").split("/")
+                from_source_root = "/".join(from_source_root_parts[:-1])
+                pipes.make_relation(
+                    from_resource=from_resource,
+                    to_resource=to_resource,
+                    map_type=jvm_lang.binary_map_type,
+                    extra_data={"from_source_root": f"{from_source_root}/"},
                 )
-                for from_resource in potential_sources:
-                    from_source_root_parts = from_resource.path.strip("/").split("/")
-                    from_source_root = "/".join(from_source_root_parts[:-1])
-                    pipes.make_relation(
-                        from_resource=from_resource,
-                        to_resource=to_resource,
-                        map_type=jvm_lang.binary_map_type,
-                        extra_data={"from_source_root": f"{from_source_root}/"},
-                    )
-            return
+            continue
+
+        if not match:
+            continue
 
         for resource_id in match.resource_ids:
             from_resource = from_resources.get(id=resource_id)
