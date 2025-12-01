@@ -1,11 +1,29 @@
 Changelog
 =========
 
-v35.4.2 (unreleased)
+v35.5.0 (2025-12-01)
 --------------------
 
 - Add arguments support for the reset action in REST API.
   https://github.com/aboutcode-org/scancode.io/issues/1948
+
+- Add management command to analyze Kubernetes cluster.
+  https://github.com/aboutcode-org/scancode.io/issues/1950
+
+- Improve source mapping for .py and .pyi files.
+  https://github.com/aboutcode-org/scancode.io/issues/1920
+
+- Keep webhook subscription in project reset.
+  https://github.com/aboutcode-org/scancode.io/issues/1963
+
+- Add --vulnerabilities and --strict options in verify-project.
+  https://github.com/aboutcode-org/scancode.io/issues/1964
+
+- Add support for PyPI PURLs as Inputs.
+  https://github.com/aboutcode-org/scancode.io/issues/1966
+
+- Add JFrog Artifactory and Sonatype Nexus integrations documentation.
+  https://github.com/aboutcode-org/scancode.io/issues/1970
 
 v35.4.1 (2025-10-24)
 --------------------
