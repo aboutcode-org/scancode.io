@@ -1,7 +1,55 @@
 name: scancodeio
 services:
+  # This service checks the PostgreSQL data version before starting the database.
+  # PostgreSQL major versions store data in incompatible formats, so starting
+  # PostgreSQL 17 with data from PostgreSQL 13 would fail or cause corruption.
+  #
+  # The check reads the PG_VERSION file from the data volume (mounted read-only)
+  # and blocks startup if the data is from an older PostgreSQL version.
+  #
+  # If this check fails, run the migration script before starting the stack:
+  #   ./migrate-pg13-to-17.sh
+  #
+  # For fresh installations (no existing data), this check passes automatically.
+  db-check:
+    image: docker.io/library/postgres:17
+    volumes:
+      - db_data:/var/lib/postgresql/data/:ro
+    entrypoint: [ "/bin/bash", "-c" ]
+    command:
+      - |
+        DATA_DIR="/var/lib/postgresql/data"
+        if [ ! -f "$$DATA_DIR/PG_VERSION" ]; then
+          echo "Fresh install detected, no upgrade needed."
+          exit 0
+        fi
+
+        OLD_VERSION=$$(cat "$$DATA_DIR/PG_VERSION")
+        echo "Found PostgreSQL data version: $$OLD_VERSION"
+
+        if [ "$$OLD_VERSION" -lt 17 ]; then
+          echo ""
+          echo "╔════════════════════════════════════════════════════════════════════╗"
+          echo "║ ERROR: PostgreSQL $$OLD_VERSION data detected, version 17 required ║"
+          echo "╠════════════════════════════════════════════════════════════════════╣"
+          echo "║ Your database volume contains data from an older PostgreSQL.       ║"
+          echo "║                                                                    ║"
+          echo "║ To migrate, run:                                                   ║"
+          echo "║    ./migrate-pg13-to-17.sh                                         ║"
+          echo "║                                                                    ║"
+          echo "╚════════════════════════════════════════════════════════════════════╝"
+          echo ""
+          exit 1
+        fi
+
+        echo "PostgreSQL version OK."
+    restart: "no"
+
   db:
-    image: docker.io/library/postgres:13
+    image: docker.io/library/postgres:17
+    depends_on:
+      db-check:
+        condition: service_completed_successfully
     env_file:
       - docker.env
     volumes:

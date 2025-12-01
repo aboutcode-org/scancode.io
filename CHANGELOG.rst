@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v36.0.0 (unrelease)
+--------------------
+
+WARNING: This version now requires PostgreSQL v17 or later.
+If you are running ScanCode.io using the provided docker-compose.yml, you need to
+run the migration script before starting the stack: `./migrate-pg13-to-17.sh`
+
 v35.5.0 (2025-12-01)
 --------------------
 
