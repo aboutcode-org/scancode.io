@@ -100,7 +100,7 @@ dependencies = [
   "aboutcode.hashid==0.2.0",
   # AboutCode pipeline
   "aboutcode.pipeline==0.2.1",
-  "scipy==1.16.3",
+  "scipy==1.15.3",  # 1.16.x requires Python >=3.11
   # ScoreCode
   "scorecode==0.0.4",
   # Workaround issue https://github.com/aboutcode-org/scancode.io/issues/1885
