@@ -756,6 +756,179 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual({"path_score": "3/3"}, relation.extra_data)
         self.assertNotEqual("too-many-maps", file_name_too_many.status)
 
+    def test_scanpipe_pipes_d2d_get_basename_without_extension(self):
+        """Test basename extraction with various extension patterns."""
+        basename, ext = d2d.get_basename_without_extension("file.js")
+        self.assertEqual(("file", ".js"), (basename, ext))
+
+        basename, ext = d2d.get_basename_without_extension("file.ts")
+        self.assertEqual(("file", ".ts"), (basename, ext))
+
+        basename, ext = d2d.get_basename_without_extension("file.d.ts")
+        self.assertEqual(("file", ".d.ts"), (basename, ext))
+
+        basename, ext = d2d.get_basename_without_extension("file.min.js")
+        self.assertEqual(("file", ".min.js"), (basename, ext))
+
+        basename, ext = d2d.get_basename_without_extension("file.d.mts")
+        self.assertEqual(("file", ".d.mts"), (basename, ext))
+
+        basename, ext = d2d.get_basename_without_extension("file.cpp.o")
+        self.assertEqual(("file", ".cpp.o"), (basename, ext))
+
+        basename, ext = d2d.get_basename_without_extension("file.h.gch")
+        self.assertEqual(("file", ".h.gch"), (basename, ext))
+
+        basename, ext = d2d.get_basename_without_extension("file")
+        self.assertEqual(("file", ""), (basename, ext))
+
+        basename, ext = d2d.get_basename_without_extension("path/to/file.cjs")
+        self.assertEqual(("file", ".cjs"), (basename, ext))
+
+        basename, ext = d2d.get_basename_without_extension("file.js.bak")
+        self.assertEqual(("file.js", ".bak"), (basename, ext))
+
+        basename, ext = d2d.get_basename_without_extension("file.ts.bak")
+        self.assertEqual(("file.ts", ".bak"), (basename, ext))
+
+    def test_scanpipe_pipes_d2d_map_path_with_basename_matching(self):
+        """Test path mapping with basename matching for npm files."""
+        from1 = make_resource_file(
+            self.project1,
+            path="from/src/components/Button.ts",
+        )
+        from2 = make_resource_file(
+            self.project1,
+            path="from/src/utils/helper.ts",
+        )
+        from3 = make_resource_file(
+            self.project1,
+            path="from/src/styles/main.scss",
+        )
+        from4 = make_resource_file(
+            self.project1,
+            path="from/src/lib/interface.d.ts",
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/dist/components/Button.cjs",
+        )
+        to2 = make_resource_file(
+            self.project1,
+            path="to/dist/utils/helper.mjs",
+        )
+        to3 = make_resource_file(
+            self.project1,
+            path="to/dist/styles/main.css",
+        )
+        to4 = make_resource_file(
+            self.project1,
+            path="to/dist/lib/interface.d.ts",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_path(self.project1, logger=buffer.write)
+
+        relations = self.project1.codebaserelations.filter(map_type="basename")
+        self.assertGreaterEqual(relations.count(), 3, "Should have basename matches")
+
+        button_relation = relations.filter(to_resource=to1).first()
+        if button_relation:
+            self.assertEqual(from1, button_relation.from_resource)
+            self.assertEqual("basename", button_relation.map_type)
+
+        helper_relation = relations.filter(to_resource=to2).first()
+        if helper_relation:
+            self.assertEqual(from2, helper_relation.from_resource)
+
+        css_relation = relations.filter(to_resource=to3).first()
+        if css_relation:
+            self.assertEqual(from3, css_relation.from_resource)
+
+    def test_scanpipe_pipes_d2d_map_path_with_basename_same_filename(self):
+        """Test basename matching for files with same filename but different hash."""
+        from1 = make_resource_file(
+            self.project1,
+            path="from/src/components/Button.js",
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/dist/components/Button.min.js",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_path(self.project1, logger=buffer.write)
+
+        relations = self.project1.codebaserelations.filter(map_type="basename")
+        self.assertGreaterEqual(relations.count(), 1)
+
+        relation = relations.filter(to_resource=to1).first()
+        if relation:
+            self.assertEqual(from1, relation.from_resource)
+            self.assertEqual("basename", relation.map_type)
+
+    def test_scanpipe_pipes_d2d_map_path_with_compound_extensions(self):
+        """Test basename matching for compound extensions like .cpp.o -> .cpp."""
+        from1 = make_resource_file(
+            self.project1,
+            path="from/src/nrlmsise_interface.cpp",
+        )
+        from2 = make_resource_file(
+            self.project1,
+            path="from/src/headers.h",
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/build/nrlmsise_interface.cpp.o",
+        )
+        to2 = make_resource_file(
+            self.project1,
+            path="to/build/headers.h.gch",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_path(self.project1, logger=buffer.write)
+
+        relations = self.project1.codebaserelations.filter(map_type="basename")
+
+    def test_scanpipe_pipes_d2d_map_path_with_bak_files(self):
+        """Test basename matching for backup files (.bak)."""
+        from1 = make_resource_file(
+            self.project1,
+            path="from/src/components/Button.js",
+        )
+        from2 = make_resource_file(
+            self.project1,
+            path="from/src/utils/helper.ts",
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/dist/components/Button.js.bak",
+        )
+        to2 = make_resource_file(
+            self.project1,
+            path="to/dist/utils/helper.ts.bak",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_path(self.project1, logger=buffer.write)
+
+        relations = self.project1.codebaserelations.filter(map_type="basename")
+        self.assertGreaterEqual(relations.count(), 2, "Should have basename matches for .bak files")
+
+        button_relation = relations.filter(to_resource=to1).first()
+        if button_relation:
+            self.assertEqual(from1, button_relation.from_resource)
+            self.assertEqual("basename", button_relation.map_type)
+
+        helper_relation = relations.filter(to_resource=to2).first()
+        if helper_relation:
+            self.assertEqual(from2, helper_relation.from_resource)
+
     def test_scanpipe_pipes_d2d_find_java_packages(self):
         input_locations = [
             self.data / "d2d" / "find_java_packages" / "Foo.java",
