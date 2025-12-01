@@ -805,10 +805,6 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1,
             path="from/src/styles/main.scss",
         )
-        from4 = make_resource_file(
-            self.project1,
-            path="from/src/lib/interface.d.ts",
-        )
 
         to1 = make_resource_file(
             self.project1,
@@ -821,10 +817,6 @@ class ScanPipeD2DPipesTest(TestCase):
         to3 = make_resource_file(
             self.project1,
             path="to/dist/styles/main.css",
-        )
-        to4 = make_resource_file(
-            self.project1,
-            path="to/dist/lib/interface.d.ts",
         )
 
         buffer = io.StringIO()

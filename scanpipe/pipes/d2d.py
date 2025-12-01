@@ -157,8 +157,81 @@ def get_basename_without_extension(path):
     return name, ""
 
 
+def count_common_path_segments(to_dir_parts, from_dir_parts):
+    """Count common path segments from the end."""
+    common_segments = 0
+    min_len = min(len(to_dir_parts), len(from_dir_parts))
+    for i in range(min_len):
+        if to_dir_parts[-(i + 1)] == from_dir_parts[-(i + 1)]:
+            common_segments += 1
+        else:
+            break
+    return common_segments
+
+
+def match_bak_file(to_path, to_basename, from_resources, from_resources_index):
+    """Match .bak files to their original source."""
+    matches = []
+    source_path = to_path.parent / to_basename
+    source_path_str = "/" + str(source_path).replace("\\", "/")
+    match = pathmap.find_paths(source_path_str, from_resources_index)
+    if match and match.matched_path_length >= 2:
+        for resource_id in match.resource_ids:
+            from_resource = from_resources.get(id=resource_id)
+            if from_resource:
+                matches.append((from_resource, match.matched_path_length))
+    return matches
+
+
+def match_by_extension_mapping(
+    to_path, to_basename, possible_source_exts, from_resources, from_resources_index
+):
+    """Match using extension mapping."""
+    matches = []
+    for source_ext in possible_source_exts:
+        source_path = to_path.parent / f"{to_basename}{source_ext}"
+        source_path_str = "/" + str(source_path).replace("\\", "/")
+        match = pathmap.find_paths(source_path_str, from_resources_index)
+        if match and match.matched_path_length >= 2:
+            for resource_id in match.resource_ids:
+                from_resource = from_resources.get(id=resource_id)
+                if from_resource:
+                    matches.append((from_resource, match.matched_path_length))
+    return matches
+
+
+def match_by_exact_basename(
+    to_path, to_basename, to_ext, from_resources
+):
+    """Match files with same basename but different extensions."""
+    matches = []
+    to_dir = to_path.parent
+    to_dir_parts = to_dir.parts if to_dir.parts else ()
+
+    for from_resource in from_resources:
+        from_path = Path(from_resource.path.lstrip("/"))
+        from_basename, from_ext = get_basename_without_extension(from_resource.path)
+
+        if to_ext == ".bak":
+            from_full_name = from_path.name
+            if to_basename != from_full_name:
+                continue
+        else:
+            if from_basename != to_basename:
+                continue
+
+        from_dir = from_path.parent
+        from_dir_parts = from_dir.parts if from_dir.parts else ()
+        common_segments = count_common_path_segments(to_dir_parts, from_dir_parts)
+
+        if common_segments >= 2:
+            matches.append((from_resource, common_segments + 1))
+
+    return matches
+
+
 def find_basename_matches(to_resource, from_resources, from_resources_index):
-    """Find matches for to_resource based on basename matching where extensions may differ."""
+    """Find matches for to_resource based on basename matching."""
     to_path = Path(to_resource.path.lstrip("/"))
     to_basename, to_ext = get_basename_without_extension(to_resource.path)
 
@@ -169,68 +242,20 @@ def find_basename_matches(to_resource, from_resources, from_resources_index):
     matches = []
 
     if to_ext == ".bak":
-        source_path = to_path.parent / to_basename
-        source_path_str = "/" + str(source_path).replace("\\", "/")
-        match = pathmap.find_paths(source_path_str, from_resources_index)
-        if match and match.matched_path_length >= 2:
-            for resource_id in match.resource_ids:
-                from_resource = from_resources.get(id=resource_id)
-                if from_resource:
-                    matches.append((from_resource, match.matched_path_length))
+        matches.extend(match_bak_file(to_path, to_basename, from_resources, from_resources_index))
     else:
         if "." in to_ext and to_ext.count(".") > 1:
             base_ext = to_ext.rsplit(".", 1)[0]
             if base_ext not in possible_source_exts:
                 possible_source_exts.append(base_ext)
 
-    for source_ext in possible_source_exts:
-        source_path = to_path.parent / f"{to_basename}{source_ext}"
-        source_path_str = "/" + str(source_path).replace("\\", "/")
-        match = pathmap.find_paths(source_path_str, from_resources_index)
-        if match and match.matched_path_length >= 2:
-            for resource_id in match.resource_ids:
-                from_resource = from_resources.get(id=resource_id)
-                if from_resource:
-                    matches.append((from_resource, match.matched_path_length))
+        matches.extend(
+            match_by_extension_mapping(
+                to_path, to_basename, possible_source_exts, from_resources, from_resources_index
+            )
+        )
 
-    to_dir = to_path.parent
-    to_dir_parts = to_dir.parts if to_dir.parts else ()
-
-    for from_resource in from_resources:
-        from_path = Path(from_resource.path.lstrip("/"))
-        from_basename, from_ext = get_basename_without_extension(from_resource.path)
-
-        if to_ext == ".bak":
-            from_full_name = from_path.name
-            if to_basename == from_full_name:
-                from_dir = from_path.parent
-                from_dir_parts = from_dir.parts if from_dir.parts else ()
-
-                common_segments = 0
-                min_len = min(len(to_dir_parts), len(from_dir_parts))
-                for i in range(min_len):
-                    if to_dir_parts[-(i + 1)] == from_dir_parts[-(i + 1)]:
-                        common_segments += 1
-                    else:
-                        break
-
-                if common_segments >= 2:
-                    matches.append((from_resource, common_segments + 1))
-        else:
-            if from_basename == to_basename:
-                from_dir = from_path.parent
-                from_dir_parts = from_dir.parts if from_dir.parts else ()
-
-                common_segments = 0
-                min_len = min(len(to_dir_parts), len(from_dir_parts))
-                for i in range(min_len):
-                    if to_dir_parts[-(i + 1)] == from_dir_parts[-(i + 1)]:
-                        common_segments += 1
-                    else:
-                        break
-
-                if common_segments >= 2:
-                    matches.append((from_resource, common_segments + 1))
+    matches.extend(match_by_exact_basename(to_path, to_basename, to_ext, from_resources))
 
     if not matches:
         return None
@@ -491,6 +516,29 @@ def map_jar_to_jvm_source(project, jvm_lang: jvm.JvmLanguage, logger=None):
         )
 
 
+def create_basename_relations(to_resource, basename_matches, diff_ratio_threshold):
+    """Create relations for basename matches."""
+    for from_resource in basename_matches:
+        diff_ratio = get_resource_diff_ratio(to_resource, from_resource)
+        if diff_ratio is not None and diff_ratio < diff_ratio_threshold:
+            continue
+
+        to_path_length = len(to_resource.path.split("/")) - 1
+        extra_data = {
+            "path_score": f"basename/{to_path_length}",
+            "map_type_detail": "basename_match",
+        }
+        if diff_ratio:
+            extra_data["diff_ratio"] = f"{diff_ratio:.1%}"
+
+        pipes.make_relation(
+            from_resource=from_resource,
+            to_resource=to_resource,
+            map_type="basename",
+            extra_data=extra_data,
+        )
+
+
 def _map_path_resource(
     to_resource, from_resources, from_resources_index, diff_ratio_threshold=0.7
 ):
@@ -500,26 +548,7 @@ def _map_path_resource(
             to_resource, from_resources, from_resources_index
         )
         if basename_matches:
-            for from_resource in basename_matches:
-                diff_ratio = get_resource_diff_ratio(to_resource, from_resource)
-                if diff_ratio is not None and diff_ratio < diff_ratio_threshold:
-                    continue
-
-                to_path_length = len(to_resource.path.split("/")) - 1
-                from_path_length = len(from_resource.path.split("/")) - 1
-                extra_data = {
-                    "path_score": f"basename/{to_path_length}",
-                    "map_type_detail": "basename_match",
-                }
-                if diff_ratio:
-                    extra_data["diff_ratio"] = f"{diff_ratio:.1%}"
-
-                pipes.make_relation(
-                    from_resource=from_resource,
-                    to_resource=to_resource,
-                    map_type="basename",
-                    extra_data=extra_data,
-                )
+            create_basename_relations(to_resource, basename_matches, diff_ratio_threshold)
         return
 
     # Don't path map resource solely based on the file name.
