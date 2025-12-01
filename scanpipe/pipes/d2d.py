@@ -200,9 +200,7 @@ def match_by_extension_mapping(
     return matches
 
 
-def match_by_exact_basename(
-    to_path, to_basename, to_ext, from_resources
-):
+def match_by_exact_basename(to_path, to_basename, to_ext, from_resources):
     """Match files with same basename but different extensions."""
     matches = []
     to_dir = to_path.parent
