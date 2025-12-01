@@ -220,3 +220,76 @@ for details on:
 - :ref:`HTTP request headers <scancodeio_settings_fetch_headers>` (e.g., for GitHub tokens)
 - :ref:`.netrc file <scancodeio_settings_netrc_location>`
 - :ref:`Docker private registries <scancodeio_settings_skopeo_credentials>`
+
+.. _inputs_artifactory:
+
+JFrog Artifactory
+-----------------
+
+ScanCode.io can fetch artifacts from **JFrog Artifactory** repositories using
+standard download URLs.
+
+The URL format follows Artifactory's REST API pattern::
+
+    https://<artifactory-host>/artifactory/<repo-key>/<artifact-path>
+
+Example::
+
+    https://mycompany.jfrog.io/artifactory/libs-release/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar
+
+For **authentication**, configure credentials in your ``.env`` file using one of
+these methods:
+
+Using Basic Authentication::
+
+    SCANCODEIO_FETCH_BASIC_AUTH="mycompany.jfrog.io=username,password"
+
+Using API Key (via headers)::
+
+    SCANCODEIO_FETCH_HEADERS="mycompany.jfrog.io=X-JFrog-Art-Api=<YOUR_API_KEY>"
+
+Using Access Token::
+
+    SCANCODEIO_FETCH_HEADERS="mycompany.jfrog.io=Authorization=Bearer <YOUR_TOKEN>"
+
+.. tip::
+    You can also use a :ref:`.netrc file <scancodeio_settings_netrc_location>` for
+    authentication if your organization already maintains one.
+
+.. _inputs_nexus:
+
+Sonatype Nexus
+--------------
+
+ScanCode.io can fetch artifacts from **Sonatype Nexus Repository** (versions 2 and 3)
+using standard download URLs.
+
+For **Nexus 3**, the URL format follows the repository path pattern::
+
+    https://<nexus-host>/repository/<repo-name>/<path-to-artifact>
+
+Example for a Maven artifact::
+
+    https://nexus.mycompany.com/repository/maven-central/ch/qos/logback/logback-core/1.4.0/logback-core-1.4.0.jar
+
+Example for a PyPI package::
+
+    https://nexus.mycompany.com/repository/pypi-proxy/packages/urllib3/1.26.7/urllib3-1.26.7-py2.py3-none-any.whl
+
+Example for an npm package::
+
+    https://nexus.mycompany.com/repository/npm-proxy/redis/-/redis-2.8.0.tgz
+
+For **authentication**, configure credentials in your ``.env`` file:
+
+Using Basic Authentication::
+
+    SCANCODEIO_FETCH_BASIC_AUTH="nexus.mycompany.com=username,password"
+
+Using a Bearer Token::
+
+    SCANCODEIO_FETCH_HEADERS="nexus.mycompany.com=Authorization=Bearer <YOUR_TOKEN>"
+
+.. tip::
+    You can also use a :ref:`.netrc file <scancodeio_settings_netrc_location>` for
+    authentication if your organization already maintains one.

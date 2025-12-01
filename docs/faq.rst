@@ -117,6 +117,13 @@ ScanCode.io supports **multiple input types** for your projects:
 - **Git Repository**: Clone a Git repository using its HTTPS URL.
   See :ref:`inputs_git_repository`.
 
+- **JFrog Artifactory**: Fetch artifacts from on-premise or cloud Artifactory
+  repositories.
+  See :ref:`inputs_artifactory`.
+
+- **Sonatype Nexus**: Fetch artifacts from Nexus Repository Manager instances.
+  See :ref:`inputs_nexus`.
+
 For complete details on all input methods, refer to the :ref:`inputs` documentation.
 
 What is the difference between scan_codebase and scan_single_package pipelines?
