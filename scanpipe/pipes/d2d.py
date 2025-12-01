@@ -208,6 +208,11 @@ def match_by_exact_basename(
     to_dir = to_path.parent
     to_dir_parts = to_dir.parts if to_dir.parts else ()
 
+    is_compound_ext = "." in to_ext and to_ext.count(".") > 1
+    base_ext = None
+    if is_compound_ext:
+        base_ext = to_ext.rsplit(".", 1)[0]
+
     for from_resource in from_resources:
         from_path = Path(from_resource.path.lstrip("/"))
         from_basename, from_ext = get_basename_without_extension(from_resource.path)
@@ -220,12 +225,17 @@ def match_by_exact_basename(
             if from_basename != to_basename:
                 continue
 
+            if is_compound_ext and base_ext and from_ext != base_ext:
+                continue
+
         from_dir = from_path.parent
         from_dir_parts = from_dir.parts if from_dir.parts else ()
         common_segments = count_common_path_segments(to_dir_parts, from_dir_parts)
 
         if common_segments >= 2:
             matches.append((from_resource, common_segments + 1))
+        elif is_compound_ext and base_ext and from_ext == base_ext:
+            matches.append((from_resource, 1))
 
     return matches
 
