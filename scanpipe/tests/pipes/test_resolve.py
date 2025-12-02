@@ -136,7 +136,7 @@ class ScanPipeResolvePipesTest(TestCase):
 
         mock_resolve.return_value = mock.Mock(packages=inspector_output["packages"])
 
-        packages = resolve.resolve_pypi_packages("")
+        packages = resolve.resolve_pypi_packages("requirements.txt")
         self.assertEqual(2, len(packages))
         package_data = packages[0]
         self.assertEqual("pip", package_data["name"])
