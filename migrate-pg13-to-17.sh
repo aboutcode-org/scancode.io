@@ -1,12 +1,38 @@
 #!/bin/bash
+# =============================================================================
+# PostgreSQL 13 to 17 Migration Script for ScanCode.io
+# =============================================================================
+#
+# This script migrates the PostgreSQL database from version 13 to 17.
+#
+# Usage:
+#   ./migrate-pg13-to-17.sh [backup_directory]
+#
+# Arguments:
+#   backup_directory  Optional. Directory to store the backup file.
+#                     Defaults to current directory.
+#
+# Examples:
+#   ./migrate-pg13-to-17.sh
+#   ./migrate-pg13-to-17.sh /path/to/backups
+#
+# =============================================================================
+
 set -e
 echo "=== PostgreSQL 13 to 17 Migration ==="
 
 POSTGRES_DB="scancodeio"
 POSTGRES_USER="scancodeio"
-BACKUP_FILE="backup_pg13_$(date +%Y%m%d_%H%M%S).dump"
+BACKUP_DIR="${1:-.}"
+BACKUP_FILE="$BACKUP_DIR/backup_pg13_$(date +%Y%m%d_%H%M%S).dump"
 VOLUME_NAME="scancodeio_db_data"
 VOLUME_BACKUP="${VOLUME_NAME}_pg13_backup"
+
+# Check backup directory exists
+if [ ! -d "$BACKUP_DIR" ]; then
+    echo "ERROR: Backup directory $BACKUP_DIR does not exist"
+    exit 1
+fi
 
 # Stop all compose services first
 echo "Stopping all services..."
@@ -61,7 +87,9 @@ until docker compose exec -T db pg_isready 2>/dev/null; do
 done
 
 echo "Step 5/5: Restoring data (this may take a while)..."
-docker compose exec -T db pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --jobs=4 --no-owner --no-acl < "$BACKUP_FILE"
+docker cp "$BACKUP_FILE" scancodeio-db-1:/tmp/backup.dump
+docker compose exec -T db pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner --no-acl /tmp/backup.dump
+docker compose exec -T db rm /tmp/backup.dump
 
 echo ""
 echo "=== Migration complete! ==="
