@@ -746,7 +746,7 @@ class ScanPipeManagementCommandTest(TestCase):
         call_command("output", *options, stdout=out)
         out_value = out.getvalue().strip()
         self.assertIn('"bomFormat": "CycloneDX"', out_value)
-        self.assertIn('"specVersion": "1.7",', out_value)
+        self.assertIn('"specVersion": "1.6",', out_value)
 
         out = StringIO()
         options = ["--project", project.name, "--no-color"]
