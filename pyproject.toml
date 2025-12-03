@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scancodeio"
-version = "35.5.0"
+version = "36.0.0-dev"
 description = "Automate software composition analysis pipelines"
 readme = "README.rst"
 requires-python = ">=3.10,<3.14"
@@ -37,16 +37,16 @@ dependencies = [
   "importlib-metadata==8.7.0",
   "setuptools==80.9.0",
   # Django related
-  "Django==5.1.14",
+  "Django==5.2.9",
   "django-environ==0.12.0",
   "django-crispy-forms==2.5",
   "crispy-bootstrap3==2024.1",
-  "django-filter==25.1",
+  "django-filter==25.2",
   "djangorestframework==3.16.1",
   "django-taggit==6.1.0",
   "django-htmx==1.27.0",
   # Database
-  "psycopg[binary]==3.2.13",
+  "psycopg[binary]==3.3.1",
   # wait_for_database Django management command
   "django-probes==1.8.0",
   # Task queue
@@ -85,7 +85,7 @@ dependencies = [
   # Profiling
   "pyinstrument==5.1.1",
   # CycloneDX
-  "cyclonedx-python-lib==11.5.0",
+  "cyclonedx-python-lib==11.6.0",
   "jsonschema==4.25.1",
   # MatchCode-toolkit
   "matchcode-toolkit==7.2.2",
