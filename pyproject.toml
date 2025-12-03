@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scancodeio"
-version = "35.5.0"
+version = "36.0.0-dev"
 description = "Automate software composition analysis pipelines"
 readme = "README.rst"
 requires-python = ">=3.10,<3.14"
