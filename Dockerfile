@@ -42,7 +42,7 @@ ENV PYTHONUNBUFFERED=1
 # Do not write Python .pyc files
 ENV PYTHONDONTWRITEBYTECODE=1
 # Add the app dir in the Python path for entry points availability
-ENV PYTHONPATH=$PYTHONPATH:$APP_DIR
+ENV PYTHONPATH=$APP_DIR
 
 # OS requirements as per
 # https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html
