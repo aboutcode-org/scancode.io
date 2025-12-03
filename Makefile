@@ -127,7 +127,7 @@ sqlitedb:
 	@$(MAKE) migrate
 
 run:
-	${MANAGE} runserver 8001 --insecure
+	DJANGO_RUNSERVER_HIDE_WARNING=true ${MANAGE} runserver 8001 --insecure
 
 run-docker-dev:
 	@echo "-> Run the Docker compose services in dev mode (hot reload on code changes)"
