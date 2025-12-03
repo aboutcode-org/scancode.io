@@ -277,6 +277,28 @@ class ScanPipeSymbolmapPipesTest(TestCase):
         # print(result_prob_dist)
         self.assertListEqual(result_prob_dist, expected_prob_dist)
 
+    def test_jensenshannon(self):
+        # Identical distributions -> distance is 0
+        self.assertEqual(symbolmap.jensenshannon([1.0, 0.0, 0.0], [1.0, 0.0, 0.0]), 0.0)
+
+        # Completely different distributions -> maximum distance
+        self.assertAlmostEqual(
+            symbolmap.jensenshannon([1.0, 0.0], [0.0, 1.0]), 0.8325546, places=5
+        )
+
+        # Partial overlap
+        self.assertAlmostEqual(
+            symbolmap.jensenshannon([1.0, 0.0], [0.5, 0.5]),
+            0.46450140402245893,
+            places=5,
+        )
+
+        # Uniform distributions -> distance is 0
+        self.assertEqual(
+            symbolmap.jensenshannon([0.25, 0.25, 0.25, 0.25], [0.25, 0.25, 0.25, 0.25]),
+            0.0,
+        )
+
     def test_get_similarity_between_source_and_deployed_symbols(
         self,
     ):
