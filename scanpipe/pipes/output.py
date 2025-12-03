@@ -950,7 +950,7 @@ def sort_bom_with_schema_ordering(bom_as_dict, schema_version):
     return json.dumps(ordered_dict, indent=2)
 
 
-def to_cyclonedx(project, version="1.7"):
+def to_cyclonedx(project, version="1.6"):
     """
     Generate output for the provided ``project`` in CycloneDX BOM format.
     The output file is created in the ``project`` "output/" directory.
