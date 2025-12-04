@@ -639,7 +639,7 @@ class ScanPipeOutputPipesTest(TestCase):
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
-        with self.assertNumQueries(35):
+        with self.assertNumQueries(42):
             output_file = output.to_all_formats(project=project)
 
         self.assertEqual("asgiref_outputs.zip", output_file.name)
@@ -648,7 +648,8 @@ class ScanPipeOutputPipesTest(TestCase):
             zip_contents = zip_ref.namelist()
             file_count = len(zip_contents)
 
-        expected_file_count = len(output.FORMAT_TO_FUNCTION_MAPPING)
+        # csv output has 4 output files
+        expected_file_count = len(output.FORMAT_TO_FUNCTION_MAPPING) + 3
         self.assertEqual(expected_file_count, file_count)
 
     def test_scanpipe_pipes_outputs_to_all_outputs(self):
