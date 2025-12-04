@@ -1134,12 +1134,15 @@ def to_ort_package_list_yml(project):
 
 FORMAT_TO_FUNCTION_MAPPING = {
     "json": to_json,
+    "csv": to_csv,
     "xlsx": to_xlsx,
     "spdx": to_spdx,
     "cyclonedx": to_cyclonedx,
     "attribution": to_attribution,
     "ort-package-list": to_ort_package_list_yml,
 }
+
+SUPPORTED_FORMATS = list(FORMAT_TO_FUNCTION_MAPPING.keys())
 
 
 def make_zip_from_files(files):
@@ -1158,10 +1161,17 @@ def to_all_formats(project):
     files = []
     for output_function in FORMAT_TO_FUNCTION_MAPPING.values():
         output_file = output_function(project)
-        filename = safe_filename(f"{project.name}_{output_file.name}")
-        files.append((filename, output_file))
+        if isinstance(output_file, list):
+            files.extend(output_file)
+        else:
+            files.append(output_file)
 
-    zip_buffer = make_zip_from_files(files)
+    output_files = []
+    for output_file in files:
+        filename = safe_filename(f"{project.name}_{output_file.name}")
+        output_files.append((filename, output_file))
+
+    zip_buffer = make_zip_from_files(output_files)
 
     # Wrap it into a Django File-like object
     zip_file = ContentFile(zip_buffer.getvalue())

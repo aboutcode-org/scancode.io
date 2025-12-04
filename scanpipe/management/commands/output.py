@@ -25,16 +25,6 @@ from django.core.management.base import CommandError
 from scanpipe.management.commands import ProjectCommand
 from scanpipe.pipes import output
 
-SUPPORTED_FORMATS = [
-    "json",
-    "csv",
-    "xlsx",
-    "attribution",
-    "spdx",
-    "cyclonedx",
-    "ort-package-list",
-]
-
 
 class Command(ProjectCommand):
     help = "Output project results as JSON, XLSX, Attribution, SPDX, and CycloneDX."
@@ -46,7 +36,7 @@ class Command(ProjectCommand):
             "--format",
             default=["json"],
             nargs="+",
-            metavar=f"{{{','.join(SUPPORTED_FORMATS)}}}",
+            metavar=f"{{{','.join(output.SUPPORTED_FORMATS)}}}",
             help=(
                 "Specifies the output format for the results. "
                 "To specify a CycloneDX spec version (default to latest), use the "
