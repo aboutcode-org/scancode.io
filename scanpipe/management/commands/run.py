@@ -59,7 +59,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--format",
             default="json",
-            choices=["json", "spdx", "cyclonedx", "attribution"],
+            choices=["json", "spdx", "cyclonedx", "attribution", "ort-package-list"],
             help="Specifies the output serialization format for the results.",
         )
 
