@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v36.0.0 (unreleased)
+v36.0.0 (2025-12-05)
 --------------------
 
 **Breaking Change:** PostgreSQL 17 is now required (previously 13).
@@ -9,6 +9,18 @@ v36.0.0 (unreleased)
 Docker Compose users with existing data: run `./migrate-pg13-to-17.sh` before starting
 the stack.
 Fresh installations require no action.
+
+- Upgrade PostgreSQL from 13 to 17 in Docker compose file
+  https://github.com/aboutcode-org/scancode.io/issues/1973
+
+- Upgrade Django to latest 5.2.x version
+  https://github.com/aboutcode-org/scancode.io/issues/1976
+
+- Remove the dependency on scipy
+  https://github.com/aboutcode-org/scancode.io/issues/1754
+
+- Add "ort-package-list" to the formats list in run command
+  https://github.com/aboutcode-org/scancode.io/issues/1982
 
 v35.5.0 (2025-12-01)
 --------------------
