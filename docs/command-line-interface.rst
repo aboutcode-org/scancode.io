@@ -145,6 +145,7 @@ Optional arguments:
 - ``--no-global-webhook`` Skip the creation of the global webhook. This option is
   only useful if a global webhook is defined in the settings.
 
+
 .. _cli_batch_create:
 
 `$ scanpipe batch-create [--input-directory INPUT_DIRECTORY] [--input-list FILENAME.csv]`
@@ -532,6 +533,7 @@ Displays status information about the ``PROJECT`` project.
     The full logs of each pipeline execution are displayed by default.
     This can be disabled providing the ``--verbosity 0`` option.
 
+
 .. _cli_output:
 
 `$ scanpipe output --project PROJECT --format {json,csv,xlsx,spdx,cyclonedx,attribution,...}`
@@ -556,6 +558,7 @@ your outputs on the host machine when running with Docker.
 
 .. tip:: To specify a CycloneDX spec version (default to latest), use the syntax
   ``cyclonedx:VERSION`` as format value. For example: ``--format cyclonedx:1.5``.
+
 
 .. _cli_report:
 
@@ -598,6 +601,7 @@ worksheet::
 
    $ scanpipe report --model package --search audit
 
+
 .. _cli_check_compliance:
 
 `$ scanpipe check-compliance --project PROJECT`
@@ -630,16 +634,41 @@ Optional arguments:
 - ``--no-input`` Does not prompt the user for input of any kind.
 
 
+.. _cli_reset_project:
+
 `$ scanpipe reset-project --project PROJECT`
 --------------------------------------------
 
-Resets a project removing all database entrie and all data on disks except for
-the input/ directory.
+Resets a project removing all database entries and all data on disks except for
+the :guilabel:`input/` directory.
 
 Optional arguments:
 
+- ``--remove-input`` Remove the :guilabel:`input/` directory and input sources when
+  resetting the project.
+- ``--remove-webhook`` Remove webhook subscriptions when resetting the project.
+- ``--restore-pipelines`` Restore all pipelines that were previously existing on the
+  project.
+- ``--execute-now`` Execute the restored pipelines immediately after restoration.
+  Applies only when ``--restore-pipelines`` is provided.
 - ``--no-input`` Does not prompt the user for input of any kind.
 
+Example usage:
+
+1. Reset a project while preserving input files and webhooks (default behavior)::
+
+   $ scanpipe reset-project --project foo
+
+2. Reset a project and remove all data including input files::
+
+   $ scanpipe reset-project --project foo --remove-input
+
+3. Reset a project and restore its original pipelines for re-execution::
+
+   $ scanpipe reset-project --project foo --restore-pipelines --execute-now
+
+
+.. _cli_delete_project:
 
 `$ scanpipe delete-project --project PROJECT`
 ---------------------------------------------
@@ -715,6 +744,7 @@ Optional arguments:
 - ``--admin`` Specifies that the user should be created as an admin user.
 - ``--super`` Specifies that the user should be created as a superuser.
 
+
 .. _cli_run:
 
 `$ run PIPELINE_NAME [PIPELINE_NAME ...] input_location`
@@ -773,29 +803,50 @@ See the :ref:`cli_output` for more information about supported output formats.
 
 Verifies the analysis results of a project against expected package and dependency
 counts.
-This command is designed to ensure that a project’s scan results meet specific
+This command is designed to ensure that a project's scan results meet specific
 expectations — for example, that a minimum number of packages or dependencies were
-discovered, and that no unexpected vulnerabilities were introduced.
+discovered, or that vulnerability counts match expected baselines.
 
 Optional arguments:
 
-- ``--packages`` Minimum number of discovered packages expected.
+- ``--packages`` Expected number of discovered packages.
 
-- ``--vulnerable-packages`` Minimum number of vulnerable packages expected.
+- ``--vulnerable-packages`` Expected number of vulnerable packages.
 
-- ``--dependencies`` Minimum number of discovered dependencies expected.
+- ``--dependencies`` Expected number of discovered dependencies.
 
-- ``--vulnerable-dependencies`` Minimum number of vulnerable dependencies expected.
+- ``--vulnerable-dependencies`` Expected number of vulnerable dependencies.
 
-If any of these expectations are not met, the command exits with a non-zero status
-and prints a summary of all issues found.
+- ``--vulnerabilities`` Expected number of unique vulnerabilities.
+  Combines vulnerabilities from both packages and dependencies.
+
+- ``--strict`` Assert on strict count equality instead of minimum threshold.
+  When not provided, the command checks that actual counts are at least the expected
+  values (greater than or equal). With ``--strict``, actual counts must match expected
+  values exactly.
+
+By default, the command verifies that actual counts meet or exceed the expected values.
+Only the metrics explicitly provided via command-line arguments are validated.
+
+If any expectations are not met, the command exits with a non-zero status and prints
+a summary of all issues found.
 
 Example usage:
 
-.. code-block:: bash
+1. Verify minimum thresholds (default behavior)::
 
-    $ scanpipe verify-project --project my_project --packages 100 --dependencies 50
+   $ scanpipe verify-project --project my_project --packages 100 --dependencies 50
+
+2. Verify exact counts with strict mode::
+
+   $ scanpipe verify-project --project my_project --vulnerabilities 14 --strict
+
+3. Verify only specific metrics::
+
+   $ scanpipe verify-project --project my_project --vulnerable-packages 5
 
 .. tip::
     This command is particularly useful for **CI/CD pipelines** that need to validate
-    SBOM or vulnerability scan results against known baselines.
+    SBOM or vulnerability scan results against known baselines. Use non-strict mode
+    to ensure minimum quality thresholds, or strict mode to detect unexpected changes
+    in scan results.

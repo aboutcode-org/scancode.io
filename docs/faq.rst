@@ -95,6 +95,37 @@ existing data, allowing for more comprehensive analysis and insights.
   It's essential to set up :ref:`MatchCode.io <scancodeio_settings_matchcodeio>` before
   executing this pipeline.
 
+What input types are supported?
+-------------------------------
+
+ScanCode.io supports **multiple input types** for your projects:
+
+- **File Upload**: Upload archives, source files, packages, or SBOMs directly.
+  See :ref:`inputs_file_upload`.
+
+- **Download URL**: Provide an HTTP/HTTPS URL to fetch remote files.
+  See :ref:`inputs_download_url`.
+
+- **Package URL (PURL)**: Reference packages from popular registries (npm, PyPI,
+  Maven, Cargo, NuGet, RubyGems, and more) using the PURL specification.
+  See :ref:`inputs_package_url`.
+
+- **Docker Reference**: Fetch Docker images directly from container registries
+  using the ``docker://`` syntax.
+  See :ref:`inputs_docker_reference`.
+
+- **Git Repository**: Clone a Git repository using its HTTPS URL.
+  See :ref:`inputs_git_repository`.
+
+- **JFrog Artifactory**: Fetch artifacts from on-premise or cloud Artifactory
+  repositories.
+  See :ref:`inputs_artifactory`.
+
+- **Sonatype Nexus**: Fetch artifacts from Nexus Repository Manager instances.
+  See :ref:`inputs_nexus`.
+
+For complete details on all input methods, refer to the :ref:`inputs` documentation.
+
 What is the difference between scan_codebase and scan_single_package pipelines?
 -------------------------------------------------------------------------------
 

@@ -47,11 +47,12 @@ In this documentation, you’ll find:
     custom-pipelines
     scanpipe-pipes
     project-configuration
-    policies
-    data-models
+    inputs
     output-files
     command-line-interface
     rest-api
+    policies
+    data-models
     automation
     webhooks
     application-settings
