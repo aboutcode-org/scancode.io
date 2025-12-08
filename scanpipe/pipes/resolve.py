@@ -97,22 +97,64 @@ def get_data_from_manifests(project, package_registry, manifest_resources, model
         )
         return []
 
+    manifests_by_type = {}
     for resource in manifest_resources:
-        packages = resolve_manifest_resources(resource, package_registry)
-        if packages:
-            resolved_packages.extend(packages)
-            if headers := get_manifest_headers(resource):
-                sboms_headers[resource.name] = headers
-        else:
-            project.add_error(
-                description="No packages could be resolved",
-                model=model,
-                object_instance=resource,
-            )
+        package_type = get_default_package_type(resource.location)
+        if package_type:
+            if package_type not in manifests_by_type:
+                manifests_by_type[package_type] = []
+            manifests_by_type[package_type].append(resource)
 
-        dependencies = get_dependencies_from_manifest(resource)
-        if dependencies:
-            resolved_dependencies.extend(dependencies)
+    if "pypi" in manifests_by_type:
+        pypi_resources = manifests_by_type["pypi"]
+        pypi_locations = [resource.location for resource in pypi_resources]
+        
+        resolver = package_registry.get("pypi")
+        if resolver:
+            try:
+                packages = resolver(input_locations=pypi_locations)
+                if packages:
+                    for package_data in packages:
+                        package_data["codebase_resources"] = pypi_resources
+                    resolved_packages.extend(packages)
+                    
+                    for resource in pypi_resources:
+                        if headers := get_manifest_headers(resource):
+                            sboms_headers[resource.name] = headers
+                else:
+                    for resource in pypi_resources:
+                        project.add_error(
+                            description="No packages could be resolved",
+                            model=model,
+                            object_instance=resource,
+                        )
+            except Exception as e:
+                for resource in pypi_resources:
+                    project.add_error(
+                        description=f"Error resolving packages: {e}",
+                        model=model,
+                        object_instance=resource,
+                    )
+        
+        del manifests_by_type["pypi"]
+
+    for package_type, resources in manifests_by_type.items():
+        for resource in resources:
+            packages = resolve_manifest_resources(resource, package_registry)
+            if packages:
+                resolved_packages.extend(packages)
+                if headers := get_manifest_headers(resource):
+                    sboms_headers[resource.name] = headers
+            else:
+                project.add_error(
+                    description="No packages could be resolved",
+                    model=model,
+                    object_instance=resource,
+                )
+
+            dependencies = get_dependencies_from_manifest(resource)
+            if dependencies:
+                resolved_dependencies.extend(dependencies)
 
     if sboms_headers:
         project.update_extra_data({"sboms_headers": sboms_headers})
@@ -222,13 +264,30 @@ def get_manifest_resources(project):
     return project.codebaseresources.filter(status=flag.APPLICATION_PACKAGE)
 
 
-def resolve_pypi_packages(input_location):
-    """Resolve the PyPI packages from the ``input_location`` requirements file."""
+def resolve_pypi_packages(input_location=None, input_locations=None):
+    """
+    Resolve the PyPI packages from requirement file(s).
+    
+    Args:
+        input_location: Single requirement file path (for backward compatibility)
+        input_locations: List of requirement file paths (for batch processing)
+    
+    Returns:
+        List of resolved package data dictionaries
+    """
+    # Handle both single file and multiple files
+    if input_locations:
+        requirement_files = input_locations
+    elif input_location:
+        requirement_files = [input_location]
+    else:
+        raise ValueError("Either input_location or input_locations must be provided")
+    
     python_version = f"{sys.version_info.major}{sys.version_info.minor}"
     operating_system = "linux"
 
     resolution_output = python_inspector.resolve_dependencies(
-        requirement_files=[input_location],
+        requirement_files=requirement_files,
         python_version=python_version,
         operating_system=operating_system,
         # Prefer source distributions over binary distributions,
