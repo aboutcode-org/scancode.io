@@ -65,6 +65,9 @@ class ScanPipeORTPipesTest(TestCase):
                     "declaredLicenses": ["GPL-2.0-only AND GPL-2.0-or-later"],
                     "description": "add and remove users and groups",
                     "homepageUrl": "https://packages.debian.org",
+                    "authors": [
+                        "Debian Adduser Developers <adduser@packages.debian.org>"
+                    ],
                 }
             ],
         }
