@@ -76,6 +76,7 @@ class Vcs:
 #     val concludedLicense: SpdxExpression? = null,
 #     val description: String? = null,
 #     val homepageUrl: String? = null,
+#     val authors: Set<String> = emptySet(),
 #     val isExcluded: Boolean = false,
 #     val isDynamicallyLinked: Boolean = false,
 #     val labels: Map<String, String> = emptyMap()
@@ -90,6 +91,7 @@ class Dependency:
     # concludedLicense: str = None
     description: str = None
     homepageUrl: str = None
+    authors: list = field(default_factory=set)
     # isExcluded: bool = False
     # isDynamicallyLinked: bool = False
     # labels: dict = field(default_factory=dict)
@@ -134,6 +136,12 @@ def to_ort_package_list_yml(project):
 
     dependencies = []
     for package in project.discoveredpackages.all():
+        authors = {
+            party.get("name").strip()
+            for party in package.parties
+            if party.get("role") in ("author", "maintainer") and party.get("name")
+        }
+
         dependency = Dependency(
             id=f"{project_type or package.type}::{package.name}:{package.version}",
             purl=package.purl,
@@ -142,6 +150,7 @@ def to_ort_package_list_yml(project):
             vcs=Vcs(url=package.vcs_url),
             description=package.description,
             homepageUrl=package.homepage_url,
+            authors=sorted(authors),
         )
         dependencies.append(dependency)
 
