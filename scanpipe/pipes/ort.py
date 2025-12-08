@@ -139,7 +139,7 @@ def to_ort_package_list_yml(project):
         authors = {
             party.get("name").strip()
             for party in package.parties
-            if party.get("role") in ("maintainer") and party.get("name")
+            if party.get("role") in ("author", "maintainer") and party.get("name")
         }
 
         dependency = Dependency(
