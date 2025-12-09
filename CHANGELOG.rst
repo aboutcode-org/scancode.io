@@ -1,14 +1,29 @@
 Changelog
 =========
 
-v36.0.0 (2025-12-05)
---------------------
-
-**Breaking Change:** PostgreSQL 17 is now required (previously 13).
+**v36 Breaking Change:** PostgreSQL 17 is now required (previously 13).
 
 Docker Compose users with existing data: run `./migrate-pg13-to-17.sh` before starting
 the stack.
 Fresh installations require no action.
+
+v36.0.1 (2025-12-09)
+--------------------
+
+- Add support for authors in ORT package list generation.
+  https://github.com/aboutcode-org/scancode.io/issues/1988
+
+- Add authors field to the CycloneDX output.
+  https://github.com/aboutcode-org/scancode.io/issues/1990
+
+- Store non-supported fields in the comment SPDX field.
+  https://github.com/aboutcode-org/scancode.io/issues/1989
+
+- Add support for CycloneDX spec v1.7.
+  https://github.com/aboutcode-org/scancode.io/issues/1975
+
+v36.0.0 (2025-12-05)
+--------------------
 
 - Upgrade PostgreSQL from 13 to 17 in Docker compose file
   https://github.com/aboutcode-org/scancode.io/issues/1973
