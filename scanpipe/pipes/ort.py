@@ -136,12 +136,6 @@ def to_ort_package_list_yml(project):
 
     dependencies = []
     for package in project.discoveredpackages.all():
-        authors = {
-            party.get("name").strip()
-            for party in package.parties
-            if party.get("role") in ("author", "maintainer") and party.get("name")
-        }
-
         dependency = Dependency(
             id=f"{project_type or package.type}::{package.name}:{package.version}",
             purl=package.purl,
@@ -150,7 +144,7 @@ def to_ort_package_list_yml(project):
             vcs=Vcs(url=package.vcs_url),
             description=package.description,
             homepageUrl=package.homepage_url,
-            authors=sorted(authors),
+            authors=package.get_author_names(),
         )
         dependencies.append(dependency)
 

@@ -90,6 +90,7 @@ from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 from scanpipe.tests import package_data2
+from scanpipe.tests import parties_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -2591,6 +2592,47 @@ class ScanPipeModelsTest(TestCase):
         package1 = make_package(self.project1, "pkg:type/a")
         expected = f"SPDXRef-scancodeio-discoveredpackage-{package1.uuid}"
         self.assertEqual(expected, package1.spdx_id)
+
+    def test_scanpipe_discovered_package_model_extract_from_parties(self):
+        package1 = make_package(self.project1, "pkg:type/a", parties=parties_data1)
+
+        expected = [
+            {
+                "name": "Debian X Strike Force",
+                "role": "maintainer",
+                "email": "debian-x@lists.debian.org",
+            }
+        ]
+        self.assertEqual(expected, package1.extract_from_parties(roles=["maintainer"]))
+
+        expected = [
+            {
+                "name": "AboutCode and others",
+                "role": "author",
+                "type": "person",
+                "email": "info@aboutcode.org",
+                "url": None,
+            }
+        ]
+        self.assertEqual(expected, package1.extract_from_parties(roles=["author"]))
+
+    def test_scanpipe_discovered_package_model_get_author_names(self):
+        package1 = make_package(self.project1, "pkg:type/a", parties=parties_data1)
+
+        expected = ["AboutCode and others", "Debian X Strike Force"]
+        self.assertEqual(expected, package1.get_author_names())
+
+        roles = ["maintainer"]
+        expected = ["Debian X Strike Force"]
+        self.assertEqual(expected, package1.get_author_names(roles))
+
+        roles = ["author"]
+        expected = ["AboutCode and others"]
+        self.assertEqual(expected, package1.get_author_names(roles))
+
+        roles = ["maintainer", "developer"]
+        expected = ["Debian X Strike Force", "JBoss.org Community"]
+        self.assertEqual(expected, package1.get_author_names(roles))
 
     def test_scanpipe_model_create_user_creates_auth_token(self):
         basic_user = User.objects.create_user(username="basic_user")
