@@ -3890,6 +3890,21 @@ class DiscoveredPackage(
                 )
             )
 
+        # Store non-supported fields in the `comment` SPDX field
+        extra_fields = [
+            "primary_language",
+            "repository_download_url",
+            "api_data_url",
+            "holder",
+            "parties",
+            "notice_text",
+        ]
+        extra_data = {
+            field_name: value
+            for field_name in extra_fields
+            if (value := getattr(self, field_name)) not in EMPTY_VALUES
+        }
+
         return spdx.Package(
             name=self.name or self.filename,
             spdx_id=self.spdx_id,
@@ -3905,6 +3920,7 @@ class DiscoveredPackage(
             attribution_texts=attribution_texts,
             checksums=checksums,
             external_refs=external_refs,
+            comment=saneyaml.dump(extra_data) if extra_data else "",
         )
 
     @property
