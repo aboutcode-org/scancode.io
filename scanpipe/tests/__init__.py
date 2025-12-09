@@ -196,6 +196,42 @@ resource_data1 = {
     "extra_data": {},
 }
 
+parties_data1 = [
+    {
+        "name": "AboutCode and others",
+        "role": "author",
+        "type": "person",
+        "email": "info@aboutcode.org",
+        "url": None,
+    },
+    # Duplicate on purpose
+    {
+        "name": "AboutCode and others",
+        "role": "author",
+        "type": "person",
+        "email": "info@aboutcode.org",
+        "url": None,
+    },
+    {
+        "name": "Debian X Strike Force",
+        "role": "maintainer",
+        "email": "debian-x@lists.debian.org",
+    },
+    {
+        "name": "JBoss.org Community",
+        "role": "developer",
+        "type": "person",
+        "email": None,
+    },
+    {
+        "url": "http://www.apache.org/",
+        "name": "The Apache Software Foundation",
+        "role": "owner",
+        "type": "organization",
+        "email": None,
+    },
+]
+
 package_data1 = {
     "type": "deb",
     "namespace": "debian",

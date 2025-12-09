@@ -73,6 +73,7 @@ import saneyaml
 from commoncode.fileutils import parent_directory
 from cyclonedx import model as cyclonedx_model
 from cyclonedx.model import component as cyclonedx_component
+from cyclonedx.model import contact as cyclonedx_contact
 from cyclonedx.model import license as cyclonedx_license
 from extractcode import EXTRACT_SUFFIX
 from licensedcode.cache import build_spdx_license_expression
@@ -3666,6 +3667,42 @@ class AbstractPackage(models.Model):
     class Meta:
         abstract = True
 
+    def extract_from_parties(self, roles):
+        """
+        Extract parties matching the given roles, deduplicated by name.
+
+        Args:
+            roles: Tuple of role strings to filter by.
+
+        Returns:
+            List of party dicts matching the specified roles, unique by name.
+
+        """
+        seen_names = set()
+        results = []
+        for party in self.parties or []:
+            if party.get("role") in roles:
+                name = party.get("name")
+                if name and name not in seen_names:
+                    seen_names.add(name)
+                    results.append(party)
+        return results
+
+    def get_author_names(self, roles=("author", "maintainer")):
+        """
+        Return a sorted list of party names matching the specified roles.
+
+        Args:
+            roles: Tuple of role strings to filter by.
+            Defaults to ("author", "maintainer").
+
+        Returns:
+            Sorted list of party names.
+
+        """
+        parties = self.extract_from_parties(roles=roles)
+        return sorted(party["name"] for party in parties)
+
 
 class DiscoveredPackage(
     ProjectRelatedModel,
@@ -3952,6 +3989,14 @@ class DiscoveredPackage(
             if (hash_value := getattr(self, field_name))
         ]
 
+        authors = [
+            cyclonedx_contact.OrganizationalContact(
+                name=party.get("name", ""),
+                email=party.get("email", ""),
+            )
+            for party in self.extract_from_parties(roles=("author", "maintainer"))
+        ]
+
         # Those fields are not supported natively by CycloneDX but are required to
         # load the BOM without major data loss.
         # See https://github.com/nexB/aboutcode-cyclonedx-taxonomy
@@ -4012,6 +4057,7 @@ class DiscoveredPackage(
             properties=properties,
             external_references=external_references,
             evidence=evidence,
+            authors=authors,
         )
 
 
