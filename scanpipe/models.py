@@ -2498,7 +2498,10 @@ class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuery
         )
 
     def executable_binaries(self):
-        return self.union(self.win_exes(), self.macho_binaries(), self.elfs())
+        return self.win_exes().order_by().union(
+            self.macho_binaries().order_by(),
+            self.elfs().order_by()
+        )
 
     def with_has_children(self):
         """
