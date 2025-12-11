@@ -94,6 +94,12 @@ class ScanPipeJvmTest(TestCase):
         )
         self.assertEqual("foo/org/common/Bar.java", njp)
 
+    def test_scanpipe_pipes_jvm_get_normalized_java_path_with_logging_annotation(self):
+        njp = jvm.JavaLanguage.get_normalized_path(
+            "foo/org/common/Bar_$logger.class", ".java"
+        )
+        self.assertEqual("foo/org/common/Bar.java", njp)
+
     def test_scanpipe_pipes_jvm_get_fully_qualified_java_path(self):
         fqjp = jvm.get_fully_qualified_path("org.common", "Bar.java")
         self.assertEqual("org/common/Bar.java", fqjp)
