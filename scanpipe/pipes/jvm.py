@@ -136,7 +136,11 @@ class JvmLanguage:
             )
         path = Path(path.strip("/"))
         class_name = path.name
-        if "$" in class_name:  # inner class
+        # Handled generated logger class
+        # https://github.com/aboutcode-org/scancode.io/issues/1994
+        if class_name.endswith("_$logger.class"):
+            class_name, _, _ = class_name.partition("_$logger.class")
+        elif "$" in class_name:  # inner class
             class_name, _, _ = class_name.partition("$")
         else:
             class_name, _, _ = class_name.partition(".")  # plain .class
