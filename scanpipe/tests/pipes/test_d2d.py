@@ -503,6 +503,12 @@ class ScanPipeD2DPipesTest(TestCase):
         make_resource_file(self.project1, path="to/META-INF/MANIFEST.MF")
         make_resource_file(self.project1, path="to/test.class")
         make_resource_file(self.project1, path="to/META-INF/others.txt")
+        make_resource_file(
+            self.project1, path="to/META-INF/spring-configuration-metadata.json"
+        )
+        make_resource_file(self.project1, path="to/OSGI-INF/test.xml")
+        make_resource_file(self.project1, path="to/OSGI-INF/test.json")
+        make_resource_file(self.project1, path="to/OSGI-INF/test.class")
         buffer = io.StringIO()
 
         java_config = d2d_config.get_ecosystem_config(ecosystem="Java")
@@ -511,7 +517,7 @@ class ScanPipeD2DPipesTest(TestCase):
             patterns_to_ignore=java_config.deployed_resource_path_exclusions,
             logger=buffer.write,
         )
-        expected = "Ignoring 3 to/ resources with ecosystem specific configurations."
+        expected = "Ignoring 6 to/ resources with ecosystem specific configurations."
         self.assertIn(expected, buffer.getvalue())
 
     def test_scanpipe_pipes_d2d_map_jar_to_java_source(self):
@@ -612,6 +618,21 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(from2, relation.from_resource)
         self.assertEqual(to_jar, relation.to_resource)
 
+    def test_scanpipe_pipes_d2d_scala_ignore_pattern(self):
+        make_resource_file(self.project1, path="to/META-INF/MANIFEST.MF")
+        make_resource_file(self.project1, path="to/test.class")
+        make_resource_file(self.project1, path="to/META-INF/others.txt")
+        buffer = io.StringIO()
+
+        scala_config = d2d_config.get_ecosystem_config(ecosystem="Scala")
+        d2d.ignore_unmapped_resources_from_config(
+            project=self.project1,
+            patterns_to_ignore=scala_config.deployed_resource_path_exclusions,
+            logger=buffer.write,
+        )
+        expected = "Ignoring 2 to/ resources with ecosystem specific configurations."
+        self.assertIn(expected, buffer.getvalue())
+
     def test_scanpipe_pipes_d2d_map_jar_to_kotlin_source(self):
         from1 = make_resource_file(
             self.project1,
@@ -660,6 +681,23 @@ class ScanPipeD2DPipesTest(TestCase):
         relation = self.project1.codebaserelations.get(map_type="jar_to_source")
         self.assertEqual(from2, relation.from_resource)
         self.assertEqual(to_jar, relation.to_resource)
+
+    def test_scanpipe_pipes_d2d_kotlin_ignore_pattern(self):
+        make_resource_file(self.project1, path="to/META-INF/test.knm")
+        make_resource_file(self.project1, path="to/test.class")
+        make_resource_file(
+            self.project1, path="to/META-INF/kotlin-project-structure-metadata.json"
+        )
+        buffer = io.StringIO()
+
+        kotlin_config = d2d_config.get_ecosystem_config(ecosystem="Kotlin")
+        d2d.ignore_unmapped_resources_from_config(
+            project=self.project1,
+            patterns_to_ignore=kotlin_config.deployed_resource_path_exclusions,
+            logger=buffer.write,
+        )
+        expected = "Ignoring 2 to/ resources with ecosystem specific configurations."
+        self.assertIn(expected, buffer.getvalue())
 
     def test_scanpipe_pipes_d2d_map_jar_to_source_works_for_jar(self):
         from1 = make_resource_file(
