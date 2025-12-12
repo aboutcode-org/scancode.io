@@ -58,7 +58,7 @@ dependencies = [
   # Docker
   "container-inspector==33.0.0",
   # ScanCode-toolkit
-  "scancode-toolkit[packages]==32.4.0",
+  "scancode-toolkit[packages]==32.4.1",
   "extractcode[full]==31.0.0",
   "commoncode==32.3.0",
   "Beautifulsoup4[chardet]==4.13.4",
