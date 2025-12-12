@@ -25,6 +25,7 @@ from pathlib import Path
 
 from django.core.management import call_command
 from django.test import TestCase
+from django.test import override_settings
 
 import requests
 from scorecode.ossf_scorecard import fetch_scorecard
@@ -75,7 +76,8 @@ class RegenTestData(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        exitcode, _ = pipeline.execute()
+        with override_settings(SCANCODEIO_PROCESSES=-1):
+            exitcode, _ = pipeline.execute()
         self.assertEqual(0, exitcode)
 
         # ScanCode-toolkit scan result
@@ -88,6 +90,7 @@ class RegenTestData(TestCase):
                 "license": True,
                 "package": True,
             },
+            processes=1,
         )
 
         # ScanCode.io results
@@ -151,6 +154,7 @@ class RegenTestData(TestCase):
                 "info": True,
                 "package": True,
             },
+            processes=1,
         )
 
     def test_regenerate_scorecard_data(self):

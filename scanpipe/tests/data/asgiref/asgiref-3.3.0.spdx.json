@@ -1,23 +1,23 @@
 {
   "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
-  "SPDXID": "SPDXRef-DOCUMENT-804c3391-e6f9-415f-bb7a-cb6653853a46",
+  "SPDXID": "SPDXRef-DOCUMENT-3282ba3d-f525-4b74-9008-919108846d33",
   "name": "scancodeio_asgiref",
-  "documentNamespace": "https://scancode.io/spdxdocs/804c3391-e6f9-415f-bb7a-cb6653853a46",
+  "documentNamespace": "https://scancode.io/spdxdocs/3282ba3d-f525-4b74-9008-919108846d33",
   "documentDescribes": [
-    "SPDXRef-scancodeio-project-804c3391-e6f9-415f-bb7a-cb6653853a46"
+    "SPDXRef-scancodeio-project-3282ba3d-f525-4b74-9008-919108846d33"
   ],
   "creationInfo": {
     "created": "2000-01-01T01:02:03Z",
     "creators": [
       "Tool: ScanCode.io-31.0.0"
     ],
-    "licenseListVersion": "3.20"
+    "licenseListVersion": "3.27"
   },
   "packages": [
     {
       "name": "asgiref",
-      "SPDXID": "SPDXRef-scancodeio-project-804c3391-e6f9-415f-bb7a-cb6653853a46",
+      "SPDXID": "SPDXRef-scancodeio-project-3282ba3d-f525-4b74-9008-919108846d33",
       "downloadLocation": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
@@ -26,7 +26,7 @@
     },
     {
       "name": "asgiref",
-      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-9d0bdc32-1117-407a-9908-08d3558dc739",
+      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-b0467b22-5e83-4b0d-91e2-15121a8cf075",
       "downloadLocation": "NOASSERTION",
       "licenseDeclared": "BSD-3-Clause",
       "licenseConcluded": "BSD-3-Clause",
@@ -46,7 +46,7 @@
     },
     {
       "name": "asgiref",
-      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-7969de5e-5589-4441-bffa-a60e12b43280",
+      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-856001ca-aabf-4c6a-8ac2-cc1317f3e05d",
       "downloadLocation": "NOASSERTION",
       "licenseDeclared": "BSD-3-Clause",
       "licenseConcluded": "BSD-3-Clause",
@@ -66,7 +66,7 @@
     },
     {
       "name": "pytest",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-4cff8bf8-197c-4698-a43a-5c793586c780",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-ef046d41-ae47-42c3-838c-def8bc956723",
       "downloadLocation": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
@@ -82,7 +82,7 @@
     },
     {
       "name": "pytest",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-4c5c1313-3850-4f81-ac27-8d496080d667",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-31fbc19e-c309-4463-8312-390ef734bf78",
       "downloadLocation": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
@@ -98,7 +98,7 @@
     },
     {
       "name": "pytest-asyncio",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-f983278c-22f1-43e1-ba2b-a020d659531b",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-3f928a8b-4505-4a7b-ad3a-a589dec836db",
       "downloadLocation": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
@@ -114,7 +114,7 @@
     },
     {
       "name": "pytest-asyncio",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-98aeddb5-b81a-43d4-ac56-dc873a589fdf",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-892b2af3-a9f0-4544-9874-583307d2d387",
       "downloadLocation": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
@@ -132,33 +132,33 @@
   "files": [],
   "relationships": [
     {
-      "spdxElementId": "SPDXRef-scancodeio-project-804c3391-e6f9-415f-bb7a-cb6653853a46",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-9d0bdc32-1117-407a-9908-08d3558dc739",
+      "spdxElementId": "SPDXRef-scancodeio-project-3282ba3d-f525-4b74-9008-919108846d33",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-b0467b22-5e83-4b0d-91e2-15121a8cf075",
       "relationshipType": "DEPENDS_ON"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-project-804c3391-e6f9-415f-bb7a-cb6653853a46",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-7969de5e-5589-4441-bffa-a60e12b43280",
+      "spdxElementId": "SPDXRef-scancodeio-project-3282ba3d-f525-4b74-9008-919108846d33",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-856001ca-aabf-4c6a-8ac2-cc1317f3e05d",
       "relationshipType": "DEPENDS_ON"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-4cff8bf8-197c-4698-a43a-5c793586c780",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-9d0bdc32-1117-407a-9908-08d3558dc739",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-ef046d41-ae47-42c3-838c-def8bc956723",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-b0467b22-5e83-4b0d-91e2-15121a8cf075",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-4c5c1313-3850-4f81-ac27-8d496080d667",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-7969de5e-5589-4441-bffa-a60e12b43280",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-31fbc19e-c309-4463-8312-390ef734bf78",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-856001ca-aabf-4c6a-8ac2-cc1317f3e05d",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-f983278c-22f1-43e1-ba2b-a020d659531b",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-9d0bdc32-1117-407a-9908-08d3558dc739",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-3f928a8b-4505-4a7b-ad3a-a589dec836db",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-b0467b22-5e83-4b0d-91e2-15121a8cf075",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-98aeddb5-b81a-43d4-ac56-dc873a589fdf",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-7969de5e-5589-4441-bffa-a60e12b43280",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-892b2af3-a9f0-4544-9874-583307d2d387",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-856001ca-aabf-4c6a-8ac2-cc1317f3e05d",
       "relationshipType": "DEPENDENCY_OF"
     }
   ],

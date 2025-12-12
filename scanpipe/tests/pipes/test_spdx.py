@@ -47,7 +47,7 @@ class ScanPipeSPDXPipesTest(TestCase):
                 "Organization: Starship ()",
                 "Tool: SPDXCode-1.0",
             ],
-            "licenseListVersion": "3.20",
+            "licenseListVersion": "3.27",
             "comment": "Generated with SPDXCode",
         }
         self.checksum_sha1_data = {
@@ -204,7 +204,7 @@ class ScanPipeSPDXPipesTest(TestCase):
                     "Organization: Starship ()",
                     "Tool: SPDXCode-1.0",
                 ],
-                "licenseListVersion": "3.20",
+                "licenseListVersion": "3.27",
                 "comment": "Generated with SPDXCode",
             },
             "packages": [

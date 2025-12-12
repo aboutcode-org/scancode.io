@@ -2,7 +2,7 @@
   "headers": [
     {
       "tool_name": "scancode-toolkit",
-      "tool_version": "32.4.0",
+      "tool_version": "32.4.1",
       "options": {
         "--copyright": true,
         "--info": true,
@@ -10,10 +10,10 @@
         "--package": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "start_timestamp": "2025-07-16T152710.223094",
-      "end_timestamp": "2025-07-16T152711.545101",
+      "start_timestamp": "2025-12-12T081649.433146",
+      "end_timestamp": "2025-12-12T081655.140123",
       "output_format_version": "4.1.0",
-      "duration": 1.322021245956421,
+      "duration": 5.707000255584717,
       "message": null,
       "errors": [],
       "warnings": [],
@@ -21,11 +21,11 @@
         "system_environment": {
           "operating_system": "linux",
           "cpu_architecture": "64",
-          "platform": "Linux-5.15.0-143-generic-x86_64-with-glibc2.35",
-          "platform_version": "#153-Ubuntu SMP Fri Jun 13 19:10:45 UTC 2025",
-          "python_version": "3.10.12 (main, May 27 2025, 17:12:29) [GCC 11.4.0]"
+          "platform": "Linux-5.15.0-163-generic-x86_64-with-glibc2.35",
+          "platform_version": "#173-Ubuntu SMP Tue Oct 14 17:51:00 UTC 2025",
+          "python_version": "3.10.12 (main, Nov  4 2025, 08:48:33) [GCC 11.4.0]"
         },
-        "spdx_license_list_version": "3.26",
+        "spdx_license_list_version": "3.27",
         "files_count": 15
       }
     }
@@ -140,7 +140,7 @@
       "repository_homepage_url": "https://pypi.org/project/asgiref",
       "repository_download_url": "https://pypi.org/packages/source/a/asgiref/asgiref-3.3.0.tar.gz",
       "api_data_url": "https://pypi.org/pypi/asgiref/3.3.0/json",
-      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=1688f96b-4f7c-4f59-9221-532b427b4560",
+      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=8d961513-130b-422b-8fa7-3cbfdd6646e4",
       "datafile_paths": [
         "codebase/asgiref-3.3.0-py3-none-any.whl"
       ],
@@ -258,7 +258,7 @@
       "repository_homepage_url": "https://pypi.org/project/asgiref",
       "repository_download_url": "https://pypi.org/packages/source/a/asgiref/asgiref-3.3.0.tar.gz",
       "api_data_url": "https://pypi.org/pypi/asgiref/3.3.0/json",
-      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4",
+      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb",
       "datafile_paths": [
         "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA"
       ],
@@ -279,8 +279,8 @@
       "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
-      "dependency_uid": "pkg:pypi/pytest?uuid=b152065e-125b-4bd1-8d60-f2de45b0ea14",
-      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=1688f96b-4f7c-4f59-9221-532b427b4560",
+      "dependency_uid": "pkg:pypi/pytest?uuid=a5625e52-9223-44ca-aa7a-f0f00c75ef4d",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=8d961513-130b-422b-8fa7-3cbfdd6646e4",
       "datafile_path": "codebase/asgiref-3.3.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel"
     },
@@ -294,8 +294,8 @@
       "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
-      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=e5c4c0c5-4671-44c5-b8c1-68d9acb07d8e",
-      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=1688f96b-4f7c-4f59-9221-532b427b4560",
+      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=91a0c4c7-f419-48b5-b22d-00f10b69e69a",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=8d961513-130b-422b-8fa7-3cbfdd6646e4",
       "datafile_path": "codebase/asgiref-3.3.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel"
     },
@@ -309,8 +309,8 @@
       "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
-      "dependency_uid": "pkg:pypi/pytest?uuid=3b443d57-63ce-4383-afe9-71ce4d1efbc6",
-      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4",
+      "dependency_uid": "pkg:pypi/pytest?uuid=25041a97-3bee-4b75-926a-f303ebb81d99",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb",
       "datafile_path": "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata"
     },
@@ -324,8 +324,8 @@
       "is_direct": true,
       "resolved_package": {},
       "extra_data": {},
-      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=a7c13ec9-3218-4464-8844-2565c4b0a5ac",
-      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4",
+      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=05572afa-6f15-4b60-94bb-1d9a43d5aba6",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb",
       "datafile_path": "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata"
     }
@@ -464,7 +464,7 @@
       "base_name": "asgiref-3.3.0-py3-none-any",
       "extension": ".whl",
       "size": 19948,
-      "date": "2025-07-16",
+      "date": "2025-12-12",
       "sha1": "c03f67211a311b13d1294ac8af7cb139ee34c4f9",
       "md5": "5bce1df6dedc53a41a9a6b40d7b1699e",
       "sha256": "a5098bc870b80e7b872bff60bb363c7f2c2c89078759f6c47b53ff8c525a152e",
@@ -745,7 +745,7 @@
         }
       ],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=1688f96b-4f7c-4f59-9221-532b427b4560"
+        "pkg:pypi/asgiref@3.3.0?uuid=8d961513-130b-422b-8fa7-3cbfdd6646e4"
       ],
       "detected_license_expression": null,
       "detected_license_expression_spdx": null,
@@ -855,7 +855,7 @@
       "is_script": false,
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4"
+        "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb"
       ],
       "detected_license_expression": null,
       "detected_license_expression_spdx": null,
@@ -893,7 +893,7 @@
       "is_script": true,
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4"
+        "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb"
       ],
       "detected_license_expression": null,
       "detected_license_expression_spdx": null,
@@ -931,7 +931,7 @@
       "is_script": true,
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4"
+        "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb"
       ],
       "detected_license_expression": null,
       "detected_license_expression_spdx": null,
@@ -969,7 +969,7 @@
       "is_script": true,
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4"
+        "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb"
       ],
       "detected_license_expression": null,
       "detected_license_expression_spdx": null,
@@ -1007,7 +1007,7 @@
       "is_script": true,
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4"
+        "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb"
       ],
       "detected_license_expression": null,
       "detected_license_expression_spdx": null,
@@ -1045,7 +1045,7 @@
       "is_script": true,
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4"
+        "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb"
       ],
       "detected_license_expression": null,
       "detected_license_expression_spdx": null,
@@ -1083,7 +1083,7 @@
       "is_script": true,
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4"
+        "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb"
       ],
       "detected_license_expression": null,
       "detected_license_expression_spdx": null,
@@ -1121,7 +1121,7 @@
       "is_script": true,
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4"
+        "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb"
       ],
       "detected_license_expression": "apache-2.0",
       "detected_license_expression_spdx": "Apache-2.0",
@@ -1181,7 +1181,7 @@
       "is_script": true,
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4"
+        "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb"
       ],
       "detected_license_expression": null,
       "detected_license_expression_spdx": null,
@@ -1255,7 +1255,7 @@
       "is_script": false,
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4"
+        "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb"
       ],
       "detected_license_expression": "bsd-new",
       "detected_license_expression_spdx": "BSD-3-Clause",
@@ -1592,7 +1592,7 @@
         }
       ],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4"
+        "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb"
       ],
       "detected_license_expression": "bsd-new",
       "detected_license_expression_spdx": "BSD-3-Clause",
@@ -1679,7 +1679,7 @@
       "is_script": false,
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4"
+        "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb"
       ],
       "detected_license_expression": null,
       "detected_license_expression_spdx": null,
@@ -1717,7 +1717,7 @@
       "is_script": false,
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4"
+        "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb"
       ],
       "detected_license_expression": null,
       "detected_license_expression_spdx": null,
@@ -1755,7 +1755,7 @@
       "is_script": false,
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f91c7642-bbbc-4735-a558-274d192826f4"
+        "pkg:pypi/asgiref@3.3.0?uuid=c7159857-d80e-40e5-8665-3347b8d35ffb"
       ],
       "detected_license_expression": null,
       "detected_license_expression_spdx": null,

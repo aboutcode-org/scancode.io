@@ -862,11 +862,13 @@ def get_pretty_params(args):
     return {f"--{key.replace('_', '-')}": value for key, value in args.items()}
 
 
-def run_scan(location, output_file, run_scan_args):
+def run_scan(location, output_file, run_scan_args, processes=None):
     """Scan the `location` content and write the results into an `output_file`."""
+    if not processes:
+        processes = get_max_workers(keep_available=1)
     _success, results = scancode_run_scan(
         input=shlex.quote(location),
-        processes=get_max_workers(keep_available=1),
+        processes=processes,
         quiet=True,
         verbose=False,
         return_results=True,
