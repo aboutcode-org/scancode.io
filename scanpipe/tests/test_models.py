@@ -2154,76 +2154,76 @@ class ScanPipeModelsTest(TestCase):
         fixtures = self.data / "asgiref" / "asgiref-3.3.0_walk_test_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         asgiref_root = self.project_asgiref.codebaseresources.get(
-            path="asgiref-3.3.0.whl-extract"
+            path="asgiref-3.3.0-py3-none-any.whl-extract"
         )
 
         topdown_paths = list(r.path for r in asgiref_root.walk(topdown=True))
         expected_topdown_paths = [
-            "asgiref-3.3.0.whl-extract/asgiref",
-            "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
-            "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
-            "asgiref-3.3.0.whl-extract/asgiref/local.py",
-            "asgiref-3.3.0.whl-extract/asgiref/server.py",
-            "asgiref-3.3.0.whl-extract/asgiref/sync.py",
-            "asgiref-3.3.0.whl-extract/asgiref/testing.py",
-            "asgiref-3.3.0.whl-extract/asgiref/timeout.py",
-            "asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
         ]
         self.assertEqual(expected_topdown_paths, topdown_paths)
 
         bottom_up_paths = list(r.path for r in asgiref_root.walk(topdown=False))
         expected_bottom_up_paths = [
-            "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
-            "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
-            "asgiref-3.3.0.whl-extract/asgiref/local.py",
-            "asgiref-3.3.0.whl-extract/asgiref/server.py",
-            "asgiref-3.3.0.whl-extract/asgiref/sync.py",
-            "asgiref-3.3.0.whl-extract/asgiref/testing.py",
-            "asgiref-3.3.0.whl-extract/asgiref/timeout.py",
-            "asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
-            "asgiref-3.3.0.whl-extract/asgiref",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info",
         ]
         self.assertEqual(expected_bottom_up_paths, bottom_up_paths)
 
         # Test parent-related methods
         asgiref_resource = self.project_asgiref.codebaseresources.get(
-            path="asgiref-3.3.0.whl-extract/asgiref/compatibility.py"
+            path="asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py"
         )
-        expected_parent_path = "asgiref-3.3.0.whl-extract/asgiref"
+        expected_parent_path = "asgiref-3.3.0-py3-none-any.whl-extract/asgiref"
         self.assertEqual(
             expected_parent_path, asgiref_resource.compute_parent_directory()
         )
         self.assertTrue(asgiref_resource.has_parent())
         expected_parent = self.project_asgiref.codebaseresources.get(
-            path="asgiref-3.3.0.whl-extract/asgiref"
+            path="asgiref-3.3.0-py3-none-any.whl-extract/asgiref"
         )
         self.assertEqual(expected_parent, asgiref_resource.parent())
 
         # Test sibling-related methods
         expected_siblings = [
-            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
-            "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
-            "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "asgiref-3.3.0.whl-extract/asgiref/local.py",
-            "asgiref-3.3.0.whl-extract/asgiref/server.py",
-            "asgiref-3.3.0.whl-extract/asgiref/sync.py",
-            "asgiref-3.3.0.whl-extract/asgiref/testing.py",
-            "asgiref-3.3.0.whl-extract/asgiref/timeout.py",
-            "asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
         ]
         asgiref_resource_siblings = [r.path for r in asgiref_resource.siblings()]
         self.assertEqual(sorted(expected_siblings), sorted(asgiref_resource_siblings))
