@@ -49,9 +49,15 @@ class InspectPackages(ScanCodebase):
             cls.collect_and_create_codebase_resources,
             cls.flag_empty_files,
             cls.flag_ignored_resources,
+            cls.scan_binaries,
             cls.scan_for_application_packages,
             cls.resolve_dependencies,
         )
+
+    @optional_step("Binary")
+    def scan_binaries(self):
+        """Scan binaries for package and dependency information."""
+        self.scan_binaries = True
 
     def scan_for_application_packages(self):
         """
@@ -61,6 +67,7 @@ class InspectPackages(ScanCodebase):
         scancode.scan_for_application_packages(
             project=self.project,
             assemble=True,
+            binary=self.scan_binaries or False,
             package_only=True,
             progress_logger=self.log,
         )

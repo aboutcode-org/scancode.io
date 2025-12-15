@@ -58,9 +58,9 @@ dependencies = [
   # Docker
   "container-inspector==33.0.0",
   # ScanCode-toolkit
-  "scancode-toolkit[packages]==32.4.1",
+  "scancode-toolkit[packages]@git+https://github.com/aboutcode-org/scancode-toolkit.git@6b6a79b8a1c0b9789a466df4c5623ab723890a76",
   "extractcode[full]==31.0.0",
-  "commoncode==32.3.0",
+  "commoncode==32.4.0",
   "Beautifulsoup4[chardet]==4.13.4",
   "packageurl-python==0.17.6",
   # Workaround issue https://github.com/aboutcode-org/scancode.io/issues/1795
@@ -101,9 +101,7 @@ dependencies = [
   # AboutCode pipeline
   "aboutcode.pipeline==0.2.1",
   # ScoreCode
-  "scorecode==0.0.4",
-  # Workaround issue https://github.com/aboutcode-org/scancode.io/issues/1885
-  "click==8.2.1"
+  "scorecode==0.0.4"
 ]
 
 [project.optional-dependencies]
