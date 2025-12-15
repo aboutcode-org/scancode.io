@@ -81,22 +81,8 @@ def get_dependencies_from_manifest(resource):
     return dependencies
 
 
-def get_data_from_manifests(project, package_registry, manifest_resources, model=None):
-    """
-    Get package and dependency data from package manifests/lockfiles/SBOMs or
-    for resolved packages from package requirements.
-    """
-    resolved_packages = []
-    resolved_dependencies = []
-    sboms_headers = {}
-
-    if not manifest_resources.exists():
-        project.add_warning(
-            description="No resources containing package data found in codebase.",
-            model=model,
-        )
-        return []
-
+def _group_manifests_by_type(manifest_resources):
+    """Group manifest resources by their package type."""
     manifests_by_type = {}
     for resource in manifest_resources:
         package_type = get_default_package_type(resource.location)
@@ -104,40 +90,53 @@ def get_data_from_manifests(project, package_registry, manifest_resources, model
             if package_type not in manifests_by_type:
                 manifests_by_type[package_type] = []
             manifests_by_type[package_type].append(resource)
+    return manifests_by_type
 
-    if "pypi" in manifests_by_type:
-        pypi_resources = manifests_by_type["pypi"]
-        pypi_locations = [resource.location for resource in pypi_resources]
 
-        resolver = package_registry.get("pypi")
-        if resolver:
-            try:
-                packages = resolver(input_locations=pypi_locations)
-                if packages:
-                    for package_data in packages:
-                        package_data["codebase_resources"] = pypi_resources
-                    resolved_packages.extend(packages)
+def _resolve_pypi_manifests(
+    project, package_registry, pypi_resources, resolved_packages, sboms_headers, model
+):
+    """Resolve PyPI manifest resources."""
+    pypi_locations = [resource.location for resource in pypi_resources]
+    resolver = package_registry.get("pypi")
+    if not resolver:
+        return
 
-                    for resource in pypi_resources:
-                        if headers := get_manifest_headers(resource):
-                            sboms_headers[resource.name] = headers
-                else:
-                    for resource in pypi_resources:
-                        project.add_error(
-                            description="No packages could be resolved",
-                            model=model,
-                            object_instance=resource,
-                        )
-            except Exception as e:
-                for resource in pypi_resources:
-                    project.add_error(
-                        description=f"Error resolving packages: {e}",
-                        model=model,
-                        object_instance=resource,
-                    )
+    try:
+        packages = resolver(input_locations=pypi_locations)
+        if packages:
+            for package_data in packages:
+                package_data["codebase_resources"] = pypi_resources
+            resolved_packages.extend(packages)
+            for resource in pypi_resources:
+                if headers := get_manifest_headers(resource):
+                    sboms_headers[resource.name] = headers
+        else:
+            for resource in pypi_resources:
+                project.add_error(
+                    description="No packages could be resolved",
+                    model=model,
+                    object_instance=resource,
+                )
+    except Exception as e:
+        for resource in pypi_resources:
+            project.add_error(
+                description=f"Error resolving packages: {e}",
+                model=model,
+                object_instance=resource,
+            )
 
-        del manifests_by_type["pypi"]
 
+def _resolve_other_manifests(
+    project,
+    package_registry,
+    manifests_by_type,
+    resolved_packages,
+    resolved_dependencies,
+    sboms_headers,
+    model,
+):
+    """Resolve non-PyPI manifest resources."""
     for package_type, resources in manifests_by_type.items():
         for resource in resources:
             packages = resolve_manifest_resources(resource, package_registry)
@@ -155,6 +154,46 @@ def get_data_from_manifests(project, package_registry, manifest_resources, model
             dependencies = get_dependencies_from_manifest(resource)
             if dependencies:
                 resolved_dependencies.extend(dependencies)
+
+
+def get_data_from_manifests(project, package_registry, manifest_resources, model=None):
+    """
+    Get package and dependency data from package manifests/lockfiles/SBOMs or
+    for resolved packages from package requirements.
+    """
+    resolved_packages = []
+    resolved_dependencies = []
+    sboms_headers = {}
+
+    if not manifest_resources.exists():
+        project.add_warning(
+            description="No resources containing package data found in codebase.",
+            model=model,
+        )
+        return []
+
+    manifests_by_type = _group_manifests_by_type(manifest_resources)
+
+    if "pypi" in manifests_by_type:
+        _resolve_pypi_manifests(
+            project,
+            package_registry,
+            manifests_by_type["pypi"],
+            resolved_packages,
+            sboms_headers,
+            model,
+        )
+        del manifests_by_type["pypi"]
+
+    _resolve_other_manifests(
+        project,
+        package_registry,
+        manifests_by_type,
+        resolved_packages,
+        resolved_dependencies,
+        sboms_headers,
+        model,
+    )
 
     if sboms_headers:
         project.update_extra_data({"sboms_headers": sboms_headers})
