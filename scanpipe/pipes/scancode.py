@@ -409,6 +409,7 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
 def scan_for_application_packages(
     project,
     assemble=True,
+    binary=False,
     package_only=False,
     resource_qs=None,
     progress_logger=logger.info,
@@ -431,6 +432,7 @@ def scan_for_application_packages(
 
     scan_func_kwargs = {
         "package_only": package_only,
+        "binary": binary,
     }
 
     # Collect detected Package data and save it to the CodebaseResource it was
