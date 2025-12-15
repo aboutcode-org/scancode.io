@@ -196,7 +196,6 @@ class ScanPipeSPDXPipesTest(TestCase):
             "SPDXID": "SPDXRef-DOCUMENT",
             "name": "document_name",
             "documentNamespace": "https://[CreatorWebsite]/[DocumentName]-[UUID]",
-            "documentDescribes": ["SPDXRef-project"],
             "creationInfo": {
                 "created": "2022-09-21T13:50:20Z",
                 "creators": [
@@ -276,6 +275,11 @@ class ScanPipeSPDXPipesTest(TestCase):
                     "spdxElementId": "SPDXRef-package1",
                     "relatedSpdxElement": "SPDXRef-file1",
                     "relationshipType": "CONTAINS",
+                },
+                {
+                    "spdxElementId": "SPDXRef-DOCUMENT",
+                    "relatedSpdxElement": "SPDXRef-project",
+                    "relationshipType": "DESCRIBES",
                 }
             ],
             "comment": "This document was created using SPDXCode-1.0",
@@ -412,3 +416,31 @@ class ScanPipeSPDXPipesTest(TestCase):
 
         with self.assertRaises(Exception):
             spdx.validate_document({}, self.schema_2_3)
+
+    def test_spdx_document_2_3_uses_relationships_not_documentdescribes(self):
+        """Test that SPDX 2.3 uses DESCRIBES relationships instead of documentDescribes."""
+        document = spdx.Document(**self.document_data)
+        document_dict = document.as_dict()
+        
+        # SPDX 2.3 should NOT have documentDescribes
+        assert "documentDescribes" not in document_dict
+        
+        # SPDX 2.3 should have DESCRIBES relationships
+        relationships = document_dict.get("relationships", [])
+        describes_relationships = [
+            rel for rel in relationships
+            if rel.get("relationshipType") == "DESCRIBES"
+        ]
+        assert len(describes_relationships) > 0
+        assert describes_relationships[0]["spdxElementId"] == "SPDXRef-DOCUMENT"
+        assert describes_relationships[0]["relatedSpdxElement"] == "SPDXRef-project"
+
+    def test_spdx_document_2_2_still_uses_documentdescribes(self):
+        """Test that SPDX 2.2 still includes documentDescribes field."""
+        document_data_2_2 = self.document_data.copy()
+        document = spdx.Document(**document_data_2_2, version=spdx.SPDX_SPEC_VERSION_2_2)
+        document_dict = document.as_dict()
+        
+        # SPDX 2.2 should still have documentDescribes
+        assert "documentDescribes" in document_dict
+        assert document_dict["documentDescribes"] == ["SPDXRef-project"]
