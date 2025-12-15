@@ -339,9 +339,7 @@ class ScanPipeOutputPipesTest(TestCase):
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
         project = Project.objects.get(name="asgiref")
-        package = project.discoveredpackages.get(
-            uuid="856001ca-aabf-4c6a-8ac2-cc1317f3e05d"
-        )
+        package = project.discoveredpackages.get(datasource_ids=["pypi_wheel_metadata"])
 
         package.other_license_expression_spdx = "Apache-2.0 AND LicenseRef-test"
         data = self.data / "cyclonedx/django-4.0.10-vulnerability.json"
