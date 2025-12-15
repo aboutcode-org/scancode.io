@@ -30,9 +30,10 @@ from datetime import timezone
 from pathlib import Path
 
 import saneyaml
+from scancode_config import spdx_license_list_version
 
 SCHEMAS_LOCATION = Path(__file__).parent / "schemas"
-SPDX_LICENSE_LIST_VERSION = "3.20"
+SPDX_LICENSE_LIST_VERSION = spdx_license_list_version
 
 SPDX_SPEC_VERSION_2_3 = "2.3"
 SPDX_SCHEMA_2_3_PATH = SCHEMAS_LOCATION / "spdx-schema-2.3.json"
