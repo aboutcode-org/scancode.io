@@ -390,11 +390,11 @@ class ScanPipeResolvePipesTest(TestCase):
 
         req_files = ["requirements1.txt", "requirements2.txt"]
         packages = resolve.resolve_pypi_packages(input_locations=req_files)
-        
+
         mock_resolve.assert_called_once()
         call_args = mock_resolve.call_args
         self.assertEqual(req_files, call_args.kwargs["requirement_files"])
-        
+
         self.assertEqual(2, len(packages))
         self.assertEqual("pip", packages[0]["name"])
 
@@ -402,7 +402,7 @@ class ScanPipeResolvePipesTest(TestCase):
     def test_scanpipe_pipes_resolve_pypi_packages_backward_compatibility(
         self, mock_resolve
     ):
-        """Test that resolve_pypi_packages still works with single file (backward compatibility)."""
+        """Test resolve_pypi_packages with single file (backward compatibility)."""
         inspector_output_location = (
             self.data / "resolve" / "python_inspector_resolve_dependencies.json"
         )
@@ -412,10 +412,9 @@ class ScanPipeResolvePipesTest(TestCase):
         mock_resolve.return_value = mock.Mock(packages=inspector_output["packages"])
 
         packages = resolve.resolve_pypi_packages(input_location="requirements.txt")
-        
+
         mock_resolve.assert_called_once()
         call_args = mock_resolve.call_args
         self.assertEqual(["requirements.txt"], call_args.kwargs["requirement_files"])
-        
-        self.assertEqual(2, len(packages))
 
+        self.assertEqual(2, len(packages))
