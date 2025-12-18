@@ -80,7 +80,7 @@ ECOSYSTEM_CONFIGS = {
             ".odt",
             ".odp",
         ],
-        deployed_resource_path_exclusions=["*.properties", "*.html","*/.github/*"],
+        deployed_resource_path_exclusions=["*.properties", "*.html", "*/.github/*"],
     ),
     "Java": EcosystemConfig(
         ecosystem_option="Java",
