@@ -130,14 +130,28 @@ def get_ort_project_type(project):
         return "docker"
 
 
+def sanitize_id_part(value):
+    """
+    Sanitize an identifier part by replacing colons with underscores.
+    ORT uses colons as separators in the identifier string representation.
+    """
+    if value:
+        return value.replace(":", "_")
+    return value
+
+
 def to_ort_package_list_yml(project):
     """Convert a project object into a YAML string in the ORT package list format."""
     project_type = get_ort_project_type(project)
 
     dependencies = []
     for package in project.discoveredpackages.all():
+        type_ = sanitize_id_part(project_type or package.type)
+        name = sanitize_id_part(package.name)
+        version = sanitize_id_part(package.version)
+
         dependency = Dependency(
-            id=f"{project_type or package.type}::{package.name}:{package.version}",
+            id=f"{type_}::{name}:{version}",
             purl=package.purl,
             sourceArtifact=SourceArtifact(url=package.download_url),
             declaredLicenses=[package.get_declared_license_expression_spdx()],
