@@ -27,10 +27,10 @@ jobs:
   generate-and-load-sbom:
     runs-on: ubuntu-24.04
     steps:
-      - name: Install OWASP dep-scan
+      - name: Install OWASP dep-scan v6 beta
         run: |
           sudo npm install -g @cyclonedx/cdxgen
-          pip install owasp-depscan
+          pip install --pre owasp-depscan[all]
 
       - name: Generate SBOM with OWASP dep-scan
         run: |
@@ -39,6 +39,10 @@ jobs:
             --type docker \
             --reports-dir reports \
             --explain
+        env:
+          CDXGEN_TEMP_DIR: ${{ runner.temp }}/cdxgen-temp
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYTHONUTF8: 1
 
       - name: Upload SBOM as GitHub Artifact
         uses: actions/upload-artifact@v4
