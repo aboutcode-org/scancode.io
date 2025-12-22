@@ -57,9 +57,8 @@ for any legal advice.
 
 
 
-
-.. |ci-tests| image:: https://github.com/aboutcode-org/scancode.io/actions/workflows/ci.yml/badge.svg?branch=main
-    :target: https://github.com/aboutcode-org/scancode.io/actions/workflows/ci.yml
+.. |ci-tests| image:: https://github.com/aboutcode-org/scancode.io/actions/workflows/run-unit-tests.yml/badge.svg?branch=main
+    :target: https://github.com/aboutcode-org/scancode.io/actions/workflows/run-unit-tests.yml
     :alt: CI Tests Status
 
 .. |docs-rtd| image:: https://readthedocs.org/projects/scancodeio/badge/?version=latest
