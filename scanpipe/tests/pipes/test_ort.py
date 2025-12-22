@@ -72,3 +72,21 @@ class ScanPipeORTPipesTest(TestCase):
             ],
         }
         self.assertEqual(expected, package_list)
+
+    def test_scanpipe_ort_pipes_to_ort_package_list_yml_sanitization(self):
+        project = make_project(name="Analysis")
+        package_data = {
+            "name": "passwd",
+            "type": "deb",
+            "version": "1:4.13+dfsg1-4ubuntu3.2",
+            "purl": "pkg:deb/ubuntu/passwd@1:4.13%2Bdfsg1-4ubuntu3.2?arch=amd64",
+        }
+        pipes.update_or_create_package(project, package_data)
+
+        package_list_yml = ort.to_ort_package_list_yml(project)
+        package_list = saneyaml.load(package_list_yml)
+        dependency_id = package_list["dependencies"][0]["id"]
+
+        # The colon in the version should be sanitized
+        self.assertNotIn("1:4.13", dependency_id)
+        self.assertEqual("deb::passwd:1_4.13+dfsg1-4ubuntu3.2", dependency_id)
