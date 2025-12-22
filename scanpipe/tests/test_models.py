@@ -90,6 +90,7 @@ from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 from scanpipe.tests import package_data2
+from scanpipe.tests import parties_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -227,25 +228,29 @@ class ScanPipeModelsTest(TestCase):
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
         make_message(self.project1, description="Error")
+        self.project1.add_webhook_subscription(target_url="https://localhost")
 
         self.assertEqual(1, self.project1.projectmessages.count())
         self.assertEqual(1, self.project1.runs.count())
         self.assertEqual(1, self.project1.discoveredpackages.count())
         self.assertEqual(1, self.project1.codebaseresources.count())
         self.assertEqual(1, self.project1.inputsources.count())
+        self.assertEqual(1, self.project1.webhooksubscriptions.count())
 
         self.project1.reset(restore_pipelines=True, execute_now=False)
         self.assertEqual(0, self.project1.projectmessages.count())
         self.assertEqual(1, self.project1.runs.count())
         self.assertEqual(0, self.project1.discoveredpackages.count())
         self.assertEqual(0, self.project1.codebaseresources.count())
+        self.assertEqual(1, self.project1.webhooksubscriptions.count())
 
-        self.project1.reset()
+        self.project1.reset(keep_webhook=False)
         self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
         self.assertEqual(0, self.project1.projectmessages.count())
         self.assertEqual(0, self.project1.runs.count())
         self.assertEqual(0, self.project1.discoveredpackages.count())
         self.assertEqual(0, self.project1.codebaseresources.count())
+        self.assertEqual(0, self.project1.webhooksubscriptions.count())
 
         # The InputSource objects are kept
         self.assertEqual(1, self.project1.inputsources.count())
@@ -647,6 +652,32 @@ class ScanPipeModelsTest(TestCase):
         subscription1 = self.project1.webhooksubscriptions.get()
         self.assertEqual(new_project, cloned_subscription.project)
         self.assertNotEqual(cloned_subscription.pk, subscription1.pk)
+
+    def test_scanpipe_project_vulnerability_properties(self):
+        v1 = {"vulnerability_id": "VCID-1"}
+        v2 = {"vulnerability_id": "VCID-2"}
+        v3 = {"vulnerability_id": "VCID-3"}
+        project = make_project()
+        make_package(project, "pkg:type/0")
+        p1 = make_package(project, "pkg:type/a", affected_by_vulnerabilities=[v1, v2])
+        p2 = make_package(project, "pkg:type/b", affected_by_vulnerabilities=[v3])
+        make_dependency(project)
+        d1 = make_dependency(project, affected_by_vulnerabilities=[v1])
+        d2 = make_dependency(project, affected_by_vulnerabilities=[v3])
+
+        self.assertQuerySetEqual(project.vulnerable_packages.order_by("id"), [p1, p2])
+        self.assertQuerySetEqual(
+            project.vulnerable_dependencies.order_by("id"), [d1, d2]
+        )
+        self.assertEqual([v1, v2, v3], project.package_vulnerabilities)
+        self.assertEqual([v1, v3], project.dependency_vulnerabilities)
+
+        expected = {
+            "VCID-1": {"vulnerability_id": "VCID-1", "affects": [p1, d1]},
+            "VCID-2": {"vulnerability_id": "VCID-2", "affects": [p1]},
+            "VCID-3": {"vulnerability_id": "VCID-3", "affects": [p2, d2]},
+        }
+        self.assertEqual(expected, project.vulnerabilities)
 
     def test_scanpipe_project_get_codebase_config_directory(self):
         self.assertIsNone(self.project1.get_codebase_config_directory())
@@ -2050,11 +2081,36 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_discovered_package_queryset_vulnerable(self):
         p1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
         p2 = DiscoveredPackage.create_from_data(self.project1, package_data2)
-        p2.update(
-            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
-        )
+        p2.update(affected_by_vulnerabilities=[{"vulnerability_id": "VCID-1"}])
+
+        package_qs = self.project1.discoveredpackages
         self.assertNotIn(p1, DiscoveredPackage.objects.vulnerable())
         self.assertIn(p2, DiscoveredPackage.objects.vulnerable())
+        self.assertEqual([p2], list(package_qs.vulnerable_ordered()))
+
+        p1.update(
+            affected_by_vulnerabilities=[
+                {"vulnerability_id": "VCID-1"},
+                {"vulnerability_id": "VCID-2"},
+            ]
+        )
+        expected = [{"vulnerability_id": "VCID-1"}, {"vulnerability_id": "VCID-2"}]
+        with self.assertNumQueries(1):
+            self.assertEqual(expected, package_qs.get_vulnerabilities_list())
+
+        expected = {
+            "VCID-1": {
+                "vulnerability_id": "VCID-1",
+                "affects": [p1, p2],
+            },
+            "VCID-2": {
+                "vulnerability_id": "VCID-2",
+                "affects": [p1],
+            },
+        }
+        with self.assertNumQueries(1):
+            vulnerabilities_dict = package_qs.get_vulnerabilities_dict()
+            self.assertEqual(expected, vulnerabilities_dict)
 
     def test_scanpipe_discovered_package_queryset_dependency_methods(self):
         project = make_project("project")
@@ -2098,76 +2154,76 @@ class ScanPipeModelsTest(TestCase):
         fixtures = self.data / "asgiref" / "asgiref-3.3.0_walk_test_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         asgiref_root = self.project_asgiref.codebaseresources.get(
-            path="asgiref-3.3.0.whl-extract"
+            path="asgiref-3.3.0-py3-none-any.whl-extract"
         )
 
         topdown_paths = list(r.path for r in asgiref_root.walk(topdown=True))
         expected_topdown_paths = [
-            "asgiref-3.3.0.whl-extract/asgiref",
-            "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
-            "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
-            "asgiref-3.3.0.whl-extract/asgiref/local.py",
-            "asgiref-3.3.0.whl-extract/asgiref/server.py",
-            "asgiref-3.3.0.whl-extract/asgiref/sync.py",
-            "asgiref-3.3.0.whl-extract/asgiref/testing.py",
-            "asgiref-3.3.0.whl-extract/asgiref/timeout.py",
-            "asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
         ]
         self.assertEqual(expected_topdown_paths, topdown_paths)
 
         bottom_up_paths = list(r.path for r in asgiref_root.walk(topdown=False))
         expected_bottom_up_paths = [
-            "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
-            "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
-            "asgiref-3.3.0.whl-extract/asgiref/local.py",
-            "asgiref-3.3.0.whl-extract/asgiref/server.py",
-            "asgiref-3.3.0.whl-extract/asgiref/sync.py",
-            "asgiref-3.3.0.whl-extract/asgiref/testing.py",
-            "asgiref-3.3.0.whl-extract/asgiref/timeout.py",
-            "asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
-            "asgiref-3.3.0.whl-extract/asgiref",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
-            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info",
         ]
         self.assertEqual(expected_bottom_up_paths, bottom_up_paths)
 
         # Test parent-related methods
         asgiref_resource = self.project_asgiref.codebaseresources.get(
-            path="asgiref-3.3.0.whl-extract/asgiref/compatibility.py"
+            path="asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py"
         )
-        expected_parent_path = "asgiref-3.3.0.whl-extract/asgiref"
+        expected_parent_path = "asgiref-3.3.0-py3-none-any.whl-extract/asgiref"
         self.assertEqual(
             expected_parent_path, asgiref_resource.compute_parent_directory()
         )
         self.assertTrue(asgiref_resource.has_parent())
         expected_parent = self.project_asgiref.codebaseresources.get(
-            path="asgiref-3.3.0.whl-extract/asgiref"
+            path="asgiref-3.3.0-py3-none-any.whl-extract/asgiref"
         )
         self.assertEqual(expected_parent, asgiref_resource.parent())
 
         # Test sibling-related methods
         expected_siblings = [
-            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
-            "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
-            "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "asgiref-3.3.0.whl-extract/asgiref/local.py",
-            "asgiref-3.3.0.whl-extract/asgiref/server.py",
-            "asgiref-3.3.0.whl-extract/asgiref/sync.py",
-            "asgiref-3.3.0.whl-extract/asgiref/testing.py",
-            "asgiref-3.3.0.whl-extract/asgiref/timeout.py",
-            "asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
         ]
         asgiref_resource_siblings = [r.path for r in asgiref_resource.siblings()]
         self.assertEqual(sorted(expected_siblings), sorted(asgiref_resource_siblings))
@@ -2536,6 +2592,47 @@ class ScanPipeModelsTest(TestCase):
         package1 = make_package(self.project1, "pkg:type/a")
         expected = f"SPDXRef-scancodeio-discoveredpackage-{package1.uuid}"
         self.assertEqual(expected, package1.spdx_id)
+
+    def test_scanpipe_discovered_package_model_extract_from_parties(self):
+        package1 = make_package(self.project1, "pkg:type/a", parties=parties_data1)
+
+        expected = [
+            {
+                "name": "Debian X Strike Force",
+                "role": "maintainer",
+                "email": "debian-x@lists.debian.org",
+            }
+        ]
+        self.assertEqual(expected, package1.extract_from_parties(roles=["maintainer"]))
+
+        expected = [
+            {
+                "name": "AboutCode and others",
+                "role": "author",
+                "type": "person",
+                "email": "info@aboutcode.org",
+                "url": None,
+            }
+        ]
+        self.assertEqual(expected, package1.extract_from_parties(roles=["author"]))
+
+    def test_scanpipe_discovered_package_model_get_author_names(self):
+        package1 = make_package(self.project1, "pkg:type/a", parties=parties_data1)
+
+        expected = ["AboutCode and others", "Debian X Strike Force"]
+        self.assertEqual(expected, package1.get_author_names())
+
+        roles = ["maintainer"]
+        expected = ["Debian X Strike Force"]
+        self.assertEqual(expected, package1.get_author_names(roles))
+
+        roles = ["author"]
+        expected = ["AboutCode and others"]
+        self.assertEqual(expected, package1.get_author_names(roles))
+
+        roles = ["maintainer", "developer"]
+        expected = ["Debian X Strike Force", "JBoss.org Community"]
+        self.assertEqual(expected, package1.get_author_names(roles))
 
     def test_scanpipe_model_create_user_creates_auth_token(self):
         basic_user = User.objects.create_user(username="basic_user")

@@ -136,10 +136,29 @@ class JvmLanguage:
             )
         path = Path(path.strip("/"))
         class_name = path.name
-        if "$" in class_name:  # inner class
+        # Handled generated logger class
+        # https://github.com/aboutcode-org/scancode.io/issues/1994
+        if class_name.endswith("_$logger.class"):
+            class_name, _, _ = class_name.partition("_$logger.class")
+        elif "$" in class_name and not class_name.startswith("$"):  # inner class
             class_name, _, _ = class_name.partition("$")
         else:
             class_name, _, _ = class_name.partition(".")  # plain .class
+        return str(path.parent / f"{class_name}{extension}")
+
+    @classmethod
+    def get_source_path(cls, path, extension):
+        """
+        Return a JVM file path for ``path`` .class file path string.
+        No normalization is performed.
+        """
+        if not path.endswith(cls.binary_extensions):
+            raise ValueError(
+                f"Only path ending with {cls.binary_extensions} are supported."
+            )
+        path = Path(path.strip("/"))
+        class_name = path.name
+        class_name, _, _ = class_name.partition(".")  # plain .class
         return str(path.parent / f"{class_name}{extension}")
 
 
@@ -215,6 +234,15 @@ class GrammarLanguage(JvmLanguage):
     source_package_attribute_name = "grammar_package"
     package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
     binary_map_type = "grammar_to_class"
+
+
+class XtendLanguage(JvmLanguage):
+    name = "xtend"
+    source_extensions = (".xtend",)
+    binary_extensions = (".class",)
+    source_package_attribute_name = "xtend_package"
+    package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
+    binary_map_type = "xtend_to_class"
 
 
 def get_fully_qualified_path(jvm_package, filename):

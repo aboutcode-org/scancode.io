@@ -17,7 +17,7 @@ env:
 
 jobs:
   run-unit-tests:
-    runs-on: macos-13
+    runs-on: macos-15
 
     strategy:
       matrix:
@@ -32,15 +32,17 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: ikalnytskyi/action-setup-postgres@v7
-        id: postgres
+      - name: Set up PostgreSQL
+        uses: ikalnytskyi/action-setup-postgres@v8
         with:
-          postgres-version: "14"  # 13 is not supported.
+          postgres-version: "17"
           database: ${{ env.POSTGRES_DB }}
           username: ${{ env.POSTGRES_USER }}
           password: ${{ env.POSTGRES_PASSWORD }}
           port: 5432
+
+      - name: Install libmagic
+        run: brew install libmagic
 
       - name: Install Python dependencies
         run: make dev envfile

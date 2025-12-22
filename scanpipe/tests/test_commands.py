@@ -144,7 +144,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "analyze_root_filesystem_or_vm_image",
             "scan_single_package",
         ]
-        self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
+        self.assertEqual(expected, project.pipelines)
         run = project.runs.get(pipeline_name="analyze_root_filesystem_or_vm_image")
         self.assertEqual(["group1", "group2"], run.selected_groups)
 
@@ -422,7 +422,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "analyze_root_filesystem_or_vm_image",
             "scan_single_package",
         ]
-        self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
+        self.assertEqual(expected, project.pipelines)
         run = project.runs.get(pipeline_name="analyze_root_filesystem_or_vm_image")
         self.assertEqual(["group1", "group2"], run.selected_groups)
 
@@ -804,10 +804,12 @@ class ScanPipeManagementCommandTest(TestCase):
         project.add_pipeline("analyze_docker_image")
         CodebaseResource.objects.create(project=project, path="filename.ext")
         DiscoveredPackage.objects.create(project=project)
+        project.add_webhook_subscription(target_url="https://localhost")
 
         self.assertEqual(1, project.runs.count())
         self.assertEqual(1, project.codebaseresources.count())
         self.assertEqual(1, project.discoveredpackages.count())
+        self.assertEqual(1, project.webhooksubscriptions.count())
 
         (project.input_path / "input_file").touch()
         (project.codebase_path / "codebase_file").touch()
@@ -823,17 +825,33 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
         call_command("reset-project", *options, stdout=out)
         out_value = out.getvalue().strip()
-
-        expected = (
-            "All data, except inputs, for the my_project project have been removed."
-        )
-        self.assertEqual(expected, out_value)
+        self.assertEqual("The my_project project has been reset.", out_value)
 
         self.assertEqual(0, project.runs.count())
         self.assertEqual(0, project.codebaseresources.count())
         self.assertEqual(0, project.discoveredpackages.count())
         self.assertEqual(1, len(Project.get_root_content(project.input_path)))
         self.assertEqual(0, len(Project.get_root_content(project.codebase_path)))
+        self.assertEqual(1, project.webhooksubscriptions.count())
+
+        project.add_pipeline("analyze_docker_image")
+        self.assertEqual(1, project.runs.count())
+        out = StringIO()
+        options += [
+            "--remove-input",
+            "--remove-webhook",
+            "--restore-pipelines",
+        ]
+        call_command("reset-project", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        self.assertEqual("The my_project project has been reset.", out_value)
+
+        self.assertEqual(1, project.runs.count())
+        self.assertEqual(0, project.codebaseresources.count())
+        self.assertEqual(0, project.discoveredpackages.count())
+        self.assertEqual(0, len(Project.get_root_content(project.input_path)))
+        self.assertEqual(0, len(Project.get_root_content(project.codebase_path)))
+        self.assertEqual(0, project.webhooksubscriptions.count())
 
     def test_scanpipe_management_command_flush_projects(self):
         project1 = make_project("project1")
@@ -1424,7 +1442,7 @@ class ScanPipeManagementCommandTest(TestCase):
         make_dependency(project)
 
         out = StringIO()
-        call_command(
+        options = [
             "verify-project",
             "--project",
             project.name,
@@ -1436,30 +1454,32 @@ class ScanPipeManagementCommandTest(TestCase):
             "1",
             "--vulnerable-dependencies",
             "0",
-            stdout=out,
-        )
+        ]
+        call_command(*options, stdout=out)
         self.assertIn("Project verification passed.", out.getvalue())
 
-        out = StringIO()
+        options = [
+            "verify-project",
+            "--project",
+            project.name,
+            "--packages",
+            "5",
+            "--vulnerable-packages",
+            "10",
+            "--dependencies",
+            "5",
+            "--vulnerabilities",
+            "13",
+        ]
         expected = (
             "Project verification failed:\n"
             "Expected at least 5 packages, found 1\n"
             "Expected at least 10 vulnerable packages, found 0\n"
-            "Expected at least 5 dependencies, found 1"
+            "Expected at least 5 dependencies, found 1\n"
+            "Expected at least 13 vulnerabilities on the project, found 0"
         )
         with self.assertRaisesMessage(CommandError, expected):
-            call_command(
-                "verify-project",
-                "--project",
-                project.name,
-                "--packages",
-                "5",
-                "--vulnerable-packages",
-                "10",
-                "--dependencies",
-                "5",
-                stdout=out,
-            )
+            call_command(*options)
 
     def test_scanpipe_management_command_extract_tag_from_input_file(self):
         extract_tag = commands.extract_tag_from_input_file
@@ -1473,6 +1493,56 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(expected, extract_tag("file.ext:tag1:tag2"))
         expected = ("file.ext", "tag1,tag2")
         self.assertEqual(expected, extract_tag("file.ext:tag1,tag2"))
+
+    @mock.patch("scanpipe.pipes.kubernetes.get_images_from_kubectl")
+    def test_scanpipe_management_command_analyze_kubernetes_from_kubectl(
+        self, mock_get_images
+    ):
+        mock_get_images.return_value = ["nginx:latest", "redis:alpine"]
+
+        project_name = "kube-from-cluster-single"
+        out = StringIO()
+        call_command(
+            "analyze-kubernetes",
+            project_name,
+            "--label",
+            "label1",
+            "--notes",
+            "Notes",
+            "--find-vulnerabilities",
+            stdout=out,
+        )
+        self.assertIn("Extracting images from Kubernetes cluster", out.getvalue())
+        self.assertEqual(1, Project.objects.count())
+        project = Project.objects.get(name=project_name)
+        self.assertEqual(["label1"], list(project.labels.names()))
+        self.assertEqual("Notes", project.notes)
+        self.assertEqual(
+            ["analyze_docker_image", "find_vulnerabilities"], project.pipelines
+        )
+        expected = ["docker://nginx:latest", "docker://redis:alpine"]
+        download_urls = project.inputsources.values_list("download_url", flat=True)
+        self.assertEqual(expected, sorted(download_urls))
+        project.delete()
+
+        project_name = "kube-from-cluster-multi"
+        out = StringIO()
+        call_command(
+            "analyze-kubernetes",
+            project_name,
+            "--multi",
+            stdout=out,
+        )
+        self.assertIn("Extracting images from Kubernetes cluster", out.getvalue())
+        self.assertEqual(2, Project.objects.count())
+        expected = [
+            "kube-from-cluster-multi: nginx:latest",
+            "kube-from-cluster-multi: redis:alpine",
+        ]
+        names = Project.objects.values_list("name", flat=True)
+        self.assertEqual(expected, sorted(names))
+        for project in Project.objects.all():
+            self.assertEqual(1, project.inputsources.count())
 
 
 class ScanPipeManagementCommandMixinTest(TestCase):
@@ -1525,7 +1595,7 @@ class ScanPipeManagementCommandMixinTest(TestCase):
             "analyze_root_filesystem_or_vm_image",
             "scan_single_package",
         ]
-        self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
+        self.assertEqual(expected, project.pipelines)
         run = project.runs.get(pipeline_name="analyze_root_filesystem_or_vm_image")
         self.assertEqual(["group1", "group2"], run.selected_groups)
 

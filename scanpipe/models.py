@@ -29,6 +29,7 @@ import uuid
 from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
+from itertools import chain
 from itertools import groupby
 from operator import itemgetter
 from pathlib import Path
@@ -72,6 +73,7 @@ import saneyaml
 from commoncode.fileutils import parent_directory
 from cyclonedx import model as cyclonedx_model
 from cyclonedx.model import component as cyclonedx_component
+from cyclonedx.model import contact as cyclonedx_contact
 from cyclonedx.model import license as cyclonedx_license
 from extractcode import EXTRACT_SUFFIX
 from licensedcode.cache import build_spdx_license_expression
@@ -678,7 +680,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         self.update(is_archived=True)
 
-    def delete_related_objects(self, keep_input=False, keep_labels=False):
+    def delete_related_objects(
+        self, keep_input=False, keep_labels=False, keep_webhook=False
+    ):
         """
         Delete all related object instances using the private `_raw_delete` model API.
         This bypass the objects collection, cascade deletions, and signals.
@@ -700,7 +704,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         relationships = [
             self.webhookdeliveries,
-            self.webhooksubscriptions,
             self.projectmessages,
             self.codebaserelations,
             self.discovereddependencies,
@@ -711,6 +714,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         if not keep_input:
             relationships.append(self.inputsources)
+
+        if not keep_webhook:
+            relationships.append(self.webhooksubscriptions)
 
         for qs in relationships:
             count = qs.all()._raw_delete(qs.db)
@@ -730,10 +736,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         return super().delete(*args, **kwargs)
 
-    def reset(self, keep_input=True, restore_pipelines=False, execute_now=False):
+    def reset(
+        self,
+        keep_input=True,
+        keep_webhook=True,
+        restore_pipelines=False,
+        execute_now=False,
+    ):
         """
         Reset the project by deleting all related database objects and all work
-        directories except the input directory—when the `keep_input` option is True.
+        directories except the input directory when the `keep_input` option is True.
         """
         self._raise_if_run_in_progress()
 
@@ -748,7 +760,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
                 for run in self.runs.all()
             ]
 
-        self.delete_related_objects(keep_input=keep_input, keep_labels=True)
+        self.delete_related_objects(
+            keep_input=keep_input, keep_labels=True, keep_webhook=keep_webhook
+        )
 
         work_directories = [
             self.codebase_path,
@@ -1474,12 +1488,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     @cached_property
     def vulnerable_package_count(self):
         """Return the number of vulnerable packages related to this project."""
-        return self.discoveredpackages.vulnerable().count()
+        return self.vulnerable_packages.count()
 
     @cached_property
     def vulnerable_dependency_count(self):
         """Return the number of vulnerable dependencies related to this project."""
-        return self.discovereddependencies.vulnerable().count()
+        return self.vulnerable_dependencies.count()
 
     @cached_property
     def dependency_count(self):
@@ -1526,12 +1540,60 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         return self.codebaserelations.count()
 
     @cached_property
+    def vulnerable_packages(self):
+        """Return a QuerySet of vulnerable packages."""
+        return self.discoveredpackages.vulnerable()
+
+    @cached_property
+    def vulnerable_dependencies(self):
+        """Return a QuerySet of vulnerable dependencies."""
+        return self.discovereddependencies.vulnerable()
+
+    @property
+    def package_vulnerabilities(self):
+        """Return the list of package vulnerabilities."""
+        return self.vulnerable_packages.get_vulnerabilities_list()
+
+    @property
+    def dependency_vulnerabilities(self):
+        """Return the list of dependency vulnerabilities."""
+        return self.vulnerable_dependencies.get_vulnerabilities_list()
+
+    @property
+    def vulnerabilities(self):
+        """
+        Return a dict of all vulnerabilities affecting this project.
+
+        Combines package and dependency vulnerabilities, keyed by vulnerability_id.
+        Each vulnerability includes an "affects" list of all affected packages
+        and dependencies.
+        """
+        vulnerabilities_dict = {}
+        # Process both packages and dependencies
+        querysets = [self.vulnerable_packages, self.vulnerable_dependencies]
+
+        for queryset in querysets:
+            vulnerabilities = queryset.get_vulnerabilities_dict()
+            for vcid, vuln_data in vulnerabilities.items():
+                if vcid in vulnerabilities_dict:
+                    vulnerabilities_dict[vcid]["affects"].extend(vuln_data["affects"])
+                else:
+                    vulnerabilities_dict[vcid] = vuln_data
+
+        return vulnerabilities_dict
+
+    @cached_property
     def has_single_resource(self):
         """
         Return True if we only have a single CodebaseResource associated to this
         project, False otherwise.
         """
         return self.resource_count == 1
+
+    @property
+    def pipelines(self):
+        """Return the list of pipeline names assigned to this Project."""
+        return list(self.runs.values_list("pipeline_name", flat=True))
 
     def get_policies_dict(self):
         """
@@ -3267,15 +3329,69 @@ class VulnerabilityMixin(models.Model):
 
 
 class VulnerabilityQuerySetMixin:
+    AFFECTED_BY_FIELD = "affected_by_vulnerabilities"
+
     def vulnerable(self):
-        return self.filter(~Q(affected_by_vulnerabilities__in=EMPTY_VALUES))
+        return self.filter(~Q(**{f"{self.AFFECTED_BY_FIELD}__in": EMPTY_VALUES}))
 
     def vulnerable_ordered(self):
         return (
             self.vulnerable()
-            .only_package_url_fields(extra=["affected_by_vulnerabilities"])
+            .only_package_url_fields(extra=[self.AFFECTED_BY_FIELD])
             .order_by_package_url()
         )
+
+    def get_vulnerabilities_list(self):
+        """
+        Return a deduplicated, sorted flat list of all vulnerabilities from the
+        queryset.
+
+        Extracts and flattens the affected_by_vulnerabilities field from
+        all objects in the queryset. Removes duplicates based on vulnerability_id
+        while preserving the first occurrence of each unique vulnerability.
+        """
+        vulnerabilities_lists = self.values_list(self.AFFECTED_BY_FIELD, flat=True)
+        flatten_vulnerabilities = chain.from_iterable(vulnerabilities_lists)
+
+        # Deduplicate by vulnerability_id while preserving order
+        unique_vulnerabilities = {
+            vuln["vulnerability_id"]: vuln for vuln in flatten_vulnerabilities
+        }
+
+        return sorted(
+            unique_vulnerabilities.values(), key=itemgetter("vulnerability_id")
+        )
+
+    def get_vulnerabilities_dict(self):
+        """
+        Return a dict of vulnerabilities keyed by vulnerability_id.
+
+        Each vulnerability includes an "affects" list containing all
+        objects from this queryset affected by that vulnerability.
+
+        Returns:
+            dict: {
+                'VCID-1': {
+                    'vulnerability_id': 'VCID-1',
+                    'affects': [obj1, obj2, ...]
+                },
+                ...
+            }
+
+        """
+        vulnerabilities_dict = {}
+
+        for obj in self.vulnerable_ordered():
+            for vulnerability in obj.affected_by_vulnerabilities:
+                vcid = vulnerability.get("vulnerability_id")
+                if not vcid:
+                    continue
+
+                if vcid not in vulnerabilities_dict:
+                    vulnerabilities_dict[vcid] = {**vulnerability, "affects": []}
+                vulnerabilities_dict[vcid]["affects"].append(obj)
+
+        return vulnerabilities_dict
 
 
 class DiscoveredPackageQuerySet(
@@ -3307,7 +3423,7 @@ class DiscoveredPackageQuerySet(
         if not extra:
             extra = []
 
-        return self.only("uuid", *PACKAGE_URL_FIELDS, *extra)
+        return self.only("uuid", *PACKAGE_URL_FIELDS, "project_id", *extra)
 
     def filter(self, *args, **kwargs):
         """Add support for using ``package_url`` as a field lookup."""
@@ -3551,6 +3667,42 @@ class AbstractPackage(models.Model):
     class Meta:
         abstract = True
 
+    def extract_from_parties(self, roles):
+        """
+        Extract parties matching the given roles, deduplicated by name.
+
+        Args:
+            roles: Tuple of role strings to filter by.
+
+        Returns:
+            List of party dicts matching the specified roles, unique by name.
+
+        """
+        seen_names = set()
+        results = []
+        for party in self.parties or []:
+            if party.get("role") in roles:
+                name = party.get("name")
+                if name and name not in seen_names:
+                    seen_names.add(name)
+                    results.append(party)
+        return results
+
+    def get_author_names(self, roles=("author", "maintainer")):
+        """
+        Return a sorted list of party names matching the specified roles.
+
+        Args:
+            roles: Tuple of role strings to filter by.
+            Defaults to ("author", "maintainer").
+
+        Returns:
+            Sorted list of party names.
+
+        """
+        parties = self.extract_from_parties(roles=roles)
+        return sorted(party["name"] for party in parties)
+
 
 class DiscoveredPackage(
     ProjectRelatedModel,
@@ -3775,6 +3927,21 @@ class DiscoveredPackage(
                 )
             )
 
+        # Store non-supported fields in the `comment` SPDX field
+        extra_fields = [
+            "primary_language",
+            "repository_download_url",
+            "api_data_url",
+            "holder",
+            "parties",
+            "notice_text",
+        ]
+        extra_data = {
+            field_name: value
+            for field_name in extra_fields
+            if (value := getattr(self, field_name)) not in EMPTY_VALUES
+        }
+
         return spdx.Package(
             name=self.name or self.filename,
             spdx_id=self.spdx_id,
@@ -3790,6 +3957,7 @@ class DiscoveredPackage(
             attribution_texts=attribution_texts,
             checksums=checksums,
             external_refs=external_refs,
+            comment=saneyaml.dump(extra_data) if extra_data else "",
         )
 
     @property
@@ -3819,6 +3987,14 @@ class DiscoveredPackage(
             cyclonedx_model.HashType(alg=algorithm, content=hash_value)
             for field_name, algorithm in hash_fields.items()
             if (hash_value := getattr(self, field_name))
+        ]
+
+        authors = [
+            cyclonedx_contact.OrganizationalContact(
+                name=party.get("name", ""),
+                email=party.get("email", ""),
+            )
+            for party in self.extract_from_parties(roles=("author", "maintainer"))
         ]
 
         # Those fields are not supported natively by CycloneDX but are required to
@@ -3881,6 +4057,7 @@ class DiscoveredPackage(
             properties=properties,
             external_references=external_references,
             evidence=evidence,
+            authors=authors,
         )
 
 
@@ -3928,7 +4105,7 @@ class DiscoveredDependencyQuerySet(
         if not extra:
             extra = []
 
-        return self.only("dependency_uid", *PACKAGE_URL_FIELDS, *extra)
+        return self.only("dependency_uid", *PACKAGE_URL_FIELDS, "project_id", *extra)
 
 
 class DiscoveredDependency(

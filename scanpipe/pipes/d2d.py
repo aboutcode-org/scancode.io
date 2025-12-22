@@ -170,12 +170,21 @@ def _map_jvm_to_class_resource(
     from/ fully qualified binary files.
     """
     for extension in jvm_lang.source_extensions:
-        normalized_path = jvm_lang.get_normalized_path(
+        # Perform basic conversion from .class to source file path
+        source_path = jvm_lang.get_source_path(
             path=to_resource.path, extension=extension
         )
-        match = pathmap.find_paths(path=normalized_path, index=from_classes_index)
+        # Perform basic mapping without normalization for scenarios listed in
+        # https://github.com/aboutcode-org/scancode.io/issues/1873
+        match = pathmap.find_paths(path=source_path, index=from_classes_index)
+
         if not match:
-            return
+            normalized_path = jvm_lang.get_normalized_path(
+                path=to_resource.path, extension=extension
+            )
+            match = pathmap.find_paths(path=normalized_path, index=from_classes_index)
+            if not match:
+                return
 
         for resource_id in match.resource_ids:
             from_resource = from_resources.get(id=resource_id)
@@ -2387,3 +2396,48 @@ def map_python_pyx_to_binaries(project, logger=None):
                 to_resource=matching_elf,
                 map_type="python_pyx_match",
             )
+
+
+def map_python_protobuf_files(project, logger=None):
+    """Map protobuf-generated .py/.pyi files to their source .proto files."""
+    from_resources = (
+        project.codebaseresources.files().from_codebase().filter(extension=".proto")
+    )
+    to_resources = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .has_no_relation()
+        .filter(extension__in=[".py", ".pyi"])
+    )
+    to_resources_count = to_resources.count()
+    from_resources_count = from_resources.count()
+
+    if not from_resources_count or not to_resources_count:
+        return
+
+    proto_index = {}
+    for proto_resource in from_resources:
+        base_name = proto_resource.name.replace(".proto", "")
+        proto_index[base_name] = proto_resource
+
+    mapped_count = 0
+    for to_resource in to_resources:
+        base_name = extract_protobuf_base_name(to_resource.name)
+        if base_name and base_name in proto_index:
+            from_resource = proto_index[base_name]
+            pipes.make_relation(
+                from_resource=from_resource,
+                to_resource=to_resource,
+                map_type="protobuf_mapping",
+                extra_data={"protobuf_base_name": base_name},
+            )
+            mapped_count += 1
+
+
+def extract_protobuf_base_name(filename):
+    """Extract the base name from a protobuf-generated filename."""
+    name_without_ext = filename.rsplit(".", 1)[0]
+    protobuf_pattern = r"^(.+)_pb[23]$"
+    match = re.match(protobuf_pattern, name_without_ext)
+    if match:
+        return match.group(1)

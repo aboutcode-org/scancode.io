@@ -285,7 +285,7 @@ Before you install ScanCode.io, make sure you have the following prerequisites:
 
  * **Python: versions 3.10 to 3.13** found at https://www.python.org/downloads/
  * **Git**: most recent release available at https://git-scm.com/
- * **PostgreSQL**: release 13 or later found at https://www.postgresql.org/ or
+ * **PostgreSQL**: release 17 or later found at https://www.postgresql.org/ or
    https://postgresapp.com/ on macOS
 
 .. _system_dependencies:
@@ -519,7 +519,7 @@ Once Helm is properly set up, add the ``scancode-kube`` repo as follows::
     # sample output
     # NAME            VERSION REPOSITORY                              STATUS
     # nginx           9.x.x   https://charts.bitnami.com/bitnami      ok
-    # postgresql      11.x.x  https://charts.bitnami.com/bitnami      ok
+    # postgresql      17.x.x  https://charts.bitnami.com/bitnami      ok
     # redis           16.x.x  https://charts.bitnami.com/bitnami      ok
 
     # install scancode helm charts

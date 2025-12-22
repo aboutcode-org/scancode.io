@@ -39,8 +39,9 @@ Example:
     "": {
         "resources": 1,
         "packages": 16,
-        "packages_vulnerable": 7,
+        "vulnerable_packages": 7,
         "dependencies": 25,
+        "vulnerabilities": 10,
         "purls": [
             "pkg:unknown/alpine@3.17.0",
         ],
@@ -66,8 +67,9 @@ from scanpipe.tests.test_integrations_sca_tools import ScanPipeIntegrationsBaseT
 # Keys are filenames, values are dicts with expected numbers of:
 # - ``resources``: CodebaseResource
 # - ``packages``: DiscoveredPackages
-# - ``packages_vulnerable``: Vulnerable DiscoveredPackages
+# - ``vulnerable_packages``: Vulnerable DiscoveredPackages
 # - ``dependencies``: DiscoveredDependencies
+# - ``vulnerabilities``: Expected number of unique vulnerabilities.
 # - ``purls``: The list of PURLs present in the SBOM
 TEST_DATA = {
     ## requirements.txt
@@ -78,14 +80,85 @@ TEST_DATA = {
     "requirements.txt_bom.cyclonedx.json": {
         "resources": 1,
         "packages": 5,
-        "packages_vulnerable": 1,
+        "vulnerable_packages": 1,
         "dependencies": 1,
+        "vulnerabilities": 10,
         "purls": [
             "pkg:pypi/amqp@5.1.1",
             "pkg:pypi/appdirs@1.4.4",
             "pkg:pypi/asgiref@3.5.2",
             "pkg:pypi/urllib3@1.26.0",
             "pkg:pypi/vine@5.1.0",
+        ],
+    },
+    "ort-reporter-cyclonedx-1.6/cyclonedx-reporter-expected-result.json": {
+        "resources": 1,
+        "packages": 5,
+        "vulnerable_packages": 1,
+        "dependencies": 0,
+        "vulnerabilities": 1,
+        "purls": [
+            "pkg:npm/%40ort/concluded-license@1.0?classifier=sources",
+            "pkg:npm/%40ort/declared-license@1.0?classifier=sources",
+            "pkg:npm/%40ort/license-file-and-additional-licenses@1.0?classifier=sources",
+            "pkg:npm/%40ort/license-file@1.0?classifier=sources",
+            "pkg:npm/%40ort/no-license-file@1.0",
+        ],
+    },
+    "ort-reporter-cyclonedx-1.6/cyclonedx-reporter-expected-result-with-findings.json": {  # noqa: E501
+        "resources": 1,
+        "packages": 5,
+        "vulnerable_packages": 0,
+        "dependencies": 0,
+        "vulnerabilities": 0,
+        "purls": [
+            "pkg:npm/%40ort/concluded-license@1.0?classifier=sources",
+            "pkg:npm/%40ort/declared-license@1.0?classifier=sources",
+            "pkg:npm/%40ort/license-file-and-additional-licenses@1.0?classifier=sources",
+            "pkg:npm/%40ort/license-file@1.0?classifier=sources",
+            "pkg:npm/%40ort/no-license-file@1.0",
+        ],
+    },
+    "ort-reporter-cyclonedx-1.6/cyclonedx-reporter-expected-result-without-findings.json": {  # noqa: E501
+        "resources": 1,
+        "packages": 0,
+        "vulnerable_packages": 0,
+        "dependencies": 0,
+        "vulnerabilities": 0,
+        "purls": [],
+    },
+    "ort-reporter-spdx-2.2/synthetic-scan-result-expected-output.spdx.json": {
+        "resources": 1,
+        "packages": 12,
+        "vulnerable_packages": 0,
+        "dependencies": 11,
+        "vulnerabilities": 0,
+        "purls": [
+            "pkg:golang/gopkg.in/yaml.v3@3.0.1",
+            "pkg:maven/pkg1-grp/pkg1@0.0.1",
+            "pkg:maven/pkg2-grp/pkg2@0.0.1",
+            "pkg:maven/pkg3-grp/pkg3@0.0.1",
+            "pkg:maven/pkg4-grp/pkg4@0.0.1",
+            "pkg:maven/pkg6-grp/pkg6@0.0.1",
+            "pkg:maven/pkg7-grp/pkg7@0.0.1",
+            "pkg:unknown/proj1@0.0.1",
+        ],
+    },
+    "ort-reporter-spdx-2.3/synthetic-scan-result-expected-output.spdx.json": {
+        "resources": 1,
+        "packages": 12,
+        "vulnerable_packages": 0,
+        "dependencies": 11,
+        "vulnerabilities": 0,
+        "purls": [
+            "pkg:golang/gopkg.in/yaml.v3@3.0.1",
+            "pkg:maven/pkg1-grp/pkg1@0.0.1",
+            "pkg:maven/pkg2-grp/pkg2@0.0.1",
+            "pkg:maven/pkg3-grp/pkg3@0.0.1",
+            "pkg:maven/pkg4-grp/pkg4@0.0.1",
+            "pkg:maven/pkg6-grp/pkg6@0.0.1",
+            "pkg:maven/pkg7-grp/pkg7@0.0.1",
+            "pkg:unknown/proj1@0.0.1",
         ],
     },
 }

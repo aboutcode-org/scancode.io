@@ -41,8 +41,11 @@ from scanpipe.api.serializers import CodebaseRelationSerializer
 from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
+from scanpipe.api.serializers import InputSerializer
 from scanpipe.api.serializers import PipelineSerializer
+from scanpipe.api.serializers import ProjectArchiveSerializer
 from scanpipe.api.serializers import ProjectMessageSerializer
+from scanpipe.api.serializers import ProjectResetSerializer
 from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import RunSerializer
 from scanpipe.api.serializers import WebhookSubscriptionSerializer
@@ -356,7 +359,7 @@ class ProjectViewSet(
         }
         return ErrorResponse(message)
 
-    @action(detail=True, methods=["get", "post"])
+    @action(detail=True, methods=["get", "post"], serializer_class=InputSerializer)
     def add_input(self, request, *args, **kwargs):
         project = self.get_object()
 
@@ -365,9 +368,15 @@ class ProjectViewSet(
                 "Cannot add inputs once a pipeline has started to execute."
             )
 
-        upload_file = request.data.get("upload_file")
-        upload_file_tag = request.data.get("upload_file_tag", "")
-        input_urls = request.data.get("input_urls", [])
+        # Validate input using the action serializer
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return ErrorResponse(serializer.errors)
+
+        # Extract validated data
+        upload_file = serializer.validated_data.get("upload_file")
+        upload_file_tag = serializer.validated_data.get("upload_file_tag", "")
+        input_urls = serializer.validated_data.get("input_urls", [])
 
         if not (upload_file or input_urls):
             return ErrorResponse("upload_file or input_urls required.")
@@ -393,16 +402,13 @@ class ProjectViewSet(
     def add_webhook(self, request, *args, **kwargs):
         project = self.get_object()
 
-        # Validate input using the serializer
-        serializer = WebhookSubscriptionSerializer(data=request.data)
-        if serializer.is_valid():
-            project.add_webhook_subscription(**serializer.validated_data)
-            return Response(
-                {"status": "Webhook added."}, status=status.HTTP_201_CREATED
-            )
+        # Validate input using the action serializer
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return ErrorResponse(serializer.errors)
 
-        # Return validation errors
-        return ErrorResponse(serializer.errors)
+        project.add_webhook_subscription(**serializer.validated_data)
+        return Response({"status": "Webhook added."}, status=status.HTTP_201_CREATED)
 
     def destroy(self, request, *args, **kwargs):
         try:
@@ -410,7 +416,11 @@ class ProjectViewSet(
         except RunInProgressError:
             return ErrorResponse("Cannot delete project while a run is in progress.")
 
-    @action(detail=True, methods=["get", "post"])
+    @action(
+        detail=True,
+        methods=["get", "post"],
+        serializer_class=ProjectArchiveSerializer,
+    )
     def archive(self, request, *args, **kwargs):
         project = self.get_object()
 
@@ -423,18 +433,23 @@ class ProjectViewSet(
             )
             return Response({"status": message})
 
+        # Validate input using the action serializer
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return ErrorResponse(serializer.errors)
+
         try:
-            project.archive(
-                remove_input=request.data.get("remove_input"),
-                remove_codebase=request.data.get("remove_codebase"),
-                remove_output=request.data.get("remove_output"),
-            )
+            project.archive(**serializer.validated_data)
         except RunInProgressError:
             return ErrorResponse("Cannot archive project while a run is in progress.")
 
         return Response({"status": f"The project {project} has been archived."})
 
-    @action(detail=True, methods=["get", "post"])
+    @action(
+        detail=True,
+        methods=["get", "post"],
+        serializer_class=ProjectResetSerializer,
+    )
     def reset(self, request, *args, **kwargs):
         project = self.get_object()
 
@@ -442,17 +457,17 @@ class ProjectViewSet(
             message = "POST on this URL to reset the project."
             return Response({"status": message})
 
+        # Validate input using the action serializer
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return ErrorResponse(serializer.errors)
+
         try:
-            project.reset(
-                keep_input=request.data.get("keep_input", True),
-                restore_pipelines=request.data.get("restore_pipelines", False),
-                execute_now=request.data.get("execute_now", False),
-            )
+            project.reset(**serializer.validated_data)
         except RunInProgressError:
             return ErrorResponse("Cannot reset project while a run is in progress.")
-        else:
-            message = f"The {project} project has been reset."
-            return Response({"status": message})
+
+        return Response({"status": f"The {project} project has been reset."})
 
     @action(detail=True, methods=["get"])
     def outputs(self, request, *args, **kwargs):
