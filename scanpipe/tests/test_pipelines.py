@@ -1638,13 +1638,25 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(1, project1.discoveredpackages.count())
         package = project1.discoveredpackages.get()
+        affected_by = package.affected_by_vulnerabilities[0]
+        cdx_vulnerability_json = affected_by.pop("cdx_vulnerability_json")
+        expected = {
+            "vulnerability_id": "CVE-2005-2541",
+            "summary": "Tar 1.15.1 does not properly warn the user when...",
+        }
+        self.assertEqual(expected, affected_by)
+        cdx_vulnerability = json.loads(cdx_vulnerability_json)
         expected = [
-            {
-                "vulnerability_id": "CVE-2005-2541",
-                "summary": "Tar 1.15.1 does not properly warn the user when...",
-            }
+            "advisories",
+            "affects",
+            "description",
+            "id",
+            "published",
+            "ratings",
+            "source",
+            "updated",
         ]
-        self.assertEqual(expected, package.affected_by_vulnerabilities)
+        self.assertEqual(expected, list(cdx_vulnerability.keys()))
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("uuid.uuid4")
