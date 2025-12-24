@@ -118,6 +118,7 @@ def request_post(
     data,
     timeout=None,
 ):
+    """Wrap the HTTP POST request calls on the API."""
     try:
         response = session.post(url, json=data, timeout=timeout)
         response.raise_for_status()

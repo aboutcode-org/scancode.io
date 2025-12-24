@@ -26,6 +26,7 @@ import json
 import operator
 from collections import Counter
 from contextlib import suppress
+from typing import Any
 
 from django.apps import apps
 from django.conf import settings
@@ -192,7 +193,7 @@ SCAN_SUMMARY_FIELDS = [
 ]
 
 
-def purldb_is_configured(*args):
+def purldb_is_configured(*args: Any) -> bool:
     return purldb.is_configured()
 
 
@@ -203,21 +204,21 @@ class PrefetchRelatedViewMixin:
         return super().get_queryset().prefetch_related(*self.prefetch_related)
 
 
-def render_as_yaml(value):
+def render_as_yaml(value: Any) -> str | None:
     if value:
         return saneyaml.dump(value, indent=2)
 
 
-def render_size(size_in_bytes):
+def render_size(size_in_bytes: int | None) -> str | None:
     if size_in_bytes:
         return f"{size_in_bytes} ({filesizeformat(size_in_bytes)})"
 
 
-def fields_have_no_values(fields_data):
+def fields_have_no_values(fields_data: dict[str, Any]) -> bool:
     return not any([field_data.get("value") for field_data in fields_data.values()])
 
 
-def do_not_disable(*args, **kwargs):
+def do_not_disable(*args: Any, **kwargs: Any) -> bool:
     return False
 
 

@@ -26,8 +26,10 @@ import subprocess
 import sys
 import time
 import uuid
+from collections.abc import Callable
 from contextlib import suppress
 from datetime import datetime
+from typing import Any
 from itertools import islice
 from pathlib import Path
 
@@ -548,7 +550,7 @@ def get_resource_diff_ratio(resource_a, resource_b):
         )
 
 
-def poll_until_success(check, sleep=10, **kwargs):
+def poll_until_success(check: Callable[..., Any], sleep: int = 10, **kwargs: Any) -> bool:
     """
     Given a function `check`, which returns the status of a run, return True
     when the run instance has completed successfully.
@@ -577,7 +579,7 @@ def poll_until_success(check, sleep=10, **kwargs):
         time.sleep(sleep)
 
 
-def run_command_safely(command_args):
+def run_command_safely(command_args: list[str]) -> str:
     """
     Execute the external commands following security best practices.
 
