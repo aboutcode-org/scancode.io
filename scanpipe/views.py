@@ -235,7 +235,7 @@ DISPLAYABLE_IMAGE_MIME_TYPE = [
 ]
 
 
-def is_displayable_image_type(resource):
+def is_displayable_image_type(resource: CodebaseResource) -> bool:
     """Return True if the ``resource`` file is supported by the HTML <img> tag."""
     return resource.mime_type and resource.mime_type in DISPLAYABLE_IMAGE_MIME_TYPE
 

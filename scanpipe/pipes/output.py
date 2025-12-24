@@ -494,7 +494,12 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
     # we only get this key in each dict of a list for some fields
     mapping_key = mappings_key_by_fieldname.get(fieldname)
     if mapping_key:
-        value = [mapping[mapping_key] for mapping in value]
+        # Use .get() to safely access keys and filter out None values
+        value = [
+            mapping.get(mapping_key)
+            for mapping in value
+            if mapping.get(mapping_key) is not None
+        ]
 
     # convert these to text lines, remove duplicates
     if isinstance(value, list | tuple):

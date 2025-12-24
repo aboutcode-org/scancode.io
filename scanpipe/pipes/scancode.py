@@ -1162,6 +1162,8 @@ def make_results_summary(project, scan_results_location):
         scan_data = json.load(f)
 
     summary = scan_data.get("summary")
+    if not summary:
+        raise ValueError(f"Missing 'summary' in scan results at {scan_results_location}")
 
     # Inject the generated `license_matches` in the summary from the project
     # codebase resources.

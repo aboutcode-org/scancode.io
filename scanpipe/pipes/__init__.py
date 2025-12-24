@@ -34,6 +34,7 @@ from itertools import islice
 from pathlib import Path
 
 from django.db.models import Count
+from django.db.models import QuerySet
 
 from scanpipe.models import AbstractTaskFieldsModel
 from scanpipe.models import CodebaseRelation
@@ -484,23 +485,23 @@ def make_relation(from_resource, to_resource, map_type, **extra_fields):
     )
 
 
-def normalize_path(path):
+def normalize_path(path: str) -> str:
     """Return a normalized path from a `path` string."""
     return "/" + path.strip("/")
 
 
-def strip_root(location):
+def strip_root(location: str | Path) -> str:
     """Return the provided `location` without the root directory."""
     return "/".join(str(location).strip("/").split("/")[1:])
 
 
-def filename_now(sep="-"):
+def filename_now(sep: str = "-") -> str:
     """Return the current date and time in iso format suitable for filename."""
     now = datetime.now().isoformat(sep=sep, timespec="seconds")
     return now.replace(":", sep)
 
 
-def count_group_by(queryset, field_name):
+def count_group_by(queryset: QuerySet[Any], field_name: str) -> dict[Any, int]:
     """
     Return a summary of all existing values for the provided `field_name` on the
     `queryset`, including the count of each entry, as a dictionary.
@@ -514,12 +515,12 @@ def count_group_by(queryset, field_name):
     return {entry.get(field_name): entry.get("count") for entry in counts}
 
 
-def get_bin_executable(filename):
+def get_bin_executable(filename: str) -> str:
     """Return the location of the `filename` executable binary."""
     return str(Path(sys.executable).parent / filename)
 
 
-def get_text_str_diff_ratio(str_a, str_b):
+def get_text_str_diff_ratio(str_a: str, str_b: str) -> float | None:
     """
     Return a similarity ratio as a float between 0 and 1 by comparing the
     text content of the ``str_a`` and ``str_b``.
@@ -527,7 +528,7 @@ def get_text_str_diff_ratio(str_a, str_b):
     Return None if any of the two resources str is empty.
     """
     if not (str_a and str_b):
-        return
+        return None
 
     if not isinstance(str_a, str) or not isinstance(str_b, str):
         raise ValueError("Values must be str")
@@ -536,7 +537,7 @@ def get_text_str_diff_ratio(str_a, str_b):
     return matcher.quick_ratio()
 
 
-def get_resource_diff_ratio(resource_a, resource_b):
+def get_resource_diff_ratio(resource_a: CodebaseResource, resource_b: CodebaseResource) -> float | None:
     """
     Return a similarity ratio as a float between 0 and 1 by comparing the
     text content of the CodebaseResource ``resource_a`` and ``resource_b``.
@@ -548,6 +549,7 @@ def get_resource_diff_ratio(resource_a, resource_b):
             str_a=resource_a.file_content,
             str_b=resource_b.file_content,
         )
+    return None
 
 
 def poll_until_success(check: Callable[..., Any], sleep: int = 10, **kwargs: Any) -> bool:
