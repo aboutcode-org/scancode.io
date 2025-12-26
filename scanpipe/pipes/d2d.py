@@ -139,7 +139,7 @@ def _map_checksum_resource(to_resource, from_resources, checksum_field):
         )
 
 
-def map_checksum(project, checksum_field, logger=None, to_queryset=None):
+def map_checksum(project, checksum_field, logger=None, to_queryset=None, **kwargs):
     """Map using checksum."""
     project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase().has_value(checksum_field)
@@ -196,7 +196,9 @@ def _map_jvm_to_class_resource(
             )
 
 
-def map_jvm_to_class(project, jvm_lang: jvm.JvmLanguage, logger=None, to_queryset=None):
+def map_jvm_to_class(
+    project, jvm_lang: jvm.JvmLanguage, logger=None, to_queryset=None, **kwargs
+):
     """
     Map to/ compiled Jvm's binary files to from/ using Jvm language's fully
     qualified paths and indexing from/ Jvm lang's source files.
@@ -348,7 +350,9 @@ def _map_jar_to_jvm_source_resource(
         )
 
 
-def map_jar_to_jvm_source(project, jvm_lang: jvm.JvmLanguage, logger=None, to_queryset=None):
+def map_jar_to_jvm_source(
+    project, jvm_lang: jvm.JvmLanguage, logger=None, to_queryset=None, **kwargs
+):
     """Map .jar files to their related source directory."""
     project_files = project.codebaseresources.files()
     # Include the directories to map on the common source
@@ -415,7 +419,7 @@ def _map_path_resource(
         )
 
 
-def map_path(project, logger=None, to_queryset=None):
+def map_path(project, logger=None, to_queryset=None, **kwargs):
     """Map using path suffix similarities."""
     project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase()
@@ -620,7 +624,13 @@ def match_sha1s_to_purldb(
 
 
 def match_purldb_resources(
-    project, extensions, matcher_func, chunk_size=1000, logger=None, to_queryset=None
+    project,
+    extensions,
+    matcher_func,
+    chunk_size=1000,
+    logger=None,
+    to_queryset=None,
+    **kwargs,
 ):
     """
     Match against PurlDB selecting codebase resources using provided
@@ -758,7 +768,7 @@ def match_purldb_directories(project, logger=None, to_queryset=None):
     )
 
 
-def map_javascript(project, logger=None, to_queryset=None):
+def map_javascript(project, logger=None, to_queryset=None, **kwargs):
     """Map a packed or minified JavaScript, TypeScript, CSS and SCSS to its source."""
     project_files = project.codebaseresources.files()
 
@@ -1035,7 +1045,7 @@ class AboutFileIndexes:
         return about_purls, mapped_about_resources
 
 
-def map_about_files(project, logger=None, to_queryset=None):
+def map_about_files(project, logger=None, to_queryset=None, **kwargs):
     """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
     project_resources = project.codebaseresources
     from_about_files = (
@@ -1080,7 +1090,7 @@ def map_about_files(project, logger=None, to_queryset=None):
         )
 
 
-def map_javascript_post_purldb_match(project, logger=None, to_queryset=None):
+def map_javascript_post_purldb_match(project, logger=None, to_queryset=None, **kwargs):
     """Map minified javascript file based on existing PurlDB match."""
     project_files = project.codebaseresources.files()
 
@@ -1149,7 +1159,7 @@ def _map_javascript_post_purldb_match_resource(
         to_minified.update(status=flag.MAPPED)
 
 
-def map_javascript_path(project, logger=None, to_queryset=None):
+def map_javascript_path(project, logger=None, to_queryset=None, **kwargs):
     """Map javascript file based on path."""
     project_files = project.codebaseresources.files()
 
@@ -1241,7 +1251,7 @@ def _map_javascript_path_resource(
     )
 
 
-def map_javascript_colocation(project, logger=None, to_queryset=None):
+def map_javascript_colocation(project, logger=None, to_queryset=None, **kwargs):
     """Map JavaScript files based on neighborhood file mapping."""
     project_files = project.codebaseresources.files()
 
@@ -1332,7 +1342,7 @@ def _map_javascript_colocation_resource(
     )
 
 
-def flag_processed_archives(project, to_queryset=None):
+def flag_processed_archives(project, logger=None, to_queryset=None, **kwargs):
     """
     Flag package archives as processed if they meet the following criteria:
 
@@ -1362,7 +1372,7 @@ def flag_processed_archives(project, to_queryset=None):
             archive_resource.update(status=flag.ARCHIVE_PROCESSED)
 
 
-def map_thirdparty_npm_packages(project, logger=None, to_queryset=None):
+def map_thirdparty_npm_packages(project, logger=None, to_queryset=None, **kwargs):
     """Map thirdparty package using package.json metadata."""
     project_files = project.codebaseresources.files()
 
@@ -1473,7 +1483,7 @@ def create_local_files_packages(project):
         pipes.create_local_files_package(project, defaults, codebase_resource_ids)
 
 
-def match_resources_with_no_java_source(project, logger=None, to_queryset=None):
+def match_resources_with_no_java_source(project, logger=None, to_queryset=None, **kwargs):
     """
     Match resources with ``no-java-source`` to PurlDB, if no match
     is found update status to ``requires-review``.
@@ -1505,7 +1515,7 @@ def match_resources_with_no_java_source(project, logger=None, to_queryset=None):
 
 
 def ignore_unmapped_resources_from_config(
-    project, patterns_to_ignore, logger=None, to_queryset=None
+    project, patterns_to_ignore, logger=None, to_queryset=None, **kwargs
 ):
     """Ignore unmapped resources for a project using `patterns_to_ignore`."""
     if to_queryset is not None:
@@ -1526,7 +1536,7 @@ def ignore_unmapped_resources_from_config(
 
 
 def match_unmapped_resources(
-    project, matched_extensions=None, logger=None, to_queryset=None
+    project, matched_extensions=None, logger=None, to_queryset=None, **kwargs
 ):
     """
     Match resources with empty status to PurlDB, if unmatched
@@ -1636,7 +1646,7 @@ def flag_deployed_from_resources_with_missing_license(project, doc_extensions=No
     unknown_license_files.update(status=flag.UNKNOWN_LICENSE)
 
 
-def handle_dangling_deployed_legal_files(project, logger, to_queryset=None):
+def handle_dangling_deployed_legal_files(project, logger, to_queryset=None, **kwargs):
     """
     Scan the legal files with empty status and update status
     to `REVIEW_DANGLING_LEGAL_FILE`.
@@ -1892,7 +1902,7 @@ def is_invalid_match(match, matched_path_length):
     return matched_path_length == 1 and len(match.resource_ids) != 1
 
 
-def map_elfs_with_dwarf_paths(project, logger=None, to_queryset=None):
+def map_elfs_with_dwarf_paths(project, logger=None, to_queryset=None, **kwargs):
     """Map ELF binaries to their sources in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
     if to_queryset is not None:
@@ -1964,7 +1974,7 @@ def get_go_file_paths(location):
     return file_paths
 
 
-def map_go_paths(project, logger=None, to_queryset=None):
+def map_go_paths(project, logger=None, to_queryset=None, **kwargs):
     """Map Go binaries to their source in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
     if to_queryset is not None:
@@ -2020,7 +2030,7 @@ MACHO_BINARY_OPTIONS = ["Rust", "Go", "MacOS"]
 WINPE_BINARY_OPTIONS = ["Windows"]
 
 
-def extract_binary_symbols(project, options, logger=None, to_queryset=None):
+def extract_binary_symbols(project, options, logger=None, to_queryset=None, **kwargs):
     """
     Extract binary symbols for all Elf, Mach0 and Winpe binaries
     found in the ``project`` resources, based on selected
@@ -2065,7 +2075,7 @@ def extract_binary_symbols(project, options, logger=None, to_queryset=None):
         )
 
 
-def map_rust_binaries_with_symbols(project, logger=None, to_queryset=None):
+def map_rust_binaries_with_symbols(project, logger=None, to_queryset=None, **kwargs):
     """Map Rust binaries to their source using symbols in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
     if to_queryset is not None:
@@ -2093,7 +2103,7 @@ def map_rust_binaries_with_symbols(project, logger=None, to_queryset=None):
     )
 
 
-def map_go_binaries_with_symbols(project, logger=None, to_queryset=None):
+def map_go_binaries_with_symbols(project, logger=None, to_queryset=None, **kwargs):
     """Map Go binaries to their source using symbols in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
     if to_queryset is not None:
@@ -2121,7 +2131,7 @@ def map_go_binaries_with_symbols(project, logger=None, to_queryset=None):
     )
 
 
-def map_elfs_binaries_with_symbols(project, logger=None, to_queryset=None):
+def map_elfs_binaries_with_symbols(project, logger=None, to_queryset=None, **kwargs):
     """Map Elf binaries to their source using symbols in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
     if to_queryset is not None:
@@ -2146,7 +2156,7 @@ def map_elfs_binaries_with_symbols(project, logger=None, to_queryset=None):
     )
 
 
-def map_macho_binaries_with_symbols(project, logger=None, to_queryset=None):
+def map_macho_binaries_with_symbols(project, logger=None, to_queryset=None, **kwargs):
     """Map macho binaries to their source using symbols in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
     if to_queryset is not None:
@@ -2174,7 +2184,7 @@ def map_macho_binaries_with_symbols(project, logger=None, to_queryset=None):
     )
 
 
-def map_winpe_binaries_with_symbols(project, logger=None, to_queryset=None):
+def map_winpe_binaries_with_symbols(project, logger=None, to_queryset=None, **kwargs):
     """Map winpe binaries to their source using symbols in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
     if to_queryset is not None:
@@ -2268,7 +2278,7 @@ def extract_binary_symbols_from_resources(resources, binary_symbols_func, logger
             logger(f"Error parsing binary symbols at: {resource.location_path!r} {e!r}")
 
 
-def map_javascript_symbols(project, logger=None, to_queryset=None):
+def map_javascript_symbols(project, logger=None, to_queryset=None, **kwargs):
     """Map deployed JavaScript, TypeScript to its sources using symbols."""
     project_files = project.codebaseresources.files()
 
@@ -2369,7 +2379,7 @@ def _map_javascript_symbols(to_resource, javascript_from_resources, logger):
     return 0
 
 
-def map_javascript_strings(project, logger=None, to_queryset=None):
+def map_javascript_strings(project, logger=None, to_queryset=None, **kwargs):
     """Map deployed JavaScript, TypeScript to its sources using string literals."""
     project_files = project.codebaseresources.files()
 
@@ -2457,7 +2467,7 @@ def _map_javascript_strings(to_resource, javascript_from_resources, logger):
     return 0
 
 
-def map_python_pyx_to_binaries(project, logger=None, to_queryset=None):
+def map_python_pyx_to_binaries(project, logger=None, to_queryset=None, **kwargs):
     """Map Cython source to their compiled binaries in ``project``."""
     from source_inspector.symbols_tree_sitter import get_tree_and_language_info
 
@@ -2505,7 +2515,7 @@ def map_python_pyx_to_binaries(project, logger=None, to_queryset=None):
             )
 
 
-def map_python_protobuf_files(project, logger=None, to_queryset=None):
+def map_python_protobuf_files(project, logger=None, to_queryset=None, **kwargs):
     """Map protobuf-generated .py/.pyi files to their source .proto files."""
     from_resources = (
         project.codebaseresources.files().from_codebase().filter(extension=".proto")
