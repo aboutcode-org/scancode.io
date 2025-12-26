@@ -190,7 +190,7 @@ def cyclonedx_component_to_package_data(
                 {
                     "vulnerability_id": str(cdx_vulnerability.id),
                     "summary": cdx_vulnerability.description,
-                    "cdx_vulnerability_json": cdx_vulnerability_json,
+                    "cdx_vulnerability_data": json.loads(cdx_vulnerability_json),
                 }
             )
 
