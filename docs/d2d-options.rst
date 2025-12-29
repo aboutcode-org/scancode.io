@@ -6,7 +6,7 @@ This page lists the available d2d options and highlights the capabilities presen
 Overview
 --------
 
-d2d (deploy-to-devel) workflows are used to map deployed artifacts (such as compiled binaries and archives)
+d2d (deploy-to-develop) workflows are used to map deployed artifacts (such as compiled binaries and archives)
 back to their most likely source code.
 
 The current d2d helper script runs the ``map_deploy_to_develop`` mapping workflow in ScanCode.io inside a
