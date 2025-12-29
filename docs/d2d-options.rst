@@ -1,4 +1,4 @@
-Reference Documentation Page: d2d options and capabilities
+Reference Documentation Page: D2D Options and Capabilities
 =========================================================
 
 This page lists the available d2d options and highlights the capabilities present for each optional ecosystem option.
