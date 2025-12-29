@@ -97,6 +97,11 @@ urlpatterns = [
         name="project_messages",
     ),
     path(
+        "project/<slug:slug>/vulnerabilities/",
+        views.VulnerabilityListView.as_view(),
+        name="project_vulnerabilities",
+    ),
+    path(
         "project/<slug:slug>/archive/",
         views.ProjectArchiveView.as_view(),
         name="project_archive",
