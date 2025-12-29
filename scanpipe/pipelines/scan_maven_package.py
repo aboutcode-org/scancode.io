@@ -36,6 +36,7 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
 
     The output is a summary of the scan results in JSON format.
     """
+
     d2d_option_enabled = False
 
     @classmethod
