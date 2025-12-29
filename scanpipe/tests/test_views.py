@@ -1276,6 +1276,31 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(5):
             self.client.get(url)
 
+    @override_settings(VULNERABLECODE_URL="https://vcio/")
+    def test_scanpipe_views_vulnerability_list_view(self):
+        self.assertEqual(0, self.project1.vulnerability_count)
+        url = reverse("project_vulnerabilities", args=[self.project1.slug])
+        with self.assertNumQueries(5):
+            response = self.client.get(url)
+        self.assertContains(response, "No Vulnerabilities found.")
+
+        v1 = {"vulnerability_id": "VCID-1"}
+        v2 = {"vulnerability_id": "VCID-2"}
+        project = make_project()
+        make_package(project, "pkg:type/a", affected_by_vulnerabilities=[v1])
+        make_dependency(project, affected_by_vulnerabilities=[v2])
+
+        self.assertEqual(2, project.vulnerability_count)
+        url = reverse("project_vulnerabilities", args=[project.slug])
+        with self.assertNumQueries(5):
+            response = self.client.get(url)
+
+        expected = '<a href="https://vcio//vulnerabilities/VCID-1" target="_blank">'
+        self.assertContains(response, expected)
+        expected = '<a href="https://vcio//vulnerabilities/VCID-2" target="_blank">'
+        self.assertContains(response, expected)
+        self.assertContains(response, "pkg:type/a")
+
     def test_scanpipe_views_license_list_view(self):
         url = reverse("license_list")
         response = self.client.get(url)

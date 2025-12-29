@@ -11,7 +11,7 @@
       {% for vulnerability in tab_data.fields.affected_by_vulnerabilities.value %}
         <tr>
           <td>
-            {% include 'scanpipe/includes/vulnerability_id.html' with vulnerability=vulnerability only %}
+            {% include 'scanpipe/includes/vulnerability_id.html' with vulnerability=vulnerability %}
           </td>
           <td>
             {% include 'scanpipe/includes/vulnerability_summary.html' with vulnerability=vulnerability only %}
