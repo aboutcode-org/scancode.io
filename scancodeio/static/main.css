@@ -391,6 +391,12 @@ progress.file-upload::before {
 #message-list th#column-severity {
   min-width: 110px;
 }
+th#column-vulnerability_id {
+  min-width: 220px;
+}
+th#column-summary {
+  width: 40%;
+}
 .menu.is-info .is-active {
   background-color: #3e8ed0;
 }
