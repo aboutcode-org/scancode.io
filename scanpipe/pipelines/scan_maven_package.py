@@ -29,10 +29,18 @@ from scanpipe.pipes.maven import update_package_license_from_resource_if_missing
 
 class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
     """
-    Scan a single maven package archive.
+    Scan a single maven package archive, or run a D2D scan for a maven package.
 
     This pipeline scans a single maven package for package metadata,
     declared dependencies, licenses, license clarity score and copyrights.
+
+    In addition, if the `deploy_to_develop` option is enabled, it performs a
+    D2D (deploy to develop) scan for Maven projects.
+
+    It requires a minimum of two archive files, each properly tagged with:
+
+    - **from** for archives containing the development source code.
+    - **to** for archives containing the deployment compiled code.
 
     The output is a summary of the scan results in JSON format.
     """
