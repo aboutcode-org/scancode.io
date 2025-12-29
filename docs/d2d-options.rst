@@ -17,46 +17,52 @@ Usage
 
 .. code-block:: bash
 
-   ./map-deploy-to-develop.sh <from-path> <to-path> <output-file> [options] <spin-db> [db-port]
+   ./map-deploy-to-develop.sh <from-path> <to-path> <output-file> [--options <value>] [--spin-db] [--port <db-port>]
+
 
 Arguments
 ---------
 
-+-----------------+-------------------------------------------------------------+
-| Argument        | Description                                                 |
-+=================+=============================================================+
-| ``from-path``   | Path to the base deployment/scan file                       |
-+-----------------+-------------------------------------------------------------+
-| ``to-path``     | Path to the target deployment/scan file                     |
-+-----------------+-------------------------------------------------------------+
-| ``options``     | D2D pipeline parameters (can be empty ``""``)               |
-+-----------------+-------------------------------------------------------------+
-| ``output-file`` | File where ScanCode.io output will be written               |
-+-----------------+-------------------------------------------------------------+
-| ``spin-db``     | ``true`` = spin temp DB container, ``false`` = skip         |
-+-----------------+-------------------------------------------------------------+
-| ``db-port``     | ``--port`` flag to specify port to bind Postgres (default: ``5432``) |
-+-----------------+-------------------------------------------------------------+
++-----------------+---------------------------------------------------------------------+
+| Argument        | Description                                                         |
++=================+=====================================================================+
+| ``from-path``   | Path to the base deployment/scan file                               |
++-----------------+---------------------------------------------------------------------+
+| ``to-path``     | Path to the target deployment/scan file                             |
++-----------------+---------------------------------------------------------------------+
+| ``output-file`` | File where ScanCode.io output will be written                       |
++-----------------+---------------------------------------------------------------------+
+| ``--options``   | Optional flag to specify D2D pipeline parameters                    |
+|                 | (for example: ``"Python,Java"``).                                   |
++-----------------+---------------------------------------------------------------------+
+| ``--spin-db``   | Optional flag to start a temporary PostgreSQL DB container           |
+|                 | (omit the flag to skip starting the DB).                             |
++-----------------+---------------------------------------------------------------------+
+| ``--port``      | Optional flag to specify the Postgres bind port                     |
+|                 | (default: ``5432``).                                                |
++-----------------+---------------------------------------------------------------------+
+
 
 Capabilities matrix
 -------------------
 
 The helper script executes the ``map_deploy_to_develop`` mapping workflow. The exact capabilities depend on the
-D2D pipeline parameters passed through the ``options`` argument.
+D2D pipeline parameters passed through the ``--options`` flag.
 
-+------------------------------------------+------------------------------+------------------------------+---------------------------+-----------------------+--------------------------+
-| d2d option / parameter                   | compiled file -> source file | archive -> source directory  | binary/source symbols     | archives -> purlDB     | source files -> purlDB   |
-+==========================================+==============================+==============================+===========================+=======================+==========================+
-| Base mapping workflow (default)          | ✅                            | ✅                            | depends on parameters     | depends on parameters  | depends on parameters     |
-+------------------------------------------+------------------------------+------------------------------+---------------------------+-----------------------+--------------------------+
-| ``options`` (pipeline parameters)        | ✅                            | ✅                            | ✅/❌                       | ✅/❌                   | ✅/❌                      |
-+------------------------------------------+------------------------------+------------------------------+---------------------------+-----------------------+--------------------------+
-| ``spin-db=true`` (temporary DB enabled)  | ✅                            | ✅                            | depends on parameters     | depends on parameters  | depends on parameters     |
-+------------------------------------------+------------------------------+------------------------------+---------------------------+-----------------------+--------------------------+
-| ``spin-db=false`` (no DB container)      | ✅                            | ✅                            | depends on parameters     | depends on parameters  | depends on parameters     |
-+------------------------------------------+------------------------------+------------------------------+---------------------------+-----------------------+--------------------------+
-| ``db-port=<port>``                       | ✅                            | ✅                            | depends on parameters     | depends on parameters  | depends on parameters     |
-+------------------------------------------+------------------------------+------------------------------+---------------------------+-----------------------+--------------------------+
++--------------------------------------------+------------------------------+------------------------------+---------------------------+------------------------+--------------------------+
+| d2d option / parameter                     | compiled file -> source file | archive -> source directory  | binary/source symbols     | archives -> purlDB      | source files -> purlDB   |
++============================================+==============================+==============================+===========================+========================+==========================+
+| Base mapping workflow (default)            | ✅                            | ✅                            | depends on parameters     | depends on parameters   | depends on parameters     |
++--------------------------------------------+------------------------------+------------------------------+---------------------------+------------------------+--------------------------+
+| ``--options <value>`` (pipeline parameters)| ✅                            | ✅                            | ✅/❌                       | ✅/❌                    | ✅/❌                      |
++--------------------------------------------+------------------------------+------------------------------+---------------------------+------------------------+--------------------------+
+| ``--spin-db`` (temporary DB enabled)       | ✅                            | ✅                            | depends on parameters     | depends on parameters   | depends on parameters     |
++--------------------------------------------+------------------------------+------------------------------+---------------------------+------------------------+--------------------------+
+| without ``--spin-db`` (no DB container)    | ✅                            | ✅                            | depends on parameters     | depends on parameters   | depends on parameters     |
++--------------------------------------------+------------------------------+------------------------------+---------------------------+------------------------+--------------------------+
+| ``--port <port>``                          | ✅                            | ✅                            | depends on parameters     | depends on parameters   | depends on parameters     |
++--------------------------------------------+------------------------------+------------------------------+---------------------------+------------------------+--------------------------+
+
 
 Examples
 --------
@@ -71,19 +77,21 @@ Run mapping with database on a custom port:
 
 .. code-block:: bash
 
-   ./map-deploy-to-develop.sh ./from.tar.gz ./to.whl output.json "Python,Java" true 5433
+   ./map-deploy-to-develop.sh ./from.tar.gz ./to.whl output.json --options "Python,Java" --spin-db --port 5433
+
 
 Script actions (high-level)
 ---------------------------
 
 1. Validates required arguments
-2. Starts PostgreSQL in Docker (if ``spin-db=true``)
+2. Starts PostgreSQL in Docker (if ``--spin-db`` is provided)
 3. Creates a temporary working directory: ``./d2d``
 4. Copies input files into working directory
 5. Runs ScanCode.io mapping step
 6. Writes mapping output into ``output-file``
 7. Cleans up temp directory
 8. Stops DB container if it was started
+
 
 Related files
 -------------
