@@ -1626,7 +1626,7 @@ class ProjectRelatedViewMixin:
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["project"] = self.project
+        context["project"] = self.get_project()
         context["model_label"] = self.model_label
         return context
 
@@ -1949,6 +1949,28 @@ class CodebaseRelationListView(
         kwargs = super().get_filterset_kwargs(filterset_class)
         kwargs.update({"project": self.project})
         return kwargs
+
+
+class VulnerabilityListView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    TableColumnsMixin,
+    generic.ListView,
+):
+    template_name = "scanpipe/vulnerability_list.html"
+    table_columns = [
+        "vulnerability_id",
+        "summary",
+        "affects",
+    ]
+
+    def get_queryset(self):
+        return []
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["object_list"] = self.project.vulnerabilities
+        return context
 
 
 class CodebaseResourceDetailsView(
