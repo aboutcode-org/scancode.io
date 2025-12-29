@@ -192,7 +192,7 @@ class JavaLanguage(JvmLanguage):
 class ScalaLanguage(JvmLanguage):
     name = "scala"
     source_extensions = (".scala",)
-    binary_extensions = (".class",)
+    binary_extensions = (".class", ".tasty")
     source_package_attribute_name = "scala_package"
     package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
     binary_map_type = "scala_to_class"

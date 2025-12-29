@@ -372,7 +372,7 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1, logger=buffer.write, jvm_lang=jvm.JavaLanguage
         )
 
-        expected = "Mapping 3 .class resources to 2 ('.java',)"
+        expected = "Mapping 3 .class (or other deployed file) resources to 2 ('.java',)"
         self.assertIn(expected, buffer.getvalue())
 
         self.assertEqual(2, self.project1.codebaserelations.count())
@@ -432,8 +432,46 @@ class ScanPipeD2DPipesTest(TestCase):
         d2d.map_jvm_to_class(
             self.project1, logger=buffer.write, jvm_lang=jvm.JavaLanguage
         )
-        expected = "Mapping 1 .class resources to 1 ('.java',)"
+        expected = "Mapping 1 .class (or other deployed file) resources to 1 ('.java',)"
         self.assertIn(expected, buffer.getvalue())
+
+    def test_scanpipe_pipes_d2d_map_scala_to_class(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/tastyquery/Annotations.scala",
+            extra_data={"scala_package": "tastyquery"},
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/tastyquery/Annotations.tasty",
+        )
+
+        to2 = make_resource_file(
+            self.project1,
+            path="to/tastyquery/Annotations.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.ScalaLanguage
+        )
+
+        expected = (
+            "Mapping 2 .class (or other deployed file) resources to 1 ('.scala',)"
+        )
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(2, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("scala_to_class", r1.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r1.extra_data)
+
+        r2 = self.project1.codebaserelations.get(to_resource=to2, from_resource=from1)
+        self.assertEqual("scala_to_class", r2.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r2.extra_data)
 
     def test_scanpipe_pipes_d2d_map_grammar_to_class(self):
         from1 = make_resource_file(
@@ -452,7 +490,9 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1, logger=buffer.write, jvm_lang=jvm.GrammarLanguage
         )
 
-        expected = "Mapping 1 .class resources to 1 ('.g', '.g4')"
+        expected = (
+            "Mapping 1 .class (or other deployed file) resources to 1 ('.g', '.g4')"
+        )
         self.assertIn(expected, buffer.getvalue())
         self.assertEqual(1, self.project1.codebaserelations.count())
 
@@ -480,7 +520,9 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1, logger=buffer.write, jvm_lang=jvm.XtendLanguage
         )
 
-        expected = "Mapping 1 .class resources to 1 ('.xtend',)"
+        expected = (
+            "Mapping 1 .class (or other deployed file) resources to 1 ('.xtend',)"
+        )
         self.assertIn(expected, buffer.getvalue())
         self.assertEqual(1, self.project1.codebaserelations.count())
 
