@@ -17,8 +17,8 @@ Usage
 
 .. code-block:: bash
 
-   ./map-deploy-to-develop.sh <from-path> <to-path> <output-file> [--options <value>] [--spin-db] [--port <db-port>]
-
+   ./map-deploy-to-develop.sh <from-path> <to-path> <output-file> \
+     [--options <value>] [--spin-db] [--db-port <port>]
 
 Arguments
 ---------
@@ -38,10 +38,9 @@ Arguments
 | ``--spin-db``   | Optional flag to start a temporary PostgreSQL DB container           |
 |                 | (omit the flag to skip starting the DB).                             |
 +-----------------+---------------------------------------------------------------------+
-| ``--port``      | Optional flag to specify the Postgres bind port                     |
+| ``--db-port``   | Optional flag to specify the Postgres bind port                     |
 |                 | (default: ``5432``).                                                |
 +-----------------+---------------------------------------------------------------------+
-
 
 Capabilities matrix
 -------------------
@@ -60,9 +59,8 @@ D2D pipeline parameters passed through the ``--options`` flag.
 +--------------------------------------------+------------------------------+------------------------------+---------------------------+------------------------+--------------------------+
 | without ``--spin-db`` (no DB container)    | ✅                            | ✅                            | depends on parameters     | depends on parameters   | depends on parameters     |
 +--------------------------------------------+------------------------------+------------------------------+---------------------------+------------------------+--------------------------+
-| ``--port <port>``                          | ✅                            | ✅                            | depends on parameters     | depends on parameters   | depends on parameters     |
+| ``--db-port <port>``                       | ✅                            | ✅                            | depends on parameters     | depends on parameters   | depends on parameters     |
 +--------------------------------------------+------------------------------+------------------------------+---------------------------+------------------------+--------------------------+
-
 
 Examples
 --------
@@ -77,8 +75,10 @@ Run mapping with database on a custom port:
 
 .. code-block:: bash
 
-   ./map-deploy-to-develop.sh ./from.tar.gz ./to.whl output.json --options "Python,Java" --spin-db --port 5433
-
+   ./map-deploy-to-develop.sh ./from.tar.gz ./to.whl output.json \
+     --options "Python,Java" \
+     --spin-db \
+     --db-port 5433
 
 Script actions (high-level)
 ---------------------------
@@ -91,7 +91,6 @@ Script actions (high-level)
 6. Writes mapping output into ``output-file``
 7. Cleans up temp directory
 8. Stops DB container if it was started
-
 
 Related files
 -------------
