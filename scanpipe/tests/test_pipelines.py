@@ -533,6 +533,8 @@ class PipelinesIntegrationTest(TestCase):
         "--verbose",
         # system_environment differs between systems
         "system_environment",
+        # the version number may change over time
+        "spdx_license_list_version",
         "file_type",
         # mime type and is_script are inconsistent across systems
         "mime_type",
