@@ -35,7 +35,7 @@ Arguments
 +-----------------+-------------------------------------------------------------+
 | ``spin-db``     | ``true`` = spin temp DB container, ``false`` = skip         |
 +-----------------+-------------------------------------------------------------+
-| ``db-port``     | Port to bind Postgres (default: ``5432``)                   |
+| ``db-port``     | ``--port`` flag to specify port to bind Postgres (default: ``5432``) |
 +-----------------+-------------------------------------------------------------+
 
 Capabilities matrix
