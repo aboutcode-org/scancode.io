@@ -65,7 +65,7 @@ Run mapping without database:
 
 .. code-block:: bash
 
-   ./map-deploy-to-develop.sh ./from.tar.gz ./to.whl results.json "" false
+   ./map-deploy-to-develop.sh ./from.tar.gz ./to.whl results.json
 
 Run mapping with database on a custom port:
 
