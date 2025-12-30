@@ -593,7 +593,6 @@ class ScanPipeD2DPipesTest(TestCase):
         expected = (
             "Mapping 1 .class (or other deployed file) resources to 1 ('.groovy',)"
         )
-        print("buffer.getvalue():", buffer.getvalue(), file=sys.stderr)
         self.assertIn(expected, buffer.getvalue())
         self.assertEqual(1, self.project1.codebaserelations.count())
 
@@ -620,7 +619,6 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
         expected = "Mapping 1 .class (or other deployed file) resources to 1 ('.aj',)"
-        print("buffer.getvalue():", buffer.getvalue(), file=sys.stderr)
         self.assertIn(expected, buffer.getvalue())
         self.assertEqual(1, self.project1.codebaserelations.count())
 
@@ -647,7 +645,6 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
         expected = "Mapping 1 .class (or other deployed file) resources to 1 ('.clj',)"
-        print("buffer.getvalue():", buffer.getvalue(), file=sys.stderr)
         self.assertIn(expected, buffer.getvalue())
         self.assertEqual(1, self.project1.codebaserelations.count())
 
