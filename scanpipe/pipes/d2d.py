@@ -239,8 +239,8 @@ def map_jvm_to_class(project, jvm_lang: jvm.JvmLanguage, logger=None):
 
     if logger:
         logger(
-            f"Mapping {to_resource_count:,d} .class resources to "
-            f"{from_resource_count:,d} {jvm_lang.source_extensions}"
+            f"Mapping {to_resource_count:,d} .class (or other deployed file) "
+            f"resources to {from_resource_count:,d} {jvm_lang.source_extensions}"
         )
 
     # build an index using from-side fully qualified class file names
