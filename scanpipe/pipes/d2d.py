@@ -644,10 +644,7 @@ def match_purldb_resources(
     else:
         to_resources = project.codebaseresources.files().to_codebase().no_status()
 
-    to_resources = (
-        to_resources.has_value("sha1")
-        .filter(extension__in=extensions)
-    )
+    to_resources = to_resources.has_value("sha1").filter(extension__in=extensions)
     resource_count = to_resources.count()
 
     extensions_str = ", ".join(extensions)
@@ -773,9 +770,13 @@ def map_javascript(project, logger=None, to_queryset=None, **kwargs):
     project_files = project.codebaseresources.files()
 
     if to_queryset is not None:
-        to_resources_base = to_queryset.files().no_status().exclude(name__startswith=".")
+        to_resources_base = (
+            to_queryset.files().no_status().exclude(name__startswith=".")
+        )
     else:
-        to_resources_base = project_files.to_codebase().no_status().exclude(name__startswith=".")
+        to_resources_base = (
+            project_files.to_codebase().no_status().exclude(name__startswith=".")
+        )
 
     to_resources_dot_map = to_resources_base.filter(extension=".map")
     to_resources_minified = to_resources_base.filter(extension__in=[".css", ".js"])
@@ -1169,8 +1170,7 @@ def map_javascript_path(project, logger=None, to_queryset=None, **kwargs):
         to_resources_base = project_files.to_codebase().no_status()
 
     to_resources_key = (
-        to_resources_base
-        .filter(extension__in=[".map", ".ts"])
+        to_resources_base.filter(extension__in=[".map", ".ts"])
         .exclude(name__startswith=".")
         .exclude(path__contains="/node_modules/")
     )
@@ -1261,8 +1261,7 @@ def map_javascript_colocation(project, logger=None, to_queryset=None, **kwargs):
         to_resources_base = project_files.to_codebase().no_status()
 
     to_resources_key = (
-        to_resources_base
-        .filter(extension__in=[".map", ".ts"])
+        to_resources_base.filter(extension__in=[".map", ".ts"])
         .exclude(name__startswith=".")
         .exclude(path__contains="/node_modules/")
     )
@@ -1381,11 +1380,9 @@ def map_thirdparty_npm_packages(project, logger=None, to_queryset=None, **kwargs
     else:
         to_resources_base = project_files.to_codebase()
 
-    to_package_json = (
-        to_resources_base
-        .filter(path__regex=r"^.*\/node_modules\/.*\/package\.json$")
-        .exclude(path__regex=r"^.*\/node_modules\/.*\/node_modules\/.*$")
-    )
+    to_package_json = to_resources_base.filter(
+        path__regex=r"^.*\/node_modules\/.*\/package\.json$"
+    ).exclude(path__regex=r"^.*\/node_modules\/.*\/node_modules\/.*$")
 
     to_resources = to_resources_base.no_status()
     resource_count = to_package_json.count()
@@ -1483,7 +1480,9 @@ def create_local_files_packages(project):
         pipes.create_local_files_package(project, defaults, codebase_resource_ids)
 
 
-def match_resources_with_no_java_source(project, logger=None, to_queryset=None, **kwargs):
+def match_resources_with_no_java_source(
+    project, logger=None, to_queryset=None, **kwargs
+):
     """
     Match resources with ``no-java-source`` to PurlDB, if no match
     is found update status to ``requires-review``.
@@ -1493,7 +1492,9 @@ def match_resources_with_no_java_source(project, logger=None, to_queryset=None, 
     if to_queryset is not None:
         to_no_java_source = to_queryset.files().filter(status=flag.NO_JAVA_SOURCE)
     else:
-        to_no_java_source = project_files.to_codebase().filter(status=flag.NO_JAVA_SOURCE)
+        to_no_java_source = project_files.to_codebase().filter(
+            status=flag.NO_JAVA_SOURCE
+        )
 
     if to_no_java_source:
         resource_count = to_no_java_source.count()
@@ -1599,9 +1600,7 @@ def scan_ignored_to_files(project, logger=None, to_queryset=None):
     scan_files = to_resources.filter(status=flag.IGNORED_FROM_CONFIG)
     scancode.scan_for_files(project, scan_files, progress_logger=logger)
 
-    to_resources.filter(status=flag.SCANNED).update(
-        status=flag.IGNORED_FROM_CONFIG
-    )
+    to_resources.filter(status=flag.SCANNED).update(status=flag.IGNORED_FROM_CONFIG)
 
 
 def scan_unmapped_to_files(project, logger=None, to_queryset=None):
@@ -1617,9 +1616,7 @@ def scan_unmapped_to_files(project, logger=None, to_queryset=None):
     scan_files = to_resources.filter(status=flag.REQUIRES_REVIEW)
     scancode.scan_for_files(project, scan_files, progress_logger=logger)
 
-    to_resources.filter(status=flag.SCANNED).update(
-        status=flag.REQUIRES_REVIEW
-    )
+    to_resources.filter(status=flag.SCANNED).update(status=flag.REQUIRES_REVIEW)
 
 
 def flag_deployed_from_resources_with_missing_license(project, doc_extensions=None):
@@ -1721,9 +1718,7 @@ def match_purldb_resources_post_process(project, logger=None, to_queryset=None):
 
     to_extract_directories = to_extract_directories.filter(path__regex=r"^.*-extract$")
 
-    to_resources = to_resources_base.filter(
-        status=flag.MATCHED_TO_PURLDB_RESOURCE
-    )
+    to_resources = to_resources_base.filter(status=flag.MATCHED_TO_PURLDB_RESOURCE)
 
     resource_count = to_extract_directories.count()
 
@@ -2288,10 +2283,8 @@ def map_javascript_symbols(project, logger=None, to_queryset=None, **kwargs):
     else:
         to_resources_base = project_files.to_codebase()
 
-    javascript_to_resources = (
-        to_resources_base
-        .has_no_relation()
-        .filter(extension__in=js_config.source_symbol_extensions)
+    javascript_to_resources = to_resources_base.has_no_relation().filter(
+        extension__in=js_config.source_symbol_extensions
     )
 
     javascript_from_resources = (
@@ -2389,8 +2382,7 @@ def map_javascript_strings(project, logger=None, to_queryset=None, **kwargs):
         to_resources_base = project_files.to_codebase()
 
     javascript_to_resources = (
-        to_resources_base
-        .has_no_relation()
+        to_resources_base.has_no_relation()
         .filter(extension__in=[".ts", ".js"])
         .exclude(extra_data={})
     )
