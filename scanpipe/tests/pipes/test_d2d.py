@@ -602,6 +602,59 @@ class ScanPipeD2DPipesTest(TestCase):
         expected = {"from_source_root": "from/"}
         self.assertEqual(expected, r1.extra_data)
 
+    def test_scanpipe_pipes_d2d_map_aspectj_to_class(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/project/test.aj",
+            extra_data={"aspectj_package": "project"},
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/project/test.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.AspectJLanguage
+        )
+
+        expected = "Mapping 1 .class (or other deployed file) resources to 1 ('.aj',)"
+        print("buffer.getvalue():", buffer.getvalue(), file=sys.stderr)
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(1, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("aspectj_to_class", r1.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r1.extra_data)
+
+    def test_scanpipe_pipes_d2d_map_clojure_to_class(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/project/test.clj",
+            extra_data={"clojure_package": "project"},
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/project/test.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.ClojureLanguage
+        )
+
+        expected = "Mapping 1 .class (or other deployed file) resources to 1 ('.clj',)"
+        print("buffer.getvalue():", buffer.getvalue(), file=sys.stderr)
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(1, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("clojure_to_class", r1.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r1.extra_data)
 
     def test_scanpipe_pipes_d2d_map_scala_to_class(self):
         from1 = make_resource_file(

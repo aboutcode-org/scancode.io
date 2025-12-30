@@ -207,6 +207,24 @@ class GroovyLanguage(JvmLanguage):
     binary_map_type = "groovy_to_class"
 
 
+class AspectJLanguage(JvmLanguage):
+    name = "aspectj"
+    source_extensions = (".aj",)
+    binary_extensions = (".class",)
+    source_package_attribute_name = "aspectj_package"
+    package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
+    binary_map_type = "aspectj_to_class"
+
+
+class ClojureLanguage(JvmLanguage):
+    name = "clojure"
+    source_extensions = (".clj",)
+    binary_extensions = (".class",)
+    source_package_attribute_name = "clojure_package"
+    package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
+    binary_map_type = "clojure_to_class"
+
+
 class KotlinLanguage(JvmLanguage):
     name = "kotlin"
     source_extensions = (".kt", ".kts")
