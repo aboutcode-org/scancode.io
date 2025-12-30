@@ -112,6 +112,14 @@ ECOSYSTEM_CONFIGS = {
             "*kotlin-project-structure-metadata.json",
         ],
     ),
+    "Groovy": EcosystemConfig(
+        ecosystem_option="Groovy",
+        matchable_package_extensions=[".jar", ".war"],
+        matchable_resource_extensions=[".class"],
+        deployed_resource_path_exclusions=[
+            "*META-INF/*",
+        ],
+    ),
     "JavaScript": EcosystemConfig(
         ecosystem_option="JavaScript",
         matchable_resource_extensions=[

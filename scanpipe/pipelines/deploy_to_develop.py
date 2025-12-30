@@ -83,6 +83,9 @@ class DeployToDevelop(Pipeline):
             cls.find_grammar_packages,
             cls.map_grammar_to_class,
             cls.map_jar_to_grammar_source,
+            cls.find_groovy_packages,
+            cls.map_groovy_to_class,
+            cls.map_jar_to_groovy_source,
             cls.find_xtend_packages,
             cls.map_xtend_to_class,
             cls.map_javascript,
@@ -261,6 +264,28 @@ class DeployToDevelop(Pipeline):
         d2d.map_jar_to_jvm_source(
             project=self.project, jvm_lang=jvm.GrammarLanguage, logger=self.log
         )
+
+    @optional_step("Groovy")
+    def find_groovy_packages(self):
+        """Find the java package of the .java source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.GroovyLanguage, logger=self.log
+        )
+
+    @optional_step("Groovy")
+    def map_groovy_to_class(self):
+        """Map a .class compiled file to its .java source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.GroovyLanguage, logger=self.log
+        )
+
+    @optional_step("Groovy")
+    def map_jar_to_groovy_source(self):
+        """Map .jar files to their related source directory."""
+        d2d.map_jar_to_jvm_source(
+            project=self.project, jvm_lang=jvm.GroovyLanguage, logger=self.log
+        )
+
 
     @optional_step("Xtend")
     def find_xtend_packages(self):

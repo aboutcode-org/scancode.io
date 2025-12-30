@@ -198,6 +198,15 @@ class ScalaLanguage(JvmLanguage):
     binary_map_type = "scala_to_class"
 
 
+class GroovyLanguage(JvmLanguage):
+    name = "groovy"
+    source_extensions = (".groovy",)
+    binary_extensions = (".class",)
+    source_package_attribute_name = "groovy_package"
+    package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
+    binary_map_type = "groovy_to_class"
+
+
 class KotlinLanguage(JvmLanguage):
     name = "kotlin"
     source_extensions = (".kt", ".kts")
