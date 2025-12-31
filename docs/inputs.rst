@@ -26,6 +26,7 @@ interface in the "Inputs" panel.
 
 For REST API uploads, refer to the :ref:`rest_api` documentation for endpoint details.
 
+.. _inputs_download_url:
 
 Download URL
 ------------
