@@ -189,11 +189,15 @@ def download_pom_files(pom_url_list):
     pom_file_list = []
     for pom_url in pom_url_list:
         pom_file_dict = {}
-        downloaded_pom = fetch.fetch_http(pom_url)
-        pom_file_dict["pom_file_path"] = str(downloaded_pom.path)
-        pom_file_dict["output_path"] = str(downloaded_pom.path) + "-output.json"
-        pom_file_dict["pom_url"] = pom_url
-        pom_file_list.append(pom_file_dict)
+        try:
+            downloaded_pom = fetch.fetch_http(pom_url)
+            pom_file_dict["pom_file_path"] = str(downloaded_pom.path)
+            pom_file_dict["output_path"] = str(downloaded_pom.path) + "-output.json"
+            pom_file_dict["pom_url"] = pom_url
+            pom_file_list.append(pom_file_dict)
+        except requests.RequestException:
+            # Keep the process going if one pom_url fails
+            continue
     return pom_file_list
 
 
