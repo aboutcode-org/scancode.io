@@ -109,19 +109,36 @@ function showFolderUploadNotSupportedMessage() {
 function dropHandler(event) {
   disableEvent(event);
 
-  // Detect folder drops (directories are not supported)
   const items = event.dataTransfer.items;
-  if (items) {
+  let droppedFiles = [];
+  let hasDirectory = false;
+
+  if (items && items.length > 0) {
+    // Build a list of files from the dropped items, skipping directories
     for (const item of items) {
       const entry = item.webkitGetAsEntry?.();
       if (entry && entry.isDirectory) {
-        showFolderUploadNotSupportedMessage();
-        return;
+        hasDirectory = true;
+        continue;
+      }
+      const file = item.getAsFile?.();
+      if (file) {
+        droppedFiles.push(file);
       }
     }
+  } else {
+    // Fallback when items are not available
+    droppedFiles = Array.from(event.dataTransfer.files || []);
   }
 
-  const droppedFiles = event.dataTransfer.files;
+  if (hasDirectory) {
+    showFolderUploadNotSupportedMessage();
+  }
+
+  // If there are no files at all (e.g. only folders were dropped), do nothing further
+  if (droppedFiles.length === 0) {
+    return;
+  }
   const updatedFilesSet = new Set(Array.from(fileInput.files));
 
   for (let file of droppedFiles) {
