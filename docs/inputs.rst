@@ -16,12 +16,16 @@ Supported file types include archives (e.g., ``.tar``, ``.zip``, ``.tar.gz``),
 individual source files, pre-built packages, and **SBOMs** (SPDX or CycloneDX in
 JSON format).
 
+.. note::
+
+   Uploading folders/directories is not supported. If you need to upload a folder,
+   create an archive (e.g., ``.zip`` or ``.tar.gz``) and upload the archive instead.
+
 When uploading through the Web UI, navigate to your project and use the upload
 interface in the "Inputs" panel.
 
 For REST API uploads, refer to the :ref:`rest_api` documentation for endpoint details.
 
-.. _inputs_download_url:
 
 Download URL
 ------------
