@@ -607,10 +607,30 @@ class Document:
             "SPDXID": self.spdx_id,
             "name": self.safe_document_name(self.name),
             "documentNamespace": self.namespace,
-            "documentDescribes": self.describes,
             "creationInfo": self.creation_info.as_dict(),
             "packages": [package.as_dict(self.version) for package in self.packages],
         }
+
+        # For SPDX 2.2, use deprecated documentDescribes field for backward compatibility
+        # For SPDX 2.3+, use DESCRIBES relationships instead (per SPDX spec)
+        if self.version == SPDX_SPEC_VERSION_2_2:
+            data["documentDescribes"] = self.describes
+        else:
+            # Generate DESCRIBES relationships from document to described elements
+            describes_relationships = [
+                Relationship(
+                    spdx_id=self.spdx_id,
+                    related_spdx_id=described_id,
+                    relationship="DESCRIBES",
+                ).as_dict()
+                for described_id in self.describes
+            ]
+            # Merge with existing relationships
+            all_relationships = describes_relationships + [
+                relationship.as_dict() for relationship in self.relationships
+            ]
+            if all_relationships:
+                data["relationships"] = all_relationships
 
         if self.files:
             data["files"] = [file.as_dict() for file in self.files]
@@ -620,7 +640,8 @@ class Document:
                 license_info.as_dict() for license_info in self.extracted_licenses
             ]
 
-        if self.relationships:
+        # For SPDX 2.2, add relationships separately (without DESCRIBES)
+        if self.version == SPDX_SPEC_VERSION_2_2 and self.relationships:
             data["relationships"] = [
                 relationship.as_dict() for relationship in self.relationships
             ]
@@ -636,13 +657,37 @@ class Document:
 
     @classmethod
     def from_data(cls, data):
+        spdx_id = data.get("SPDXID", "SPDXRef-DOCUMENT")
+        relationships_data = data.get("relationships", [])
+
+        # Extract describes from either documentDescribes (SPDX 2.2) or
+        # DESCRIBES relationships (SPDX 2.3+)
+        describes = data.get("documentDescribes")
+        if describes is None:
+            # Extract from DESCRIBES relationships
+            describes = [
+                rel.get("relatedSpdxElement")
+                for rel in relationships_data
+                if rel.get("relationshipType") == "DESCRIBES"
+                and rel.get("spdxElementId") == spdx_id
+            ]
+
+        # Filter out DESCRIBES relationships to avoid duplication
+        filtered_relationships = [
+            rel for rel in relationships_data
+            if not (
+                rel.get("relationshipType") == "DESCRIBES"
+                and rel.get("spdxElementId") == spdx_id
+            )
+        ]
+
         return cls(
-            spdx_id=data.get("SPDXID"),
+            spdx_id=spdx_id,
             version=data.get("spdxVersion", "").split("SPDX-")[-1],
             data_license=data.get("dataLicense"),
             name=data.get("name"),
             namespace=data.get("documentNamespace"),
-            describes=data.get("documentDescribes"),
+            describes=describes or [],
             creation_info=CreationInfo.from_data(data.get("creationInfo", {})),
             packages=[
                 Package.from_data(package_data)
@@ -655,7 +700,7 @@ class Document:
             ],
             relationships=[
                 Relationship.from_data(relationship_data)
-                for relationship_data in data.get("relationships", [])
+                for relationship_data in filtered_relationships
             ],
             comment=data.get("comment"),
         )
