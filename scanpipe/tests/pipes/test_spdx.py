@@ -190,13 +190,13 @@ class ScanPipeSPDXPipesTest(TestCase):
             ],
             "comment": "This document was created using SPDXCode-1.0",
         }
+        # SPDX 2.3 uses DESCRIBES relationships instead of documentDescribes
         self.document_spdx_data = {
             "spdxVersion": "SPDX-2.3",
             "dataLicense": "CC0-1.0",
             "SPDXID": "SPDXRef-DOCUMENT",
             "name": "document_name",
             "documentNamespace": "https://[CreatorWebsite]/[DocumentName]-[UUID]",
-            "documentDescribes": ["SPDXRef-project"],
             "creationInfo": {
                 "created": "2022-09-21T13:50:20Z",
                 "creators": [
@@ -246,6 +246,19 @@ class ScanPipeSPDXPipesTest(TestCase):
                     ],
                 },
             ],
+            # DESCRIBES relationship replaces documentDescribes in SPDX 2.3+
+            "relationships": [
+                {
+                    "spdxElementId": "SPDXRef-DOCUMENT",
+                    "relatedSpdxElement": "SPDXRef-project",
+                    "relationshipType": "DESCRIBES",
+                },
+                {
+                    "spdxElementId": "SPDXRef-package1",
+                    "relatedSpdxElement": "SPDXRef-file1",
+                    "relationshipType": "CONTAINS",
+                },
+            ],
             "files": [
                 {
                     "SPDXID": "SPDXRef-file1",
@@ -269,13 +282,6 @@ class ScanPipeSPDXPipesTest(TestCase):
                     "extractedText": "License Text",
                     "name": "License 1",
                     "seeAlsos": ["https://license1.text", "https://license1.homepage"],
-                }
-            ],
-            "relationships": [
-                {
-                    "spdxElementId": "SPDXRef-package1",
-                    "relatedSpdxElement": "SPDXRef-file1",
-                    "relationshipType": "CONTAINS",
                 }
             ],
             "comment": "This document was created using SPDXCode-1.0",
@@ -412,3 +418,104 @@ class ScanPipeSPDXPipesTest(TestCase):
 
         with self.assertRaises(Exception):
             spdx.validate_document({}, self.schema_2_3)
+
+    def test_spdx_document_2_3_uses_describes_relationships(self):
+        """Test that SPDX 2.3 documents use DESCRIBES relationships instead of
+        the deprecated documentDescribes field."""
+        document = spdx.Document(**self.document_data)
+        document.version = spdx.SPDX_SPEC_VERSION_2_3
+        result = document.as_dict()
+
+        # Should NOT have documentDescribes
+        assert "documentDescribes" not in result
+
+        # Should have DESCRIBES relationship
+        describes_rels = [
+            rel for rel in result.get("relationships", [])
+            if rel.get("relationshipType") == "DESCRIBES"
+        ]
+        assert len(describes_rels) == 1
+        assert describes_rels[0]["spdxElementId"] == "SPDXRef-DOCUMENT"
+        assert describes_rels[0]["relatedSpdxElement"] == "SPDXRef-project"
+
+    def test_spdx_document_2_2_uses_document_describes(self):
+        """Test that SPDX 2.2 documents still use documentDescribes for
+        backward compatibility."""
+        document = spdx.Document(**self.document_data)
+        document.version = spdx.SPDX_SPEC_VERSION_2_2
+        result = document.as_dict()
+
+        # Should have documentDescribes
+        assert "documentDescribes" in result
+        assert result["documentDescribes"] == ["SPDXRef-project"]
+
+        # Should NOT have DESCRIBES relationship
+        describes_rels = [
+            rel for rel in result.get("relationships", [])
+            if rel.get("relationshipType") == "DESCRIBES"
+        ]
+        assert len(describes_rels) == 0
+
+    def test_spdx_document_from_data_with_describes_relationships(self):
+        """Test that from_data correctly extracts describes from DESCRIBES
+        relationships (SPDX 2.3+ format)."""
+        data_with_describes_rel = {
+            "SPDXID": "SPDXRef-DOCUMENT",
+            "spdxVersion": "SPDX-2.3",
+            "name": "test",
+            "documentNamespace": "https://example.com/test",
+            "creationInfo": {"created": "2022-01-01T00:00:00Z", "creators": ["Tool: test"]},
+            "packages": [],
+            "relationships": [
+                {
+                    "spdxElementId": "SPDXRef-DOCUMENT",
+                    "relatedSpdxElement": "SPDXRef-pkg1",
+                    "relationshipType": "DESCRIBES",
+                },
+                {
+                    "spdxElementId": "SPDXRef-DOCUMENT",
+                    "relatedSpdxElement": "SPDXRef-pkg2",
+                    "relationshipType": "DESCRIBES",
+                },
+                {
+                    "spdxElementId": "SPDXRef-pkg1",
+                    "relatedSpdxElement": "SPDXRef-file1",
+                    "relationshipType": "CONTAINS",
+                },
+            ],
+        }
+        document = spdx.Document.from_data(data_with_describes_rel)
+
+        # Should extract describes from DESCRIBES relationships
+        assert document.describes == ["SPDXRef-pkg1", "SPDXRef-pkg2"]
+
+        # Should filter out DESCRIBES relationships from relationships list
+        assert len(document.relationships) == 1
+        assert document.relationships[0].relationship == "CONTAINS"
+
+    def test_spdx_document_from_data_with_document_describes(self):
+        """Test that from_data correctly handles documentDescribes
+        (SPDX 2.2 format)."""
+        data_with_document_describes = {
+            "SPDXID": "SPDXRef-DOCUMENT",
+            "spdxVersion": "SPDX-2.2",
+            "name": "test",
+            "documentNamespace": "https://example.com/test",
+            "documentDescribes": ["SPDXRef-pkg1", "SPDXRef-pkg2"],
+            "creationInfo": {"created": "2022-01-01T00:00:00Z", "creators": ["Tool: test"]},
+            "packages": [],
+            "relationships": [
+                {
+                    "spdxElementId": "SPDXRef-pkg1",
+                    "relatedSpdxElement": "SPDXRef-file1",
+                    "relationshipType": "CONTAINS",
+                },
+            ],
+        }
+        document = spdx.Document.from_data(data_with_document_describes)
+
+        # Should use documentDescribes directly
+        assert document.describes == ["SPDXRef-pkg1", "SPDXRef-pkg2"]
+
+        # Should keep all relationships
+        assert len(document.relationships) == 1
