@@ -26,6 +26,7 @@ from unittest import mock
 from django.test import TestCase
 from django.test import override_settings
 
+import requests
 from requests import auth as request_auth
 
 from scanpipe.pipes import fetch
@@ -265,3 +266,37 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual("", download.size)
         self.assertEqual("", download.sha1)
         self.assertEqual("", download.md5)
+
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_check_urls_availability(self, mock_get):
+        urls = [
+            "https://example.com/file.zip",
+            "https://nuget.org/api/v2/package/Serilog/4.3.0",
+        ]
+
+        # Test successful availability check
+        mock_response = mock.Mock()
+        mock_response.raise_for_status = mock.Mock()
+        mock_get.return_value = mock_response
+        errors = fetch.check_urls_availability(urls)
+        self.assertEqual([], errors)
+        # Verify GET with stream=True is used (not HEAD)
+        self.assertEqual(2, mock_get.call_count)
+        for call in mock_get.call_args_list:
+            self.assertTrue(call.kwargs.get("stream"))
+
+        # Test failed availability check
+        mock_get.reset_mock()
+        mock_get.side_effect = requests.exceptions.RequestException("Connection failed")
+        errors = fetch.check_urls_availability(urls)
+        self.assertEqual(urls, errors)
+
+        # Test non-http URLs are skipped
+        mock_get.reset_mock()
+        mock_get.side_effect = None
+        mock_get.return_value = mock_response
+        mixed_urls = ["pkg:npm/lodash@4.0.0", "https://example.com/file.zip"]
+        errors = fetch.check_urls_availability(mixed_urls)
+        self.assertEqual([], errors)
+        # Only the http URL should be checked
+        self.assertEqual(1, mock_get.call_count)

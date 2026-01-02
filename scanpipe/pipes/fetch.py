@@ -414,8 +414,12 @@ def check_urls_availability(urls):
 
         request_session = get_request_session(url)
         try:
-            response = request_session.head(url, timeout=HTTP_REQUEST_TIMEOUT)
+            # Use GET with stream=True instead of HEAD because some servers
+            # (like nuget.org) reject HEAD requests with 403 Forbidden.
+            # stream=True ensures we only download headers, not the body.
+            response = request_session.get(url, timeout=HTTP_REQUEST_TIMEOUT, stream=True)
             response.raise_for_status()
+            response.close()
         except requests.exceptions.RequestException:
             errors.append(url)
 
