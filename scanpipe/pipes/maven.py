@@ -4,6 +4,7 @@ import re
 import requests
 
 from scanpipe.pipes import fetch
+from scanpipe.pipes import flag
 from scanpipe.pipes import scancode
 
 
@@ -189,11 +190,15 @@ def download_pom_files(pom_url_list):
     pom_file_list = []
     for pom_url in pom_url_list:
         pom_file_dict = {}
-        downloaded_pom = fetch.fetch_http(pom_url)
-        pom_file_dict["pom_file_path"] = str(downloaded_pom.path)
-        pom_file_dict["output_path"] = str(downloaded_pom.path) + "-output.json"
-        pom_file_dict["pom_url"] = pom_url
-        pom_file_list.append(pom_file_dict)
+        try:
+            downloaded_pom = fetch.fetch_http(pom_url)
+            pom_file_dict["pom_file_path"] = str(downloaded_pom.path)
+            pom_file_dict["output_path"] = str(downloaded_pom.path) + "-output.json"
+            pom_file_dict["pom_url"] = pom_url
+            pom_file_list.append(pom_file_dict)
+        except requests.RequestException:
+            # Keep the process going if one pom_url fails
+            continue
     return pom_file_list
 
 
@@ -241,6 +246,48 @@ def update_datafile_paths(pom_file_list):
                     scanned_dep["datafile_path"] = ""
                     scanned_pom_deps.append(scanned_dep)
     return scanned_pom_packages, scanned_pom_deps
+
+
+def validate_package_license_integrity(project):
+    """Validate the correctness of the package license."""
+    from license_expression import Licensing
+
+    for package in project.discoveredpackages.all():
+        package_lic = package.get_declared_license_expression()
+        if package_lic:
+            package_uid = package.package_uid
+            package_uid_found = False
+            detected_lic_list = []
+            for resource in project.codebaseresources.has_license_expression():
+                for for_package in resource.for_packages:
+                    if for_package == package_uid:
+                        package_uid_found = True
+                        detected_lic_exp = resource.detected_license_expression
+                        # Ignore all the 'unknown' detected licenses
+                        if detected_lic_exp != "unknown" and detected_lic_exp:
+                            if detected_lic_exp not in detected_lic_list:
+                                detected_lic_list.append(detected_lic_exp)
+            if not package_uid_found:
+                # The package data is fetched remotely.
+                for resource in project.codebaseresources.has_license_expression():
+                    detected_lic_exp = resource.detected_license_expression
+                    # Ignore all the 'unknown' detected licenses
+                    if detected_lic_exp != "unknown" and detected_lic_exp:
+                        if detected_lic_exp not in detected_lic_list:
+                            detected_lic_list.append(detected_lic_exp)
+            if detected_lic_list:
+                lic_exp = " AND ".join(detected_lic_list)
+                detected_lic_exp = str(Licensing().dedup(lic_exp))
+                # The package license is not in sync with detected license(s)
+                if detected_lic_exp != package_lic:
+                    package.update_extra_data({"issue": "License Mismatch", "declared_license": package_lic, "detecte_codebase_license": detected_lic_exp})
+                    for datafile_path in package.datafile_paths:
+                        if not datafile_path.startswith("https://"):
+                            data_path = project.codebaseresources.get(
+                                path=datafile_path
+                            )
+                            data_path.update(status=flag.LICENSE_ISSUE)
+                            data_path.update_extra_data({"declared_license": package_lic, "detecte_codebase_license": detected_lic_exp})
 
 
 def update_package_license_from_resource_if_missing(project):

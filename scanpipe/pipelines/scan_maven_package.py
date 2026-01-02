@@ -25,6 +25,7 @@ from scanpipe.pipelines.deploy_to_develop import DeployToDevelop
 from scanpipe.pipelines.scan_single_package import ScanSinglePackage
 from scanpipe.pipes.maven import fetch_and_scan_remote_pom
 from scanpipe.pipes.maven import update_package_license_from_resource_if_missing
+from scanpipe.pipes.maven import validate_package_license_integrity
 
 
 class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
@@ -59,6 +60,7 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
             cls.run_scan,
             cls.fetch_and_scan_remote_pom,
             cls.load_inventory_from_toolkit_scan,
+            cls.validate_package_license_integrity,
             cls.update_package_license_from_resource_if_missing,
             cls.make_summary_from_scan_results,
         )
@@ -159,6 +161,10 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
                             "resource_path": resource_path.removeprefix("codebase/")
                         },
                     )
+
+    def validate_package_license_integrity(self):
+        """Validate the correctness of the package license."""
+        validate_package_license_integrity(self.project)
 
     def update_package_license_from_resource_if_missing(self):
         """Update PACKAGE license from the license detected in RESOURCES if missing."""
