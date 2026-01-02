@@ -1496,6 +1496,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         return self.vulnerable_dependencies.count()
 
     @cached_property
+    def vulnerability_count(self):
+        """Return the number of vulnerabilities related to this project."""
+        return self.vulnerable_package_count + self.vulnerable_dependency_count
+
+    @cached_property
     def dependency_count(self):
         """Return the number of dependencies related to this project."""
         return self.discovereddependencies.count()
