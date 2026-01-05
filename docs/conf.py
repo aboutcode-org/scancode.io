@@ -65,6 +65,20 @@ autodoc_default_options = {
 
 # -- Options for HTML output -------------------------------------------------
 
+html_static_path = ["_static"]
+
+html_context = {
+    "display_github": True,
+    "github_user": "aboutcode-org",
+    "github_repo": "scancode.io",
+    "github_version": "main",  # branch
+    "conf_py_path": "/docs/",  # path in the checkout to the docs root
+}
+
+html_css_files = [
+    "theme_overrides.css",
+]
+
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 html_theme = "sphinx_rtd_theme"

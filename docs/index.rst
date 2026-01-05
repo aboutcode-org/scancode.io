@@ -21,28 +21,26 @@ to help you know where to look for certain things.
 
 .. rst-class:: column column2 top-left
 
-:ref:`getting-started`
+Getting started
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Start here if you are new to ScanCode.
 
 - :ref:`quickstart`
-
- - :ref:`introduction`
- - :ref:`installation`
- - :ref:`user-interface`
-
-- :ref:`faq`
+- :ref:`introduction`
+- :ref:`installation`
+- :ref:`contributing`
+- :ref:`user_interface`
 
 .. rst-class:: column column2 top-right
 
-:ref:`tutorials`
+Tutorials
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Learn via practical step-by-step guides.
 
 - :ref:`tutorial_web_ui_analyze_docker_image`
-- :ref:`tutorial_web_ui_review_scan_result`
+- :ref:`tutorial_web_ui_review_scan_results`
 - :ref:`tutorial_cli_analyze_docker_image`
 - :ref:`tutorial_api_analyze_package_archive`
 - :ref:`tutorial_license_policies`
@@ -52,57 +50,84 @@ Learn via practical step-by-step guides.
 
 .. rst-class:: column column2 bottom-left
 
-:ref:`how-to-guides`
-~~~~~~~~~~~~~~~~~~~~
+Reference Docs
+~~~~~~~~~~~~~~~~~~
 
-Helps you accomplish things.
+Reference documentation for scancode features and customizations.
 
-- :ref:`contributing`
+- :ref:`built_in_pipelines`
+- :ref:`custom_pipelines`
+- :ref:`project_configuration`
+- :ref:`inputs`
+- :ref:`output_files`
+- :ref:`command_line_interface`
+- :ref:`rest_api`
+- :ref:`policies`
+- :ref:`data_model`
+- :ref:`automation`
+- :ref:`webhooks`
+- :ref:`scancodeio_settings`
+- :ref:`recognized_distros_os_images`
 
 .. rst-class:: column column2 bottom-right
 
-:ref:`reference` and :ref:`explanation`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Explanations
+~~~~~~~~~~~~~~~~~~
 
 Consult the reference to understand ScanCode.io concepts.
 
-- :ref:`scanpipe-concepts`
-- :ref:`built-in-pipelines`
-- :ref:`custom-pipelines`
-- :ref:`scanpipe-pipes`
-- :ref:`project-configuration`
-- :ref:`inputs`
-- :ref:`output-files`
-- :ref:`command-line-interface`
-- :ref:`rest-api`
-- :ref:`policies`
-- :ref:`data-models`
-- :ref:`automation`
-- :ref:`webhooks`
-- :ref:`application-settings`
-- :ref:`distros-os-images`
+- :ref:`scanpipe_concepts`
+- :ref:`scanpipe_pipes`
 
 .. rst-class:: row clearfix
 
-Improving Documentation
-~~~~~~~~~~~~~~~~~~~~~~~
+Misc
+~~~~~~~~~~~~~~~
 
-.. include::  /rst-snippets/improve-docs.rst
+- :ref:`faq`
+- :ref:`changelog`
 
-.. toctree::
-   :maxdepth: 2
-   :hidden:
+.. include:: improve-docs.rst
 
-   getting-started/index
-   tutorials/index
-   how-to-guides/index
-   reference/index
-   explanation/index
-
-   changelog
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`search`
+
+.. toctree::
+    :maxdepth: 2
+    :hidden:
+
+    quickstart
+    introduction
+    installation
+    user-interface
+    faq
+    contributing
+    changelog
+    tutorial_web_ui_analyze_docker_image
+    tutorial_web_ui_review_scan_results
+    tutorial_cli_analyze_docker_image
+    tutorial_cli_analyze_codebase
+    tutorial_api_analyze_package_archive
+    tutorial_license_policies
+    tutorial_vulnerablecode_integration
+    tutorial_web_ui_symbol_and_string_collection
+    tutorial_cli_end_to_end_scanning_to_dejacode
+    scanpipe-concepts
+    built-in-pipelines
+    custom-pipelines
+    scanpipe-pipes
+    project-configuration
+    inputs
+    output-files
+    command-line-interface
+    rest-api
+    policies
+    data-models
+    automation
+    webhooks
+    application-settings
+    distros-os-images
