@@ -286,3 +286,23 @@ class ScanPipeMavenPipesTest(TestCase):
 
         for package in project1.discoveredpackages.all():
             self.assertEqual(package.get_declared_license_expression(), "custom")
+
+    def test_scanpipe_maven_contains_ignore_pattern(self):
+        ignore_patterns = ["*example/*", "*.sh", "*test/*"]
+
+        self.assertTrue(
+            maven.contains_ignore_pattern(
+                "src/com/example/Example.class", ignore_patterns
+            )
+        )
+        self.assertFalse(
+            maven.contains_ignore_pattern("docs/README.md", ignore_patterns)
+        )
+        self.assertTrue(
+            maven.contains_ignore_pattern(
+                "src/com/project/test/Test.java", ignore_patterns
+            )
+        )
+        self.assertTrue(
+            maven.contains_ignore_pattern("src/com/project/conf.sh", ignore_patterns)
+        )

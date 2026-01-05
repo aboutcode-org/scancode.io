@@ -248,46 +248,80 @@ def update_datafile_paths(pom_file_list):
     return scanned_pom_packages, scanned_pom_deps
 
 
+def contains_ignore_pattern(resource_path, ignore_patterns):
+    """Check if the resource path matches any of the ignore patterns."""
+    from fnmatch import fnmatch
+
+    for pattern in ignore_patterns:
+        if fnmatch(resource_path, pattern):
+            return True
+    return False
+
+
+def collect_detected_licenses(resources, ignore_patterns, package_uid=None):
+    """Collect detected licenses from resources, ignoring specified patterns."""
+    detected_lic_list = []
+    for resource in resources:
+        if contains_ignore_pattern(resource.path, ignore_patterns):
+            continue
+
+        # If a package_uid is provided, only consider resources linked to it
+        if package_uid and package_uid not in resource.for_packages:
+            continue
+
+        lic = resource.detected_license_expression
+        if lic and lic != "unknown" and lic not in detected_lic_list:
+            detected_lic_list.append(lic)
+    return detected_lic_list
+
+
 def validate_package_license_integrity(project):
     """Validate the correctness of the package license."""
     from license_expression import Licensing
+
+    # Patterns to ignore certain resources during license validation
+    ignore_patterns = [
+        "*test*",
+        "*.sh",
+    ]
 
     for package in project.discoveredpackages.all():
         package_lic = package.get_declared_license_expression()
         if package_lic:
             package_uid = package.package_uid
-            package_uid_found = False
-            detected_lic_list = []
-            for resource in project.codebaseresources.has_license_expression():
-                for for_package in resource.for_packages:
-                    if for_package == package_uid:
-                        package_uid_found = True
-                        detected_lic_exp = resource.detected_license_expression
-                        # Ignore all the 'unknown' detected licenses
-                        if detected_lic_exp != "unknown" and detected_lic_exp:
-                            if detected_lic_exp not in detected_lic_list:
-                                detected_lic_list.append(detected_lic_exp)
-            if not package_uid_found:
-                # The package data is fetched remotely.
-                for resource in project.codebaseresources.has_license_expression():
-                    detected_lic_exp = resource.detected_license_expression
-                    # Ignore all the 'unknown' detected licenses
-                    if detected_lic_exp != "unknown" and detected_lic_exp:
-                        if detected_lic_exp not in detected_lic_list:
-                            detected_lic_list.append(detected_lic_exp)
+            resources = project.codebaseresources.has_license_expression()
+            detected_lic_list = collect_detected_licenses(
+                resources, ignore_patterns, package_uid
+            )
+            if not detected_lic_list:
+                detected_lic_list = collect_detected_licenses(
+                    resources, ignore_patterns
+                )
+
             if detected_lic_list:
                 lic_exp = " AND ".join(detected_lic_list)
                 detected_lic_exp = str(Licensing().dedup(lic_exp))
                 # The package license is not in sync with detected license(s)
                 if detected_lic_exp != package_lic:
-                    package.update_extra_data({"issue": "License Mismatch", "declared_license": package_lic, "detecte_codebase_license": detected_lic_exp})
+                    package.update_extra_data(
+                        {
+                            "issue": "License Mismatch",
+                            "declared_license": package_lic,
+                            "detecte_codebase_license": detected_lic_exp,
+                        }
+                    )
                     for datafile_path in package.datafile_paths:
                         if not datafile_path.startswith("https://"):
                             data_path = project.codebaseresources.get(
                                 path=datafile_path
                             )
                             data_path.update(status=flag.LICENSE_ISSUE)
-                            data_path.update_extra_data({"declared_license": package_lic, "detecte_codebase_license": detected_lic_exp})
+                            data_path.update_extra_data(
+                                {
+                                    "declared_license": package_lic,
+                                    "detecte_codebase_license": detected_lic_exp,
+                                }
+                            )
 
 
 def update_package_license_from_resource_if_missing(project):
