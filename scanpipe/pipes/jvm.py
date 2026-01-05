@@ -192,10 +192,37 @@ class JavaLanguage(JvmLanguage):
 class ScalaLanguage(JvmLanguage):
     name = "scala"
     source_extensions = (".scala",)
-    binary_extensions = (".class",)
+    binary_extensions = (".class", ".tasty")
     source_package_attribute_name = "scala_package"
     package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
     binary_map_type = "scala_to_class"
+
+
+class GroovyLanguage(JvmLanguage):
+    name = "groovy"
+    source_extensions = (".groovy",)
+    binary_extensions = (".class",)
+    source_package_attribute_name = "groovy_package"
+    package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
+    binary_map_type = "groovy_to_class"
+
+
+class AspectJLanguage(JvmLanguage):
+    name = "aspectj"
+    source_extensions = (".aj",)
+    binary_extensions = (".class",)
+    source_package_attribute_name = "aspectj_package"
+    package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
+    binary_map_type = "aspectj_to_class"
+
+
+class ClojureLanguage(JvmLanguage):
+    name = "clojure"
+    source_extensions = (".clj",)
+    binary_extensions = (".class",)
+    source_package_attribute_name = "clojure_package"
+    package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
+    binary_map_type = "clojure_to_class"
 
 
 class KotlinLanguage(JvmLanguage):
