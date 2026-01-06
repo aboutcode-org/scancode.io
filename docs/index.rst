@@ -57,6 +57,8 @@ In this documentation, you’ll find:
     webhooks
     application-settings
     distros-os-images
+    d2d-options
+
 
 Indices and tables
 ==================
