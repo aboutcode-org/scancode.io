@@ -24,6 +24,9 @@ const fileInput = document.querySelector("#id_input_files");
 let selectedFiles = []; // Store selected files
 fileInput.onchange = updateFiles;
 
+// Handle drag and drop events
+const inputFilesBox = document.querySelector("#input_files_box");
+
 // Update the list of files to be uploaded in the UI
 function updateFiles() {
   if (fileInput.files.length > 0) {
@@ -33,14 +36,16 @@ function updateFiles() {
     // Update the selectedFiles array
     const newFiles = Array.from(fileInput.files);
     // Create a Set to track unique file names
-    const uniqueFileNames = new Set(selectedFiles.map(file => file.name));
+    const uniqueFileNames = new Set(selectedFiles.map((file) => file.name));
     // Filter out files with the same name
-    const filteredNewFiles = newFiles.filter(file => !uniqueFileNames.has(file.name));
+    const filteredNewFiles = newFiles.filter(
+      (file) => !uniqueFileNames.has(file.name)
+    );
     // Concatenate the unique files to the existing selectedFiles array
     selectedFiles = selectedFiles.concat(filteredNewFiles);
 
     for (let file of selectedFiles) {
-      const fileNameWithoutSpaces = file.name.replace(/\s/g, '');
+      const fileNameWithoutSpaces = file.name.replace(/\s/g, "");
       fileName.innerHTML += `
       <span class="is-flex is-justify-content-space-between is-block" id="file-name-${fileNameWithoutSpaces}">
         <span class="is-block">${file.name}</span>
@@ -49,13 +54,15 @@ function updateFiles() {
         </a>
       </span>
       `;
-      document.getElementById("file-delete-btn-"+ fileNameWithoutSpaces).addEventListener("click", function(event){
-        disableEvent(event);
-        removeFile(fileNameWithoutSpaces);
-        if(selectedFiles.length == 0){
-          fileName.innerHTML ="<i>No files selected</i>"
-        }
-      });
+      document
+        .getElementById("file-delete-btn-" + fileNameWithoutSpaces)
+        .addEventListener("click", function (event) {
+          disableEvent(event);
+          removeFile(fileNameWithoutSpaces);
+          if (selectedFiles.length == 0) {
+            fileName.innerHTML = "<i>No files selected</i>";
+          }
+        });
     }
   }
 }
@@ -67,8 +74,8 @@ function disableEvent(event) {
 }
 
 function removeFile(fileName) {
-  selectedFiles = selectedFiles.filter(file => {
-    const fileNameWithoutSpaces = file.name.replace(/\s/g, '');
+  selectedFiles = selectedFiles.filter((file) => {
+    const fileNameWithoutSpaces = file.name.replace(/\s/g, "");
     return fileNameWithoutSpaces !== fileName;
   });
 
@@ -85,9 +92,53 @@ function removeFile(fileName) {
   fileInput.files = dataTransfer.files;
 }
 
+function showFolderUploadNotSupportedMessage() {
+  let notice = document.querySelector("#folder-upload-notice");
+  if (!notice) {
+    notice = document.createElement("div");
+    notice.id = "folder-upload-notice";
+    notice.className = "notification is-warning is-light mt-2";
+    notice.innerHTML = `
+      <strong>Folders are not supported.</strong>
+      Please upload a <code>.zip</code> or <code>.tar.gz</code> archive instead.
+    `;
+    inputFilesBox.insertAdjacentElement("afterend", notice);
+  }
+}
+
 function dropHandler(event) {
   disableEvent(event);
-  const droppedFiles = event.dataTransfer.files;
+
+  const items = event.dataTransfer.items;
+  let droppedFiles = [];
+  let hasDirectory = false;
+
+  if (items && items.length > 0) {
+    // Build a list of files from the dropped items, skipping directories
+    for (const item of items) {
+      const entry = item.webkitGetAsEntry?.();
+      if (entry && entry.isDirectory) {
+        hasDirectory = true;
+        continue;
+      }
+      const file = item.getAsFile?.();
+      if (file) {
+        droppedFiles.push(file);
+      }
+    }
+  } else {
+    // Fallback when items are not available
+    droppedFiles = Array.from(event.dataTransfer.files || []);
+  }
+
+  if (hasDirectory) {
+    showFolderUploadNotSupportedMessage();
+  }
+
+  // If there are no files at all (e.g. only folders were dropped), do nothing further
+  if (droppedFiles.length === 0) {
+    return;
+  }
   const updatedFilesSet = new Set(Array.from(fileInput.files));
 
   for (let file of droppedFiles) {
@@ -106,8 +157,6 @@ function dropHandler(event) {
   updateFiles();
 }
 
-// Handle drag and drop events
-const inputFilesBox = document.querySelector("#input_files_box");
 inputFilesBox.addEventListener("dragenter", disableEvent);
 inputFilesBox.addEventListener("dragover", disableEvent);
 inputFilesBox.addEventListener("drop", dropHandler);
