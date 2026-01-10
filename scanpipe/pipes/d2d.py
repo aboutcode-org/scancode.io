@@ -174,12 +174,21 @@ def _map_jvm_to_class_resource(
     from/ fully qualified binary files.
     """
     for extension in jvm_lang.source_extensions:
-        normalized_path = jvm_lang.get_normalized_path(
+        # Perform basic conversion from .class to source file path
+        source_path = jvm_lang.get_source_path(
             path=to_resource.path, extension=extension
         )
-        match = pathmap.find_paths(path=normalized_path, index=from_classes_index)
+        # Perform basic mapping without normalization for scenarios listed in
+        # https://github.com/aboutcode-org/scancode.io/issues/1873
+        match = pathmap.find_paths(path=source_path, index=from_classes_index)
+
         if not match:
-            return
+            normalized_path = jvm_lang.get_normalized_path(
+                path=to_resource.path, extension=extension
+            )
+            match = pathmap.find_paths(path=normalized_path, index=from_classes_index)
+            if not match:
+                return
 
         for resource_id in match.resource_ids:
             from_resource = from_resources.get(id=resource_id)
@@ -240,8 +249,8 @@ def map_jvm_to_class(
 
     if logger:
         logger(
-            f"Mapping {to_resource_count:,d} .class resources to "
-            f"{from_resource_count:,d} {jvm_lang.source_extensions}"
+            f"Mapping {to_resource_count:,d} .class (or other deployed file) "
+            f"resources to {from_resource_count:,d} {jvm_lang.source_extensions}"
         )
 
     # build an index using from-side fully qualified class file names

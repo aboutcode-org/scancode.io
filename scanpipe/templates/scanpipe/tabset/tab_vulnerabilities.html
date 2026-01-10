@@ -2,41 +2,23 @@
   <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
     <thead>
       <tr>
-        <th style="width: 210px;">Affected by</th>
+        <th style="width: 220px;">Affected by</th>
         <th>Summary</th>
-        <th style="width: 210px;">Aliases</th>
+        <th>Analysis</th>
       </tr>
     </thead>
     <tbody>
       {% for vulnerability in tab_data.fields.affected_by_vulnerabilities.value %}
         <tr>
           <td>
-            <a href="{{ VULNERABLECODE_URL }}/vulnerabilities/{{ vulnerability.vulnerability_id }}" target="_blank">
-              {{ vulnerability.vulnerability_id }}
-              <i class="fa-solid fa-up-right-from-square is-small"></i>
-            </a>
+            {% include 'scanpipe/includes/vulnerability_id.html' with vulnerability=vulnerability %}
           </td>
           <td>
-            {{ vulnerability.summary }}
+            {% include 'scanpipe/includes/vulnerability_summary.html' with vulnerability=vulnerability only %}
           </td>
           <td>
-            {% for alias in vulnerability.aliases %}
-              {% if alias|slice:":3" == "CVE" %}
-                <a href="https://nvd.nist.gov/vuln/detail/{{ alias }}" target="_blank">{{ alias }}
-                  <i class="fa-solid fa-up-right-from-square is-small"></i>
-                </a>
-              {% elif alias|slice:":4" == "GHSA" %}
-                <a href="https://github.com/advisories/{{ alias }}" target="_blank">{{ alias }}
-                  <i class="fa-solid fa-up-right-from-square is-small"></i>
-                </a>
-              {% elif alias|slice:":3" == "NPM" %}
-                <a href="https://github.com/nodejs/security-wg/blob/main/vuln/npm/{{ alias|slice:"4:" }}.json" target="_blank">{{ alias }}
-                  <i class="fa-solid fa-up-right-from-square is-small"></i>
-                </a>
-              {% else %}
-                {{ alias }}
-              {% endif %}
-              <br>
+            {% for key, value in vulnerability.cdx_vulnerability.analysis.items %}
+              <strong>{{ key }}:</strong> {{ value }}{% if not forloop.last %}<br>{% endif %}
             {% endfor %}
           </td>
         </tr>

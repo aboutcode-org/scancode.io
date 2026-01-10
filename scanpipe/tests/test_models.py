@@ -678,6 +678,7 @@ class ScanPipeModelsTest(TestCase):
             "VCID-3": {"vulnerability_id": "VCID-3", "affects": [p2, d2]},
         }
         self.assertEqual(expected, project.vulnerabilities)
+        self.assertEqual(4, project.vulnerability_count)
 
     def test_scanpipe_project_get_codebase_config_directory(self):
         self.assertIsNone(self.project1.get_codebase_config_directory())

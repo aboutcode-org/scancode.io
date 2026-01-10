@@ -140,10 +140,25 @@ class JvmLanguage:
         # https://github.com/aboutcode-org/scancode.io/issues/1994
         if class_name.endswith("_$logger.class"):
             class_name, _, _ = class_name.partition("_$logger.class")
-        elif "$" in class_name:  # inner class
+        elif "$" in class_name and not class_name.startswith("$"):  # inner class
             class_name, _, _ = class_name.partition("$")
         else:
             class_name, _, _ = class_name.partition(".")  # plain .class
+        return str(path.parent / f"{class_name}{extension}")
+
+    @classmethod
+    def get_source_path(cls, path, extension):
+        """
+        Return a JVM file path for ``path`` .class file path string.
+        No normalization is performed.
+        """
+        if not path.endswith(cls.binary_extensions):
+            raise ValueError(
+                f"Only path ending with {cls.binary_extensions} are supported."
+            )
+        path = Path(path.strip("/"))
+        class_name = path.name
+        class_name, _, _ = class_name.partition(".")  # plain .class
         return str(path.parent / f"{class_name}{extension}")
 
 
@@ -177,10 +192,37 @@ class JavaLanguage(JvmLanguage):
 class ScalaLanguage(JvmLanguage):
     name = "scala"
     source_extensions = (".scala",)
-    binary_extensions = (".class",)
+    binary_extensions = (".class", ".tasty")
     source_package_attribute_name = "scala_package"
     package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
     binary_map_type = "scala_to_class"
+
+
+class GroovyLanguage(JvmLanguage):
+    name = "groovy"
+    source_extensions = (".groovy",)
+    binary_extensions = (".class",)
+    source_package_attribute_name = "groovy_package"
+    package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
+    binary_map_type = "groovy_to_class"
+
+
+class AspectJLanguage(JvmLanguage):
+    name = "aspectj"
+    source_extensions = (".aj",)
+    binary_extensions = (".class",)
+    source_package_attribute_name = "aspectj_package"
+    package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
+    binary_map_type = "aspectj_to_class"
+
+
+class ClojureLanguage(JvmLanguage):
+    name = "clojure"
+    source_extensions = (".clj",)
+    binary_extensions = (".class",)
+    source_package_attribute_name = "clojure_package"
+    package_regex = re.compile(r"^\s*package\s+([\w\.]+)\s*;?")
+    binary_map_type = "clojure_to_class"
 
 
 class KotlinLanguage(JvmLanguage):

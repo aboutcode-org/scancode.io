@@ -94,4 +94,8 @@
   {% endif %}
   {% url 'project_messages' project.slug as project_messages_url %}
   {% include "scanpipe/includes/project_summary_level_item.html" with label="Messages" count=project.message_count url=project_messages_url only %}
+  {% if project.vulnerability_count %}
+    {% url 'project_vulnerabilities' project.slug as project_vulnerabilities_url %}
+    {% include "scanpipe/includes/project_summary_level_item.html" with label="Vulnerabilities" count=project.vulnerability_count url=project_vulnerabilities_url only %}
+  {% endif %}
 </nav>
