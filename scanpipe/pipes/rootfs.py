@@ -208,7 +208,15 @@ def package_getter(root_dir, **kwargs):
 
 def _create_system_package(project, purl, package):
     """Create system package and related resources."""
-    created_package = pipes.update_or_create_package(project, package.to_dict())
+    package_data = package.to_dict()
+    
+    if package.type == 'rpm' and hasattr(package, 'release') and package.release:
+        version = package.version or ''
+        release = package.release or ''
+        if version and release:
+            package_data['version'] = f"{version}-{release}"
+    
+    created_package = pipes.update_or_create_package(project, package_data)
 
     installed_files = []
     if hasattr(package, "resources"):
