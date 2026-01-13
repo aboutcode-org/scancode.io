@@ -1,0 +1,27 @@
+[
+    {
+        "purl": "pkg:pypi/django@5.0",
+        "affected_by_vulnerabilities": [
+            {
+                "vulnerability_id": "VCID-3gge-bre2-aaac",
+                "summary": "CVE-2024-24680 vulnerability",
+                "aliases": [
+                    "CVE-2024-24680",
+                    "GHSA-xxj9-f6rv-m3x4"
+                ]
+            }
+        ]
+    },
+    {
+        "purl": "pkg:pypi/requests@2.28.0",
+        "affected_by_vulnerabilities": [
+            {
+                "vulnerability_id": "VCID-test-vuln-aaaa",
+                "summary": "Test vulnerability",
+                "aliases": [
+                    "CVE-2023-12345"
+                ]
+            }
+        ]
+    }
+]
