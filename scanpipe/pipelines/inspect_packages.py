@@ -54,9 +54,12 @@ class InspectPackages(ScanCodebase):
             cls.resolve_dependencies,
         )
 
-    @optional_step("Binary")
+    @optional_step("Compiled")
     def scan_binaries(self):
-        """Scan binaries for package and dependency information."""
+        """
+        Scan compiled binaries for package and dependency related data'
+        Currently supported compiled binaries: Go, Rust.
+        """
         self.scan_binaries = True
 
     def scan_for_application_packages(self):
@@ -67,7 +70,7 @@ class InspectPackages(ScanCodebase):
         scancode.scan_for_application_packages(
             project=self.project,
             assemble=True,
-            binary=self.scan_binaries or False,
+            compiled=self.scan_binaries or False,
             package_only=True,
             progress_logger=self.log,
         )
