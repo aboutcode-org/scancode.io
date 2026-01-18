@@ -64,7 +64,10 @@ def analyze_license_issues(project):
     Returns a dict mapping package identifiers to their license issues.
     """
     issues = {}
-    packages = project.discoveredpackages.all()
+    # Optimize database queries with prefetch_related
+    packages = project.discoveredpackages.all().prefetch_related(
+        "codebase_resources",
+    )
     
     for package in packages:
         package_issues = detect_package_license_issues(package)
@@ -269,7 +272,15 @@ def check_license_clarity(package):
     # Check for missing license files
     has_license_file = False
     for resource in package.codebase_resources.all():
-        if resource.is_legal or 'license' in resource.name.lower():
+        # Prefer the dedicated legal/notice flag
+        if getattr(resource, "is_legal", False):
+            has_license_file = True
+            break
+        # Fall back to common license filenames
+        resource_name = resource.name.lower()
+        if (resource_name in {"license", "license.txt", "license.md", "copying", "copying.txt"}
+            or resource_name.startswith("license.")
+            or resource_name.startswith("copying.")):
             has_license_file = True
             break
     
@@ -406,6 +417,18 @@ NIXPKGS_LICENSE_MAPPINGS = {
 }
 
 
+# Package type to ecosystem mapping
+PACKAGE_TYPE_TO_ECOSYSTEM = {
+    "pypi": "python",
+    "npm": "nodejs",
+    "cargo": "rust",
+    "gem": "ruby",
+    "cpan": "perl",
+    "maven": "java",
+    "nuget": "dotnet",
+    "hackage": "haskell",
+}
+
 # Known nixpkgs package ecosystems and their typical licenses
 NIXPKGS_ECOSYSTEM_LICENSE_PATTERNS = {
     "python": ["MIT", "Apache-2.0", "BSD-3-Clause", "GPL-3.0-or-later"],
@@ -416,6 +439,7 @@ NIXPKGS_ECOSYSTEM_LICENSE_PATTERNS = {
     "ruby": ["MIT", "GPL-2.0-or-later"],
     "perl": ["Artistic-2.0", "GPL-1.0-or-later"],
     "java": ["Apache-2.0", "MIT", "LGPL-2.1-or-later"],
+    "dotnet": ["MIT", "Apache-2.0"],
 }
 
 
@@ -439,7 +463,9 @@ def check_nixpkgs_ecosystem_license(package):
     if not package.type or not package.declared_license_expression:
         return None
     
-    ecosystem = package.type.lower()
+    package_type = package.type.lower()
+    # Map package type to ecosystem (e.g., pypi -> python)
+    ecosystem = PACKAGE_TYPE_TO_ECOSYSTEM.get(package_type, package_type)
     expected_licenses = NIXPKGS_ECOSYSTEM_LICENSE_PATTERNS.get(ecosystem)
     
     if not expected_licenses:
@@ -518,8 +544,15 @@ def detect_license_file_issues(package):
     resources = package.codebase_resources.all()
     
     for resource in resources:
+        # Prefer the is_legal flag when available
+        if getattr(resource, "is_legal", False):
+            license_files.append(resource)
+            continue
+        
+        # Fall back to matching common canonical license filenames
         name_lower = resource.name.lower()
-        if any(lic in name_lower for lic in ["license", "licence", "copying", "copyright"]):
+        base_name = name_lower.split(".", 1)[0]
+        if base_name in {"license", "licence", "copying", "copyright"}:
             license_files.append(resource)
     
     # Multiple license files might indicate multiple licenses

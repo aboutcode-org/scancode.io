@@ -23,11 +23,12 @@
 from django.db import models
 
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import nixpkgs
 from scanpipe.pipes import scancode
 
 
-class AnalyzeNixpkgsLicenses(Pipeline):
+class AnalyzeNixpkgsLicenses(ScanCodebase):
     """
     Analyze Nixpkgs packages for license clarity and correctness.
     
@@ -113,8 +114,8 @@ class AnalyzeNixpkgsLicenses(Pipeline):
         for package_str, package_issues in issues.items():
             # Find package by its string representation or purl
             packages = self.project.discoveredpackages.filter(
-                models.Q(package_url__contains=package_str) |
-                models.Q(name__contains=package_str)
+                models.Q(package_url=package_str) |
+                models.Q(name=package_str)
             )
             
             for package in packages:
@@ -124,14 +125,22 @@ class AnalyzeNixpkgsLicenses(Pipeline):
                     for issue in package_issues
                 ]
                 
-                # Update package notes with issues
+                # Update package notes with issues (idempotent)
                 current_notes = package.notes or ""
-                new_notes = "\n".join([
-                    current_notes,
-                    "\n=== License Issues ===",
-                    *issue_messages,
-                ])
-                package.update(notes=new_notes.strip())
+                header = "=== License Issues ==="
+                
+                # Remove existing license issues section to avoid duplication
+                if header in current_notes:
+                    current_notes = current_notes.split("\n" + header, 1)[0].rstrip()
+                
+                sections = []
+                if current_notes:
+                    sections.append(current_notes)
+                sections.append("\n" + header)
+                sections.extend(issue_messages)
+                
+                new_notes = "\n".join(sections).strip()
+                package.update(notes=new_notes)
                 
                 # Get detected licenses for this package
                 detected_licenses = nixpkgs.get_detected_licenses_for_package(package)
@@ -149,13 +158,15 @@ class AnalyzeNixpkgsLicenses(Pipeline):
                                 f"'{suggestion['suggested_license']}' "
                                 f"(confidence: {suggestion['confidence']})"
                             )
-                            # Add suggestion to notes
+                            # Add suggestion to notes (idempotent)
                             suggestion_note = (
                                 f"\nSuggested license: {suggestion['suggested_license']} "
                                 f"(confidence: {suggestion['confidence']})\n"
                                 f"Reason: {suggestion['reason']}"
                             )
-                            package.update(notes=package.notes + suggestion_note)
+                            current_notes = package.notes or ""
+                            if suggestion_note not in current_notes:
+                                package.update(notes=current_notes + suggestion_note)
 
     def flag_license_detections_needing_review(self):
         """

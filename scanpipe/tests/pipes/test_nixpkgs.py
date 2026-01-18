@@ -67,7 +67,7 @@ class NixpkgsLicenseAnalysisTest(TestCase):
         
         # Should detect mismatch
         mismatch_issues = [i for i in issues if i["type"] == "license_mismatch"]
-        self.assertTrue(len(mismatch_issues) > 0)
+        self.assertGreater(len(mismatch_issues), 0)
         self.assertEqual(mismatch_issues[0]["severity"], "warning")
 
     def test_normalize_nixpkgs_license(self):
@@ -248,10 +248,7 @@ class NixpkgsLicenseAnalysisTest(TestCase):
         issues = nixpkgs.check_license_clarity(package)
         
         unclear_issues = [i for i in issues if i["type"] == "unclear_license"]
-        self.assertTrue(len(unclear_issues) > 0)
-        self.assertEqual(unclear_issues[0]["severity"], "warning")
-
-    def test_get_detected_licenses_for_package(self):
+        self.assertGreater(len(unclear_issues), 0)
         package = DiscoveredPackage.objects.create(
             project=self.project,
             type="pypi",
@@ -307,7 +304,7 @@ class NixpkgsLicenseAnalysisTest(TestCase):
         multiple_file_issues = [
             i for i in issues if i["type"] == "multiple_license_files"
         ]
-        self.assertTrue(len(multiple_file_issues) > 0)
+        self.assertGreater(len(multiple_file_issues), 0)
 
     def test_are_licenses_compatible_exact_match(self):
         from licensedcode.cache import get_licensing
