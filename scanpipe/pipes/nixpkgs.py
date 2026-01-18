@@ -21,6 +21,7 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import logging
+import re
 from collections import defaultdict
 
 from licensedcode.cache import get_licensing
@@ -182,8 +183,9 @@ def find_license_inconsistencies(declared_license, detected_licenses):
                     "detected": detected,
                     "suggestion": "Review source files to determine correct license. Consider if this is dual-licensing or incorrect declaration."
                 })
-        except Exception:
-            # Skip invalid detected licenses
+        except Exception as e:
+            # Log invalid detected licenses for debugging
+            logger.debug(f"Invalid detected license expression '{detected}': {e}")
             continue
     
     return issues
@@ -201,14 +203,15 @@ def are_licenses_compatible(declared, detected, licensing):
     if declared_str == detected_str:
         return True
     
-    # Split on common license expression delimiters for more precise matching
-    import re
-    declared_parts = set(re.split(r'[\s\-_()]+|\bor\b|\band\b|\bwith\b', declared_str))
-    detected_parts = set(re.split(r'[\s\-_()]+|\bor\b|\band\b|\bwith\b', detected_str))
+    # Check if either expression contains the other
+    # Split only on spaces, hyphens, and parentheses (not on operators)
+    declared_parts = set(re.split(r'[\s()]+', declared_str))
+    detected_parts = set(re.split(r'[\s()]+', detected_str))
     
-    # Remove empty strings from split
-    declared_parts.discard('')
-    detected_parts.discard('')
+    # Remove empty strings and common operators from comparison
+    operators = {'or', 'and', 'with', ''}
+    declared_parts -= operators
+    detected_parts -= operators
     
     # Check if detected parts are subset of declared or vice versa
     if detected_parts and declared_parts:
@@ -264,7 +267,6 @@ def check_license_clarity(package):
     
     # Check if license is too generic or unclear
     if package.declared_license_expression:
-        import re
         unclear_indicators = [
             "unknown",
             "see-license",
@@ -493,7 +495,6 @@ def check_nixpkgs_ecosystem_license(package):
     declared = package.declared_license_expression
     
     # Check if declared license matches expected patterns
-    import re
     declared_lower = declared.lower()
     for expected in expected_licenses:
         # Use word boundary matching to avoid false positives like "mit" in "limited"
@@ -523,7 +524,6 @@ def detect_copyleft_compliance_issues(package):
     declared_lower = package.declared_license_expression.lower()
     
     # Check for copyleft licenses using word boundary matching
-    import re
     copyleft_indicators = ["gpl", "agpl", "lgpl", "mpl", "epl", "cpl"]
     is_copyleft = any(
         re.search(r'\b' + re.escape(ind) + r'\b', declared_lower)
@@ -545,7 +545,6 @@ def detect_copyleft_compliance_issues(package):
             })
         
         # Check for proprietary indicators in notes or description
-        import re
         proprietary_indicators = ["proprietary", "commercial", "closed"]
         description = (package.description or "").lower()
         notes = (package.notes or "").lower()
@@ -578,6 +577,9 @@ def detect_license_file_issues(package):
     license_files = []
     resources = package.codebase_resources.all()
     
+    # Known file extensions for license files
+    license_extensions = {'.txt', '.md', '.rst', '.html', '.pdf', ''}
+    
     for resource in resources:
         # Prefer the is_legal flag when available
         if getattr(resource, "is_legal", False):
@@ -586,6 +588,10 @@ def detect_license_file_issues(package):
         
         # Fall back to matching common canonical license filenames
         name_lower = resource.name.lower()
+        # Extract file extension for validation
+        file_ext = '.' + name_lower.split('.')[-1] if '.' in name_lower else ''
+        
+        # Check if it matches expected license file patterns with valid extensions
         if (
             # Exact common license filenames
             name_lower in {
@@ -594,13 +600,13 @@ def detect_license_file_issues(package):
                 "copying", "copying.txt", "copying.md",
                 "copyright", "copyright.txt", "copyright.md",
             }
-            # Files starting with common license-related prefixes
-            or name_lower.startswith((
+            # Files starting with common license-related prefixes and valid extensions
+            or (file_ext in license_extensions and name_lower.startswith((
                 "license.", "license-",
                 "licence.", "licence-",
                 "copying.", "copying-",
                 "copyright.", "copyright-",
-            ))
+            )))
         ):
             license_files.append(resource)
     
