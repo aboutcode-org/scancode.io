@@ -201,9 +201,19 @@ def are_licenses_compatible(declared, detected, licensing):
     if declared_str == detected_str:
         return True
     
-    # Check if one contains the other (e.g., for compound expressions)
-    if detected_str in declared_str or declared_str in detected_str:
-        return True
+    # Split on common license expression delimiters for more precise matching
+    import re
+    declared_parts = set(re.split(r'[\s\-_()]+|\bor\b|\band\b|\bwith\b', declared_str))
+    detected_parts = set(re.split(r'[\s\-_()]+|\bor\b|\band\b|\bwith\b', detected_str))
+    
+    # Remove empty strings from split
+    declared_parts.discard('')
+    detected_parts.discard('')
+    
+    # Check if detected parts are subset of declared or vice versa
+    if detected_parts and declared_parts:
+        if detected_parts.issubset(declared_parts) or declared_parts.issubset(detected_parts):
+            return True
     
     return False
 
@@ -225,7 +235,13 @@ def check_ambiguous_detections(package):
     
     for lic in ambiguous_licenses:
         # Check if this detection appears in package files
-        detection_paths = {fr.get('path') for fr in lic.file_regions}
+        detection_paths = {
+            fr_path
+            for fr in (lic.file_regions or [])
+            if isinstance(fr, dict)
+            for fr_path in [fr.get("path")]
+            if fr_path is not None
+        }
         if package_paths & detection_paths:
             issues.append({
                 "type": "ambiguous_detection",
@@ -248,6 +264,7 @@ def check_license_clarity(package):
     
     # Check if license is too generic or unclear
     if package.declared_license_expression:
+        import re
         unclear_indicators = [
             "unknown",
             "see-license",
@@ -259,7 +276,9 @@ def check_license_clarity(package):
         
         declared_lower = package.declared_license_expression.lower()
         for indicator in unclear_indicators:
-            if indicator in declared_lower:
+            # Use word boundary matching to avoid false positives
+            pattern = r'\b' + re.escape(indicator) + r'\b'
+            if re.search(pattern, declared_lower):
                 issues.append({
                     "type": "unclear_license",
                     "severity": "warning",
@@ -473,9 +492,13 @@ def check_nixpkgs_ecosystem_license(package):
     
     declared = package.declared_license_expression
     
-    # Check if declared license is in expected patterns
+    # Check if declared license matches expected patterns
+    import re
+    declared_lower = declared.lower()
     for expected in expected_licenses:
-        if expected.lower() in declared.lower():
+        # Use word boundary matching to avoid false positives like "mit" in "limited"
+        pattern = r'\b' + re.escape(expected.lower()) + r'\b'
+        if re.search(pattern, declared_lower):
             return None
     
     return {
@@ -499,9 +522,13 @@ def detect_copyleft_compliance_issues(package):
     
     declared_lower = package.declared_license_expression.lower()
     
-    # Check for copyleft licenses
+    # Check for copyleft licenses using word boundary matching
+    import re
     copyleft_indicators = ["gpl", "agpl", "lgpl", "mpl", "epl", "cpl"]
-    is_copyleft = any(ind in declared_lower for ind in copyleft_indicators)
+    is_copyleft = any(
+        re.search(r'\b' + re.escape(ind) + r'\b', declared_lower)
+        for ind in copyleft_indicators
+    )
     
     if is_copyleft:
         # Check if package has dependencies
@@ -518,11 +545,19 @@ def detect_copyleft_compliance_issues(package):
             })
         
         # Check for proprietary indicators in notes or description
+        import re
         proprietary_indicators = ["proprietary", "commercial", "closed"]
         description = (package.description or "").lower()
         notes = (package.notes or "").lower()
         
-        if any(ind in description or ind in notes for ind in proprietary_indicators):
+        # Use word boundary matching to avoid false positives like "commercial" in "noncommercial"
+        has_proprietary = any(
+            re.search(r'\b' + re.escape(ind) + r'\b', description) or
+            re.search(r'\b' + re.escape(ind) + r'\b', notes)
+            for ind in proprietary_indicators
+        )
+        
+        if has_proprietary:
             issues.append({
                 "type": "copyleft_proprietary_conflict",
                 "severity": "error",
@@ -551,8 +586,22 @@ def detect_license_file_issues(package):
         
         # Fall back to matching common canonical license filenames
         name_lower = resource.name.lower()
-        base_name = name_lower.split(".", 1)[0]
-        if base_name in {"license", "licence", "copying", "copyright"}:
+        if (
+            # Exact common license filenames
+            name_lower in {
+                "license", "license.txt", "license.md",
+                "licence", "licence.txt", "licence.md",
+                "copying", "copying.txt", "copying.md",
+                "copyright", "copyright.txt", "copyright.md",
+            }
+            # Files starting with common license-related prefixes
+            or name_lower.startswith((
+                "license.", "license-",
+                "licence.", "licence-",
+                "copying.", "copying-",
+                "copyright.", "copyright-",
+            ))
+        ):
             license_files.append(resource)
     
     # Multiple license files might indicate multiple licenses

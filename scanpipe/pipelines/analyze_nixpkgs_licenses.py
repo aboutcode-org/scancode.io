@@ -22,7 +22,6 @@
 
 from django.db import models
 
-from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import nixpkgs
 from scanpipe.pipes import scancode
@@ -158,12 +157,14 @@ class AnalyzeNixpkgsLicenses(ScanCodebase):
                                 f"'{suggestion['suggested_license']}' "
                                 f"(confidence: {suggestion['confidence']})"
                             )
-                            # Add suggestion to notes (idempotent)
+                            # Add suggestion to notes (idempotent) - use the already updated notes
                             suggestion_note = (
                                 f"\nSuggested license: {suggestion['suggested_license']} "
                                 f"(confidence: {suggestion['confidence']})\n"
                                 f"Reason: {suggestion['reason']}"
                             )
+                            # Refresh package from DB to get latest notes after previous update
+                            package.refresh_from_db()
                             current_notes = package.notes or ""
                             if suggestion_note not in current_notes:
                                 package.update(notes=current_notes + suggestion_note)

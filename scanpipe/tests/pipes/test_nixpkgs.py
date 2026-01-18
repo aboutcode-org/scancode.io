@@ -240,7 +240,7 @@ class NixpkgsLicenseAnalysisTest(TestCase):
         package = DiscoveredPackage.objects.create(
             project=self.project,
             type="pypi",
-            name="test-package",
+            name="test-package-unclear",
             version="1.0.0",
             declared_license_expression="Unknown",
         )
@@ -249,10 +249,13 @@ class NixpkgsLicenseAnalysisTest(TestCase):
         
         unclear_issues = [i for i in issues if i["type"] == "unclear_license"]
         self.assertGreater(len(unclear_issues), 0)
+        self.assertEqual(unclear_issues[0]["severity"], "warning")
+
+    def test_get_detected_licenses_for_package(self):
         package = DiscoveredPackage.objects.create(
             project=self.project,
             type="pypi",
-            name="test-package",
+            name="test-package-detected",
             version="1.0.0",
         )
         
