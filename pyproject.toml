@@ -7,7 +7,7 @@ name = "scancodeio"
 version = "36.0.1"
 description = "Automate software composition analysis pipelines"
 readme = "README.rst"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE", "scan.NOTICE"]
 authors = [
@@ -30,6 +30,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Utilities"
 ]
 
@@ -72,7 +73,7 @@ dependencies = [
   "rust-inspector==0.2.1",
   "binary-inspector==0.2.0",
   "python-inspector==0.15.0",
-  "source-inspector==0.7.0; sys_platform != 'darwin' and platform_machine != 'arm64'",
+  "source-inspector==0.7.1; sys_platform != 'darwin' and platform_machine != 'arm64'",
   "aboutcode-toolkit==11.1.1",
   # Utilities
   "XlsxWriter==3.2.9",
