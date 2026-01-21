@@ -57,7 +57,7 @@ dependencies = [
   # WSGI server
   "gunicorn==23.0.0",
   # Docker
-  "container-inspector==33.0.0",
+  "container-inspector==33.1.0",
   # ScanCode-toolkit
   "scancode-toolkit[packages]==32.5.0",
   "extractcode[full]==31.0.0",
