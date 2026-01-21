@@ -607,3 +607,36 @@ body.full-screen #resource-viewer .message-header {
   background-color: var(--bulma-background);
   border-radius: var(--bulma-radius);
 }
+
+/* Limit dropdown content height and enable scrolling for long filter lists */
+.dropdown-content.is-scrollable {
+  max-height: 320px;
+  overflow-y: auto;
+  background-color: var(--bulma-scheme-main-ter);
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--bulma-border) var(--bulma-scheme-main-ter); /* Firefox */
+}
+
+/* Scrollbar styling for WebKit browsers */
+.dropdown-content.is-scrollable::-webkit-scrollbar {
+  width: 8px;
+}
+.dropdown-content.is-scrollable::-webkit-scrollbar-track {
+  background: var(--bulma-scheme-main-ter);
+}
+.dropdown-content.is-scrollable::-webkit-scrollbar-thumb {
+  background-color: var(--bulma-border);
+  border-radius: 6px;
+}
+
+/* Dark mode overrides for scrollable dropdown */
+[data-theme="dark"] .dropdown-content.is-scrollable {
+  background-color: var(--bulma-scheme-main-bis);
+  scrollbar-color: var(--bulma-grey) var(--bulma-scheme-main-bis);
+}
+[data-theme="dark"] .dropdown-content.is-scrollable::-webkit-scrollbar-track {
+  background: var(--bulma-scheme-main-bis);
+}
+[data-theme="dark"] .dropdown-content.is-scrollable::-webkit-scrollbar-thumb {
+  background-color: var(--bulma-grey);
+}
