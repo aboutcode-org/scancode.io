@@ -362,7 +362,7 @@ def scan_resources(
 
     with futures.ProcessPoolExecutor(max_workers) as executor:
         future_to_resource = {
-            executor.submit(scan_func, resource.location): resource
+            executor.submit(scan_func, resource.location, **scan_func_kwargs): resource
             for resource in resource_iterator
         }
 
