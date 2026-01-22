@@ -139,13 +139,17 @@ def _map_checksum_resource(to_resource, from_resources, checksum_field):
         )
 
 
-def map_checksum(project, checksum_field, logger=None):
+def map_checksum(project, checksum_field, logger=None, to_queryset=None, **kwargs):
     """Map using checksum."""
     project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase().has_value(checksum_field)
-    to_resources = (
-        project_files.to_codebase().has_value(checksum_field).has_no_relation()
-    )
+
+    if to_queryset is not None:
+        to_resources = to_queryset.files().no_status()
+    else:
+        to_resources = project_files.to_codebase()
+
+    to_resources = to_resources.has_value(checksum_field).has_no_relation()
     resource_count = to_resources.count()
 
     if logger:
@@ -201,7 +205,9 @@ def _map_jvm_to_class_resource(
             )
 
 
-def map_jvm_to_class(project, jvm_lang: jvm.JvmLanguage, logger=None):
+def map_jvm_to_class(
+    project, jvm_lang: jvm.JvmLanguage, logger=None, to_queryset=None, **kwargs
+):
     """
     Map to/ compiled Jvm's binary files to from/ using Jvm language's fully
     qualified paths and indexing from/ Jvm lang's source files.
@@ -214,7 +220,11 @@ def map_jvm_to_class(project, jvm_lang: jvm.JvmLanguage, logger=None):
     # .class files failing to resolve. See
     # https://github.com/aboutcode-org/scancode.io/issues/1854#issuecomment-3273472895
     from_resources = project_files.from_codebase()
-    to_resources = project_files.to_codebase().no_status().has_no_relation()
+
+    if to_queryset is not None:
+        to_resources = to_queryset.files().no_status().has_no_relation()
+    else:
+        to_resources = project_files.to_codebase().no_status().has_no_relation()
 
     has_source_pkg_attr_name = {
         f"extra_data__{jvm_lang.source_package_attribute_name}__isnull": False
@@ -349,12 +359,19 @@ def _map_jar_to_jvm_source_resource(
         )
 
 
-def map_jar_to_jvm_source(project, jvm_lang: jvm.JvmLanguage, logger=None):
+def map_jar_to_jvm_source(
+    project, jvm_lang: jvm.JvmLanguage, logger=None, to_queryset=None, **kwargs
+):
     """Map .jar files to their related source directory."""
     project_files = project.codebaseresources.files()
     # Include the directories to map on the common source
     from_resources = project.codebaseresources.from_codebase()
-    to_resources = project_files.to_codebase()
+
+    if to_queryset is not None:
+        to_resources = to_queryset.files()
+    else:
+        to_resources = project_files.to_codebase()
+
     to_jars = to_resources.filter(extension=".jar")
 
     to_jars_count = to_jars.count()
@@ -411,11 +428,16 @@ def _map_path_resource(
         )
 
 
-def map_path(project, logger=None):
+def map_path(project, logger=None, to_queryset=None, **kwargs):
     """Map using path suffix similarities."""
     project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase()
-    to_resources = project_files.to_codebase().has_no_relation()
+
+    if to_queryset is not None:
+        to_resources = to_queryset.files().no_status().has_no_relation()
+    else:
+        to_resources = project_files.to_codebase().has_no_relation()
+
     resource_count = to_resources.count()
 
     if logger:
@@ -611,7 +633,13 @@ def match_sha1s_to_purldb(
 
 
 def match_purldb_resources(
-    project, extensions, matcher_func, chunk_size=1000, logger=None
+    project,
+    extensions,
+    matcher_func,
+    chunk_size=1000,
+    logger=None,
+    to_queryset=None,
+    **kwargs,
 ):
     """
     Match against PurlDB selecting codebase resources using provided
@@ -620,13 +648,12 @@ def match_purldb_resources(
     Match requests are sent off in batches of 1000 SHA1s. This number is set
     using `chunk_size`.
     """
-    to_resources = (
-        project.codebaseresources.files()
-        .to_codebase()
-        .no_status()
-        .has_value("sha1")
-        .filter(extension__in=extensions)
-    )
+    if to_queryset is not None:
+        to_resources = to_queryset.files().no_status()
+    else:
+        to_resources = project.codebaseresources.files().to_codebase().no_status()
+
+    to_resources = to_resources.has_value("sha1").filter(extension__in=extensions)
     resource_count = to_resources.count()
 
     extensions_str = ", ".join(extensions)
@@ -699,7 +726,7 @@ def _match_purldb_resources(
     )
 
 
-def match_purldb_directories(project, logger=None):
+def match_purldb_directories(project, logger=None, to_queryset=None):
     """Match against PurlDB selecting codebase directories."""
     # If we are able to get match results for a directory fingerprint, then that
     # means every resource and directory under that directory is part of a
@@ -707,10 +734,13 @@ def match_purldb_directories(project, logger=None):
     # match as many files as we can before attempting to match further down. The
     # more "higher-up" directories we can match to means that we reduce the
     # number of queries made to purldb.
+    if to_queryset is not None:
+        to_directories = to_queryset.directories()
+    else:
+        to_directories = project.codebaseresources.directories().to_codebase()
+
     to_directories = (
-        project.codebaseresources.directories()
-        .to_codebase()
-        .no_status(status=flag.ABOUT_MAPPED)
+        to_directories.no_status(status=flag.ABOUT_MAPPED)
         .no_status(status=flag.MATCHED_TO_PURLDB_PACKAGE)
         .order_by("path")
     )
@@ -730,25 +760,35 @@ def match_purldb_directories(project, logger=None):
         if directory.status != flag.MATCHED_TO_PURLDB_DIRECTORY:
             match_purldb_directory(project, directory)
 
-    matched_count = (
-        project.codebaseresources.directories()
-        .to_codebase()
-        .filter(status=flag.MATCHED_TO_PURLDB_DIRECTORY)
-        .count()
-    )
+    if to_queryset is not None:
+        matched_directories = to_queryset.directories()
+    else:
+        matched_directories = project.codebaseresources.directories().to_codebase()
+
+    matched_count = matched_directories.filter(
+        status=flag.MATCHED_TO_PURLDB_DIRECTORY
+    ).count()
     logger(
         f"{matched_count:,d} director{pluralize(matched_count, 'y,ies')} "
         f"matched in PurlDB"
     )
 
 
-def map_javascript(project, logger=None):
+def map_javascript(project, logger=None, to_queryset=None, **kwargs):
     """Map a packed or minified JavaScript, TypeScript, CSS and SCSS to its source."""
     project_files = project.codebaseresources.files()
 
-    to_resources = project_files.to_codebase().no_status().exclude(name__startswith=".")
-    to_resources_dot_map = to_resources.filter(extension=".map")
-    to_resources_minified = to_resources.filter(extension__in=[".css", ".js"])
+    if to_queryset is not None:
+        to_resources_base = (
+            to_queryset.files().no_status().exclude(name__startswith=".")
+        )
+    else:
+        to_resources_base = (
+            project_files.to_codebase().no_status().exclude(name__startswith=".")
+        )
+
+    to_resources_dot_map = to_resources_base.filter(extension=".map")
+    to_resources_minified = to_resources_base.filter(extension__in=[".css", ".js"])
 
     to_resources_dot_map_count = to_resources_dot_map.count()
     if logger:
@@ -1015,7 +1055,7 @@ class AboutFileIndexes:
         return about_purls, mapped_about_resources
 
 
-def map_about_files(project, logger=None):
+def map_about_files(project, logger=None, to_queryset=None, **kwargs):
     """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
     project_resources = project.codebaseresources
     from_about_files = (
@@ -1035,7 +1075,11 @@ def map_about_files(project, logger=None):
     )
 
     # Ignoring empty or ignored files as they are not relevant anyway
-    to_resources = project_resources.to_codebase().no_status()
+    if to_queryset is not None:
+        to_resources = to_queryset.no_status()
+    else:
+        to_resources = project_resources.to_codebase().no_status()
+
     mapped_to_resources = indexes.map_deployed_to_devel_using_about(
         to_resources=to_resources,
     )
@@ -1056,11 +1100,14 @@ def map_about_files(project, logger=None):
         )
 
 
-def map_javascript_post_purldb_match(project, logger=None):
+def map_javascript_post_purldb_match(project, logger=None, to_queryset=None, **kwargs):
     """Map minified javascript file based on existing PurlDB match."""
     project_files = project.codebaseresources.files()
 
-    to_resources = project_files.to_codebase()
+    if to_queryset is not None:
+        to_resources = to_queryset.files()
+    else:
+        to_resources = project_files.to_codebase()
 
     to_resources_dot_map = to_resources.filter(
         status=flag.MATCHED_TO_PURLDB_RESOURCE
@@ -1122,19 +1169,22 @@ def _map_javascript_post_purldb_match_resource(
         to_minified.update(status=flag.MAPPED)
 
 
-def map_javascript_path(project, logger=None):
+def map_javascript_path(project, logger=None, to_queryset=None, **kwargs):
     """Map javascript file based on path."""
     project_files = project.codebaseresources.files()
 
+    if to_queryset is not None:
+        to_resources_base = to_queryset.files().no_status()
+    else:
+        to_resources_base = project_files.to_codebase().no_status()
+
     to_resources_key = (
-        project_files.to_codebase()
-        .no_status()
-        .filter(extension__in=[".map", ".ts"])
+        to_resources_base.filter(extension__in=[".map", ".ts"])
         .exclude(name__startswith=".")
         .exclude(path__contains="/node_modules/")
     )
 
-    to_resources = project_files.to_codebase().no_status().exclude(name__startswith=".")
+    to_resources = to_resources_base.exclude(name__startswith=".")
 
     from_resources = project_files.from_codebase().exclude(path__contains="/test/")
     resource_count = to_resources_key.count()
@@ -1210,19 +1260,22 @@ def _map_javascript_path_resource(
     )
 
 
-def map_javascript_colocation(project, logger=None):
+def map_javascript_colocation(project, logger=None, to_queryset=None, **kwargs):
     """Map JavaScript files based on neighborhood file mapping."""
     project_files = project.codebaseresources.files()
 
+    if to_queryset is not None:
+        to_resources_base = to_queryset.files().no_status()
+    else:
+        to_resources_base = project_files.to_codebase().no_status()
+
     to_resources_key = (
-        project_files.to_codebase()
-        .no_status()
-        .filter(extension__in=[".map", ".ts"])
+        to_resources_base.filter(extension__in=[".map", ".ts"])
         .exclude(name__startswith=".")
         .exclude(path__contains="/node_modules/")
     )
 
-    to_resources = project_files.to_codebase().no_status().exclude(name__startswith=".")
+    to_resources = to_resources_base.exclude(name__startswith=".")
 
     from_resources = project_files.from_codebase().exclude(path__contains="/test/")
     resource_count = to_resources_key.count()
@@ -1297,7 +1350,7 @@ def _map_javascript_colocation_resource(
     )
 
 
-def flag_processed_archives(project):
+def flag_processed_archives(project, logger=None, to_queryset=None, **kwargs):
     """
     Flag package archives as processed if they meet the following criteria:
 
@@ -1311,9 +1364,12 @@ def flag_processed_archives(project):
     have statuses. If so, it updates the status of the package archive to
     "archive-processed".
     """
-    to_resources = (
-        project.codebaseresources.all().to_codebase().no_status().order_by("-path")
-    )
+    if to_queryset is not None:
+        to_resources = to_queryset.no_status().order_by("-path")
+    else:
+        to_resources = (
+            project.codebaseresources.all().to_codebase().no_status().order_by("-path")
+        )
 
     for archive_resource in to_resources.archives():
         extract_path = archive_resource.path + EXTRACT_SUFFIX
@@ -1324,17 +1380,20 @@ def flag_processed_archives(project):
             archive_resource.update(status=flag.ARCHIVE_PROCESSED)
 
 
-def map_thirdparty_npm_packages(project, logger=None):
+def map_thirdparty_npm_packages(project, logger=None, to_queryset=None, **kwargs):
     """Map thirdparty package using package.json metadata."""
     project_files = project.codebaseresources.files()
 
-    to_package_json = (
-        project_files.to_codebase()
-        .filter(path__regex=r"^.*\/node_modules\/.*\/package\.json$")
-        .exclude(path__regex=r"^.*\/node_modules\/.*\/node_modules\/.*$")
-    )
+    if to_queryset is not None:
+        to_resources_base = to_queryset.files()
+    else:
+        to_resources_base = project_files.to_codebase()
 
-    to_resources = project_files.to_codebase().no_status()
+    to_package_json = to_resources_base.filter(
+        path__regex=r"^.*\/node_modules\/.*\/package\.json$"
+    ).exclude(path__regex=r"^.*\/node_modules\/.*\/node_modules\/.*$")
+
+    to_resources = to_resources_base.no_status()
     resource_count = to_package_json.count()
 
     if logger:
@@ -1430,14 +1489,21 @@ def create_local_files_packages(project):
         pipes.create_local_files_package(project, defaults, codebase_resource_ids)
 
 
-def match_resources_with_no_java_source(project, logger=None):
+def match_resources_with_no_java_source(
+    project, logger=None, to_queryset=None, **kwargs
+):
     """
     Match resources with ``no-java-source`` to PurlDB, if no match
     is found update status to ``requires-review``.
     """
     project_files = project.codebaseresources.files()
 
-    to_no_java_source = project_files.to_codebase().filter(status=flag.NO_JAVA_SOURCE)
+    if to_queryset is not None:
+        to_no_java_source = to_queryset.files().filter(status=flag.NO_JAVA_SOURCE)
+    else:
+        to_no_java_source = project_files.to_codebase().filter(
+            status=flag.NO_JAVA_SOURCE
+        )
 
     if to_no_java_source:
         resource_count = to_no_java_source.count()
@@ -1458,10 +1524,17 @@ def match_resources_with_no_java_source(project, logger=None):
         )
 
 
-def ignore_unmapped_resources_from_config(project, patterns_to_ignore, logger=None):
+def ignore_unmapped_resources_from_config(
+    project, patterns_to_ignore, logger=None, to_queryset=None, **kwargs
+):
     """Ignore unmapped resources for a project using `patterns_to_ignore`."""
+    if to_queryset is not None:
+        to_resources = to_queryset.no_status()
+    else:
+        to_resources = project.codebaseresources.to_codebase().no_status()
+
     ignored_resources_count = flag.flag_ignored_patterns(
-        codebaseresources=project.codebaseresources.to_codebase().no_status(),
+        codebaseresources=to_resources,
         patterns=patterns_to_ignore,
         status=flag.IGNORED_FROM_CONFIG,
     )
@@ -1472,14 +1545,21 @@ def ignore_unmapped_resources_from_config(project, patterns_to_ignore, logger=No
         )
 
 
-def match_unmapped_resources(project, matched_extensions=None, logger=None):
+def match_unmapped_resources(
+    project, matched_extensions=None, logger=None, to_queryset=None, **kwargs
+):
     """
     Match resources with empty status to PurlDB, if unmatched
     update status as ``requires-review``.
     """
     project_files = project.codebaseresources.files()
 
-    to_unmapped = project_files.to_codebase().no_status().exclude(is_media=True)
+    if to_queryset is not None:
+        to_unmapped = to_queryset.files().no_status()
+    else:
+        to_unmapped = project_files.to_codebase().no_status()
+
+    to_unmapped = to_unmapped.exclude(is_media=True)
 
     if matched_extensions:
         to_unmapped.exclude(extension__in=matched_extensions)
@@ -1516,38 +1596,36 @@ def flag_undeployed_resources(project):
     from_unmapped.update(status=flag.NOT_DEPLOYED)
 
 
-def scan_ignored_to_files(project, logger=None):
+def scan_ignored_to_files(project, logger=None, to_queryset=None):
     """
     Scan status="ignored-from-config" ``to/`` files for copyrights, licenses,
     emails, and urls.
     """
-    scan_files = (
-        project.codebaseresources.files()
-        .to_codebase()
-        .filter(status=flag.IGNORED_FROM_CONFIG)
-    )
+    if to_queryset is not None:
+        to_resources = to_queryset.files()
+    else:
+        to_resources = project.codebaseresources.files().to_codebase()
+
+    scan_files = to_resources.filter(status=flag.IGNORED_FROM_CONFIG)
     scancode.scan_for_files(project, scan_files, progress_logger=logger)
 
-    project.codebaseresources.files().to_codebase().filter(status=flag.SCANNED).update(
-        status=flag.IGNORED_FROM_CONFIG
-    )
+    to_resources.filter(status=flag.SCANNED).update(status=flag.IGNORED_FROM_CONFIG)
 
 
-def scan_unmapped_to_files(project, logger=None):
+def scan_unmapped_to_files(project, logger=None, to_queryset=None):
     """
     Scan unmapped/matched ``to/`` files for copyrights, licenses,
     emails, and urls and update the status to `requires-review`.
     """
-    scan_files = (
-        project.codebaseresources.files()
-        .to_codebase()
-        .filter(status=flag.REQUIRES_REVIEW)
-    )
+    if to_queryset is not None:
+        to_resources = to_queryset.files()
+    else:
+        to_resources = project.codebaseresources.files().to_codebase()
+
+    scan_files = to_resources.filter(status=flag.REQUIRES_REVIEW)
     scancode.scan_for_files(project, scan_files, progress_logger=logger)
 
-    project.codebaseresources.files().to_codebase().filter(status=flag.SCANNED).update(
-        status=flag.REQUIRES_REVIEW
-    )
+    to_resources.filter(status=flag.SCANNED).update(status=flag.REQUIRES_REVIEW)
 
 
 def flag_deployed_from_resources_with_missing_license(project, doc_extensions=None):
@@ -1574,12 +1652,15 @@ def flag_deployed_from_resources_with_missing_license(project, doc_extensions=No
     unknown_license_files.update(status=flag.UNKNOWN_LICENSE)
 
 
-def handle_dangling_deployed_legal_files(project, logger):
+def handle_dangling_deployed_legal_files(project, logger, to_queryset=None, **kwargs):
     """
     Scan the legal files with empty status and update status
     to `REVIEW_DANGLING_LEGAL_FILE`.
     """
-    to_resources = project.codebaseresources.files().to_codebase().no_status()
+    if to_queryset is not None:
+        to_resources = to_queryset.files().no_status()
+    else:
+        to_resources = project.codebaseresources.files().to_codebase().no_status()
 
     legal_file_filter = Q()
 
@@ -1635,17 +1716,18 @@ def flag_whitespace_files(project):
             resource.update(status=flag.IGNORED_WHITESPACE_FILE)
 
 
-def match_purldb_resources_post_process(project, logger=None):
+def match_purldb_resources_post_process(project, logger=None, to_queryset=None):
     """Choose the best package for PurlDB matched resources."""
-    to_extract_directories = (
-        project.codebaseresources.directories()
-        .to_codebase()
-        .filter(path__regex=r"^.*-extract$")
-    )
+    if to_queryset is not None:
+        to_extract_directories = to_queryset.directories()
+        to_resources_base = to_queryset.files()
+    else:
+        to_extract_directories = project.codebaseresources.directories().to_codebase()
+        to_resources_base = project.codebaseresources.files().to_codebase()
 
-    to_resources = project.codebaseresources.files().filter(
-        status=flag.MATCHED_TO_PURLDB_RESOURCE
-    )
+    to_extract_directories = to_extract_directories.filter(path__regex=r"^.*-extract$")
+
+    to_resources = to_resources_base.filter(status=flag.MATCHED_TO_PURLDB_RESOURCE)
 
     resource_count = to_extract_directories.count()
 
@@ -1824,12 +1906,15 @@ def is_invalid_match(match, matched_path_length):
     return matched_path_length == 1 and len(match.resource_ids) != 1
 
 
-def map_elfs_with_dwarf_paths(project, logger=None):
+def map_elfs_with_dwarf_paths(project, logger=None, to_queryset=None, **kwargs):
     """Map ELF binaries to their sources in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
-    to_resources = (
-        project.codebaseresources.files().to_codebase().has_no_relation().elfs()
-    )
+    if to_queryset is not None:
+        to_resources = to_queryset.files().has_no_relation().elfs()
+    else:
+        to_resources = (
+            project.codebaseresources.files().to_codebase().has_no_relation().elfs()
+        )
     for resource in to_resources:
         try:
             paths = get_elf_file_dwarf_paths(resource.location_path)
@@ -1893,15 +1978,18 @@ def get_go_file_paths(location):
     return file_paths
 
 
-def map_go_paths(project, logger=None):
+def map_go_paths(project, logger=None, to_queryset=None, **kwargs):
     """Map Go binaries to their source in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
-    to_resources = (
-        project.codebaseresources.files()
-        .to_codebase()
-        .has_no_relation()
-        .executable_binaries()
-    )
+    if to_queryset is not None:
+        to_resources = to_queryset.files().has_no_relation().executable_binaries()
+    else:
+        to_resources = (
+            project.codebaseresources.files()
+            .to_codebase()
+            .has_no_relation()
+            .executable_binaries()
+        )
     for resource in to_resources:
         try:
             paths = get_go_file_paths(resource.location_path)
@@ -1946,14 +2034,18 @@ MACHO_BINARY_OPTIONS = ["Rust", "Go", "MacOS"]
 WINPE_BINARY_OPTIONS = ["Windows"]
 
 
-def extract_binary_symbols(project, options, logger=None):
+def extract_binary_symbols(project, options, logger=None, to_queryset=None, **kwargs):
     """
     Extract binary symbols for all Elf, Mach0 and Winpe binaries
     found in the ``project`` resources, based on selected
     ecosystem ``options`` so that these symbols can be mapped to
     extracted source symbols.
     """
-    to_resources = project.codebaseresources.files().to_codebase().has_no_relation()
+    if to_queryset is not None:
+        to_resources = to_queryset.files().has_no_relation()
+    else:
+        to_resources = project.codebaseresources.files().to_codebase().has_no_relation()
+
     if any([option in ELF_BINARY_OPTIONS for option in options]):
         to_binaries = to_resources.elfs()
         extract_binary_symbols_from_resources(
@@ -1987,15 +2079,18 @@ def extract_binary_symbols(project, options, logger=None):
         )
 
 
-def map_rust_binaries_with_symbols(project, logger=None):
+def map_rust_binaries_with_symbols(project, logger=None, to_queryset=None, **kwargs):
     """Map Rust binaries to their source using symbols in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
-    to_binaries = (
-        project.codebaseresources.files()
-        .to_codebase()
-        .has_no_relation()
-        .executable_binaries()
-    )
+    if to_queryset is not None:
+        to_binaries = to_queryset.files().has_no_relation().executable_binaries()
+    else:
+        to_binaries = (
+            project.codebaseresources.files()
+            .to_codebase()
+            .has_no_relation()
+            .executable_binaries()
+        )
 
     # Collect source symbols from rust source files
     rust_config = d2d_config.get_ecosystem_config(ecosystem="Rust")
@@ -2012,15 +2107,18 @@ def map_rust_binaries_with_symbols(project, logger=None):
     )
 
 
-def map_go_binaries_with_symbols(project, logger=None):
+def map_go_binaries_with_symbols(project, logger=None, to_queryset=None, **kwargs):
     """Map Go binaries to their source using symbols in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
-    to_binaries = (
-        project.codebaseresources.files()
-        .to_codebase()
-        .has_no_relation()
-        .executable_binaries()
-    )
+    if to_queryset is not None:
+        to_binaries = to_queryset.files().has_no_relation().executable_binaries()
+    else:
+        to_binaries = (
+            project.codebaseresources.files()
+            .to_codebase()
+            .has_no_relation()
+            .executable_binaries()
+        )
 
     # Collect source symbols from rust source files
     go_config = d2d_config.get_ecosystem_config(ecosystem="Go")
@@ -2037,12 +2135,15 @@ def map_go_binaries_with_symbols(project, logger=None):
     )
 
 
-def map_elfs_binaries_with_symbols(project, logger=None):
+def map_elfs_binaries_with_symbols(project, logger=None, to_queryset=None, **kwargs):
     """Map Elf binaries to their source using symbols in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
-    elf_binaries = (
-        project.codebaseresources.files().to_codebase().has_no_relation().elfs()
-    )
+    if to_queryset is not None:
+        elf_binaries = to_queryset.files().has_no_relation().elfs()
+    else:
+        elf_binaries = (
+            project.codebaseresources.files().to_codebase().has_no_relation().elfs()
+        )
 
     # Collect source symbols from elf related source files
     elf_config = d2d_config.get_ecosystem_config(ecosystem="Elf")
@@ -2059,15 +2160,18 @@ def map_elfs_binaries_with_symbols(project, logger=None):
     )
 
 
-def map_macho_binaries_with_symbols(project, logger=None):
+def map_macho_binaries_with_symbols(project, logger=None, to_queryset=None, **kwargs):
     """Map macho binaries to their source using symbols in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
-    macho_binaries = (
-        project.codebaseresources.files()
-        .to_codebase()
-        .has_no_relation()
-        .macho_binaries()
-    )
+    if to_queryset is not None:
+        macho_binaries = to_queryset.files().has_no_relation().macho_binaries()
+    else:
+        macho_binaries = (
+            project.codebaseresources.files()
+            .to_codebase()
+            .has_no_relation()
+            .macho_binaries()
+        )
 
     # Collect source symbols from macos related source files
     macos_config = d2d_config.get_ecosystem_config(ecosystem="MacOS")
@@ -2084,12 +2188,15 @@ def map_macho_binaries_with_symbols(project, logger=None):
     )
 
 
-def map_winpe_binaries_with_symbols(project, logger=None):
+def map_winpe_binaries_with_symbols(project, logger=None, to_queryset=None, **kwargs):
     """Map winpe binaries to their source using symbols in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
-    winexe_binaries = (
-        project.codebaseresources.files().to_codebase().has_no_relation().win_exes()
-    )
+    if to_queryset is not None:
+        winexe_binaries = to_queryset.files().has_no_relation().win_exes()
+    else:
+        winexe_binaries = (
+            project.codebaseresources.files().to_codebase().has_no_relation().win_exes()
+        )
 
     # Collect source symbols from windows related source files
     windows_config = d2d_config.get_ecosystem_config(ecosystem="Windows")
@@ -2175,15 +2282,18 @@ def extract_binary_symbols_from_resources(resources, binary_symbols_func, logger
             logger(f"Error parsing binary symbols at: {resource.location_path!r} {e!r}")
 
 
-def map_javascript_symbols(project, logger=None):
+def map_javascript_symbols(project, logger=None, to_queryset=None, **kwargs):
     """Map deployed JavaScript, TypeScript to its sources using symbols."""
     project_files = project.codebaseresources.files()
 
     js_config = d2d_config.get_ecosystem_config(ecosystem="JavaScript")
-    javascript_to_resources = (
-        project_files.to_codebase()
-        .has_no_relation()
-        .filter(extension__in=js_config.source_symbol_extensions)
+    if to_queryset is not None:
+        to_resources_base = to_queryset.files()
+    else:
+        to_resources_base = project_files.to_codebase()
+
+    javascript_to_resources = to_resources_base.has_no_relation().filter(
+        extension__in=js_config.source_symbol_extensions
     )
 
     javascript_from_resources = (
@@ -2271,13 +2381,17 @@ def _map_javascript_symbols(to_resource, javascript_from_resources, logger):
     return 0
 
 
-def map_javascript_strings(project, logger=None):
+def map_javascript_strings(project, logger=None, to_queryset=None, **kwargs):
     """Map deployed JavaScript, TypeScript to its sources using string literals."""
     project_files = project.codebaseresources.files()
 
+    if to_queryset is not None:
+        to_resources_base = to_queryset.files()
+    else:
+        to_resources_base = project_files.to_codebase()
+
     javascript_to_resources = (
-        project_files.to_codebase()
-        .has_no_relation()
+        to_resources_base.has_no_relation()
         .filter(extension__in=[".ts", ".js"])
         .exclude(extra_data={})
     )
@@ -2354,7 +2468,7 @@ def _map_javascript_strings(to_resource, javascript_from_resources, logger):
     return 0
 
 
-def map_python_pyx_to_binaries(project, logger=None):
+def map_python_pyx_to_binaries(project, logger=None, to_queryset=None, **kwargs):
     """Map Cython source to their compiled binaries in ``project``."""
     from source_inspector.symbols_tree_sitter import get_tree_and_language_info
 
@@ -2364,9 +2478,13 @@ def map_python_pyx_to_binaries(project, logger=None):
         .from_codebase()
         .filter(extension__in=python_config.source_symbol_extensions)
     )
-    to_resources = (
-        project.codebaseresources.files().to_codebase().has_no_relation().elfs()
-    )
+
+    if to_queryset is not None:
+        to_resources = to_queryset.files().has_no_relation().elfs()
+    else:
+        to_resources = (
+            project.codebaseresources.files().to_codebase().has_no_relation().elfs()
+        )
 
     for resource in from_resources:
         # Open Cython source file, create AST, parse it for function definitions
@@ -2398,17 +2516,18 @@ def map_python_pyx_to_binaries(project, logger=None):
             )
 
 
-def map_python_protobuf_files(project, logger=None):
+def map_python_protobuf_files(project, logger=None, to_queryset=None, **kwargs):
     """Map protobuf-generated .py/.pyi files to their source .proto files."""
     from_resources = (
         project.codebaseresources.files().from_codebase().filter(extension=".proto")
     )
-    to_resources = (
-        project.codebaseresources.files()
-        .to_codebase()
-        .has_no_relation()
-        .filter(extension__in=[".py", ".pyi"])
-    )
+
+    if to_queryset is not None:
+        to_resources = to_queryset.files().has_no_relation()
+    else:
+        to_resources = project.codebaseresources.files().to_codebase().has_no_relation()
+
+    to_resources = to_resources.filter(extension__in=[".py", ".pyi"])
     to_resources_count = to_resources.count()
     from_resources_count = from_resources.count()
 

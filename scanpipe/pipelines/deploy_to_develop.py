@@ -129,21 +129,48 @@ class DeployToDevelop(Pipeline):
 
     def extract_inputs_to_codebase_directory(self):
         """Extract input files to the project's codebase/ directory."""
-        inputs_with_codebase_path_destination = [
-            (self.from_files, self.project.codebase_path / d2d.FROM),
-            (self.to_files, self.project.codebase_path / d2d.TO),
-        ]
+        # Extract from files to FROM
+        from_path = self.project.codebase_path / d2d.FROM
+        for input_file_path in self.from_files:
+            if input.is_archive(input_file_path):
+                self.extract_archive(input_file_path, from_path)
+            else:
+                input.copy_input(input_file_path, from_path)
 
-        for input_files, codebase_path in inputs_with_codebase_path_destination:
-            for input_file_path in input_files:
-                if input.is_archive(input_file_path):
-                    self.extract_archive(input_file_path, codebase_path)
-                else:
-                    input.copy_input(input_file_path, codebase_path)
+        # Extract each to file to a separate subdirectory under TO
+        self.to_paths = []
+        for i, input_file_path in enumerate(self.to_files):
+            if len(self.to_files) > 1:
+                to_subpath = self.project.codebase_path / d2d.TO / str(i)
+            else:
+                to_subpath = self.project.codebase_path / d2d.TO
+
+            self.to_paths.append(
+                str(to_subpath.relative_to(self.project.codebase_path)) + "/"
+            )
+
+            if input.is_archive(input_file_path):
+                self.extract_archive(input_file_path, to_subpath)
+            else:
+                input.copy_input(input_file_path, to_subpath)
 
         # Reload the project env post-extraction as the scancode-config.yml file
         # may be located in one of the extracted archives.
         self.env = self.project.get_env()
+
+    def run_d2d_step(self, func, *args, **kwargs):
+        """Run a d2d mapping step for each to_path."""
+        to_paths = getattr(self, "to_paths", [None])
+        for to_path in to_paths:
+            if to_path:
+                kwargs["to_queryset"] = self.project.codebaseresources.filter(
+                    path__startswith=to_path
+                )
+                kwargs["to_path"] = to_path
+                if len(to_paths) > 1:
+                    self.log(f"Running {func.__name__} for {to_path}")
+
+            func(project=self.project, logger=self.log, *args, **kwargs)
 
     def collect_and_create_codebase_resources(self):
         """Collect and create codebase resources."""
@@ -168,11 +195,11 @@ class DeployToDevelop(Pipeline):
 
     def map_about_files(self):
         """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
-        d2d.map_about_files(project=self.project, logger=self.log)
+        self.run_d2d_step(d2d.map_about_files)
 
     def map_checksum(self):
         """Map using SHA1 checksum."""
-        d2d.map_checksum(project=self.project, checksum_field="sha1", logger=self.log)
+        self.run_d2d_step(d2d.map_checksum, checksum_field="sha1")
 
     def match_archives_to_purldb(self):
         """Match selected package archives by extension to PurlDB."""
@@ -180,11 +207,10 @@ class DeployToDevelop(Pipeline):
             self.log("PurlDB is not available. Skipping.")
             return
 
-        d2d.match_purldb_resources(
-            project=self.project,
+        self.run_d2d_step(
+            d2d.match_purldb_resources,
             extensions=self.ecosystem_config.matchable_package_extensions,
             matcher_func=d2d.match_purldb_package,
-            logger=self.log,
         )
 
     @optional_step("Java")
@@ -197,16 +223,12 @@ class DeployToDevelop(Pipeline):
     @optional_step("Java")
     def map_java_to_class(self):
         """Map a .class compiled file to its .java source."""
-        d2d.map_jvm_to_class(
-            project=self.project, jvm_lang=jvm.JavaLanguage, logger=self.log
-        )
+        self.run_d2d_step(d2d.map_jvm_to_class, jvm_lang=jvm.JavaLanguage)
 
     @optional_step("Java")
     def map_jar_to_java_source(self):
         """Map .jar files to their related source directory."""
-        d2d.map_jar_to_jvm_source(
-            project=self.project, jvm_lang=jvm.JavaLanguage, logger=self.log
-        )
+        self.run_d2d_step(d2d.map_jar_to_jvm_source, jvm_lang=jvm.JavaLanguage)
 
     @optional_step("Scala")
     def find_scala_packages(self):
@@ -218,16 +240,12 @@ class DeployToDevelop(Pipeline):
     @optional_step("Scala")
     def map_scala_to_class(self):
         """Map a .class compiled file to its .scala source."""
-        d2d.map_jvm_to_class(
-            project=self.project, jvm_lang=jvm.ScalaLanguage, logger=self.log
-        )
+        self.run_d2d_step(d2d.map_jvm_to_class, jvm_lang=jvm.ScalaLanguage)
 
     @optional_step("Scala")
     def map_jar_to_scala_source(self):
         """Map .jar files to their related source directory."""
-        d2d.map_jar_to_jvm_source(
-            project=self.project, jvm_lang=jvm.ScalaLanguage, logger=self.log
-        )
+        self.run_d2d_step(d2d.map_jar_to_jvm_source, jvm_lang=jvm.ScalaLanguage)
 
     @optional_step("Kotlin")
     def find_kotlin_packages(self):
@@ -239,16 +257,12 @@ class DeployToDevelop(Pipeline):
     @optional_step("Kotlin")
     def map_kotlin_to_class(self):
         """Map a .class compiled file to its kotlin source."""
-        d2d.map_jvm_to_class(
-            project=self.project, jvm_lang=jvm.KotlinLanguage, logger=self.log
-        )
+        self.run_d2d_step(d2d.map_jvm_to_class, jvm_lang=jvm.KotlinLanguage)
 
     @optional_step("Kotlin")
     def map_jar_to_kotlin_source(self):
         """Map .jar files to their related source directory."""
-        d2d.map_jar_to_jvm_source(
-            project=self.project, jvm_lang=jvm.KotlinLanguage, logger=self.log
-        )
+        self.run_d2d_step(d2d.map_jar_to_jvm_source, jvm_lang=jvm.KotlinLanguage)
 
     @optional_step("Grammar")
     def find_grammar_packages(self):
@@ -260,16 +274,12 @@ class DeployToDevelop(Pipeline):
     @optional_step("Grammar")
     def map_grammar_to_class(self):
         """Map a .class compiled file to its .g/.g4 source."""
-        d2d.map_jvm_to_class(
-            project=self.project, jvm_lang=jvm.GrammarLanguage, logger=self.log
-        )
+        self.run_d2d_step(d2d.map_jvm_to_class, jvm_lang=jvm.GrammarLanguage)
 
     @optional_step("Grammar")
     def map_jar_to_grammar_source(self):
         """Map .jar files to their related source directory."""
-        d2d.map_jar_to_jvm_source(
-            project=self.project, jvm_lang=jvm.GrammarLanguage, logger=self.log
-        )
+        self.run_d2d_step(d2d.map_jar_to_jvm_source, jvm_lang=jvm.GrammarLanguage)
 
     @optional_step("Groovy")
     def find_groovy_packages(self):
@@ -344,9 +354,7 @@ class DeployToDevelop(Pipeline):
     @optional_step("Xtend")
     def map_xtend_to_class(self):
         """Map a .class compiled file to its xtend source."""
-        d2d.map_jvm_to_class(
-            project=self.project, jvm_lang=jvm.XtendLanguage, logger=self.log
-        )
+        self.run_d2d_step(d2d.map_jvm_to_class, jvm_lang=jvm.XtendLanguage)
 
     @optional_step("JavaScript")
     def map_javascript(self):
@@ -354,52 +362,48 @@ class DeployToDevelop(Pipeline):
         Map a packed or minified JavaScript, TypeScript, CSS and SCSS
         to its source.
         """
-        d2d.map_javascript(project=self.project, logger=self.log)
+        self.run_d2d_step(d2d.map_javascript)
 
     @optional_step("JavaScript")
     def map_javascript_symbols(self):
         """Map deployed JavaScript, TypeScript to its sources using symbols."""
-        d2d.map_javascript_symbols(project=self.project, logger=self.log)
+        self.run_d2d_step(d2d.map_javascript_symbols)
 
     @optional_step("JavaScript")
     def map_javascript_strings(self):
         """Map deployed JavaScript, TypeScript to its sources using string literals."""
-        d2d.map_javascript_strings(project=self.project, logger=self.log)
+        self.run_d2d_step(d2d.map_javascript_strings)
 
     def get_symbols_from_binaries(self):
         """Extract symbols from Elf, Mach0 and windows binaries for mapping."""
-        d2d.extract_binary_symbols(
-            project=self.project,
-            options=self.selected_groups,
-            logger=self.log,
-        )
+        self.run_d2d_step(d2d.extract_binary_symbols, options=self.selected_groups)
 
     @optional_step("Elf")
     def map_elf(self):
         """Map ELF binaries to their sources using dwarf paths and symbols."""
-        d2d.map_elfs_with_dwarf_paths(project=self.project, logger=self.log)
-        d2d.map_elfs_binaries_with_symbols(project=self.project, logger=self.log)
+        self.run_d2d_step(d2d.map_elfs_with_dwarf_paths)
+        self.run_d2d_step(d2d.map_elfs_binaries_with_symbols)
 
     @optional_step("MacOS")
     def map_macho(self):
         """Map mach0 binaries to their sources using symbols."""
-        d2d.map_macho_binaries_with_symbols(project=self.project, logger=self.log)
+        self.run_d2d_step(d2d.map_macho_binaries_with_symbols)
 
     @optional_step("Windows")
     def map_winpe(self):
         """Map winpe binaries to their sources using symbols."""
-        d2d.map_winpe_binaries_with_symbols(project=self.project, logger=self.log)
+        self.run_d2d_step(d2d.map_winpe_binaries_with_symbols)
 
     @optional_step("Go")
     def map_go(self):
         """Map Go binaries to their sources using paths and symbols."""
-        d2d.map_go_paths(project=self.project, logger=self.log)
-        d2d.map_go_binaries_with_symbols(project=self.project, logger=self.log)
+        self.run_d2d_step(d2d.map_go_paths)
+        self.run_d2d_step(d2d.map_go_binaries_with_symbols)
 
     @optional_step("Rust")
     def map_rust(self):
         """Map Rust binaries to their sources using symbols."""
-        d2d.map_rust_binaries_with_symbols(project=self.project, logger=self.log)
+        self.run_d2d_step(d2d.map_rust_binaries_with_symbols)
 
     @optional_step("Python")
     def map_python(self):
@@ -407,8 +411,8 @@ class DeployToDevelop(Pipeline):
         Map binaries from Python packages to their sources using dwarf paths and
         symbols.
         """
-        d2d.map_python_pyx_to_binaries(project=self.project, logger=self.log)
-        d2d.map_python_protobuf_files(project=self.project, logger=self.log)
+        self.run_d2d_step(d2d.map_python_pyx_to_binaries)
+        self.run_d2d_step(d2d.map_python_protobuf_files)
 
     def match_directories_to_purldb(self):
         """Match selected directories in PurlDB."""
@@ -416,10 +420,7 @@ class DeployToDevelop(Pipeline):
             self.log("PurlDB is not available. Skipping.")
             return
 
-        d2d.match_purldb_directories(
-            project=self.project,
-            logger=self.log,
-        )
+        self.run_d2d_step(d2d.match_purldb_directories)
 
     def match_resources_to_purldb(self):
         """Match selected files by extension in PurlDB."""
@@ -427,42 +428,41 @@ class DeployToDevelop(Pipeline):
             self.log("PurlDB is not available. Skipping.")
             return
 
-        d2d.match_purldb_resources(
-            project=self.project,
+        self.run_d2d_step(
+            d2d.match_purldb_resources,
             extensions=self.ecosystem_config.matchable_resource_extensions,
             matcher_func=d2d.match_purldb_resource,
-            logger=self.log,
         )
 
     @optional_step("JavaScript")
     def map_javascript_post_purldb_match(self):
         """Map minified javascript file based on existing PurlDB match."""
-        d2d.map_javascript_post_purldb_match(project=self.project, logger=self.log)
+        self.run_d2d_step(d2d.map_javascript_post_purldb_match)
 
     @optional_step("JavaScript")
     def map_javascript_path(self):
         """Map javascript file based on path."""
-        d2d.map_javascript_path(project=self.project, logger=self.log)
+        self.run_d2d_step(d2d.map_javascript_path)
 
     @optional_step("JavaScript")
     def map_javascript_colocation(self):
         """Map JavaScript files based on neighborhood file mapping."""
-        d2d.map_javascript_colocation(project=self.project, logger=self.log)
+        self.run_d2d_step(d2d.map_javascript_colocation)
 
     @optional_step("JavaScript")
     def map_thirdparty_npm_packages(self):
         """Map thirdparty package using package.json metadata."""
-        d2d.map_thirdparty_npm_packages(project=self.project, logger=self.log)
+        self.run_d2d_step(d2d.map_thirdparty_npm_packages)
 
     def map_path(self):
         """Map using path similarities."""
-        d2d.map_path(project=self.project, logger=self.log)
+        self.run_d2d_step(d2d.map_path)
 
     def flag_mapped_resources_archives_and_ignored_directories(self):
         """Flag all codebase resources that were mapped during the pipeline."""
         flag.flag_mapped_resources(self.project)
         flag.flag_ignored_directories(self.project)
-        d2d.flag_processed_archives(self.project)
+        self.run_d2d_step(d2d.flag_processed_archives)
 
     def perform_house_keeping_tasks(self):
         """
@@ -476,17 +476,15 @@ class DeployToDevelop(Pipeline):
         On devel side
             - Update status for not deployed files.
         """
-        d2d.match_resources_with_no_java_source(project=self.project, logger=self.log)
-        d2d.handle_dangling_deployed_legal_files(project=self.project, logger=self.log)
-        d2d.ignore_unmapped_resources_from_config(
-            project=self.project,
+        self.run_d2d_step(d2d.match_resources_with_no_java_source)
+        self.run_d2d_step(d2d.handle_dangling_deployed_legal_files)
+        self.run_d2d_step(
+            d2d.ignore_unmapped_resources_from_config,
             patterns_to_ignore=self.ecosystem_config.deployed_resource_path_exclusions,
-            logger=self.log,
         )
-        d2d.match_unmapped_resources(
-            project=self.project,
+        self.run_d2d_step(
+            d2d.match_unmapped_resources,
             matched_extensions=self.ecosystem_config.matchable_resource_extensions,
-            logger=self.log,
         )
         d2d.flag_undeployed_resources(project=self.project)
 
