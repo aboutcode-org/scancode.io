@@ -1386,11 +1386,10 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(cm.exception.code, 1)
         out_value = out.getvalue().strip()
         expected = (
-            "2 vulnerable records found:\n"
-            "pkg:generic/name@1.0\n"
-            " > VCID-cah8-awtr-aaad\n"
-            "dependency1\n"
-            " > VCID-cah8-awtr-aaad"
+            "1 vulnerabilities found:\n"
+            "VCID-cah8-awtr-aaad\n"
+            " > pkg:generic/name@1.0\n"
+            " > dependency1"
         )
         self.assertEqual(expected, out_value)
 
