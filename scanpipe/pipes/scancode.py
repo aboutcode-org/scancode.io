@@ -250,7 +250,13 @@ def scan_file(location, with_threading=True, min_license_score=0, **kwargs):
     return _scan_resource(location, scanners, with_threading=with_threading)
 
 
-def scan_for_package_data(location, with_threading=True, package_only=False, **kwargs):
+def scan_for_package_data(
+    location,
+    with_threading=True,
+    package_only=False,
+    compiled=False,
+    **kwargs,
+):
     """
     Run a package scan on provided `location` using the scancode-toolkit direct API.
 
@@ -259,6 +265,7 @@ def scan_for_package_data(location, with_threading=True, package_only=False, **k
     scancode_get_packages = partial(
         scancode_api.get_package_data,
         package_only=package_only,
+        compiled=compiled,
     )
     scanners = [
         Scanner("package_data", scancode_get_packages),
@@ -355,7 +362,7 @@ def scan_resources(
 
     with futures.ProcessPoolExecutor(max_workers) as executor:
         future_to_resource = {
-            executor.submit(scan_func, resource.location): resource
+            executor.submit(scan_func, resource.location, **scan_func_kwargs): resource
             for resource in resource_iterator
         }
 
@@ -409,6 +416,7 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
 def scan_for_application_packages(
     project,
     assemble=True,
+    compiled=False,
     package_only=False,
     resource_qs=None,
     progress_logger=logger.info,
@@ -431,6 +439,7 @@ def scan_for_application_packages(
 
     scan_func_kwargs = {
         "package_only": package_only,
+        "compiled": compiled,
     }
 
     # Collect detected Package data and save it to the CodebaseResource it was
