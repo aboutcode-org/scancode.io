@@ -14,8 +14,6 @@ from licensedcode.cache import get_licensing
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes.input import copy_inputs
-
-
 class NixpkgsLicenseAudit(Pipeline):
     """
     Scan the codebase, collect license detections, and audit package-level
