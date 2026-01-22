@@ -391,12 +391,6 @@ progress.file-upload::before {
 #message-list th#column-severity {
   min-width: 110px;
 }
-th#column-vulnerability_id {
-  min-width: 220px;
-}
-th#column-summary {
-  width: 40%;
-}
 .menu.is-info .is-active {
   background-color: #3e8ed0;
 }
@@ -606,4 +600,34 @@ body.full-screen #resource-viewer .message-header {
 #resource-tree-container .tree-node:hover, .tree-node-file:hover {
   background-color: var(--bulma-background);
   border-radius: var(--bulma-radius);
+}
+
+.dropdown-content.is-scrollable {
+  max-height: 320px;
+  overflow-y: auto;
+  background-color: var(--bulma-scheme-main-ter);
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--bulma-border) var(--bulma-scheme-main-ter); /* Firefox */
+}
+
+.dropdown-content.is-scrollable::-webkit-scrollbar {
+  width: 8px;
+}
+.dropdown-content.is-scrollable::-webkit-scrollbar-track {
+  background: var(--bulma-scheme-main-ter);
+}
+.dropdown-content.is-scrollable::-webkit-scrollbar-thumb {
+  background-color: var(--bulma-border);
+  border-radius: 6px;
+}
+
+[data-theme="dark"] .dropdown-content.is-scrollable {
+  background-color: var(--bulma-scheme-main-bis);
+  scrollbar-color: var(--bulma-grey) var(--bulma-scheme-main-bis);
+}
+[data-theme="dark"] .dropdown-content.is-scrollable::-webkit-scrollbar-track {
+  background: var(--bulma-scheme-main-bis);
+}
+[data-theme="dark"] .dropdown-content.is-scrollable::-webkit-scrollbar-thumb {
+  background-color: var(--bulma-grey);
 }
