@@ -1,11 +1,11 @@
 {
   "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
-  "SPDXID": "SPDXRef-DOCUMENT-3282ba3d-f525-4b74-9008-919108846d33",
+  "SPDXID": "SPDXRef-DOCUMENT-92fe63d9-1d53-4b63-b19a-85022fb7a3f3",
   "name": "scancodeio_asgiref",
-  "documentNamespace": "https://scancode.io/spdxdocs/3282ba3d-f525-4b74-9008-919108846d33",
+  "documentNamespace": "https://scancode.io/spdxdocs/92fe63d9-1d53-4b63-b19a-85022fb7a3f3",
   "documentDescribes": [
-    "SPDXRef-scancodeio-project-3282ba3d-f525-4b74-9008-919108846d33"
+    "SPDXRef-scancodeio-project-92fe63d9-1d53-4b63-b19a-85022fb7a3f3"
   ],
   "creationInfo": {
     "created": "2000-01-01T01:02:03Z",
@@ -17,7 +17,7 @@
   "packages": [
     {
       "name": "asgiref",
-      "SPDXID": "SPDXRef-scancodeio-project-3282ba3d-f525-4b74-9008-919108846d33",
+      "SPDXID": "SPDXRef-scancodeio-project-92fe63d9-1d53-4b63-b19a-85022fb7a3f3",
       "downloadLocation": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
@@ -26,7 +26,7 @@
     },
     {
       "name": "asgiref",
-      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-b0467b22-5e83-4b0d-91e2-15121a8cf075",
+      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-543a3583-3a13-4b5d-a039-c6bc4072de35",
       "downloadLocation": "NOASSERTION",
       "licenseDeclared": "BSD-3-Clause",
       "licenseConcluded": "BSD-3-Clause",
@@ -46,7 +46,7 @@
     },
     {
       "name": "asgiref",
-      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-856001ca-aabf-4c6a-8ac2-cc1317f3e05d",
+      "SPDXID": "SPDXRef-scancodeio-discoveredpackage-b2913908-3a31-4460-b330-a74d14b5ee24",
       "downloadLocation": "NOASSERTION",
       "licenseDeclared": "BSD-3-Clause",
       "licenseConcluded": "BSD-3-Clause",
@@ -66,7 +66,7 @@
     },
     {
       "name": "pytest",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-ef046d41-ae47-42c3-838c-def8bc956723",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-19138025-32e9-4060-ab38-622b27493b6c",
       "downloadLocation": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
@@ -82,7 +82,7 @@
     },
     {
       "name": "pytest",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-31fbc19e-c309-4463-8312-390ef734bf78",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-c6282019-1112-43f8-a27a-658cc0c5dcf4",
       "downloadLocation": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
@@ -98,7 +98,7 @@
     },
     {
       "name": "pytest-asyncio",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-3f928a8b-4505-4a7b-ad3a-a589dec836db",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-52135390-385f-4fc0-8b0a-38f28c1040dd",
       "downloadLocation": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
@@ -114,7 +114,7 @@
     },
     {
       "name": "pytest-asyncio",
-      "SPDXID": "SPDXRef-scancodeio-discovereddependency-892b2af3-a9f0-4544-9874-583307d2d387",
+      "SPDXID": "SPDXRef-scancodeio-discovereddependency-01b33ae9-cb5f-442b-bfac-af8e40a1bf8c",
       "downloadLocation": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "licenseConcluded": "NOASSERTION",
@@ -132,33 +132,33 @@
   "files": [],
   "relationships": [
     {
-      "spdxElementId": "SPDXRef-scancodeio-project-3282ba3d-f525-4b74-9008-919108846d33",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-b0467b22-5e83-4b0d-91e2-15121a8cf075",
+      "spdxElementId": "SPDXRef-scancodeio-project-92fe63d9-1d53-4b63-b19a-85022fb7a3f3",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-543a3583-3a13-4b5d-a039-c6bc4072de35",
       "relationshipType": "DEPENDS_ON"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-project-3282ba3d-f525-4b74-9008-919108846d33",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-856001ca-aabf-4c6a-8ac2-cc1317f3e05d",
+      "spdxElementId": "SPDXRef-scancodeio-project-92fe63d9-1d53-4b63-b19a-85022fb7a3f3",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-b2913908-3a31-4460-b330-a74d14b5ee24",
       "relationshipType": "DEPENDS_ON"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-ef046d41-ae47-42c3-838c-def8bc956723",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-b0467b22-5e83-4b0d-91e2-15121a8cf075",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-19138025-32e9-4060-ab38-622b27493b6c",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-543a3583-3a13-4b5d-a039-c6bc4072de35",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-31fbc19e-c309-4463-8312-390ef734bf78",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-856001ca-aabf-4c6a-8ac2-cc1317f3e05d",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-c6282019-1112-43f8-a27a-658cc0c5dcf4",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-b2913908-3a31-4460-b330-a74d14b5ee24",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-3f928a8b-4505-4a7b-ad3a-a589dec836db",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-b0467b22-5e83-4b0d-91e2-15121a8cf075",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-52135390-385f-4fc0-8b0a-38f28c1040dd",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-543a3583-3a13-4b5d-a039-c6bc4072de35",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-892b2af3-a9f0-4544-9874-583307d2d387",
-      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-856001ca-aabf-4c6a-8ac2-cc1317f3e05d",
+      "spdxElementId": "SPDXRef-scancodeio-discovereddependency-01b33ae9-cb5f-442b-bfac-af8e40a1bf8c",
+      "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-b2913908-3a31-4460-b330-a74d14b5ee24",
       "relationshipType": "DEPENDENCY_OF"
     }
   ],

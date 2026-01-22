@@ -2,16 +2,16 @@
   "headers": [
     {
       "tool_name": "scancode-toolkit",
-      "tool_version": "32.4.1",
+      "tool_version": "32.5.0",
       "options": {
         "--info": true,
         "--package": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "start_timestamp": "2025-12-12T081655.345103",
-      "end_timestamp": "2025-12-12T081655.456071",
+      "start_timestamp": "2026-01-16T124033.902159",
+      "end_timestamp": "2026-01-16T124034.007409",
       "output_format_version": "4.1.0",
-      "duration": 0.11098170280456543,
+      "duration": 0.10526299476623535,
       "message": null,
       "errors": [],
       "warnings": [],
@@ -19,9 +19,9 @@
         "system_environment": {
           "operating_system": "linux",
           "cpu_architecture": "64",
-          "platform": "Linux-5.15.0-163-generic-x86_64-with-glibc2.35",
-          "platform_version": "#173-Ubuntu SMP Tue Oct 14 17:51:00 UTC 2025",
-          "python_version": "3.10.12 (main, Nov  4 2025, 08:48:33) [GCC 11.4.0]"
+          "platform": "Linux-5.15.0-164-generic-x86_64-with-glibc2.35",
+          "platform_version": "#174-Ubuntu SMP Fri Nov 14 20:25:16 UTC 2025",
+          "python_version": "3.10.12 (main, Jan  8 2026, 06:52:19) [GCC 11.4.0]"
         },
         "spdx_license_list_version": "3.27",
         "files_count": 3
@@ -91,7 +91,7 @@
       "repository_homepage_url": "https://www.npmjs.com/package/test",
       "repository_download_url": "https://registry.npmjs.org/test/-/test-0.1.0.tgz",
       "api_data_url": "https://registry.npmjs.org/test/0.1.0",
-      "package_uid": "pkg:npm/test@0.1.0?uuid=966ed823-6627-4192-9608-1d1170ea4528",
+      "package_uid": "pkg:npm/test@0.1.0?uuid=bc515e36-4d09-4c13-b689-533065ae7d09",
       "datafile_paths": [
         "package_assembly_codebase.tar.gz-extract/test/get_package_resources/package.json"
       ],
@@ -278,7 +278,7 @@
         }
       ],
       "for_packages": [
-        "pkg:npm/test@0.1.0?uuid=966ed823-6627-4192-9608-1d1170ea4528"
+        "pkg:npm/test@0.1.0?uuid=bc515e36-4d09-4c13-b689-533065ae7d09"
       ],
       "files_count": 0,
       "dirs_count": 0,
@@ -308,7 +308,7 @@
       "is_script": false,
       "package_data": [],
       "for_packages": [
-        "pkg:npm/test@0.1.0?uuid=966ed823-6627-4192-9608-1d1170ea4528"
+        "pkg:npm/test@0.1.0?uuid=bc515e36-4d09-4c13-b689-533065ae7d09"
       ],
       "files_count": 0,
       "dirs_count": 0,

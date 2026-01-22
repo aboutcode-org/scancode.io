@@ -30,6 +30,7 @@ from django.db.models import Q
 
 import attr
 from commoncode.ignore import default_ignores
+from commoncode.system import py314
 from container_inspector.distro import Distro
 from packagedcode import plugin_package
 
@@ -377,12 +378,19 @@ def flag_ignorable_codebase_resources(project):
     """
     lookups = Q()
     for pattern in default_ignores.keys():
+        # These are not patterns
+        if "*" not in pattern:
+            lookups |= Q(rootfs_path__icontains=pattern)
+            continue
+
         # Translate glob pattern to regex
         translated_pattern = fnmatch.translate(pattern)
         # PostgreSQL does not like parts of Python regex
         if translated_pattern.startswith("(?s"):
             translated_pattern = translated_pattern.replace("(?s", "(?")
-        lookups |= Q(rootfs_path__icontains=pattern)
+            if py314:
+                translated_pattern = translated_pattern.replace("\\z", "\\Z")
+
         lookups |= Q(rootfs_path__iregex=translated_pattern)
 
     qs = project.codebaseresources.no_status()

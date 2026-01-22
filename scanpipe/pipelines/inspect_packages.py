@@ -41,6 +41,8 @@ class InspectPackages(ScanCodebase):
     https://scancode-toolkit.readthedocs.io/en/stable/reference/available_package_parsers.html
     """
 
+    scan_binaries = False
+
     @classmethod
     def steps(cls):
         return (
@@ -49,9 +51,18 @@ class InspectPackages(ScanCodebase):
             cls.collect_and_create_codebase_resources,
             cls.flag_empty_files,
             cls.flag_ignored_resources,
+            cls.scan_binaries_for_package,
             cls.scan_for_application_packages,
             cls.resolve_dependencies,
         )
+
+    @optional_step("Compiled")
+    def scan_binaries_for_package(self):
+        """
+        Scan compiled binaries for package and dependency related data'
+        Currently supported compiled binaries: Go, Rust.
+        """
+        self.scan_binaries = True
 
     def scan_for_application_packages(self):
         """
@@ -61,6 +72,7 @@ class InspectPackages(ScanCodebase):
         scancode.scan_for_application_packages(
             project=self.project,
             assemble=True,
+            compiled=self.scan_binaries,
             package_only=True,
             progress_logger=self.log,
         )

@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scancodeio"
-version = "36.0.1"
+version = "36.1.0"
 description = "Automate software composition analysis pipelines"
 readme = "README.rst"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE", "scan.NOTICE"]
 authors = [
@@ -30,6 +30,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Utilities"
 ]
 
@@ -56,26 +57,23 @@ dependencies = [
   # WSGI server
   "gunicorn==23.0.0",
   # Docker
-  "container-inspector==33.0.0",
+  "container-inspector==33.1.0",
   # ScanCode-toolkit
-  "scancode-toolkit[packages]==32.4.1",
+  "scancode-toolkit[packages]==32.5.0",
   "extractcode[full]==31.0.0",
-  "commoncode==32.3.0",
+  "commoncode==32.4.2",
   "Beautifulsoup4[chardet]==4.13.4",
   "packageurl-python==0.17.6",
-  # Workaround issue https://github.com/aboutcode-org/scancode.io/issues/1795
-  "fingerprints==1.2.3",
-  "normality==2.6.1",
   # FetchCode
   "fetchcode==0.8.0",
   "fetchcode-container==1.2.3.210512; sys_platform == 'linux'",
   # Inspectors
   "elf-inspector==0.0.3",
   "go-inspector==0.5.0",
-  "rust-inspector==0.1.0",
-  "binary-inspector==0.1.2",
+  "rust-inspector==0.2.1",
+  "binary-inspector==0.2.0",
   "python-inspector==0.15.0",
-  "source-inspector==0.7.0; sys_platform != 'darwin' and platform_machine != 'arm64'",
+  "source-inspector==0.7.1; sys_platform != 'darwin' and platform_machine != 'arm64'",
   "aboutcode-toolkit==11.1.1",
   # Utilities
   "XlsxWriter==3.2.9",
@@ -101,9 +99,7 @@ dependencies = [
   # AboutCode pipeline
   "aboutcode.pipeline==0.2.1",
   # ScoreCode
-  "scorecode==0.0.4",
-  # Workaround issue https://github.com/aboutcode-org/scancode.io/issues/1885
-  "click==8.2.1"
+  "scorecode==0.0.4"
 ]
 
 [project.optional-dependencies]
