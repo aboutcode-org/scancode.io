@@ -237,3 +237,201 @@ def load_inventory_from_xlsx(project, input_location, extra_data_prefix=None):
         if extra_data_prefix:
             extra_data = {extra_data_prefix: extra_data}
         project.update_extra_data(extra_data)
+
+
+def get_integrated_tool_name(scan_data):
+    """
+    Detect and return the integrated tool name from the ``scan_data`` structure.
+
+    Supported tools:
+    - vulnerablecode: VulnerableCode vulnerability data export
+    - purldb: PurlDB package enrichment data export
+    - matchcodeio: MatchCode.io matching results export
+
+    Returns None if the tool cannot be identified.
+    """
+    if "vulnerabilities" in scan_data or (
+        isinstance(scan_data, list)
+        and scan_data
+        and "affected_by_vulnerabilities" in scan_data[0]
+    ):
+        return "vulnerablecode"
+
+    if "files" in scan_data and "packages" in scan_data:
+        files = scan_data.get("files", [])
+        if files and any("for_packages" in f for f in files if isinstance(f, dict)):
+            for file_data in files:
+                if isinstance(file_data, dict):
+                    extra_data = file_data.get("extra_data", {})
+                    if any(
+                        key in extra_data
+                        for key in ["matched_to", "path_score", "matched_fingerprints"]
+                    ):
+                        return "matchcodeio"
+
+    if "packages" in scan_data or (
+        isinstance(scan_data, list)
+        and scan_data
+        and isinstance(scan_data[0], dict)
+        and "purl" in scan_data[0]
+        and any(
+            key in scan_data[0]
+            for key in ["repository_homepage_url", "api_data_url", "package_content"]
+        )
+    ):
+        return "purldb"
+
+    return None
+
+
+def load_vulnerabilities_from_vulnerablecode(project, scan_data):
+    """
+    Load vulnerability data from VulnerableCode export and update project packages.
+
+    The ``scan_data`` should contain vulnerability information that can be matched
+    to existing packages in the project by their PURL.
+
+    Expected format:
+    - List of package dicts with 'purl' and 'affected_by_vulnerabilities' keys
+    - Or dict with 'vulnerabilities' key containing vulnerability details
+    """
+    packages_by_purl = {}
+    for package in project.discoveredpackages.all():
+        if package.package_url:
+            packages_by_purl[package.package_url] = package
+
+    if isinstance(scan_data, list):
+        vulnerability_data_list = scan_data
+    elif "packages" in scan_data:
+        vulnerability_data_list = scan_data.get("packages", [])
+    elif "results" in scan_data:
+        vulnerability_data_list = scan_data.get("results", [])
+    else:
+        vulnerability_data_list = []
+
+    updated_packages = []
+    for vuln_data in vulnerability_data_list:
+        purl = vuln_data.get("purl")
+        if not purl:
+            continue
+
+        package = packages_by_purl.get(purl)
+        if not package:
+            continue
+
+        affected_by = vuln_data.get("affected_by_vulnerabilities", [])
+        if affected_by:
+            package.affected_by_vulnerabilities = affected_by
+            updated_packages.append(package)
+
+    if updated_packages:
+        DiscoveredPackage.objects.bulk_update(
+            objs=updated_packages,
+            fields=["affected_by_vulnerabilities"],
+            batch_size=1000,
+        )
+
+    return len(updated_packages)
+
+
+def load_enrichment_from_purldb(project, scan_data):
+    """
+    Load package enrichment data from PurlDB export and update/create packages.
+
+    The ``scan_data`` should contain package information that can be used to
+    enrich existing packages or create new packages in the project.
+
+    Expected format:
+    - List of package dicts with package data fields
+    - Or dict with 'packages' key containing package dicts
+    """
+    if isinstance(scan_data, list):
+        package_data_list = scan_data
+    elif "packages" in scan_data:
+        package_data_list = scan_data.get("packages", [])
+    elif "results" in scan_data:
+        package_data_list = scan_data.get("results", [])
+    else:
+        package_data_list = []
+
+    created_count = 0
+    updated_count = 0
+
+    for package_data in package_data_list:
+        purl = package_data.get("purl")
+        if not purl:
+            continue
+
+        existing_package = project.discoveredpackages.filter(
+            package_url=purl
+        ).first()
+
+        if existing_package:
+            updated_fields = existing_package.update_from_data(package_data)
+            if updated_fields:
+                existing_package.update_extra_data(
+                    {"enriched_from_purldb": updated_fields}
+                )
+                updated_count += 1
+        else:
+            pipes.update_or_create_package(project, package_data)
+            created_count += 1
+
+    return {"created": created_count, "updated": updated_count}
+
+
+def load_matches_from_matchcode(project, scan_data):
+    """
+    Load matching results from MatchCode.io export and create packages/associations.
+
+    The ``scan_data`` should contain matching results with package data and
+    resource associations.
+
+    Expected format:
+    - Dict with 'files' and 'packages' keys
+    - 'files' contains resource data with 'for_packages' associations
+    - 'packages' contains matched package data
+    """
+    from collections import defaultdict
+
+    files_data = scan_data.get("files", [])
+    packages_data = scan_data.get("packages", [])
+
+    resource_paths_by_package_uid = defaultdict(list)
+    for file_data in files_data:
+        for_packages = file_data.get("for_packages", [])
+        file_path = file_data.get("path")
+        if file_path:
+            for package_uid in for_packages:
+                resource_paths_by_package_uid[package_uid].append(file_path)
+
+    created_packages = 0
+
+    for package_data in packages_data:
+        package_uid = package_data.get("package_uid")
+        if not package_uid:
+            continue
+
+
+        resource_paths = resource_paths_by_package_uid.get(package_uid, [])
+
+        resources = project.codebaseresources.filter(path__in=resource_paths)
+
+        package, created = pipes.update_or_create_package(project, package_data)
+        if created:
+            created_packages += 1
+
+        if package and resources.exists():
+            package.add_resources(resources)
+
+        for file_data in files_data:
+            if file_data.get("path") in resource_paths:
+                extra_data = file_data.get("extra_data", {})
+                if extra_data:
+                    resource = project.codebaseresources.filter(
+                        path=file_data["path"]
+                    ).first()
+                    if resource:
+                        resource.update_extra_data(extra_data)
+
+    return created_packages
