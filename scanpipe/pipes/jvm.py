@@ -169,7 +169,8 @@ def find_expression(lines, regex):
 
         >>> lines = ["   package    foo.back ;  # dsasdasdasdasdasda.asdasdasd"]
         >>> regex = java_package_re
-        >>> assert find_expression(lines, regex) == "foo.back"
+        >>> find_expression(lines, regex) 
+    'foo.back'
     """
     for ln, line in enumerate(lines):
         # only look at the first 500 lines
