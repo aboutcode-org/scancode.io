@@ -158,6 +158,8 @@ scan_codebase = "scanpipe.pipelines.scan_codebase:ScanCodebase"
 scan_for_virus = "scanpipe.pipelines.scan_for_virus:ScanForVirus"
 scan_single_package = "scanpipe.pipelines.scan_single_package:ScanSinglePackage"
 nixpkgs_license_audit = "scanpipe.pipelines.nixpkgs_license_audit:NixpkgsLicenseAudit"  
+analyze_nixpkg = "scanpipe.pipelines.analyze_nixpkg:NixpkgClarity"
+
 [tool.setuptools.packages.find]
 where = ["."]
 
