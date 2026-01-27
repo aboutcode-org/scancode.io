@@ -392,6 +392,8 @@ class ProjectViewSet(
         for url in input_urls:
             project.add_input_source(download_url=url)
 
+        project.auto_populate_purl_if_single_package_url()
+
         return Response({"status": "Input(s) added."}, status=status.HTTP_201_CREATED)
 
     @action(
