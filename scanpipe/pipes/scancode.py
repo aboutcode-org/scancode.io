@@ -111,6 +111,15 @@ def get_max_workers(keep_available):
     return max_workers
 
 
+def normalize_spdx_identifier(license_key):
+    SPDX_MAPPINGS = {
+        "GPL-2.0": "GPL-2.0-only",
+        "GPL-3.0": "GPL-3.0-only",
+        "LGPL-2.1": "LGPL-2.1-only"
+    }
+    return SPDX_MAPPINGS.get(license_key, license_key)
+
+
 def extract_archive(location, target):
     """
     Extract a single archive or compressed file at `location` to the `target`
