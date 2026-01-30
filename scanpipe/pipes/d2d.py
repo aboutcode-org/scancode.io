@@ -31,6 +31,7 @@ from re import match as regex_match
 from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import connection
 from django.db.models import F
 from django.db.models import Q
 from django.db.models import Value
@@ -1409,25 +1410,50 @@ def create_local_files_packages(project):
     license_field = CodebaseResource.license_expression_field
     grouped_by_license = from_files_qs.values(license_field).order_by(license_field)
 
-    grouped_by_license = grouped_by_license.annotate(
-        grouped_resource_ids=ArrayAgg("id", distinct=True),
-        grouped_copyrights=ArrayAgg("copyrights", distinct=True),
-    )
+    if connection.vendor == "postgresql":
+        grouped_by_license = grouped_by_license.annotate(
+            grouped_resource_ids=ArrayAgg("id", distinct=True),
+            grouped_copyrights=ArrayAgg("copyrights", distinct=True),
+        )
 
-    for group in grouped_by_license:
-        codebase_resource_ids = sorted(set(group["grouped_resource_ids"]))
-        copyrights = [
-            entry["copyright"]
-            for copyrights in group["grouped_copyrights"]
-            for entry in copyrights
-        ]
+        for group in grouped_by_license:
+            codebase_resource_ids = sorted(set(group["grouped_resource_ids"]))
+            copyrights = [
+                entry["copyright"]
+                for copyrights in group["grouped_copyrights"]
+                for entry in copyrights
+            ]
 
-        defaults = {
-            "declared_license_expression": group.get("detected_license_expression"),
-            # The Counter is used to sort by most frequent values.
-            "copyright": "\n".join(Counter(copyrights).keys()),
-        }
-        pipes.create_local_files_package(project, defaults, codebase_resource_ids)
+            defaults = {
+                "declared_license_expression": group.get("detected_license_expression"),
+                # The Counter is used to sort by most frequent values.
+                "copyright": "\n".join(Counter(copyrights).keys()),
+            }
+            pipes.create_local_files_package(project, defaults, codebase_resource_ids)
+
+    else:
+        # Fallback for non-PostgreSQL databases (e.g. SQLite for tests)
+        # We need to iterate over unique license expressions to avoid
+        # creating duplicate packages.
+        grouped_by_license = grouped_by_license.distinct()
+        for group in grouped_by_license:
+            license_expression = group.get("detected_license_expression")
+            resources = from_files_qs.filter(
+                detected_license_expression=license_expression
+            )
+            codebase_resource_ids = list(resources.values_list("id", flat=True))
+            
+            copyrights = []
+            for resource_copyrights in resources.values_list("copyrights", flat=True):
+                for entry in resource_copyrights:
+                    if copyright := entry.get("copyright"):
+                        copyrights.append(copyright)
+
+            defaults = {
+                "declared_license_expression": license_expression,
+                "copyright": "\n".join(Counter(copyrights).keys()),
+            }
+            pipes.create_local_files_package(project, defaults, codebase_resource_ids)
 
 
 def match_resources_with_no_java_source(project, logger=None):
