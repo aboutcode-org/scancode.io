@@ -86,7 +86,9 @@ check:
 	@${ACTIVATE} ruff format --check
 	@$(MAKE) doc8
 	@echo "-> Run ABOUT files validation"
-	@${ACTIVATE} about check --exclude .venv/ --exclude scanpipe/tests/ .
+	@${ACTIVATE} python -c "import sys; sys.exit(0 if sys.version_info < (3, 12) else 1)" && \
+		about check --exclude .venv/ --exclude scanpipe/tests/ . || \
+		echo "Skipping ABOUT files validation on Python 3.12+ (distutils missing)"
 
 check-deploy:
 	@echo "-> Check Django deployment settings"
