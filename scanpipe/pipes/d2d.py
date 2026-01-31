@@ -1442,7 +1442,7 @@ def create_local_files_packages(project):
                 detected_license_expression=license_expression
             )
             codebase_resource_ids = list(resources.values_list("id", flat=True))
-            
+
             copyrights = []
             for resource_copyrights in resources.values_list("copyrights", flat=True):
                 for entry in resource_copyrights:
