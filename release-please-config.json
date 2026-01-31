@@ -1,0 +1,13 @@
+{
+    "packages": {
+        ".": {
+            "release-type": "python",
+            "package-name": "scancodeio",
+            "version-file": "scancodeio/__init__.py",
+            "extra-files": [
+                "pyproject.toml"
+            ]
+        }
+    },
+    "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
+}

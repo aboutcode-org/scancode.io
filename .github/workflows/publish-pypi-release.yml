@@ -1,10 +1,9 @@
 name: Build Python distributions and publish on PyPI
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
-  push:
-    tags:
-      - "v*.*.*"
 
 jobs:
   build-and-publish:
@@ -26,20 +25,13 @@ jobs:
         run: python -m build --sdist --wheel --outdir dist/ .
 
       - name: Publish to PyPI
-        if: startsWith(github.ref, 'refs/tags')
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
 
-      - name: Upload built archives
-        uses: actions/upload-artifact@v4
-        with:
-          name: pypi_archives
-          path: dist/*
-
-      - name: Create a GitHub release
+      - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          generate_release_notes: true
-          draft: false
           files: dist/*
+
