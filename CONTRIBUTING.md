@@ -2,15 +2,14 @@
 
 ## Commit Message Convention
 
-We use [Conventional Commits](https://www.conventionalcommits.org/) to automate our release process.
-This specification is **mandatory** for all commits.
+We use **Conventional Commits** to keep our history clean and automate releases. This means your commit messages should follow a simple pattern that tells us *what* changed and *why*.
 
-### Format
+### The Rule
+Every commit message must look like this:
 ```
 <type>(<scope>): <subject>
-<BLANK LINE>
-<body>
 ```
+(Scope is optional but helpful!)
 
 ### Allowed Types
 -   **feat**: A new feature (triggers MINOR release)
