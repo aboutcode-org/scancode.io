@@ -60,7 +60,7 @@ class EcosystemConfig:
     # which are not so useful in mapping
     standard_symbols_to_exclude: list = field(default_factory=list)
 
-    # File extesions which should be looked at for source symbol extraction
+    # File extensions which should be looked at for source symbol extraction
     # for mapping using symbols for a specific selected option/ecosystem
     source_symbol_extensions: list = field(default_factory=list)
 

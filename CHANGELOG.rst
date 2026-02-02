@@ -1187,7 +1187,7 @@ to be updated for the new ``app`` user, using:
 v32.4.0 (2023-07-13)
 --------------------
 
-- Add support for license policies and complaince alert for Discovered Packages.
+- Add support for license policies and compliance alert for Discovered Packages.
   https://github.com/nexB/scancode.io/issues/151
 
 - Refine the details views and tabs:
@@ -1617,7 +1617,7 @@ v30.2.0 (2021-12-17)
 --------------------
 
 - Add authentication for the Web UI views and REST API endpoint.
-  The autentication is disabled by default and can be enabled using the
+  The authentication is disabled by default and can be enabled using the
   SCANCODEIO_REQUIRE_AUTHENTICATION settings.
   When enabled, users have to authenticate through a login form in the Web UI, or using
   their API Key in the REST API.
@@ -1670,7 +1670,7 @@ v30.1.0 (2021-11-22)
   during the next maintenance tasks.
   QUEUED pipeline will be restored in the queue as the worker redis cache backend data
   is now persistent and reloaded on starting the image.
-  Note that internaly, a running job emits a "heartbeat" every 60 seconds to let all the
+  Note that internally, a running job emits a "heartbeat" every 60 seconds to let all the
   workers know that it is properly running.
   After 90 seconds without any heartbeats, a worker will determine that the job is not
   active anymore and that job will be moved to the failed registry during the worker
