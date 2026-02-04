@@ -7,6 +7,46 @@ Docker Compose users with existing data: run `./migrate-pg13-to-17.sh` before st
 the stack.
 Fresh installations require no action.
 
+v36.1.0 (2026-01-22)
+--------------------
+
+- Bump to latest scancode-toolkit v32.5.0 with:
+  * package and license detection performance improvement
+  * python3.14 support with updated dependencies
+  * improved copyright, license and package detection
+  For more details see https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.5.0
+  https://github.com/aboutcode-org/scancode.io/pull/2000
+
+- Support python3.14
+  https://github.com/aboutcode-org/scancode.io/pull/2000
+
+- Update to scancode-toolkit v32.4.1
+  https://github.com/aboutcode-org/scancode.io/pull/1984
+  For more details see https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.4.1
+
+- Store the whole vulnerability data from cdx to local models
+  https://github.com/aboutcode-org/scancode.io/pull/2007
+
+- Add project vulnerability list view
+  https://github.com/aboutcode-org/scancode.io/pull/2018
+
+- Update minecode-pipelines to latest v0.1.1
+  https://github.com/aboutcode-org/scancode.io/pull/2013
+
+- Refine d2d pipelines with misc improvements
+  https://github.com/aboutcode-org/scancode.io/pull/1996
+  https://github.com/aboutcode-org/scancode.io/pull/1995
+  https://github.com/aboutcode-org/scancode.io/pull/1999
+  https://github.com/aboutcode-org/scancode.io/pull/2021
+
+- Sanitize ORT package IDs to handle colons in versions
+  https://github.com/aboutcode-org/scancode.io/pull/2005
+
+- Restructure docs and README
+  https://github.com/aboutcode-org/scancode.io/pull/2032
+
+
+
 v36.0.1 (2025-12-09)
 --------------------
 
