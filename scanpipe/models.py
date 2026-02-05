@@ -28,6 +28,7 @@ import shutil
 import uuid
 from collections import Counter
 from collections import defaultdict
+from collections import deque
 from contextlib import suppress
 from itertools import chain
 from itertools import groupby
@@ -3085,6 +3086,24 @@ class CodebaseResource(
         The current CodebaseResource is not included.
         """
         return self.project.codebaseresources.filter(path__startswith=f"{self.path}/")
+
+    def ancestors(self):
+        """
+        Return a QuerySet of ancestors CodebaseResource objects using a database query
+        on the current CodebaseResource `path`. The current CodebaseResource is not
+        included
+        """
+        if not self.has_parent():
+            return []
+        ancestors = deque()
+        current = self.parent()
+        ancestors_appendleft = ancestors.appendleft
+
+        while current:
+            ancestors_appendleft(current)
+            current = current.parent()
+
+        return list(ancestors)
 
     def children(self, codebase=None):
         """
