@@ -67,3 +67,34 @@ class ScanPipeClamAVPipesTest(TestCase):
             }
         }
         self.assertEqual(expected_virus_report_extra_data, resource1.extra_data)
+
+    @mock.patch("clamd.ClamdNetworkSocket.multiscan")
+    def test_scanpipe_pipes_clamav_scan_for_virus_missing_resource(self, mock_multiscan):
+        """Test that scan_for_virus handles missing CodebaseResource gracefully."""
+        project = Project.objects.create(name="project")
+        r1 = make_resource_file(project=project, path="existing.zip")
+
+        # Simulate ClamAV returning results for both existing and non-existing resources
+        mock_multiscan.return_value = {
+            r1.location: ("FOUND", "Win.Test.EICAR_HDB-1"),
+            str(project.codebase_path / "missing_file.exe"): ("FOUND", "Trojan.Test"),
+        }
+
+        # Should not raise an exception
+        clamav.scan_for_virus(project)
+
+        # Should have 2 error messages: one for virus, one for missing resource
+        messages = list(project.projectmessages.all())
+        self.assertEqual(2, len(messages))
+
+        # Check that missing resource error was logged
+        missing_resource_error = project.projectmessages.filter(
+            description="CodebaseResource not found for ClamAV result"
+        ).first()
+        self.assertIsNotNone(missing_resource_error)
+        self.assertEqual("missing_file.exe", missing_resource_error.details["resource_path"])
+
+        # Check that existing resource still got processed
+        virus_error = project.projectmessages.filter(description="Virus detected").first()
+        self.assertIsNotNone(virus_error)
+        self.assertEqual("existing.zip", virus_error.details["resource_path"])
