@@ -26,6 +26,10 @@ import warnings
 from contextlib import suppress
 from pathlib import Path
 
+# This import is required to shim distutils on Python 3.12+ for dependencies
+# that rely on it (e.g., python-inspector, aboutcode-toolkit).
+if sys.version_info >= (3, 12):
+    import setuptools  # noqa
 import git
 
 VERSION = "36.1.0"
