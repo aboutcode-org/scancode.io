@@ -607,7 +607,6 @@ class Document:
             "SPDXID": self.spdx_id,
             "name": self.safe_document_name(self.name),
             "documentNamespace": self.namespace,
-            "documentDescribes": self.describes,
             "creationInfo": self.creation_info.as_dict(),
             "packages": [package.as_dict(self.version) for package in self.packages],
         }
@@ -620,9 +619,19 @@ class Document:
                 license_info.as_dict() for license_info in self.extracted_licenses
             ]
 
-        if self.relationships:
+        relationships_list = list(self.relationships) if self.relationships else []
+        if self.describes:
+            for described_id in self.describes:
+                describes_relationship = Relationship(
+                    spdx_id=self.spdx_id,
+                    related_spdx_id=described_id,
+                    relationship="DESCRIBES",
+                )
+                relationships_list.append(describes_relationship)
+
+        if relationships_list:
             data["relationships"] = [
-                relationship.as_dict() for relationship in self.relationships
+                relationship.as_dict() for relationship in relationships_list
             ]
 
         if self.comment:
@@ -636,13 +645,22 @@ class Document:
 
     @classmethod
     def from_data(cls, data):
+        describes = data.get("documentDescribes")
+        if not describes:
+            describes = []
+            document_id = data.get("SPDXID", "SPDXRef-DOCUMENT")
+            for rel_data in data.get("relationships", []):
+                if (rel_data.get("spdxElementId") == document_id and 
+                    rel_data.get("relationshipType") == "DESCRIBES"):
+                    describes.append(rel_data.get("relatedSpdxElement"))
+        
         return cls(
             spdx_id=data.get("SPDXID"),
             version=data.get("spdxVersion", "").split("SPDX-")[-1],
             data_license=data.get("dataLicense"),
             name=data.get("name"),
             namespace=data.get("documentNamespace"),
-            describes=data.get("documentDescribes"),
+            describes=describes,
             creation_info=CreationInfo.from_data(data.get("creationInfo", {})),
             packages=[
                 Package.from_data(package_data)

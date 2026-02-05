@@ -4,9 +4,6 @@
   "SPDXID": "SPDXRef-DOCUMENT-92fe63d9-1d53-4b63-b19a-85022fb7a3f3",
   "name": "scancodeio_asgiref",
   "documentNamespace": "https://scancode.io/spdxdocs/92fe63d9-1d53-4b63-b19a-85022fb7a3f3",
-  "documentDescribes": [
-    "SPDXRef-scancodeio-project-92fe63d9-1d53-4b63-b19a-85022fb7a3f3"
-  ],
   "creationInfo": {
     "created": "2000-01-01T01:02:03Z",
     "creators": [
@@ -131,6 +128,11 @@
   ],
   "files": [],
   "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT-92fe63d9-1d53-4b63-b19a-85022fb7a3f3",
+      "relatedSpdxElement": "SPDXRef-scancodeio-project-92fe63d9-1d53-4b63-b19a-85022fb7a3f3",
+      "relationshipType": "DESCRIBES"
+    },
     {
       "spdxElementId": "SPDXRef-scancodeio-project-92fe63d9-1d53-4b63-b19a-85022fb7a3f3",
       "relatedSpdxElement": "SPDXRef-scancodeio-discoveredpackage-543a3583-3a13-4b5d-a039-c6bc4072de35",
