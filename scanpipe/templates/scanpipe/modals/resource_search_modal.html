@@ -1,0 +1,53 @@
+<div class="modal" id="resource-search-modal">
+  <div class="modal-background"></div>
+  <div class="modal-card" style="max-width: 600px;">
+    <header class="modal-card-head py-3">
+      <p class="modal-card-title mb-0">
+        <span class="icon-text">
+          <span class="icon">
+            <i class="fa-solid fa-search"></i>
+          </span>
+          <span>Search Resources</span>
+        </span>
+      </p>
+      <div class="is-flex is-align-items-center">
+        <span class="tag is-light mr-2">Esc to close</span>
+        <button class="delete" aria-label="close"></button>
+      </div>
+    </header>
+    <form id="resource-search-form" method="get" action="{% url 'project_resources' project.slug %}">
+      <section class="modal-card-body py-4">
+        <div class="field">
+          <p class="control has-icons-left">
+            <input
+              id="resource-search-input"
+              class="input is-medium"
+              type="search"
+              placeholder="Search resources by path, name, status..."
+              name="search"
+              value="{{ object.path }}"
+              autofocus>
+            <span class="icon is-medium is-left">
+              <i class="fa-solid fa-search"></i>
+            </span>
+          </p>
+        </div>
+        <p class="help">
+          Press <kbd>Enter</kbd> to search or <kbd>Esc</kbd> to close.
+          Use <kbd>Ctrl+K</kbd> or <kbd>/</kbd> to open this search.
+        </p>
+      </section>
+      <footer class="modal-card-foot is-justify-content-flex-end py-3">
+        <div class="buttons">
+          <button class="button" type="button">Cancel</button>
+          <button class="button is-link is-no-close" type="submit">
+            <span class="icon">
+              <i class="fa-solid fa-search"></i>
+            </span>
+            <span>Search</span>
+          </button>
+        </div>
+      </footer>
+    </form>
+  </div>
+</div>
