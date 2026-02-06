@@ -20,7 +20,7 @@
   <div id="resource-tree-container" class="container is-fluid p-0">
     <div class="resizable-container is-flex">
       <div id="left-pane" class="left-pane px-2">
-        {% include "scanpipe/tree/resource_left_pane_header.html" only %}
+        {% include "scanpipe/tree/resource_left_pane_header.html" with project=project %}
         <div id="resource-tree">
           {% include "scanpipe/tree/resource_left_pane_tree.html" with children=children path=path %}
         </div>
@@ -161,6 +161,50 @@
         });
       });
 
+      const searchInput = document.getElementById('file-search-input');
+      const searchResults = document.getElementById('search-results');
+      const clearSearchBtn = document.getElementById('clear-search');
+      
+      function toggleSearchResults(show = null) {
+        const shouldShow = show !== null ? show : searchInput.value.trim();
+        searchResults.classList.toggle('is-hidden', !shouldShow);
+      }
+      
+      function clearSearch() {
+        searchInput.value = '';
+        toggleSearchResults(false);
+        searchInput.focus();
+      }
+      
+      clearSearchBtn.addEventListener('click', clearSearch);
+      searchInput.addEventListener('focus', () => toggleSearchResults());
+      
+      searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          toggleSearchResults(false);
+          searchInput.blur();
+        }
+      });
+      
+      document.addEventListener('click', function(e) {
+        const searchResultItem = e.target.closest('.dropdown-item');
+        if (searchResultItem && searchResultItem.hasAttribute('hx-get')) {
+          toggleSearchResults(false);
+          searchInput.blur();
+          expandToPath(searchResultItem.dataset.path);
+          return;
+        }
+        
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+          toggleSearchResults(false);
+        }
+      });
+      
+      document.body.addEventListener('htmx:afterSettle', function(evt) {
+        if (evt.target === searchResults) {
+          toggleSearchResults();
+        }
+      });
     });
   </script>
 {% endblock %}
