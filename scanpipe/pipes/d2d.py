@@ -164,11 +164,6 @@ def map_checksum(project, checksum_field, logger=None):
 def _map_jvm_to_class_resource(
     to_resource, from_resources, from_classes_index, jvm_lang: jvm.JvmLanguage
 ):
-    """
-    Map the ``to_resource`` .class file Resource with a Resource in
-    ``from_resources`` source files, using the ``from_classes_index`` index of
-    from/ fully qualified binary files.
-    """
     for extension in jvm_lang.source_extensions:
         # Perform basic conversion from .class to source file path
         source_path = jvm_lang.get_source_path(
@@ -183,12 +178,31 @@ def _map_jvm_to_class_resource(
                 path=to_resource.path, extension=extension
             )
             match = pathmap.find_paths(path=normalized_path, index=from_classes_index)
+
+            # Scala fallback for case classes and inner classes
+            # https://github.com/aboutcode-org/scancode.io/issues/1875
+            if not match and jvm_lang.name == "scala":
+                package_path = str(Path(to_resource.path).parent)
+                potential_sources = from_resources.filter(
+                    path__startswith=package_path.replace("to/", "from/"),
+                    extension__in=jvm_lang.source_extensions,
+                )
+                for from_resource in potential_sources:
+                    from_source_root_parts = from_resource.path.strip("/").split("/")
+                    from_source_root = "/".join(from_source_root_parts[:-1])
+                    pipes.make_relation(
+                        from_resource=from_resource,
+                        to_resource=to_resource,
+                        map_type=jvm_lang.binary_map_type,
+                        extra_data={"from_source_root": f"{from_source_root}/"},
+                    )
+                continue
+
             if not match:
-                return
+                continue
 
         for resource_id in match.resource_ids:
             from_resource = from_resources.get(id=resource_id)
-            # compute the root of the packages on the source side
             from_source_root_parts = from_resource.path.strip("/").split("/")
             from_source_root = "/".join(
                 from_source_root_parts[: -match.matched_path_length]

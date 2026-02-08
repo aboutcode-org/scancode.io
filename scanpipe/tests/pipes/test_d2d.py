@@ -755,6 +755,43 @@ class ScanPipeD2DPipesTest(TestCase):
         expected = "Ignoring 2 to/ resources with ecosystem specific configurations."
         self.assertIn(expected, buffer.getvalue())
 
+    def test_scanpipe_pipes_d2d_map_scala_case_classes_to_source(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/pekko-cluster-sharding-typed/org/apache/pekko/cluster/sharding/typed/"
+            "ClusterShardingQuery.scala",
+            extra_data={"scala_package": "org.apache.pekko.cluster.sharding.typed"},
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/pekko-cluster-sharding-typed/org/apache/pekko/cluster/sharding/typed/"
+            "GetClusterShardingStats.class",
+        )
+        to2 = make_resource_file(
+            self.project1,
+            path="to/pekko-cluster-sharding-typed/org/apache/pekko/cluster/sharding/typed/"
+            "GetShardRegionState.class",
+        )
+        to3 = make_resource_file(
+            self.project1,
+            path="to/pekko-cluster-sharding-typed/org/apache/pekko/cluster/sharding/typed/"
+            "ClusterShardingQuery.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.ScalaLanguage
+        )
+
+        expected = "Mapping 3 .class resources to 1 ('.scala',)"
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(3, self.project1.codebaserelations.count())
+
+        for to_resource in [to1, to2, to3]:
+            relation = self.project1.codebaserelations.get(to_resource=to_resource)
+            self.assertEqual(from1, relation.from_resource)
+            self.assertEqual("scala_to_class", relation.map_type)
+
     def test_scanpipe_pipes_d2d_map_jar_to_kotlin_source(self):
         from1 = make_resource_file(
             self.project1,
