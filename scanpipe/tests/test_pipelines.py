@@ -533,6 +533,8 @@ class PipelinesIntegrationTest(TestCase):
         "--verbose",
         # system_environment differs between systems
         "system_environment",
+        # the version number may change over time
+        "spdx_license_list_version",
         "file_type",
         # mime type and is_script are inconsistent across systems
         "mime_type",
@@ -839,6 +841,29 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(2, project1.codebaseresources.count())
         self.assertEqual(0, project1.discoveredpackages.count())
+
+    def test_scanpipe_scan_maven_package_single_file(self):
+        pipeline_name = "scan_maven_package"
+        project1 = make_project()
+
+        input_location = (
+            self.data / "jvm" / "wisp-logging-2025.11.11.195957-97a44b0.jar"
+        )
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(13, project1.codebaseresources.count())
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(29, project1.discovereddependencies.count())
+
+        scancode_file = project1.get_latest_output(filename="scancode")
+        expected_file = self.data / "jvm" / "scancodeio_wisp-logging.json"
+        self.assertPipelineResultEqual(expected_file, scancode_file)
 
     def test_scanpipe_scan_codebase_pipeline_integration(self):
         pipeline_name = "scan_codebase"

@@ -265,6 +265,14 @@ Scan Single Package
     :members:
     :member-order: bysource
 
+.. _pipeline_scan_maven_package:
+
+Scan Maven Package
+-------------------
+.. autoclass:: scanpipe.pipelines.scan_maven_package.ScanMavenPackage()
+    :members:
+    :member-order: bysource
+
 Fetch Scores (addon)
 --------------------
 .. warning::

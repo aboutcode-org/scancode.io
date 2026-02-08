@@ -157,6 +157,7 @@ resolve_dependencies = "scanpipe.pipelines.resolve_dependencies:ResolveDependenc
 scan_codebase = "scanpipe.pipelines.scan_codebase:ScanCodebase"
 scan_for_virus = "scanpipe.pipelines.scan_for_virus:ScanForVirus"
 scan_single_package = "scanpipe.pipelines.scan_single_package:ScanSinglePackage"
+scan_maven_package = "scanpipe.pipelines.scan_maven_package:ScanMavenPackage"
 
 [tool.setuptools.packages.find]
 where = ["."]
