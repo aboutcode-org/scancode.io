@@ -203,3 +203,13 @@ max-complexity = 10
 "**/test_spdx.py*" = ["S101"]
 # Allow complexity in management commands
 "scanpipe/management/commands/*" = ["C901"]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "36.1.0"
+tag_format = "v$version"
+version_files = [
+    "scancodeio/__init__.py",
+    "pyproject.toml:version"
+]
+
