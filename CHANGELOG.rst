@@ -7,6 +7,15 @@ Docker Compose users with existing data: run `./migrate-pg13-to-17.sh` before st
 the stack.
 Fresh installations require no action.
 
+v37.0.0 (unreleased)
+--------------------
+
+- Upgrade Django to release 6.x
+
+- Drop support for Python3.10 and Python3.11
+
+- Set python:3.14-slim as the base Docker image
+
 v36.1.0 (2026-01-22)
 --------------------
 
