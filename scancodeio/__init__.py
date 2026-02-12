@@ -88,6 +88,7 @@ __version__ = get_version(VERSION)
 warnings.filterwarnings("ignore", module="extractcode")
 warnings.filterwarnings("ignore", module="typecode")
 warnings.filterwarnings("ignore", module="clamd")
+warnings.filterwarnings("ignore", module="cyclonedx")
 
 
 def command_line():
