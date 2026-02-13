@@ -4,6 +4,16 @@
   Missing data
 {% endif %}
 
+{% if node.is_circular %}
+  <span class="tag is-warning is-light ml-1"
+        title="Circular dependency detected">
+    <span class="icon is-small">
+      <i class="fas fa-sync-alt"></i>
+    </span>
+    <span>Circular</span>
+  </span>
+{% endif %}
+
 <span class="ml-1">
   {% if node.url %}
     <a href="{{ node.url }}" target="_blank">

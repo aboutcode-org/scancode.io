@@ -23,6 +23,7 @@
 import difflib
 import io
 import json
+import logging
 import operator
 from collections import Counter
 from contextlib import suppress
@@ -106,6 +107,9 @@ from scanpipe.pipes import output
 from scanpipe.pipes import purldb
 
 scanpipe_app = apps.get_app_config("scanpipe")
+logger = logging.getLogger(__name__)
+
+
 
 
 # Cancel the default ordering for better performances
@@ -2701,43 +2705,80 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         try:
-            context["dependency_tree"] = self.get_dependency_tree(project=self.object)
+            context["dependency_tree"] = self.get_dependency_tree(self.object)
         except RecursionError:
             context["recursion_error"] = True
-
+            logger.error(
+                "RecursionError while building dependency tree",
+                extra={"project": self.object.name},
+            )
         return context
 
     def get_dependency_tree(self, project):
-        root_packages = (
-            project.discoveredpackages.root_packages()
-            .order_by("name")
-            .only_package_url_fields(
-                extra=["project_id", "compliance_alert", "affected_by_vulnerabilities"]
-            )
+        """
+        Build the dependency tree for a project.
+
+        All packages and their relations are prefetched up front
+        to avoid N+1 queries during traversal.
+        """
+
+        # Load all packages and related objects once
+        all_packages = list(
+            project.discoveredpackages
+            .all()
+            .prefetch_related("children_packages", "declared_dependencies")
         )
-        project_children = [self.get_node(package) for package in root_packages]
 
-        # Dependencies with no assigned `for_packages`.
-        project_dependencies = project.discovereddependencies.project_dependencies()
-        for dependency in project_dependencies:
-            project_children.append({"name": dependency.package_url})
+        # Determine roots using model logic
+        root_uuids = set(
+            project.discoveredpackages
+            .root_packages()
+            .values_list("uuid", flat=True)
+        )
 
-        dependency_tree = {
+        # Filter and sort roots in memory
+        roots = sorted(
+            (pkg for pkg in all_packages if pkg.uuid in root_uuids),
+            key=lambda p: p.name or "",
+        )
+
+        children = [self.get_node(pkg, stack=set()) for pkg in roots]
+
+        # Add dependencies not attached to specific packages
+        for dependency in project.discovereddependencies.project_dependencies():
+            children.append({"name": dependency.package_url})
+
+        return {
             "name": project.name,
-            "children": project_children,
+            "children": children,
         }
-        return dependency_tree
 
-    def get_node(self, package):
-        # Resolved dependencies
+    def get_node(self, package, stack=None):
+        """
+        Recursively build a node with cycle detection.
+        """
+
+        if stack is None:
+            stack = set()
+
+        if package.uuid in stack:
+            return self._circular_node(package)
+
+        new_stack = stack | {package.uuid}
+
+        # Use prefetched data and sort in memory
+        resolved_children = sorted(
+            package.children_packages.all(),
+            key=lambda p: p.name or "",
+        )
+
         children = [
-            self.get_node(child_package)
-            for child_package in package.children_packages.all().order_by("name")
+            self.get_node(child, new_stack)
+            for child in resolved_children
         ]
 
-        # Un-resolved dependencies
-        unresolved_dependencies = package.declared_dependencies.unresolved()
-        for dependency in unresolved_dependencies:
+        # Unresolved dependencies
+        for dependency in package.declared_dependencies.unresolved():
             children.append(
                 {
                     "name": dependency.package_url,
@@ -2745,15 +2786,27 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
                 }
             )
 
-        node = {
+        return {
             "name": str(package),
             "url": package.get_absolute_url(),
             "compliance_alert": package.compliance_alert,
             "has_compliance_issue": package.has_compliance_issue,
             "is_vulnerable": package.is_vulnerable,
+            "is_circular": False,
             "children": children,
         }
-        return node
+
+    def _circular_node(self, package):
+        return {
+            "name": str(package),
+            "url": package.get_absolute_url(),
+            "compliance_alert": package.compliance_alert,
+            "has_compliance_issue": package.has_compliance_issue,
+            "is_vulnerable": package.is_vulnerable,
+            "is_circular": True,
+            "children": [],
+        }
+
 
 
 class ProjectResourceTreeView(ConditionalLoginRequired, generic.DetailView):
