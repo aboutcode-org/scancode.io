@@ -572,6 +572,21 @@ Run the App
     docker compose build
     docker compose up
 
+.. warning:: **Windows Users: Port 80 Conflicts**
+
+    If you encounter a **502 Bad Gateway** error or see an **EDB Postgres** page, you likely have a local service blocking port 80.
+
+    To fix this, edit ``docker-compose.yml`` and change the Nginx port mapping:
+
+    .. code-block:: yaml
+
+        nginx:
+          ports:
+            - "9000:80"
+
+    Then access the dashboard at http://localhost:9000
+
 At this stage, the ScanCode.io app is up and running.
 To access the app, open the "PORTS" window and open the address for port 80 in your
 browser.
+
