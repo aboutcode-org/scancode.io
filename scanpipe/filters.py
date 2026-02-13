@@ -201,7 +201,7 @@ class FilterSetUtilsMixin:
             [
                 field_name
                 for field_name in self.form.changed_data
-                if field_name not in ["sort"]
+                if field_name != "sort"
             ]
         )
 
