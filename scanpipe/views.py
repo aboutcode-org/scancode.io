@@ -2778,7 +2778,12 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
         ]
 
         # Unresolved dependencies
-        for dependency in package.declared_dependencies.unresolved():
+        # Unresolved dependencies - filter in memory to avoid DB query
+        unresolved_deps = [
+            dep for dep in package.declared_dependencies.all()
+            if dep.resolved_to_package_id is None
+        ]
+        for dependency in unresolved_deps:
             children.append(
                 {
                     "name": dependency.package_url,
