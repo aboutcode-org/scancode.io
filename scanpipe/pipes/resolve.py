@@ -314,6 +314,7 @@ def convert_spdx_expression(license_expression_spdx):
 def spdx_package_to_package_data(spdx_package):
     """Convert the provided spdx_package into package_data."""
     package_url_dict = {}
+
     # Store the original "SPDXID" as package_uid for dependencies resolution.
     package_uid = spdx_package.spdx_id
 
@@ -321,6 +322,14 @@ def spdx_package_to_package_data(spdx_package):
         if ref.type == "purl":
             purl = ref.locator
             package_url_dict = PackageURL.from_string(purl).to_dict(encode=True)
+
+    if not package_url_dict and spdx_package.name and spdx_package.version:
+        generic_purl = PackageURL(
+            type="generic",
+            name=spdx_package.name,
+            version=spdx_package.version,
+        )
+        package_url_dict = generic_purl.to_dict(encode=True)
 
     checksum_data = {
         checksum.algorithm.lower(): checksum.value
@@ -330,7 +339,9 @@ def spdx_package_to_package_data(spdx_package):
     declared_license_expression_spdx = spdx_package.license_concluded
     declared_expression = ""
     if declared_license_expression_spdx:
-        declared_expression = convert_spdx_expression(declared_license_expression_spdx)
+        declared_expression = convert_spdx_expression(
+            declared_license_expression_spdx
+        )
 
     package_data = {
         "package_uid": package_uid,
