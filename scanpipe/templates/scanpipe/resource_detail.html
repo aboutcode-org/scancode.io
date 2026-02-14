@@ -9,6 +9,7 @@
 {% endblock %}
 
 {% block content %}
+  {% include 'scanpipe/modals/resource_search_modal.html' %}
   <div class="container is-max-widescreen">
     {% include 'scanpipe/includes/navbar_header.html' %}
     <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
@@ -146,6 +147,31 @@
       let body = document.querySelector('body');
       let is_full_screen = body.classList.toggle("full-screen");
       editor.resize()
+    });
+
+    // Resource search modal keyboard shortcut (Ctrl+K or /)
+    document.addEventListener('keydown', function (event) {
+      // Check if any input or textarea has focus
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.isContentEditable
+      );
+
+      // Open search modal on Ctrl+K or / (when no input is focused)
+      if ((event.ctrlKey && event.key === 'k') || (event.key === '/' && !isInputFocused)) {
+        event.preventDefault();
+        openModal('resource-search-modal');
+        // Focus the search input after a short delay to ensure modal is visible
+        setTimeout(function() {
+          const searchInput = document.getElementById('resource-search-input');
+          if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+          }
+        }, 50);
+      }
     });
   }
   </script>
