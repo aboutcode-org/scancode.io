@@ -62,7 +62,7 @@ class SymbolsMatchResult:
     Statistics and debug information for each attempted matching
     between a binary and a source file using extracted symbols.
     Contains CodebaseRelation and other data to create the codebase
-    realtions optionally if matching with symbols is successful.
+    relations optionally if matching with symbols is successful.
     """
 
     from_resource: str

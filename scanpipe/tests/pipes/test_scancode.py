@@ -478,7 +478,7 @@ class ScanPipeScancodePipesTest(TestCase):
         uuid = "ba110d49-b6f2-4c86-8d89-a6fd34838ca8"
         package.update(package_uid=f"pkg:npm/is-npm@1.0.0?uuid={uuid}")
 
-        # Patching the ``file_type`` and ``mime_typea` values as those are OS dependant.
+        # Patching the ``file_type`` and ``mime_type`` values as those are OS dependent.
         # Note that we cannot use proper ``mock`` as the ``scan_package`` pipeline
         # uses a subprocess call to run the ``scancode`` command.
         project1.codebaseresources.all().update(file_type="", mime_type="text/plain")

@@ -3650,7 +3650,7 @@ class AbstractPackage(models.Model):
         blank=True,
         help_text=_(
             "A list of Resource paths for package datafiles which were "
-            "used to assemble this pacakage."
+            "used to assemble this package."
         ),
     )
     file_references = models.JSONField(
@@ -4448,7 +4448,7 @@ class DiscoveredLicenseQuerySet(
         return self.filter(needs_review=False)
 
     def order_by_count_and_expression(self):
-        """Order by detection count and license expression (identifer) fields."""
+        """Order by detection count and license expression (identifier) fields."""
         return self.order_by("-detection_count", "identifier")
 
 
@@ -4565,8 +4565,8 @@ class DiscoveredLicense(
         blank=True,
         help_text=_(
             "A list of review comments for license detection issues which "
-            "needs review. These descriptive comments are based on ambigous "
-            "detection types and could also offers helpful suggestions on "
+            "needs review. These descriptive comments are based on ambiguous "
+            "detection types and could also offer helpful suggestions on "
             "how to review/report these detection issues."
         ),
     )

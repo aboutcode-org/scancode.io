@@ -1,6 +1,6 @@
 .. _tutorial_api_analyze_package_archive:
 
-Analyse Package Archive (REST API)
+Analyze Package Archive (REST API)
 ==================================
 
 This tutorial complements the :ref:`rest_api` section, and the aim here is to
