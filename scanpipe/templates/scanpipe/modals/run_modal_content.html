@@ -33,11 +33,11 @@
           <i class="fa-solid fa-trash-alt"></i>
           Delete pipeline
         </a>
-        <a href="#" class="ml-4"
-           hx-get="{% url 'project_run_step_selection' run.uuid %}"
-           hx-target="#run-step-selection-box"
-           hx-swap="outerHTML"
-        >
+        <a
+          href="#" class="ml-4"
+          hx-get="{% url 'project_run_step_selection' run.uuid %}"
+          hx-target="#run-step-selection-box"
+          hx-swap="outerHTML">
           <i class="fa-regular fa-square-check"></i>
           Select steps
         </a>

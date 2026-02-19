@@ -89,6 +89,17 @@
               "content": "806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"
             }
           ]
+        },
+        {
+          "type": "build-meta",
+          "url": "",
+          "comment": "Missing URL",
+          "hashes": [
+            {
+              "alg": "SHA-1",
+              "content": "568f3f90c3d6aced58de033a3547ccd2e4e088e8"
+            }
+          ]
         }
       ],
       "licenses": [

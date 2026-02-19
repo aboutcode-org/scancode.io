@@ -25,6 +25,10 @@ from pathlib import Path
 
 from django.core.management import call_command
 from django.test import TestCase
+from django.test import override_settings
+
+import requests
+from scorecode.ossf_scorecard import fetch_scorecard
 
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
@@ -72,7 +76,8 @@ class RegenTestData(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        exitcode, _ = pipeline.execute()
+        with override_settings(SCANCODEIO_PROCESSES=-1):
+            exitcode, _ = pipeline.execute()
         self.assertEqual(0, exitcode)
 
         # ScanCode-toolkit scan result
@@ -85,6 +90,7 @@ class RegenTestData(TestCase):
                 "license": True,
                 "package": True,
             },
+            processes=1,
         )
 
         # ScanCode.io results
@@ -148,4 +154,20 @@ class RegenTestData(TestCase):
                 "info": True,
                 "package": True,
             },
+            processes=1,
         )
+
+    def test_regenerate_scorecard_data(self):
+        """Regenerate and save scorecard data by calling the OSSF Scorecard API."""
+        scorecard_data_file = self.data / "scorecode" / "scorecard_response.json"
+        platform, org, repo = "github.com", "nexB", "scancode-toolkit"
+
+        try:
+            scorecard_data = fetch_scorecard(platform, org, repo)
+        except requests.exceptions.Timeout:
+            raise RuntimeError("The request to the OSSF Scorecard API timed out.")
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"Error fetching scorecard data: {e}")
+
+        scorecard_data_file.parent.mkdir(parents=True, exist_ok=True)
+        scorecard_data_file.write_text(json.dumps(scorecard_data.to_dict(), indent=2))

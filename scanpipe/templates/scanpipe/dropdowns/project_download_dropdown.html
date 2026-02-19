@@ -15,21 +15,34 @@
       <a href="{% url 'project_results' project.slug 'xlsx' %}" class="dropdown-item">
         <strong>XLSX</strong>
       </a>
-      <a href="{% url 'project_results' project.slug 'spdx' %}" class="dropdown-item">
+      <div class="dropdown-item">
         <strong>SPDX</strong>
-      </a>
+        <div class="has-text-weight-semibold">
+          <div class="buttons">
+            <a href="{% url 'project_results' project.slug 'spdx' '2.3' %}" class="tag is-link">2.3</a>
+            <a href="{% url 'project_results' project.slug 'spdx' '2.2' %}" class="tag">2.2</a>
+          </div>
+        </div>
+      </div>
       <div class="dropdown-item">
         <strong>CycloneDX</strong>
         <div class="has-text-weight-semibold">
           <div class="buttons">
             <a href="{% url 'project_results' project.slug 'cyclonedx' '1.6' %}" class="tag is-link">1.6</a>
+            <a href="{% url 'project_results' project.slug 'cyclonedx' '1.7' %}" class="tag">1.7</a>
             <a href="{% url 'project_results' project.slug 'cyclonedx' '1.5' %}" class="tag">1.5</a>
-            <a href="{% url 'project_results' project.slug 'cyclonedx' '1.4' %}" class="tag">1.4</a>
           </div>
         </div>
       </div>
       <a href="{% url 'project_results' project.slug 'attribution' %}" class="dropdown-item">
         <strong>Attribution</strong>
+      </a>
+      <a href="{% url 'project_results' project.slug 'ort-package-list' %}" class="dropdown-item">
+        <strong>ORT (package-list)</strong>
+      </a>
+      <hr class="dropdown-divider" />
+      <a href="{% url 'project_results' project.slug 'all_formats' %}" class="dropdown-item">
+        <strong>All formats</strong>
       </a>
     </div>
   </div>

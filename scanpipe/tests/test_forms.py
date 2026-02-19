@@ -219,7 +219,9 @@ class ScanPipeFormsTest(TestCase):
         self.assertFalse(form.is_valid())
         expected = {
             "policies": [
-                "The `license_policies` key is missing from provided policies data."
+                "At least one of the following policy types must be present: "
+                "license_clarity_thresholds, license_policies, "
+                "scorecard_score_thresholds"
             ]
         }
         self.assertEqual(expected, form.errors)

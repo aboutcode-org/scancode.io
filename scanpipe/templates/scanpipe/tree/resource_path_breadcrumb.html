@@ -1,0 +1,37 @@
+<nav class="breadcrumb is-flex is-align-items-center mb-2" aria-label="breadcrumbs">
+  <button
+    id="expand-left-pane"
+    class="button is-light px-2 mr-2 has-tooltip is-hidden"
+    data-title="Show resource tree"
+    data-tooltip-position="bottom right">
+    <i class="fa-solid fa-square-caret-right"></i>
+  </button>
+  {% if path %}
+    <ul>
+      {% for subpath, segment in path_segments %}
+        {% if not forloop.last %}
+          <li>
+            <a
+              href="{% url 'project_resource_tree' project.slug subpath %}"
+              class="expand-in-tree"
+              data-path="{{ subpath }}"
+              hx-get="{% url 'project_resource_tree_right_pane' project.slug subpath %}"
+              hx-target="#right-pane"
+              hx-push-url="{% url 'project_resource_tree' project.slug subpath %}">
+              {{ segment }}
+            </a>
+          </li>
+        {% else %}
+          <li class="is-active">
+            <a href="#" class="has-text-dark"  aria-current="page">
+              {{ segment }}
+            </a>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+    <button class="button is-borderless copy-to-clipboard p-2" aria-label="Copy path" data-copy="{{ path }}" data-copy-feedback="Path copied!">
+      <i class="fa-regular fa-clone"></i>
+    </button>
+  {% endif %}
+</nav>

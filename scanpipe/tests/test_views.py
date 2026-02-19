@@ -28,7 +28,6 @@ from pathlib import Path
 from unittest import mock
 
 from django.apps import apps
-from django.core.exceptions import SuspiciousFileOperation
 from django.http import FileResponse
 from django.http.response import Http404
 from django.test import TestCase
@@ -54,12 +53,13 @@ from scanpipe.tests import dependency_data2
 from scanpipe.tests import make_dependency
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
+from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 from scanpipe.tests import package_data2
 from scanpipe.views import CodebaseResourceDetailsView
 from scanpipe.views import ProjectActionView
-from scanpipe.views import ProjectCodebaseView
+from scanpipe.views import ProjectCodebasePanelView
 from scanpipe.views import ProjectDetailView
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -672,25 +672,17 @@ class ScanPipeViewsTest(TestCase):
 
         (self.project1.codebase_path / "dir1").mkdir()
         (self.project1.codebase_path / "dir1/dir2").mkdir()
-        (self.project1.codebase_path / "file.txt").touch()
+        (self.project1.codebase_path / "file+.txt").touch()
 
         response = self.client.get(url)
-        self.assertContains(response, "/codebase/?current_dir=./dir1")
-        self.assertContains(response, "/resources/./file.txt/")
-
-        data = {"current_dir": "dir1"}
-        response = self.client.get(url, data=data)
-        self.assertContains(response, "..")
-        self.assertContains(response, "/codebase/?current_dir=.")
-        self.assertContains(response, "/codebase/?current_dir=dir1/dir2")
-
-        data = {"current_dir": "not_existing"}
-        response = self.client.get(url, data=data)
-        self.assertEqual(404, response.status_code)
-
-        data = {"current_dir": "../"}
-        response = self.client.get(url, data=data)
-        self.assertEqual(404, response.status_code)
+        resource_tree_url = reverse(
+            "project_resource_tree", args=[self.project1.slug, "dir1"]
+        )
+        self.assertContains(response, resource_tree_url)
+        resource_tree_url = reverse(
+            "project_resource_tree", args=[self.project1.slug, "file+.txt"]
+        )
+        self.assertContains(response, resource_tree_url)
 
     def test_scanpipe_views_project_codebase_view_ordering(self):
         url = reverse("project_codebase", args=[self.project1.slug])
@@ -702,12 +694,12 @@ class ScanPipeViewsTest(TestCase):
         (self.project1.codebase_path / "Dir").mkdir()
 
         response = self.client.get(url)
-        codebase_tree = response.context_data["codebase_tree"]
+        codebase_tree = response.context_data["codebase_root_tree"]
         expected = ["Dir", "Zdir", "a", "z", "a.txt", "z.txt"]
         self.assertEqual(expected, [path.get("name") for path in codebase_tree])
 
-    def test_scanpipe_views_project_codebase_view_get_tree(self):
-        get_tree = ProjectCodebaseView.get_tree
+    def test_scanpipe_views_project_codebase_view_get_root_tree(self):
+        get_root_tree = ProjectCodebasePanelView.get_root_tree
 
         (self.project1.codebase_path / "dir1").mkdir()
         (self.project1.codebase_path / "dir1/dir2").mkdir()
@@ -715,34 +707,20 @@ class ScanPipeViewsTest(TestCase):
 
         with mock.patch.object(scanpipe_app, "workspace_path", ""):
             self.assertEqual("", scanpipe_app.workspace_path)
-            with self.assertRaises(ValueError) as e:
-                get_tree(self.project1, current_dir="")
+            with self.assertRaises(ValueError):
+                get_root_tree(self.project1)
 
-        with self.assertRaises(FileNotFoundError):
-            get_tree(self.project1, current_dir="not_existing")
-
-        with self.assertRaises(SuspiciousFileOperation) as e:
-            get_tree(self.project1, current_dir="../../")
-        self.assertIn("is located outside of the base path component", str(e.exception))
-
-        codebase_tree = get_tree(self.project1, current_dir="")
+        codebase_tree = get_root_tree(self.project1)
         expected = [
-            {"name": "dir1", "is_dir": True, "location": "/dir1"},
-            {"name": "file.txt", "is_dir": False, "location": "/file.txt"},
-        ]
-        self.assertEqual(expected, codebase_tree)
-
-        codebase_tree = get_tree(self.project1, current_dir="dir1")
-        expected = [
-            {"name": "..", "is_dir": True, "location": "."},
-            {"name": "dir2", "is_dir": True, "location": "dir1/dir2"},
+            {"name": "dir1", "is_dir": True},
+            {"name": "file.txt", "is_dir": False},
         ]
         self.assertEqual(expected, codebase_tree)
 
         shutil.rmtree(self.project1.work_directory, ignore_errors=True)
         self.assertFalse(self.project1.codebase_path.exists())
         with self.assertRaises(Exception):
-            get_tree(self.project1, current_dir="")
+            get_root_tree(self.project1)
 
     def test_scanpipe_views_project_archive_view(self):
         url = reverse("project_archive", args=[self.project1.slug])
@@ -843,7 +821,7 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(7):
             self.client.get(url)
 
-        with self.assertNumQueries(13):
+        with self.assertNumQueries(15):
             self.client.get(self.project1.get_absolute_url())
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
@@ -1024,6 +1002,9 @@ class ScanPipeViewsTest(TestCase):
             compliance_alert=DiscoveredPackage.Compliance.ERROR,
         )
 
+        self.project1.extra_data = {"license_clarity_compliance_alert": "warning"}
+        self.project1.save(update_fields=["extra_data"])
+
         mock_license_policies_enabled.return_value = False
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
@@ -1032,6 +1013,8 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertContains(response, "Compliance alerts")
         self.assertContains(response, "1 Error")
+        self.assertContains(response, "License clarity")
+        self.assertContains(response, "Warning")
         expected = f"/project/{self.project1.slug}/packages/?compliance_alert=error"
         self.assertContains(response, expected)
 
@@ -1292,6 +1275,31 @@ class ScanPipeViewsTest(TestCase):
         url = reverse("project_messages", args=[self.project1.slug])
         with self.assertNumQueries(5):
             self.client.get(url)
+
+    @override_settings(VULNERABLECODE_URL="https://vcio/")
+    def test_scanpipe_views_vulnerability_list_view(self):
+        self.assertEqual(0, self.project1.vulnerability_count)
+        url = reverse("project_vulnerabilities", args=[self.project1.slug])
+        with self.assertNumQueries(5):
+            response = self.client.get(url)
+        self.assertContains(response, "No Vulnerabilities found.")
+
+        v1 = {"vulnerability_id": "VCID-1"}
+        v2 = {"vulnerability_id": "VCID-2"}
+        project = make_project()
+        make_package(project, "pkg:type/a", affected_by_vulnerabilities=[v1])
+        make_dependency(project, affected_by_vulnerabilities=[v2])
+
+        self.assertEqual(2, project.vulnerability_count)
+        url = reverse("project_vulnerabilities", args=[project.slug])
+        with self.assertNumQueries(5):
+            response = self.client.get(url)
+
+        expected = '<a href="https://vcio//vulnerabilities/VCID-1" target="_blank">'
+        self.assertContains(response, expected)
+        expected = '<a href="https://vcio//vulnerabilities/VCID-2" target="_blank">'
+        self.assertContains(response, expected)
+        self.assertContains(response, "pkg:type/a")
 
     def test_scanpipe_views_license_list_view(self):
         url = reverse("license_list")
@@ -1625,3 +1633,112 @@ class ScanPipeViewsTest(TestCase):
 
         for field in expected_fields:
             self.assertIn(field, json_data[0])
+
+    def test_scanpipe_views_resource_tree_root_path(self):
+        make_resource_file(self.project1, path="child1.txt")
+        make_resource_file(self.project1, path="dir1")
+
+        url = reverse("project_resource_tree", kwargs={"slug": self.project1.slug})
+        response = self.client.get(url)
+        children = response.context["children"]
+        child1 = children[0]
+        dir1 = children[1]
+
+        self.assertEqual(child1.path, "child1.txt")
+        self.assertEqual(dir1.path, "dir1")
+
+    def test_scanpipe_views_resource_tree_children_path(self):
+        make_resource_file(self.project1, path="parent/child1.txt")
+        make_resource_file(self.project1, path="parent/dir1")
+        make_resource_file(self.project1, path="parent/dir1/child2.txt")
+
+        url = reverse(
+            "project_resource_tree",
+            kwargs={"slug": self.project1.slug, "path": "parent"},
+        )
+        response = self.client.get(url + "?tree_panel=true")
+        children = response.context["children"]
+
+        child1 = children[0]
+        dir1 = children[1]
+
+        self.assertEqual(child1.path, "parent/child1.txt")
+        self.assertEqual(dir1.path, "parent/dir1")
+
+        self.assertFalse(child1.has_children)
+        self.assertTrue(dir1.has_children)
+
+    def test_scanpipe_views_project_resource_tree_right_pane_view_with_path_directory(
+        self,
+    ):
+        resource1 = make_resource_directory(self.project1, path="parent+special&chars")
+        make_resource_file(self.project1, path="parent+special&chars/child1.txt")
+        make_resource_file(self.project1, path="parent+special&chars/child2.py")
+
+        url = reverse(
+            "project_resource_tree_right_pane",
+            kwargs={"slug": self.project1.slug, "path": resource1.path},
+        )
+        response = self.client.get(url)
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(resource1.path, response.context["path"])
+        resources = list(response.context["resources"])
+        self.assertEqual(2, len(resources))
+
+        resource_paths = [r.path for r in resources]
+        self.assertEqual(
+            ["parent+special&chars/child1.txt", "parent+special&chars/child2.py"],
+            resource_paths,
+        )
+
+    def test_scanpipe_views_project_resource_tree_view_with_path_file(self):
+        resource = make_resource_file(self.project1, path="specific_file.txt")
+
+        url = reverse(
+            "project_resource_tree",
+            kwargs={"slug": self.project1.slug, "path": resource.path},
+        )
+        response = self.client.get(url)
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("specific_file.txt", response.context["path"])
+        self.assertEqual(resource, response.context["resource"])
+
+    def test_scanpipe_views_project_resource_tree_right_pane_view_empty_directory(self):
+        make_resource_directory(self.project1, path="empty_dir")
+
+        url = reverse(
+            "project_resource_tree_right_pane",
+            kwargs={"slug": self.project1.slug, "path": "empty_dir"},
+        )
+        response = self.client.get(url)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("empty_dir", response.context["path"])
+        resources = list(response.context["resources"])
+        self.assertEqual(0, len(resources))
+
+    @mock.patch("scanpipe.views.ProjectResourceTreeRightPaneView.paginate_by", 2)
+    def test_scanpipe_views_project_resource_tree_right_pane_view_pagination(self):
+        make_resource_directory(self.project1, path="parent")
+        make_resource_file(self.project1, path="parent/file1.txt", parent_path="parent")
+        make_resource_file(self.project1, path="parent/file2.txt", parent_path="parent")
+        make_resource_file(self.project1, path="parent/file3.txt", parent_path="parent")
+
+        url = reverse(
+            "project_resource_tree_right_pane",
+            kwargs={"slug": self.project1.slug, "path": "parent"},
+        )
+
+        response = self.client.get(url)
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(response.context["is_paginated"])
+        self.assertEqual(1, response.context["page_obj"].number)
+        self.assertTrue(response.context["page_obj"].has_next())
+        self.assertFalse(response.context["page_obj"].has_previous())
+
+        response = self.client.get(url + "?page=2")
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, response.context["page_obj"].number)
+        self.assertFalse(response.context["page_obj"].has_next())
+        self.assertTrue(response.context["page_obj"].has_previous())

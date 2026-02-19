@@ -8,6 +8,11 @@ Generic
 .. automodule:: scanpipe.pipes
     :members:
 
+Benchmark
+---------
+.. automodule:: scanpipe.pipes.benchmark
+    :members:
+
 ClamAV
 ------
 .. automodule:: scanpipe.pipes.clamav

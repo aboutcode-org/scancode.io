@@ -18,4 +18,10 @@
       </div>
     </div>
   {% endfor %}
+  <div class="panel-block">
+    <a class="button is-link is-outlined is-fullwidth" href="{% url 'project_results' project.slug 'all_outputs' %}">
+      <span class="icon mr-1"><i class="fa-solid fa-download"></i></span>
+      Download all outputs
+    </a>
+  </div>
 </article>

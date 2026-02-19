@@ -22,6 +22,7 @@
 
 import difflib
 import logging
+import subprocess
 import sys
 import time
 import uuid
@@ -72,6 +73,10 @@ def make_codebase_resource(project, location, save=True, **extra_fields):
     from scanpipe.pipes import flag
 
     relative_path = Path(location).relative_to(project.codebase_path)
+    parent_path = str(relative_path.parent)
+    if parent_path == ".":
+        parent_path = ""
+
     try:
         resource_data = scancode.get_resource_info(location=str(location))
     except OSError as error:
@@ -92,6 +97,7 @@ def make_codebase_resource(project, location, save=True, **extra_fields):
     codebase_resource = CodebaseResource(
         project=project,
         path=relative_path,
+        parent_path=parent_path,
         **resource_data,
     )
 
@@ -569,3 +575,40 @@ def poll_until_success(check, sleep=10, **kwargs):
             return False
 
         time.sleep(sleep)
+
+
+def run_command_safely(command_args):
+    """
+    Execute the external commands following security best practices.
+
+    This function is using the subprocess.run function which simplifies running external
+    commands. It provides a safer and more straightforward API compared to older methods
+    like subprocess.Popen.
+
+    WARNING: Please note that the `--option=value` syntax is required for args entries,
+    and not the `--option value` format.
+
+    - This does not use the Shell (shell=False) to prevent injection vulnerabilities.
+    - The command should be provided as a list of ``command_args`` arguments.
+    - Only full paths to executable commands should be provided to avoid any ambiguity.
+
+    WARNING: If you're incorporating user input into the command, make
+    sure to sanitize and validate the input to prevent any malicious commands from
+    being executed.
+
+    Raise a SubprocessError if the exit code was non-zero.
+    """
+    completed_process = subprocess.run(  # noqa: S603
+        command_args,
+        capture_output=True,
+        text=True,
+    )
+
+    if completed_process.returncode:
+        error_msg = (
+            f'Error while executing cmd="{completed_process.args}": '
+            f'"{completed_process.stderr.strip()}"'
+        )
+        raise subprocess.SubprocessError(error_msg)
+
+    return completed_process.stdout

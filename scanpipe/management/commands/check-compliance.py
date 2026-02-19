@@ -74,8 +74,18 @@ class Command(ProjectCommand):
             len(issues) for model in alerts.values() for issues in model.values()
         )
 
-        if count and self.verbosity > 0:
-            self.stderr.write(f"{count} compliance issues detected.")
+        clarity_alert = self.project.get_license_clarity_compliance_alert()
+        has_clarity_issue = clarity_alert not in (None, "ok")
+
+        scorecard_alert = self.project.get_scorecard_compliance_alert()
+        has_scorecard_issue = scorecard_alert not in (None, "ok")
+
+        total_issues = (
+            count + (1 if has_clarity_issue else 0) + (1 if has_scorecard_issue else 0)
+        )
+
+        if total_issues and self.verbosity > 0:
+            self.stderr.write(f"{total_issues} compliance issues detected.")
             for label, model in alerts.items():
                 self.stderr.write(f"[{label}]")
                 for severity, entries in model.items():
@@ -83,26 +93,28 @@ class Command(ProjectCommand):
                     if self.verbosity > 1:
                         self.stderr.write("   " + "\n   ".join(entries))
 
-        return count > 0
+            if has_clarity_issue:
+                self.stderr.write("[license clarity]")
+                self.stderr.write(f" > {clarity_alert.upper()}")
+
+            if has_scorecard_issue:
+                self.stderr.write("[scorecard compliance]")
+                self.stderr.write(f" > {scorecard_alert.upper()}")
+
+        return total_issues > 0
 
     def check_vulnerabilities(self):
-        packages = self.project.discoveredpackages.vulnerable_ordered()
-        dependencies = self.project.discovereddependencies.vulnerable_ordered()
-
-        vulnerable_records = list(packages) + list(dependencies)
-        count = len(vulnerable_records)
+        all_vulnerabilities = self.project.vulnerabilities
+        vulnerabilities_count = len(all_vulnerabilities)
 
         if self.verbosity > 0:
-            if count:
-                self.stderr.write(f"{count} vulnerable records found:")
-                for entry in vulnerable_records:
-                    self.stderr.write(str(entry))
-                    vulnerability_ids = [
-                        vulnerability.get("vulnerability_id")
-                        for vulnerability in entry.affected_by_vulnerabilities
-                    ]
-                    self.stderr.write(" > " + ", ".join(vulnerability_ids))
+            if vulnerabilities_count:
+                self.stderr.write(f"{vulnerabilities_count} vulnerabilities found:")
+                for vulnerability_id, vulnerability_data in all_vulnerabilities.items():
+                    self.stderr.write(str(vulnerability_id))
+                    for affected_obj in vulnerability_data.get("affects", []):
+                        self.stderr.write(f" > {affected_obj}")
             else:
                 self.stdout.write("No vulnerabilities found")
 
-        return count > 0
+        return vulnerabilities_count > 0

@@ -1,0 +1,580 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:5a01ec9d-04e9-4a0e-b00e-acdd4ba89e5e",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "bom-ref": "7bdbcef4-069b-48e8-98f0-40cfad8831b0",
+      "name": "alpine_3.22.1",
+      "type": "library"
+    },
+    "properties": [
+      {
+        "name": "notice",
+        "value": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n"
+      }
+    ],
+    "timestamp": "2025-09-02T10:15:59.743697+00:00",
+    "tools": [
+      {
+        "name": "ScanCode.io",
+        "version": "35.3.0"
+      }
+    ]
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:alpine/alpine-baselayout@3.7.0-r0?arch=x86_64&uuid=5e1c9abe-d389-4ec4-9743-16fd05589686",
+      "copyright": "",
+      "description": "Alpine base dir structure and init scripts",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "git+https://git.alpinelinux.org/aports/commit/?id=540d8477019887cc6534152e92c3b12676e35d7b"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "GPL-2.0-only"
+        }
+      ],
+      "name": "alpine-baselayout",
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://git.alpinelinux.org/cgit/aports/tree/main/alpine-baselayout"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:alpine/alpine-baselayout@3.7.0-r0?arch=x86_64&uuid=5e1c9abe-d389-4ec4-9743-16fd05589686"
+        }
+      ],
+      "purl": "pkg:alpine/alpine-baselayout@3.7.0-r0?arch=x86_64",
+      "type": "library",
+      "version": "3.7.0-r0"
+    },
+    {
+      "bom-ref": "pkg:alpine/alpine-baselayout-data@3.7.0-r0?arch=x86_64&uuid=79dba268-e693-45bf-871f-bd487cecf059",
+      "copyright": "",
+      "description": "Alpine base dir structure and init scripts",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "git+https://git.alpinelinux.org/aports/commit/?id=540d8477019887cc6534152e92c3b12676e35d7b"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "GPL-2.0-only"
+        }
+      ],
+      "name": "alpine-baselayout-data",
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://git.alpinelinux.org/cgit/aports/tree/main/alpine-baselayout"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:alpine/alpine-baselayout-data@3.7.0-r0?arch=x86_64&uuid=79dba268-e693-45bf-871f-bd487cecf059"
+        }
+      ],
+      "purl": "pkg:alpine/alpine-baselayout-data@3.7.0-r0?arch=x86_64",
+      "type": "library",
+      "version": "3.7.0-r0"
+    },
+    {
+      "bom-ref": "pkg:alpine/alpine-keys@2.5-r0?arch=x86_64&uuid=17722541-2c9c-4197-b608-000024809c10",
+      "copyright": "",
+      "description": "Public keys for Alpine Linux packages",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "git+https://git.alpinelinux.org/aports/commit/?id=6d473fb38effb2389f567b29fb7eb27039b3a279"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "name": "alpine-keys",
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://alpinelinux.org"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:alpine/alpine-keys@2.5-r0?arch=x86_64&uuid=17722541-2c9c-4197-b608-000024809c10"
+        }
+      ],
+      "purl": "pkg:alpine/alpine-keys@2.5-r0?arch=x86_64",
+      "type": "library",
+      "version": "2.5-r0"
+    },
+    {
+      "bom-ref": "pkg:alpine/alpine-release@3.22.1-r0?arch=x86_64&uuid=01456176-0d31-4790-ae90-1302ac777f02",
+      "copyright": "",
+      "description": "Alpine release data",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "git+https://git.alpinelinux.org/aports/commit/?id=96586cb7ed12d722ab560ee2ec0fc5294a9dc84b"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "name": "alpine-release",
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://alpinelinux.org"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:alpine/alpine-release@3.22.1-r0?arch=x86_64&uuid=01456176-0d31-4790-ae90-1302ac777f02"
+        }
+      ],
+      "purl": "pkg:alpine/alpine-release@3.22.1-r0?arch=x86_64",
+      "type": "library",
+      "version": "3.22.1-r0"
+    },
+    {
+      "bom-ref": "pkg:alpine/apk-tools@2.14.9-r2?arch=x86_64&uuid=952e40e5-9797-475c-bbac-3c21e41af9d4",
+      "copyright": "",
+      "description": "Alpine Package Keeper - package manager for alpine",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "git+https://git.alpinelinux.org/aports/commit/?id=a73d5616eaf4e16a219366d848d8e46b85d458ea"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "GPL-2.0-only"
+        }
+      ],
+      "name": "apk-tools",
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://gitlab.alpinelinux.org/alpine/apk-tools"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:alpine/apk-tools@2.14.9-r2?arch=x86_64&uuid=952e40e5-9797-475c-bbac-3c21e41af9d4"
+        }
+      ],
+      "purl": "pkg:alpine/apk-tools@2.14.9-r2?arch=x86_64",
+      "type": "library",
+      "version": "2.14.9-r2"
+    },
+    {
+      "bom-ref": "pkg:alpine/busybox@1.37.0-r18?arch=x86_64&uuid=16daa514-4087-427d-acf1-b024f5c3e64b",
+      "copyright": "",
+      "description": "Size optimized toolbox of many common UNIX utilities",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "git+https://git.alpinelinux.org/aports/commit/?id=28ab379633dca30ff5d3ebd36b274d15a2f15719"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "GPL-2.0-only"
+        }
+      ],
+      "name": "busybox",
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://busybox.net/"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:alpine/busybox@1.37.0-r18?arch=x86_64&uuid=16daa514-4087-427d-acf1-b024f5c3e64b"
+        }
+      ],
+      "purl": "pkg:alpine/busybox@1.37.0-r18?arch=x86_64",
+      "type": "library",
+      "version": "1.37.0-r18"
+    },
+    {
+      "bom-ref": "pkg:alpine/busybox-binsh@1.37.0-r18?arch=x86_64&uuid=1cd47628-7794-497d-b482-74917a45477a",
+      "copyright": "",
+      "description": "busybox ash /bin/sh",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "git+https://git.alpinelinux.org/aports/commit/?id=28ab379633dca30ff5d3ebd36b274d15a2f15719"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "GPL-2.0-only"
+        }
+      ],
+      "name": "busybox-binsh",
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://busybox.net/"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:alpine/busybox-binsh@1.37.0-r18?arch=x86_64&uuid=1cd47628-7794-497d-b482-74917a45477a"
+        }
+      ],
+      "purl": "pkg:alpine/busybox-binsh@1.37.0-r18?arch=x86_64",
+      "type": "library",
+      "version": "1.37.0-r18"
+    },
+    {
+      "bom-ref": "pkg:alpine/ca-certificates-bundle@20250619-r0?arch=x86_64&uuid=f80e5418-5b1f-4d52-806b-740ba17fe1b0",
+      "copyright": "",
+      "description": "Pre generated bundle of Mozilla certificates",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "git+https://git.alpinelinux.org/aports/commit/?id=78856465c851ab2ce0cb1e12fe9f57d04204919a"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MPL-2.0 AND MIT"
+        }
+      ],
+      "name": "ca-certificates-bundle",
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://www.mozilla.org/en-US/about/governance/policies/security-group/certs/"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:alpine/ca-certificates-bundle@20250619-r0?arch=x86_64&uuid=f80e5418-5b1f-4d52-806b-740ba17fe1b0"
+        }
+      ],
+      "purl": "pkg:alpine/ca-certificates-bundle@20250619-r0?arch=x86_64",
+      "type": "library",
+      "version": "20250619-r0"
+    },
+    {
+      "bom-ref": "pkg:alpine/libapk2@2.14.9-r2?arch=x86_64&uuid=cf4b2dd9-82fa-45eb-a8c4-5af7428fa43a",
+      "copyright": "",
+      "description": "Alpine Package Keeper - package manager for alpine",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "git+https://git.alpinelinux.org/aports/commit/?id=a73d5616eaf4e16a219366d848d8e46b85d458ea"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "GPL-2.0-only"
+        }
+      ],
+      "name": "libapk2",
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://gitlab.alpinelinux.org/alpine/apk-tools"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:alpine/libapk2@2.14.9-r2?arch=x86_64&uuid=cf4b2dd9-82fa-45eb-a8c4-5af7428fa43a"
+        }
+      ],
+      "purl": "pkg:alpine/libapk2@2.14.9-r2?arch=x86_64",
+      "type": "library",
+      "version": "2.14.9-r2"
+    },
+    {
+      "bom-ref": "pkg:alpine/libcrypto3@3.5.1-r0?arch=x86_64&uuid=4643159d-61bc-43e1-a1cd-72e2f543da1b",
+      "copyright": "",
+      "description": "Crypto library from openssl",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "git+https://git.alpinelinux.org/aports/commit/?id=370a62f0ac139d30d09aba7ed93fcbf455a032ae"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "name": "libcrypto3",
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://www.openssl.org/"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:alpine/libcrypto3@3.5.1-r0?arch=x86_64&uuid=4643159d-61bc-43e1-a1cd-72e2f543da1b"
+        }
+      ],
+      "purl": "pkg:alpine/libcrypto3@3.5.1-r0?arch=x86_64",
+      "type": "library",
+      "version": "3.5.1-r0"
+    },
+    {
+      "bom-ref": "pkg:alpine/libssl3@3.5.1-r0?arch=x86_64&uuid=ebcd8874-944c-47d3-af95-355b488adbcc",
+      "copyright": "",
+      "description": "SSL shared libraries",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "git+https://git.alpinelinux.org/aports/commit/?id=370a62f0ac139d30d09aba7ed93fcbf455a032ae"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "name": "libssl3",
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://www.openssl.org/"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:alpine/libssl3@3.5.1-r0?arch=x86_64&uuid=ebcd8874-944c-47d3-af95-355b488adbcc"
+        }
+      ],
+      "purl": "pkg:alpine/libssl3@3.5.1-r0?arch=x86_64",
+      "type": "library",
+      "version": "3.5.1-r0"
+    },
+    {
+      "bom-ref": "pkg:alpine/musl@1.2.5-r10?arch=x86_64&uuid=b40261e8-1a2f-4d9d-8010-6e13db9b80d7",
+      "copyright": "",
+      "description": "the musl c library (libc) implementation",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "git+https://git.alpinelinux.org/aports/commit/?id=1a5f5e699b2eae883e73c93a789f87bd89a2a190"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "name": "musl",
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://musl.libc.org/"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:alpine/musl@1.2.5-r10?arch=x86_64&uuid=b40261e8-1a2f-4d9d-8010-6e13db9b80d7"
+        }
+      ],
+      "purl": "pkg:alpine/musl@1.2.5-r10?arch=x86_64",
+      "type": "library",
+      "version": "1.2.5-r10"
+    },
+    {
+      "bom-ref": "pkg:alpine/musl-utils@1.2.5-r10?arch=x86_64&uuid=3942f96e-224f-4aaa-9be7-310d082de737",
+      "copyright": "",
+      "description": "the musl c library (libc) implementation",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "git+https://git.alpinelinux.org/aports/commit/?id=1a5f5e699b2eae883e73c93a789f87bd89a2a190"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT AND BSD-2-Clause AND GPL-2.0-or-later"
+        }
+      ],
+      "name": "musl-utils",
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://musl.libc.org/"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:alpine/musl-utils@1.2.5-r10?arch=x86_64&uuid=3942f96e-224f-4aaa-9be7-310d082de737"
+        }
+      ],
+      "purl": "pkg:alpine/musl-utils@1.2.5-r10?arch=x86_64",
+      "type": "library",
+      "version": "1.2.5-r10"
+    },
+    {
+      "bom-ref": "pkg:alpine/scanelf@1.3.8-r1?arch=x86_64&uuid=48546d84-5a6c-427c-8b5b-b20e98b96f23",
+      "copyright": "",
+      "description": "Scan ELF binaries for stuff",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "git+https://git.alpinelinux.org/aports/commit/?id=9818c555f344e3085d0dd1f3d917d8e23e244cb1"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "GPL-2.0-only"
+        }
+      ],
+      "name": "scanelf",
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://wiki.gentoo.org/wiki/Hardened/PaX_Utilities"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:alpine/scanelf@1.3.8-r1?arch=x86_64&uuid=48546d84-5a6c-427c-8b5b-b20e98b96f23"
+        }
+      ],
+      "purl": "pkg:alpine/scanelf@1.3.8-r1?arch=x86_64",
+      "type": "library",
+      "version": "1.3.8-r1"
+    },
+    {
+      "bom-ref": "pkg:alpine/ssl_client@1.37.0-r18?arch=x86_64&uuid=c7ae18d1-5277-4487-85ce-1e1363bf5a52",
+      "copyright": "",
+      "description": "External ssl_client for busybox wget",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "git+https://git.alpinelinux.org/aports/commit/?id=28ab379633dca30ff5d3ebd36b274d15a2f15719"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "GPL-2.0-only"
+        }
+      ],
+      "name": "ssl_client",
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://busybox.net/"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:alpine/ssl_client@1.37.0-r18?arch=x86_64&uuid=c7ae18d1-5277-4487-85ce-1e1363bf5a52"
+        }
+      ],
+      "purl": "pkg:alpine/ssl_client@1.37.0-r18?arch=x86_64",
+      "type": "library",
+      "version": "1.37.0-r18"
+    },
+    {
+      "bom-ref": "pkg:alpine/zlib@1.3.1-r2?arch=x86_64&uuid=5d218285-63a3-4ce4-ac27-bc8cabfffdaf",
+      "copyright": "",
+      "description": "A compression/decompression Library",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "git+https://git.alpinelinux.org/aports/commit/?id=4c2722e7ecc1c5e3ba882429044a101497121223"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "Zlib"
+        }
+      ],
+      "name": "zlib",
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://zlib.net/"
+        },
+        {
+          "name": "aboutcode:package_uid",
+          "value": "pkg:alpine/zlib@1.3.1-r2?arch=x86_64&uuid=5d218285-63a3-4ce4-ac27-bc8cabfffdaf"
+        }
+      ],
+      "purl": "pkg:alpine/zlib@1.3.1-r2?arch=x86_64",
+      "type": "library",
+      "version": "1.3.1-r2"
+    }
+  ],
+  "dependencies": [
+    {
+      "dependsOn": [
+        "pkg:alpine/alpine-baselayout-data@3.7.0-r0?arch=x86_64&uuid=79dba268-e693-45bf-871f-bd487cecf059",
+        "pkg:alpine/alpine-baselayout@3.7.0-r0?arch=x86_64&uuid=5e1c9abe-d389-4ec4-9743-16fd05589686",
+        "pkg:alpine/alpine-keys@2.5-r0?arch=x86_64&uuid=17722541-2c9c-4197-b608-000024809c10",
+        "pkg:alpine/alpine-release@3.22.1-r0?arch=x86_64&uuid=01456176-0d31-4790-ae90-1302ac777f02",
+        "pkg:alpine/apk-tools@2.14.9-r2?arch=x86_64&uuid=952e40e5-9797-475c-bbac-3c21e41af9d4",
+        "pkg:alpine/busybox-binsh@1.37.0-r18?arch=x86_64&uuid=1cd47628-7794-497d-b482-74917a45477a",
+        "pkg:alpine/busybox@1.37.0-r18?arch=x86_64&uuid=16daa514-4087-427d-acf1-b024f5c3e64b",
+        "pkg:alpine/ca-certificates-bundle@20250619-r0?arch=x86_64&uuid=f80e5418-5b1f-4d52-806b-740ba17fe1b0",
+        "pkg:alpine/libapk2@2.14.9-r2?arch=x86_64&uuid=cf4b2dd9-82fa-45eb-a8c4-5af7428fa43a",
+        "pkg:alpine/libcrypto3@3.5.1-r0?arch=x86_64&uuid=4643159d-61bc-43e1-a1cd-72e2f543da1b",
+        "pkg:alpine/libssl3@3.5.1-r0?arch=x86_64&uuid=ebcd8874-944c-47d3-af95-355b488adbcc",
+        "pkg:alpine/musl-utils@1.2.5-r10?arch=x86_64&uuid=3942f96e-224f-4aaa-9be7-310d082de737",
+        "pkg:alpine/musl@1.2.5-r10?arch=x86_64&uuid=b40261e8-1a2f-4d9d-8010-6e13db9b80d7",
+        "pkg:alpine/scanelf@1.3.8-r1?arch=x86_64&uuid=48546d84-5a6c-427c-8b5b-b20e98b96f23",
+        "pkg:alpine/ssl_client@1.37.0-r18?arch=x86_64&uuid=c7ae18d1-5277-4487-85ce-1e1363bf5a52",
+        "pkg:alpine/zlib@1.3.1-r2?arch=x86_64&uuid=5d218285-63a3-4ce4-ac27-bc8cabfffdaf"
+      ],
+      "ref": "7bdbcef4-069b-48e8-98f0-40cfad8831b0"
+    },
+    {
+      "ref": "pkg:alpine/alpine-baselayout-data@3.7.0-r0?arch=x86_64&uuid=79dba268-e693-45bf-871f-bd487cecf059"
+    },
+    {
+      "ref": "pkg:alpine/alpine-baselayout@3.7.0-r0?arch=x86_64&uuid=5e1c9abe-d389-4ec4-9743-16fd05589686"
+    },
+    {
+      "ref": "pkg:alpine/alpine-keys@2.5-r0?arch=x86_64&uuid=17722541-2c9c-4197-b608-000024809c10"
+    },
+    {
+      "ref": "pkg:alpine/alpine-release@3.22.1-r0?arch=x86_64&uuid=01456176-0d31-4790-ae90-1302ac777f02"
+    },
+    {
+      "ref": "pkg:alpine/apk-tools@2.14.9-r2?arch=x86_64&uuid=952e40e5-9797-475c-bbac-3c21e41af9d4"
+    },
+    {
+      "ref": "pkg:alpine/busybox-binsh@1.37.0-r18?arch=x86_64&uuid=1cd47628-7794-497d-b482-74917a45477a"
+    },
+    {
+      "ref": "pkg:alpine/busybox@1.37.0-r18?arch=x86_64&uuid=16daa514-4087-427d-acf1-b024f5c3e64b"
+    },
+    {
+      "ref": "pkg:alpine/ca-certificates-bundle@20250619-r0?arch=x86_64&uuid=f80e5418-5b1f-4d52-806b-740ba17fe1b0"
+    },
+    {
+      "ref": "pkg:alpine/libapk2@2.14.9-r2?arch=x86_64&uuid=cf4b2dd9-82fa-45eb-a8c4-5af7428fa43a"
+    },
+    {
+      "ref": "pkg:alpine/libcrypto3@3.5.1-r0?arch=x86_64&uuid=4643159d-61bc-43e1-a1cd-72e2f543da1b"
+    },
+    {
+      "ref": "pkg:alpine/libssl3@3.5.1-r0?arch=x86_64&uuid=ebcd8874-944c-47d3-af95-355b488adbcc"
+    },
+    {
+      "ref": "pkg:alpine/musl-utils@1.2.5-r10?arch=x86_64&uuid=3942f96e-224f-4aaa-9be7-310d082de737"
+    },
+    {
+      "ref": "pkg:alpine/musl@1.2.5-r10?arch=x86_64&uuid=b40261e8-1a2f-4d9d-8010-6e13db9b80d7"
+    },
+    {
+      "ref": "pkg:alpine/scanelf@1.3.8-r1?arch=x86_64&uuid=48546d84-5a6c-427c-8b5b-b20e98b96f23"
+    },
+    {
+      "ref": "pkg:alpine/ssl_client@1.37.0-r18?arch=x86_64&uuid=c7ae18d1-5277-4487-85ce-1e1363bf5a52"
+    },
+    {
+      "ref": "pkg:alpine/zlib@1.3.1-r2?arch=x86_64&uuid=5d218285-63a3-4ce4-ac27-bc8cabfffdaf"
+    }
+  ]
+}

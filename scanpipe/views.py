@@ -24,15 +24,14 @@ import difflib
 import io
 import json
 import operator
-import zipfile
 from collections import Counter
 from contextlib import suppress
-from pathlib import Path
 
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.exceptions import ValidationError
 from django.core.files.storage.filesystem import FileSystemStorage
@@ -62,6 +61,7 @@ from django.views.generic.edit import UpdateView
 import saneyaml
 import xlsxwriter
 from django_filters.views import FilterView
+from django_htmx.http import HttpResponseClientRedirect
 from licensedcode.spans import Span
 from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
 
@@ -201,14 +201,6 @@ class PrefetchRelatedViewMixin:
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(*self.prefetch_related)
-
-
-class HTTPResponseHXRedirect(HttpResponseRedirect):
-    status_code = 200
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self["HX-Redirect"] = self["Location"]
 
 
 def render_as_yaml(value):
@@ -569,23 +561,21 @@ class ExportJSONMixin:
         return response
 
 
-class FormAjaxMixin:
-    def is_xhr(self):
-        return self.request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
-
+class HTMXFormMixin:
     def form_valid(self, form):
         response = super().form_valid(form)
 
-        if self.is_xhr():
-            return JsonResponse({"redirect_url": self.get_success_url()}, status=201)
+        if self.request.htmx:
+            return HttpResponseClientRedirect(self.get_success_url())
 
         return response
 
     def form_invalid(self, form):
         response = super().form_invalid(form)
 
-        if self.is_xhr():
-            return JsonResponse({"errors": str(form.errors)}, status=400)
+        if self.request.htmx:
+            # Re-render the form with errors
+            return self.render_to_response(self.get_context_data(form=form))
 
         return response
 
@@ -705,7 +695,7 @@ class ProjectListView(
         )
 
 
-class ProjectCreateView(ConditionalLoginRequired, FormAjaxMixin, generic.CreateView):
+class ProjectCreateView(ConditionalLoginRequired, generic.CreateView):
     model = Project
     form_class = ProjectForm
     template_name = "scanpipe/project_form.html"
@@ -723,6 +713,23 @@ class ProjectCreateView(ConditionalLoginRequired, FormAjaxMixin, generic.CreateV
         context["pipelines"] = pipelines
         context["pipelines_available_groups"] = pipelines_available_groups
         return context
+
+    @property
+    def is_xhr(self):
+        # The request is XMLHttpRequest when using the input upload progress
+        return self.request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if self.is_xhr:
+            return JsonResponse({"redirect_url": self.get_success_url()}, status=201)
+        return response
+
+    def form_invalid(self, form):
+        response = super().form_invalid(form)
+        if self.is_xhr:
+            return JsonResponse({"errors": str(form.errors)}, status=400)
+        return response
 
 
 class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
@@ -966,7 +973,7 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
 
 
 class ProjectSettingsWebhookCreateView(
-    ConditionalLoginRequired, FormAjaxMixin, UpdateView
+    ConditionalLoginRequired, HTMXFormMixin, UpdateView
 ):
     model = Project
     form_class = WebhookSubscriptionForm
@@ -979,7 +986,7 @@ class ProjectSettingsWebhookCreateView(
     def form_valid(self, form):
         form.save(project=self.object)
         messages.success(self.request, "Webhook added to the project.")
-        return HTTPResponseHXRedirect(self.get_success_url())
+        return HttpResponseClientRedirect(self.get_success_url())
 
 
 class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
@@ -1129,14 +1136,19 @@ class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.Detai
 
         # Also get count for detections with
         expressions_with_compliance_alert = []
+        issue_count_by_expression = {}
         for license_expression in top_licenses.keys():
-            has_compliance_alert = (
-                proper_license_detections.filter(license_expression=license_expression)
-                .has_compliance_alert()
-                .exists()
+            detections_for_expression = proper_license_detections.filter(
+                license_expression=license_expression
             )
+            has_compliance_alert = (
+                detections_for_expression.has_compliance_alert().exists()
+            )
+            issue_count = detections_for_expression.needs_review().count()
             if has_compliance_alert:
                 expressions_with_compliance_alert.append(license_expression)
+            if issue_count > 0:
+                issue_count_by_expression[license_expression] = issue_count
 
         total_counts = {
             "with_compliance_error": (
@@ -1160,6 +1172,7 @@ class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.Detai
         return (
             top_licenses,
             expressions_with_compliance_alert,
+            issue_count_by_expression,
             total_counts,
             license_clues,
             clue_counts,
@@ -1167,11 +1180,12 @@ class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.Detai
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        summary, expressions, counts, clues, clue_counts = (
+        summary, expressions, issues, counts, clues, clue_counts = (
             self.get_license_detection_summary(project=self.object)
         )
         context["license_detection_summary"] = summary
         context["expressions_with_compliance_alert"] = expressions
+        context["issue_count_by_expression"] = issues
         context["total_counts"] = counts
         context["license_clues"] = clues
         context["clue_counts"] = clue_counts
@@ -1181,14 +1195,14 @@ class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.Detai
         return context
 
 
-class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
+class ProjectCodebasePanelView(ConditionalLoginRequired, generic.DetailView):
     model = Project
     template_name = "scanpipe/panels/project_codebase.html"
 
     @staticmethod
-    def get_tree(project, current_dir):
+    def get_root_tree(project):
         """
-        Return the direct content of the ``current_dir`` as a flat tree.
+        Return the direct content of the project codebase root directory as a flat tree.
 
         The lookups are scoped to the ``project`` codebase/ work directory.
         The security is handled by the FileSystemStorage and will raise a
@@ -1201,60 +1215,20 @@ class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
         # Raises ValueError if the codebase_root is not within the workspace_path
         codebase_root.relative_to(scanpipe_app.workspace_path)
         fs_storage = FileSystemStorage(location=codebase_root)
-        directories, files = fs_storage.listdir(current_dir)
-
-        def get_node(name, is_dir, location):
-            return {
-                "name": name,
-                "is_dir": is_dir,
-                "location": location,
-            }
+        directories, files = fs_storage.listdir(".")
 
         tree = []
-        root_directory = "."
-        include_parent = current_dir and current_dir != root_directory
-        if include_parent:
-            tree.append(
-                get_node(name="..", is_dir=True, location=str(Path(current_dir).parent))
-            )
-
         for resources, is_dir in [(sorted(directories), True), (sorted(files), False)]:
-            tree.extend(
-                get_node(name=name, is_dir=is_dir, location=f"{current_dir}/{name}")
-                for name in resources
-            )
+            tree.extend({"name": name, "is_dir": is_dir} for name in resources)
 
         return tree
 
-    @staticmethod
-    def get_breadcrumbs(current_dir):
-        breadcrumbs = {}
-        path_segments = current_dir.removeprefix("./").split("/")
-        last_path = ""
-
-        for segment in path_segments:
-            if segment:
-                last_path += f"{segment}/"
-                breadcrumbs[segment] = last_path
-
-        return breadcrumbs
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        current_dir = self.request.GET.get("current_dir") or "."
-
         try:
-            codebase_tree = self.get_tree(self.object, current_dir)
-        except FileNotFoundError:
-            raise Http404(f"{current_dir} not found")
+            context["codebase_root_tree"] = self.get_root_tree(self.object)
         except (ValueError, SuspiciousFileOperation) as error:
             raise Http404(error)
-
-        context["current_dir"] = current_dir
-        context["codebase_tree"] = codebase_tree
-        context["codebase_breadcrumbs"] = self.get_breadcrumbs(current_dir)
-        context["project_details_url"] = self.object.get_absolute_url()
-
         return context
 
 
@@ -1274,6 +1248,13 @@ class ProjectCompliancePanelView(ConditionalLoginRequired, generic.DetailView):
             fail_level="missing",
         )
         context["compliance_alerts"] = compliance_alerts
+
+        context["license_clarity_compliance_alert"] = (
+            project.get_license_clarity_compliance_alert()
+        )
+
+        context["scorecard_compliance_alert"] = project.get_scorecard_compliance_alert()
+
         return context
 
 
@@ -1430,19 +1411,17 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
 
     @staticmethod
     def download_outputs_zip_response(project_qs, action_form):
+        """Generate and return a zip file response for selected projects."""
         output_format = action_form.cleaned_data["output_format"]
         output_function = output.FORMAT_TO_FUNCTION_MAPPING.get(output_format)
 
-        # In-memory file storage for the zip archive
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-            for project in project_qs:
-                output_file = output_function(project)
-                filename = output.safe_filename(f"{project.name}_{output_file.name}")
-                with open(output_file, "rb") as f:
-                    zip_file.writestr(filename, f.read())
+        files = []
+        for project in project_qs:
+            output_file = output_function(project)
+            filename = output.safe_filename(f"{project.name}_{output_file.name}")
+            files.append((filename, output_file))
 
-        zip_buffer.seek(0)
+        zip_buffer = output.make_zip_from_files(files)
         return FileResponse(
             zip_buffer,
             as_attachment=True,
@@ -1462,14 +1441,10 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
         )
 
 
-class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, UpdateView):
+class ProjectCloneView(ConditionalLoginRequired, HTMXFormMixin, UpdateView):
     model = Project
     form_class = ProjectCloneForm
     template_name = "scanpipe/forms/project_clone_form.html"
-
-    def form_valid(self, form):
-        super().form_valid(form)
-        return HTTPResponseHXRedirect(self.get_success_url())
 
 
 @conditional_login_required
@@ -1601,21 +1576,28 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
         self.object = self.get_object()
         project = self.object
         format = self.kwargs["format"]
+
         version = self.kwargs.get("version")
         output_kwargs = {}
+        if version:
+            output_kwargs["version"] = version
 
         if format == "json":
             return project_results_json_response(project, as_attachment=True)
         elif format == "xlsx":
             output_file = output.to_xlsx(project)
         elif format == "spdx":
-            output_file = output.to_spdx(project)
+            output_file = output.to_spdx(project, **output_kwargs)
         elif format == "cyclonedx":
-            if version:
-                output_kwargs["version"] = version
             output_file = output.to_cyclonedx(project, **output_kwargs)
         elif format == "attribution":
             output_file = output.to_attribution(project)
+        elif format == "ort-package-list":
+            output_file = output.to_ort_package_list_yml(project)
+        elif format == "all_formats":
+            output_file = output.to_all_formats(project)
+        elif format == "all_outputs":
+            output_file = output.to_all_outputs(project)
         else:
             raise Http404("Format not supported.")
 
@@ -1644,7 +1626,7 @@ class ProjectRelatedViewMixin:
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["project"] = self.project
+        context["project"] = self.get_project()
         context["model_label"] = self.model_label
         return context
 
@@ -1896,7 +1878,9 @@ class DiscoveredLicenseListView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["display_compliance_alert"] = self.get_project().policies_enabled
+        context["display_compliance_alert"] = (
+            self.get_project().license_policies_enabled
+        )
         return context
 
 
@@ -1965,6 +1949,28 @@ class CodebaseRelationListView(
         kwargs = super().get_filterset_kwargs(filterset_class)
         kwargs.update({"project": self.project})
         return kwargs
+
+
+class VulnerabilityListView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    TableColumnsMixin,
+    generic.ListView,
+):
+    template_name = "scanpipe/vulnerability_list.html"
+    table_columns = [
+        "vulnerability_id",
+        "summary",
+        "affects",
+    ]
+
+    def get_queryset(self):
+        return []
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["object_list"] = self.project.vulnerabilities
+        return context
 
 
 class CodebaseResourceDetailsView(
@@ -2176,6 +2182,12 @@ class CodebaseResourceDetailsView(
 
         matched_snippet_annotations = self.get_matched_snippet_annotations(resource)
         context["detected_values"]["matched snippets"] = matched_snippet_annotations
+
+        # Compatibility with ProjectResourceTreeRightPaneView
+        segments = resource.path.strip("/").split("/")
+        context["path_segments"] = [
+            ("/".join(segments[: i + 1]), segment) for i, segment in enumerate(segments)
+        ]
 
         return context
 
@@ -2684,7 +2696,7 @@ class LicenseDetailsView(
 
 class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
     model = Project
-    template_name = "scanpipe/project_dependency_tree.html"
+    template_name = "scanpipe/dependency_tree.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2742,3 +2754,84 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
             "children": children,
         }
         return node
+
+
+class ProjectResourceTreeView(ConditionalLoginRequired, generic.DetailView):
+    template_name = "scanpipe/resource_tree.html"
+
+    def get(self, request, *args, **kwargs):
+        slug = self.kwargs.get("slug")
+        project = get_object_or_404(Project, slug=slug)
+        path = self.kwargs.get("path", "")
+        parent_path = path if request.GET.get("tree_panel") == "true" else ""
+
+        children = (
+            project.codebaseresources.filter(parent_path=parent_path)
+            .with_has_children()
+            .only("id", "project_id", "path", "name", "type")
+            .order_by("type", "path")
+        )
+
+        try:
+            resource = project.codebaseresources.get(path=path)
+        except ObjectDoesNotExist:
+            resource = None
+
+        context = {
+            "project": project,
+            "path": path,
+            "children": children,
+            "resource": resource,
+        }
+
+        if request.GET.get("tree_panel") == "true":
+            return render(
+                request, "scanpipe/tree/resource_left_pane_tree.html", context
+            )
+
+        return render(request, self.template_name, context)
+
+
+class ProjectResourceTreeRightPaneView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    generic.ListView,
+):
+    model = CodebaseResource
+    template_name = "scanpipe/tree/resource_right_pane.html"
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("resource", 100)
+    context_object_name = "resources"
+
+    def get_queryset(self):
+        path = self.kwargs.get("path", "")
+        return (
+            super()
+            .get_queryset()
+            .filter(parent_path=path)
+            .with_has_children()
+            .only(
+                "path",
+                "status",
+                "programming_language",
+                "tag",
+                "detected_license_expression",
+                "compliance_alert",
+            )
+            .order_by("type", "path")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        path = self.kwargs.get("path", "")
+        context["path"] = path
+
+        segments = path.strip("/").split("/")
+        context["path_segments"] = [
+            ("/".join(segments[: i + 1]), segment) for i, segment in enumerate(segments)
+        ]
+
+        if path and "/" in path:
+            parent_segments = path.rstrip("/").split("/")[:-1]
+            context["parent_path"] = "/".join(parent_segments)
+
+        return context

@@ -1,0 +1,61 @@
+name: Generate SBOM with cyclonedx-gomod and load into ScanCode.io
+
+# This workflow:
+#  1. Generates a CycloneDX SBOM for a container image using cyclonedx-gomod.
+#  2. Uploads the SBOM as a GitHub artifact for future inspection.
+#  3. Loads the SBOM into ScanCode.io for further analysis.
+#  4. Runs assertions to verify that the SBOM was properly processed in ScanCode.io.
+#
+# It runs on demand, and once a week (scheduled).
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Run once a week (every 7 days) at 00:00 UTC on Sunday
+    - cron: "0 0 * * 0"
+
+permissions:
+  contents: read
+
+env:
+  EXPECTED_PACKAGE: 5
+  EXPECTED_VULNERABLE_PACKAGE: 0
+  EXPECTED_DEPENDENCY: 1
+
+jobs:
+  generate-and-load-sbom:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout minimal Go repo
+        uses: actions/checkout@v4
+        with:
+          repository: opencontainers/runc
+
+      - name: Generate SBOM with cyclonedx-gomod
+        uses: CycloneDX/gh-gomod-generate-sbom@v2
+        with:
+          version: v1
+          args: mod -licenses -json -output gomod-sbom.cdx.json
+
+      - name: Upload SBOM as GitHub Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-report
+          path: "gomod-sbom.cdx.json"
+          retention-days: 20
+
+      - name: Import SBOM into ScanCode.io
+        uses: aboutcode-org/scancode-action@main
+        with:
+          pipelines: "load_sbom"
+          inputs-path: "gomod-sbom.cdx.json"
+          scancodeio-repo-branch: "main"
+
+      - name: Verify SBOM Analysis Results in ScanCode.io
+        shell: bash
+        run: |
+          scanpipe verify-project \
+            --project scancode-action \
+            --packages ${{ env.EXPECTED_PACKAGE }} \
+            --vulnerable-packages ${{ env.EXPECTED_VULNERABLE_PACKAGE }} \
+            --dependencies ${{ env.EXPECTED_DEPENDENCY }}

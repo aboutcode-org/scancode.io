@@ -20,11 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import math
 from collections import Counter
 from dataclasses import dataclass
 from dataclasses import field
-
-from scipy.spatial.distance import jensenshannon
 
 from aboutcode.pipeline import LoopProgress
 from scanpipe.models import CodebaseRelation
@@ -290,6 +289,21 @@ def get_symbols_probability_distribution(symbols, unique_symbols):
     ]
 
     return probability_dist
+
+
+def jensenshannon(p, q):
+    """Compute the Jensen-Shannon distance between two probability distributions."""
+    m = [(pi + qi) / 2.0 for pi, qi in zip(p, q)]
+
+    left = 0.0
+    right = 0.0
+    for pi, qi, mi in zip(p, q, m):
+        if pi > 0:
+            left += pi * math.log(pi / mi)
+        if qi > 0:
+            right += qi * math.log(qi / mi)
+
+    return math.sqrt((left + right) / 2.0)
 
 
 def get_similarity_between_source_and_deployed_symbols(

@@ -60,6 +60,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import flag
+from scanpipe.pipes.compliance_thresholds import get_project_clarity_thresholds
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -249,7 +250,13 @@ def scan_file(location, with_threading=True, min_license_score=0, **kwargs):
     return _scan_resource(location, scanners, with_threading=with_threading)
 
 
-def scan_for_package_data(location, with_threading=True, package_only=False, **kwargs):
+def scan_for_package_data(
+    location,
+    with_threading=True,
+    package_only=False,
+    compiled=False,
+    **kwargs,
+):
     """
     Run a package scan on provided `location` using the scancode-toolkit direct API.
 
@@ -258,6 +265,7 @@ def scan_for_package_data(location, with_threading=True, package_only=False, **k
     scancode_get_packages = partial(
         scancode_api.get_package_data,
         package_only=package_only,
+        compiled=compiled,
     )
     scanners = [
         Scanner("package_data", scancode_get_packages),
@@ -354,7 +362,7 @@ def scan_resources(
 
     with futures.ProcessPoolExecutor(max_workers) as executor:
         future_to_resource = {
-            executor.submit(scan_func, resource.location): resource
+            executor.submit(scan_func, resource.location, **scan_func_kwargs): resource
             for resource in resource_iterator
         }
 
@@ -408,6 +416,7 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
 def scan_for_application_packages(
     project,
     assemble=True,
+    compiled=False,
     package_only=False,
     resource_qs=None,
     progress_logger=logger.info,
@@ -430,6 +439,7 @@ def scan_for_application_packages(
 
     scan_func_kwargs = {
         "package_only": package_only,
+        "compiled": compiled,
     }
 
     # Collect detected Package data and save it to the CodebaseResource it was
@@ -861,11 +871,13 @@ def get_pretty_params(args):
     return {f"--{key.replace('_', '-')}": value for key, value in args.items()}
 
 
-def run_scan(location, output_file, run_scan_args):
+def run_scan(location, output_file, run_scan_args, processes=None):
     """Scan the `location` content and write the results into an `output_file`."""
+    if not processes:
+        processes = get_max_workers(keep_available=1)
     _success, results = scancode_run_scan(
         input=shlex.quote(location),
-        processes=get_max_workers(keep_available=1),
+        processes=processes,
         quiet=True,
         verbose=False,
         return_results=True,
@@ -900,6 +912,84 @@ def get_virtual_codebase(project, input_location):
     return VirtualCodebase(input_location, temp_dir=str(temp_path), max_in_memory=0)
 
 
+def create_codebase_resource(project, scanned_resource):
+    """Create a CodebaseResource entry from ScanCode scanned data."""
+    resource_data = {}
+
+    for field in CodebaseResource._meta.fields:
+        # Do not include the path as provided by the scanned_resource since it
+        # includes the "root". The `get_path` method is used instead.
+        if field.name in ["path", "parent_path"]:
+            continue
+        value = getattr(scanned_resource, field.name, None)
+        if value is not None:
+            resource_data[field.name] = value
+
+    resource_type = "FILE" if scanned_resource.is_file else "DIRECTORY"
+    resource_data["type"] = CodebaseResource.Type[resource_type]
+    resource_path = scanned_resource.get_path(strip_root=True)
+
+    parent_path = str(Path(resource_path).parent)
+    if parent_path == ".":
+        parent_path = ""
+    resource_data["parent_path"] = parent_path
+
+    codebase_resource, _ = CodebaseResource.objects.get_or_create(
+        project=project,
+        path=resource_path,
+        defaults=resource_data,
+    )
+
+    # Handle package assignments
+    for_packages = getattr(scanned_resource, "for_packages", [])
+    for package_uid in for_packages:
+        logger.debug(f"Assign {package_uid} to {codebase_resource}")
+        package = project.discoveredpackages.get(package_uid=package_uid)
+        set_codebase_resource_for_package(
+            codebase_resource=codebase_resource,
+            discovered_package=package,
+        )
+
+    # Handle license detections
+    license_detections = getattr(scanned_resource, "license_detections", [])
+    for detection_data in license_detections:
+        detection_identifier = detection_data.get("identifier")
+        pipes.update_or_create_license_detection(
+            project=project,
+            detection_data=detection_data,
+            resource_path=resource_path,
+            count_detection=False,
+        )
+        logger.debug(f"Add {codebase_resource} to {detection_identifier}")
+
+    # Handle license clues
+    license_clues = getattr(scanned_resource, "license_clues", [])
+    for clue_data in license_clues:
+        pipes.update_or_create_license_detection(
+            project=project,
+            detection_data=clue_data,
+            resource_path=resource_path,
+            is_license_clue=True,
+        )
+        logger.debug(f"Add license clue at {codebase_resource}")
+
+    # Handle package data
+    packages = getattr(scanned_resource, "package_data", [])
+    for package_data in packages:
+        license_detections = package_data.get("license_detections", [])
+        license_detections.extend(package_data.get("other_license_detections", []))
+        for detection_data in license_detections:
+            detection_identifier = detection_data.get("identifier")
+            pipes.update_or_create_license_detection(
+                project=project,
+                detection_data=detection_data,
+                resource_path=resource_path,
+                count_detection=False,
+                from_package=True,
+            )
+            logger.debug(f"Add {codebase_resource} to {detection_identifier}")
+
+
 def create_codebase_resources(project, scanned_codebase):
     """
     Save the resources of a ScanCode `scanned_codebase` scancode.resource.Codebase
@@ -909,71 +999,7 @@ def create_codebase_resources(project, scanned_codebase):
     skipped.
     """
     for scanned_resource in scanned_codebase.walk(skip_root=True):
-        resource_data = {}
-
-        for field in CodebaseResource._meta.fields:
-            # Do not include the path as provided by the scanned_resource since it
-            # includes the "root". The `get_path` method is used instead.
-            if field.name == "path":
-                continue
-            value = getattr(scanned_resource, field.name, None)
-            if value is not None:
-                resource_data[field.name] = value
-
-        resource_type = "FILE" if scanned_resource.is_file else "DIRECTORY"
-        resource_data["type"] = CodebaseResource.Type[resource_type]
-        resource_path = scanned_resource.get_path(strip_root=True)
-
-        codebase_resource, _ = CodebaseResource.objects.get_or_create(
-            project=project,
-            path=resource_path,
-            defaults=resource_data,
-        )
-
-        for_packages = getattr(scanned_resource, "for_packages", [])
-        for package_uid in for_packages:
-            logger.debug(f"Assign {package_uid} to {codebase_resource}")
-            package = project.discoveredpackages.get(package_uid=package_uid)
-            set_codebase_resource_for_package(
-                codebase_resource=codebase_resource,
-                discovered_package=package,
-            )
-
-        license_detections = getattr(scanned_resource, "license_detections", [])
-        for detection_data in license_detections:
-            detection_identifier = detection_data.get("identifier")
-            pipes.update_or_create_license_detection(
-                project=project,
-                detection_data=detection_data,
-                resource_path=resource_path,
-                count_detection=False,
-            )
-            logger.debug(f"Add {codebase_resource} to {detection_identifier}")
-
-        license_clues = getattr(scanned_resource, "license_clues", [])
-        for clue_data in license_clues:
-            pipes.update_or_create_license_detection(
-                project=project,
-                detection_data=clue_data,
-                resource_path=resource_path,
-                is_license_clue=True,
-            )
-            logger.debug(f"Add license clue at {codebase_resource}")
-
-        packages = getattr(scanned_resource, "package_data", [])
-        for package_data in packages:
-            license_detections = package_data.get("license_detections", [])
-            license_detections.extend(package_data.get("other_license_detections", []))
-            for detection_data in license_detections:
-                detection_identifier = detection_data.get("identifier")
-                pipes.update_or_create_license_detection(
-                    project=project,
-                    detection_data=detection_data,
-                    resource_path=resource_path,
-                    count_detection=False,
-                    from_package=True,
-                )
-                logger.debug(f"Add {codebase_resource} to {detection_identifier}")
+        create_codebase_resource(project, scanned_resource)
 
 
 def create_discovered_packages(project, scanned_codebase):
@@ -1134,7 +1160,10 @@ def make_results_summary(project, scan_results_location):
     Extract selected sections of the Scan results, such as the `summary`
     `license_clarity_score`, and `license_matches` related data.
     The `key_files` are also collected and injected in the `summary` output.
+    Additionally, store license_clarity_compliance_alert in project's extra_data.
     """
+    import json
+
     from scanpipe.api.serializers import CodebaseResourceSerializer
     from scanpipe.api.serializers import DiscoveredPackageSerializer
 
@@ -1167,4 +1196,12 @@ def make_results_summary(project, scan_results_location):
         DiscoveredPackageSerializer(package).data for package in key_files_packages_qs
     ]
 
+    clarity_score = summary.get("license_clarity_score", {}).get("score")
+    if clarity_score is not None:
+        clarity_policy = get_project_clarity_thresholds(project)
+        if clarity_policy:
+            alert = clarity_policy.get_alert_for_score(clarity_score)
+            summary["license_clarity_compliance_alert"] = alert
+
+            project.update_extra_data({"license_clarity_compliance_alert": alert})
     return summary

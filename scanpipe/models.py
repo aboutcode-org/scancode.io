@@ -29,6 +29,7 @@ import uuid
 from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
+from itertools import chain
 from itertools import groupby
 from operator import itemgetter
 from pathlib import Path
@@ -46,6 +47,7 @@ from django.db import models
 from django.db import transaction
 from django.db.models import Case
 from django.db.models import Count
+from django.db.models import Exists
 from django.db.models import IntegerField
 from django.db.models import OuterRef
 from django.db.models import Prefetch
@@ -71,6 +73,7 @@ import saneyaml
 from commoncode.fileutils import parent_directory
 from cyclonedx import model as cyclonedx_model
 from cyclonedx.model import component as cyclonedx_component
+from cyclonedx.model import contact as cyclonedx_contact
 from cyclonedx.model import license as cyclonedx_license
 from extractcode import EXTRACT_SUFFIX
 from licensedcode.cache import build_spdx_license_expression
@@ -88,6 +91,8 @@ from rq.command import send_stop_job_command
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
 from rq.job import JobStatus
+from scorecode.contrib.django.models import PackageScoreMixin
+from scorecode.contrib.django.models import ScorecardChecksMixin
 from taggit.managers import TaggableManager
 from taggit.models import GenericUUIDTaggedItemBase
 from taggit.models import TaggedItemBase
@@ -675,7 +680,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         self.update(is_archived=True)
 
-    def delete_related_objects(self, keep_input=False, keep_labels=False):
+    def delete_related_objects(
+        self, keep_input=False, keep_labels=False, keep_webhook=False
+    ):
         """
         Delete all related object instances using the private `_raw_delete` model API.
         This bypass the objects collection, cascade deletions, and signals.
@@ -697,7 +704,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         relationships = [
             self.webhookdeliveries,
-            self.webhooksubscriptions,
             self.projectmessages,
             self.codebaserelations,
             self.discovereddependencies,
@@ -708,6 +714,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         if not keep_input:
             relationships.append(self.inputsources)
+
+        if not keep_webhook:
+            relationships.append(self.webhooksubscriptions)
 
         for qs in relationships:
             count = qs.all()._raw_delete(qs.db)
@@ -727,10 +736,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         return super().delete(*args, **kwargs)
 
-    def reset(self, keep_input=True, restore_pipelines=False, execute_now=False):
+    def reset(
+        self,
+        keep_input=True,
+        keep_webhook=True,
+        restore_pipelines=False,
+        execute_now=False,
+    ):
         """
         Reset the project by deleting all related database objects and all work
-        directories except the input directory—when the `keep_input` option is True.
+        directories except the input directory when the `keep_input` option is True.
         """
         self._raise_if_run_in_progress()
 
@@ -745,7 +760,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
                 for run in self.runs.all()
             ]
 
-        self.delete_related_objects(keep_input=keep_input, keep_labels=True)
+        self.delete_related_objects(
+            keep_input=keep_input, keep_labels=True, keep_webhook=keep_webhook
+        )
 
         work_directories = [
             self.codebase_path,
@@ -1145,12 +1162,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         filename = f"{name}-{filename_now()}.{extension}"
         return self.output_path / filename
 
-    def get_latest_output(self, filename):
+    def get_latest_output(self, filename, extension="json"):
         """
         Return the latest output file with the "filename" prefix, for example
         "scancode-<timestamp>.json".
         """
-        output_files = sorted(self.output_path.glob(f"*{filename}*.json"))
+        output_files = sorted(self.output_path.glob(f"*{filename}*.{extension}"))
         if output_files:
             return output_files[-1]
 
@@ -1245,7 +1262,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         adds the `input_source`.
         """
         self.write_input_file(uploaded_file)
-        self.add_input_source(filename=uploaded_file.name, is_uploaded=True, tag=tag)
+        input_source = self.add_input_source(
+            filename=uploaded_file.name,
+            is_uploaded=True,
+            tag=tag,
+        )
+        return input_source
 
     def add_uploads(self, uploads):
         """
@@ -1466,12 +1488,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     @cached_property
     def vulnerable_package_count(self):
         """Return the number of vulnerable packages related to this project."""
-        return self.discoveredpackages.vulnerable().count()
+        return self.vulnerable_packages.count()
 
     @cached_property
     def vulnerable_dependency_count(self):
         """Return the number of vulnerable dependencies related to this project."""
-        return self.discovereddependencies.vulnerable().count()
+        return self.vulnerable_dependencies.count()
+
+    @cached_property
+    def vulnerability_count(self):
+        """Return the number of vulnerabilities related to this project."""
+        return self.vulnerable_package_count + self.vulnerable_dependency_count
 
     @cached_property
     def dependency_count(self):
@@ -1518,12 +1545,60 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         return self.codebaserelations.count()
 
     @cached_property
+    def vulnerable_packages(self):
+        """Return a QuerySet of vulnerable packages."""
+        return self.discoveredpackages.vulnerable()
+
+    @cached_property
+    def vulnerable_dependencies(self):
+        """Return a QuerySet of vulnerable dependencies."""
+        return self.discovereddependencies.vulnerable()
+
+    @property
+    def package_vulnerabilities(self):
+        """Return the list of package vulnerabilities."""
+        return self.vulnerable_packages.get_vulnerabilities_list()
+
+    @property
+    def dependency_vulnerabilities(self):
+        """Return the list of dependency vulnerabilities."""
+        return self.vulnerable_dependencies.get_vulnerabilities_list()
+
+    @property
+    def vulnerabilities(self):
+        """
+        Return a dict of all vulnerabilities affecting this project.
+
+        Combines package and dependency vulnerabilities, keyed by vulnerability_id.
+        Each vulnerability includes an "affects" list of all affected packages
+        and dependencies.
+        """
+        vulnerabilities_dict = {}
+        # Process both packages and dependencies
+        querysets = [self.vulnerable_packages, self.vulnerable_dependencies]
+
+        for queryset in querysets:
+            vulnerabilities = queryset.get_vulnerabilities_dict()
+            for vcid, vuln_data in vulnerabilities.items():
+                if vcid in vulnerabilities_dict:
+                    vulnerabilities_dict[vcid]["affects"].extend(vuln_data["affects"])
+                else:
+                    vulnerabilities_dict[vcid] = vuln_data
+
+        return vulnerabilities_dict
+
+    @cached_property
     def has_single_resource(self):
         """
         Return True if we only have a single CodebaseResource associated to this
         project, False otherwise.
         """
         return self.resource_count == 1
+
+    @property
+    def pipelines(self):
+        """Return the list of pipeline names assigned to this Project."""
+        return list(self.runs.values_list("pipeline_name", flat=True))
 
     def get_policies_dict(self):
         """
@@ -1543,6 +1618,20 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             return policies.load_policies_file(project_input_policies_file)
 
         return scanpipe_app.policies
+
+    def get_license_clarity_compliance_alert(self):
+        """
+        Return the license clarity compliance alert value for the project,
+        or None if not set.
+        """
+        return self.extra_data.get("license_clarity_compliance_alert")
+
+    def get_scorecard_compliance_alert(self):
+        """
+        Return the scorecard compliance alert value for the project,
+        or None if not set.
+        """
+        return self.extra_data.get("scorecard_compliance_alert")
 
     def get_license_policy_index(self):
         """Return the policy license index for this project instance."""
@@ -2416,6 +2505,17 @@ class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuery
     def executable_binaries(self):
         return self.union(self.win_exes(), self.macho_binaries(), self.elfs())
 
+    def with_has_children(self):
+        """
+        Annotate the QuerySet with has_children field based on whether
+        each resource has any children (subdirectories/files).
+        """
+        children_qs = CodebaseResource.objects.filter(
+            parent_path=OuterRef("path"),
+        )
+
+        return self.annotate(has_children=Exists(children_qs))
+
 
 class ScanFieldsModelMixin(models.Model):
     """Fields returned by the ScanCode-toolkit scans."""
@@ -2537,7 +2637,6 @@ class ComplianceAlertMixin(models.Model):
     """
 
     license_expression_field = None
-    license_expression_spdx_field = None
 
     class Compliance(models.TextChoices):
         OK = "ok"
@@ -2739,6 +2838,17 @@ class CodebaseResource(
             'Eg.: "/usr/bin/bash" for a path of "tarball-extract/rootfs/usr/bin/bash"'
         ),
     )
+
+    parent_path = models.CharField(
+        max_length=2000,
+        blank=True,
+        help_text=_(
+            "The path of the resource's parent directory. "
+            "Set to empty string for top-level (root) resources. "
+            "Used to efficiently retrieve a directory's contents."
+        ),
+    )
+
     status = models.CharField(
         blank=True,
         max_length=50,
@@ -2832,6 +2942,7 @@ class CodebaseResource(
             models.Index(fields=["compliance_alert"]),
             models.Index(fields=["is_binary"]),
             models.Index(fields=["is_text"]),
+            models.Index(fields=["project", "parent_path"]),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -2843,6 +2954,11 @@ class CodebaseResource(
 
     def __str__(self):
         return self.path
+
+    def save(self, *args, **kwargs):
+        if self.path and not self.parent_path:
+            self.parent_path = self.compute_parent_directory() or ""
+        super().save(*args, **kwargs)
 
     def get_absolute_url(self):
         return reverse("resource_detail", args=[self.project.slug, self.path])
@@ -2912,16 +3028,21 @@ class CodebaseResource(
 
         return part_and_subpath
 
-    def parent_directory(self):
+    def compute_parent_directory(self):
         """Return the parent path for this CodebaseResource or None."""
-        return parent_directory(self.path, with_trail=False)
+        if parent_path := parent_directory(str(self.path), with_trail=False):
+            return parent_path
 
     def has_parent(self):
         """
         Return True if this CodebaseResource has a parent CodebaseResource or
         False otherwise.
         """
-        parent_path = self.parent_directory()
+        if self.parent_path:
+            return True
+
+        # Support for resources created before the parent_path was stored as a field.
+        parent_path = self.compute_parent_directory()
         if not parent_path:
             return False
         if self.project.codebaseresources.filter(path=parent_path).exists():
@@ -2936,7 +3057,13 @@ class CodebaseResource(
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
-        parent_path = self.parent_directory()
+        if self.parent_path:
+            parent_path = self.parent_path
+
+        # Support for resources created before the parent_path was stored as a field.
+        else:
+            parent_path = self.compute_parent_directory()
+
         return parent_path and self.project.codebaseresources.get(path=parent_path)
 
     def siblings(self, codebase=None):
@@ -3207,15 +3334,69 @@ class VulnerabilityMixin(models.Model):
 
 
 class VulnerabilityQuerySetMixin:
+    AFFECTED_BY_FIELD = "affected_by_vulnerabilities"
+
     def vulnerable(self):
-        return self.filter(~Q(affected_by_vulnerabilities__in=EMPTY_VALUES))
+        return self.filter(~Q(**{f"{self.AFFECTED_BY_FIELD}__in": EMPTY_VALUES}))
 
     def vulnerable_ordered(self):
         return (
             self.vulnerable()
-            .only_package_url_fields(extra=["affected_by_vulnerabilities"])
+            .only_package_url_fields(extra=[self.AFFECTED_BY_FIELD])
             .order_by_package_url()
         )
+
+    def get_vulnerabilities_list(self):
+        """
+        Return a deduplicated, sorted flat list of all vulnerabilities from the
+        queryset.
+
+        Extracts and flattens the affected_by_vulnerabilities field from
+        all objects in the queryset. Removes duplicates based on vulnerability_id
+        while preserving the first occurrence of each unique vulnerability.
+        """
+        vulnerabilities_lists = self.values_list(self.AFFECTED_BY_FIELD, flat=True)
+        flatten_vulnerabilities = chain.from_iterable(vulnerabilities_lists)
+
+        # Deduplicate by vulnerability_id while preserving order
+        unique_vulnerabilities = {
+            vuln["vulnerability_id"]: vuln for vuln in flatten_vulnerabilities
+        }
+
+        return sorted(
+            unique_vulnerabilities.values(), key=itemgetter("vulnerability_id")
+        )
+
+    def get_vulnerabilities_dict(self):
+        """
+        Return a dict of vulnerabilities keyed by vulnerability_id.
+
+        Each vulnerability includes an "affects" list containing all
+        objects from this queryset affected by that vulnerability.
+
+        Returns:
+            dict: {
+                'VCID-1': {
+                    'vulnerability_id': 'VCID-1',
+                    'affects': [obj1, obj2, ...]
+                },
+                ...
+            }
+
+        """
+        vulnerabilities_dict = {}
+
+        for obj in self.vulnerable_ordered():
+            for vulnerability in obj.affected_by_vulnerabilities:
+                vcid = vulnerability.get("vulnerability_id")
+                if not vcid:
+                    continue
+
+                if vcid not in vulnerabilities_dict:
+                    vulnerabilities_dict[vcid] = {**vulnerability, "affects": []}
+                vulnerabilities_dict[vcid]["affects"].append(obj)
+
+        return vulnerabilities_dict
 
 
 class DiscoveredPackageQuerySet(
@@ -3247,7 +3428,7 @@ class DiscoveredPackageQuerySet(
         if not extra:
             extra = []
 
-        return self.only("uuid", *PACKAGE_URL_FIELDS, *extra)
+        return self.only("uuid", *PACKAGE_URL_FIELDS, "project_id", *extra)
 
     def filter(self, *args, **kwargs):
         """Add support for using ``package_url`` as a field lookup."""
@@ -3491,6 +3672,42 @@ class AbstractPackage(models.Model):
     class Meta:
         abstract = True
 
+    def extract_from_parties(self, roles):
+        """
+        Extract parties matching the given roles, deduplicated by name.
+
+        Args:
+            roles: Tuple of role strings to filter by.
+
+        Returns:
+            List of party dicts matching the specified roles, unique by name.
+
+        """
+        seen_names = set()
+        results = []
+        for party in self.parties or []:
+            if party.get("role") in roles:
+                name = party.get("name")
+                if name and name not in seen_names:
+                    seen_names.add(name)
+                    results.append(party)
+        return results
+
+    def get_author_names(self, roles=("author", "maintainer")):
+        """
+        Return a sorted list of party names matching the specified roles.
+
+        Args:
+            roles: Tuple of role strings to filter by.
+            Defaults to ("author", "maintainer").
+
+        Returns:
+            Sorted list of party names.
+
+        """
+        parties = self.extract_from_parties(roles=roles)
+        return sorted(party["name"] for party in parties)
+
 
 class DiscoveredPackage(
     ProjectRelatedModel,
@@ -3715,6 +3932,21 @@ class DiscoveredPackage(
                 )
             )
 
+        # Store non-supported fields in the `comment` SPDX field
+        extra_fields = [
+            "primary_language",
+            "repository_download_url",
+            "api_data_url",
+            "holder",
+            "parties",
+            "notice_text",
+        ]
+        extra_data = {
+            field_name: value
+            for field_name in extra_fields
+            if (value := getattr(self, field_name)) not in EMPTY_VALUES
+        }
+
         return spdx.Package(
             name=self.name or self.filename,
             spdx_id=self.spdx_id,
@@ -3730,6 +3962,7 @@ class DiscoveredPackage(
             attribution_texts=attribution_texts,
             checksums=checksums,
             external_refs=external_refs,
+            comment=saneyaml.dump(extra_data) if extra_data else "",
         )
 
     @property
@@ -3759,6 +3992,14 @@ class DiscoveredPackage(
             cyclonedx_model.HashType(alg=algorithm, content=hash_value)
             for field_name, algorithm in hash_fields.items()
             if (hash_value := getattr(self, field_name))
+        ]
+
+        authors = [
+            cyclonedx_contact.OrganizationalContact(
+                name=party.get("name", ""),
+                email=party.get("email", ""),
+            )
+            for party in self.extract_from_parties(roles=("author", "maintainer"))
         ]
 
         # Those fields are not supported natively by CycloneDX but are required to
@@ -3821,6 +4062,7 @@ class DiscoveredPackage(
             properties=properties,
             external_references=external_references,
             evidence=evidence,
+            authors=authors,
         )
 
 
@@ -3868,7 +4110,7 @@ class DiscoveredDependencyQuerySet(
         if not extra:
             extra = []
 
-        return self.only("dependency_uid", *PACKAGE_URL_FIELDS, *extra)
+        return self.only("dependency_uid", *PACKAGE_URL_FIELDS, "project_id", *extra)
 
 
 class DiscoveredDependency(
@@ -3898,9 +4140,9 @@ class DiscoveredDependency(
 
     3. Dependencies can be either direct or transitive:
        - A **direct dependency** is explicitly declared in a package manifest or
-         lockfile.
+       lockfile.
        - A **transitive dependency** is not declared directly, but is required by one
-         of the project's direct dependencies.
+       of the project's direct dependencies.
 
     Understanding the distinction between direct and transitive dependencies is
     important for analyzing dependency trees, resolving version conflicts, and
@@ -4726,3 +4968,99 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
     """Create an API key token on user creation, using the signal system."""
     if created:
         Token.objects.create(user_id=instance.pk)
+
+
+class DiscoveredPackageScore(UUIDPKModel, PackageScoreMixin):
+    """Represents a security or quality score for a DiscoveredPackage."""
+
+    discovered_package = models.ForeignKey(
+        DiscoveredPackage,
+        related_name="scores",
+        help_text=_("The package for which the score is given"),
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+
+    class Meta:
+        verbose_name = "discovered package score"
+        verbose_name_plural = "discovered package scores"
+        ordering = ["-score"]
+        indexes = [
+            models.Index(fields=["score"]),
+            models.Index(fields=["scoring_tool_version"]),
+        ]
+
+    def __str__(self):
+        return self.score or str(self.uuid)
+
+    @classmethod
+    def create_from_scorecard_data(
+        cls, discovered_package, scorecard_data, scoring_tool="ossf-scorecard"
+    ):
+        """Create ScoreCard object from scorecard data and discovered package"""
+        final_data = {
+            "score": scorecard_data.score,
+            "scoring_tool_version": scorecard_data.scoring_tool_version,
+            "scoring_tool_documentation_url": (
+                scorecard_data.scoring_tool_documentation_url
+            ),
+            "score_date": cls.parse_score_date(scorecard_data.score_date),
+        }
+
+        scorecard_object = cls.objects.create(
+            **final_data,
+            discovered_package=discovered_package,
+            scoring_tool=scoring_tool,
+        )
+
+        for check in scorecard_data.checks:
+            ScorecardCheck.create_from_data(package_score=scorecard_object, check=check)
+
+        return scorecard_object
+
+    @classmethod
+    def create_from_package_and_scorecard(cls, scorecard_data, package):
+        score_object = cls.create_from_scorecard_data(
+            discovered_package=package,
+            scorecard_data=scorecard_data,
+            scoring_tool="ossf-scorecard",
+        )
+        return score_object
+
+
+class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
+    """
+    Represents an individual check within a Scorecard evaluation for a
+    DiscoveredPackageScore.
+    """
+
+    package_score = models.ForeignKey(
+        DiscoveredPackageScore,
+        related_name="checks",
+        help_text=_("The checks for which the score is given"),
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+
+    class Meta:
+        verbose_name = "scorecard check"
+        verbose_name_plural = "scorecard checks"
+        ordering = ["-check_score"]
+        indexes = [
+            models.Index(fields=["check_score"]),
+            models.Index(fields=["check_name"]),
+        ]
+
+    def __str__(self):
+        return self.check_score or str(self.uuid)
+
+    @classmethod
+    def create_from_data(cls, package_score, check):
+        """Create a ScorecardCheck instance from provided data."""
+        return cls.objects.create(
+            check_name=check.check_name,
+            check_score=check.check_score,
+            reason=check.reason or "",
+            details=check.details or [],
+            package_score=package_score,
+        )

@@ -1,0 +1,293 @@
+{
+  "files": [],
+  "packages": [
+    {
+      "name": "alpine-baselayout-data",
+      "SPDXID": "SPDXRef-Package-2FF1344E2849EBD04203DE6480D48AA9DF318FD79C2CF23DEBBF14C63DAD7AD9",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "3.4.0-r0",
+      "supplier": "Organization: Natanael Copa <ncopa@alpinelinux.org>"
+    },
+    {
+      "name": "busybox",
+      "SPDXID": "SPDXRef-Package-269AF94DD8BFFCFAD5BA8BBC6E82B9365798AE4AF85B49BC3A5FE4F31DDE9488",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "1.35.0-r29",
+      "supplier": "Organization: Sören Tempel <soeren+alpine@soeren-tempel.net>"
+    },
+    {
+      "name": "alpine-baselayout",
+      "SPDXID": "SPDXRef-Package-BC8A0138F4AB887ACBE81B0C5FF1077477DD1F054104C9D28244F3EE1318EF29",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "3.4.0-r0",
+      "supplier": "Organization: Natanael Copa <ncopa@alpinelinux.org>"
+    },
+    {
+      "name": "ca-certificates-bundle",
+      "SPDXID": "SPDXRef-Package-2471353CCE204889AD89EFCEC030096363B376775C5DFAFBDBEBD99597EEA969",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MPL-2.0 AND MIT",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "20220614-r2",
+      "supplier": "Organization: Natanael Copa <ncopa@alpinelinux.org>"
+    },
+    {
+      "name": "libssl3",
+      "SPDXID": "SPDXRef-Package-E8FDE8662042A1A73B88F43634ECA413A98DD1B5BA43F46455B024C794272A3C",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "3.0.7-r0",
+      "supplier": "Organization: Ariadne Conill <ariadne@dereferenced.org>"
+    },
+    {
+      "name": "ssl_client",
+      "SPDXID": "SPDXRef-Package-A03157DF01BCE5BF4A209E6AAF611D234E1D38DD10136D6F48A0E30D4704DA2E",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "1.35.0-r29",
+      "supplier": "Organization: Sören Tempel <soeren+alpine@soeren-tempel.net>"
+    },
+    {
+      "name": "zlib",
+      "SPDXID": "SPDXRef-Package-00888F6C5F68DF809EB4EBE041A412FFD51276AA402850EECDC1C4A17921C5D3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Zlib",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "1.2.13-r0",
+      "supplier": "Organization: Natanael Copa <ncopa@alpinelinux.org>"
+    },
+    {
+      "name": "libcrypto3",
+      "SPDXID": "SPDXRef-Package-342117E26CA6266072A57732213BAA801F51EB280EEF5A1CE4DBB9B3D8F5F5B0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "3.0.7-r0",
+      "supplier": "Organization: Ariadne Conill <ariadne@dereferenced.org>"
+    },
+    {
+      "name": "busybox-binsh",
+      "SPDXID": "SPDXRef-Package-01C3FA070AC7D05FE03422B385F566584B3AF940657764A6748FCD9AACEEB807",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "1.35.0-r29",
+      "supplier": "Organization: Sören Tempel <soeren+alpine@soeren-tempel.net>"
+    },
+    {
+      "name": "musl-utils",
+      "SPDXID": "SPDXRef-Package-E00DB534A00A22C8CE4CA11B1FC76E8BE0E9B819067295BA0575664FC5D97D9C",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT AND BSD-2-Clause AND GPL-2.0-or-later",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "1.2.3-r4",
+      "supplier": "Organization: Timo Teräs <timo.teras@iki.fi>"
+    },
+    {
+      "name": "apk-tools",
+      "SPDXID": "SPDXRef-Package-ECA17F56515573DD93ACE781F91516271AC671A1C6A71618E49ED7F26C398AF2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "2.12.10-r1",
+      "supplier": "Organization: Natanael Copa <ncopa@alpinelinux.org>"
+    },
+    {
+      "name": "musl",
+      "SPDXID": "SPDXRef-Package-705013B3778D10501271BF617E996011323C4A2E28E57A79D17B6955D6888627",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "1.2.3-r4",
+      "supplier": "Organization: Timo Teräs <timo.teras@iki.fi>"
+    },
+    {
+      "name": "libc-utils",
+      "SPDXID": "SPDXRef-Package-275AFBF9CCA335A5E19E25A072FFEFB4E434081793EB7292B98827157A1283A2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-2-Clause AND BSD-3-Clause",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "0.7.2-r3",
+      "supplier": "Organization: Natanael Copa <ncopa@alpinelinux.org>"
+    },
+    {
+      "name": "alpine-keys",
+      "SPDXID": "SPDXRef-Package-932F58BF477100E836DA6FFE2DC4AFB017DBF2D0CE6BB04467E4BB26E7EC36FC",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "2.4-r1",
+      "supplier": "Organization: Natanael Copa <ncopa@alpinelinux.org>"
+    },
+    {
+      "name": "scanelf",
+      "SPDXID": "SPDXRef-Package-76DC710B1952C21FCC403CE0DAF2FEA3FB887F06C005D10639E71D7947DE90FB",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "1.3.5-r1",
+      "supplier": "Organization: Natanael Copa <ncopa@alpinelinux.org>"
+    },
+    {
+      "name": "DockerImage",
+      "SPDXID": "SPDXRef-RootPackage",
+      "downloadLocation": "NOASSERTION",
+      "packageVerificationCode": {
+        "packageVerificationCodeValue": "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+      },
+      "filesAnalyzed": true,
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoFromFiles": [
+        "NOASSERTION"
+      ],
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "1.0.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:swid/Company/sbom.company.com/DockerImage@1.0.0?tag_id=60e3f440-f9a8-449e-b516-da3049700fff"
+        }
+      ],
+      "supplier": "Organization: Company",
+      "hasFiles": []
+    }
+  ],
+  "externalDocumentRefs": [],
+  "relationships": [
+    {
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-RootPackage",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-2471353CCE204889AD89EFCEC030096363B376775C5DFAFBDBEBD99597EEA969",
+      "spdxElementId": "SPDXRef-RootPackage"
+    },
+    {
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-269AF94DD8BFFCFAD5BA8BBC6E82B9365798AE4AF85B49BC3A5FE4F31DDE9488",
+      "spdxElementId": "SPDXRef-RootPackage"
+    },
+    {
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-A03157DF01BCE5BF4A209E6AAF611D234E1D38DD10136D6F48A0E30D4704DA2E",
+      "spdxElementId": "SPDXRef-RootPackage"
+    },
+    {
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-E8FDE8662042A1A73B88F43634ECA413A98DD1B5BA43F46455B024C794272A3C",
+      "spdxElementId": "SPDXRef-RootPackage"
+    },
+    {
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-275AFBF9CCA335A5E19E25A072FFEFB4E434081793EB7292B98827157A1283A2",
+      "spdxElementId": "SPDXRef-RootPackage"
+    },
+    {
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-ECA17F56515573DD93ACE781F91516271AC671A1C6A71618E49ED7F26C398AF2",
+      "spdxElementId": "SPDXRef-RootPackage"
+    },
+    {
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-01C3FA070AC7D05FE03422B385F566584B3AF940657764A6748FCD9AACEEB807",
+      "spdxElementId": "SPDXRef-RootPackage"
+    },
+    {
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-705013B3778D10501271BF617E996011323C4A2E28E57A79D17B6955D6888627",
+      "spdxElementId": "SPDXRef-RootPackage"
+    },
+    {
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-E00DB534A00A22C8CE4CA11B1FC76E8BE0E9B819067295BA0575664FC5D97D9C",
+      "spdxElementId": "SPDXRef-RootPackage"
+    },
+    {
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-342117E26CA6266072A57732213BAA801F51EB280EEF5A1CE4DBB9B3D8F5F5B0",
+      "spdxElementId": "SPDXRef-RootPackage"
+    },
+    {
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-00888F6C5F68DF809EB4EBE041A412FFD51276AA402850EECDC1C4A17921C5D3",
+      "spdxElementId": "SPDXRef-RootPackage"
+    },
+    {
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-76DC710B1952C21FCC403CE0DAF2FEA3FB887F06C005D10639E71D7947DE90FB",
+      "spdxElementId": "SPDXRef-RootPackage"
+    },
+    {
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-932F58BF477100E836DA6FFE2DC4AFB017DBF2D0CE6BB04467E4BB26E7EC36FC",
+      "spdxElementId": "SPDXRef-RootPackage"
+    },
+    {
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-BC8A0138F4AB887ACBE81B0C5FF1077477DD1F054104C9D28244F3EE1318EF29",
+      "spdxElementId": "SPDXRef-RootPackage"
+    },
+    {
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-2FF1344E2849EBD04203DE6480D48AA9DF318FD79C2CF23DEBBF14C63DAD7AD9",
+      "spdxElementId": "SPDXRef-RootPackage"
+    }
+  ],
+  "spdxVersion": "SPDX-2.2",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "DockerImage 1.0.0",
+  "documentNamespace": "https://sbom.company.com/DockerImage/1.0.0/YuWW1Lwcd0S5vJUf-VhClw",
+  "creationInfo": {
+    "created": "2025-08-26T12:03:59Z",
+    "creators": [
+      "Organization: Company",
+      "Tool: Microsoft.SBOMTool-4.1.1"
+    ]
+  },
+  "documentDescribes": [
+    "SPDXRef-RootPackage"
+  ]
+}

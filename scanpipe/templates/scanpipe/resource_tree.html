@@ -1,0 +1,166 @@
+{% extends "scanpipe/base.html" %}
+{% load static humanize %}
+{% block title %}ScanCode.io: {{ project.name }} - Resources tree{% endblock %}
+
+{% block extrahead %}
+  <script src="{% static 'ace-1.43.3.min.js' %}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="{% static 'ace-1.43.3-ext-searchbox.min.js' %}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Resources tree" %}
+      </div>
+    </section>
+  </div>
+
+  <div id="resource-tree-container" class="container is-fluid p-0">
+    <div class="resizable-container is-flex">
+      <div id="left-pane" class="left-pane px-2">
+        {% include "scanpipe/tree/resource_left_pane_header.html" only %}
+        <div id="resource-tree">
+          {% include "scanpipe/tree/resource_left_pane_tree.html" with children=children path=path %}
+        </div>
+      </div>
+      <div id="resizer" class="resizer"></div>
+      <div id="right-pane" class="right-pane px-3">
+          <div
+            {% if resource.is_file %}
+              hx-get="{% url 'resource_detail' project.slug resource.path %}"
+            {% elif path %}
+              hx-get="{% url 'project_resource_tree_right_pane' project.slug path %}"
+            {% else %}
+              hx-get="{% url 'project_resource_tree_right_pane' project.slug %}"
+            {% endif %}
+            hx-trigger="load"
+            hx-target="this">
+          </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    async function toggleFolderNode(folderNode, forceExpand = false) {
+      const targetId = folderNode.dataset.target;
+      const url = folderNode.dataset.url;
+      const target = document.getElementById("dir-" + targetId);
+      const chevron = folderNode.querySelector("[data-chevron]");
+      
+      if (!target || !chevron) return;
+
+      if (target.dataset.loaded === "true") {
+        if (forceExpand) {
+          target.classList.remove("is-hidden");
+          chevron.classList.add("rotated");
+        } else {
+          target.classList.toggle("is-hidden");
+          chevron.classList.toggle("rotated");
+        }
+      } else {
+        target.classList.remove("is-hidden");
+        const fullUrl = new URL(url, window.location.origin);
+        fullUrl.searchParams.append('tree_panel', 'true');
+        const response = await fetch(fullUrl.toString());
+        target.innerHTML = await response.text();
+        target.dataset.loaded = "true";
+        htmx.process(target);
+        chevron.classList.add("rotated");
+      }
+    }
+
+    async function expandToPath(path) {
+      const parts = path.split('/').filter(Boolean);
+      let current = "";
+      for (const part of parts) {
+        current = current ? current + "/" + part : part;
+        const folderNode = document.querySelector(`[data-folder][data-path="${current}"]`);
+        if (folderNode) await toggleFolderNode(folderNode, true);
+      }
+      const finalNode = document.querySelector(`[data-folder][data-path="${path}"], .is-file[data-file][data-path="${path}"]`);
+      if (finalNode) {
+        document.querySelectorAll('.is-current').forEach(el => el.classList.remove('is-current'));
+        finalNode.classList.add('is-current');
+        finalNode.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+
+    document.addEventListener("click", async e => {
+      const node = e.target.closest("[data-folder], .is-file[data-file], .expand-in-tree, [data-chevron]");
+      if (!node) return;
+
+      e.preventDefault();
+      if (node.matches("[data-chevron]")) {
+        await toggleFolderNode(node.closest("[data-folder]"));
+      } else if (node.matches("[data-folder], .is-file[data-file], .expand-in-tree")) {
+        await expandToPath(node.dataset.path);
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const currentPath = "{{ path }}";
+      if (currentPath) {
+        expandToPath(currentPath);
+      }
+
+      const resizer = document.getElementById('resizer');
+      const leftPane = document.getElementById('left-pane');
+      const rightPane = document.getElementById('right-pane');
+      let isResizing = false;
+
+      resizer.addEventListener('mousedown', function(e) {
+        isResizing = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', function(e) {
+        if (!isResizing) return;
+        
+        const container = document.querySelector('.resizable-container');
+        const containerRect = container.getBoundingClientRect();
+        let newLeftWidth = e.clientX - containerRect.left;
+        const containerWidth = containerRect.width;
+        const resizerWidth = 5;
+        const minLeftWidth = 200;
+        if (newLeftWidth < minLeftWidth) newLeftWidth = minLeftWidth;
+        if (newLeftWidth > containerWidth - resizerWidth) newLeftWidth = containerWidth - resizerWidth;
+
+        const leftPercent = (newLeftWidth / containerWidth) * 100;
+        const rightPercent = ((containerWidth - newLeftWidth - resizerWidth) / containerWidth) * 100;
+
+        leftPane.style.flexBasis = leftPercent + '%';
+        rightPane.style.flexBasis = rightPercent + '%';
+      });
+
+      document.addEventListener('mouseup', function() {
+        if (isResizing) {
+          isResizing = false;
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+        }
+      });
+
+      // Show/hide left pane
+      const hidePaneButton = document.getElementById('hide-left-pane');
+      hidePaneButton.addEventListener('click', function() {
+        leftPane.classList.add('is-hidden');
+        resizer.classList.add('is-hidden');
+
+        const expandPaneButton = document.getElementById('expand-left-pane');
+        expandPaneButton.classList.remove('is-hidden');
+        expandPaneButton.addEventListener('click', function() {
+          leftPane.classList.remove('is-hidden');
+          resizer.classList.remove('is-hidden');
+          expandPaneButton.classList.add('is-hidden');
+        });
+      });
+
+    });
+  </script>
+{% endblock %}

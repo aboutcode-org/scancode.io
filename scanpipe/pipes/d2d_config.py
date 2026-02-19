@@ -80,11 +80,45 @@ ECOSYSTEM_CONFIGS = {
             ".odt",
             ".odp",
         ],
+        deployed_resource_path_exclusions=["*.properties", "*.html", "*/.github/*"],
     ),
     "Java": EcosystemConfig(
         ecosystem_option="Java",
         matchable_package_extensions=[".jar", ".war"],
         matchable_resource_extensions=[".class"],
+        deployed_resource_path_exclusions=[
+            "*META-INF/*",
+            "*/module-info.class",
+            "*/OSGI-INF/*.xml",
+            "*/OSGI-INF/*.json",
+            "*spring-configuration-metadata.json",
+        ],
+    ),
+    "Scala": EcosystemConfig(
+        ecosystem_option="Scala",
+        matchable_package_extensions=[".jar", ".war"],
+        matchable_resource_extensions=[".class"],
+        deployed_resource_path_exclusions=[
+            "*META-INF/*",
+        ],
+    ),
+    "Kotlin": EcosystemConfig(
+        ecosystem_option="Kotlin",
+        matchable_package_extensions=[".jar", ".war"],
+        matchable_resource_extensions=[".class"],
+        deployed_resource_path_exclusions=[
+            "*META-INF/*",
+            "*.knm",
+            "*kotlin-project-structure-metadata.json",
+        ],
+    ),
+    "Groovy": EcosystemConfig(
+        ecosystem_option="Groovy",
+        matchable_package_extensions=[".jar", ".war"],
+        matchable_resource_extensions=[".class"],
+        deployed_resource_path_exclusions=[
+            "*META-INF/*",
+        ],
     ),
     "JavaScript": EcosystemConfig(
         ecosystem_option="JavaScript",
@@ -107,6 +141,7 @@ ECOSYSTEM_CONFIGS = {
     "Go": EcosystemConfig(
         ecosystem_option="Go",
         matchable_resource_extensions=[".go"],
+        source_symbol_extensions=[".go"],
     ),
     "Rust": EcosystemConfig(
         ecosystem_option="Rust",
@@ -146,7 +181,8 @@ ECOSYSTEM_CONFIGS = {
     ),
     "Python": EcosystemConfig(
         ecosystem_option="Python",
-        source_symbol_extensions=[".pyx", ".pxd"],
+        source_symbol_extensions=[".pyx", ".pxd", ".py", ".pyi"],
+        matchable_resource_extensions=[".py", ".pyi"],
     ),
 }
 
@@ -164,7 +200,7 @@ def load_ecosystem_config(pipeline, options):
     - which source files to get source symbols from
     - which unmapped paths to ignore in deployed binaries
     """
-    # Add default configurations which are common accross ecosystems
+    # Add default configurations which are common across ecosystems
     pipeline.ecosystem_config = ECOSYSTEM_CONFIGS.get("Default")
 
     # Add configurations for each selected ecosystem

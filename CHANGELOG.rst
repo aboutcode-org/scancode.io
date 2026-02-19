@@ -1,7 +1,208 @@
 Changelog
 =========
 
-v35.2.0 (unreleased)
+**v36 Breaking Change:** PostgreSQL 17 is now required (previously 13).
+
+Docker Compose users with existing data: run `./migrate-pg13-to-17.sh` before starting
+the stack.
+Fresh installations require no action.
+
+v37.0.0 (unreleased)
+--------------------
+
+- Upgrade Django to release 6.x
+
+- Drop support for Python3.10 and Python3.11
+
+v36.1.0 (2026-01-22)
+--------------------
+
+- Bump to latest scancode-toolkit v32.5.0 with:
+  * package and license detection performance improvement
+  * python3.14 support with updated dependencies
+  * improved copyright, license and package detection
+  For more details see https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.5.0
+  https://github.com/aboutcode-org/scancode.io/pull/2000
+
+- Support python3.14
+  https://github.com/aboutcode-org/scancode.io/pull/2000
+
+- Update to scancode-toolkit v32.4.1
+  https://github.com/aboutcode-org/scancode.io/pull/1984
+  For more details see https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.4.1
+
+- Store the whole vulnerability data from cdx to local models
+  https://github.com/aboutcode-org/scancode.io/pull/2007
+
+- Add project vulnerability list view
+  https://github.com/aboutcode-org/scancode.io/pull/2018
+
+- Update minecode-pipelines to latest v0.1.1
+  https://github.com/aboutcode-org/scancode.io/pull/2013
+
+- Refine d2d pipelines with misc improvements
+  https://github.com/aboutcode-org/scancode.io/pull/1996
+  https://github.com/aboutcode-org/scancode.io/pull/1995
+  https://github.com/aboutcode-org/scancode.io/pull/1999
+  https://github.com/aboutcode-org/scancode.io/pull/2021
+
+- Sanitize ORT package IDs to handle colons in versions
+  https://github.com/aboutcode-org/scancode.io/pull/2005
+
+- Restructure docs and README
+  https://github.com/aboutcode-org/scancode.io/pull/2032
+
+
+
+v36.0.1 (2025-12-09)
+--------------------
+
+- Add support for authors in ORT package list generation.
+  https://github.com/aboutcode-org/scancode.io/issues/1988
+
+- Add authors field to the CycloneDX output.
+  https://github.com/aboutcode-org/scancode.io/issues/1990
+
+- Store non-supported fields in the comment SPDX field.
+  https://github.com/aboutcode-org/scancode.io/issues/1989
+
+- Add support for CycloneDX spec v1.7.
+  https://github.com/aboutcode-org/scancode.io/issues/1975
+
+v36.0.0 (2025-12-05)
+--------------------
+
+- Upgrade PostgreSQL from 13 to 17 in Docker compose file
+  https://github.com/aboutcode-org/scancode.io/issues/1973
+
+- Upgrade Django to latest 5.2.x version
+  https://github.com/aboutcode-org/scancode.io/issues/1976
+
+- Remove the dependency on scipy
+  https://github.com/aboutcode-org/scancode.io/issues/1754
+
+- Add "ort-package-list" to the formats list in run command
+  https://github.com/aboutcode-org/scancode.io/issues/1982
+
+v35.5.0 (2025-12-01)
+--------------------
+
+- Add arguments support for the reset action in REST API.
+  https://github.com/aboutcode-org/scancode.io/issues/1948
+
+- Add management command to analyze Kubernetes cluster.
+  https://github.com/aboutcode-org/scancode.io/issues/1950
+
+- Improve source mapping for .py and .pyi files.
+  https://github.com/aboutcode-org/scancode.io/issues/1920
+
+- Keep webhook subscription in project reset.
+  https://github.com/aboutcode-org/scancode.io/issues/1963
+
+- Add --vulnerabilities and --strict options in verify-project.
+  https://github.com/aboutcode-org/scancode.io/issues/1964
+
+- Add support for PyPI PURLs as Inputs.
+  https://github.com/aboutcode-org/scancode.io/issues/1966
+
+- Add JFrog Artifactory and Sonatype Nexus integrations documentation.
+  https://github.com/aboutcode-org/scancode.io/issues/1970
+
+v35.4.1 (2025-10-24)
+--------------------
+
+- Add ability to download all output results formats as a zipfile for a given project.
+  https://github.com/aboutcode-org/scancode.io/issues/1880
+
+- Add support for tagging inputs in the run management command
+  Add ability to skip the SQLite auto db in combined_run
+  Add documentation to leverage PostgreSQL service
+  https://github.com/aboutcode-org/scancode.io/pull/1916
+
+- Refine d2d pipeline for scala and kotlin.
+  https://github.com/aboutcode-org/scancode.io/issues/1898
+
+- Add utilities to create/init FederatedCode data repo.
+  https://github.com/aboutcode-org/scancode.io/issues/1896
+
+- Add a verify-project CLI management command.
+  https://github.com/aboutcode-org/scancode.io/issues/1903
+
+- Add support for multiple inputs in the run management command.
+  https://github.com/aboutcode-org/scancode.io/issues/1916
+
+- Add the django-htmx app to the stack.
+  https://github.com/aboutcode-org/scancode.io/issues/1917
+
+- Adjust the resource tree view table rendering.
+  https://github.com/aboutcode-org/scancode.io/issues/1840
+
+- Add ".." navigation option in table to navigate to parent resource.
+  https://github.com/aboutcode-org/scancode.io/issues/1869
+
+- Add ability to download all output results formats.
+  https://github.com/aboutcode-org/scancode.io/issues/1880
+
+- Update Java D2D Pipeline to Include Checksum Mapped Sources for Accurate Java Mapping.
+  https://github.com/aboutcode-org/scancode.io/issues/1870
+
+- Auto-detect pipeline from provided input.
+  https://github.com/aboutcode-org/scancode.io/issues/1883
+
+- Migrate SCA workflows verification to new verify-project management command.
+  https://github.com/aboutcode-org/scancode.io/issues/1902
+
+v35.4.0 (2025-09-30)
+--------------------
+
+- Use deterministic UID/GID in Dockerfile.
+  A temporary ``chown`` service is now started in the ``docker-compose`` stack
+  to fix the permissions. This process is only fully run once.
+  You may manually run this process using the following:
+  ``$ chown -R 1000:1000 /var/scancodeio/``
+  https://github.com/aboutcode-org/scancode.io/issues/1555
+
+- Resolve and load dependencies from SPDX SBOMs.
+  https://github.com/aboutcode-org/scancode.io/issues/1145
+
+- Display the optional steps in the Pipelines autodoc.
+  https://github.com/aboutcode-org/scancode.io/issues/1822
+
+- Add new ``benchmark_purls`` pipeline.
+  https://github.com/aboutcode-org/scancode.io/issues/1804
+
+- Add a Resources tree view.
+  https://github.com/aboutcode-org/scancode.io/issues/1682
+
+- Improve CycloneDX SBOM support.
+  * Upgrade the cyclonedx-python-lib to 11.0.0
+  * Fix the validate_document following library upgrade.
+  * Add support when the "components" entry is missing.
+  https://github.com/aboutcode-org/scancode.io/issues/1727
+
+- Split the functionality of
+  ``scanpipe.pipes.federatedcode.commit_and_push_changes`` into
+  ``scanpipe.pipes.federatedcode.commit_changes`` and
+  ``scanpipe.pipes.federatedcode.push_changes``. Add
+  ``scanpipe.pipes.federatedcode.write_data_as_yaml``.
+
+- Add ORT ``package-list.yml`` as new downloadable output format.
+  https://github.com/aboutcode-org/scancode.io/pull/1852
+
+- Add support for SPDX as YAML in ``load_sbom`` pipeline.
+
+v35.3.0 (2025-08-20)
+--------------------
+
+- Enhanced scorecard compliance support with:
+  * New ``scorecard_compliance_alert`` in project ``extra_data``.
+  * ``/api/projects/{id}/scorecard_compliance/`` API endpoint.
+  * Scorecard compliance integration in ``check-compliance`` management command.
+  * UI template support for scorecard compliance alert.
+  * ``evaluate_scorecard_compliance()`` pipe function for compliance evaluation.
+  https://github.com/aboutcode-org/scancode.io/pull/1800
+
+v35.2.0 (2025-08-01)
 --------------------
 
 - Refactor policies implementation to support more than licenses.
@@ -21,6 +222,11 @@ v35.2.0 (unreleased)
 - Enhance the dependency tree view in a more dynamic rendering.
   Vulnerabilities and compliance alert are displayed along the dependency entries.
   https://github.com/aboutcode-org/scancode.io/pull/1742
+
+- Add new ``fetch_scores`` pipeline.
+  This pipeline retrieves ScoreCode data for each discovered package in the project
+  and stores it in the corresponding package instances.
+  https://github.com/aboutcode-org/scancode.io/pull/1294
 
 v35.1.0 (2025-07-02)
 --------------------

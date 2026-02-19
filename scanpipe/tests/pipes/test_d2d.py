@@ -40,6 +40,7 @@ from scanpipe.models import Project
 from scanpipe.pipes import d2d
 from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
+from scanpipe.pipes import jvm
 from scanpipe.pipes import scancode
 from scanpipe.pipes import symbols
 from scanpipe.pipes.input import copy_input
@@ -367,9 +368,11 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
         buffer = io.StringIO()
-        d2d.map_java_to_class(self.project1, logger=buffer.write)
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.JavaLanguage
+        )
 
-        expected = "Mapping 3 .class resources to 2 .java"
+        expected = "Mapping 3 .class (or other deployed file) resources to 2 ('.java',)"
         self.assertIn(expected, buffer.getvalue())
 
         self.assertEqual(2, self.project1.codebaserelations.count())
@@ -390,14 +393,138 @@ class ScanPipeD2DPipesTest(TestCase):
         to3.refresh_from_db()
         self.assertEqual("", to3.status)
 
+    def test_scanpipe_pipes_d2d_map_java_to_class_with_java_in_deploy(self):
+        input_dir = self.project1.input_path
+        # "from-Baz.zip" contains Baz.java
+        # "to-Baz.jar" contains Baz.java and Baz.class
+        input_resources = [
+            self.data / "d2d" / "find_java_packages" / "from-Baz.zip",
+            self.data / "d2d" / "find_java_packages" / "to-Baz.jar",
+        ]
+
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+
+        d2d.map_checksum(
+            project=self.project1, checksum_field="sha1", logger=buffer.write
+        )
+
+        d2d.find_jvm_packages(
+            self.project1, jvm_lang=jvm.JavaLanguage, logger=buffer.write
+        )
+        expected = "Finding java packages for 1 ('.java',) resources."
+        self.assertIn(expected, buffer.getvalue())
+        # Now run map_java_to_class
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.JavaLanguage
+        )
+        expected = "Mapping 1 .class (or other deployed file) resources to 1 ('.java',)"
+        self.assertIn(expected, buffer.getvalue())
+
+    def test_scanpipe_pipes_d2d_map_grammar_to_class(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/antlr4-4.5.1-beta-1/tool/src/org/antlr/v4/parse/BlockSetTransformer.g",
+            extra_data={"grammar_package": "org.antlr.v4.parse"},
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/org/antlr/v4/parse/BlockSetTransformer.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.GrammarLanguage
+        )
+
+        expected = (
+            "Mapping 1 .class (or other deployed file) resources to 1 ('.g', '.g4')"
+        )
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(1, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("grammar_to_class", r1.map_type)
+        expected = {"from_source_root": "from/antlr4-4.5.1-beta-1/tool/src/"}
+        self.assertEqual(expected, r1.extra_data)
+
+    def test_scanpipe_pipes_d2d_map_xtend_to_class(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/org.openhab.binding.urtsi/src/main/java/org/openhab/"
+            + "binding/urtsi/internal/UrtsiDevice.xtend",
+            extra_data={"xtend_package": "org.openhab.binding.urtsi.internal"},
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/org.openhab.binding.urtsi-1.6.2.jar-extract/org/"
+            + "openhab/binding/urtsi/internal/UrtsiDevice.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.XtendLanguage
+        )
+
+        expected = (
+            "Mapping 1 .class (or other deployed file) resources to 1 ('.xtend',)"
+        )
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(1, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("xtend_to_class", r1.map_type)
+        expected = {"from_source_root": "from/org.openhab.binding.urtsi/src/main/java/"}
+        self.assertEqual(expected, r1.extra_data)
+
     def test_scanpipe_pipes_d2d_map_java_to_class_no_java(self):
         make_resource_file(self.project1, path="to/Abstract.class")
         buffer = io.StringIO()
-        d2d.map_java_to_class(self.project1, logger=buffer.write)
-        expected = "No .java resources to map."
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.JavaLanguage
+        )
+        expected = "No ('.java',) resources to map."
         self.assertIn(expected, buffer.getvalue())
 
-    def test_scanpipe_pipes_d2d_map_jar_to_source(self):
+    def test_scanpipe_pipes_d2d_java_ignore_pattern(self):
+        make_resource_file(self.project1, path="to/module-info.class")
+        make_resource_file(self.project1, path="to/META-INF/MANIFEST.MF")
+        make_resource_file(self.project1, path="to/test.class")
+        make_resource_file(self.project1, path="to/META-INF/others.txt")
+        make_resource_file(
+            self.project1, path="to/META-INF/spring-configuration-metadata.json"
+        )
+        make_resource_file(self.project1, path="to/OSGI-INF/test.xml")
+        make_resource_file(self.project1, path="to/OSGI-INF/test.json")
+        make_resource_file(self.project1, path="to/OSGI-INF/test.class")
+        buffer = io.StringIO()
+
+        java_config = d2d_config.get_ecosystem_config(ecosystem="Java")
+        d2d.ignore_unmapped_resources_from_config(
+            project=self.project1,
+            patterns_to_ignore=java_config.deployed_resource_path_exclusions,
+            logger=buffer.write,
+        )
+        expected = "Ignoring 6 to/ resources with ecosystem specific configurations."
+        self.assertIn(expected, buffer.getvalue())
+
+    def test_scanpipe_pipes_d2d_map_jar_to_java_source(self):
         from1 = make_resource_file(
             self.project1,
             path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/"
@@ -423,7 +550,9 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
         buffer = io.StringIO()
-        d2d.map_java_to_class(self.project1, logger=buffer.write)
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.JavaLanguage
+        )
         relation = self.project1.codebaserelations.get()
         self.assertEqual(from1, relation.from_resource)
         self.assertEqual(to1, relation.to_resource)
@@ -433,7 +562,9 @@ class ScanPipeD2DPipesTest(TestCase):
 
         buffer = io.StringIO()
         with self.assertNumQueries(6):
-            d2d.map_jar_to_source(self.project1, logger=buffer.write)
+            d2d.map_jar_to_jvm_source(
+                self.project1, logger=buffer.write, jvm_lang=jvm.JavaLanguage
+            )
         expected = "Mapping 1 .jar resources using map_jar_to_source"
         self.assertIn(expected, buffer.getvalue())
 
@@ -441,6 +572,254 @@ class ScanPipeD2DPipesTest(TestCase):
         relation = self.project1.codebaserelations.get(map_type="jar_to_source")
         self.assertEqual(from2, relation.from_resource)
         self.assertEqual(to_jar, relation.to_resource)
+
+    def test_scanpipe_pipes_d2d_map_groovy_to_class(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/project/test.groovy",
+            extra_data={"groovy_package": "project"},
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/project/test.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.GroovyLanguage
+        )
+
+        expected = (
+            "Mapping 1 .class (or other deployed file) resources to 1 ('.groovy',)"
+        )
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(1, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("groovy_to_class", r1.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r1.extra_data)
+
+    def test_scanpipe_pipes_d2d_map_aspectj_to_class(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/project/test.aj",
+            extra_data={"aspectj_package": "project"},
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/project/test.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.AspectJLanguage
+        )
+
+        expected = "Mapping 1 .class (or other deployed file) resources to 1 ('.aj',)"
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(1, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("aspectj_to_class", r1.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r1.extra_data)
+
+    def test_scanpipe_pipes_d2d_map_clojure_to_class(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/project/test.clj",
+            extra_data={"clojure_package": "project"},
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/project/test.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.ClojureLanguage
+        )
+
+        expected = "Mapping 1 .class (or other deployed file) resources to 1 ('.clj',)"
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(1, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("clojure_to_class", r1.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r1.extra_data)
+
+    def test_scanpipe_pipes_d2d_map_scala_to_class(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/tastyquery/Annotations.scala",
+            extra_data={"scala_package": "tastyquery"},
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/tastyquery/Annotations.tasty",
+        )
+
+        to2 = make_resource_file(
+            self.project1,
+            path="to/tastyquery/Annotations.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.ScalaLanguage
+        )
+
+        expected = (
+            "Mapping 2 .class (or other deployed file) resources to 1 ('.scala',)"
+        )
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(2, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("scala_to_class", r1.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r1.extra_data)
+
+        r2 = self.project1.codebaserelations.get(to_resource=to2, from_resource=from1)
+        self.assertEqual("scala_to_class", r2.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r2.extra_data)
+
+    def test_scanpipe_pipes_d2d_map_jar_to_scala_source(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider.scala",
+            extra_data={"scala_package": "org.apache.flume.node"},
+        )
+        from2 = make_resource_file(
+            self.project1,
+            path="from/flume-ng-node-1.9.0-sources.jar-extract",
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider.class",
+        )
+        make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
+        )
+        to_jar = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.ScalaLanguage
+        )
+        relation = self.project1.codebaserelations.get()
+        self.assertEqual(from1, relation.from_resource)
+        self.assertEqual(to1, relation.to_resource)
+        self.assertEqual("scala_to_class", relation.map_type)
+        expected = {"from_source_root": "from/flume-ng-node-1.9.0-sources.jar-extract/"}
+        self.assertEqual(expected, relation.extra_data)
+
+        buffer = io.StringIO()
+        with self.assertNumQueries(6):
+            d2d.map_jar_to_jvm_source(
+                self.project1, logger=buffer.write, jvm_lang=jvm.ScalaLanguage
+            )
+        expected = "Mapping 1 .jar resources using map_jar_to_source"
+        self.assertIn(expected, buffer.getvalue())
+
+        self.assertEqual(2, self.project1.codebaserelations.count())
+        relation = self.project1.codebaserelations.get(map_type="jar_to_source")
+        self.assertEqual(from2, relation.from_resource)
+        self.assertEqual(to_jar, relation.to_resource)
+
+    def test_scanpipe_pipes_d2d_scala_ignore_pattern(self):
+        make_resource_file(self.project1, path="to/META-INF/MANIFEST.MF")
+        make_resource_file(self.project1, path="to/test.class")
+        make_resource_file(self.project1, path="to/META-INF/others.txt")
+        buffer = io.StringIO()
+
+        scala_config = d2d_config.get_ecosystem_config(ecosystem="Scala")
+        d2d.ignore_unmapped_resources_from_config(
+            project=self.project1,
+            patterns_to_ignore=scala_config.deployed_resource_path_exclusions,
+            logger=buffer.write,
+        )
+        expected = "Ignoring 2 to/ resources with ecosystem specific configurations."
+        self.assertIn(expected, buffer.getvalue())
+
+    def test_scanpipe_pipes_d2d_map_jar_to_kotlin_source(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider.kt",
+            extra_data={"kotlin_package": "org.apache.flume.node"},
+        )
+        from2 = make_resource_file(
+            self.project1,
+            path="from/flume-ng-node-1.9.0-sources.jar-extract",
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider.class",
+        )
+        make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
+        )
+        to_jar = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.KotlinLanguage
+        )
+        relation = self.project1.codebaserelations.get()
+        self.assertEqual(from1, relation.from_resource)
+        self.assertEqual(to1, relation.to_resource)
+        self.assertEqual("kotlin_to_class", relation.map_type)
+        expected = {"from_source_root": "from/flume-ng-node-1.9.0-sources.jar-extract/"}
+        self.assertEqual(expected, relation.extra_data)
+
+        buffer = io.StringIO()
+        with self.assertNumQueries(6):
+            d2d.map_jar_to_jvm_source(
+                self.project1, logger=buffer.write, jvm_lang=jvm.KotlinLanguage
+            )
+        expected = "Mapping 1 .jar resources using map_jar_to_source"
+        self.assertIn(expected, buffer.getvalue())
+
+        self.assertEqual(2, self.project1.codebaserelations.count())
+        relation = self.project1.codebaserelations.get(map_type="jar_to_source")
+        self.assertEqual(from2, relation.from_resource)
+        self.assertEqual(to_jar, relation.to_resource)
+
+    def test_scanpipe_pipes_d2d_kotlin_ignore_pattern(self):
+        make_resource_file(self.project1, path="to/META-INF/test.knm")
+        make_resource_file(self.project1, path="to/test.class")
+        make_resource_file(
+            self.project1, path="to/META-INF/kotlin-project-structure-metadata.json"
+        )
+        buffer = io.StringIO()
+
+        kotlin_config = d2d_config.get_ecosystem_config(ecosystem="Kotlin")
+        d2d.ignore_unmapped_resources_from_config(
+            project=self.project1,
+            patterns_to_ignore=kotlin_config.deployed_resource_path_exclusions,
+            logger=buffer.write,
+        )
+        expected = "Ignoring 2 to/ resources with ecosystem specific configurations."
+        self.assertIn(expected, buffer.getvalue())
 
     def test_scanpipe_pipes_d2d_map_jar_to_source_works_for_jar(self):
         from1 = make_resource_file(
@@ -460,7 +839,7 @@ class ScanPipeD2DPipesTest(TestCase):
             path="to/org/apache/logging/log4j/core/util/SystemClock.class",
         )
 
-        d2d.map_java_to_class(self.project1)
+        d2d.map_jvm_to_class(self.project1, jvm_lang=jvm.JavaLanguage)
 
         expected = [
             (from1.path, to1.path, "java_to_class"),
@@ -495,7 +874,7 @@ class ScanPipeD2DPipesTest(TestCase):
             (2, "org/apache/logging/log4j/core/util/SystemClock2.java"),
         ]
         results = list(
-            d2d.get_indexable_qualified_java_paths_from_values(resource_values)
+            jvm.JavaLanguage.get_indexable_qualified_paths_from_values(resource_values)
         )
         self.assertEqual(expected, results)
 
@@ -550,9 +929,11 @@ class ScanPipeD2DPipesTest(TestCase):
         pipes.collect_and_create_codebase_resources(self.project1)
 
         buffer = io.StringIO()
-        d2d.find_java_packages(self.project1, logger=buffer.write)
+        d2d.find_jvm_packages(
+            self.project1, jvm_lang=jvm.JavaLanguage, logger=buffer.write
+        )
 
-        expected = "Finding Java package for 2 .java resources."
+        expected = "Finding java packages for 2 ('.java',) resources."
         self.assertEqual(expected, buffer.getvalue())
 
         expected = [
@@ -1134,6 +1515,30 @@ class ScanPipeD2DPipesTest(TestCase):
 
         self.assertEqual(1, expected)
 
+    def test_scanpipe_pipes_d2d_scan_ignored_to_files(self):
+        to_dir = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/META-INF/foo-bar"
+        )
+        to_input_location = self.data / "d2d/find_java_packages/Foo.java"
+        to_dir.mkdir(parents=True)
+        copy_input(to_input_location, to_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        foo_java = self.project1.codebaseresources.get(
+            path=("to/project.tar.zst-extract/META-INF/foo-bar/Foo.java")
+        )
+        foo_java.update(status=flag.IGNORED_FROM_CONFIG)
+
+        d2d.scan_ignored_to_files(self.project1)
+        foo_java.refresh_from_db()
+
+        expected = self.project1.codebaseresources.filter(
+            status=flag.IGNORED_FROM_CONFIG
+        ).count()
+
+        self.assertEqual(1, expected)
+
     def test_scan_unmapped_to_files(self):
         to_dir = (
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
@@ -1581,6 +1986,73 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
     @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_extract_binary_symbols_from_resources(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-macho/to-ollama.zip",
+            self.data / "d2d-macho/from-ollama.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+
+        binary_resource = self.project1.codebaseresources.get(
+            path="to/libggml-cpu-skylakex.so"
+        )
+        d2d.extract_binary_symbols_from_resources(
+            resources=[binary_resource],
+            binary_symbols_func=d2d.collect_and_parse_macho_symbols,
+            logger=buffer.write,
+        )
+        symbols = binary_resource.extra_data.get("macho_symbols")
+        self.assertNotEqual(symbols, [])
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_extract_binary_symbols(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-macho/to-ollama.zip",
+            self.data / "d2d-macho/from-ollama.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.extract_binary_symbols(
+            project=self.project1, options=["Go"], logger=buffer.write
+        )
+        binary_resource = self.project1.codebaseresources.get(
+            path="to/libggml-cpu-skylakex.so"
+        )
+        symbols = binary_resource.extra_data.get("macho_symbols")
+        self.assertNotEqual(symbols, [])
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
     def test_scanpipe_pipes_d2d_map_rust_symbols(self):
         input_dir = self.project1.input_path
         input_resources = [
@@ -1603,6 +2075,9 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
+        d2d.extract_binary_symbols(
+            project=self.project1, options=["Rust"], logger=buffer.write
+        )
         d2d.map_rust_binaries_with_symbols(project=self.project1, logger=buffer.write)
         self.assertEqual(
             2,
@@ -1614,6 +2089,40 @@ class ScanPipeD2DPipesTest(TestCase):
             0,
             CodebaseResource.objects.filter(
                 project=self.project1, status="requires-review"
+            ).count(),
+        )
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    def test_scanpipe_pipes_d2d_map_go_symbols(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data / "d2d-macho/to-ollama.zip",
+            self.data / "d2d-macho/from-ollama.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+        pipes.collect_and_create_codebase_resources(self.project1)
+        buffer = io.StringIO()
+        d2d.extract_binary_symbols(
+            project=self.project1, options=["Go"], logger=buffer.write
+        )
+        d2d.map_go_binaries_with_symbols(project=self.project1, logger=buffer.write)
+        self.assertEqual(
+            1,
+            CodebaseRelation.objects.filter(
+                project=self.project1, map_type="macho_symbols"
             ).count(),
         )
 
@@ -1640,6 +2149,9 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
+        d2d.extract_binary_symbols(
+            project=self.project1, options=["Elf"], logger=buffer.write
+        )
         d2d.map_elfs_binaries_with_symbols(project=self.project1, logger=buffer.write)
         self.assertEqual(
             7,
@@ -1671,6 +2183,9 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
+        d2d.extract_binary_symbols(
+            project=self.project1, options=["MacOS"], logger=buffer.write
+        )
         d2d.map_macho_binaries_with_symbols(project=self.project1, logger=buffer.write)
         self.assertEqual(
             9,
@@ -1699,6 +2214,9 @@ class ScanPipeD2DPipesTest(TestCase):
         scancode.extract_archives(self.project1.codebase_path, recurse=True)
         pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
+        d2d.extract_binary_symbols(
+            project=self.project1, options=["Python"], logger=buffer.write
+        )
         d2d.map_python_pyx_to_binaries(project=self.project1, logger=buffer.write)
         pyx_match_relations = CodebaseRelation.objects.filter(
             project=self.project1, map_type="python_pyx_match"
@@ -1728,6 +2246,9 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         pipes.collect_and_create_codebase_resources(self.project1)
         buffer = io.StringIO()
+        d2d.extract_binary_symbols(
+            project=self.project1, options=["Windows"], logger=buffer.write
+        )
         d2d.map_winpe_binaries_with_symbols(project=self.project1, logger=buffer.write)
         self.assertEqual(
             4,
@@ -1884,3 +2405,98 @@ class ScanPipeD2DPipesTest(TestCase):
             expected_extra_data = json.load(f)
 
         self.assertEqual(expected_extra_data, asdict(pipeline.ecosystem_config))
+
+    def test_scanpipe_pipes_d2d_extract_protobuf_base_name(self):
+        """Test the protobuf base name extraction function."""
+        test_cases = [
+            ("command_request_pb2.py", "command_request"),
+            ("connection_request_pb2.pyi", "connection_request"),
+            ("response_pb2.py", "response"),
+            ("user_pb3.py", "user"),
+            ("data_pb2.pyi", "data"),
+            ("regular_file.py", None),
+            ("not_protobuf.pyi", None),
+            ("pb2_standalone.py", None),
+        ]
+        for filename, expected in test_cases:
+            with self.subTest(filename=filename):
+                result = d2d.extract_protobuf_base_name(filename)
+                self.assertEqual(expected, result)
+
+    def test_scanpipe_pipes_d2d_map_python_protobuf_files(self):
+        """Test protobuf file mapping functionality."""
+        from1 = make_resource_file(
+            self.project1,
+            path="from/valkey_glide-2.0.1/glide-core/src/protobuf/command_request.proto",
+        )
+        from2 = make_resource_file(
+            self.project1,
+            path="from/valkey_glide-2.0.1/glide-core/src/protobuf/connection_request.proto",
+        )
+        from3 = make_resource_file(
+            self.project1,
+            path="from/valkey_glide-2.0.1/glide-core/src/protobuf/response.proto",
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/glide/protobuf/command_request_pb2.py",
+        )
+        to2 = make_resource_file(
+            self.project1,
+            path="to/glide/protobuf/command_request_pb2.pyi",
+        )
+        to3 = make_resource_file(
+            self.project1,
+            path="to/glide/protobuf/connection_request_pb2.py",
+        )
+        to4 = make_resource_file(
+            self.project1,
+            path="to/glide/protobuf/connection_request_pb2.pyi",
+        )
+        to5 = make_resource_file(
+            self.project1,
+            path="to/glide/protobuf/response_pb2.py",
+        )
+        to6 = make_resource_file(
+            self.project1,
+            path="to/glide/protobuf/response_pb2.pyi",
+        )
+        d2d.map_python_protobuf_files(self.project1)
+        relations = self.project1.codebaserelations.filter(map_type="protobuf_mapping")
+        self.assertEqual(6, relations.count())
+        expected_mappings = [
+            (from1, to1, "command_request"),
+            (from1, to2, "command_request"),
+            (from2, to3, "connection_request"),
+            (from2, to4, "connection_request"),
+            (from3, to5, "response"),
+            (from3, to6, "response"),
+        ]
+        for from_resource, to_resource, expected_base_name in expected_mappings:
+            relation = relations.filter(
+                from_resource=from_resource, to_resource=to_resource
+            ).first()
+            self.assertIsNotNone(relation)
+            self.assertEqual(
+                expected_base_name, relation.extra_data["protobuf_base_name"]
+            )
+
+    def test_scanpipe_pipes_d2d_map_python_protobuf_files_no_proto_files(self):
+        """Test protobuf mapping when no .proto files exist."""
+        make_resource_file(
+            self.project1,
+            path="to/glide/protobuf/command_request_pb2.py",
+        )
+        d2d.map_python_protobuf_files(self.project1)
+        relations = self.project1.codebaserelations.filter(map_type="protobuf_mapping")
+        self.assertEqual(0, relations.count())
+
+    def test_scanpipe_pipes_d2d_map_python_protobuf_files_no_py_files(self):
+        """Test protobuf mapping when no .py/.pyi files exist."""
+        make_resource_file(
+            self.project1,
+            path="from/valkey_glide-2.0.1/glide-core/src/protobuf/command_request.proto",
+        )
+        d2d.map_python_protobuf_files(self.project1)
+        relations = self.project1.codebaserelations.filter(map_type="protobuf_mapping")
+        self.assertEqual(0, relations.count())

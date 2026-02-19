@@ -46,6 +46,47 @@ Analyse Docker Windows Image
     :members:
     :member-order: bysource
 
+.. _pipeline_benchmark_purls:
+
+Benchmark PURLs (addon)
+-----------------------
+
+To check an **SBOM against a list of expected Package URLs (PURLs)**:
+
+1. **Create a new project** and provide two inputs:
+
+   * The SBOM file you want to check.
+   * A list of expected PURLs in a ``*-purls.txt`` file with one PURL per line.
+
+     .. tip:: You may also flag any filename using the ``purls`` input tag.
+
+2. **Run the pipelines**:
+
+   * Select and run the ``load_sbom`` pipeline to load the SBOM.
+   * Run the ``benchmark_purls`` pipeline to validate against the expected PURLs.
+
+3. **Download the results** from the "output" section of the project.
+
+The output file contains only the differences between the discovered PURLs and
+the expected PURLs:
+
+* Lines starting with ``-`` are missing from the project.
+* Lines starting with ``+`` are unexpected in the project.
+
+.. note::
+  The ``load_sbom`` pipeline is provided as an example to benchmark external
+  tools using SBOMs as inputs. You can also run ``benchmark_purls`` directly
+  after any ScanCode.io pipeline to validate the discovered PURLs.
+
+.. tip::
+  You can provide multiple expected PURLs files.
+
+
+.. autoclass:: scanpipe.pipelines.benchmark_purls.BenchmarkPurls()
+    :members:
+    :member-order: bysource
+
+
 .. _pipeline_collect_strings_gettext:
 
 Collect string with Xgettext (addon)
@@ -82,7 +123,6 @@ Collect symbols and string with Tree-Sitter (addon)
 
 Enrich With PurlDB (addon)
 --------------------------
-
 .. warning::
     This pipeline requires access to a PurlDB service.
     Refer to :ref:`scancodeio_settings_purldb` to configure access to PurlDB in your
@@ -96,7 +136,6 @@ Enrich With PurlDB (addon)
 
 Find Vulnerabilities (addon)
 ----------------------------
-
 .. warning::
     This pipeline requires access to a VulnerableCode database.
     Refer to :ref:`scancodeio_settings_vulnerablecode` to configure access to
@@ -150,7 +189,6 @@ Resolve Dependencies
 
 Map Deploy To Develop
 ---------------------
-
 .. warning::
     This pipeline requires input files to be tagged with the following:
 
@@ -168,7 +206,6 @@ Map Deploy To Develop
 
 Match to MatchCode (addon)
 --------------------------
-
 .. warning::
     This pipeline requires access to a MatchCode.io service.
     Refer to :ref:`scancodeio_settings_matchcodeio` to configure access to
@@ -182,7 +219,6 @@ Match to MatchCode (addon)
 
 Populate PurlDB (addon)
 -----------------------
-
 .. warning::
     This pipeline requires access to a PurlDB service.
     Refer to :ref:`scancodeio_settings_purldb` to configure access to PurlDB in your
@@ -196,7 +232,6 @@ Populate PurlDB (addon)
 
 Publish To FederatedCode (addon)
 --------------------------------
-
 .. warning::
     This pipeline requires access to a FederatedCode service.
     Refer to :ref:`scancodeio_settings_federatedcode` to configure access to
@@ -227,5 +262,15 @@ Scan For Virus
 Scan Single Package
 -------------------
 .. autoclass:: scanpipe.pipelines.scan_single_package.ScanSinglePackage()
+    :members:
+    :member-order: bysource
+
+Fetch Scores (addon)
+--------------------
+.. warning::
+    This pipeline is preconfigured to access the "OpenSSF Scorecard API"
+    available at https://api.securityscorecards.dev/
+
+.. autoclass:: scanpipe.pipelines.fetch_scores.FetchScores()
     :members:
     :member-order: bysource

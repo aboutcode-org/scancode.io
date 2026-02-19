@@ -1,0 +1,732 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:c134c2dd-4815-4edf-847a-6633874ac74c",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2025-08-25T06:39:25Z",
+    "tools": {
+      "components": [
+        {
+          "group": "@cyclonedx",
+          "name": "cdxgen",
+          "version": "11.6.0",
+          "purl": "pkg:npm/%40cyclonedx/cdxgen@11.6.0",
+          "type": "application",
+          "bom-ref": "pkg:npm/@cyclonedx/cdxgen@11.6.0",
+          "publisher": "OWASP Foundation",
+          "authors": [
+            {
+              "name": "OWASP Foundation"
+            }
+          ]
+        }
+      ]
+    },
+    "authors": [
+      {
+        "name": "OWASP Foundation"
+      }
+    ],
+    "lifecycles": [
+      {
+        "phase": "pre-build"
+      },
+      {
+        "phase": "post-build"
+      }
+    ],
+    "component": {
+      "name": "alpine",
+      "version": "3.17.0",
+      "type": "container",
+      "purl": "pkg:oci/alpine@sha256:8914eb54f968791faf6a8638949e480fef81e697984fba772b3976835194c6d4",
+      "bom-ref": "pkg:oci/alpine@sha256:8914eb54f968791faf6a8638949e480fef81e697984fba772b3976835194c6d4"
+    },
+    "properties": [
+      {
+        "name": "oci:image:Id",
+        "value": "sha256:49176f190c7e9cdb51ac85ab6c6d5e4512352218190cd69b08e6fd803ffbf3da"
+      },
+      {
+        "name": "oci:image:RepoTag",
+        "value": "alpine:3.17.0"
+      },
+      {
+        "name": "oci:image:RepoDigest",
+        "value": "alpine@sha256:8914eb54f968791faf6a8638949e480fef81e697984fba772b3976835194c6d4"
+      },
+      {
+        "name": "oci:image:Created",
+        "value": "2022-11-22T22:19:29.008562326Z"
+      },
+      {
+        "name": "oci:image:Architecture",
+        "value": "amd64"
+      },
+      {
+        "name": "oci:image:Os",
+        "value": "linux"
+      },
+      {
+        "name": "oci:image:manifest:Config",
+        "value": "blobs/sha256/49176f190c7e9cdb51ac85ab6c6d5e4512352218190cd69b08e6fd803ffbf3da"
+      },
+      {
+        "name": "oci:image:manifest:Layers",
+        "value": "blobs/sha256/ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf"
+      },
+      {
+        "name": "oci:image:lastLayer:Env",
+        "value": "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      },
+      {
+        "name": "oci:image:env:PATH",
+        "value": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      },
+      {
+        "name": "oci:image:lastLayer:Cmd",
+        "value": "/bin/sh"
+      },
+      {
+        "name": "cdx:bom:componentTypes",
+        "value": "generic"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "busybox",
+      "type": "file",
+      "purl": "pkg:generic/busybox",
+      "bom-ref": "pkg:generic/busybox",
+      "hashes": [
+        {
+          "alg": "MD5",
+          "content": "54c55186b332e6dfe5a75530c4a453bd"
+        },
+        {
+          "alg": "SHA-1",
+          "content": "c9534b79e07b568ba108efe4cfe75b7cbddd6387"
+        }
+      ],
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "/bin/busybox"
+        },
+        {
+          "name": "internal:is_executable",
+          "value": "true"
+        }
+      ],
+      "evidence": {
+        "identity": [
+          {
+            "field": "purl",
+            "confidence": 0,
+            "methods": [
+              {
+                "technique": "filename",
+                "confidence": 0,
+                "value": "/bin/busybox"
+              }
+            ],
+            "concludedValue": "/bin/busybox"
+          }
+        ]
+      }
+    },
+    {
+      "name": "apk",
+      "type": "file",
+      "purl": "pkg:generic/apk",
+      "bom-ref": "pkg:generic/apk",
+      "hashes": [
+        {
+          "alg": "MD5",
+          "content": "ac9ea8f31b1a7d83af65af97f1d32f7b"
+        },
+        {
+          "alg": "SHA-1",
+          "content": "ff86e638f7bf1f56211d1ce5ae3dbba2e7d384cc"
+        }
+      ],
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "/sbin/apk"
+        },
+        {
+          "name": "internal:is_executable",
+          "value": "true"
+        }
+      ],
+      "evidence": {
+        "identity": [
+          {
+            "field": "purl",
+            "confidence": 0,
+            "methods": [
+              {
+                "technique": "filename",
+                "confidence": 0,
+                "value": "/sbin/apk"
+              }
+            ],
+            "concludedValue": "/sbin/apk"
+          }
+        ]
+      },
+      "tags": [
+        "package"
+      ]
+    },
+    {
+      "name": "ldconfig",
+      "type": "file",
+      "purl": "pkg:generic/ldconfig",
+      "bom-ref": "pkg:generic/ldconfig",
+      "hashes": [
+        {
+          "alg": "MD5",
+          "content": "830d01f7821b978df770b06db3790921"
+        },
+        {
+          "alg": "SHA-1",
+          "content": "2a36b6f8f3992b112450e66ac128c2ea499a103e"
+        }
+      ],
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "/sbin/ldconfig"
+        },
+        {
+          "name": "internal:is_executable",
+          "value": "true"
+        }
+      ],
+      "evidence": {
+        "identity": [
+          {
+            "field": "purl",
+            "confidence": 0,
+            "methods": [
+              {
+                "technique": "filename",
+                "confidence": 0,
+                "value": "/sbin/ldconfig"
+              }
+            ],
+            "concludedValue": "/sbin/ldconfig"
+          }
+        ]
+      }
+    },
+    {
+      "name": "getconf",
+      "type": "file",
+      "purl": "pkg:generic/getconf",
+      "bom-ref": "pkg:generic/getconf",
+      "hashes": [
+        {
+          "alg": "MD5",
+          "content": "e58b1487fd604f02b3923621b6fd6b64"
+        },
+        {
+          "alg": "SHA-1",
+          "content": "514468d67656129d5bc162ca39a16ff4c4641ae6"
+        }
+      ],
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "/usr/bin/getconf"
+        },
+        {
+          "name": "internal:is_executable",
+          "value": "true"
+        }
+      ],
+      "evidence": {
+        "identity": [
+          {
+            "field": "purl",
+            "confidence": 0,
+            "methods": [
+              {
+                "technique": "filename",
+                "confidence": 0,
+                "value": "/usr/bin/getconf"
+              }
+            ],
+            "concludedValue": "/usr/bin/getconf"
+          }
+        ]
+      }
+    },
+    {
+      "name": "getent",
+      "type": "file",
+      "purl": "pkg:generic/getent",
+      "bom-ref": "pkg:generic/getent",
+      "hashes": [
+        {
+          "alg": "MD5",
+          "content": "448d1bc633b9067eeb8da91188096ba6"
+        },
+        {
+          "alg": "SHA-1",
+          "content": "ceddd4e0b7e00ddcc5b85de5205ce4b506f99cbc"
+        }
+      ],
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "/usr/bin/getent"
+        },
+        {
+          "name": "internal:is_executable",
+          "value": "true"
+        }
+      ],
+      "evidence": {
+        "identity": [
+          {
+            "field": "purl",
+            "confidence": 0,
+            "methods": [
+              {
+                "technique": "filename",
+                "confidence": 0,
+                "value": "/usr/bin/getent"
+              }
+            ],
+            "concludedValue": "/usr/bin/getent"
+          }
+        ]
+      }
+    },
+    {
+      "name": "iconv",
+      "type": "file",
+      "purl": "pkg:generic/iconv",
+      "bom-ref": "pkg:generic/iconv",
+      "hashes": [
+        {
+          "alg": "MD5",
+          "content": "a0d8b1e97322d3192ae21583265c0e7c"
+        },
+        {
+          "alg": "SHA-1",
+          "content": "314af66ec460757ec81034fc55e6fcd9ab5badf9"
+        }
+      ],
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "/usr/bin/iconv"
+        },
+        {
+          "name": "internal:is_executable",
+          "value": "true"
+        }
+      ],
+      "evidence": {
+        "identity": [
+          {
+            "field": "purl",
+            "confidence": 0,
+            "methods": [
+              {
+                "technique": "filename",
+                "confidence": 0,
+                "value": "/usr/bin/iconv"
+              }
+            ],
+            "concludedValue": "/usr/bin/iconv"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ldd",
+      "type": "file",
+      "purl": "pkg:generic/ldd",
+      "bom-ref": "pkg:generic/ldd",
+      "hashes": [
+        {
+          "alg": "MD5",
+          "content": "be6a1717bf61614c6be87c0755a1bc98"
+        },
+        {
+          "alg": "SHA-1",
+          "content": "c850211a08262fb11181b200eca431c93cdfde4b"
+        }
+      ],
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "/usr/bin/ldd"
+        },
+        {
+          "name": "internal:is_executable",
+          "value": "true"
+        }
+      ],
+      "evidence": {
+        "identity": [
+          {
+            "field": "purl",
+            "confidence": 0,
+            "methods": [
+              {
+                "technique": "filename",
+                "confidence": 0,
+                "value": "/usr/bin/ldd"
+              }
+            ],
+            "concludedValue": "/usr/bin/ldd"
+          }
+        ]
+      }
+    },
+    {
+      "name": "scanelf",
+      "type": "file",
+      "purl": "pkg:generic/scanelf",
+      "bom-ref": "pkg:generic/scanelf",
+      "hashes": [
+        {
+          "alg": "MD5",
+          "content": "38402b7639b4e3fec70bc5d3a24416ab"
+        },
+        {
+          "alg": "SHA-1",
+          "content": "368022b2c543b9a9d717528e125f2aac50376eca"
+        }
+      ],
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "/usr/bin/scanelf"
+        },
+        {
+          "name": "internal:is_executable",
+          "value": "true"
+        }
+      ],
+      "evidence": {
+        "identity": [
+          {
+            "field": "purl",
+            "confidence": 0,
+            "methods": [
+              {
+                "technique": "filename",
+                "confidence": 0,
+                "value": "/usr/bin/scanelf"
+              }
+            ],
+            "concludedValue": "/usr/bin/scanelf"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ssl_client",
+      "type": "file",
+      "purl": "pkg:generic/ssl_client",
+      "bom-ref": "pkg:generic/ssl_client",
+      "hashes": [
+        {
+          "alg": "MD5",
+          "content": "38e490a85ffa4b084b67a36f50de71c6"
+        },
+        {
+          "alg": "SHA-1",
+          "content": "dd2841de918c0cbf11eecaaf0d578b38167a3f74"
+        }
+      ],
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "/usr/bin/ssl_client"
+        },
+        {
+          "name": "internal:is_executable",
+          "value": "true"
+        }
+      ],
+      "evidence": {
+        "identity": [
+          {
+            "field": "purl",
+            "confidence": 0,
+            "methods": [
+              {
+                "technique": "filename",
+                "confidence": 0,
+                "value": "/usr/bin/ssl_client"
+              }
+            ],
+            "concludedValue": "/usr/bin/ssl_client"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ld-musl-x86_64.so.1",
+      "type": "file",
+      "purl": "pkg:generic/ld-musl-x86_64.so.1",
+      "bom-ref": "pkg:generic/ld-musl-x86_64.so.1",
+      "hashes": [
+        {
+          "alg": "MD5",
+          "content": "63440a8a226fbb7d118deb67f0435143"
+        },
+        {
+          "alg": "SHA-1",
+          "content": "b46c60c7614bac3fb4524d373540706db1224425"
+        }
+      ],
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "/lib/ld-musl-x86_64.so.1"
+        },
+        {
+          "name": "internal:is_shared_library",
+          "value": "true"
+        }
+      ],
+      "evidence": {
+        "identity": [
+          {
+            "field": "purl",
+            "confidence": 0,
+            "methods": [
+              {
+                "technique": "filename",
+                "confidence": 0,
+                "value": "/lib/ld-musl-x86_64.so.1"
+              }
+            ],
+            "concludedValue": "/lib/ld-musl-x86_64.so.1"
+          }
+        ]
+      },
+      "tags": [
+        "runtime"
+      ]
+    },
+    {
+      "name": "libapk.so.3.12.0",
+      "type": "file",
+      "purl": "pkg:generic/libapk.so.3.12.0",
+      "bom-ref": "pkg:generic/libapk.so.3.12.0",
+      "hashes": [
+        {
+          "alg": "MD5",
+          "content": "16a996a811e650948251bd52d712d5a4"
+        },
+        {
+          "alg": "SHA-1",
+          "content": "a298e962a5e0ce6395a3b11b35ef25e57a25d3c8"
+        }
+      ],
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "/lib/libapk.so.3.12.0"
+        },
+        {
+          "name": "internal:is_shared_library",
+          "value": "true"
+        }
+      ],
+      "evidence": {
+        "identity": [
+          {
+            "field": "purl",
+            "confidence": 0,
+            "methods": [
+              {
+                "technique": "filename",
+                "confidence": 0,
+                "value": "/lib/libapk.so.3.12.0"
+              }
+            ],
+            "concludedValue": "/lib/libapk.so.3.12.0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "libcrypto.so.3",
+      "type": "file",
+      "purl": "pkg:generic/libcrypto.so.3",
+      "bom-ref": "pkg:generic/libcrypto.so.3",
+      "hashes": [
+        {
+          "alg": "MD5",
+          "content": "f0adf918b27de9e5be5a515140928dd1"
+        },
+        {
+          "alg": "SHA-1",
+          "content": "cb3c6cb6ad39366fb80c04b4811fd749c32d8516"
+        }
+      ],
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "/lib/libcrypto.so.3"
+        },
+        {
+          "name": "internal:is_shared_library",
+          "value": "true"
+        }
+      ],
+      "evidence": {
+        "identity": [
+          {
+            "field": "purl",
+            "confidence": 0,
+            "methods": [
+              {
+                "technique": "filename",
+                "confidence": 0,
+                "value": "/lib/libcrypto.so.3"
+              }
+            ],
+            "concludedValue": "/lib/libcrypto.so.3"
+          }
+        ]
+      },
+      "tags": [
+        "crypto"
+      ]
+    },
+    {
+      "name": "libssl.so.3",
+      "type": "file",
+      "purl": "pkg:generic/libssl.so.3",
+      "bom-ref": "pkg:generic/libssl.so.3",
+      "hashes": [
+        {
+          "alg": "MD5",
+          "content": "55ecd1621ee12862bece282bbd634a7b"
+        },
+        {
+          "alg": "SHA-1",
+          "content": "4e1b4e4e9647c4b4f45b7254d4123c6c6da05bf6"
+        }
+      ],
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "/lib/libssl.so.3"
+        },
+        {
+          "name": "internal:is_shared_library",
+          "value": "true"
+        }
+      ],
+      "evidence": {
+        "identity": [
+          {
+            "field": "purl",
+            "confidence": 0,
+            "methods": [
+              {
+                "technique": "filename",
+                "confidence": 0,
+                "value": "/lib/libssl.so.3"
+              }
+            ],
+            "concludedValue": "/lib/libssl.so.3"
+          }
+        ]
+      },
+      "tags": [
+        "security"
+      ]
+    },
+    {
+      "name": "libz.so.1.2.13",
+      "type": "file",
+      "purl": "pkg:generic/libz.so.1.2.13",
+      "bom-ref": "pkg:generic/libz.so.1.2.13",
+      "hashes": [
+        {
+          "alg": "MD5",
+          "content": "c8f4f91b139ae30a3b09f62e17952df6"
+        },
+        {
+          "alg": "SHA-1",
+          "content": "7698af4c7e324d69d09d311d28699431a97f0ac2"
+        }
+      ],
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "/lib/libz.so.1.2.13"
+        },
+        {
+          "name": "internal:is_shared_library",
+          "value": "true"
+        }
+      ],
+      "evidence": {
+        "identity": [
+          {
+            "field": "purl",
+            "confidence": 0,
+            "methods": [
+              {
+                "technique": "filename",
+                "confidence": 0,
+                "value": "/lib/libz.so.1.2.13"
+              }
+            ],
+            "concludedValue": "/lib/libz.so.1.2.13"
+          }
+        ]
+      }
+    }
+  ],
+  "services": [],
+  "dependencies": [
+    {
+      "ref": "pkg:oci/alpine@sha256:8914eb54f968791faf6a8638949e480fef81e697984fba772b3976835194c6d4",
+      "dependsOn": []
+    }
+  ],
+  "annotations": [
+    {
+      "bom-ref": "metadata-annotations",
+      "subjects": [
+        "pkg:oci/alpine@sha256:8914eb54f968791faf6a8638949e480fef81e697984fba772b3976835194c6d4"
+      ],
+      "annotator": {
+        "component": {
+          "group": "@cyclonedx",
+          "name": "cdxgen",
+          "version": "11.6.0",
+          "purl": "pkg:npm/%40cyclonedx/cdxgen@11.6.0",
+          "type": "application",
+          "bom-ref": "pkg:npm/@cyclonedx/cdxgen@11.6.0",
+          "publisher": "OWASP Foundation",
+          "authors": [
+            {
+              "name": "OWASP Foundation"
+            }
+          ]
+        }
+      },
+      "timestamp": "2025-08-25T06:39:25Z",
+      "text": "This Software Bill-of-Materials (SBOM) document was created on Monday, August 25, 2025 with cdxgen. The lifecycles phases represented are: pre-build and post-build. The document describes a container named 'alpine' with version '3.17.0'. There are 14 components. The linux image uses the amd64 architecture and has the registry tag alpine:3.17.0."
+    }
+  ]
+}

@@ -58,6 +58,11 @@ dev: virtualenv
 	@echo "-> Configure and install development dependencies"
 	@${ACTIVATE} pip install ${PIP_ARGS} --editable .[dev]
 
+dev-mining: virtualenv
+	@echo "-> Configure and install development dependencies"
+	@$(MAKE) dev
+	@${ACTIVATE} pip install ${PIP_ARGS} --editable .[mining]
+
 envfile:
 	@echo "-> Create the .env file and generate a secret key"
 	@if test -f ${ENV_FILE}; then echo ".env file exists already"; exit 1; fi
@@ -122,7 +127,7 @@ sqlitedb:
 	@$(MAKE) migrate
 
 run:
-	${MANAGE} runserver 8001 --insecure
+	DJANGO_RUNSERVER_HIDE_WARNING=true ${MANAGE} runserver 8001 --insecure
 
 run-docker-dev:
 	@echo "-> Run the Docker compose services in dev mode (hot reload on code changes)"

@@ -399,7 +399,10 @@ class MatchCodePipesTest(TestCase):
             self.project1.codebase_path,
         )
         codebase_resource3 = CodebaseResource.objects.create(
-            project=self.project1, path="inherits.js", is_text=True
+            project=self.project1,
+            path="inherits.js",
+            is_text=True,
+            programming_language="JavaScript",
         )
 
         matchcode.fingerprint_stemmed_codebase_resources(self.project1)

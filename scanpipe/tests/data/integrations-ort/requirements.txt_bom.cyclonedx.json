@@ -1,0 +1,1558 @@
+{
+  "bomFormat" : "CycloneDX",
+  "specVersion" : "1.6",
+  "serialNumber" : "urn:uuid:26ba8e96-2afe-4156-b149-7da92d2af39e",
+  "version" : 1,
+  "metadata" : {
+    "timestamp" : "2025-09-03T12:27:26Z",
+    "tools" : {
+      "components" : [
+        {
+          "type" : "application",
+          "name" : "OSS Review Toolkit",
+          "version" : "66.1.0"
+        }
+      ],
+      "services" : [ ]
+    },
+    "component" : {
+      "type" : "file",
+      "bom-ref" : "@",
+      "name" : "",
+      "version" : ""
+    },
+    "licenses" : [
+      {
+        "expression" : "CC0-1.0"
+      }
+    ]
+  },
+  "components" : [
+    {
+      "type" : "library",
+      "bom-ref" : "PyPI::amqp:5.1.1",
+      "supplier" : {
+        "contact" : [
+          {
+            "name" : "Barry Pederson <pyamqp@celeryproject.org>"
+          }
+        ]
+      },
+      "authors" : [
+        {
+          "name" : "Barry Pederson <pyamqp@celeryproject.org>"
+        }
+      ],
+      "group" : "",
+      "name" : "amqp",
+      "version" : "5.1.1",
+      "description" : "Low-level AMQP client for Python (fork of amqplib).",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "SHA-256",
+          "content" : "6f0956d2c23d8fa6e7691934d8c3930eadb44972cbbd1a7ae3a520f735d43359"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "BSD-3-Clause",
+            "text" : {
+              "contentType" : "plain/text",
+              "content" : "Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met: Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of the ORGANIZATION nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+            },
+            "properties" : [
+              {
+                "name" : "ort:origin",
+                "value" : "declared license"
+              }
+            ]
+          }
+        }
+      ],
+      "purl" : "pkg:pypi/amqp@5.1.1",
+      "modified" : false,
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://github.com/celery/py-amqp"
+        }
+      ],
+      "properties" : [
+        {
+          "name" : "ort:dependencyType",
+          "value" : "direct"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "PyPI::appdirs:1.4.4",
+      "supplier" : {
+        "contact" : [
+          {
+            "name" : "Trent Mick <trentm@gmail.com>"
+          }
+        ]
+      },
+      "authors" : [
+        {
+          "name" : "Trent Mick <trentm@gmail.com>"
+        }
+      ],
+      "group" : "",
+      "name" : "appdirs",
+      "version" : "1.4.4",
+      "description" : "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\".",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "SHA-256",
+          "content" : "a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT",
+            "text" : {
+              "contentType" : "plain/text",
+              "content" : "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
+            },
+            "properties" : [
+              {
+                "name" : "ort:origin",
+                "value" : "declared license"
+              }
+            ]
+          }
+        }
+      ],
+      "purl" : "pkg:pypi/appdirs@1.4.4",
+      "modified" : false,
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://github.com/ActiveState/appdirs"
+        }
+      ],
+      "properties" : [
+        {
+          "name" : "ort:dependencyType",
+          "value" : "direct"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "PyPI::asgiref:3.5.2",
+      "supplier" : {
+        "contact" : [
+          {
+            "name" : "Django Software Foundation <foundation@djangoproject.com>"
+          }
+        ]
+      },
+      "authors" : [
+        {
+          "name" : "Django Software Foundation <foundation@djangoproject.com>"
+        }
+      ],
+      "group" : "",
+      "name" : "asgiref",
+      "version" : "3.5.2",
+      "description" : "ASGI specs, helper code, and adapters",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "SHA-256",
+          "content" : "1d2880b792ae8757289136f1db2b7b99100ce959b2aa57fd69dab783d05afac4"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "BSD-3-Clause",
+            "text" : {
+              "contentType" : "plain/text",
+              "content" : "Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met: Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of the ORGANIZATION nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+            },
+            "properties" : [
+              {
+                "name" : "ort:origin",
+                "value" : "declared license"
+              }
+            ]
+          }
+        }
+      ],
+      "purl" : "pkg:pypi/asgiref@3.5.2",
+      "modified" : false,
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://github.com/django/asgiref/"
+        }
+      ],
+      "properties" : [
+        {
+          "name" : "ort:dependencyType",
+          "value" : "direct"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "PyPI::urllib3:1.26.0",
+      "supplier" : {
+        "contact" : [
+          {
+            "name" : "Andrey Petrov <andrey.petrov@shazow.net>"
+          }
+        ]
+      },
+      "authors" : [
+        {
+          "name" : "Andrey Petrov <andrey.petrov@shazow.net>"
+        }
+      ],
+      "group" : "",
+      "name" : "urllib3",
+      "version" : "1.26.0",
+      "description" : "HTTP library with thread-safe connection pooling, file post, and more.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "SHA-256",
+          "content" : "bad31cb622ceee0ab46c4c884cf61957def0ff2e644de0a7a093678844c9ccac"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT",
+            "text" : {
+              "contentType" : "plain/text",
+              "content" : "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
+            },
+            "properties" : [
+              {
+                "name" : "ort:origin",
+                "value" : "declared license"
+              }
+            ]
+          }
+        }
+      ],
+      "purl" : "pkg:pypi/urllib3@1.26.0",
+      "modified" : false,
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://urllib3.readthedocs.io/"
+        }
+      ],
+      "properties" : [
+        {
+          "name" : "ort:dependencyType",
+          "value" : "direct"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "PyPI::vine:5.1.0",
+      "supplier" : {
+        "contact" : [
+          {
+            "name" : "Ask Solem <auvipy@gmail.com>"
+          }
+        ]
+      },
+      "authors" : [
+        {
+          "name" : "Ask Solem <auvipy@gmail.com>"
+        }
+      ],
+      "group" : "",
+      "name" : "vine",
+      "version" : "5.1.0",
+      "description" : "Python promises.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "SHA-256",
+          "content" : "40fdf3c48b2cfe1c38a49e9ae2da6fda88e4794c810050a728bd7413811fb1dc"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "BSD-3-Clause",
+            "text" : {
+              "contentType" : "plain/text",
+              "content" : "Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met: Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of the ORGANIZATION nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+            },
+            "properties" : [
+              {
+                "name" : "ort:origin",
+                "value" : "declared license"
+              }
+            ]
+          }
+        }
+      ],
+      "purl" : "pkg:pypi/vine@5.1.0",
+      "modified" : false,
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://github.com/celery/vine"
+        }
+      ],
+      "properties" : [
+        {
+          "name" : "ort:dependencyType",
+          "value" : "transitive"
+        }
+      ]
+    }
+  ],
+  "dependencies" : [
+    {
+      "ref" : "@",
+      "dependsOn" : [
+        "PyPI::amqp:5.1.1",
+        "PyPI::appdirs:1.4.4",
+        "PyPI::asgiref:3.5.2",
+        "PyPI::urllib3:1.26.0"
+      ]
+    },
+    {
+      "ref" : "PyPI::amqp:5.1.1",
+      "dependsOn" : [
+        "PyPI::vine:5.1.0"
+      ]
+    }
+  ],
+  "vulnerabilities" : [
+    {
+      "id" : "GHSA-34jh-p97f-mpxf",
+      "ratings" : [
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/security/advisories/GHSA-34jh-p97f-mpxf"
+          },
+          "score" : 4.400000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://nvd.nist.gov/vuln/detail/CVE-2024-37891"
+          },
+          "score" : 4.400000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/40b6d1605814dd1db0a46e202d6e56f2e4c9a468"
+          },
+          "score" : 4.400000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/accff72ecc2f6cf5a76d9570198a93ac7c90270e"
+          },
+          "score" : 4.400000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3"
+          },
+          "score" : 4.400000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        }
+      ],
+      "description" : "When using urllib3's proxy support with `ProxyManager`, the `Proxy-Authorization` header is only sent to the configured proxy, as expected. However, when sending HTTP requests *without* using urllib3's proxy support, it's possible to accidentally configure the `Proxy-Authorization` header even though it won't have any effect as the request is not using a forwarding proxy or a tunneling proxy. In those cases, urllib3 doesn't treat the `Proxy-Authorization` HTTP header as one carrying authentication material and thus doesn't strip the header on cross-origin redirects. Because this is a highly unlikely scenario, we believe the severity of this vulnerability is low for almost all users. Out of an abundance of caution urllib3 will automatically strip the `Proxy-Authorization` header during cross-origin redirects to avoid the small chance that users are doing this on accident. Users should use urllib3's proxy support or disable automatic redirects to achieve safe processing of the `Proxy-Authorization` header, but we still decided to strip the header by default in order to further protect users who aren't using the correct approach. ## Affected usages We believe the number of usages affected by this advisory is low. It requires all of the following to be true to be exploited: * Setting the `Proxy-Authorization` header without using urllib3's built-in proxy support. * Not disabling HTTP redirects. * Either not using an HTTPS origin server or for the proxy or target origin to redirect to a malicious origin. ## Remediation * Using the `Proxy-Authorization` header with urllib3's `ProxyManager`. * Disabling HTTP redirects using `redirects=False` when sending requests. * Not using the `Proxy-Authorization` header.",
+      "detail" : "urllib3's Proxy-Authorization request header isn't stripped during cross-origin redirects",
+      "affects" : [
+        {
+          "ref" : "PyPI::urllib3:1.26.0"
+        }
+      ]
+    },
+    {
+      "id" : "GHSA-5phf-pp7p-vc2r",
+      "ratings" : [
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/security/advisories/GHSA-5phf-pp7p-vc2r"
+          },
+          "score" : 6.5,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://nvd.nist.gov/vuln/detail/CVE-2021-28363"
+          },
+          "score" : 6.5,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/8d65ea1ecf6e2cdc27d42124e587c1b83a3118b0"
+          },
+          "score" : 6.5,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/pypa/advisory-database/tree/main/vulns/urllib3/PYSEC-2021-59.yaml"
+          },
+          "score" : 6.5,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/pypa/advisory-db/tree/main/vulns/urllib3/PYSEC-2021-59.yaml"
+          },
+          "score" : 6.5,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3"
+          },
+          "score" : 6.5,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/blob/main/CHANGES.rst#1264-2021-03-15"
+          },
+          "score" : 6.5,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commits/main"
+          },
+          "score" : 6.5,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/releases/tag/1.26.4"
+          },
+          "score" : 6.5,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/4S65ZQVZ2ODGB52IC7VJDBUK4M5INCXL"
+          },
+          "score" : 6.5,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/4S65ZQVZ2ODGB52IC7VJDBUK4M5INCXL"
+          },
+          "score" : 6.5,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://pypi.org/project/urllib3/1.26.4"
+          },
+          "score" : 6.5,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://security.gentoo.org/glsa/202107-36"
+          },
+          "score" : 6.5,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://security.gentoo.org/glsa/202305-02"
+          },
+          "score" : 6.5,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://security.netapp.com/advisory/ntap-20240621-0007"
+          },
+          "score" : 6.5,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://www.oracle.com/security-alerts/cpuoct2021.html"
+          },
+          "score" : 6.5,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/security/advisories/GHSA-5phf-pp7p-vc2r"
+          },
+          "score" : 6.900000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://nvd.nist.gov/vuln/detail/CVE-2021-28363"
+          },
+          "score" : 6.900000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/8d65ea1ecf6e2cdc27d42124e587c1b83a3118b0"
+          },
+          "score" : 6.900000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/pypa/advisory-database/tree/main/vulns/urllib3/PYSEC-2021-59.yaml"
+          },
+          "score" : 6.900000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/pypa/advisory-db/tree/main/vulns/urllib3/PYSEC-2021-59.yaml"
+          },
+          "score" : 6.900000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3"
+          },
+          "score" : 6.900000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/blob/main/CHANGES.rst#1264-2021-03-15"
+          },
+          "score" : 6.900000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commits/main"
+          },
+          "score" : 6.900000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/releases/tag/1.26.4"
+          },
+          "score" : 6.900000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/4S65ZQVZ2ODGB52IC7VJDBUK4M5INCXL"
+          },
+          "score" : 6.900000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/4S65ZQVZ2ODGB52IC7VJDBUK4M5INCXL"
+          },
+          "score" : 6.900000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://pypi.org/project/urllib3/1.26.4"
+          },
+          "score" : 6.900000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://security.gentoo.org/glsa/202107-36"
+          },
+          "score" : 6.900000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://security.gentoo.org/glsa/202305-02"
+          },
+          "score" : 6.900000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://security.netapp.com/advisory/ntap-20240621-0007"
+          },
+          "score" : 6.900000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://www.oracle.com/security-alerts/cpuoct2021.html"
+          },
+          "score" : 6.900000095367432,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+        }
+      ],
+      "description" : "### Impact Users who are using an HTTPS proxy to issue HTTPS requests and haven't configured their own SSLContext via `proxy_config`. Only the default SSLContext is impacted. ### Patches [urllib3 >=1.26.4 has the issue resolved](https://github.com/urllib3/urllib3/releases/tag/1.26.4). urllib3<1.26 is not impacted due to not supporting HTTPS requests via HTTPS proxies. ### Workarounds Upgrading is recommended as this is a minor release and not likely to break current usage. Configuring an `SSLContext` with `check_hostname=True` and passing via `proxy_config` instead of relying on the default `SSLContext` ### For more information If you have any questions or comments about this advisory: * Email us at [sethmichaellarson@gmail.com](mailto:sethmichaellarson@gmail.com)",
+      "detail" : "Using default SSLContext for HTTPS requests in an HTTPS proxy doesn't verify certificate hostname for proxy connection",
+      "affects" : [
+        {
+          "ref" : "PyPI::urllib3:1.26.0"
+        }
+      ]
+    },
+    {
+      "id" : "GHSA-g4mx-q9vg-27p4",
+      "ratings" : [
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/security/advisories/GHSA-g4mx-q9vg-27p4"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://nvd.nist.gov/vuln/detail/CVE-2023-45803"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/4e50fbc5db74e32cabd5ccc1ab81fc103adfe0b3"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/4e98d57809dacab1cbe625fddeec1a290c478ea9"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/b594c5ceaca38e1ac215f916538fb128e3526a36"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/pypa/advisory-database/tree/main/vulns/urllib3/PYSEC-2023-212.yaml"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/releases/tag/1.26.18"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/releases/tag/2.0.7"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/4R2Y5XK3WALSR3FNAGN7JBYV2B343ZKB"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/5F5CUBAN5XMEBVBZPHFITBLMJV5FIJJ5"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/PPDPLM6UUMN55ESPQWJFLLIZY4ZKCNRX"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://www.rfc-editor.org/rfc/rfc9110.html#name-get"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/security/advisories/GHSA-g4mx-q9vg-27p4"
+          },
+          "score" : 5.699999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:A/AC:L/AT:P/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://nvd.nist.gov/vuln/detail/CVE-2023-45803"
+          },
+          "score" : 5.699999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:A/AC:L/AT:P/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/4e50fbc5db74e32cabd5ccc1ab81fc103adfe0b3"
+          },
+          "score" : 5.699999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:A/AC:L/AT:P/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/4e98d57809dacab1cbe625fddeec1a290c478ea9"
+          },
+          "score" : 5.699999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:A/AC:L/AT:P/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/b594c5ceaca38e1ac215f916538fb128e3526a36"
+          },
+          "score" : 5.699999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:A/AC:L/AT:P/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/pypa/advisory-database/tree/main/vulns/urllib3/PYSEC-2023-212.yaml"
+          },
+          "score" : 5.699999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:A/AC:L/AT:P/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3"
+          },
+          "score" : 5.699999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:A/AC:L/AT:P/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/releases/tag/1.26.18"
+          },
+          "score" : 5.699999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:A/AC:L/AT:P/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/releases/tag/2.0.7"
+          },
+          "score" : 5.699999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:A/AC:L/AT:P/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/4R2Y5XK3WALSR3FNAGN7JBYV2B343ZKB"
+          },
+          "score" : 5.699999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:A/AC:L/AT:P/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/5F5CUBAN5XMEBVBZPHFITBLMJV5FIJJ5"
+          },
+          "score" : 5.699999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:A/AC:L/AT:P/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/PPDPLM6UUMN55ESPQWJFLLIZY4ZKCNRX"
+          },
+          "score" : 5.699999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:A/AC:L/AT:P/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://www.rfc-editor.org/rfc/rfc9110.html#name-get"
+          },
+          "score" : 5.699999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:A/AC:L/AT:P/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+        }
+      ],
+      "description" : "urllib3 previously wouldn't remove the HTTP request body when an HTTP redirect response using status 303 \"See Other\" after the request had its method changed from one that could accept a request body (like `POST`) to `GET` as is required by HTTP RFCs. Although the behavior of removing the request body is not specified in the section for redirects, it can be inferred by piecing together information from different sections and we have observed the behavior in other major HTTP client implementations like curl and web browsers. From [RFC 9110 Section 9.3.1](https://www.rfc-editor.org/rfc/rfc9110.html#name-get): > A client SHOULD NOT generate content in a GET request unless it is made directly to an origin server that has previously indicated, in or out of band, that such a request has a purpose and will be adequately supported. ## Affected usages Because the vulnerability requires a previously trusted service to become compromised in order to have an impact on confidentiality we believe the exploitability of this vulnerability is low. Additionally, many users aren't putting sensitive data in HTTP request bodies, if this is the case then this vulnerability isn't exploitable. Both of the following conditions must be true to be affected by this vulnerability: * If you're using urllib3 and submitting sensitive information in the HTTP request body (such as form data or JSON) * The origin service is compromised and starts redirecting using 303 to a malicious peer or the redirected-to service becomes compromised. ## Remediation You can remediate this vulnerability with any of the following steps: * Upgrade to a patched version of urllib3 (v1.26.18 or v2.0.7) * Disable redirects for services that you aren't expecting to respond with redirects with `redirects=False`. * Disable automatic redirects with `redirects=False` and handle 303 redirects manually by stripping the HTTP request body.",
+      "detail" : "urllib3's request body not stripped after redirect from 303 status changes request method to GET",
+      "affects" : [
+        {
+          "ref" : "PyPI::urllib3:1.26.0"
+        }
+      ]
+    },
+    {
+      "id" : "GHSA-pq67-6m6q-mj2v",
+      "ratings" : [
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/security/advisories/GHSA-pq67-6m6q-mj2v"
+          },
+          "score" : 5.300000190734863,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://nvd.nist.gov/vuln/detail/CVE-2025-50181"
+          },
+          "score" : 5.300000190734863,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/f05b1329126d5be6de501f9d1e3e36738bc08857"
+          },
+          "score" : 5.300000190734863,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3"
+          },
+          "score" : 5.300000190734863,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:N/A:N"
+        }
+      ],
+      "description" : "urllib3 handles redirects and retries using the same mechanism, which is controlled by the `Retry` object. The most common way to disable redirects is at the request level, as follows: ```python resp = urllib3.request(\"GET\", \"https://httpbin.org/redirect/1\", redirect=False) print(resp.status) # 302 ``` However, it is also possible to disable redirects, for all requests, by instantiating a `PoolManager` and specifying `retries` in a way that disable redirects: ```python import urllib3 http = urllib3.PoolManager(retries=0) # should raise MaxRetryError on redirect http = urllib3.PoolManager(retries=urllib3.Retry(redirect=0)) # equivalent to the above http = urllib3.PoolManager(retries=False) # should return the first response resp = http.request(\"GET\", \"https://httpbin.org/redirect/1\") ``` However, the `retries` parameter is currently ignored, which means all the above examples don't disable redirects. ## Affected usages Passing `retries` on `PoolManager` instantiation to disable redirects or restrict their number. By default, requests and botocore users are not affected. ## Impact Redirects are often used to exploit SSRF vulnerabilities. An application attempting to mitigate SSRF or open redirect vulnerabilities by disabling redirects at the PoolManager level will remain vulnerable. ## Remediation You can remediate this vulnerability with the following steps: * Upgrade to a patched version of urllib3. If your organization would benefit from the continued support of urllib3 1.x, please contact [sethmichaellarson@gmail.com](mailto:sethmichaellarson@gmail.com) to discuss sponsorship or contribution opportunities. * Disable redirects at the `request()` level instead of the `PoolManager()` level.",
+      "detail" : "urllib3 redirects are not disabled when retries are disabled on PoolManager instantiation",
+      "affects" : [
+        {
+          "ref" : "PyPI::urllib3:1.26.0"
+        }
+      ]
+    },
+    {
+      "id" : "GHSA-q2q7-5pp4-w6pg",
+      "ratings" : [
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/security/advisories/GHSA-q2q7-5pp4-w6pg"
+          },
+          "score" : 7.5,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source" : {
+            "url" : "https://nvd.nist.gov/vuln/detail/CVE-2021-33503"
+          },
+          "score" : 7.5,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/2d4a3fee6de2fa45eb82169361918f759269b4ec"
+          },
+          "score" : 7.5,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/5b047b645f5f93900d5e2fc31230848c25eb1f5f#diff-52026d639119bf1e0364836b4e8a18bd9ed3c95c6ba39b26534a5057a65e35bbR65"
+          },
+          "score" : 7.5,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/pypa/advisory-database/tree/main/vulns/urllib3/PYSEC-2021-108.yaml"
+          },
+          "score" : 7.5,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3"
+          },
+          "score" : 7.5,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/6SCV7ZNAHS3E6PBFLJGENCDRDRWRZZ6W"
+          },
+          "score" : 7.5,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/FMUGWEAUYGGHTPPXT6YBD53WYXQGVV73"
+          },
+          "score" : 7.5,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source" : {
+            "url" : "https://security.gentoo.org/glsa/202107-36"
+          },
+          "score" : 7.5,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source" : {
+            "url" : "https://www.oracle.com/security-alerts/cpuoct2021.html"
+          },
+          "score" : 7.5,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/security/advisories/GHSA-q2q7-5pp4-w6pg"
+          },
+          "score" : 8.699999809265137,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://nvd.nist.gov/vuln/detail/CVE-2021-33503"
+          },
+          "score" : 8.699999809265137,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/2d4a3fee6de2fa45eb82169361918f759269b4ec"
+          },
+          "score" : 8.699999809265137,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/5b047b645f5f93900d5e2fc31230848c25eb1f5f#diff-52026d639119bf1e0364836b4e8a18bd9ed3c95c6ba39b26534a5057a65e35bbR65"
+          },
+          "score" : 8.699999809265137,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/pypa/advisory-database/tree/main/vulns/urllib3/PYSEC-2021-108.yaml"
+          },
+          "score" : 8.699999809265137,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3"
+          },
+          "score" : 8.699999809265137,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/6SCV7ZNAHS3E6PBFLJGENCDRDRWRZZ6W"
+          },
+          "score" : 8.699999809265137,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/FMUGWEAUYGGHTPPXT6YBD53WYXQGVV73"
+          },
+          "score" : 8.699999809265137,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://security.gentoo.org/glsa/202107-36"
+          },
+          "score" : 8.699999809265137,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://www.oracle.com/security-alerts/cpuoct2021.html"
+          },
+          "score" : 8.699999809265137,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N"
+        }
+      ],
+      "description" : "### Impact When provided with a URL containing many `@` characters in the authority component the authority regular expression exhibits catastrophic backtracking causing a denial of service if a URL were passed as a parameter or redirected to via an HTTP redirect. ### Patches The issue has been fixed in urllib3 v1.26.5. ### References - [CVE-2021-33503](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-33503) - [JVNVU#92413403 (English)](https://jvn.jp/en/vu/JVNVU92413403/) - [JVNVU#92413403 (Japanese)](https://jvn.jp/vu/JVNVU92413403/) - [urllib3 v1.26.5](https://github.com/urllib3/urllib3/releases/tag/1.26.5) ### For more information If you have any questions or comments about this advisory: * Ask in our [community Discord](https://discord.gg/urllib3) * Email [sethmichaellarson@gmail.com](mailto:sethmichaellarson@gmail.com)",
+      "detail" : "Catastrophic backtracking in URL authority parser when passed URL containing many @ characters",
+      "affects" : [
+        {
+          "ref" : "PyPI::urllib3:1.26.0"
+        }
+      ]
+    },
+    {
+      "id" : "GHSA-v845-jxx5-vc9f",
+      "ratings" : [
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/security/advisories/GHSA-v845-jxx5-vc9f"
+          },
+          "score" : 5.900000095367432,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://nvd.nist.gov/vuln/detail/CVE-2023-43804"
+          },
+          "score" : 5.900000095367432,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/01220354d389cd05474713f8c982d05c9b17aafb"
+          },
+          "score" : 5.900000095367432,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/644124ecd0b6e417c527191f866daa05a5a2056d"
+          },
+          "score" : 5.900000095367432,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/pypa/advisory-database/tree/main/vulns/urllib3/PYSEC-2023-192.yaml"
+          },
+          "score" : 5.900000095367432,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3"
+          },
+          "score" : 5.900000095367432,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.debian.org/debian-lts-announce/2023/10/msg00012.html"
+          },
+          "score" : 5.900000095367432,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/5F5CUBAN5XMEBVBZPHFITBLMJV5FIJJ5"
+          },
+          "score" : 5.900000095367432,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/I3PR7C6RJ6JUBQKIJ644DMIJSUP36VDY"
+          },
+          "score" : 5.900000095367432,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/NDAGZXYJ7H2G3SB47M453VQVNAWKAEJJ"
+          },
+          "score" : 5.900000095367432,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://security.netapp.com/advisory/ntap-20241213-0007"
+          },
+          "score" : 5.900000095367432,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://www.vicarius.io/vsociety/posts/cve-2023-43804-urllib3-vulnerability-3"
+          },
+          "score" : 5.900000095367432,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/security/advisories/GHSA-v845-jxx5-vc9f"
+          },
+          "score" : 7.400000095367432,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://nvd.nist.gov/vuln/detail/CVE-2023-43804"
+          },
+          "score" : 7.400000095367432,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/01220354d389cd05474713f8c982d05c9b17aafb"
+          },
+          "score" : 7.400000095367432,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/644124ecd0b6e417c527191f866daa05a5a2056d"
+          },
+          "score" : 7.400000095367432,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/pypa/advisory-database/tree/main/vulns/urllib3/PYSEC-2023-192.yaml"
+          },
+          "score" : 7.400000095367432,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3"
+          },
+          "score" : 7.400000095367432,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.debian.org/debian-lts-announce/2023/10/msg00012.html"
+          },
+          "score" : 7.400000095367432,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/5F5CUBAN5XMEBVBZPHFITBLMJV5FIJJ5"
+          },
+          "score" : 7.400000095367432,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/I3PR7C6RJ6JUBQKIJ644DMIJSUP36VDY"
+          },
+          "score" : 7.400000095367432,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/NDAGZXYJ7H2G3SB47M453VQVNAWKAEJJ"
+          },
+          "score" : 7.400000095367432,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://security.netapp.com/advisory/ntap-20241213-0007"
+          },
+          "score" : 7.400000095367432,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "source" : {
+            "url" : "https://www.vicarius.io/vsociety/posts/cve-2023-43804-urllib3-vulnerability-3"
+          },
+          "score" : 7.400000095367432,
+          "severity" : "high",
+          "method" : "CVSSv4",
+          "vector" : "CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        }
+      ],
+      "description" : "urllib3 doesn't treat the `Cookie` HTTP header special or provide any helpers for managing cookies over HTTP, that is the responsibility of the user. However, it is possible for a user to specify a `Cookie` header and unknowingly leak information via HTTP redirects to a different origin if that user doesn't disable redirects explicitly. Users **must** handle redirects themselves instead of relying on urllib3's automatic redirects to achieve safe processing of the `Cookie` header, thus we decided to strip the header by default in order to further protect users who aren't using the correct approach. ## Affected usages We believe the number of usages affected by this advisory is low. It requires all of the following to be true to be exploited: * Using an affected version of urllib3 (patched in v1.26.17 and v2.0.6) * Using the `Cookie` header on requests, which is mostly typical for impersonating a browser. * Not disabling HTTP redirects * Either not using HTTPS or for the origin server to redirect to a malicious origin. ## Remediation * Upgrading to at least urllib3 v1.26.17 or v2.0.6 * Disabling HTTP redirects using `redirects=False` when sending requests. * Not using the `Cookie` header.",
+      "detail" : "`Cookie` HTTP header isn't stripped on cross-origin redirects",
+      "affects" : [
+        {
+          "ref" : "PyPI::urllib3:1.26.0"
+        }
+      ]
+    },
+    {
+      "id" : "PYSEC-2021-108",
+      "ratings" : [
+        {
+          "source" : {
+            "url" : "https://github.com/advisories/GHSA-q2q7-5pp4-w6pg"
+          }
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/2d4a3fee6de2fa45eb82169361918f759269b4ec"
+          }
+        }
+      ],
+      "description" : "An issue was discovered in urllib3 before 1.26.5. When provided with a URL containing many @ characters in the authority component, the authority regular expression exhibits catastrophic backtracking, causing a denial of service if a URL were passed as a parameter or redirected to via an HTTP redirect.",
+      "affects" : [
+        {
+          "ref" : "PyPI::urllib3:1.26.0"
+        }
+      ]
+    },
+    {
+      "id" : "PYSEC-2021-59",
+      "ratings" : [
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commits/main"
+          }
+        },
+        {
+          "source" : {
+            "url" : "https://pypi.org/project/urllib3/1.26.4/"
+          }
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/8d65ea1ecf6e2cdc27d42124e587c1b83a3118b0"
+          }
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/security/advisories/GHSA-5phf-pp7p-vc2r"
+          }
+        }
+      ],
+      "description" : "The urllib3 library 1.26.x before 1.26.4 for Python omits SSL certificate validation in some cases involving HTTPS to HTTPS proxies. The initial connection to the HTTPS proxy (if an SSLContext isn't given via proxy_config) doesn't verify the hostname of the certificate. This means certificates for different servers that still validate properly with the default urllib3 SSLContext will be silently accepted.",
+      "affects" : [
+        {
+          "ref" : "PyPI::urllib3:1.26.0"
+        }
+      ]
+    },
+    {
+      "id" : "PYSEC-2023-192",
+      "ratings" : [
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/644124ecd0b6e417c527191f866daa05a5a2056d"
+          },
+          "score" : 8.100000381469727,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/security/advisories/GHSA-v845-jxx5-vc9f"
+          },
+          "score" : 8.100000381469727,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/01220354d389cd05474713f8c982d05c9b17aafb"
+          },
+          "score" : 8.100000381469727,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.debian.org/debian-lts-announce/2023/10/msg00012.html"
+          },
+          "score" : 8.100000381469727,
+          "severity" : "high",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N"
+        }
+      ],
+      "description" : "urllib3 is a user-friendly HTTP client library for Python. urllib3 doesn't treat the `Cookie` HTTP header special or provide any helpers for managing cookies over HTTP, that is the responsibility of the user. However, it is possible for a user to specify a `Cookie` header and unknowingly leak information via HTTP redirects to a different origin if that user doesn't disable redirects explicitly. This issue has been patched in urllib3 version 1.26.17 or 2.0.5.",
+      "affects" : [
+        {
+          "ref" : "PyPI::urllib3:1.26.0"
+        }
+      ]
+    },
+    {
+      "id" : "PYSEC-2023-212",
+      "ratings" : [
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/security/advisories/GHSA-g4mx-q9vg-27p4"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://www.rfc-editor.org/rfc/rfc9110.html#name-get"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://github.com/urllib3/urllib3/commit/4e98d57809dacab1cbe625fddeec1a290c478ea9"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source" : {
+            "url" : "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/PPDPLM6UUMN55ESPQWJFLLIZY4ZKCNRX/"
+          },
+          "score" : 4.199999809265137,
+          "severity" : "medium",
+          "method" : "CVSSv3",
+          "vector" : "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        }
+      ],
+      "description" : "urllib3 is a user-friendly HTTP client library for Python. urllib3 previously wouldn't remove the HTTP request body when an HTTP redirect response using status 301, 302, or 303 after the request had its method changed from one that could accept a request body (like `POST`) to `GET` as is required by HTTP RFCs. Although this behavior is not specified in the section for redirects, it can be inferred by piecing together information from different sections and we have observed the behavior in other major HTTP client implementations like curl and web browsers. Because the vulnerability requires a previously trusted service to become compromised in order to have an impact on confidentiality we believe the exploitability of this vulnerability is low. Additionally, many users aren't putting sensitive data in HTTP request bodies, if this is the case then this vulnerability isn't exploitable. Both of the following conditions must be true to be affected by this vulnerability: 1. Using urllib3 and submitting sensitive information in the HTTP request body (such as form data or JSON) and 2. The origin service is compromised and starts redirecting using 301, 302, or 303 to a malicious peer or the redirected-to service becomes compromised. This issue has been addressed in versions 1.26.18 and 2.0.7 and users are advised to update to resolve this issue. Users unable to update should disable redirects for services that aren't expecting to respond with redirects with `redirects=False` and disable automatic redirects with `redirects=False` and handle 301, 302, and 303 redirects manually by stripping the HTTP request body.",
+      "affects" : [
+        {
+          "ref" : "PyPI::urllib3:1.26.0"
+        }
+      ]
+    }
+  ]
+}

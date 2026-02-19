@@ -1,0 +1,5677 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:8b0fe8e7-c73a-4f4d-867d-83ec2eadbf6e",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2025-08-20T10:36:39Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "author": "anchore",
+          "name": "grype",
+          "version": "0.97.1"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "049b1abdd16b76ce",
+      "type": "container",
+      "name": "alpine",
+      "version": "3.17.0"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:apk/alpine/alpine-baselayout@3.4.0-r0?arch=x86_64&distro=alpine-3.17.0&package-id=6e97ac524b16262e",
+      "type": "library",
+      "publisher": "Natanael Copa <ncopa@alpinelinux.org>",
+      "name": "alpine-baselayout",
+      "version": "3.4.0-r0",
+      "description": "Alpine base dir structure and init scripts",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:alpine-baselayout:alpine-baselayout:3.4.0-r0:*:*:*:*:*:*:*",
+      "purl": "pkg:apk/alpine/alpine-baselayout@3.4.0-r0?arch=x86_64&distro=alpine-3.17.0",
+      "externalReferences": [
+        {
+          "url": "https://git.alpinelinux.org/cgit/aports/tree/main/alpine-baselayout",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "apk-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "apk"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "apk-db-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine-baselayout:alpine_baselayout:3.4.0-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine_baselayout:alpine-baselayout:3.4.0-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine_baselayout:alpine_baselayout:3.4.0-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine:alpine-baselayout:3.4.0-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine:alpine_baselayout:3.4.0-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/lib/apk/db/installed"
+        },
+        {
+          "name": "syft:metadata:gitCommitOfApkPort",
+          "value": "bd965a7ebf7fd8f07d7a0cc0d7375bf3e4eb9b24"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "331776"
+        },
+        {
+          "name": "syft:metadata:originPackage",
+          "value": "alpine-baselayout"
+        },
+        {
+          "name": "syft:metadata:pullChecksum",
+          "value": "Q1/eXfmbYT1WXenFSqKjroYyK84NE="
+        },
+        {
+          "name": "syft:metadata:pullDependencies:0",
+          "value": "alpine-baselayout-data=3.4.0-r0"
+        },
+        {
+          "name": "syft:metadata:pullDependencies:1",
+          "value": "/bin/sh"
+        },
+        {
+          "name": "syft:metadata:size",
+          "value": "8890"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:apk/alpine/alpine-baselayout-data@3.4.0-r0?arch=x86_64&distro=alpine-3.17.0&package-id=f4d364196d3576d8&upstream=alpine-baselayout",
+      "type": "library",
+      "publisher": "Natanael Copa <ncopa@alpinelinux.org>",
+      "name": "alpine-baselayout-data",
+      "version": "3.4.0-r0",
+      "description": "Alpine base dir structure and init scripts",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:alpine-baselayout-data:alpine-baselayout-data:3.4.0-r0:*:*:*:*:*:*:*",
+      "purl": "pkg:apk/alpine/alpine-baselayout-data@3.4.0-r0?arch=x86_64&distro=alpine-3.17.0&upstream=alpine-baselayout",
+      "externalReferences": [
+        {
+          "url": "https://git.alpinelinux.org/cgit/aports/tree/main/alpine-baselayout",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "apk-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "apk"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "apk-db-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine-baselayout-data:alpine_baselayout_data:3.4.0-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine_baselayout_data:alpine-baselayout-data:3.4.0-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine_baselayout_data:alpine_baselayout_data:3.4.0-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine-baselayout:alpine-baselayout-data:3.4.0-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine-baselayout:alpine_baselayout_data:3.4.0-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine_baselayout:alpine-baselayout-data:3.4.0-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine_baselayout:alpine_baselayout_data:3.4.0-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine:alpine-baselayout-data:3.4.0-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine:alpine_baselayout_data:3.4.0-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/lib/apk/db/installed"
+        },
+        {
+          "name": "syft:metadata:gitCommitOfApkPort",
+          "value": "bd965a7ebf7fd8f07d7a0cc0d7375bf3e4eb9b24"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "77824"
+        },
+        {
+          "name": "syft:metadata:originPackage",
+          "value": "alpine-baselayout"
+        },
+        {
+          "name": "syft:metadata:pullChecksum",
+          "value": "Q1/JgpM8J6DWI/541tUX+uHEzSjqo="
+        },
+        {
+          "name": "syft:metadata:size",
+          "value": "11664"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:apk/alpine/alpine-keys@2.4-r1?arch=x86_64&distro=alpine-3.17.0&package-id=7b661594e49912dd",
+      "type": "library",
+      "publisher": "Natanael Copa <ncopa@alpinelinux.org>",
+      "name": "alpine-keys",
+      "version": "2.4-r1",
+      "description": "Public keys for Alpine Linux packages",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:alpine-keys:alpine-keys:2.4-r1:*:*:*:*:*:*:*",
+      "purl": "pkg:apk/alpine/alpine-keys@2.4-r1?arch=x86_64&distro=alpine-3.17.0",
+      "externalReferences": [
+        {
+          "url": "https://alpinelinux.org",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "apk-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "apk"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "apk-db-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine-keys:alpine_keys:2.4-r1:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine_keys:alpine-keys:2.4-r1:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine_keys:alpine_keys:2.4-r1:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine:alpine-keys:2.4-r1:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:alpine:alpine_keys:2.4-r1:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/lib/apk/db/installed"
+        },
+        {
+          "name": "syft:metadata:gitCommitOfApkPort",
+          "value": "aab68f8c9ab434a46710de8e12fb3206e2930a59"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "159744"
+        },
+        {
+          "name": "syft:metadata:originPackage",
+          "value": "alpine-keys"
+        },
+        {
+          "name": "syft:metadata:pullChecksum",
+          "value": "Q1KM01lfKVp+gEZn23awujqjSkrN8="
+        },
+        {
+          "name": "syft:metadata:size",
+          "value": "13361"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:apk/alpine/apk-tools@2.12.10-r1?arch=x86_64&distro=alpine-3.17.0&package-id=16afe072554310ee",
+      "type": "library",
+      "publisher": "Natanael Copa <ncopa@alpinelinux.org>",
+      "name": "apk-tools",
+      "version": "2.12.10-r1",
+      "description": "Alpine Package Keeper - package manager for alpine",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:apk-tools:apk-tools:2.12.10-r1:*:*:*:*:*:*:*",
+      "purl": "pkg:apk/alpine/apk-tools@2.12.10-r1?arch=x86_64&distro=alpine-3.17.0",
+      "externalReferences": [
+        {
+          "url": "https://gitlab.alpinelinux.org/alpine/apk-tools",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "apk-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "apk"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "apk-db-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:apk-tools:apk_tools:2.12.10-r1:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:apk_tools:apk-tools:2.12.10-r1:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:apk_tools:apk_tools:2.12.10-r1:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:apk:apk-tools:2.12.10-r1:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:apk:apk_tools:2.12.10-r1:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/lib/apk/db/installed"
+        },
+        {
+          "name": "syft:metadata:gitCommitOfApkPort",
+          "value": "0188f510baadbae393472103427b9c1875117136"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "307200"
+        },
+        {
+          "name": "syft:metadata:originPackage",
+          "value": "apk-tools"
+        },
+        {
+          "name": "syft:metadata:provides:0",
+          "value": "so:libapk.so.3.12.0=3.12.0"
+        },
+        {
+          "name": "syft:metadata:provides:1",
+          "value": "cmd:apk=2.12.10-r1"
+        },
+        {
+          "name": "syft:metadata:pullChecksum",
+          "value": "Q1Ef3iwt+cMdGngEgaFr2URIJhKzQ="
+        },
+        {
+          "name": "syft:metadata:pullDependencies:0",
+          "value": "musl>=1.2"
+        },
+        {
+          "name": "syft:metadata:pullDependencies:1",
+          "value": "ca-certificates-bundle"
+        },
+        {
+          "name": "syft:metadata:pullDependencies:2",
+          "value": "so:libc.musl-x86_64.so.1"
+        },
+        {
+          "name": "syft:metadata:pullDependencies:3",
+          "value": "so:libcrypto.so.3"
+        },
+        {
+          "name": "syft:metadata:pullDependencies:4",
+          "value": "so:libssl.so.3"
+        },
+        {
+          "name": "syft:metadata:pullDependencies:5",
+          "value": "so:libz.so.1"
+        },
+        {
+          "name": "syft:metadata:size",
+          "value": "120973"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:apk/alpine/busybox@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=ca8e18476c9977b9",
+      "type": "library",
+      "publisher": "Sören Tempel <soeren+alpine@soeren-tempel.net>",
+      "name": "busybox",
+      "version": "1.35.0-r29",
+      "description": "Size optimized toolbox of many common UNIX utilities",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:busybox:busybox:1.35.0-r29:*:*:*:*:*:*:*",
+      "purl": "pkg:apk/alpine/busybox@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0",
+      "externalReferences": [
+        {
+          "url": "https://busybox.net/",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "apk-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "apk"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "apk-db-entry"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/lib/apk/db/installed"
+        },
+        {
+          "name": "syft:metadata:gitCommitOfApkPort",
+          "value": "1dbf7a793afae640ea643a055b6dd4f430ac116b"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "962560"
+        },
+        {
+          "name": "syft:metadata:originPackage",
+          "value": "busybox"
+        },
+        {
+          "name": "syft:metadata:provides:0",
+          "value": "cmd:busybox=1.35.0-r29"
+        },
+        {
+          "name": "syft:metadata:pullChecksum",
+          "value": "Q1NN3sp0yr99btRysqty3nQUrWHaY="
+        },
+        {
+          "name": "syft:metadata:pullDependencies:0",
+          "value": "so:libc.musl-x86_64.so.1"
+        },
+        {
+          "name": "syft:metadata:size",
+          "value": "509600"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:apk/alpine/busybox-binsh@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=93ba00f9117dea1c&upstream=busybox",
+      "type": "library",
+      "publisher": "Sören Tempel <soeren+alpine@soeren-tempel.net>",
+      "name": "busybox-binsh",
+      "version": "1.35.0-r29",
+      "description": "busybox ash /bin/sh",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:busybox-binsh:busybox-binsh:1.35.0-r29:*:*:*:*:*:*:*",
+      "purl": "pkg:apk/alpine/busybox-binsh@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&upstream=busybox",
+      "externalReferences": [
+        {
+          "url": "https://busybox.net/",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "apk-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "apk"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "apk-db-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:busybox-binsh:busybox_binsh:1.35.0-r29:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:busybox_binsh:busybox-binsh:1.35.0-r29:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:busybox_binsh:busybox_binsh:1.35.0-r29:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:busybox:busybox-binsh:1.35.0-r29:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:busybox:busybox_binsh:1.35.0-r29:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/lib/apk/db/installed"
+        },
+        {
+          "name": "syft:metadata:gitCommitOfApkPort",
+          "value": "1dbf7a793afae640ea643a055b6dd4f430ac116b"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "8192"
+        },
+        {
+          "name": "syft:metadata:originPackage",
+          "value": "busybox"
+        },
+        {
+          "name": "syft:metadata:provides:0",
+          "value": "/bin/sh"
+        },
+        {
+          "name": "syft:metadata:provides:1",
+          "value": "cmd:sh=1.35.0-r29"
+        },
+        {
+          "name": "syft:metadata:pullChecksum",
+          "value": "Q1miWwyhWKXVEiRYLhmArV1TKMs6A="
+        },
+        {
+          "name": "syft:metadata:pullDependencies:0",
+          "value": "busybox=1.35.0-r29"
+        },
+        {
+          "name": "syft:metadata:size",
+          "value": "1547"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:apk/alpine/ca-certificates-bundle@20220614-r2?arch=x86_64&distro=alpine-3.17.0&package-id=55ebd522552a8be0&upstream=ca-certificates",
+      "type": "library",
+      "publisher": "Natanael Copa <ncopa@alpinelinux.org>",
+      "name": "ca-certificates-bundle",
+      "version": "20220614-r2",
+      "description": "Pre generated bundle of Mozilla certificates",
+      "licenses": [
+        {
+          "expression": "MPL-2.0 AND MIT"
+        }
+      ],
+      "cpe": "cpe:2.3:a:ca-certificates-bundle:ca-certificates-bundle:20220614-r2:*:*:*:*:*:*:*",
+      "purl": "pkg:apk/alpine/ca-certificates-bundle@20220614-r2?arch=x86_64&distro=alpine-3.17.0&upstream=ca-certificates",
+      "externalReferences": [
+        {
+          "url": "https://www.mozilla.org/en-US/about/governance/policies/security-group/certs/",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "apk-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "apk"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "apk-db-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:ca-certificates-bundle:ca_certificates_bundle:20220614-r2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:ca_certificates_bundle:ca-certificates-bundle:20220614-r2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:ca_certificates_bundle:ca_certificates_bundle:20220614-r2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:ca-certificates:ca-certificates-bundle:20220614-r2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:ca-certificates:ca_certificates_bundle:20220614-r2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:ca_certificates:ca-certificates-bundle:20220614-r2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:ca_certificates:ca_certificates_bundle:20220614-r2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:mozilla:ca-certificates-bundle:20220614-r2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:mozilla:ca_certificates_bundle:20220614-r2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:ca:ca-certificates-bundle:20220614-r2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:ca:ca_certificates_bundle:20220614-r2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/lib/apk/db/installed"
+        },
+        {
+          "name": "syft:metadata:gitCommitOfApkPort",
+          "value": "54565cc2c465089fce8043755afff04cdeb21f33"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "237568"
+        },
+        {
+          "name": "syft:metadata:originPackage",
+          "value": "ca-certificates"
+        },
+        {
+          "name": "syft:metadata:provides:0",
+          "value": "ca-certificates-cacert=20220614-r2"
+        },
+        {
+          "name": "syft:metadata:pullChecksum",
+          "value": "Q1njxLQy44ICczNtXEjHMvz4FhWVk="
+        },
+        {
+          "name": "syft:metadata:size",
+          "value": "126291"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:apk/alpine/libc-utils@0.7.2-r3?arch=x86_64&distro=alpine-3.17.0&package-id=b1c2651bdcbb8d9c&upstream=libc-dev",
+      "type": "library",
+      "publisher": "Natanael Copa <ncopa@alpinelinux.org>",
+      "name": "libc-utils",
+      "version": "0.7.2-r3",
+      "description": "Meta package to pull in correct libc",
+      "licenses": [
+        {
+          "expression": "BSD-2-Clause AND BSD-3-Clause"
+        }
+      ],
+      "cpe": "cpe:2.3:a:libc-utils:libc-utils:0.7.2-r3:*:*:*:*:*:*:*",
+      "purl": "pkg:apk/alpine/libc-utils@0.7.2-r3?arch=x86_64&distro=alpine-3.17.0&upstream=libc-dev",
+      "externalReferences": [
+        {
+          "url": "https://alpinelinux.org",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "apk-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "apk"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "apk-db-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:libc-utils:libc_utils:0.7.2-r3:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:libc_utils:libc-utils:0.7.2-r3:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:libc_utils:libc_utils:0.7.2-r3:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:libc:libc-utils:0.7.2-r3:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:libc:libc_utils:0.7.2-r3:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/lib/apk/db/installed"
+        },
+        {
+          "name": "syft:metadata:gitCommitOfApkPort",
+          "value": "60424133be2e79bbfeff3d58147a22886f817ce2"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "4096"
+        },
+        {
+          "name": "syft:metadata:originPackage",
+          "value": "libc-dev"
+        },
+        {
+          "name": "syft:metadata:pullChecksum",
+          "value": "Q19Gg06pBPiiG9UN94ql7qImsHSUQ="
+        },
+        {
+          "name": "syft:metadata:pullDependencies:0",
+          "value": "musl-utils"
+        },
+        {
+          "name": "syft:metadata:size",
+          "value": "1485"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl",
+      "type": "library",
+      "publisher": "Ariadne Conill <ariadne@dereferenced.org>",
+      "name": "libcrypto3",
+      "version": "3.0.7-r0",
+      "description": "Crypto library from openssl",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:libcrypto3:libcrypto3:3.0.7-r0:*:*:*:*:*:*:*",
+      "purl": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&upstream=openssl",
+      "externalReferences": [
+        {
+          "url": "https://www.openssl.org/",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "apk-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "apk"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "apk-db-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:libcrypto3:libcrypto:3.0.7-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:libcrypto:libcrypto3:3.0.7-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:libcrypto:libcrypto:3.0.7-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/lib/apk/db/installed"
+        },
+        {
+          "name": "syft:metadata:gitCommitOfApkPort",
+          "value": "37a47708fdd97644624ff4b7238bb3299e037eaf"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "4206592"
+        },
+        {
+          "name": "syft:metadata:originPackage",
+          "value": "openssl"
+        },
+        {
+          "name": "syft:metadata:provides:0",
+          "value": "so:libcrypto.so.3=3"
+        },
+        {
+          "name": "syft:metadata:pullChecksum",
+          "value": "Q1TjmrAEa5PKd40PNz6OIpo+bBeW0="
+        },
+        {
+          "name": "syft:metadata:pullDependencies:0",
+          "value": "so:libc.musl-x86_64.so.1"
+        },
+        {
+          "name": "syft:metadata:size",
+          "value": "1707237"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl",
+      "type": "library",
+      "publisher": "Ariadne Conill <ariadne@dereferenced.org>",
+      "name": "libssl3",
+      "version": "3.0.7-r0",
+      "description": "SSL shared libraries",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:libssl3:libssl3:3.0.7-r0:*:*:*:*:*:*:*",
+      "purl": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&upstream=openssl",
+      "externalReferences": [
+        {
+          "url": "https://www.openssl.org/",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "apk-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "apk"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "apk-db-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:libssl3:libssl:3.0.7-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:libssl:libssl3:3.0.7-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:libssl:libssl:3.0.7-r0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/lib/apk/db/installed"
+        },
+        {
+          "name": "syft:metadata:gitCommitOfApkPort",
+          "value": "37a47708fdd97644624ff4b7238bb3299e037eaf"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "622592"
+        },
+        {
+          "name": "syft:metadata:originPackage",
+          "value": "openssl"
+        },
+        {
+          "name": "syft:metadata:provides:0",
+          "value": "so:libssl.so.3=3"
+        },
+        {
+          "name": "syft:metadata:pullChecksum",
+          "value": "Q1Ez54rLUVPlAincuJ2eDtxYnrek4="
+        },
+        {
+          "name": "syft:metadata:pullDependencies:0",
+          "value": "so:libc.musl-x86_64.so.1"
+        },
+        {
+          "name": "syft:metadata:pullDependencies:1",
+          "value": "so:libcrypto.so.3"
+        },
+        {
+          "name": "syft:metadata:size",
+          "value": "246098"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:apk/alpine/musl@1.2.3-r4?arch=x86_64&distro=alpine-3.17.0&package-id=37bf72ed3848875c",
+      "type": "library",
+      "publisher": "Timo Teräs <timo.teras@iki.fi>",
+      "name": "musl",
+      "version": "1.2.3-r4",
+      "description": "the musl c library (libc) implementation",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:musl-libc:musl:1.2.3-r4:*:*:*:*:*:*:*",
+      "purl": "pkg:apk/alpine/musl@1.2.3-r4?arch=x86_64&distro=alpine-3.17.0",
+      "externalReferences": [
+        {
+          "url": "https://musl.libc.org/",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "apk-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "apk"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "apk-db-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:musl_libc:musl:1.2.3-r4:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:musl:musl:1.2.3-r4:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/lib/apk/db/installed"
+        },
+        {
+          "name": "syft:metadata:gitCommitOfApkPort",
+          "value": "f93af038c3de7146121c2ea8124ba5ce29b4b058"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "634880"
+        },
+        {
+          "name": "syft:metadata:originPackage",
+          "value": "musl"
+        },
+        {
+          "name": "syft:metadata:provides:0",
+          "value": "so:libc.musl-x86_64.so.1=1"
+        },
+        {
+          "name": "syft:metadata:pullChecksum",
+          "value": "Q1Pk7x1woArbB1nzkMPJPq1TECwus="
+        },
+        {
+          "name": "syft:metadata:size",
+          "value": "388955"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:apk/alpine/musl-utils@1.2.3-r4?arch=x86_64&distro=alpine-3.17.0&package-id=7e954e300b825db1&upstream=musl",
+      "type": "library",
+      "publisher": "Timo Teräs <timo.teras@iki.fi>",
+      "name": "musl-utils",
+      "version": "1.2.3-r4",
+      "description": "the musl c library (libc) implementation",
+      "licenses": [
+        {
+          "expression": "MIT AND BSD-2-Clause AND GPL-2.0-or-later"
+        }
+      ],
+      "cpe": "cpe:2.3:a:musl-utils:musl-utils:1.2.3-r4:*:*:*:*:*:*:*",
+      "purl": "pkg:apk/alpine/musl-utils@1.2.3-r4?arch=x86_64&distro=alpine-3.17.0&upstream=musl",
+      "externalReferences": [
+        {
+          "url": "https://musl.libc.org/",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "apk-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "apk"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "apk-db-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:musl-utils:musl_utils:1.2.3-r4:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:musl_utils:musl-utils:1.2.3-r4:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:musl_utils:musl_utils:1.2.3-r4:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:musl-libc:musl-utils:1.2.3-r4:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:musl-libc:musl_utils:1.2.3-r4:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:musl:musl-utils:1.2.3-r4:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:musl:musl_utils:1.2.3-r4:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/lib/apk/db/installed"
+        },
+        {
+          "name": "syft:metadata:gitCommitOfApkPort",
+          "value": "f93af038c3de7146121c2ea8124ba5ce29b4b058"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "135168"
+        },
+        {
+          "name": "syft:metadata:originPackage",
+          "value": "musl"
+        },
+        {
+          "name": "syft:metadata:provides:0",
+          "value": "cmd:getconf=1.2.3-r4"
+        },
+        {
+          "name": "syft:metadata:provides:1",
+          "value": "cmd:getent=1.2.3-r4"
+        },
+        {
+          "name": "syft:metadata:provides:2",
+          "value": "cmd:iconv=1.2.3-r4"
+        },
+        {
+          "name": "syft:metadata:provides:3",
+          "value": "cmd:ldconfig=1.2.3-r4"
+        },
+        {
+          "name": "syft:metadata:provides:4",
+          "value": "cmd:ldd=1.2.3-r4"
+        },
+        {
+          "name": "syft:metadata:pullChecksum",
+          "value": "Q1ZWJL4eySx8nPSjF1FAJgQyvuNs4="
+        },
+        {
+          "name": "syft:metadata:pullDependencies:0",
+          "value": "scanelf"
+        },
+        {
+          "name": "syft:metadata:pullDependencies:1",
+          "value": "so:libc.musl-x86_64.so.1"
+        },
+        {
+          "name": "syft:metadata:size",
+          "value": "36697"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:apk/alpine/scanelf@1.3.5-r1?arch=x86_64&distro=alpine-3.17.0&package-id=aa189d4fe94178ae&upstream=pax-utils",
+      "type": "library",
+      "publisher": "Natanael Copa <ncopa@alpinelinux.org>",
+      "name": "scanelf",
+      "version": "1.3.5-r1",
+      "description": "Scan ELF binaries for stuff",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:scanelf:scanelf:1.3.5-r1:*:*:*:*:*:*:*",
+      "purl": "pkg:apk/alpine/scanelf@1.3.5-r1?arch=x86_64&distro=alpine-3.17.0&upstream=pax-utils",
+      "externalReferences": [
+        {
+          "url": "https://wiki.gentoo.org/wiki/Hardened/PaX_Utilities",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "apk-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "apk"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "apk-db-entry"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/lib/apk/db/installed"
+        },
+        {
+          "name": "syft:metadata:gitCommitOfApkPort",
+          "value": "e52243dbb02069f10d48440ccc5fd41fa5fc2236"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "98304"
+        },
+        {
+          "name": "syft:metadata:originPackage",
+          "value": "pax-utils"
+        },
+        {
+          "name": "syft:metadata:provides:0",
+          "value": "cmd:scanelf=1.3.5-r1"
+        },
+        {
+          "name": "syft:metadata:pullChecksum",
+          "value": "Q11dxYFsHvBFAzzHGDo5gOTDNJDyQ="
+        },
+        {
+          "name": "syft:metadata:pullDependencies:0",
+          "value": "so:libc.musl-x86_64.so.1"
+        },
+        {
+          "name": "syft:metadata:size",
+          "value": "37687"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:apk/alpine/ssl_client@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=8827bc68b60ba6d0&upstream=busybox",
+      "type": "library",
+      "publisher": "Sören Tempel <soeren+alpine@soeren-tempel.net>",
+      "name": "ssl_client",
+      "version": "1.35.0-r29",
+      "description": "EXternal ssl_client for busybox wget",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:ssl-client:ssl-client:1.35.0-r29:*:*:*:*:*:*:*",
+      "purl": "pkg:apk/alpine/ssl_client@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&upstream=busybox",
+      "externalReferences": [
+        {
+          "url": "https://busybox.net/",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "apk-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "apk"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "apk-db-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:ssl-client:ssl_client:1.35.0-r29:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:ssl_client:ssl-client:1.35.0-r29:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:ssl_client:ssl_client:1.35.0-r29:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:ssl:ssl-client:1.35.0-r29:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:ssl:ssl_client:1.35.0-r29:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/lib/apk/db/installed"
+        },
+        {
+          "name": "syft:metadata:gitCommitOfApkPort",
+          "value": "1dbf7a793afae640ea643a055b6dd4f430ac116b"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "28672"
+        },
+        {
+          "name": "syft:metadata:originPackage",
+          "value": "busybox"
+        },
+        {
+          "name": "syft:metadata:provides:0",
+          "value": "cmd:ssl_client=1.35.0-r29"
+        },
+        {
+          "name": "syft:metadata:pullChecksum",
+          "value": "Q1QuqZjeP6XG85I29tOiCWofL8Cj0="
+        },
+        {
+          "name": "syft:metadata:pullDependencies:0",
+          "value": "so:libc.musl-x86_64.so.1"
+        },
+        {
+          "name": "syft:metadata:pullDependencies:1",
+          "value": "so:libcrypto.so.3"
+        },
+        {
+          "name": "syft:metadata:pullDependencies:2",
+          "value": "so:libssl.so.3"
+        },
+        {
+          "name": "syft:metadata:size",
+          "value": "4929"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:apk/alpine/zlib@1.2.13-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0f6f64aa11912270",
+      "type": "library",
+      "publisher": "Natanael Copa <ncopa@alpinelinux.org>",
+      "name": "zlib",
+      "version": "1.2.13-r0",
+      "description": "A compression/decompression Library",
+      "licenses": [
+        {
+          "license": {
+            "id": "Zlib"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:zlib:zlib:1.2.13-r0:*:*:*:*:*:*:*",
+      "purl": "pkg:apk/alpine/zlib@1.2.13-r0?arch=x86_64&distro=alpine-3.17.0",
+      "externalReferences": [
+        {
+          "url": "https://zlib.net/",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "apk-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "apk"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "apk-db-entry"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/lib/apk/db/installed"
+        },
+        {
+          "name": "syft:metadata:gitCommitOfApkPort",
+          "value": "bb37266b06a72d21d1fd850ef4b86665cf9ef70f"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "110592"
+        },
+        {
+          "name": "syft:metadata:originPackage",
+          "value": "zlib"
+        },
+        {
+          "name": "syft:metadata:provides:0",
+          "value": "so:libz.so.1=1.2.13"
+        },
+        {
+          "name": "syft:metadata:pullChecksum",
+          "value": "Q1rjnXT01l1PAxXheUxe4Oldl5rFk="
+        },
+        {
+          "name": "syft:metadata:pullDependencies:0",
+          "value": "so:libc.musl-x86_64.so.1"
+        },
+        {
+          "name": "syft:metadata:size",
+          "value": "54258"
+        }
+      ]
+    },
+    {
+      "bom-ref": "os:alpine@3.17.0",
+      "type": "operating-system",
+      "name": "alpine",
+      "version": "3.17.0",
+      "description": "Alpine Linux v3.17",
+      "swid": {
+        "tagId": "alpine",
+        "name": "alpine",
+        "version": "3.17.0"
+      },
+      "externalReferences": [
+        {
+          "url": "https://gitlab.alpinelinux.org/alpine/aports/-/issues",
+          "type": "issue-tracker"
+        },
+        {
+          "url": "https://alpinelinux.org/",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:distro:extendedSupport",
+          "value": "false"
+        },
+        {
+          "name": "syft:distro:id",
+          "value": "alpine"
+        },
+        {
+          "name": "syft:distro:prettyName",
+          "value": "Alpine Linux v3.17"
+        },
+        {
+          "name": "syft:distro:versionID",
+          "value": "3.17.0"
+        }
+      ]
+    },
+    {
+      "bom-ref": "45e180275126c237",
+      "type": "file",
+      "name": "/bin/busybox",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "36d96947f81bee3a5e1d436a333a52209f051bb3556028352d4273a748e2d136"
+        }
+      ]
+    },
+    {
+      "bom-ref": "2789d612e7744068",
+      "type": "file",
+      "name": "/etc/apk/keys/alpine-devel@lists.alpinelinux.org-4a6a0840.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9c102bcc376af1498d549b77bdbfa815ae86faa1d2d82f040e616b18ef2df2d4"
+        }
+      ]
+    },
+    {
+      "bom-ref": "e0812703f353217c",
+      "type": "file",
+      "name": "/etc/apk/keys/alpine-devel@lists.alpinelinux.org-5243ef4b.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ebf31683b56410ecc4c00acd9f6e2839e237a3b62b5ae7ef686705c7ba0396a9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "17634874eaec534a",
+      "type": "file",
+      "name": "/etc/apk/keys/alpine-devel@lists.alpinelinux.org-5261cecb.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "12f899e55a7691225603d6fb3324940fc51cd7f133e7ead788663c2b7eecb00c"
+        }
+      ]
+    },
+    {
+      "bom-ref": "cee53a31edb0cb5e",
+      "type": "file",
+      "name": "/etc/apk/keys/alpine-devel@lists.alpinelinux.org-6165ee59.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "207e4696d3c05f7cb05966aee557307151f1f00217af4143c1bcaf33b8df733f"
+        }
+      ]
+    },
+    {
+      "bom-ref": "31de9cc53148957a",
+      "type": "file",
+      "name": "/etc/apk/keys/alpine-devel@lists.alpinelinux.org-61666e3f.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "128d34d4aec39b0daedea8163cd8dc24dff36fd3d848630ab97eeb1d3084bbb3"
+        }
+      ]
+    },
+    {
+      "bom-ref": "9c35640b7261f6c0",
+      "type": "file",
+      "name": "/etc/crontabs/root",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "575d810a9fae5f2f0671c9b2c0ce973e46c7207fbe5cb8d1b0d1836a6a0470e3"
+        }
+      ]
+    },
+    {
+      "bom-ref": "dbb1d7a6be2920de",
+      "type": "file",
+      "name": "/etc/fstab",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a3efca2e8d62785c87517283092b4c800d88612b6f3f06b80a4c2f39d8e68841"
+        }
+      ]
+    },
+    {
+      "bom-ref": "ac56fcb4bc2b7257",
+      "type": "file",
+      "name": "/etc/group",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0632d55a68081065097472fe7bc7c66f0785f3b78f39fb23f622d24a7e09be9f"
+        }
+      ]
+    },
+    {
+      "bom-ref": "c987374590a7d086",
+      "type": "file",
+      "name": "/etc/hostname",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d906aecb61d076a967d9ffe8821c7b04b063f72df9d9e35b33ef36b1c0d98f16"
+        }
+      ]
+    },
+    {
+      "bom-ref": "997ca43adda17ab6",
+      "type": "file",
+      "name": "/etc/hosts",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e3998dbe02b51dada33de87ae43d18a93ab6915b9e34f5a751bf2b9b25a55492"
+        }
+      ]
+    },
+    {
+      "bom-ref": "79bde4ce21f2d6d2",
+      "type": "file",
+      "name": "/etc/inittab",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "54a5f36970125bf70cdf7b215c9e12a287d92ad76a693bd72aec4cbc5645df87"
+        }
+      ]
+    },
+    {
+      "bom-ref": "ddc9afbfe44a67cb",
+      "type": "file",
+      "name": "/etc/logrotate.d/acpid",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d608a3b7715886b5735def0cc50a6359fd364fac2e0e0a459c588c04be471031"
+        }
+      ]
+    },
+    {
+      "bom-ref": "016212920a3aa3f0",
+      "type": "file",
+      "name": "/etc/modprobe.d/aliases.conf",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "3ebaba946f213670170c7d69949f690a3854553bd0b1560f1d980cba4c83a942"
+        }
+      ]
+    },
+    {
+      "bom-ref": "e4bafc6de9373073",
+      "type": "file",
+      "name": "/etc/modprobe.d/blacklist.conf",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "5cd46031fc7dc7186e67c97fd34780597de4ebff51dbe41eba27220fe5e0d866"
+        }
+      ]
+    },
+    {
+      "bom-ref": "609be614951eaa00",
+      "type": "file",
+      "name": "/etc/modprobe.d/i386.conf",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6c46c4cbfb8b7594f19eb94801a350fa2221ae9ac5239a8819d15555caa76ae8"
+        }
+      ]
+    },
+    {
+      "bom-ref": "b9da6d0c6423545f",
+      "type": "file",
+      "name": "/etc/modprobe.d/kms.conf",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "50467fa732f809f3a2bb5738628765c5f895c3a237e1c1ad09f85d41fd9ca7c5"
+        }
+      ]
+    },
+    {
+      "bom-ref": "d533bd96d693f86e",
+      "type": "file",
+      "name": "/etc/modules",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2c881de75a5409c35d2433a24f180b8b02ba478ef2c1c60ea3434a35bcbc335d"
+        }
+      ]
+    },
+    {
+      "bom-ref": "e3b7e6af5d580ea0",
+      "type": "file",
+      "name": "/etc/motd",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ff044e9be5daa2eee2d3d10a4da72e5477e4c24c16f1792de2c91dae844c0e30"
+        }
+      ]
+    },
+    {
+      "bom-ref": "ff01017e002cca42",
+      "type": "file",
+      "name": "/etc/network/if-up.d/dad",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "8ee2455448c12cd1fd0befbc84f1ace7b80ba46603aff0d67bc7bcad604ea466"
+        }
+      ]
+    },
+    {
+      "bom-ref": "3094ceee1ecfa6a4",
+      "type": "file",
+      "name": "/etc/nsswitch.conf",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0afd94c183d30a348b45057f6bf468e121aa448a7641109addb5bb8e282f514d"
+        }
+      ]
+    },
+    {
+      "bom-ref": "71204313a9d94cce",
+      "type": "file",
+      "name": "/etc/passwd",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2e0902cf0a7f64bf4e64ef2fad66ae977b4d01975dddf5352a84aea5c4e901f0"
+        }
+      ]
+    },
+    {
+      "bom-ref": "ddf259d58d41d03c",
+      "type": "file",
+      "name": "/etc/profile",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2055f9abf0d8055e788deae8c6e5be0de008ea2dadc833a15b235bca435faa5e"
+        }
+      ]
+    },
+    {
+      "bom-ref": "1949455873a628b0",
+      "type": "file",
+      "name": "/etc/profile.d/README",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b73284f27fe2da9ae1902b1fe9596c3ffc61a154e2805a034184f0468f8b09b0"
+        }
+      ]
+    },
+    {
+      "bom-ref": "9ad1b8f45eb9c2c3",
+      "type": "file",
+      "name": "/etc/profile.d/color_prompt.sh.disabled",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ba24425c6864a5d17fa0fdaf914c4d21419e47c4d62080c33830af059fe46617"
+        }
+      ]
+    },
+    {
+      "bom-ref": "a612505b3b16058b",
+      "type": "file",
+      "name": "/etc/profile.d/locale.sh",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "84eb9034099d759ff08e6da5a731cacfc63a319547ad0f1dfc1c64853aca93f2"
+        }
+      ]
+    },
+    {
+      "bom-ref": "ade6164a43f8be51",
+      "type": "file",
+      "name": "/etc/protocols",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4959498abbadaa1e50894a266f8d0d94500101cfe5b5f09dcad82e9d5bdfab46"
+        }
+      ]
+    },
+    {
+      "bom-ref": "21c5db0890b2ee30",
+      "type": "file",
+      "name": "/etc/securetty",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "49382575069e4b954a36f1fb2248d1bd96ee7ba28a5b12798fa92d80a29d0fab"
+        }
+      ]
+    },
+    {
+      "bom-ref": "bf499b70b232e4c2",
+      "type": "file",
+      "name": "/etc/services",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "f6183055fd949f9c53d49ee620f85d0150123ea691d25ed1bba0c641b4ee2f48"
+        }
+      ]
+    },
+    {
+      "bom-ref": "4a664786168b2249",
+      "type": "file",
+      "name": "/etc/shadow",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "cdcdf002dbf6a03de7cf3c024d12162d6227cb5e2d27ca58844a716301f03151"
+        }
+      ]
+    },
+    {
+      "bom-ref": "58fa2e90c63afb3a",
+      "type": "file",
+      "name": "/etc/shells",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "24be6ceb236610df45684c83b06c918ae45635be55f69975e43676b7595bbc5f"
+        }
+      ]
+    },
+    {
+      "bom-ref": "06fede8fa1634c59",
+      "type": "file",
+      "name": "/etc/ssl/certs/ca-certificates.crt",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "92dd040a840947f00a14f66e9e17a799051ad7f88ddcde851b3711ee0a78a7ac"
+        }
+      ]
+    },
+    {
+      "bom-ref": "79865d9afe6f302f",
+      "type": "file",
+      "name": "/etc/ssl/ct_log_list.cnf",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "f1c1803d13d1d0b755b13b23c28bd4e20e07baf9f2b744c9337ba5866aa0ec3b"
+        }
+      ]
+    },
+    {
+      "bom-ref": "59a5c7473aa56801",
+      "type": "file",
+      "name": "/etc/ssl/ct_log_list.cnf.dist",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "f1c1803d13d1d0b755b13b23c28bd4e20e07baf9f2b744c9337ba5866aa0ec3b"
+        }
+      ]
+    },
+    {
+      "bom-ref": "573bff1786dfc252",
+      "type": "file",
+      "name": "/etc/ssl/misc/CA.pl",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "35a85ebe05ac4ee42a0efe544c02ad2c70bf374c4dcd8bf5aaf403b7c1b6cdd8"
+        }
+      ]
+    },
+    {
+      "bom-ref": "17c4cd361a21ed65",
+      "type": "file",
+      "name": "/etc/ssl/misc/tsget.pl",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0c2dc9013fb51dc6b2a07f41d65c91e55e7a4b98e2b7544549412f70271d88ae"
+        }
+      ]
+    },
+    {
+      "bom-ref": "87b59f9144dd81fb",
+      "type": "file",
+      "name": "/etc/ssl/openssl.cnf",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "15c6ec001241f54bed98c135f0dab42f4a5e489f22544613b0671198f8ad8318"
+        }
+      ]
+    },
+    {
+      "bom-ref": "d400a7c7a27d3b09",
+      "type": "file",
+      "name": "/etc/ssl/openssl.cnf.dist",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "15c6ec001241f54bed98c135f0dab42f4a5e489f22544613b0671198f8ad8318"
+        }
+      ]
+    },
+    {
+      "bom-ref": "111ee70376f63525",
+      "type": "file",
+      "name": "/etc/sysctl.conf",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "8bba47da45bc8715c69ac904a60410eabffaa7bbbef640f9c1368ab9c48493d0"
+        }
+      ]
+    },
+    {
+      "bom-ref": "049772dafcddb7d6",
+      "type": "file",
+      "name": "/etc/udhcpd.conf",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9249f3fd52c2500bfe3586def6765b82336ba7832b65cb8c6b8ca1999c31342e"
+        }
+      ]
+    },
+    {
+      "bom-ref": "93e5c73a3b3688f0",
+      "type": "file",
+      "name": "/lib/apk/db/installed",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d8321a6550e92b705606d0660730198fd4d87d9bc3947a4cc140341f7bbdd85b"
+        }
+      ]
+    },
+    {
+      "bom-ref": "fa9108ca3ddd517b",
+      "type": "file",
+      "name": "/lib/ld-musl-x86_64.so.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a0e80898190e34005a4d0598fa71e2e0b0ab2726a3cd73c3ad147770ca371173"
+        }
+      ]
+    },
+    {
+      "bom-ref": "1fe6bda94c049269",
+      "type": "file",
+      "name": "/lib/libapk.so.3.12.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "f042925dae3decc473a8b88afbbfbdedfe740731aef7f41304b671a70950cf45"
+        }
+      ]
+    },
+    {
+      "bom-ref": "df2a4caefd7f2808",
+      "type": "file",
+      "name": "/lib/libcrypto.so.3",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "eadc4a1e3a6cc8515e898bb3c5f63db6014087dcaf529425767c4b9ec1420935"
+        }
+      ]
+    },
+    {
+      "bom-ref": "5156e2896fd3bffd",
+      "type": "file",
+      "name": "/lib/libssl.so.3",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "3845c3e4f025c391ab46a669a07348d621cfd6d659e6880bdeef97866f3b7350"
+        }
+      ]
+    },
+    {
+      "bom-ref": "9f32ece93f41858b",
+      "type": "file",
+      "name": "/lib/libz.so.1.2.13",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a7df4375fc9f37d5c284ef74e1d782d0100ce3a907ad2cbc6287f769cb90aac4"
+        }
+      ]
+    },
+    {
+      "bom-ref": "de5c4e1acbe1962e",
+      "type": "file",
+      "name": "/lib/sysctl.d/00-alpine.conf",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ee169bea2cb6859420b55ca7a9c23fb68b50adc1d26c951f904dec9e8f767380"
+        }
+      ]
+    },
+    {
+      "bom-ref": "c03f862705ab1b46",
+      "type": "file",
+      "name": "/sbin/apk",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e9779d79565729775dbf0779d198a01b7f2bec49ebfb5ab727993b10731d03ec"
+        }
+      ]
+    },
+    {
+      "bom-ref": "936d08662fa1a975",
+      "type": "file",
+      "name": "/sbin/ldconfig",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b4a2c06db38742e8c42c3c9838b285a7d8cdac6c091ff3df5ff9a15f1e41b9c7"
+        }
+      ]
+    },
+    {
+      "bom-ref": "a1d1806ecc9b65e9",
+      "type": "file",
+      "name": "/usr/bin/getconf",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "018f94905c92f3af3bb63db27909301dd21cbc6ed0b292e68a3c79f2d867d37e"
+        }
+      ]
+    },
+    {
+      "bom-ref": "f528514d300ba632",
+      "type": "file",
+      "name": "/usr/bin/getent",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e1da9464434075598b13bca855bbfc23042f417a7b7745a30867d345fafb7157"
+        }
+      ]
+    },
+    {
+      "bom-ref": "b9d6cec6532d64a5",
+      "type": "file",
+      "name": "/usr/bin/iconv",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "76255619020c88ceb5135ca06c1faaaf39ca07dbe8f5efd3668e5ddb977b319e"
+        }
+      ]
+    },
+    {
+      "bom-ref": "a61ac2747b342275",
+      "type": "file",
+      "name": "/usr/bin/ldd",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9a49c2541a439be89f1ef1496604ef3b607f460d589877c60775acf74cdb5dfb"
+        }
+      ]
+    },
+    {
+      "bom-ref": "dccc46eb1250458d",
+      "type": "file",
+      "name": "/usr/bin/scanelf",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9d67cee3e834a1c96ff488471e70de590886253ffca68f6f36a28044f4d09878"
+        }
+      ]
+    },
+    {
+      "bom-ref": "974b71af5e241870",
+      "type": "file",
+      "name": "/usr/bin/ssl_client",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "99a0361fb672afb60c11e11ae4139f69af1aad2ca7b38c5be8035a2551db683d"
+        }
+      ]
+    },
+    {
+      "bom-ref": "31d6c0fe986c6b19",
+      "type": "file",
+      "name": "/usr/lib/engines-3/afalg.so",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "db5e1944f820c1c00b3991b600e233be03b0c0bd983c3906bfaf38ac2dd1ab38"
+        }
+      ]
+    },
+    {
+      "bom-ref": "5d55272338b7a7e1",
+      "type": "file",
+      "name": "/usr/lib/engines-3/capi.so",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "12fccafb01f91d2ecf7268df9c728218fa12f23f6f411fe02e3566dbaceaee0f"
+        }
+      ]
+    },
+    {
+      "bom-ref": "c1e73a11fe23e85b",
+      "type": "file",
+      "name": "/usr/lib/engines-3/loader_attic.so",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b72683cf25cb3d49229ac0fec40c7c5be5c682c458d099650ed53bb2b9e087b7"
+        }
+      ]
+    },
+    {
+      "bom-ref": "1f8d614ecb5e42af",
+      "type": "file",
+      "name": "/usr/lib/engines-3/padlock.so",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6fbd2bb7385b545024173fb9e3a73e5f1b204b1cacacb2314740e1aaa0b3e69d"
+        }
+      ]
+    },
+    {
+      "bom-ref": "a81ac27237330c9a",
+      "type": "file",
+      "name": "/usr/lib/ossl-modules/legacy.so",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "202ee29433d63fee07e469dc205ba66625840f10afc58c4484847e81f2b86a0d"
+        }
+      ]
+    },
+    {
+      "bom-ref": "f45a13601846dd9b",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-4a6a0840.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9c102bcc376af1498d549b77bdbfa815ae86faa1d2d82f040e616b18ef2df2d4"
+        }
+      ]
+    },
+    {
+      "bom-ref": "9f8b874295a12723",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-5243ef4b.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ebf31683b56410ecc4c00acd9f6e2839e237a3b62b5ae7ef686705c7ba0396a9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "8e734ba43e652e58",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-524d27bb.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1bb2a846c0ea4ca9d0e7862f970863857fc33c32f5506098c636a62a726a847b"
+        }
+      ]
+    },
+    {
+      "bom-ref": "bb19e1977abff271",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-5261cecb.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "12f899e55a7691225603d6fb3324940fc51cd7f133e7ead788663c2b7eecb00c"
+        }
+      ]
+    },
+    {
+      "bom-ref": "8bc430e0b6742e90",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-58199dcc.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "73867d92083f2f8ab899a26ccda7ef63dfaa0032a938620eda605558958a8041"
+        }
+      ]
+    },
+    {
+      "bom-ref": "75d3d06b1047ec20",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-58cbb476.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9a4cd858d9710963848e6d5f555325dc199d1c952b01cf6e64da2c15deedbd97"
+        }
+      ]
+    },
+    {
+      "bom-ref": "54cdcd0f9a9360ef",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-58e4f17d.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "780b3ed41786772cbc7b68136546fa3f897f28a23b30c72dde6225319c44cfff"
+        }
+      ]
+    },
+    {
+      "bom-ref": "dad76f415b494e1a",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-5e69ca50.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "59c01c57b446633249f67c04b115dd6787f4378f183dff2bbf65406df93f176d"
+        }
+      ]
+    },
+    {
+      "bom-ref": "989af91b22c54f15",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-60ac2099.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "db0b49163f07ffba64a5ca198bcf1688610b0bd1f0d8d5afeaf78559d73f2278"
+        }
+      ]
+    },
+    {
+      "bom-ref": "0f33b1e57709d82f",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-6165ee59.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "207e4696d3c05f7cb05966aee557307151f1f00217af4143c1bcaf33b8df733f"
+        }
+      ]
+    },
+    {
+      "bom-ref": "66323df00c9157e2",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-61666e3f.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "128d34d4aec39b0daedea8163cd8dc24dff36fd3d848630ab97eeb1d3084bbb3"
+        }
+      ]
+    },
+    {
+      "bom-ref": "1df9645b615c6f0b",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-616a9724.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "10877cce0a935e46ad88cb79e174a2491680508eccda08e92bf04fb9bf37fbc1"
+        }
+      ]
+    },
+    {
+      "bom-ref": "1f7c9f03f1f38408",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-616abc23.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4a095a9daca86da496a3cd9adcd95ee2197fdbeb84638656d469f05a4d740751"
+        }
+      ]
+    },
+    {
+      "bom-ref": "e8e001549e9ea680",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-616ac3bc.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0caf5662fde45616d88cfd7021b7bda269a2fcaf311e51c48945a967a609ec0b"
+        }
+      ]
+    },
+    {
+      "bom-ref": "f9b7199e302a0a2e",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-616adfeb.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ebe717d228555aa58133c202314a451f81e71f174781fd7ff8d8970d6cfa60da"
+        }
+      ]
+    },
+    {
+      "bom-ref": "d322e64cf0e83c18",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-616ae350.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d11f6b21c61b4274e182eb888883a8ba8acdbf820dcc7a6d82a7d9fc2fd2836d"
+        }
+      ]
+    },
+    {
+      "bom-ref": "f5a04c41271c4c3f",
+      "type": "file",
+      "name": "/usr/share/apk/keys/alpine-devel@lists.alpinelinux.org-616db30d.rsa.pub",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "40a216cbd163f22e5f16a9e0929de7cde221b9cbae8e36aa368b1e128afe0a31"
+        }
+      ]
+    },
+    {
+      "bom-ref": "c49a891f9a0bedcc",
+      "type": "file",
+      "name": "/usr/share/udhcpc/default.script",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c4e5a7c4783a7a73dec48dee009ee687015d2de7ff86b269679b95bef2c60e13"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:apk/alpine/alpine-baselayout@3.4.0-r0?arch=x86_64&distro=alpine-3.17.0&package-id=6e97ac524b16262e",
+      "dependsOn": [
+        "pkg:apk/alpine/alpine-baselayout-data@3.4.0-r0?arch=x86_64&distro=alpine-3.17.0&package-id=f4d364196d3576d8&upstream=alpine-baselayout",
+        "pkg:apk/alpine/busybox-binsh@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=93ba00f9117dea1c&upstream=busybox"
+      ]
+    },
+    {
+      "ref": "pkg:apk/alpine/apk-tools@2.12.10-r1?arch=x86_64&distro=alpine-3.17.0&package-id=16afe072554310ee",
+      "dependsOn": [
+        "pkg:apk/alpine/ca-certificates-bundle@20220614-r2?arch=x86_64&distro=alpine-3.17.0&package-id=55ebd522552a8be0&upstream=ca-certificates",
+        "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl",
+        "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl",
+        "pkg:apk/alpine/musl@1.2.3-r4?arch=x86_64&distro=alpine-3.17.0&package-id=37bf72ed3848875c",
+        "pkg:apk/alpine/zlib@1.2.13-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0f6f64aa11912270"
+      ]
+    },
+    {
+      "ref": "pkg:apk/alpine/busybox-binsh@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=93ba00f9117dea1c&upstream=busybox",
+      "dependsOn": [
+        "pkg:apk/alpine/busybox@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=ca8e18476c9977b9"
+      ]
+    },
+    {
+      "ref": "pkg:apk/alpine/busybox@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=ca8e18476c9977b9",
+      "dependsOn": [
+        "pkg:apk/alpine/musl@1.2.3-r4?arch=x86_64&distro=alpine-3.17.0&package-id=37bf72ed3848875c"
+      ]
+    },
+    {
+      "ref": "pkg:apk/alpine/libc-utils@0.7.2-r3?arch=x86_64&distro=alpine-3.17.0&package-id=b1c2651bdcbb8d9c&upstream=libc-dev",
+      "dependsOn": [
+        "pkg:apk/alpine/musl-utils@1.2.3-r4?arch=x86_64&distro=alpine-3.17.0&package-id=7e954e300b825db1&upstream=musl"
+      ]
+    },
+    {
+      "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl",
+      "dependsOn": [
+        "pkg:apk/alpine/musl@1.2.3-r4?arch=x86_64&distro=alpine-3.17.0&package-id=37bf72ed3848875c"
+      ]
+    },
+    {
+      "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl",
+      "dependsOn": [
+        "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl",
+        "pkg:apk/alpine/musl@1.2.3-r4?arch=x86_64&distro=alpine-3.17.0&package-id=37bf72ed3848875c"
+      ]
+    },
+    {
+      "ref": "pkg:apk/alpine/musl-utils@1.2.3-r4?arch=x86_64&distro=alpine-3.17.0&package-id=7e954e300b825db1&upstream=musl",
+      "dependsOn": [
+        "pkg:apk/alpine/musl@1.2.3-r4?arch=x86_64&distro=alpine-3.17.0&package-id=37bf72ed3848875c",
+        "pkg:apk/alpine/scanelf@1.3.5-r1?arch=x86_64&distro=alpine-3.17.0&package-id=aa189d4fe94178ae&upstream=pax-utils"
+      ]
+    },
+    {
+      "ref": "pkg:apk/alpine/scanelf@1.3.5-r1?arch=x86_64&distro=alpine-3.17.0&package-id=aa189d4fe94178ae&upstream=pax-utils",
+      "dependsOn": [
+        "pkg:apk/alpine/musl@1.2.3-r4?arch=x86_64&distro=alpine-3.17.0&package-id=37bf72ed3848875c"
+      ]
+    },
+    {
+      "ref": "pkg:apk/alpine/ssl_client@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=8827bc68b60ba6d0&upstream=busybox",
+      "dependsOn": [
+        "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl",
+        "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl",
+        "pkg:apk/alpine/musl@1.2.3-r4?arch=x86_64&distro=alpine-3.17.0&package-id=37bf72ed3848875c"
+      ]
+    },
+    {
+      "ref": "pkg:apk/alpine/zlib@1.2.13-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0f6f64aa11912270",
+      "dependsOn": [
+        "pkg:apk/alpine/musl@1.2.3-r4?arch=x86_64&distro=alpine-3.17.0&package-id=37bf72ed3848875c"
+      ]
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "bom-ref": "urn:uuid:13ed5040-1deb-4d71-8d83-bfbf53bf724a",
+      "id": "CVE-2023-0286",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-0286"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-0286",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-0286"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.4,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.88099,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:df7268db-ca45-4fca-ba51-968b01860d9f",
+      "id": "CVE-2023-0286",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-0286"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-0286",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-0286"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.4,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.88099,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:14fcc2b1-0471-4911-85cf-0d66e320ba01",
+      "id": "CVE-2023-2650",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-2650"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-2650",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-2650"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 6.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.88328,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:6da1e983-b9f3-483a-ace2-ccc988851c06",
+      "id": "CVE-2023-2650",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-2650"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-2650",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-2650"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 6.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.88328,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:07992e70-0d51-44be-af6b-6d268f409a96",
+      "id": "CVE-2024-5535",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2024-5535"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-5535",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2024-5535"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 9.1,
+          "severity": "critical",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.04845,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:f08032bd-2829-4b89-b05b-501f25487ed2",
+      "id": "CVE-2024-5535",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2024-5535"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-5535",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2024-5535"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 9.1,
+          "severity": "critical",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.04845,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:ca76ffc1-4c62-4183-a6ba-65f716e5d9b7",
+      "id": "CVE-2024-2511",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2024-2511"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-2511",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2024-2511"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.9,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.02023,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:cb9015c9-5c47-4a2d-b063-7c8053b017cc",
+      "id": "CVE-2024-2511",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2024-2511"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-2511",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2024-2511"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.9,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.02023,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:0565558b-8be1-434a-8750-2e1dd2a8e3e2",
+      "id": "CVE-2023-0464",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-0464"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-0464",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-0464"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.0137,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:9a1a3064-3010-4f73-899e-d37b5a80c5c5",
+      "id": "CVE-2023-0464",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-0464"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-0464",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-0464"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.0137,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:ccdaf695-d923-44f6-a7d5-4e7da26a4f5c",
+      "id": "CVE-2023-6129",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-6129"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-6129",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-6129"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 6.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.01579,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:995bcd48-a7d5-4990-8d34-f7674245e9a5",
+      "id": "CVE-2023-6129",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-6129"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-6129",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-6129"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 6.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.01579,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:48cc199c-dd3e-4c9d-9513-0ccf3209fca3",
+      "id": "CVE-2023-5363",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-5363"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-5363",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-5363"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.0111,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:47400a38-7aca-4347-99d8-9498e76df67e",
+      "id": "CVE-2023-5363",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-5363"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-5363",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-5363"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.0111,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:d9b092e0-9850-491e-a3d4-be09b172eb58",
+      "id": "CVE-2023-0401",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-0401"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-0401",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-0401"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00781,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:f9d167db-076b-4844-b694-641ca55be8bb",
+      "id": "CVE-2023-0401",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-0401"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-0401",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-0401"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00781,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:6e5354e5-7852-4a72-aa82-782aac9aca09",
+      "id": "CVE-2024-6119",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2024-6119"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-6119",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2024-6119"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00672,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:d8f8079b-46a5-4546-ace6-a6ce19116723",
+      "id": "CVE-2024-6119",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2024-6119"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-6119",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2024-6119"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00672,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:53e3db6e-441d-469d-99ca-9e94ff2ca7db",
+      "id": "CVE-2023-0216",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-0216"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-0216",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-0216"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00643,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:5b036c53-0e63-4128-bbf8-f446f1e413c6",
+      "id": "CVE-2023-0216",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-0216"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-0216",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-0216"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00643,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:ce274475-124d-4d54-93d8-d8fd53a43111",
+      "id": "CVE-2022-48174",
+      "source": {
+        "name": "nvd-cpe",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-48174"
+      },
+      "references": [
+        {
+          "id": "CVE-2022-48174",
+          "source": {
+            "name": "nvd-cpe",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-48174"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 9.8,
+          "severity": "critical",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00463,
+          "method": "other"
+        }
+      ],
+      "description": "There is a stack overflow vulnerability in ash.c:6030 in busybox before 1.35. In the environment of Internet of Vehicles, this vulnerability can be executed from command to arbitrary code execution.",
+      "advisories": [
+        {
+          "url": "https://bugs.busybox.net/show_bug.cgi?id=15216"
+        },
+        {
+          "url": "https://bugs.busybox.net/show_bug.cgi?id=15216"
+        },
+        {
+          "url": "https://security.netapp.com/advisory/ntap-20241129-0001/"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/busybox@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=ca8e18476c9977b9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:fca2a5d8-d50d-4173-94d1-3fc22ef87749",
+      "id": "CVE-2022-48174",
+      "source": {
+        "name": "nvd-cpe",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-48174"
+      },
+      "references": [
+        {
+          "id": "CVE-2022-48174",
+          "source": {
+            "name": "nvd-cpe",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-48174"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 9.8,
+          "severity": "critical",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00463,
+          "method": "other"
+        }
+      ],
+      "description": "There is a stack overflow vulnerability in ash.c:6030 in busybox before 1.35. In the environment of Internet of Vehicles, this vulnerability can be executed from command to arbitrary code execution.",
+      "advisories": [
+        {
+          "url": "https://bugs.busybox.net/show_bug.cgi?id=15216"
+        },
+        {
+          "url": "https://bugs.busybox.net/show_bug.cgi?id=15216"
+        },
+        {
+          "url": "https://security.netapp.com/advisory/ntap-20241129-0001/"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/busybox-binsh@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=93ba00f9117dea1c&upstream=busybox"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:5556a168-f733-42b5-876b-91fdd481c5af",
+      "id": "CVE-2022-48174",
+      "source": {
+        "name": "nvd-cpe",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-48174"
+      },
+      "references": [
+        {
+          "id": "CVE-2022-48174",
+          "source": {
+            "name": "nvd-cpe",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-48174"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 9.8,
+          "severity": "critical",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00463,
+          "method": "other"
+        }
+      ],
+      "description": "There is a stack overflow vulnerability in ash.c:6030 in busybox before 1.35. In the environment of Internet of Vehicles, this vulnerability can be executed from command to arbitrary code execution.",
+      "advisories": [
+        {
+          "url": "https://bugs.busybox.net/show_bug.cgi?id=15216"
+        },
+        {
+          "url": "https://bugs.busybox.net/show_bug.cgi?id=15216"
+        },
+        {
+          "url": "https://security.netapp.com/advisory/ntap-20241129-0001/"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/ssl_client@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=8827bc68b60ba6d0&upstream=busybox"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:30444a24-0db6-44ac-ae6c-cc43254f235d",
+      "id": "CVE-2023-3446",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-3446"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-3446",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-3446"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00672,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:85123846-2015-462a-b45a-822c1fef9f48",
+      "id": "CVE-2023-3446",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-3446"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-3446",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-3446"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00672,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:c79d5c20-7a13-4e61-a31e-0e2fb4806ca3",
+      "id": "CVE-2024-9143",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2024-9143"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-9143",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2024-9143"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 4.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00652,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:eb700849-f2b8-40ca-a34e-56ff2dae2632",
+      "id": "CVE-2024-9143",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2024-9143"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-9143",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2024-9143"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 4.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00652,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:af588c56-9feb-491e-8ae9-d70bf7f95024",
+      "id": "CVE-2023-6237",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-6237"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-6237",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-6237"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.9,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00524,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:bed77149-01d8-4212-ae8d-dcdccaf0b9da",
+      "id": "CVE-2023-6237",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-6237"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-6237",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-6237"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.9,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00524,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:d7194352-8cb6-4a29-aa1c-a84dc6705fbc",
+      "id": "CVE-2023-0217",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-0217"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-0217",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-0217"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00371,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:cf174026-09fc-46e0-8b98-9028b906efba",
+      "id": "CVE-2023-0217",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-0217"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-0217",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-0217"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00371,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:54d39058-86da-41d6-acc2-9edf279c351b",
+      "id": "CVE-2023-0466",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-0466"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-0466",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-0466"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00508,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:5eaedb14-19ea-455d-a185-70c9931919a8",
+      "id": "CVE-2023-0466",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-0466"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-0466",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-0466"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00508,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:c3e04d24-c1db-4f64-b9eb-8547a9182ec7",
+      "id": "CVE-2023-0215",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-0215"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-0215",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-0215"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00284,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:6b0b323f-04f8-4142-b41a-564d2089301e",
+      "id": "CVE-2023-0215",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-0215"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-0215",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-0215"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00284,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:4bd92602-b1f2-45da-861e-6e7edf21e184",
+      "id": "CVE-2023-0465",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-0465"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-0465",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-0465"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00337,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:bfc5dc5c-a5ae-4184-8da1-e0648c2a1675",
+      "id": "CVE-2023-0465",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-0465"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-0465",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-0465"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00337,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:b9d2c952-be64-45d2-8f2c-5ad5969324c5",
+      "id": "CVE-2022-4203",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2022-4203"
+      },
+      "references": [
+        {
+          "id": "CVE-2022-4203",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2022-4203"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 4.9,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00325,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:608e63fb-3125-42e1-95f8-74e74016cba4",
+      "id": "CVE-2022-4203",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2022-4203"
+      },
+      "references": [
+        {
+          "id": "CVE-2022-4203",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2022-4203"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 4.9,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00325,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:508be26f-ab61-4709-9e6a-7f2ba9a0ded1",
+      "id": "CVE-2024-0727",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2024-0727"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-0727",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2024-0727"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00282,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:997f17c0-e4a0-45bc-b36c-3ddb74ab7e5c",
+      "id": "CVE-2024-0727",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2024-0727"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-0727",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2024-0727"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00282,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:995971d9-49ce-4482-966b-fabcdc99f659",
+      "id": "CVE-2022-3996",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2022-3996"
+      },
+      "references": [
+        {
+          "id": "CVE-2022-3996",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2022-3996"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00153,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:45a373fc-50f9-41f5-b408-2107abd50e8c",
+      "id": "CVE-2022-3996",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2022-3996"
+      },
+      "references": [
+        {
+          "id": "CVE-2022-3996",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2022-3996"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00153,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:49873bb5-14c7-411f-9466-1f0117d62383",
+      "id": "CVE-2022-4304",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2022-4304"
+      },
+      "references": [
+        {
+          "id": "CVE-2022-4304",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2022-4304"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.9,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00185,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:c15d6803-04b2-462f-b890-83b3ecb64a62",
+      "id": "CVE-2022-4304",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2022-4304"
+      },
+      "references": [
+        {
+          "id": "CVE-2022-4304",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2022-4304"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.9,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00185,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:c26d3c4e-72b2-4466-bc1d-d6f5c26f20d2",
+      "id": "CVE-2023-3817",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-3817"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-3817",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-3817"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00188,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:e3e81c9e-6030-4396-81e5-0440d5f77654",
+      "id": "CVE-2023-3817",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-3817"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-3817",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-3817"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00188,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:f8cf31f6-04b7-49ad-a47b-e9a9d41c2483",
+      "id": "CVE-2023-2975",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-2975"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-2975",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-2975"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00166,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:a43d5f85-4ef3-44c5-ba9d-1848a2d81b6e",
+      "id": "CVE-2023-2975",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-2975"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-2975",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-2975"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00166,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:ed4d21e9-338f-4a2a-8f1f-7608a051c65e",
+      "id": "CVE-2024-4741",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2024-4741"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-4741",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2024-4741"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.0011,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:055f4a18-1380-411c-995e-218fd9a53c5b",
+      "id": "CVE-2024-4741",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2024-4741"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-4741",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2024-4741"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.0011,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:576006ac-1e34-4710-9325-3f9c8b43a97d",
+      "id": "CVE-2022-4450",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2022-4450"
+      },
+      "references": [
+        {
+          "id": "CVE-2022-4450",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2022-4450"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00105,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:76153323-2d2c-4f87-9f1f-e8857209ae42",
+      "id": "CVE-2022-4450",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2022-4450"
+      },
+      "references": [
+        {
+          "id": "CVE-2022-4450",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2022-4450"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00105,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:657e675e-d6a7-4332-9d99-5808d729c9dc",
+      "id": "CVE-2023-5678",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-5678"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-5678",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-5678"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00081,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:4f957f2f-173c-4057-a866-b2217df4d02d",
+      "id": "CVE-2023-5678",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-5678"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-5678",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-5678"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00081,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:d5463098-a0cf-4244-8387-cb98edca027d",
+      "id": "CVE-2024-4603",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2024-4603"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-4603",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2024-4603"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00067,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:58432891-5997-4067-b43b-667c2c3b3474",
+      "id": "CVE-2024-4603",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2024-4603"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-4603",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2024-4603"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00067,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:62ed1bd2-5527-4048-a27c-1cd256fd4f8b",
+      "id": "CVE-2024-13176",
+      "source": {
+        "name": "nvd-cpe",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-13176"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-13176",
+          "source": {
+            "name": "nvd-cpe",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-13176"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 4.1,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:P/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00071,
+          "method": "other"
+        }
+      ],
+      "description": "Issue summary: A timing side-channel which could potentially allow recovering\nthe private key exists in the ECDSA signature computation.\n\nImpact summary: A timing side-channel in ECDSA signature computations\ncould allow recovering the private key by an attacker. However, measuring\nthe timing would require either local access to the signing application or\na very fast network connection with low latency.\n\nThere is a timing signal of around 300 nanoseconds when the top word of\nthe inverted ECDSA nonce value is zero. This can happen with significant\nprobability only for some of the supported elliptic curves. In particular\nthe NIST P-521 curve is affected. To be able to measure this leak, the attacker\nprocess must either be located in the same physical computer or must\nhave a very fast network connection with low latency. For that reason\nthe severity of this vulnerability is Low.\n\nThe FIPS modules in 3.4, 3.3, 3.2, 3.1 and 3.0 are affected by this issue.",
+      "advisories": [
+        {
+          "url": "https://github.com/openssl/openssl/commit/07272b05b04836a762b4baa874958af51d513844"
+        },
+        {
+          "url": "https://github.com/openssl/openssl/commit/2af62e74fb59bc469506bc37eb2990ea408d9467"
+        },
+        {
+          "url": "https://github.com/openssl/openssl/commit/392dcb336405a0c94486aa6655057f59fd3a0902"
+        },
+        {
+          "url": "https://github.com/openssl/openssl/commit/4b1cb94a734a7d4ec363ac0a215a25c181e11f65"
+        },
+        {
+          "url": "https://github.com/openssl/openssl/commit/77c608f4c8857e63e98e66444e2e761c9627916f"
+        },
+        {
+          "url": "https://github.openssl.org/openssl/extended-releases/commit/0d5fd1ab987f7571e2c955d8d8b638fc0fb54ded"
+        },
+        {
+          "url": "https://github.openssl.org/openssl/extended-releases/commit/a2639000db19878d5d89586ae7b725080592ae86"
+        },
+        {
+          "url": "https://openssl-library.org/news/secadv/20250120.txt"
+        },
+        {
+          "url": "http://www.openwall.com/lists/oss-security/2025/01/20/2"
+        },
+        {
+          "url": "https://lists.debian.org/debian-lts-announce/2025/05/msg00028.html"
+        },
+        {
+          "url": "https://security.netapp.com/advisory/ntap-20250124-0005/"
+        },
+        {
+          "url": "https://security.netapp.com/advisory/ntap-20250418-0010/"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:3d453f73-85c6-4d00-8d35-8ee5aa2d874c",
+      "id": "CVE-2024-13176",
+      "source": {
+        "name": "nvd-cpe",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-13176"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-13176",
+          "source": {
+            "name": "nvd-cpe",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-13176"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 4.1,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:P/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00071,
+          "method": "other"
+        }
+      ],
+      "description": "Issue summary: A timing side-channel which could potentially allow recovering\nthe private key exists in the ECDSA signature computation.\n\nImpact summary: A timing side-channel in ECDSA signature computations\ncould allow recovering the private key by an attacker. However, measuring\nthe timing would require either local access to the signing application or\na very fast network connection with low latency.\n\nThere is a timing signal of around 300 nanoseconds when the top word of\nthe inverted ECDSA nonce value is zero. This can happen with significant\nprobability only for some of the supported elliptic curves. In particular\nthe NIST P-521 curve is affected. To be able to measure this leak, the attacker\nprocess must either be located in the same physical computer or must\nhave a very fast network connection with low latency. For that reason\nthe severity of this vulnerability is Low.\n\nThe FIPS modules in 3.4, 3.3, 3.2, 3.1 and 3.0 are affected by this issue.",
+      "advisories": [
+        {
+          "url": "https://github.com/openssl/openssl/commit/07272b05b04836a762b4baa874958af51d513844"
+        },
+        {
+          "url": "https://github.com/openssl/openssl/commit/2af62e74fb59bc469506bc37eb2990ea408d9467"
+        },
+        {
+          "url": "https://github.com/openssl/openssl/commit/392dcb336405a0c94486aa6655057f59fd3a0902"
+        },
+        {
+          "url": "https://github.com/openssl/openssl/commit/4b1cb94a734a7d4ec363ac0a215a25c181e11f65"
+        },
+        {
+          "url": "https://github.com/openssl/openssl/commit/77c608f4c8857e63e98e66444e2e761c9627916f"
+        },
+        {
+          "url": "https://github.openssl.org/openssl/extended-releases/commit/0d5fd1ab987f7571e2c955d8d8b638fc0fb54ded"
+        },
+        {
+          "url": "https://github.openssl.org/openssl/extended-releases/commit/a2639000db19878d5d89586ae7b725080592ae86"
+        },
+        {
+          "url": "https://openssl-library.org/news/secadv/20250120.txt"
+        },
+        {
+          "url": "http://www.openwall.com/lists/oss-security/2025/01/20/2"
+        },
+        {
+          "url": "https://lists.debian.org/debian-lts-announce/2025/05/msg00028.html"
+        },
+        {
+          "url": "https://security.netapp.com/advisory/ntap-20250124-0005/"
+        },
+        {
+          "url": "https://security.netapp.com/advisory/ntap-20250418-0010/"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:9f616e38-828a-4a13-b075-e54965c81da1",
+      "id": "CVE-2023-1255",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-1255"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-1255",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-1255"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.9,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00038,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libcrypto3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=0839a28605a27baf&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:4a908b69-2770-4e6c-889f-c4c56b6fb61e",
+      "id": "CVE-2023-1255",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-1255"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-1255",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-1255"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.9,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00038,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/libssl3@3.0.7-r0?arch=x86_64&distro=alpine-3.17.0&package-id=b5d471fbdd324b28&upstream=openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:a967dc0c-6f10-4552-b6f9-261f414b4eca",
+      "id": "CVE-2023-42364",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-42364"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-42364",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-42364"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00032,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/busybox@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=ca8e18476c9977b9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:982a0490-a19e-4c3d-a51a-a8270ec9ef57",
+      "id": "CVE-2023-42365",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-42365"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-42365",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-42365"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00032,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/busybox@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=ca8e18476c9977b9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:1eef0656-28c0-4f8a-907c-f4d6587c674e",
+      "id": "CVE-2023-42364",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-42364"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-42364",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-42364"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00032,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/busybox-binsh@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=93ba00f9117dea1c&upstream=busybox"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:f204a251-3497-4180-9d51-fab80787d331",
+      "id": "CVE-2023-42365",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-42365"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-42365",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-42365"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00032,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/busybox-binsh@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=93ba00f9117dea1c&upstream=busybox"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:35e984e2-5a1e-470a-b403-aba112d3c77e",
+      "id": "CVE-2023-42364",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-42364"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-42364",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-42364"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00032,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/ssl_client@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=8827bc68b60ba6d0&upstream=busybox"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:ffd4e2df-eec4-40cf-8e06-a211ea661dc9",
+      "id": "CVE-2023-42365",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-42365"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-42365",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-42365"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00032,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/ssl_client@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=8827bc68b60ba6d0&upstream=busybox"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:15f3cbd3-b5f5-48c8-a70f-ca4dadb65041",
+      "id": "CVE-2023-42366",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-42366"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-42366",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-42366"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00028,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/busybox@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=ca8e18476c9977b9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:b56e51d0-b283-46b4-8b78-8932c480e3cc",
+      "id": "CVE-2023-42366",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-42366"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-42366",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-42366"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00028,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/busybox-binsh@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=93ba00f9117dea1c&upstream=busybox"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:8d6dbc15-b699-4caf-8326-3ed7947b89cd",
+      "id": "CVE-2023-42366",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-42366"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-42366",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-42366"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00028,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/ssl_client@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=8827bc68b60ba6d0&upstream=busybox"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:43f16d16-f5fa-48b6-b201-2897f7e3aec3",
+      "id": "CVE-2023-42363",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-42363"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-42363",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-42363"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00026,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/busybox@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=ca8e18476c9977b9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:14c232db-7d9a-4f37-ad4a-a733357a4368",
+      "id": "CVE-2023-42363",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-42363"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-42363",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-42363"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00026,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/busybox-binsh@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=93ba00f9117dea1c&upstream=busybox"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:472858f4-dc78-49b7-a891-fe6346bf50f2",
+      "id": "CVE-2023-42363",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2023-42363"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-42363",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2023-42363"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00026,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/ssl_client@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=8827bc68b60ba6d0&upstream=busybox"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:13e09adb-2241-4cd7-a263-9ffa1266723a",
+      "id": "CVE-2025-26519",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2025-26519"
+      },
+      "references": [
+        {
+          "id": "CVE-2025-26519",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2025-26519"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 8.1,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:L"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00011,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/musl@1.2.3-r4?arch=x86_64&distro=alpine-3.17.0&package-id=37bf72ed3848875c"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:247ebec5-5a45-425b-8d55-7d3c53e4d97e",
+      "id": "CVE-2025-26519",
+      "source": {
+        "name": "alpine-distro-alpine-3.17",
+        "url": "https://security.alpinelinux.org/vuln/CVE-2025-26519"
+      },
+      "references": [
+        {
+          "id": "CVE-2025-26519",
+          "source": {
+            "name": "alpine-distro-alpine-3.17",
+            "url": "https://security.alpinelinux.org/vuln/CVE-2025-26519"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 8.1,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:L"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00011,
+          "method": "other"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/musl-utils@1.2.3-r4?arch=x86_64&distro=alpine-3.17.0&package-id=7e954e300b825db1&upstream=musl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:71f139b0-f43f-4666-8b7f-7970e3288a99",
+      "id": "CVE-2025-46394",
+      "source": {
+        "name": "nvd-cpe",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-46394"
+      },
+      "references": [
+        {
+          "id": "CVE-2025-46394",
+          "source": {
+            "name": "nvd-cpe",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-46394"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 3.2,
+          "severity": "low",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:C/C:N/I:L/A:N"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00018,
+          "method": "other"
+        }
+      ],
+      "description": "In tar in BusyBox through 1.37.0, a TAR archive can have filenames hidden from a listing through the use of terminal escape sequences.",
+      "advisories": [
+        {
+          "url": "https://bugs.busybox.net/show_bug.cgi?id=16018"
+        },
+        {
+          "url": "https://www.busybox.net"
+        },
+        {
+          "url": "https://www.busybox.net/downloads/"
+        },
+        {
+          "url": "http://www.openwall.com/lists/oss-security/2025/04/23/5"
+        },
+        {
+          "url": "http://www.openwall.com/lists/oss-security/2025/04/24/3"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/busybox@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=ca8e18476c9977b9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:596f7eeb-4e3e-4b22-bcdc-ac187130eb36",
+      "id": "CVE-2025-46394",
+      "source": {
+        "name": "nvd-cpe",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-46394"
+      },
+      "references": [
+        {
+          "id": "CVE-2025-46394",
+          "source": {
+            "name": "nvd-cpe",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-46394"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 3.2,
+          "severity": "low",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:C/C:N/I:L/A:N"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00018,
+          "method": "other"
+        }
+      ],
+      "description": "In tar in BusyBox through 1.37.0, a TAR archive can have filenames hidden from a listing through the use of terminal escape sequences.",
+      "advisories": [
+        {
+          "url": "https://bugs.busybox.net/show_bug.cgi?id=16018"
+        },
+        {
+          "url": "https://www.busybox.net"
+        },
+        {
+          "url": "https://www.busybox.net/downloads/"
+        },
+        {
+          "url": "http://www.openwall.com/lists/oss-security/2025/04/23/5"
+        },
+        {
+          "url": "http://www.openwall.com/lists/oss-security/2025/04/24/3"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/busybox-binsh@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=93ba00f9117dea1c&upstream=busybox"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:8e02651f-3ba1-4c9d-9283-8b6db5a0f45e",
+      "id": "CVE-2025-46394",
+      "source": {
+        "name": "nvd-cpe",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-46394"
+      },
+      "references": [
+        {
+          "id": "CVE-2025-46394",
+          "source": {
+            "name": "nvd-cpe",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-46394"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 3.2,
+          "severity": "low",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:C/C:N/I:L/A:N"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00018,
+          "method": "other"
+        }
+      ],
+      "description": "In tar in BusyBox through 1.37.0, a TAR archive can have filenames hidden from a listing through the use of terminal escape sequences.",
+      "advisories": [
+        {
+          "url": "https://bugs.busybox.net/show_bug.cgi?id=16018"
+        },
+        {
+          "url": "https://www.busybox.net"
+        },
+        {
+          "url": "https://www.busybox.net/downloads/"
+        },
+        {
+          "url": "http://www.openwall.com/lists/oss-security/2025/04/23/5"
+        },
+        {
+          "url": "http://www.openwall.com/lists/oss-security/2025/04/24/3"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/ssl_client@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=8827bc68b60ba6d0&upstream=busybox"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:b3041785-9285-4ee3-9bbd-80a8a08d77ae",
+      "id": "CVE-2024-58251",
+      "source": {
+        "name": "nvd-cpe",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-58251"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-58251",
+          "source": {
+            "name": "nvd-cpe",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-58251"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 2.5,
+          "severity": "low",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:L"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00017,
+          "method": "other"
+        }
+      ],
+      "description": "In netstat in BusyBox through 1.37.0, local users can launch of network application with an argv[0] containing an ANSI terminal escape sequence, leading to a denial of service (terminal locked up) when netstat is used by a victim.",
+      "advisories": [
+        {
+          "url": "https://bugs.busybox.net/show_bug.cgi?id=15922"
+        },
+        {
+          "url": "https://www.busybox.net"
+        },
+        {
+          "url": "https://www.busybox.net/downloads/"
+        },
+        {
+          "url": "http://www.openwall.com/lists/oss-security/2025/04/23/6"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/busybox@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=ca8e18476c9977b9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:599e2e28-8398-4c83-930b-59b5e7012791",
+      "id": "CVE-2024-58251",
+      "source": {
+        "name": "nvd-cpe",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-58251"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-58251",
+          "source": {
+            "name": "nvd-cpe",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-58251"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 2.5,
+          "severity": "low",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:L"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00017,
+          "method": "other"
+        }
+      ],
+      "description": "In netstat in BusyBox through 1.37.0, local users can launch of network application with an argv[0] containing an ANSI terminal escape sequence, leading to a denial of service (terminal locked up) when netstat is used by a victim.",
+      "advisories": [
+        {
+          "url": "https://bugs.busybox.net/show_bug.cgi?id=15922"
+        },
+        {
+          "url": "https://www.busybox.net"
+        },
+        {
+          "url": "https://www.busybox.net/downloads/"
+        },
+        {
+          "url": "http://www.openwall.com/lists/oss-security/2025/04/23/6"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/busybox-binsh@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=93ba00f9117dea1c&upstream=busybox"
+        }
+      ]
+    },
+    {
+      "bom-ref": "urn:uuid:c11d9ae4-25df-4067-89ee-2be87c6b535a",
+      "id": "CVE-2024-58251",
+      "source": {
+        "name": "nvd-cpe",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-58251"
+      },
+      "references": [
+        {
+          "id": "CVE-2024-58251",
+          "source": {
+            "name": "nvd-cpe",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-58251"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 2.5,
+          "severity": "low",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:L"
+        },
+        {
+          "source": {
+            "name": "FIRST",
+            "url": "https://www.first.org/epss/"
+          },
+          "score": 0.00017,
+          "method": "other"
+        }
+      ],
+      "description": "In netstat in BusyBox through 1.37.0, local users can launch of network application with an argv[0] containing an ANSI terminal escape sequence, leading to a denial of service (terminal locked up) when netstat is used by a victim.",
+      "advisories": [
+        {
+          "url": "https://bugs.busybox.net/show_bug.cgi?id=15922"
+        },
+        {
+          "url": "https://www.busybox.net"
+        },
+        {
+          "url": "https://www.busybox.net/downloads/"
+        },
+        {
+          "url": "http://www.openwall.com/lists/oss-security/2025/04/23/6"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:apk/alpine/ssl_client@1.35.0-r29?arch=x86_64&distro=alpine-3.17.0&package-id=8827bc68b60ba6d0&upstream=busybox"
+        }
+      ]
+    }
+  ]
+}

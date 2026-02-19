@@ -28,7 +28,7 @@ from pathlib import Path
 
 import git
 
-VERSION = "35.1.0"
+VERSION = "36.1.0"
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = PROJECT_DIR.parent
@@ -88,6 +88,7 @@ __version__ = get_version(VERSION)
 warnings.filterwarnings("ignore", module="extractcode")
 warnings.filterwarnings("ignore", module="typecode")
 warnings.filterwarnings("ignore", module="clamd")
+warnings.filterwarnings("ignore", module="cyclonedx")
 
 
 def command_line():
@@ -106,6 +107,9 @@ def combined_run():
     configuration.
     It combines the creation, execution, and result retrieval of the project into a
     single process.
+
+    Set SCANCODEIO_NO_AUTO_DB=1 to use the database configuration from the settings
+    instead of SQLite.
     """
     from django.core.checks.security.base import SECRET_KEY_INSECURE_PREFIX
     from django.core.management import execute_from_command_line
@@ -114,10 +118,12 @@ def combined_run():
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "scancodeio.settings")
     secret_key = SECRET_KEY_INSECURE_PREFIX + get_random_secret_key()
     os.environ.setdefault("SECRET_KEY", secret_key)
-    os.environ.setdefault("SCANCODEIO_DB_ENGINE", "django.db.backends.sqlite3")
-    os.environ.setdefault("SCANCODEIO_DB_NAME", "scancodeio.sqlite3")
-    # Disable multiprocessing
-    os.environ.setdefault("SCANCODEIO_PROCESSES", "0")
+
+    # Default to SQLite unless SCANCODEIO_NO_AUTO_DB is provided
+    if not os.getenv("SCANCODEIO_NO_AUTO_DB"):
+        os.environ.setdefault("SCANCODEIO_DB_ENGINE", "django.db.backends.sqlite3")
+        os.environ.setdefault("SCANCODEIO_DB_NAME", "scancodeio.sqlite3")
+        os.environ.setdefault("SCANCODEIO_PROCESSES", "0")  # Disable multiprocessing
 
     sys.argv.insert(1, "run")
     execute_from_command_line(sys.argv)

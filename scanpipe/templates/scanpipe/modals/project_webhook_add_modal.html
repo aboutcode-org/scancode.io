@@ -5,7 +5,10 @@
       <p class="modal-card-title">Add webhook</p>
       <button class="delete" aria-label="close"></button>
     </header>
-    <form hx-post="{% url 'project_settings_add_webhook' project.slug %}" hx-target="#webhook-modal-form-body" hx-on::after-settle="removeOverlay()">{% csrf_token %}
+    <form
+      hx-post="{% url 'project_settings_add_webhook' project.slug %}"
+      hx-target="#webhook-modal-form-body"
+      hx-on::after-settle="removeOverlay()">
       <section id="webhook-modal-form-body" class="modal-card-body">
         {% include 'scanpipe/forms/project_webhook_form.html' with form=webhook_form %}
       </section>

@@ -1,0 +1,97 @@
+{% load humanize %}
+{% now "Y-m-d" as today %}
+<table class="table is-bordered is-striped is-hoverable is-fullwidth">
+  {% include 'scanpipe/includes/list_view_thead.html' with select_all=True %}
+  <tbody>
+  {% for project in projects %}
+    <tr>
+      <th class="p-2">
+        <input type="checkbox" class="select-row" value="{{ project.uuid }}">
+      </th>
+      <th class="break-all">
+        <a href="{{ project.get_absolute_url }}">{{ project }}</a>
+        <div>
+          {% include 'scanpipe/includes/project_labels.html' with labels=project.labels.all only %}
+        </div>
+        <span class="has-text-grey is-size-7 is-block">
+          {% if project.created_date|date:"Y-m-d" == today %}
+            <span title="{{ project.created_date }}">
+              Created {{ project.created_date|naturaltime }}
+            </span>
+          {% else %}
+            <span title="{{ project.created_date|naturaltime }}">
+              Created {{ project.created_date }}
+            </span>
+          {% endif %}
+        </span>
+      </th>
+      <td>
+        {% if project.discoveredpackages_count %}
+          <a href="{% url 'project_packages' project.slug %}">
+            {{ project.discoveredpackages_count|intcomma }}
+          </a>
+        {% else %}
+          <span>0</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if project.discovereddependencies_count %}
+          <a href="{% url 'project_dependencies' project.slug %}">
+            {{ project.discovereddependencies_count|intcomma }}
+          </a>
+          <a href="{% url 'project_dependency_tree' project.slug %}">
+            <span class="icon">
+              <i class="fa-solid fa-sitemap fa-sm"></i>
+            </span>
+          </a>
+        {% else %}
+          <span>0</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if project.codebaseresources_count %}
+          <a href="{% url 'project_resources' project.slug %}">
+            {{ project.codebaseresources_count|intcomma }}
+          </a>
+          {% if project.codebaseresources_count > 1 %}
+            <a href="{% url 'project_resource_tree' project.slug %}">
+              <span class="icon">
+                <i class="fa-solid fa-folder-tree fa-sm"></i>
+              </span>
+            </a>
+          {% endif %}
+        {% else %}
+          <span>0</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if project.projectmessages_count %}
+          <a href="{% url 'project_messages' project.slug %}">
+            {{ project.projectmessages_count|intcomma }}
+          </a>
+        {% else %}
+          <span>0</span>
+        {% endif %}
+      </td>
+      <td class="break-word">
+        {% for run in project.runs.all %}
+          <div class="is-flex is-justify-content-space-between {% if not forloop.first %}mt-1{% endif %}">
+            <a class="modal-button is-black-link mr-2" data-target="pipeline-help-modal" data-pipeline-name="{{ run.pipeline_name }}" aria-haspopup="true">
+              {{ run.pipeline_name }}
+            </a>
+            <a class="modal-button" data-target="run-detail-modal" data-uuid="{{ run.uuid }}" aria-haspopup="true">
+              {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
+            </a>
+          </div>
+        {% endfor %}
+      </td>
+      <td>
+        {% if project.codebaseresources_count or project.discoveredpackages_count %}
+          {% include "scanpipe/dropdowns/project_download_dropdown.html" with project=project only %}
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% include "scanpipe/modals/pipeline_help_modal.html" %}

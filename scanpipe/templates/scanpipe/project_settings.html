@@ -33,6 +33,7 @@
 
 {% block scripts %}
   <script>
+    // Warning: moving this to main.js breaks the "clone" modal redirect
     document.addEventListener("htmx:beforeOnLoad", function(evt) {
       if (evt.detail.xhr.getResponseHeader("HX-Redirect")) {
         evt.preventDefault();

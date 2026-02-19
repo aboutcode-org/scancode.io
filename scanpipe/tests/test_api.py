@@ -669,6 +669,16 @@ class ScanPipeAPITest(TransactionTestCase):
         # to prevent a "ResourceWarning: unclosed file"
         self.assertTrue(response.getvalue().startswith(b"PK"))
 
+        data = {"output_format": "all_formats"}
+        response = self.csrf_client.get(url, data=data)
+        expected = ["application/zip"]
+        self.assertIn(response["Content-Type"], expected)
+
+        data = {"output_format": "all_outputs"}
+        response = self.csrf_client.get(url, data=data)
+        expected = ["application/zip"]
+        self.assertIn(response["Content-Type"], expected)
+
     def test_scanpipe_api_project_action_pipelines(self):
         url = reverse("project-pipelines")
         response = self.csrf_client.get(url)
@@ -899,10 +909,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         response = self.csrf_client.delete(self.project1_detail_url)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
-        expected = (
-            "Cannot execute this action until all associated pipeline runs are "
-            "completed."
-        )
+        expected = "Cannot delete project while a run is in progress."
         self.assertEqual(expected, response.data["status"])
 
         run.set_task_ended(exitcode=0)
@@ -952,10 +959,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        expected = {
-            "status": "All data, except inputs, for the Analysis project have been "
-            "removed."
-        }
+        expected = {"status": "The Analysis project has been reset."}
         self.assertEqual(expected, response.data)
         self.assertEqual(0, self.project1.runs.count())
         self.assertEqual(0, self.project1.codebaseresources.count())
@@ -1030,6 +1034,16 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual("", input_source.filename)
         self.assertEqual(data["input_urls"], input_source.download_url)
         self.assertEqual("tag", input_source.tag)
+
+        data = {
+            "input_urls": ["docker://alpine", "docker://postgresql"],
+        }
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual({"status": "Input(s) added."}, response.data)
+        input_sources = self.project1.inputsources.filter(
+            download_url__startswith="docker://"
+        )
+        self.assertEqual(2, len(input_sources))
 
         data = {
             "upload_file": io.BytesIO(b"Content"),
@@ -1251,6 +1265,42 @@ class ScanPipeAPITest(TransactionTestCase):
             }
         }
         self.assertDictEqual(expected, response.data)
+
+    def test_scanpipe_api_project_action_license_clarity_compliance(self):
+        project = make_project()
+        url = reverse("project-license-clarity-compliance", args=[project.uuid])
+
+        response = self.csrf_client.get(url)
+        expected = {"license_clarity_compliance_alert": None}
+        self.assertEqual(expected, response.data)
+
+        project.update_extra_data({"license_clarity_compliance_alert": "ok"})
+        response = self.csrf_client.get(url)
+        expected = {"license_clarity_compliance_alert": "ok"}
+        self.assertEqual(expected, response.data)
+
+        project.update_extra_data({"license_clarity_compliance_alert": "error"})
+        response = self.csrf_client.get(url)
+        expected = {"license_clarity_compliance_alert": "error"}
+        self.assertEqual(expected, response.data)
+
+    def test_scanpipe_api_project_action_scorecard_compliance(self):
+        project = make_project()
+        url = reverse("project-scorecard-compliance", args=[project.uuid])
+
+        response = self.csrf_client.get(url)
+        expected = {"scorecard_compliance_alert": None}
+        self.assertEqual(expected, response.data)
+
+        project.update_extra_data({"scorecard_compliance_alert": "ok"})
+        response = self.csrf_client.get(url)
+        expected = {"scorecard_compliance_alert": "ok"}
+        self.assertEqual(expected, response.data)
+
+        project.update_extra_data({"scorecard_compliance_alert": "error"})
+        response = self.csrf_client.get(url)
+        expected = {"scorecard_compliance_alert": "error"}
+        self.assertEqual(expected, response.data)
 
     def test_scanpipe_api_serializer_get_model_serializer(self):
         self.assertEqual(

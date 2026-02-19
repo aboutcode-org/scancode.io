@@ -97,6 +97,11 @@ urlpatterns = [
         name="project_messages",
     ),
     path(
+        "project/<slug:slug>/vulnerabilities/",
+        views.VulnerabilityListView.as_view(),
+        name="project_vulnerabilities",
+    ),
+    path(
         "project/<slug:slug>/archive/",
         views.ProjectArchiveView.as_view(),
         name="project_archive",
@@ -128,8 +133,28 @@ urlpatterns = [
     ),
     path(
         "project/<slug:slug>/codebase/",
-        views.ProjectCodebaseView.as_view(),
+        views.ProjectCodebasePanelView.as_view(),
         name="project_codebase",
+    ),
+    path(
+        "project/<slug:slug>/resource_tree/<path:path>/",
+        views.ProjectResourceTreeView.as_view(),
+        name="project_resource_tree",
+    ),
+    path(
+        "project/<slug:slug>/resource_tree/",
+        views.ProjectResourceTreeView.as_view(),
+        name="project_resource_tree",
+    ),
+    path(
+        "project/<slug:slug>/resource_tree_table/<path:path>/",
+        views.ProjectResourceTreeRightPaneView.as_view(),
+        name="project_resource_tree_right_pane",
+    ),
+    path(
+        "project/<slug:slug>/resource_tree_table/",
+        views.ProjectResourceTreeRightPaneView.as_view(),
+        name="project_resource_tree_right_pane",
     ),
     path(
         "run/<uuid:uuid>/",

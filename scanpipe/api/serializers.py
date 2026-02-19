@@ -518,6 +518,20 @@ class ProjectMessageSerializer(serializers.ModelSerializer):
         return project_error.traceback.splitlines()
 
 
+class InputSerializer(serializers.Serializer):
+    """Serializer used in the `ProjectViewSet.add_input` action."""
+
+    upload_file = serializers.FileField(required=False, help_text="A file to upload.")
+    upload_file_tag = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="An optional tag to add on the uploaded file.",
+    )
+    input_urls = serializers.ListField(
+        required=False, default=list, help_text="A list of URLs to download."
+    )
+
+
 class PipelineSerializer(PipelineChoicesMixin, serializers.ModelSerializer):
     """Serializer used in the `ProjectViewSet.add_pipeline` action."""
 
@@ -534,6 +548,56 @@ class PipelineSerializer(PipelineChoicesMixin, serializers.ModelSerializer):
             "pipeline",
             "execute_now",
         ]
+
+
+class ProjectArchiveSerializer(serializers.Serializer):
+    """Serializer for the `ProjectViewSet.archive` action."""
+
+    remove_input = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text=(
+            "Delete the input directory during archival. "
+            "InputSource entries are kept for reference."
+        ),
+    )
+    remove_codebase = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text="Delete the codebase directory during archival.",
+    )
+    remove_output = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text="Delete the output directory during archival.",
+    )
+
+
+class ProjectResetSerializer(serializers.Serializer):
+    """Serializer for the `ProjectViewSet.reset` action."""
+
+    keep_input = serializers.BooleanField(
+        required=False,
+        default=True,
+        initial=True,
+        help_text="Keep the input directory and input sources when resetting.",
+    )
+    keep_webhook = serializers.BooleanField(
+        required=False,
+        default=True,
+        initial=True,
+        help_text="Keep webhook subscriptions when resetting.",
+    )
+    restore_pipelines = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text="Restore all pipelines that were previously existing on the project.",
+    )
+    execute_now = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text="Execute the restored pipelines immediately after restoration.",
+    )
 
 
 def get_model_serializer(model_class):

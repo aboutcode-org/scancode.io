@@ -1,0 +1,67 @@
+name: Generate SBOM with OWASP dep-scan and load into ScanCode.io
+
+# This workflow:
+#  1. Generates a CycloneDX SBOM for a container image using OWASP dep-scan.
+#  2. Uploads the SBOM as a GitHub artifact for future inspection.
+#  3. Loads the SBOM into ScanCode.io for further analysis.
+#  4. Runs assertions to verify that the SBOM was properly processed in ScanCode.io.
+#
+# It runs on demand, and once a week (scheduled).
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Run once a week (every 7 days) at 00:00 UTC on Sunday
+    - cron: "0 0 * * 0"
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_REFERENCE: "python:3.13.0-slim"
+  EXPECTED_PACKAGE: 220
+  EXPECTED_VULNERABLE_PACKAGE: 10
+  EXPECTED_DEPENDENCY: 150
+
+jobs:
+  generate-and-load-sbom:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Install OWASP dep-scan
+        run: |
+          sudo npm install -g @cyclonedx/cdxgen
+          pip install owasp-depscan
+
+      - name: Generate SBOM with OWASP dep-scan
+        run: |
+          depscan \
+            --src ${{ env.IMAGE_REFERENCE }} \
+            --type docker \
+            --reports-dir reports \
+            --explain
+
+      - name: Upload SBOM as GitHub Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: depscan-sbom
+          path: reports/
+          retention-days: 20
+
+      - name: Uninstall dep-scan to avoid conflicts in the Python env
+        run: pip uninstall --yes owasp-depscan
+
+      - name: Import SBOM into ScanCode.io
+        uses: aboutcode-org/scancode-action@main
+        with:
+          pipelines: "load_sbom"
+          inputs-path: "reports/sbom-docker.vdr.json"
+          scancodeio-repo-branch: "main"
+
+      - name: Verify SBOM Analysis Results in ScanCode.io
+        shell: bash
+        run: |
+          scanpipe verify-project \
+            --project scancode-action \
+            --packages ${{ env.EXPECTED_PACKAGE }} \
+            --vulnerable-packages ${{ env.EXPECTED_VULNERABLE_PACKAGE }} \
+            --dependencies ${{ env.EXPECTED_DEPENDENCY }}

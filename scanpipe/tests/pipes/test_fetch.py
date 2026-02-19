@@ -43,6 +43,7 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(git_http_url))
         self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(git_http_url + "/"))
         self.assertEqual(fetch.fetch_package_url, fetch.get_fetcher("pkg:npm/d3@5.8.0"))
+        self.assertEqual(fetch.fetch_package_url, fetch.get_fetcher("pkg:pypi/django"))
 
         with self.assertRaises(ValueError) as cm:
             fetch.get_fetcher("")
@@ -107,6 +108,19 @@ class ScanPipeFetchPipesTest(TestCase):
         mock_get.return_value = make_mock_response(url="https://exa.com/filename.zip")
         downloaded_file = fetch.fetch_package_url(package_url)
         self.assertTrue(Path(downloaded_file.directory, "filename.zip").exists())
+
+    @mock.patch("fetchcode.pypi.fetch_json_response")
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_pypi_package_url(self, mock_get, mock_fetch_json):
+        package_url = "pkg:pypi/django@5.2"
+        download_url = "https://files.pythonhosted.org/packages/Django-5.2.tar.gz"
+
+        mock_get.return_value = make_mock_response(url=download_url)
+        mock_fetch_json.return_value = {"urls": [{"url": download_url}]}
+
+        downloaded_file = fetch.fetch_package_url(package_url)
+        self.assertEqual(download_url, mock_get.call_args[0][0])
+        self.assertTrue(Path(downloaded_file.directory, "Django-5.2.tar.gz").exists())
 
     @mock.patch("scanpipe.pipes.fetch.get_docker_image_platform")
     @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")

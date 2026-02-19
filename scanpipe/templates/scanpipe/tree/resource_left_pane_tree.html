@@ -1,0 +1,41 @@
+<ul>
+  {% for node in children %}
+    <li>
+      {% if node.is_dir %}
+        <div class="tree-node is-flex is-align-items-center px-1" data-folder data-path="{{ node.path }}"{% if node.has_children %} data-target="{{ node.path|slugify }}" data-url="{% url 'project_resource_tree' project.slug node.path %}"{% endif %}>
+          <span class="icon is-small chevron mr-1{% if not node.has_children %} is-invisible{% endif %} is-clickable is-flex is-align-items-center" data-chevron>
+            <i class="fas fa-chevron-right"></i>
+          </span>
+          <span
+            class="is-flex is-align-items-center folder-meta is-clickable"
+            data-folder-click
+            data-path="{{ node.path }}"
+            hx-get="{% url 'project_resource_tree_right_pane' project.slug node.path %}"
+            hx-target="#right-pane"
+            hx-push-url="{% url 'project_resource_tree' project.slug node.path %}">
+            <span class="icon is-small mr-2">
+              <i class="fas fa-folder"></i>
+            </span>
+            <span>{{ node.name }}</span>
+          </span>
+        </div>
+        {% if node.has_children %}
+          <div id="dir-{{ node.path|slugify }}" class="ml-4 is-hidden" data-loaded="false"></div>
+        {% endif %}
+      {% else %}
+        <div
+          class="tree-node-file is-flex is-align-items-center pl-5 is-clickable is-file"
+          data-file
+          data-path="{{ node.path }}"
+          hx-get="{% url 'resource_detail' project.slug node.path %}"
+          hx-target="#right-pane"
+          hx-push-url="{% url 'project_resource_tree' project.slug node.path %}">
+          <span class="icon is-small mr-2">
+            <i class="far fa-file"></i>
+          </span>
+          <span>{{ node.name }}</span>
+        </div>
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>

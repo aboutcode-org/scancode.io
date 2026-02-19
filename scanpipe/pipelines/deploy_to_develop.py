@@ -27,6 +27,7 @@ from scanpipe.pipes import d2d
 from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import input
+from scanpipe.pipes import jvm
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
@@ -72,10 +73,31 @@ class DeployToDevelop(Pipeline):
             cls.match_archives_to_purldb,
             cls.find_java_packages,
             cls.map_java_to_class,
-            cls.map_jar_to_source,
+            cls.map_jar_to_java_source,
+            cls.find_scala_packages,
+            cls.map_scala_to_class,
+            cls.map_jar_to_scala_source,
+            cls.find_kotlin_packages,
+            cls.map_kotlin_to_class,
+            cls.map_jar_to_kotlin_source,
+            cls.find_grammar_packages,
+            cls.map_grammar_to_class,
+            cls.map_jar_to_grammar_source,
+            cls.find_groovy_packages,
+            cls.map_groovy_to_class,
+            cls.map_jar_to_groovy_source,
+            cls.find_aspectj_packages,
+            cls.map_aspectj_to_class,
+            cls.map_jar_to_aspectj_source,
+            cls.find_clojure_packages,
+            cls.map_clojure_to_class,
+            cls.map_jar_to_clojure_source,
+            cls.find_xtend_packages,
+            cls.map_xtend_to_class,
             cls.map_javascript,
             cls.map_javascript_symbols,
             cls.map_javascript_strings,
+            cls.get_symbols_from_binaries,
             cls.map_elf,
             cls.map_macho,
             cls.map_winpe,
@@ -93,6 +115,7 @@ class DeployToDevelop(Pipeline):
             cls.perform_house_keeping_tasks,
             cls.match_purldb_resources_post_process,
             cls.remove_packages_without_resources,
+            cls.scan_ignored_to_files,
             cls.scan_unmapped_to_files,
             cls.scan_mapped_from_for_files,
             cls.collect_and_create_license_detections,
@@ -167,17 +190,163 @@ class DeployToDevelop(Pipeline):
     @optional_step("Java")
     def find_java_packages(self):
         """Find the java package of the .java source files."""
-        d2d.find_java_packages(self.project, logger=self.log)
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.JavaLanguage, logger=self.log
+        )
 
     @optional_step("Java")
     def map_java_to_class(self):
         """Map a .class compiled file to its .java source."""
-        d2d.map_java_to_class(project=self.project, logger=self.log)
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.JavaLanguage, logger=self.log
+        )
 
     @optional_step("Java")
-    def map_jar_to_source(self):
+    def map_jar_to_java_source(self):
         """Map .jar files to their related source directory."""
-        d2d.map_jar_to_source(project=self.project, logger=self.log)
+        d2d.map_jar_to_jvm_source(
+            project=self.project, jvm_lang=jvm.JavaLanguage, logger=self.log
+        )
+
+    @optional_step("Scala")
+    def find_scala_packages(self):
+        """Find the java package of the .scala source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.ScalaLanguage, logger=self.log
+        )
+
+    @optional_step("Scala")
+    def map_scala_to_class(self):
+        """Map a .class compiled file to its .scala source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.ScalaLanguage, logger=self.log
+        )
+
+    @optional_step("Scala")
+    def map_jar_to_scala_source(self):
+        """Map .jar files to their related source directory."""
+        d2d.map_jar_to_jvm_source(
+            project=self.project, jvm_lang=jvm.ScalaLanguage, logger=self.log
+        )
+
+    @optional_step("Kotlin")
+    def find_kotlin_packages(self):
+        """Find the java package of the kotlin source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.KotlinLanguage, logger=self.log
+        )
+
+    @optional_step("Kotlin")
+    def map_kotlin_to_class(self):
+        """Map a .class compiled file to its kotlin source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.KotlinLanguage, logger=self.log
+        )
+
+    @optional_step("Kotlin")
+    def map_jar_to_kotlin_source(self):
+        """Map .jar files to their related source directory."""
+        d2d.map_jar_to_jvm_source(
+            project=self.project, jvm_lang=jvm.KotlinLanguage, logger=self.log
+        )
+
+    @optional_step("Grammar")
+    def find_grammar_packages(self):
+        """Find the java package of the .g/.g4 source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.GrammarLanguage, logger=self.log
+        )
+
+    @optional_step("Grammar")
+    def map_grammar_to_class(self):
+        """Map a .class compiled file to its .g/.g4 source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.GrammarLanguage, logger=self.log
+        )
+
+    @optional_step("Grammar")
+    def map_jar_to_grammar_source(self):
+        """Map .jar files to their related source directory."""
+        d2d.map_jar_to_jvm_source(
+            project=self.project, jvm_lang=jvm.GrammarLanguage, logger=self.log
+        )
+
+    @optional_step("Groovy")
+    def find_groovy_packages(self):
+        """Find the package of the .groovy source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.GroovyLanguage, logger=self.log
+        )
+
+    @optional_step("Groovy")
+    def map_groovy_to_class(self):
+        """Map a .class compiled file to its .groovy source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.GroovyLanguage, logger=self.log
+        )
+
+    @optional_step("Groovy")
+    def map_jar_to_groovy_source(self):
+        """Map .jar files to their related source directory."""
+        d2d.map_jar_to_jvm_source(
+            project=self.project, jvm_lang=jvm.GroovyLanguage, logger=self.log
+        )
+
+    @optional_step("AspectJ")
+    def find_aspectj_packages(self):
+        """Find the package of the .aj source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.AspectJLanguage, logger=self.log
+        )
+
+    @optional_step("AspectJ")
+    def map_aspectj_to_class(self):
+        """Map a .class compiled file to its .aj source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.AspectJLanguage, logger=self.log
+        )
+
+    @optional_step("AspectJ")
+    def map_jar_to_aspectj_source(self):
+        """Map .jar files to their related source directory."""
+        d2d.map_jar_to_jvm_source(
+            project=self.project, jvm_lang=jvm.AspectJLanguage, logger=self.log
+        )
+
+    @optional_step("Clojure")
+    def find_clojure_packages(self):
+        """Find the package of the .clj source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.ClojureLanguage, logger=self.log
+        )
+
+    @optional_step("Clojure")
+    def map_clojure_to_class(self):
+        """Map a .class compiled file to its .clj source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.ClojureLanguage, logger=self.log
+        )
+
+    @optional_step("Clojure")
+    def map_jar_to_clojure_source(self):
+        """Map .jar files to their related source directory."""
+        d2d.map_jar_to_jvm_source(
+            project=self.project, jvm_lang=jvm.ClojureLanguage, logger=self.log
+        )
+
+    @optional_step("Xtend")
+    def find_xtend_packages(self):
+        """Find the java package of the xtend source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.XtendLanguage, logger=self.log
+        )
+
+    @optional_step("Xtend")
+    def map_xtend_to_class(self):
+        """Map a .class compiled file to its xtend source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.XtendLanguage, logger=self.log
+        )
 
     @optional_step("JavaScript")
     def map_javascript(self):
@@ -197,6 +366,14 @@ class DeployToDevelop(Pipeline):
         """Map deployed JavaScript, TypeScript to its sources using string literals."""
         d2d.map_javascript_strings(project=self.project, logger=self.log)
 
+    def get_symbols_from_binaries(self):
+        """Extract symbols from Elf, Mach0 and windows binaries for mapping."""
+        d2d.extract_binary_symbols(
+            project=self.project,
+            options=self.selected_groups,
+            logger=self.log,
+        )
+
     @optional_step("Elf")
     def map_elf(self):
         """Map ELF binaries to their sources using dwarf paths and symbols."""
@@ -215,8 +392,9 @@ class DeployToDevelop(Pipeline):
 
     @optional_step("Go")
     def map_go(self):
-        """Map Go binaries to their sources using paths."""
+        """Map Go binaries to their sources using paths and symbols."""
         d2d.map_go_paths(project=self.project, logger=self.log)
+        d2d.map_go_binaries_with_symbols(project=self.project, logger=self.log)
 
     @optional_step("Rust")
     def map_rust(self):
@@ -230,6 +408,7 @@ class DeployToDevelop(Pipeline):
         symbols.
         """
         d2d.map_python_pyx_to_binaries(project=self.project, logger=self.log)
+        d2d.map_python_protobuf_files(project=self.project, logger=self.log)
 
     def match_directories_to_purldb(self):
         """Match selected directories in PurlDB."""
@@ -321,6 +500,16 @@ class DeployToDevelop(Pipeline):
             codebase_resources__isnull=True
         )
         package_without_resources.delete()
+
+    def scan_ignored_to_files(self):
+        """
+        Scan status="ignored-from-config" ``to/`` files for copyrights,
+        licenses, emails, and urls. These files are ignored based on
+        ecosystem specific configurations. These files are not used for the
+        D2D purpose, but scanning them may provide useful information about
+        the deployed codebase.
+        """
+        d2d.scan_ignored_to_files(project=self.project, logger=self.log)
 
     def scan_unmapped_to_files(self):
         """
