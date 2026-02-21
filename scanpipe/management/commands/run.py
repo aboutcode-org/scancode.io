@@ -30,6 +30,7 @@ from django.utils.crypto import get_random_string
 
 from scanpipe.management.commands import extract_tag_from_input_file
 from scanpipe.pipes.fetch import SCHEME_TO_FETCHER_MAPPING
+from scanpipe.pipes.output import PRINT_SUPPORTED_FORMATS
 
 
 class Command(BaseCommand):
@@ -59,7 +60,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--format",
             default="json",
-            choices=["json", "spdx", "cyclonedx", "attribution", "ort-package-list"],
+            choices=PRINT_SUPPORTED_FORMATS,
             help="Specifies the output serialization format for the results.",
         )
 

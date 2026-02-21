@@ -68,6 +68,27 @@ from scanpipe.pipes import spdx
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
+# All formats supported by the `output` management command.
+SUPPORTED_FORMATS = [
+    "json",
+    "csv",
+    "xlsx",
+    "attribution",
+    "spdx",
+    "cyclonedx",
+    "ort-package-list",
+]
+
+# Subset of formats compatible with stdout streaming (--print mode).
+# Excludes binary formats (xlsx) and multi-file formats (csv).
+PRINT_SUPPORTED_FORMATS = [
+    "json",
+    "spdx",
+    "cyclonedx",
+    "attribution",
+    "ort-package-list",
+]
+
 
 def safe_filename(filename):
     """Convert the provided `filename` to a safe filename."""
