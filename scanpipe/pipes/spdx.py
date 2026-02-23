@@ -607,7 +607,6 @@ class Document:
             "SPDXID": self.spdx_id,
             "name": self.safe_document_name(self.name),
             "documentNamespace": self.namespace,
-            "documentDescribes": self.describes,
             "creationInfo": self.creation_info.as_dict(),
             "packages": [package.as_dict(self.version) for package in self.packages],
         }
@@ -620,10 +619,24 @@ class Document:
                 license_info.as_dict() for license_info in self.extracted_licenses
             ]
 
-        if self.relationships:
-            data["relationships"] = [
-                relationship.as_dict() for relationship in self.relationships
-            ]
+        # The SPDX 2.3 spec deprecated the top-level `documentDescribes` field.
+        # Instead, emit explicit DESCRIBES relationships prepended to maintain
+        # deterministic ordering and ensure document-level relationships appear first.
+        # See https://github.com/spdx/spdx-spec/issues/395
+        describes_relationships = [
+            {
+                "spdxElementId": self.spdx_id,
+                "relatedSpdxElement": spdx_id,
+                "relationshipType": "DESCRIBES",
+            }
+            for spdx_id in (self.describes or [])
+        ]
+        existing_relationships = [
+            relationship.as_dict() for relationship in (self.relationships or [])
+        ]
+        all_relationships = describes_relationships + existing_relationships
+        if all_relationships:
+            data["relationships"] = all_relationships
 
         if self.comment:
             data["comment"] = self.comment
@@ -636,13 +649,37 @@ class Document:
 
     @classmethod
     def from_data(cls, data):
+        spdx_id = data.get("SPDXID")
+        relationships_data = data.get("relationships", [])
+
+        # Backward compatibility: reconstruct `describes` from the legacy
+        # `documentDescribes` field if present, or derive it from DESCRIBES
+        # relationships where spdxElementId matches the document SPDXID.
+        describes = data.get("documentDescribes") or [
+            r["relatedSpdxElement"]
+            for r in relationships_data
+            if r.get("relationshipType") == "DESCRIBES"
+            and r.get("spdxElementId") == spdx_id
+        ]
+
+        # Exclude DESCRIBES relationships that were re-derived into `describes`
+        # to avoid duplication when the document is round-tripped via as_dict().
+        other_relationships = [
+            Relationship.from_data(r)
+            for r in relationships_data
+            if not (
+                r.get("relationshipType") == "DESCRIBES"
+                and r.get("spdxElementId") == spdx_id
+            )
+        ]
+
         return cls(
-            spdx_id=data.get("SPDXID"),
+            spdx_id=spdx_id,
             version=data.get("spdxVersion", "").split("SPDX-")[-1],
             data_license=data.get("dataLicense"),
             name=data.get("name"),
             namespace=data.get("documentNamespace"),
-            describes=data.get("documentDescribes"),
+            describes=describes,
             creation_info=CreationInfo.from_data(data.get("creationInfo", {})),
             packages=[
                 Package.from_data(package_data)
@@ -653,10 +690,7 @@ class Document:
                 ExtractedLicensingInfo.from_data(license_info_data)
                 for license_info_data in data.get("hasExtractedLicensingInfos", [])
             ],
-            relationships=[
-                Relationship.from_data(relationship_data)
-                for relationship_data in data.get("relationships", [])
-            ],
+            relationships=other_relationships,
             comment=data.get("comment"),
         )
 

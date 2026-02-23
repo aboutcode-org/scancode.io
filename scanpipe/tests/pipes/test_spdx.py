@@ -196,7 +196,6 @@ class ScanPipeSPDXPipesTest(TestCase):
             "SPDXID": "SPDXRef-DOCUMENT",
             "name": "document_name",
             "documentNamespace": "https://[CreatorWebsite]/[DocumentName]-[UUID]",
-            "documentDescribes": ["SPDXRef-project"],
             "creationInfo": {
                 "created": "2022-09-21T13:50:20Z",
                 "creators": [
@@ -273,10 +272,15 @@ class ScanPipeSPDXPipesTest(TestCase):
             ],
             "relationships": [
                 {
+                    "spdxElementId": "SPDXRef-DOCUMENT",
+                    "relatedSpdxElement": "SPDXRef-project",
+                    "relationshipType": "DESCRIBES",
+                },
+                {
                     "spdxElementId": "SPDXRef-package1",
                     "relatedSpdxElement": "SPDXRef-file1",
                     "relationshipType": "CONTAINS",
-                }
+                },
             ],
             "comment": "This document was created using SPDXCode-1.0",
         }
@@ -412,3 +416,57 @@ class ScanPipeSPDXPipesTest(TestCase):
 
         with self.assertRaises(Exception):
             spdx.validate_document({}, self.schema_2_3)
+
+    def test_spdx_document_describes_uses_relationship(self):
+        """documentDescribes is removed; equivalent DESCRIBES relationships are emitted."""
+        document = spdx.Document(**self.document_data)
+        result = document.as_dict()
+
+        assert "documentDescribes" not in result
+
+        describes_rels = [
+            r
+            for r in result.get("relationships", [])
+            if r.get("relationshipType") == "DESCRIBES"
+        ]
+        assert len(describes_rels) == 1
+        assert describes_rels[0]["spdxElementId"] == "SPDXRef-DOCUMENT"
+        assert describes_rels[0]["relatedSpdxElement"] == "SPDXRef-project"
+
+    def test_spdx_document_from_data_backward_compat(self):
+        """Legacy documentDescribes input round-trips correctly to DESCRIBES relationships."""
+        legacy_data = {
+            "spdxVersion": "SPDX-2.3",
+            "dataLicense": "CC0-1.0",
+            "SPDXID": "SPDXRef-DOCUMENT",
+            "name": "legacy_doc",
+            "documentNamespace": "https://example.com/legacy",
+            "documentDescribes": ["SPDXRef-root"],
+            "creationInfo": {
+                "created": "2022-01-01T00:00:00Z",
+                "creators": ["Tool: OldTool-1.0"],
+            },
+            "packages": [
+                {
+                    "SPDXID": "SPDXRef-root",
+                    "name": "root-pkg",
+                    "downloadLocation": "NOASSERTION",
+                    "filesAnalyzed": False,
+                }
+            ],
+        }
+        document = spdx.Document.from_data(legacy_data)
+
+        # Internal describes is reconstructed correctly
+        assert document.describes == ["SPDXRef-root"]
+
+        # Re-serialized output uses relationships, not the legacy field
+        result = document.as_dict()
+        assert "documentDescribes" not in result
+        describes_rels = [
+            r
+            for r in result.get("relationships", [])
+            if r.get("relationshipType") == "DESCRIBES"
+        ]
+        assert len(describes_rels) == 1
+        assert describes_rels[0]["relatedSpdxElement"] == "SPDXRef-root"
