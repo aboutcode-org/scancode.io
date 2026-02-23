@@ -64,6 +64,56 @@ class ScanPipeVulnerableCodeTest(TestCase):
         django_5_0.refresh_from_db()
         self.assertEqual(1, len(django_5_0.affected_by_vulnerabilities))
 
+    @mock.patch("scanpipe.pipes.vulnerablecode.bulk_search_by_purl")
+    def test_fetch_vulnerabilities_with_advisory_response(
+        self, mock_search_by_purl
+    ):
+        django_5_0 = make_package(self.project1, "pkg:pypi/django@5.0")
+
+        advisory_response = {
+            "purl": "pkg:pypi/django@5.0",
+            "affected_by_advisories": [
+                {
+                    "advisory_id": "ADV-123",
+                    "aliases": ["CVE-2024-0001"],
+                    "summary": "Test advisory summary",
+                }
+            ],
+        }
+
+        mock_search_by_purl.return_value = [advisory_response]
+
+        fetch_vulnerabilities(packages=[django_5_0])
+        django_5_0.refresh_from_db()
+
+        self.assertEqual(1, len(django_5_0.affected_by_vulnerabilities))
+        self.assertEqual(
+            "ADV-123",
+            django_5_0.affected_by_vulnerabilities[0]["vulnerability_id"],        
+        ) 
+        self.assertEqual(
+            ["CVE-2024-0001"],
+            django_5_0.affected_by_vulnerabilities[0]["aliases"],
+        )
+
+    @mock.patch("scanpipe.pipes.vulnerablecode.bulk_search_by_purl")
+    def test_fetch_vulnerabilities_with_unexpected_response(
+        self, mock_search_by_purl
+    ):
+        django_5_0 = make_package(self.project1, "pkg:pypi/django@5.0")
+
+        unexpected_response = {
+            "purl": "pkg:pypi/django@5.0",
+            # No vulnerabilities or advisories field
+        }
+
+        mock_search_by_purl.return_value = [unexpected_response]
+
+        fetch_vulnerabilities(packages=[django_5_0])
+        django_5_0.refresh_from_db()
+
+        self.assertEqual([], django_5_0.affected_by_vulnerabilities)
+
     def test_scanpipe_pipes_vulnerablecode_filter_vulnerabilities(self):
         data = self.data / "vulnerablecode/django-5.0_package_data.json"
         package_data = json.loads(data.read_text())
