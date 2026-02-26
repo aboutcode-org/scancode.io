@@ -114,7 +114,7 @@ dev = [
   "sphinxcontrib-django==2.5",
 ]
 android_analysis = [
-  "android_inspector==0.0.1"
+  "android_inspector==0.2.0"
 ]
 mining = [
   "minecode_pipelines==0.1.1"
