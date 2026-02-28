@@ -625,6 +625,7 @@ def match_purldb_resources(
         .to_codebase()
         .no_status()
         .has_value("sha1")
+        .exclude(name=".DS_Store")
         .filter(extension__in=extensions)
     )
     resource_count = to_resources.count()
