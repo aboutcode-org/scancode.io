@@ -80,7 +80,7 @@ ECOSYSTEM_CONFIGS = {
             ".odt",
             ".odp",
         ],
-        deployed_resource_path_exclusions=["*.properties", "*.html"],
+        deployed_resource_path_exclusions=["*.properties", "*.html", "*/.github/*"],
     ),
     "Java": EcosystemConfig(
         ecosystem_option="Java",
@@ -164,7 +164,16 @@ ECOSYSTEM_CONFIGS = {
     ),
     "MacOS": EcosystemConfig(
         ecosystem_option="MacOS",
-        source_symbol_extensions=[".c", ".cpp", ".h", ".m", ".swift"],
+        source_symbol_extensions=[
+            ".c",
+            ".cpp",
+            ".h",
+            ".m",
+            ".swift",
+            ".go",
+            ".ts",
+            ".tsx",
+        ],
     ),
     "Windows": EcosystemConfig(
         ecosystem_option="Windows",
