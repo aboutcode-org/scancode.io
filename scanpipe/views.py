@@ -1598,6 +1598,8 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
             output_file = output.to_all_formats(project)
         elif format == "all_outputs":
             output_file = output.to_all_outputs(project)
+        elif format == "symbols":
+            output_file = output.to_symbols_json(project)
         else:
             raise Http404("Format not supported.")
 

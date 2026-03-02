@@ -188,6 +188,8 @@ class ProjectViewSet(
             output_file = output.to_attribution(project)
         elif format == "ort-package-list":
             output_file = output.to_ort_package_list_yml(project)
+        elif format == "symbols":
+            output_file = output.to_symbols_json(project)
         elif format == "all_formats":
             output_file = output.to_all_formats(project)
         elif format == "all_outputs":

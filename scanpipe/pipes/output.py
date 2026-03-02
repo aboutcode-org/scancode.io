@@ -177,6 +177,21 @@ def to_csv(project):
     return output_files
 
 
+def strip_symbols(data):
+    """
+    Remove symbol-related keys from general project output.
+
+    Returns a new dict with symbols removed, leaving the input unchanged.
+    """
+    if not isinstance(data, dict) or not data:
+        return data
+
+    data_copy = dict(data)
+    for key in ("source_symbols", "source_strings", "source_comments"):
+        data_copy.pop(key, None)
+
+    return data_copy
+
 class JSONResultsGenerator:
     """
     Return the `project` JSON results as a Python generator.
@@ -236,6 +251,12 @@ class JSONResultsGenerator:
 
         messages = project.projectmessages.all()
         messages = ProjectMessageSerializer(messages, many=True)
+        sanitized_messages = []
+        for msg in messages.data:
+            msg_copy = msg
+            if "details" in msg_copy:
+                msg_copy["details"] = strip_symbols(msg_copy.get("details"))
+            sanitized_messages.append(msg_copy)
 
         other_tools = [f"pkg:pypi/scancode-toolkit@{scancode_toolkit_version}"]
 
@@ -250,7 +271,7 @@ class JSONResultsGenerator:
             "settings": project.settings,
             "input_sources": project.get_inputs_with_source(),
             "runs": runs.data,
-            "messages": messages.data,
+            "messages": sanitized_messages,
             "extra_data": project.extra_data,
         }
         yield self.encode(headers)
@@ -258,7 +279,10 @@ class JSONResultsGenerator:
     def encode_queryset(self, project, model_name, serializer):
         queryset = get_queryset(project, model_name)
         for obj in queryset.iterator(chunk_size=2000):
-            yield self.encode(serializer(obj).data)
+            data = serializer(obj).data
+            if model_name == "codebaseresource" and "extra_data" in data:
+                data["extra_data"] = strip_symbols(data.get("extra_data"))
+            yield self.encode(data)
 
     def get_packages(self, project):
         from scanpipe.api.serializers import DiscoveredPackageSerializer
@@ -288,6 +312,38 @@ class JSONResultsGenerator:
             project, "codebaserelation", CodebaseRelationSerializer
         )
 
+class SymbolsJSONResultsGenerator(JSONResultsGenerator):
+    """
+    Specialized JSON generator that only outputs resources with symbol data.
+    Inherits header generation from parent, but filters resources.
+    """
+
+    def get_resources(self, project):
+        from scanpipe.api.serializers import CodebaseResourceSerializer
+
+        queryset = project.codebaseresources.all()
+        for resource in queryset.iterator(chunk_size=2000):
+            extra_data = resource.extra_data or {}
+            has_symbols = any(
+                key in extra_data
+                for key in ("source_symbols", "source_strings", "source_comments")
+            )
+            if has_symbols:
+                yield self.encode(CodebaseResourceSerializer(resource).data)
+
+    def __iter__(self):
+        yield '{"headers":['
+        for chunk in self.get_headers(self.project):
+            yield chunk
+        yield '],"files":['
+
+        first = True
+        for chunk in self.get_resources(self.project):
+            if not first:
+                yield ","
+            first = False
+            yield chunk
+        yield "]}"
 
 def to_json(project):
     """
@@ -387,6 +443,9 @@ def add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     for row_index, record in enumerate(rows, start=1):
         row_errors = []
         record_is_dict = isinstance(record, dict)
+        record_is_projectmessage = not isinstance(record, dict) and isinstance(
+            record, ProjectMessage
+        )
         for col_index, field in enumerate(fields):
             if record_is_dict:
                 value = record.get(field)
@@ -396,6 +455,8 @@ def add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
             if not value:
                 continue
 
+            if record_is_projectmessage and field == "details":
+                value = strip_symbols(value)
             value, error = _adapt_value_for_xlsx(field, value)
 
             if error:
@@ -1131,6 +1192,25 @@ def to_ort_package_list_yml(project):
     output_file.write_text(ort_yml)
     return output_file
 
+def to_symbols_json(project):
+    """
+    Generate a symbols-only JSON output for the provided `project`.
+
+    This output contains only the symbols-related extracted data stored on
+    CodebaseResource.extra_data:
+      - source_symbols
+      - source_strings
+      - source_comments
+    """
+    results_generator = SymbolsJSONResultsGenerator(project)
+    output_file = project.get_output_file_path("symbols", "json")
+
+    with output_file.open("w") as file:
+        for chunk in results_generator:
+            file.write(chunk)
+
+    return output_file
+
 
 FORMAT_TO_FUNCTION_MAPPING = {
     "json": to_json,
@@ -1139,6 +1219,7 @@ FORMAT_TO_FUNCTION_MAPPING = {
     "cyclonedx": to_cyclonedx,
     "attribution": to_attribution,
     "ort-package-list": to_ort_package_list_yml,
+    "symbols": to_symbols_json
 }
 
 
