@@ -211,6 +211,46 @@ def filter_vulnerabilities(vulnerabilities, ignore_set):
         and not any(alias in ignore_set for alias in vulnerability.get("aliases", []))
     ]
 
+def normalize_advisories(advisories):
+    """
+    Convert advisory-based API responses into vulnerability-like structure
+    for backward compatibility.
+    """
+    normalized = []
+
+    for advisory in advisories or []:
+        entry = {
+            "vulnerability_id": advisory.get("advisory_id")
+            or advisory.get("id"),
+            "aliases": advisory.get("aliases", []),
+            "summary": advisory.get("summary")
+            or advisory.get("description"),
+            "references": advisory.get("references", []),
+        }
+        normalized.append(entry)
+
+    return normalized
+
+
+def extract_security_entries(package_data):
+    """
+    Return a normalized list of security entries from package_data.
+    Supports both vulnerability-based and advisory-based API responses.
+    """
+    if not package_data:
+        return []
+
+    if "affected_by_vulnerabilities" in package_data:
+        return package_data.get("affected_by_vulnerabilities", [])
+
+    if "affected_by_advisories" in package_data:
+        logger.debug(
+            "VulnerableCode advisory-based response detected; normalizing entries."
+        )
+        advisories = package_data.get("affected_by_advisories", [])
+        return normalize_advisories(advisories)
+
+    return []
 
 def fetch_vulnerabilities(
     packages, chunk_size=1000, logger=logger.info, ignore_set=None
@@ -229,7 +269,7 @@ def fetch_vulnerabilities(
     unsaved_objects = []
     for package in packages:
         if package_data := vulnerabilities_by_purl.get(package.package_url):
-            affected_by = package_data.get("affected_by_vulnerabilities", [])
+            affected_by = extract_security_entries(package_data)
 
             if ignore_set and affected_by:
                 affected_by = filter_vulnerabilities(affected_by, ignore_set)
