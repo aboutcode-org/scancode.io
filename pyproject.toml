@@ -37,23 +37,23 @@ dependencies = [
   "setuptools==82.0.0",
   # Django related
   "Django==6.0.2",
-  "django-environ==0.12.0",
-  "django-crispy-forms==2.5",
+  "django-environ==0.13.0",
+  "django-crispy-forms==2.6",
   "crispy-bootstrap3==2024.1",
   "django-filter==25.2",
   "djangorestframework==3.16.1",
   "django-taggit==6.1.0",
   "django-htmx==1.27.0",
   # Database
-  "psycopg[binary]==3.3.2",
+  "psycopg[binary]==3.3.3",
   # wait_for_database Django management command
   "django-probes==1.8.0",
   # Task queue
-  "rq==2.6.1",
+  "rq==2.7.0",
   "django-rq==3.2.2",
-  "redis==7.1.1",
+  "redis==7.2.1",
   # WSGI server
-  "gunicorn==25.0.3",
+  "gunicorn==25.1.0",
   # Docker
   "container-inspector==33.1.0",
   # ScanCode-toolkit
@@ -103,7 +103,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   # Validation
-  "ruff==0.15.0",
+  "ruff==0.15.4",
   "doc8==2.0.0",
   # Debug
   "django-debug-toolbar==6.2.0",
