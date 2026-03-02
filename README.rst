@@ -27,8 +27,14 @@ The ScanCode.io documentation also provides:
 If you have questions that are not covered by our documentation, 
 please ask them in `Discussions <https://github.com/aboutcode-org/scancode.io/discussions>`_.
 
+Contributing
+============
+
+Thank you for your interest in contributing to AboutCode projects.
+Please `read the following guidelines carefully <https://github.com/aboutcode-org/scancode.io/blob/main/CONTRIBUTING.md>`_  before getting started.
+
 Build and tests status
-----------------------
+======================
 
 +------------+-------------------+
 | **Tests**  | **Documentation** |
@@ -37,7 +43,7 @@ Build and tests status
 +------------+-------------------+
 
 License
--------
+=======
 
 SPDX-License-Identifier: Apache-2.0
 
@@ -58,7 +64,6 @@ ScanCode.io should be considered or used as legal advice. Consult an Attorney
 for any legal advice.
 
 
-
 .. |ci-tests| image:: https://github.com/aboutcode-org/scancode.io/actions/workflows/run-unit-tests.yml/badge.svg?branch=main
     :target: https://github.com/aboutcode-org/scancode.io/actions/workflows/run-unit-tests.yml
     :alt: CI Tests Status
@@ -69,7 +74,7 @@ for any legal advice.
 
 
 Acknowledgements, Funding, Support and Sponsoring
---------------------------------------------------------
+=================================================
 
 This project is funded, supported and sponsored by:
 
