@@ -112,6 +112,8 @@ dev = [
   "sphinx-rtd-theme==3.0.2",
   "sphinx-rtd-dark-mode==1.3.0",
   "sphinxcontrib-django==2.5",
+  # Commit convention enforcement
+  "commitizen==3.29.0",
 ]
 android_analysis = [
   "android_inspector==0.2.0"
@@ -201,3 +203,27 @@ max-complexity = 10
 "**/test_spdx.py*" = ["S101"]
 # Allow complexity in management commands
 "scanpipe/management/commands/*" = ["C901"]
+
+[tool.semantic_release]
+commit_parser = "conventional"
+build_command = "python3 -m build"
+upload_to_pypi = false
+upload_to_release = false
+tag_format = "v{version}"
+changelog_file = "CHANGELOG.rst"
+changelog_style = "rst"
+version_variable = [
+  "scancodeio/__init__.py:VERSION"
+]
+version_toml = [
+  "pyproject.toml:project.version"
+]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version_provider = "scm"
+version_files = [
+  "pyproject.toml:project.version",
+  "scancodeio/__init__.py:VERSION"
+]
+tag_format = "v$version"
