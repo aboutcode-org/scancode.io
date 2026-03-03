@@ -192,6 +192,7 @@ def strip_symbols(data):
 
     return data_copy
 
+
 class JSONResultsGenerator:
     """
     Return the `project` JSON results as a Python generator.
@@ -312,6 +313,7 @@ class JSONResultsGenerator:
             project, "codebaserelation", CodebaseRelationSerializer
         )
 
+
 class SymbolsJSONResultsGenerator(JSONResultsGenerator):
     """
     Specialized JSON generator that only outputs resources with symbol data.
@@ -345,7 +347,8 @@ class SymbolsJSONResultsGenerator(JSONResultsGenerator):
             yield chunk
         yield "]}"
 
-def to_json(project):
+
+def to_json(project, **kwargs):
     """
     Generate output for the provided `project` in JSON format.
     The output file is created in the `project` output/ directory.
@@ -593,7 +596,7 @@ XLSX_EXCLUDE_FIELDS = [
 ]
 
 
-def to_xlsx(project):
+def to_xlsx(project, **kwargs):
     """
     Generate output for the provided ``project`` in XLSX format.
     The output file is created in the ``project`` "output/" directory.
@@ -1140,7 +1143,7 @@ def get_unique_licenses(packages):
     return licenses
 
 
-def to_attribution(project):
+def to_attribution(project, **kwargs):
     """
     Generate attribution for the provided ``project``.
     The output file is created in the ``project`` "output/" directory.
@@ -1181,7 +1184,7 @@ def to_attribution(project):
     return output_file
 
 
-def to_ort_package_list_yml(project):
+def to_ort_package_list_yml(project, **kwargs):
     """
     Generate an ORT compatible "package-list.yml" output.
     The output file is created in the ``project`` "output/" directory.
@@ -1192,7 +1195,8 @@ def to_ort_package_list_yml(project):
     output_file.write_text(ort_yml)
     return output_file
 
-def to_symbols_json(project):
+
+def to_symbols_json(project, **kwargs):
     """
     Generate a symbols-only JSON output for the provided `project`.
 
@@ -1219,7 +1223,7 @@ FORMAT_TO_FUNCTION_MAPPING = {
     "cyclonedx": to_cyclonedx,
     "attribution": to_attribution,
     "ort-package-list": to_ort_package_list_yml,
-    "symbols": to_symbols_json
+    "symbols": to_symbols_json,
 }
 
 
@@ -1261,3 +1265,24 @@ def to_all_outputs(project):
     zip_file.name = safe_filename(f"{project.name}_outputs.zip")
 
     return zip_file
+
+
+def get_output_for_format(project, format, version=None):
+    """
+    Generate output file for the given format.
+    Returns the output file object.
+    """
+    output_kwargs = {}
+    if version:
+        output_kwargs["version"] = version
+
+    if format == "all_formats":
+        return to_all_formats(project)
+    if format == "all_outputs":
+        return to_all_outputs(project)
+
+    output_function = FORMAT_TO_FUNCTION_MAPPING.get(format)
+    if output_function:
+        return output_function(project, **output_kwargs)
+
+    raise ValueError(f"Unsupported output format: {format}")

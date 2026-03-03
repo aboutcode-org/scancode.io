@@ -635,7 +635,7 @@ class ScanPipeAPITest(TransactionTestCase):
         CodebaseResource.objects.create(
             project=self.project1,  # Use existing project from setUp
             path="test.js",
-            extra_data={"source_symbols": ["func"]}
+            extra_data={"source_symbols": ["func"]},
         )
         url = reverse("project-results-download", args=[self.project1.uuid])
         data = {"output_format": "symbols"}

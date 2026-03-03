@@ -218,15 +218,12 @@ class ScanPipeOutputPipesTest(TestCase):
                 "source_symbols": ["func1", "func2"],
                 "source_strings": ["hello world"],
                 "source_comments": ["// test"],
-                "other_field": "should_remain"
-            }
+                "other_field": "should_remain",
+            },
         }
         resource = CodebaseResource.objects.create(project=project, **resource_data)
 
-        message_details = {
-            "source_symbols": ["sym1"],
-            "resource_path": "test.js"
-        }
+        message_details = {"source_symbols": ["sym1"], "resource_path": "test.js"}
         make_message(project, details=message_details, description="Test message")
 
         output_file = output.to_json(project=project)
@@ -255,13 +252,11 @@ class ScanPipeOutputPipesTest(TestCase):
             extra_data={
                 "source_symbols": ["func1", "func2"],
                 "source_strings": ["test"],
-                "other_data": "value"
-            }
+                "other_data": "value",
+            },
         )
         CodebaseResource.objects.create(
-            project=project,
-            path="no_symbols.txt",
-            extra_data={"other_data": "value"}
+            project=project, path="no_symbols.txt", extra_data={"other_data": "value"}
         )
         output_file = output.to_symbols_json(project)
         with output_file.open() as f:
@@ -279,7 +274,9 @@ class ScanPipeOutputPipesTest(TestCase):
 
         # Verify symbols ARE included (not stripped)
         self.assertIn("source_symbols", file_output["extra_data"])
-        self.assertEqual(["func1", "func2"], file_output["extra_data"]["source_symbols"])
+        self.assertEqual(
+            ["func1", "func2"], file_output["extra_data"]["source_symbols"]
+        )
         self.assertIn("source_strings", file_output["extra_data"])
 
         # Verify headers are present
@@ -358,20 +355,20 @@ class ScanPipeOutputPipesTest(TestCase):
                 "source_symbols": ["func1", "func2"],
                 "source_strings": ["hello"],
                 "source_comments": ["// test"],
-            }
+            },
         )
 
         message_details = {
             "source_symbols": ["symbol1", "symbol2"],
             "source_strings": ["string1"],
             "source_comments": ["# comment"],
-            "resource_path": "test.js"
+            "resource_path": "test.js",
         }
         make_message(
             project,
             model="resource",
             details=message_details,
-            description="Error with symbols"
+            description="Error with symbols",
         )
 
         output_file = output.to_xlsx(project)
@@ -850,7 +847,7 @@ class ScanPipeOutputPipesTest(TestCase):
             "source_symbols": ["foo", "bar"],
             "source_strings": ["hello"],
             "source_comments": ["# comment"],
-            "other_data": "keep_me"
+            "other_data": "keep_me",
         }
 
         result = output.strip_symbols(original)
