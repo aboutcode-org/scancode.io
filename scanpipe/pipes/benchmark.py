@@ -70,7 +70,7 @@ def compare_purls(project, expected_purls):
     - Lines starting with '+' are unexpected in the project.
     """
     sorted_project_purls = get_unique_project_purls(project)
-    diff_result = difflib.ndiff(sorted_project_purls, expected_purls)
+    diff_result = difflib.ndiff(sorted_project_purls, sorted(expected_purls))
 
     # Keep only lines that are diffs (- or +)
     filtered_diff = [line for line in diff_result if line.startswith(("-", "+"))]
