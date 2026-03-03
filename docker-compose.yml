@@ -116,7 +116,7 @@ services:
       - 8000
     volumes:
       - .env:/opt/scancodeio/.env
-      - /etc/scancodeio/:/etc/scancodeio/
+      - ./etc/scancodeio:/etc/scancodeio
       - workspace:/var/scancodeio/workspace/
       - static:/var/scancodeio/static/
     depends_on:
@@ -138,7 +138,7 @@ services:
       - docker.env
     volumes:
       - .env:/opt/scancodeio/.env
-      - /etc/scancodeio/:/etc/scancodeio/
+      - ./etc/scancodeio:/etc/scancodeio
       - workspace:/var/scancodeio/workspace/
     depends_on:
       - redis
