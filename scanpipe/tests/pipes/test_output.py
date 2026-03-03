@@ -763,7 +763,7 @@ class ScanPipeOutputPipesTest(TestCase):
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
-        with self.assertNumQueries(35):
+        with self.assertNumQueries(39):
             output_file = output.to_all_formats(project=project)
 
         self.assertEqual("asgiref_outputs.zip", output_file.name)

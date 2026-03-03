@@ -632,20 +632,19 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(expected, sorted(results.keys()))
 
     def test_api_project_results_download_symbols_format(self):
-        project = make_project(name="SymbolsAPI")
         CodebaseResource.objects.create(
-            project=project,
+            project=self.project1,  # Use existing project from setUp
             path="test.js",
             extra_data={"source_symbols": ["func"]}
         )
-
-        url = reverse("project-results-download", args=[project.uuid])
-        response = self.client.get(url, {"output_format": "symbols"})
+        url = reverse("project-results-download", args=[self.project1.uuid])
+        data = {"output_format": "symbols"}
+        response = self.csrf_client.get(url, data=data)
 
         self.assertEqual(200, response.status_code)
         self.assertIn("application/json", response["Content-Type"])
 
-        results = json.loads(response.content)
+        results = json.loads(response.getvalue())
         self.assertIn("files", results)
         self.assertGreater(len(results["files"]), 0)
 
