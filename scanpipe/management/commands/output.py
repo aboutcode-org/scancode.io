@@ -24,16 +24,7 @@ from django.core.management.base import CommandError
 
 from scanpipe.management.commands import ProjectCommand
 from scanpipe.pipes import output
-
-SUPPORTED_FORMATS = [
-    "json",
-    "csv",
-    "xlsx",
-    "attribution",
-    "spdx",
-    "cyclonedx",
-    "ort-package-list",
-]
+from scanpipe.pipes.output import SUPPORTED_FORMATS
 
 
 class Command(ProjectCommand):
