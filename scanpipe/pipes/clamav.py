@@ -23,6 +23,7 @@
 from pathlib import Path
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 
 import clamd
 
@@ -47,7 +48,19 @@ def scan_for_virus(project):
         status, reason = results
         resource_path = Path(resource_location).relative_to(project.codebase_path)
 
-        resource = project.codebaseresources.get(path=resource_path)
+        try:
+            resource = project.codebaseresources.get(path=str(resource_path))
+        except ObjectDoesNotExist:
+            project.add_error(
+                description="CodebaseResource not found for ClamAV result",
+                model="ScanForVirus",
+                details={
+                    "resource_location": resource_location,
+                    "resource_path": str(resource_path),
+                },
+            )
+            continue
+
         virus_report = {
             "calmav": {
                 "status": status,
