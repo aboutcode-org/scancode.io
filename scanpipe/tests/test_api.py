@@ -631,6 +631,24 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = ["dependencies", "files", "headers", "packages", "relations"]
         self.assertEqual(expected, sorted(results.keys()))
 
+    def test_api_project_results_download_symbols_format(self):
+        project = make_project(name="SymbolsAPI")
+        CodebaseResource.objects.create(
+            project=project,
+            path="test.js",
+            extra_data={"source_symbols": ["func"]}
+        )
+
+        url = reverse("project-results-download", args=[project.uuid])
+        response = self.client.get(url, {"output_format": "symbols"})
+
+        self.assertEqual(200, response.status_code)
+        self.assertIn("application/json", response["Content-Type"])
+
+        results = json.loads(response.content)
+        self.assertIn("files", results)
+        self.assertGreater(len(results["files"]), 0)
+
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_api_project_action_results_download_output_formats(self):
         url = reverse("project-results-download", args=[self.project1.uuid])

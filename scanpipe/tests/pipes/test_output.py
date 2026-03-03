@@ -208,6 +208,84 @@ class ScanPipeOutputPipesTest(TestCase):
             output_file = output.to_json(project=project)
         self.assertIn(output_file.name, project.output_root)
 
+    def test_scanpipe_pipes_outputs_to_json_strips_symbols(self):
+        """Test that JSON output removes symbols from resources and messages."""
+        project = make_project(name="SymbolTest")
+
+        resource_data = {
+            "path": "test.js",
+            "extra_data": {
+                "source_symbols": ["func1", "func2"],
+                "source_strings": ["hello world"],
+                "source_comments": ["// test"],
+                "other_field": "should_remain"
+            }
+        }
+        resource = CodebaseResource.objects.create(project=project, **resource_data)
+
+        message_details = {
+            "source_symbols": ["sym1"],
+            "resource_path": "test.js"
+        }
+        make_message(project, details=message_details, description="Test message")
+
+        output_file = output.to_json(project=project)
+        with output_file.open() as f:
+            results = json.loads(f.read())
+
+        resource_output = results["files"][0]
+        self.assertNotIn("source_symbols", resource_output["extra_data"])
+        self.assertNotIn("source_strings", resource_output["extra_data"])
+        self.assertNotIn("source_comments", resource_output["extra_data"])
+        self.assertIn("other_field", resource_output["extra_data"])
+        self.assertEqual("should_remain", resource_output["extra_data"]["other_field"])
+
+        message_output = results["headers"][0]["messages"][0]
+        self.assertNotIn("source_symbols", message_output["details"])
+        self.assertIn("resource_path", message_output["details"])
+
+        resource.refresh_from_db()
+        self.assertIn("source_symbols", resource.extra_data)
+
+    def test_scanpipe_pipes_outputs_to_symbols_json(self):
+        project = make_project(name="SymbolsOnly")
+        CodebaseResource.objects.create(
+            project=project,
+            path="has_symbols.js",
+            extra_data={
+                "source_symbols": ["func1", "func2"],
+                "source_strings": ["test"],
+                "other_data": "value"
+            }
+        )
+        CodebaseResource.objects.create(
+            project=project,
+            path="no_symbols.txt",
+            extra_data={"other_data": "value"}
+        )
+        output_file = output.to_symbols_json(project)
+        with output_file.open() as f:
+            results = json.loads(f.read())
+
+        self.assertIn("headers", results)
+        self.assertIn("files", results)
+
+        # Should only have 1 file (the one with symbols)
+        self.assertEqual(1, len(results["files"]))
+
+        # Verify it's the right file
+        file_output = results["files"][0]
+        self.assertEqual("has_symbols.js", file_output["path"])
+
+        # Verify symbols ARE included (not stripped)
+        self.assertIn("source_symbols", file_output["extra_data"])
+        self.assertEqual(["func1", "func2"], file_output["extra_data"]["source_symbols"])
+        self.assertIn("source_strings", file_output["extra_data"])
+
+        # Verify headers are present
+        self.assertEqual(1, len(results["headers"]))
+        self.assertEqual("scanpipe", results["headers"][0]["tool_name"])
+
     def test_scanpipe_pipes_outputs_to_xlsx(self):
         fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
@@ -270,6 +348,54 @@ class ScanPipeOutputPipesTest(TestCase):
             "TODOS",
         ]
         self.assertEqual(expected_sheet_names, workbook.sheetnames)
+
+    def test_scanpipe_pipes_outputs_to_xlsx_strips_symbols(self):
+        project = make_project(name="SymbolXLSX")
+        CodebaseResource.objects.create(
+            project=project,
+            path="test.js",
+            extra_data={
+                "source_symbols": ["func1", "func2"],
+                "source_strings": ["hello"],
+                "source_comments": ["// test"],
+            }
+        )
+
+        message_details = {
+            "source_symbols": ["symbol1", "symbol2"],
+            "source_strings": ["string1"],
+            "source_comments": ["# comment"],
+            "resource_path": "test.js"
+        }
+        make_message(
+            project,
+            model="resource",
+            details=message_details,
+            description="Error with symbols"
+        )
+
+        output_file = output.to_xlsx(project)
+        workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
+
+        self.assertIn("MESSAGES", workbook.sheetnames)
+        messages_sheet = workbook["MESSAGES"]
+
+        headers = [cell.value for cell in next(messages_sheet.iter_rows())]
+        self.assertIn("details", headers)
+        details_col_index = headers.index("details")
+
+        rows = list(messages_sheet.iter_rows(min_row=2, max_row=2, values_only=True))
+        self.assertEqual(1, len(rows))
+
+        details_value = rows[0][details_col_index]
+
+        if details_value:
+            self.assertNotIn("source_symbols", details_value)
+            self.assertNotIn("source_strings", details_value)
+            self.assertNotIn("source_comments", details_value)
+
+            # Verify other fields ARE present
+            self.assertIn("resource_path", details_value)
 
     def test_scanpipe_pipes_outputs_get_xlsx_fields_order(self):
         output_file = output.to_xlsx(project=make_project())
@@ -716,6 +842,35 @@ class ScanPipeOutputPipesTest(TestCase):
         context = {"var": "value"}
         rendered = output.render_template_file(template_location, context)
         self.assertEqual("value", rendered)
+
+    def test_strip_symbols_function(self):
+        """Test that strip_symbols removes symbol keys without mutation."""
+        original = {
+            "path": "test.py",
+            "source_symbols": ["foo", "bar"],
+            "source_strings": ["hello"],
+            "source_comments": ["# comment"],
+            "other_data": "keep_me"
+        }
+
+        result = output.strip_symbols(original)
+        # Verify symbols removed
+        self.assertNotIn("source_symbols", result)
+        self.assertNotIn("source_strings", result)
+        self.assertNotIn("source_comments", result)
+
+        # Verify other data preserved
+        self.assertEqual("test.py", result["path"])
+        self.assertEqual("keep_me", result["other_data"])
+
+        # Verify original not mutated (important!)
+        self.assertIn("source_symbols", original)
+        self.assertEqual(["foo", "bar"], original["source_symbols"])
+
+        # Test edge cases
+        self.assertIsNone(output.strip_symbols(None))
+        self.assertEqual({}, output.strip_symbols({}))
+        self.assertEqual("string", output.strip_symbols("string"))
 
     def test_scanpipe_pipes_outputs_get_attribution_template(self):
         project = make_project(name="Analysis")
