@@ -92,6 +92,10 @@
     {% url 'project_relations' project.slug as project_relations_url %}
     {% include "scanpipe/includes/project_summary_level_item.html" with label="Relations" count=project.relation_count url=project_relations_url only %}
   {% endif %}
+  {% if project.origin_determination_count %}
+    {% url 'project_origin_determinations' project.slug as project_origin_determinations_url %}
+    {% include "scanpipe/includes/project_summary_level_item.html" with label="Origin Determinations" count=project.origin_determination_count url=project_origin_determinations_url only %}
+  {% endif %}
   {% url 'project_messages' project.slug as project_messages_url %}
   {% include "scanpipe/includes/project_summary_level_item.html" with label="Messages" count=project.message_count url=project_messages_url only %}
   {% if project.vulnerability_count %}

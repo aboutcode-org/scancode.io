@@ -71,6 +71,7 @@ from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.filters import PAGE_VAR
 from scanpipe.filters import DependencyFilterSet
 from scanpipe.filters import LicenseFilterSet
+from scanpipe.filters import OriginDeterminationFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
 from scanpipe.filters import ProjectMessageFilterSet
@@ -92,6 +93,7 @@ from scanpipe.forms import ProjectSettingsForm
 from scanpipe.forms import WebhookSubscriptionForm
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
+from scanpipe.models import CodeOriginDetermination
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredLicense
 from scanpipe.models import DiscoveredPackage
@@ -2835,3 +2837,34 @@ class ProjectResourceTreeRightPaneView(
             context["parent_path"] = "/".join(parent_segments)
 
         return context
+
+
+class OriginDeterminationListView(
+    ConditionalLoginRequired, GetProjectMixin, TableColumnsMixin, FilterView
+):
+    """
+    Display a list of origin determinations for a project with filtering capabilities.
+    """
+
+    model = CodeOriginDetermination
+    filterset_class = OriginDeterminationFilterSet
+    template_name = "scanpipe/origin_determination_list.html"
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("resource", 100)
+    table_columns = [
+        {"field_name": "resource_path", "label": "Resource Path"},
+        {"field_name": "effective_origin_type", "label": "Origin Type"},
+        {"field_name": "effective_origin_identifier", "label": "Origin"},
+        {"field_name": "detected_origin_confidence", "label": "Confidence"},
+        {"field_name": "is_verified", "label": "Verified"},
+        {"field_name": "is_amended", "label": "Amended"},
+        {"field_name": "is_propagated", "label": "Source"},
+    ]
+
+    def get_queryset(self):
+        return (
+            CodeOriginDetermination.objects.filter(
+                codebase_resource__project=self.project
+            )
+            .select_related("codebase_resource", "propagation_source__codebase_resource")
+            .order_by("-detected_origin_confidence", "codebase_resource__path")
+        )

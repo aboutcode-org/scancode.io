@@ -28,6 +28,11 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.models import CodeOriginDetermination
+from scanpipe.models_curation import CurationSource
+from scanpipe.models_curation import CurationProvenance
+from scanpipe.models_curation import CurationConflict
+from scanpipe.models_curation import CurationExport
 
 
 class ScanPipeBaseAdmin(admin.ModelAdmin):
@@ -177,6 +182,277 @@ class DiscoveredDependencyAdmin(ScanPipeBaseAdmin):
     ordering = ["project", "dependency_uid"]
 
 
+class CodeOriginDeterminationAdmin(ScanPipeBaseAdmin):
+    list_display = [
+        "codebase_resource_path",
+        "effective_origin_type",
+        "effective_origin_identifier",
+        "is_verified",
+        "is_propagated",
+        "project",
+    ]
+    search_fields = [
+        "codebase_resource__path",
+        "detected_origin_identifier",
+        "amended_origin_identifier",
+    ]
+    list_filter = [
+        "codebase_resource__project",
+        "detected_origin_type",
+        "amended_origin_type",
+        "is_verified",
+        "is_propagated",
+        "propagation_method",
+    ]
+    ordering = ["codebase_resource__project", "codebase_resource__path"]
+    readonly_fields = ["created_date", "updated_date"]
+
+    @admin.display(description="Resource Path")
+    def codebase_resource_path(self, obj):
+        return obj.codebase_resource.path
+
+    @admin.display(description="Project")
+    def project(self, obj):
+        return obj.codebase_resource.project
+
+
+class CurationSourceAdmin(ScanPipeBaseAdmin):
+    list_display = [
+        "name",
+        "source_type",
+        "priority",
+        "is_active",
+        "auto_sync",
+        "last_sync_date",
+    ]
+    search_fields = ["name", "url"]
+    list_filter = ["source_type", "is_active", "auto_sync"]
+    ordering = ["-priority", "name"]
+    fieldsets = [
+        ("", {"fields": ("name", "source_type", "url", "api_key")}),
+        ("Configuration", {"fields": ("priority", "is_active", "auto_sync", "sync_frequency_hours")}),
+        ("Sync Status", {"fields": ("last_sync_date", "sync_statistics")}),
+        ("Metadata", {"fields": ("metadata", "created_date", "updated_date")}),
+    ]
+    readonly_fields = ["created_date", "updated_date"]
+
+    def has_add_permission(self, request):
+        """Allow adding new curation sources."""
+        return True
+
+
+class CurationProvenanceAdmin(ScanPipeBaseAdmin):
+    list_display = [
+        "origin_determination",
+        "action_type",
+        "actor_name",
+        "curation_source",
+        "action_date",
+    ]
+    search_fields = [
+        "actor_name",
+        "actor_email",
+        "notes",
+    ]
+    list_filter = [
+        "action_type",
+        "curation_source",
+        "action_date",
+    ]
+    ordering = ["-action_date"]
+    readonly_fields = ["created_date"]
+
+
+class CurationConflictAdmin(ScanPipeBaseAdmin):
+    list_display = [
+        "resource_path",
+        "conflict_type",
+        "resolution_status",
+        "project",
+        "created_date",
+    ]
+    search_fields = [
+        "resource_path",
+        "resolved_by",
+        "resolution_notes",
+    ]
+    list_filter = [
+        "project",
+        "conflict_type",
+        "resolution_status",
+        "resolution_strategy",
+    ]
+    ordering = ["-created_date"]
+    fieldsets = [
+        ("Conflict Details", {
+            "fields": ("project", "resource_path", "conflict_type", "imported_origin_data")
+        }),
+        ("Origins", {
+            "fields": ("existing_origin", "imported_source")
+        }),
+        ("Resolution", {
+            "fields": (
+                "resolution_status",
+                "resolution_strategy",
+                "resolved_origin",
+                "resolved_by",
+                "resolved_date",
+                "resolution_notes",
+            )
+        }),
+        ("Metadata", {
+            "fields": ("metadata", "created_date", "updated_date"),
+            "classes": ("collapse",),
+        }),
+    ]
+    readonly_fields = ["created_date", "updated_date"]
+    
+    actions = ["resolve_keep_existing", "resolve_use_imported", "resolve_highest_confidence"]
+    
+    @admin.action(description="Resolve: Keep existing curations")
+    def resolve_keep_existing(self, request, queryset):
+        count = 0
+        for conflict in queryset.filter(resolution_status="pending"):
+            if conflict.existing_origin:
+                conflict.resolve(
+                    strategy="keep_existing",
+                    resolved_origin=conflict.existing_origin,
+                    resolved_by=request.user.username,
+                    notes="Resolved via admin action: keep existing",
+                )
+                count += 1
+        self.message_user(request, f"Resolved {count} conflicts (kept existing)")
+    
+    @admin.action(description="Resolve: Use imported curations")
+    def resolve_use_imported(self, request, queryset):
+        from scanpipe.models_curation import CurationProvenance
+        from django.utils import timezone
+        
+        count = 0
+        for conflict in queryset.filter(resolution_status="pending"):
+            if conflict.existing_origin and conflict.imported_origin_data:
+                # Update existing origin with imported data
+                imported_data = conflict.imported_origin_data
+                conflict.existing_origin.amended_origin_type = imported_data["origin_type"]
+                conflict.existing_origin.amended_origin_identifier = imported_data["origin_identifier"]
+                conflict.existing_origin.amended_origin_notes = "Resolved via admin action: use imported"
+                conflict.existing_origin.amended_by = request.user.username
+                conflict.existing_origin.is_verified = imported_data.get("is_verified", False)
+                conflict.existing_origin.save()
+                
+                # Create provenance
+                CurationProvenance.objects.create(
+                    origin_determination=conflict.existing_origin,
+                    action_type="merged",
+                    curation_source=conflict.imported_source,
+                    actor_name=request.user.username,
+                    action_date=timezone.now(),
+                    new_value=imported_data,
+                    notes="Resolved via admin action: use imported",
+                )
+                
+                # Mark conflict as resolved
+                conflict.resolve(
+                    strategy="use_imported",
+                    resolved_origin=conflict.existing_origin,
+                    resolved_by=request.user.username,
+                    notes="Resolved via admin action: use imported",
+                )
+                count += 1
+        self.message_user(request, f"Resolved {count} conflicts (used imported)")
+    
+    @admin.action(description="Resolve: Highest confidence")
+    def resolve_highest_confidence(self, request, queryset):
+        from scanpipe.models_curation import CurationProvenance
+        from django.utils import timezone
+        
+        count = 0
+        for conflict in queryset.filter(resolution_status="pending"):
+            if conflict.existing_origin and conflict.imported_origin_data:
+                existing_conf = (
+                    1.0 if conflict.existing_origin.is_verified
+                    else conflict.existing_origin.detected_origin_confidence or 0.5
+                )
+                imported_conf = conflict.imported_origin_data.get("confidence", 0.5)
+                
+                if imported_conf > existing_conf:
+                    # Use imported
+                    imported_data = conflict.imported_origin_data
+                    conflict.existing_origin.amended_origin_type = imported_data["origin_type"]
+                    conflict.existing_origin.amended_origin_identifier = imported_data["origin_identifier"]
+                    conflict.existing_origin.amended_origin_notes = (
+                        f"Resolved via admin action: higher confidence "
+                        f"(imported: {imported_conf} vs existing: {existing_conf})"
+                    )
+                    conflict.existing_origin.amended_by = request.user.username
+                    conflict.existing_origin.is_verified = imported_data.get("is_verified", False)
+                    conflict.existing_origin.save()
+                    
+                    # Create provenance
+                    CurationProvenance.objects.create(
+                        origin_determination=conflict.existing_origin,
+                        action_type="merged",
+                        curation_source=conflict.imported_source,
+                        actor_name=request.user.username,
+                        action_date=timezone.now(),
+                        new_value=imported_data,
+                        notes=f"Higher confidence: {imported_conf} vs {existing_conf}",
+                    )
+                
+                # Mark conflict as resolved (whether we kept existing or used imported)
+                conflict.resolve(
+                    strategy="highest_confidence",
+                    resolved_origin=conflict.existing_origin,
+                    resolved_by=request.user.username,
+                    notes=f"Confidence comparison: imported={imported_conf}, existing={existing_conf}",
+                )
+                count += 1
+        self.message_user(request, f"Resolved {count} conflicts (highest confidence)")
+
+
+class CurationExportAdmin(ScanPipeBaseAdmin):
+    list_display = [
+        "project",
+        "status",
+        "origin_count",
+        "verified_only",
+        "created_by",
+        "created_date",
+    ]
+    search_fields = [
+        "project__name",
+        "destination_url",
+        "created_by",
+        "error_message",
+    ]
+    list_filter = [
+        "status",
+        "export_format",
+        "verified_only",
+        "include_propagated",
+    ]
+    ordering = ["-created_date"]
+    fieldsets = [
+        ("Export Details", {
+            "fields": ("project", "status", "export_format", "origin_count")
+        }),
+        ("Options", {
+            "fields": ("verified_only", "include_propagated")
+        }),
+        ("Destination", {
+            "fields": ("destination_source", "destination_url", "export_file_path", "git_commit_sha")
+        }),
+        ("Status", {
+            "fields": ("created_by", "created_date", "completed_date", "error_message")
+        }),
+        ("Metadata", {
+            "fields": ("metadata",),
+            "classes": ("collapse",),
+        }),
+    ]
+    readonly_fields = ["created_date", "completed_date"]
+
+
 class ScanCodeIOAdminSite(admin.AdminSite):
     site_header = "ScanCode.io administration"
     site_title = "ScanCode.io administration"
@@ -187,3 +463,8 @@ admin_site.register(Project, ProjectAdmin)
 admin_site.register(CodebaseResource, CodebaseResourceAdmin)
 admin_site.register(DiscoveredPackage, DiscoveredPackageAdmin)
 admin_site.register(DiscoveredDependency, DiscoveredDependencyAdmin)
+admin_site.register(CodeOriginDetermination, CodeOriginDeterminationAdmin)
+admin_site.register(CurationSource, CurationSourceAdmin)
+admin_site.register(CurationProvenance, CurationProvenanceAdmin)
+admin_site.register(CurationConflict, CurationConflictAdmin)
+admin_site.register(CurationExport, CurationExportAdmin)

@@ -30,6 +30,7 @@ from taggit.serializers import TagListSerializerField
 from scanpipe.api import ExcludeFromListViewMixin
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
+from scanpipe.models import CodeOriginDetermination
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredLicense
 from scanpipe.models import DiscoveredPackage
@@ -600,6 +601,64 @@ class ProjectResetSerializer(serializers.Serializer):
     )
 
 
+class CodeOriginDeterminationSerializer(serializers.ModelSerializer):
+    """Serializer for CodeOriginDetermination model."""
+
+    resource_path = serializers.CharField(source="codebase_resource.path", read_only=True)
+    effective_origin_type = serializers.CharField(read_only=True)
+    effective_origin_identifier = serializers.CharField(read_only=True)
+    is_amended = serializers.BooleanField(read_only=True)
+    confidence_display = serializers.CharField(source="get_confidence_display", read_only=True)
+    is_manually_confirmed = serializers.BooleanField(read_only=True)
+    can_be_propagation_source = serializers.BooleanField(read_only=True)
+    propagation_source_uuid = serializers.UUIDField(
+        source="propagation_source.uuid", 
+        read_only=True,
+        allow_null=True
+    )
+    propagation_source_path = serializers.CharField(
+        source="propagation_source.codebase_resource.path", 
+        read_only=True,
+        allow_null=True
+    )
+
+    class Meta:
+        model = CodeOriginDetermination
+        fields = [
+            "uuid",
+            "resource_path",
+            "created_date",
+            "updated_date",
+            "detected_origin_type",
+            "detected_origin_identifier",
+            "detected_origin_confidence",
+            "detected_origin_method",
+            "detected_origin_metadata",
+            "amended_origin_type",
+            "amended_origin_identifier",
+            "amended_origin_notes",
+            "amended_by",
+            "is_verified",
+            "effective_origin_type",
+            "effective_origin_identifier",
+            "is_amended",
+            "confidence_display",
+            "is_manually_confirmed",
+            "can_be_propagation_source",
+            "is_propagated",
+            "propagation_source_uuid",
+            "propagation_source_path",
+            "propagation_method",
+            "propagation_confidence",
+            "propagation_metadata",
+        ]
+        read_only_fields = [
+            "uuid",
+            "created_date",
+            "updated_date",
+        ]
+
+
 def get_model_serializer(model_class):
     """Return a Serializer class that ia related to a given `model_class`."""
     serializer = {
@@ -609,6 +668,7 @@ def get_model_serializer(model_class):
         DiscoveredLicense: DiscoveredLicenseSerializer,
         CodebaseRelation: CodebaseRelationSerializer,
         ProjectMessage: ProjectMessageSerializer,
+        CodeOriginDetermination: "CodeOriginDeterminationSerializer",
     }.get(model_class, None)
 
     if not serializer:

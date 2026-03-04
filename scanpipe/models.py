@@ -1545,6 +1545,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         return self.codebaserelations.count()
 
     @cached_property
+    def origin_determination_count(self):
+        """Return the number of origin determinations for this project."""
+        return CodeOriginDetermination.objects.filter(
+            codebase_resource__project=self
+        ).count()
+
+    @cached_property
     def vulnerable_packages(self):
         """Return a QuerySet of vulnerable packages."""
         return self.discoveredpackages.vulnerable()
@@ -5064,3 +5071,172 @@ class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
             details=check.details or [],
             package_score=package_score,
         )
+
+
+class CodeOriginDetermination(UUIDPKModel, models.Model):
+    """
+    Stores code origin determination data for a CodebaseResource.
+    Includes both automatically detected origins and user amendments.
+    """
+
+    ORIGIN_TYPE_CHOICES = [
+        ("package", "Package"),
+        ("repository", "Repository"),
+        ("url", "URL"),
+        ("unknown", "Unknown"),
+    ]
+
+    codebase_resource = models.OneToOneField(
+        CodebaseResource,
+        on_delete=models.CASCADE,
+        related_name="origin_determination",
+        help_text=_("The CodebaseResource this origin determination is for"),
+    )
+
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+
+    # Detected origin fields
+    detected_origin_type = models.CharField(
+        max_length=50,
+        choices=ORIGIN_TYPE_CHOICES,
+        blank=True,
+        help_text=_("Automatically detected origin type"),
+    )
+    detected_origin_identifier = models.CharField(
+        max_length=2048,
+        blank=True,
+        help_text=_("Detected origin identifier (e.g., package URL, repository URL)"),
+    )
+    detected_origin_confidence = models.FloatField(
+        blank=True,
+        null=True,
+        help_text=_("Confidence score (0.0 to 1.0) for the detected origin"),
+    )
+    detected_origin_method = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text=_("Method used to detect origin (e.g., scancode, matchcode)"),
+    )
+    detected_origin_metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=_("Additional metadata about the detected origin"),
+    )
+
+    # Amended origin fields (user overrides)
+    amended_origin_type = models.CharField(
+        max_length=50,
+        choices=ORIGIN_TYPE_CHOICES,
+        blank=True,
+        help_text=_("User-amended origin type"),
+    )
+    amended_origin_identifier = models.CharField(
+        max_length=2048,
+        blank=True,
+        help_text=_("User-amended origin identifier"),
+    )
+    amended_origin_notes = models.TextField(
+        blank=True,
+        help_text=_("Notes about the amendment"),
+    )
+    amended_by = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text=_("User who amended the origin"),
+    )
+
+    is_verified = models.BooleanField(
+        default=False,
+        help_text=_("Whether the origin determination has been verified"),
+    )
+
+    # Propagation tracking fields
+    is_propagated = models.BooleanField(
+        default=False,
+        help_text=_("Whether this origin was propagated from another file"),
+    )
+    propagation_source = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="propagated_to",
+        help_text=_("The origin determination this was propagated from"),
+    )
+    propagation_method = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text=_(
+            "Method used for propagation (e.g., path_pattern, package_membership, license_similarity)"
+        ),
+    )
+    propagation_confidence = models.FloatField(
+        blank=True,
+        null=True,
+        help_text=_("Confidence score for the propagation (0.0 to 1.0)"),
+    )
+    propagation_metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=_("Additional metadata about the propagation"),
+    )
+
+    class Meta:
+        verbose_name = _("Code Origin Determination")
+        verbose_name_plural = _("Code Origin Determinations")
+        ordering = ["-updated_date"]
+        indexes = [
+            models.Index(fields=["detected_origin_type"]),
+            models.Index(fields=["detected_origin_confidence"]),
+            models.Index(fields=["is_verified"]),
+            models.Index(fields=["amended_origin_type"]),
+            models.Index(fields=["is_propagated"]),
+            models.Index(fields=["propagation_method"]),
+        ]
+
+    def __str__(self):
+        return f"Origin for {self.codebase_resource.path}"
+
+    @property
+    def effective_origin_type(self):
+        """Return the effective origin type (amended if available, else detected)."""
+        return self.amended_origin_type or self.detected_origin_type
+
+    @property
+    def effective_origin_identifier(self):
+        """Return the effective origin identifier (amended if available, else detected)."""
+        return self.amended_origin_identifier or self.detected_origin_identifier
+
+    @property
+    def is_amended(self):
+        """Return True if this origin has been amended by a user."""
+        return bool(self.amended_origin_type or self.amended_origin_identifier)
+
+    @property
+    def is_manually_confirmed(self):
+        """Return True if this is a manually confirmed origin (not propagated)."""
+        return self.is_verified and not self.is_propagated
+
+    @property
+    def can_be_propagation_source(self):
+        """Return True if this origin can be used as a propagation source."""
+        # Only verified, high-confidence, non-propagated origins should be sources
+        return (
+            self.is_verified
+            and not self.is_propagated
+            and self.detected_origin_confidence is not None
+            and self.detected_origin_confidence >= 0.8
+        )
+
+    def get_confidence_display(self):
+        """Return a human-readable confidence display."""
+        if self.detected_origin_confidence is None:
+            return "Unknown"
+        confidence = self.detected_origin_confidence * 100
+        if confidence >= 90:
+            return f"High ({confidence:.0f}%)"
+        elif confidence >= 70:
+            return f"Medium ({confidence:.0f}%)"
+        else:
+            return f"Low ({confidence:.0f}%)"

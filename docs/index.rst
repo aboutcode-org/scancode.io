@@ -41,6 +41,8 @@ Learn via practical step-by-step guides.
 
 - :ref:`tutorial_web_ui_analyze_docker_image`
 - :ref:`tutorial_web_ui_review_scan_results`
+- :ref:`tutorial_origin_curation`
+- :ref:`origin_curation_workflows`
 - :ref:`tutorial_cli_analyze_docker_image`
 - :ref:`tutorial_api_analyze_package_archive`
 - :ref:`tutorial_license_policies`
@@ -66,6 +68,8 @@ Reference documentation for scancode features and customizations.
 - :ref:`data_model`
 - :ref:`automation`
 - :ref:`webhooks`
+- :ref:`federatedcode_curation_integration`
+- :ref:`origin_curation_quick_reference`
 - :ref:`scancodeio_settings`
 - :ref:`recognized_distros_os_images`
 
@@ -109,6 +113,8 @@ Indices and tables
     changelog
     tutorial_web_ui_analyze_docker_image
     tutorial_web_ui_review_scan_results
+    tutorial_origin_curation
+    origin-curation-workflows
     tutorial_cli_analyze_docker_image
     tutorial_cli_analyze_codebase
     tutorial_api_analyze_package_archive
@@ -129,5 +135,7 @@ Indices and tables
     data-models
     automation
     webhooks
+    federatedcode-curation-integration
+    origin-curation-quick-reference
     application-settings
     distros-os-images
