@@ -2212,6 +2212,55 @@ def codebase_resource_diff_view(request, slug):
     return HttpResponse(html)
 
 
+@conditional_login_required
+def resource_search_ajax_view(request, slug):
+    """AJAX endpoint for searching resources within a project."""
+    from django.http import JsonResponse
+    from django.db.models import Q
+    
+    project = get_object_or_404(Project, slug=slug)
+    query = request.GET.get("q", "").strip()
+    
+    if not query or len(query) < 2:
+        return JsonResponse({"results": []})
+    
+    # Search by name, extension, or parts of path (OR logic)
+    # This allows searching for just the filename like "arch" or extension like ".py"
+    search_filter = (
+        Q(name__icontains=query) |           # Match filename
+        Q(extension__icontains=query) |      # Match extension
+        Q(path__icontains=query)             # Match anywhere in path
+    )
+    
+    resources = (
+        project.codebaseresources
+        .only("path", "name", "type", "size")
+        .filter(search_filter)
+        .order_by("name", "path")[:15]  # Order by name for better UX
+    )
+    
+    results = []
+    for resource in resources:
+        # Format file size for display
+        size_display = ""
+        if resource.size:
+            if resource.size < 1024:
+                size_display = f"{resource.size} B"
+            elif resource.size < 1024 * 1024:
+                size_display = f"{resource.size / 1024:.1f} KB"
+            else:
+                size_display = f"{resource.size / (1024 * 1024):.1f} MB"
+        
+        results.append({
+            "path": resource.path,
+            "name": resource.name or "",  # Show filename separately
+            "type": resource.type or "file",
+            "size": size_display,
+        })
+    
+    return JsonResponse({"results": results})
+
+
 class DiscoveredPackageDetailsView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
