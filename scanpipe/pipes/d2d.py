@@ -1503,7 +1503,9 @@ def match_unmapped_resources(project, matched_extensions=None, logger=None):
         )
 
     to_without_status = project_files.to_codebase().no_status()
+
     to_without_status.filter(is_media=True).update(status=flag.IGNORED_MEDIA_FILE)
+
     to_without_status.update(status=flag.REQUIRES_REVIEW)
 
     requires_review = project_files.to_codebase().filter(status=flag.REQUIRES_REVIEW)
