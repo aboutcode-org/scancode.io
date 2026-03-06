@@ -1,0 +1,236 @@
+{% extends "scanpipe/base.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}ScanCode.io: {{ project.name }} - Origin Determinations{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Origin Determinations" %}
+        {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" %}
+      </div>
+      {% include 'scanpipe/includes/pagination_header.html' %}
+
+      <div class="buttons mt-3">
+        <button class="button is-small is-info" id="bulk-verify-btn" disabled>
+          <span class="icon"><i class="fa-solid fa-check"></i></span>
+          <span>Verify Selected</span>
+        </button>
+        <button class="button is-small is-warning" id="bulk-amend-btn" disabled>
+          <span class="icon"><i class="fa-solid fa-pen"></i></span>
+          <span>Amend Selected</span>
+        </button>
+        <button class="button is-small is-danger" id="clear-selection-btn" disabled>
+          <span class="icon"><i class="fa-solid fa-times"></i></span>
+          <span>Clear Selection</span>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <div id="origin-determination-list" class="container is-fluid mb-3">
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+      <thead>
+        <tr>
+          <th style="width: 40px;">
+            <input type="checkbox" id="select-all-checkbox" title="Select all">
+          </th>
+          {% for column in columns_data %}
+            <th>
+              {% if column.is_sorted %}
+                <a href="?{{ column.sort_query }}" class="is-black-link">
+                  {{ column.label }}
+                  <span class="icon is-small">
+                    {% if column.sort_direction %}
+                      <i class="fa-solid fa-arrow-up"></i>
+                    {% else %}
+                      <i class="fa-solid fa-arrow-down"></i>
+                    {% endif %}
+                  </span>
+                </a>
+              {% elif column.sort_query %}
+                <a href="?{{ column.sort_query }}" class="is-black-link">{{ column.label }}</a>
+              {% else %}
+                {{ column.label }}
+              {% endif %}
+            </th>
+          {% endfor %}
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for origin in object_list %}
+          <tr data-origin-uuid="{{ origin.uuid }}" class="origin-row">
+            <td>
+              <input type="checkbox" class="origin-checkbox" value="{{ origin.uuid }}">
+            </td>
+            <td class="break-all" style="min-width: 250px;">
+              <a href="{% url 'resource_detail' project.slug origin.codebase_resource.path %}">
+                {{ origin.codebase_resource.path }}
+              </a>
+            </td>
+            <td>
+              <span class="tag {% if origin.is_amended %}is-warning{% else %}is-info{% endif %}">
+                {{ origin.effective_origin_type|default:"Unknown" }}
+              </span>
+            </td>
+            <td class="break-all" style="min-width: 200px;">
+              <span class="origin-identifier" data-origin-uuid="{{ origin.uuid }}">
+                {{ origin.effective_origin_identifier|default:"Not determined" }}
+              </span>
+            </td>
+            <td>
+              {% if origin.detected_origin_confidence %}
+                <div class="field has-addons">
+                  <div class="control">
+                    <progress class="progress 
+                      {% if origin.detected_origin_confidence >= 0.9 %}is-success
+                      {% elif origin.detected_origin_confidence >= 0.7 %}is-warning
+                      {% else %}is-danger
+                      {% endif %}" 
+                      value="{{ origin.detected_origin_confidence }}" 
+                      max="1" 
+                      style="width: 100px; margin-top: 8px;">
+                    </progress>
+                  </div>
+                  <div class="control">
+                    <span class="tag">{{ origin.detected_origin_confidence|floatformat:2 }}</span>
+                  </div>
+                </div>
+              {% else %}
+                <span class="tag is-light">N/A</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if origin.is_verified %}
+                <span class="tag is-success">
+                  <span class="icon"><i class="fa-solid fa-check"></i></span>
+                  <span>Yes</span>
+                </span>
+              {% else %}
+                <span class="tag is-light">No</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if origin.is_amended %}
+                <span class="tag is-warning">
+                  <span class="icon"><i class="fa-solid fa-pen"></i></span>
+                  <span>Yes</span>
+                </span>
+              {% else %}
+                <span class="tag is-light">No</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if origin.is_propagated %}
+                <span class="tag is-link" title="Propagated from: {{ origin.propagation_source.codebase_resource.path }}">
+                  <span class="icon"><i class="fa-solid fa-share-nodes"></i></span>
+                  <span>{{ origin.propagation_method|default:"Unknown" }}</span>
+                </span>
+                {% if origin.propagation_confidence %}
+                  <br><small class="has-text-grey">Conf: {{ origin.propagation_confidence|floatformat:2 }}</small>
+                {% endif %}
+              {% elif origin.is_manually_confirmed %}
+                <span class="tag is-success">
+                  <span class="icon"><i class="fa-solid fa-user-check"></i></span>
+                  <span>Manual</span>
+                </span>
+              {% else %}
+                <span class="tag is-light">Detected</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="buttons are-small">
+                <button class="button is-info is-small edit-origin-btn" data-origin-uuid="{{ origin.uuid }}">
+                  <span class="icon"><i class="fa-solid fa-edit"></i></span>
+                  <span>Edit</span>
+                </button>
+                {% if not origin.is_verified %}
+                  <button class="button is-success is-small verify-origin-btn" data-origin-uuid="{{ origin.uuid }}">
+                    <span class="icon"><i class="fa-solid fa-check"></i></span>
+                  </button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8" class="has-text-centered p-3">
+              No origin determinations found. <a href="?">Clear search and filters</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if is_paginated %}
+      {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}
+    {% endif %}
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="edit-origin-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Edit Origin Determination</p>
+        <button class="delete" aria-label="close" id="close-edit-modal"></button>
+      </header>
+      <section class="modal-card-body">
+        <input type="hidden" id="edit-origin-uuid">
+        
+        <div class="field">
+          <label class="label">Resource Path</label>
+          <div class="control">
+            <input class="input" type="text" id="edit-resource-path" readonly>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">Origin Type</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select id="edit-origin-type">
+                <option value="">-- Select --</option>
+                <option value="package">Package</option>
+                <option value="repository">Repository</option>
+                <option value="url">URL</option>
+                <option value="unknown">Unknown</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">Origin Identifier</label>
+          <div class="control">
+            <input class="input" type="text" id="edit-origin-identifier" placeholder="e.g., pkg:npm/lodash@4.17.21">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">Notes</label>
+          <div class="control">
+            <textarea class="textarea" id="edit-origin-notes" rows="3" placeholder="Add notes about this amendment"></textarea>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="checkbox">
+            <input type="checkbox" id="edit-is-verified">
+            Mark as verified
+          </label>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-success" id="save-origin-btn">Save changes</button>
+        <button class="button" id="cancel-edit-btn">Cancel</button>
+      </footer>
+    </div>
+  </div>
+
+  <script src="{% static 'origin-determination.js' %}"></script>
+{% endblock %}

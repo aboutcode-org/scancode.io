@@ -39,6 +39,7 @@ from packageurl.contrib.django.filters import PackageURLFilter
 
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
+from scanpipe.models import CodeOriginDetermination
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredLicense
 from scanpipe.models import DiscoveredPackage
@@ -966,3 +967,132 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             qs = CodebaseResource.objects.filter(project=project)
             status_filter = self.filters["status"]
             status_filter.extra["choices"] = status_filter.get_status_choices(qs)
+
+
+class OriginDeterminationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    """
+    FilterSet for CodeOriginDetermination with search and multiple filter options.
+    """
+
+    search = SearchFilter(
+        search_fields=[
+            "codebase_resource__path",
+            "detected_origin_identifier",
+            "amended_origin_identifier",
+        ]
+    )
+
+    detected_origin_type = django_filters.ChoiceFilter(
+        choices=CodeOriginDetermination.ORIGIN_TYPE_CHOICES,
+        empty_label="Any Type",
+    )
+
+    amended_origin_type = django_filters.ChoiceFilter(
+        choices=CodeOriginDetermination.ORIGIN_TYPE_CHOICES,
+        empty_label="Any Type",
+    )
+
+    is_verified = django_filters.BooleanFilter(
+        widget=forms.Select(choices=[(None, "All"), (True, "Yes"), (False, "No")])
+    )
+
+    is_amended = django_filters.BooleanFilter(
+        method="filter_is_amended",
+        widget=forms.Select(choices=[(None, "All"), (True, "Yes"), (False, "No")]),
+    )
+
+    confidence_min = django_filters.NumberFilter(
+        field_name="detected_origin_confidence",
+        lookup_expr="gte",
+        label="Min Confidence",
+    )
+
+    confidence_max = django_filters.NumberFilter(
+        field_name="detected_origin_confidence",
+        lookup_expr="lte",
+        label="Max Confidence",
+    )
+
+    is_propagated = django_filters.BooleanFilter(
+        widget=forms.Select(choices=[(None, "All"), (True, "Yes"), (False, "No")])
+    )
+
+    propagation_method = django_filters.ChoiceFilter(
+        choices=[
+            ("", "Any Method"),
+            ("package_membership", "Package Membership"),
+            ("path_pattern_same_dir", "Path Pattern (Same Dir)"),
+            ("path_pattern_similar", "Path Pattern (Similar)"),
+            ("license_similarity", "License Similarity"),
+            ("combined_signals", "Combined Signals"),
+        ],
+        empty_label="Any Method",
+    )
+
+    is_manually_confirmed = django_filters.BooleanFilter(
+        method="filter_is_manually_confirmed",
+        widget=forms.Select(choices=[(None, "All"), (True, "Yes"), (False, "No")]),
+    )
+
+    propagation_confidence_min = django_filters.NumberFilter(
+        field_name="propagation_confidence",
+        lookup_expr="gte",
+        label="Min Propagation Confidence",
+    )
+
+    propagation_confidence_max = django_filters.NumberFilter(
+        field_name="propagation_confidence",
+        lookup_expr="lte",
+        label="Max Propagation Confidence",
+    )
+
+    sort = SortFilter(
+        fields=[
+            "codebase_resource__path",
+            "detected_origin_type",
+            "detected_origin_confidence",
+            "is_verified",
+            "updated_date",
+            "is_propagated",
+            "propagation_method",
+            "propagation_confidence",
+        ]
+    )
+
+    class Meta:
+        model = CodeOriginDetermination
+        fields = [
+            "search",
+            "detected_origin_type",
+            "amended_origin_type",
+            "is_verified",
+            "is_amended",
+            "confidence_min",
+            "confidence_max",
+            "is_propagated",
+            "propagation_method",
+            "is_manually_confirmed",
+            "propagation_confidence_min",
+            "propagation_confidence_max",
+            "sort",
+        ]
+
+    def filter_is_amended(self, queryset, name, value):
+        """Custom filter for is_amended property."""
+        if value is True:
+            return queryset.exclude(
+                Q(amended_origin_type="") & Q(amended_origin_identifier="")
+            )
+        elif value is False:
+            return queryset.filter(
+                Q(amended_origin_type="") & Q(amended_origin_identifier="")
+            )
+        return queryset
+
+    def filter_is_manually_confirmed(self, queryset, name, value):
+        """Custom filter for manually confirmed origins (verified and not propagated)."""
+        if value is True:
+            return queryset.filter(is_verified=True, is_propagated=False)
+        elif value is False:
+            return queryset.exclude(Q(is_verified=True) & Q(is_propagated=False))
+        return queryset

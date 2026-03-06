@@ -31,11 +31,17 @@ from rest_framework.routers import DefaultRouter
 from scanpipe.admin import admin_site
 from scanpipe.api.views import ProjectViewSet
 from scanpipe.api.views import RunViewSet
+from scanpipe.api.views import CodeOriginDeterminationViewSet
+from scanpipe.api.views import CurationSourceViewSet
+from scanpipe.api.views import CurationConflictViewSet
 from scanpipe.views import AccountProfileView
 
 api_router = DefaultRouter()
 api_router.register(r"projects", ProjectViewSet)
 api_router.register(r"runs", RunViewSet)
+api_router.register(r"origin-determinations", CodeOriginDeterminationViewSet)
+api_router.register(r"curation-sources", CurationSourceViewSet)
+api_router.register(r"curation-conflicts", CurationConflictViewSet)
 
 auth_urlpatterns = [
     path("accounts/login/", auth_views.LoginView.as_view(), name="login"),

@@ -39,6 +39,7 @@ from rest_framework.response import Response
 
 from scanpipe.api.serializers import CodebaseRelationSerializer
 from scanpipe.api.serializers import CodebaseResourceSerializer
+from scanpipe.api.serializers import CodeOriginDeterminationSerializer
 from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.api.serializers import InputSerializer
@@ -57,10 +58,15 @@ from scanpipe.filters import ResourceFilterSet
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.models import CodeOriginDetermination
+from scanpipe.models_curation import CurationSource
+from scanpipe.models_curation import CurationConflict
+from scanpipe.models_curation import CurationExport
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import output
 from scanpipe.pipes.compliance import get_project_compliance_alerts
 from scanpipe.views import project_results_json_response
+from scanpipe import curation_utils
 
 logger = logging.getLogger(__name__)
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -582,3 +588,607 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 
         run.delete_task()
         return Response({"status": f"Pipeline {run.pipeline_name} deleted."})
+
+
+class CodeOriginDeterminationViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.CreateModelMixin,
+    viewsets.GenericViewSet,
+):
+    """
+    ViewSet for CodeOriginDetermination.
+    Supports listing, retrieving, creating, and updating origin determinations.
+    """
+
+    queryset = CodeOriginDetermination.objects.select_related("codebase_resource")
+    serializer_class = CodeOriginDeterminationSerializer
+
+    def get_queryset(self):
+        """Filter by project if project_slug is provided."""
+        queryset = super().get_queryset()
+        project_slug = self.request.query_params.get("project")
+        if project_slug:
+            queryset = queryset.filter(codebase_resource__project__slug=project_slug)
+        return queryset
+
+    @action(detail=False, methods=["post"])
+    def bulk_update(self, request, *args, **kwargs):
+        """
+        Bulk update multiple origin determinations.
+        Expects a list of objects with uuid and fields to update.
+        """
+        updates = request.data.get("updates", [])
+        if not isinstance(updates, list):
+            return ErrorResponse("'updates' must be a list")
+
+        updated_count = 0
+        errors = []
+
+        for update_data in updates:
+            uuid_str = update_data.get("uuid")
+            if not uuid_str:
+                errors.append({"error": "Missing uuid"})
+                continue
+
+            try:
+                origin = CodeOriginDetermination.objects.get(uuid=uuid_str)
+                serializer = self.get_serializer(origin, data=update_data, partial=True)
+                if serializer.is_valid():
+                    serializer.save()
+                    updated_count += 1
+                else:
+                    errors.append({"uuid": uuid_str, "errors": serializer.errors})
+            except CodeOriginDetermination.DoesNotExist:
+                errors.append({"uuid": uuid_str, "error": "Not found"})
+
+        return Response(
+            {
+                "updated_count": updated_count,
+                "errors": errors,
+            }
+        )
+
+    @action(detail=False, methods=["post"])
+    def bulk_verify(self, request, *args, **kwargs):
+        """
+        Bulk verify multiple origin determinations.
+        Expects a list of UUIDs.
+        """
+        uuids = request.data.get("uuids", [])
+        if not isinstance(uuids, list):
+            return ErrorResponse("'uuids' must be a list")
+
+        updated = CodeOriginDetermination.objects.filter(uuid__in=uuids).update(
+            is_verified=True
+        )
+
+        return Response({"updated_count": updated})
+
+    @action(detail=False, methods=["post"])
+    def propagate(self, request, *args, **kwargs):
+        """
+        Propagate origins for a project.
+        Expects project slug and optional parameters.
+        """
+        from scanpipe import origin_utils
+        from scanpipe.models import Project
+        
+        project_slug = request.data.get("project")
+        if not project_slug:
+            return ErrorResponse("'project' slug is required")
+        
+        try:
+            project = Project.objects.get(slug=project_slug)
+        except Project.DoesNotExist:
+            return ErrorResponse(f"Project '{project_slug}' not found")
+        
+        methods = request.data.get("methods", None)
+        min_confidence = request.data.get("min_confidence", 0.8)
+        max_targets = request.data.get("max_targets", 50)
+        
+        try:
+            stats = origin_utils.propagate_origins_for_project(
+                project,
+                methods=methods,
+                min_source_confidence=min_confidence,
+                max_targets_per_source=max_targets,
+            )
+            
+            return Response(stats)
+        except Exception as e:
+            return ErrorResponse(str(e))
+
+    @action(detail=True, methods=["post"])
+    def propagate_single(self, request, pk=None):
+        """
+        Propagate a single origin determination to related files.
+        """
+        from scanpipe import origin_utils
+        
+        origin = self.get_object()
+        
+        if not origin.can_be_propagation_source:
+            return ErrorResponse(
+                "This origin cannot be used as a propagation source. "
+                "It must be verified, non-propagated, and have confidence >= 0.8"
+            )
+        
+        methods = request.data.get("methods", ["package_membership", "path_pattern"])
+        max_targets = request.data.get("max_targets", 50)
+        
+        propagated_origins = []
+        
+        try:
+            if "package_membership" in methods:
+                propagated = origin_utils.propagate_origin_by_package_membership(
+                    origin, max_targets
+                )
+                propagated_origins.extend(propagated)
+            
+            if "path_pattern" in methods:
+                propagated = origin_utils.propagate_origin_by_path_pattern(
+                    origin, max_targets
+                )
+                propagated_origins.extend(propagated)
+            
+            if "license_similarity" in methods:
+                propagated = origin_utils.propagate_origin_by_license_similarity(
+                    origin, max_targets=max_targets
+                )
+                propagated_origins.extend(propagated)
+            
+            # Serialize the results
+            serializer = self.get_serializer(propagated_origins, many=True)
+            
+            return Response({
+                "propagated_count": len(propagated_origins),
+                "propagated_origins": serializer.data,
+            })
+        except Exception as e:
+            return ErrorResponse(str(e))
+
+    @action(detail=False, methods=["post"])
+    def export_curations(self, request, *args, **kwargs):
+        """
+        Export origin curations for a project to FederatedCode or a file.
+        
+        Expects:
+        - project: Project slug (required)
+        - destination: "federatedcode" or "file" (default: "federatedcode")
+        - verified_only: bool (default: True)
+        - include_propagated: bool (default: False)
+        - curator_name: string (optional)
+        - curator_email: string (optional)
+        - format: "json" or "yaml" (for file destination, default: "json")
+        """
+        project_slug = request.data.get("project")
+        if not project_slug:
+            return ErrorResponse("'project' slug is required")
+        
+        try:
+            project = Project.objects.get(slug=project_slug)
+        except Project.DoesNotExist:
+            return ErrorResponse(f"Project '{project_slug}' not found")
+        
+        destination = request.data.get("destination", "federatedcode")
+        verified_only = request.data.get("verified_only", True)
+        include_propagated = request.data.get("include_propagated", False)
+        curator_name = request.data.get("curator_name", "")
+        curator_email = request.data.get("curator_email", "")
+        
+        try:
+            if destination == "federatedcode":
+                success, message = curation_utils.export_curations_to_federatedcode(
+                    project=project,
+                    curator_name=curator_name,
+                    curator_email=curator_email,
+                    verified_only=verified_only,
+                    include_propagated=include_propagated,
+                )
+                
+                if success:
+                    return Response({"status": "success", "message": message})
+                else:
+                    return ErrorResponse(message)
+            
+            elif destination == "file":
+                from pathlib import Path
+                
+                output_format = request.data.get("format", "json")
+                output_path = project.project_work_directory / "curations" / f"origins.{output_format}"
+                
+                success, result = curation_utils.export_curations_to_file(
+                    project=project,
+                    output_path=Path(output_path),
+                    format=output_format,
+                    verified_only=verified_only,
+                    include_propagated=include_propagated,
+                    include_provenance=True,
+                    curator_name=curator_name,
+                    curator_email=curator_email,
+                )
+                
+                if success:
+                    return Response({
+                        "status": "success",
+                        "file_path": result,
+                    })
+                else:
+                    return ErrorResponse(result)
+            
+            else:
+                return ErrorResponse(
+                    f"Invalid destination: {destination}. "
+                    "Must be 'federatedcode' or 'file'"
+                )
+        
+        except Exception as e:
+            logger.error(f"Export error: {str(e)}", exc_info=True)
+            return ErrorResponse(str(e), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=["post"])
+    def import_curations(self, request, *args, **kwargs):
+        """
+        Import origin curations from an external FederatedCode source.
+        
+        Expects:
+        - project: Project slug (required)
+        - source_url: URL to curation source (required)
+        - source_name: Name for the source (optional)
+        - conflict_strategy: Resolution strategy (default: "manual_review")
+          Options: manual_review, keep_existing, use_imported, 
+                   highest_confidence, highest_priority
+        - dry_run: bool (default: False)
+        """
+        project_slug = request.data.get("project")
+        if not project_slug:
+            return ErrorResponse("'project' slug is required")
+        
+        source_url = request.data.get("source_url")
+        if not source_url:
+            return ErrorResponse("'source_url' is required")
+        
+        try:
+            project = Project.objects.get(slug=project_slug)
+        except Project.DoesNotExist:
+            return ErrorResponse(f"Project '{project_slug}' not found")
+        
+        source_name = request.data.get("source_name", "")
+        conflict_strategy = request.data.get("conflict_strategy", "manual_review")
+        dry_run = request.data.get("dry_run", False)
+        
+        # Validate conflict strategy
+        valid_strategies = [
+            "manual_review",
+            "keep_existing",
+            "use_imported",
+            "highest_confidence",
+            "highest_priority",
+        ]
+        if conflict_strategy not in valid_strategies:
+            return ErrorResponse(
+                f"Invalid conflict_strategy: {conflict_strategy}. "
+                f"Valid options: {', '.join(valid_strategies)}"
+            )
+        
+        try:
+            success, stats = curation_utils.import_curations_from_url(
+                project=project,
+                source_url=source_url,
+                source_name=source_name,
+                conflict_strategy=conflict_strategy,
+                dry_run=dry_run,
+            )
+            
+            if success:
+                return Response({
+                    "status": "success",
+                    "dry_run": dry_run,
+                    "statistics": stats,
+                })
+            else:
+                return ErrorResponse(stats)
+        
+        except Exception as e:
+            logger.error(f"Import error: {str(e)}", exc_info=True)
+            return ErrorResponse(str(e), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class CurationSourceViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    """
+    ViewSet for managing curation sources.
+    
+    Curation sources represent external origins of curations (e.g., other
+    ScanCode.io instances, community repositories) and track synchronization status.
+    """
+    
+    queryset = CurationSource.objects.all()
+    
+    from rest_framework import serializers
+    
+    class CurationSourceSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = CurationSource
+            fields = [
+                "uuid",
+                "name",
+                "source_type",
+                "url",
+                "priority",
+                "is_active",
+                "auto_sync",
+                "sync_frequency_hours",
+                "last_sync_date",
+                "sync_statistics",
+                "metadata",
+                "created_date",
+                "updated_date",
+            ]
+            read_only_fields = ["uuid", "created_date", "updated_date", "last_sync_date", "sync_statistics"]
+    
+    serializer_class = CurationSourceSerializer
+    
+    @action(detail=True, methods=["post"])
+    def sync(self, request, pk=None):
+        """
+        Manually trigger synchronization for a curation source.
+        
+        This will import curations from the source into all active projects
+        or a specified project.
+        """
+        source = self.get_object()
+        project_slug = request.data.get("project")
+        conflict_strategy = request.data.get("conflict_strategy", "manual_review")
+        
+        if not project_slug:
+            return ErrorResponse("'project' slug is required for sync")
+        
+        try:
+            project = Project.objects.get(slug=project_slug)
+        except Project.DoesNotExist:
+            return ErrorResponse(f"Project '{project_slug}' not found")
+        
+        try:
+            success, stats = curation_utils.import_curations_from_url(
+                project=project,
+                source_url=source.url,
+                source_name=source.name,
+                conflict_strategy=conflict_strategy,
+                dry_run=False,
+            )
+            
+            if success:
+                source.mark_synced(stats)
+                return Response({
+                    "status": "success",
+                    "statistics": stats,
+                })
+            else:
+                return ErrorResponse(stats)
+        
+        except Exception as e:
+            logger.error(f"Sync error: {str(e)}", exc_info=True)
+            return ErrorResponse(str(e), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class CurationConflictViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    """
+    ViewSet for viewing and resolving curation conflicts.
+    
+    Conflicts occur when importing curations that differ from existing ones.
+    """
+    
+    queryset = CurationConflict.objects.select_related(
+        "project",
+        "existing_origin",
+        "imported_source",
+        "resolved_origin",
+    )
+    
+    from rest_framework import serializers
+    
+    class CurationConflictSerializer(serializers.ModelSerializer):
+        project_name = serializers.CharField(source="project.name", read_only=True)
+        existing_origin_type = serializers.CharField(
+            source="existing_origin.effective_origin_type",
+            read_only=True,
+        )
+        existing_origin_identifier = serializers.CharField(
+            source="existing_origin.effective_origin_identifier",
+            read_only=True,
+        )
+        source_name = serializers.CharField(
+            source="imported_source.name",
+            read_only=True,
+        )
+        
+        class Meta:
+            model = CurationConflict
+            fields = [
+                "uuid",
+                "project",
+                "project_name",
+                "resource_path",
+                "conflict_type",
+                "existing_origin",
+                "existing_origin_type",
+                "existing_origin_identifier",
+                "imported_origin_data",
+                "imported_source",
+                "source_name",
+                "resolution_status",
+                "resolution_strategy",
+                "resolved_origin",
+                "resolved_by",
+                "resolved_date",
+                "resolution_notes",
+                "created_date",
+                "updated_date",
+            ]
+            read_only_fields = [
+                "uuid",
+                "created_date",
+                "updated_date",
+                "project_name",
+                "existing_origin_type",
+                "existing_origin_identifier",
+                "source_name",
+            ]
+    
+    serializer_class = CurationConflictSerializer
+    
+    def get_queryset(self):
+        """Filter by project if provided."""
+        queryset = super().get_queryset()
+        project_slug = self.request.query_params.get("project")
+        if project_slug:
+            queryset = queryset.filter(project__slug=project_slug)
+        
+        resolution_status = self.request.query_params.get("resolution_status")
+        if resolution_status:
+            queryset = queryset.filter(resolution_status=resolution_status)
+        
+        return queryset
+    
+    @action(detail=True, methods=["post"])
+    def resolve(self, request, pk=None):
+        """
+        Resolve a conflict using a specific strategy.
+        
+        Expects:
+        - strategy: Resolution strategy (required)
+          Options: keep_existing, use_imported, highest_confidence, manual_decision
+        - notes: Resolution notes (optional)
+        """
+        conflict = self.get_object()
+        
+        if conflict.is_resolved:
+            return ErrorResponse("Conflict is already resolved")
+        
+        strategy = request.data.get("strategy")
+        if not strategy:
+            return ErrorResponse("'strategy' is required")
+        
+        valid_strategies = [
+            "keep_existing",
+            "use_imported",
+            "highest_confidence",
+            "manual_decision",
+        ]
+        if strategy not in valid_strategies:
+            return ErrorResponse(
+                f"Invalid strategy: {strategy}. "
+                f"Valid options: {', '.join(valid_strategies)}"
+            )
+        
+        notes = request.data.get("notes", "")
+        resolved_by = request.user.username if request.user.is_authenticated else "API"
+        
+        try:
+            if strategy == "keep_existing":
+                conflict.resolve(
+                    strategy="keep_existing",
+                    resolved_origin=conflict.existing_origin,
+                    resolved_by=resolved_by,
+                    notes=notes or "Kept existing curation via API",
+                )
+            
+            elif strategy == "use_imported":
+                # Update existing origin with imported data
+                from scanpipe.models_curation import CurationProvenance
+                from django.utils import timezone
+                
+                imported_data = conflict.imported_origin_data
+                conflict.existing_origin.amended_origin_type = imported_data["origin_type"]
+                conflict.existing_origin.amended_origin_identifier = imported_data["origin_identifier"]
+                conflict.existing_origin.amended_origin_notes = notes or "Used imported curation via API"
+                conflict.existing_origin.amended_by = resolved_by
+                conflict.existing_origin.is_verified = imported_data.get("is_verified", False)
+                conflict.existing_origin.save()
+                
+                # Create provenance
+                CurationProvenance.objects.create(
+                    origin_determination=conflict.existing_origin,
+                    action_type="merged",
+                    curation_source=conflict.imported_source,
+                    actor_name=resolved_by,
+                    action_date=timezone.now(),
+                    new_value=imported_data,
+                    notes=notes or "Used imported curation via API",
+                )
+                
+                conflict.resolve(
+                    strategy="use_imported",
+                    resolved_origin=conflict.existing_origin,
+                    resolved_by=resolved_by,
+                    notes=notes or "Used imported curation via API",
+                )
+            
+            elif strategy == "highest_confidence":
+                # Compare confidence scores
+                existing_conf = (
+                    1.0 if conflict.existing_origin.is_verified
+                    else conflict.existing_origin.detected_origin_confidence or 0.5
+                )
+                imported_conf = conflict.imported_origin_data.get("confidence", 0.5)
+                
+                if imported_conf > existing_conf:
+                    # Use imported (same as above)
+                    from scanpipe.models_curation import CurationProvenance
+                    from django.utils import timezone
+                    
+                    imported_data = conflict.imported_origin_data
+                    conflict.existing_origin.amended_origin_type = imported_data["origin_type"]
+                    conflict.existing_origin.amended_origin_identifier = imported_data["origin_identifier"]
+                    conflict.existing_origin.amended_origin_notes = (
+                        f"Higher confidence: {imported_conf} vs {existing_conf}. {notes}"
+                    )
+                    conflict.existing_origin.amended_by = resolved_by
+                    conflict.existing_origin.is_verified = imported_data.get("is_verified", False)
+                    conflict.existing_origin.save()
+                    
+                    CurationProvenance.objects.create(
+                        origin_determination=conflict.existing_origin,
+                        action_type="merged",
+                        curation_source=conflict.imported_source,
+                        actor_name=resolved_by,
+                        action_date=timezone.now(),
+                        new_value=imported_data,
+                        notes=f"Higher confidence: {imported_conf} vs {existing_conf}",
+                    )
+                
+                conflict.resolve(
+                    strategy="highest_confidence",
+                    resolved_origin=conflict.existing_origin,
+                    resolved_by=resolved_by,
+                    notes=notes or f"Confidence comparison: imported={imported_conf}, existing={existing_conf}",
+                )
+            
+            elif strategy == "manual_decision":
+                # User makes manual decision - just mark as resolved
+                conflict.resolve(
+                    strategy="manual_decision",
+                    resolved_origin=conflict.existing_origin,
+                    resolved_by=resolved_by,
+                    notes=notes or "Manual decision via API",
+                )
+            
+            serializer = self.get_serializer(conflict)
+            return Response(serializer.data)
+        
+        except Exception as e:
+            logger.error(f"Resolution error: {str(e)}", exc_info=True)
+            return ErrorResponse(str(e), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
