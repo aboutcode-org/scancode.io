@@ -196,7 +196,6 @@ class ScanPipeSPDXPipesTest(TestCase):
             "SPDXID": "SPDXRef-DOCUMENT",
             "name": "document_name",
             "documentNamespace": "https://[CreatorWebsite]/[DocumentName]-[UUID]",
-            "documentDescribes": ["SPDXRef-project"],
             "creationInfo": {
                 "created": "2022-09-21T13:50:20Z",
                 "creators": [
@@ -272,6 +271,11 @@ class ScanPipeSPDXPipesTest(TestCase):
                 }
             ],
             "relationships": [
+                {
+                    "spdxElementId": "SPDXRef-DOCUMENT",
+                    "relatedSpdxElement": "SPDXRef-project",
+                    "relationshipType": "DESCRIBES",
+                },
                 {
                     "spdxElementId": "SPDXRef-package1",
                     "relatedSpdxElement": "SPDXRef-file1",
@@ -389,6 +393,17 @@ class ScanPipeSPDXPipesTest(TestCase):
         assert spdx.Document.from_data({})
         document = spdx.Document.from_data(self.document_spdx_data)
         assert self.document_spdx_data == document.as_dict()
+        
+        # Test backward compatibility with deprecated documentDescribes field
+        legacy_data = dict(self.document_spdx_data)
+        legacy_data["documentDescribes"] = ["SPDXRef-project"]
+        # Remove DESCRIBES relationship to test fallback
+        legacy_data["relationships"] = [
+            rel for rel in legacy_data["relationships"]
+            if rel.get("relationshipType") != "DESCRIBES"
+        ]
+        document_from_legacy = spdx.Document.from_data(legacy_data)
+        assert ["SPDXRef-project"] == document_from_legacy.describes
 
     def test_spdx_document_as_json(self):
         document = spdx.Document(**self.document_data)
