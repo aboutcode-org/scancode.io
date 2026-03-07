@@ -2825,7 +2825,7 @@ class ProjectResourceTreeRightPaneView(
         path = self.kwargs.get("path", "")
         context["path"] = path
 
-        segments = path.strip("/").split("/")
+        segments = [segment for segment in path.strip("/").split("/") if segment]
         context["path_segments"] = [
             ("/".join(segments[: i + 1]), segment) for i, segment in enumerate(segments)
         ]
