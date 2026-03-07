@@ -1718,6 +1718,66 @@ class ScanPipeViewsTest(TestCase):
         resources = list(response.context["resources"])
         self.assertEqual(0, len(resources))
 
+    def test_scanpipe_views_project_resource_tree_right_pane_view_root_path_context(
+        self,
+    ):
+        make_resource_file(self.project1, path="child1.txt")
+        make_resource_directory(self.project1, path="dir1")
+
+        url = reverse(
+            "project_resource_tree_right_pane",
+            kwargs={"slug": self.project1.slug},
+        )
+        response = self.client.get(url)
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("", response.context["path"])
+        self.assertEqual([], response.context["path_segments"])
+        self.assertNotIn("parent_path", response.context)
+
+        resources = list(response.context["resources"])
+        resource_paths = [r.path for r in resources]
+        self.assertEqual(["dir1", "child1.txt"], resource_paths)
+
+    def test_scanpipe_views_project_resource_tree_right_pane_view_nested_path_context(
+        self,
+    ):
+        make_resource_directory(self.project1, path="parent")
+        make_resource_directory(self.project1, path="parent/dir1")
+        make_resource_file(self.project1, path="parent/dir1/child.txt")
+
+        url = reverse(
+            "project_resource_tree_right_pane",
+            kwargs={"slug": self.project1.slug, "path": "parent/dir1"},
+        )
+        response = self.client.get(url)
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("parent/dir1", response.context["path"])
+        self.assertEqual(
+            [("parent", "parent"), ("parent/dir1", "dir1")],
+            response.context["path_segments"],
+        )
+        self.assertEqual("parent", response.context["parent_path"])
+
+        resources = list(response.context["resources"])
+        self.assertEqual(["parent/dir1/child.txt"], [r.path for r in resources])
+
+    def test_scanpipe_views_resource_tree_right_pane_top_level_directory_context(self):
+        make_resource_directory(self.project1, path="topdir")
+        make_resource_file(self.project1, path="topdir/file.txt")
+
+        url = reverse(
+            "project_resource_tree_right_pane",
+            kwargs={"slug": self.project1.slug, "path": "topdir"},
+        )
+        response = self.client.get(url)
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("topdir", response.context["path"])
+        self.assertEqual([("topdir", "topdir")], response.context["path_segments"])
+        self.assertNotIn("parent_path", response.context)
+
     @mock.patch("scanpipe.views.ProjectResourceTreeRightPaneView.paginate_by", 2)
     def test_scanpipe_views_project_resource_tree_right_pane_view_pagination(self):
         make_resource_directory(self.project1, path="parent")
