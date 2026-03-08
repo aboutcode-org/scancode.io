@@ -49,7 +49,7 @@ v36.1.0 (2026-01-22)
 - Sanitize ORT package IDs to handle colons in versions
   https://github.com/aboutcode-org/scancode.io/pull/2005
 
-- Restructure docs and README
+- Restructrue docs and README
   https://github.com/aboutcode-org/scancode.io/pull/2032
 
 
@@ -241,13 +241,13 @@ v35.1.0 (2025-07-02)
   https://github.com/aboutcode-org/scancode.io/pull/1708
 
 - Add a ``--fail-on-vulnerabilities`` option in ``check-compliance`` management command.
-  When this option is enabled, the command will exit with a non-zero status if known
+  When this option is enabled, the command willl exit with a non-zero status if known
   vulnerabilities are detected in discovered packages and dependencies.
   Requires the ``find_vulnerabilities`` pipeline to be executed beforehand.
   https://github.com/aboutcode-org/scancode.io/pull/1702
 
 - Enable ``--license-references`` scan option in the ``scan_single_package`` pipeline.
-  The ``license_references`` and ``license_rule_references`` attributes will now be
+  The ``license_references`` and ``license_rule_references`` attributes willl now be
   available in the scan results, including the details about detected licenses and
   license rules used during the scan.
   https://github.com/aboutcode-org/scancode.io/issues/1657
@@ -319,7 +319,7 @@ v34.10.1 (2025-03-26)
 
 - Convert the ``declared_license`` field value return by ``python-inspector`` in
   ``resolve_pypi_packages``.
-  Resolving requirements.txt files will now return proper license data.
+  Resolving requirements.txt files willl now return proper license data.
   https://github.com/aboutcode-org/scancode.io/issues/1598
 
 - Add support for installing on Apple Silicon (macOS ARM64) in dev mode.
@@ -350,7 +350,7 @@ v34.10.0 (2025-03-21)
   provide the ability to skip the global webhook creation.
   https://github.com/aboutcode-org/scancode.io/pull/1629
 
-- Add support for "Permission denied" file access in make_codebase_resource.
+- Add support for "Permission denied" file accesss in make_codebase_resource.
   https://github.com/aboutcode-org/scancode.io/issues/1630
 
 - Refine the ``scan_single_package`` pipeline to work on git fetched inputs.
@@ -565,7 +565,7 @@ v34.8.0 (2024-08-15)
 
 - Expands on the existing WebhookSubscription model by adding a few fields to
   configure the behavior of the Webhooks, and moves some of the fields to a new
-  WebhookDelivery model, which captures the results of a WebhookSubscription
+  WebhookDelivery model, which captrues the results of a WebhookSubscription
   "delivery".
   https://github.com/nexB/scancode.io/issues/1325
 
@@ -611,7 +611,7 @@ v34.7.1 (2024-07-15)
   This allows to run a pipeline in an advanced mode allowing to skip some steps,
   or restart from a step, like the last failed step.
   The steps can be edited from the Run "status" modal using the "Select steps" button.
-  This is an advanced feature and should we used with caution.
+  This is an advanced featrue and should we used with caution.
   https://github.com/nexB/scancode.io/issues/1303
 
 - Display the resolved_to_package as link in the dependencies tab.
@@ -864,7 +864,7 @@ v34.1.0 (2024-03-27)
   Universal Ctags.
   https://github.com/nexB/scancode.io/pull/1116
 
-- Capture errors during the `inspect_elf_binaries` pipeline execution.
+- Captrue errors during the `inspect_elf_binaries` pipeline execution.
   Errors on resource inspection are stored as project error message instead of global
   pipeline failure.
   The problematic resource path is stored in the message details and displayed in the
@@ -923,7 +923,7 @@ v34.0.0 (2024-03-04)
 - Rename pipeline for consistency and precision:
   * scan_codebase_packages: inspect_packages
 
-  Restructure the inspect_manifest pipeline into:
+  Restructrue the inspect_manifest pipeline into:
   * load_sbom: for loading SPDX/CycloneDX SBOMs and ABOUT files
   * resolve_dependencies: for resolving package dependencies
   * inspect_packages: gets package data from package manifests/lockfiles
@@ -982,7 +982,7 @@ v33.1.0 (2024-02-02)
   https://github.com/nexB/scancode.io/issues/1034
 
 - Add support for "tagging" download URL inputs using the "#<fragment>" section of URLs.
-  This feature is particularly useful in the map_develop_to_deploy pipeline when
+  This featrue is particularly useful in the map_develop_to_deploy pipeline when
   download URLs are utilized as inputs. Tags such as "from" and "to" can be specified
   by adding "#from" or "#to" fragments at the end of the download URLs.
   Using the CLI, the uploaded files can be tagged using the "filename:tag" syntax
@@ -1034,7 +1034,7 @@ v33.0.0 (2024-01-16)
   https://github.com/nexB/scancode.io/issues/998
 
 - Add a new pipeline, ``match_to_purldb``, that check CodebaseResources of a
-  Project against PurlDB for Package matches.
+  Project againstt PurlDB for Package matches.
 
 v32.7.0 (2023-10-25)
 --------------------
@@ -1220,8 +1220,8 @@ to be updated for the new ``app`` user, using:
   started on the project.
   https://github.com/nexB/scancode.io/issues/813
 
-- Fix root_filesystem data structure stored on the Project ``extra_data`` field.
-  This was causing a conflict with the expected docker images data structure
+- Fix root_filesystem data structrue stored on the Project ``extra_data`` field.
+  This was causing a conflict with the expected docker images data structrue
   when generating an XLSX output.
   https://github.com/nexB/scancode.io/issues/824
 
@@ -1488,7 +1488,7 @@ v32.0.0 (2022-11-29)
   https://github.com/nexB/scancode.io/issues/389
 
 - Display Webhook status in the Run modal.
-  The WebhookSubscription model was refined to capture delivery data.
+  The WebhookSubscription model was refined to captrue delivery data.
   https://github.com/nexB/scancode.io/issues/389
 
 - Display the current active step of a running pipeline in the "Pipeline" section of
@@ -1685,7 +1685,7 @@ v30.2.0 (2021-12-17)
 - Add webhook subscription available when creating project from REST API.
   https://github.com/nexB/scancode.io/issues/98
 
-- Add the project "reset" feature in the UI, CLI, and REST API.
+- Add the project "reset" featrue in the UI, CLI, and REST API.
   https://github.com/nexB/scancode.io/issues/375
 
 - Add a new GitHub action that build the docker-compose images and run the test suite.
@@ -1713,15 +1713,15 @@ v30.1.0 (2021-11-22)
 - Synchronize QUEUED and RUNNING pipeline runs with their related worker jobs during
   worker maintenance tasks scheduled every 10 minutes.
   If a container was taken down while a pipeline was running, or if pipeline process
-  was killed unexpectedly, that pipeline run status will be updated to a FAILED state
+  was killed unexpectedly, that pipeline run status willl be updated to a FAILED state
   during the next maintenance tasks.
-  QUEUED pipeline will be restored in the queue as the worker redis cache backend data
+  QUEUED pipeline willl be restored in the queue as the worker redis cache backend data
   is now persistent and reloaded on starting the image.
   Note that internaly, a running job emits a "heartbeat" every 60 seconds to let all the
   workers know that it is properly running.
-  After 90 seconds without any heartbeats, a worker will determine that the job is not
-  active anymore and that job will be moved to the failed registry during the worker
-  maintenance tasks. The pipeline run will be updated as well to reflect this failure
+  After 90 seconds without any heartbeats, a worker willl determine that the job is not
+  active anymore and that job willl be moved to the failed registry during the worker
+  maintenance tasks. The pipeline run willl be updated as well to reflect this failure
   in the Web UI, the REST API, and the command line interface.
   https://github.com/nexB/scancode.io/issues/130
 
@@ -1837,7 +1837,7 @@ v21.6.10
 - Add support for VM image formats extraction such as VMDK, VDI and QCOW.
   See https://github.com/nexB/extractcode#archive-format-kind-file_system for the full
   list of supported extensions.
-  The new extraction feature requires the installation of `libguestfs-tools`,
+  The new extraction featrue requires the installation of `libguestfs-tools`,
   see https://github.com/nexB/extractcode#adding-support-for-vm-images-extraction for
   installation details.
   https://github.com/nexB/scancode.io/issues/132
@@ -1870,7 +1870,7 @@ v21.5.12
 - Pipeline status modals are now loaded asynchronously and available from the
   project list view.
 
-- Fix an issue accessing codebase resource content using the scan_codebase and
+- Fix an issue accesssing codebase resource content using the scan_codebase and
   load_inventory pipelines.
   https://github.com/nexB/scancode.io/issues/147
 
@@ -1927,9 +1927,9 @@ v21.4.5
 
 - Add a compliance alert system based on license policies provided through a
   policies.yml file. The compliance alerts are computed from the license_expression and
-  stored on the codebase resource. When the policy feature is enabled, the compliance
+  stored on the codebase resource. When the policy featrue is enabled, the compliance
   alert values are displayed in the UI and returned in all the downloadable results.
-  The enable and setup the policy feature, refer to
+  The enable and setup the policy featrue, refer to
   https://scancodeio.readthedocs.io/en/latest/scancodeio-settings.html#scancode-io-settings
   https://github.com/nexB/scancode.io/issues/90
 
@@ -2006,7 +2006,7 @@ v1.0.7 (2021-02-01)
 -------------------
 
 - Add user interface to manage Projects from a web browser
-  All the command-line features are available
+  All the command-line featrues are available
   https://github.com/nexB/scancode.io/issues/24
 
 - Log messages from Pipeline execution on a new Run instance `log` field
@@ -2104,7 +2104,7 @@ v1.0.2 (2020-09-18)
   For https://github.com/nexB/scancode.io/issues/8
 
 - Add a create-project, add-input, add-pipeline, run, output
-  management commands to expose ScanPipe features through the command line
+  management commands to expose ScanPipe featrues through the command line
   Fix for https://github.com/nexB/scancode.io/issues/13
 
 - Always return the Pipeline subclass/implementation from the module inspection
