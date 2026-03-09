@@ -250,21 +250,21 @@ class DeployToDevelop(Pipeline):
             project=self.project, jvm_lang=jvm.KotlinLanguage, logger=self.log
         )
 
-    @optional_step("Grammar")
+    @optional_step("Antlr")
     def find_grammar_packages(self):
         """Find the java package of the .g/.g4 source files."""
         d2d.find_jvm_packages(
             project=self.project, jvm_lang=jvm.GrammarLanguage, logger=self.log
         )
 
-    @optional_step("Grammar")
+    @optional_step("Antlr")
     def map_grammar_to_class(self):
         """Map a .class compiled file to its .g/.g4 source."""
         d2d.map_jvm_to_class(
             project=self.project, jvm_lang=jvm.GrammarLanguage, logger=self.log
         )
 
-    @optional_step("Grammar")
+    @optional_step("Antlr")
     def map_jar_to_grammar_source(self):
         """Map .jar files to their related source directory."""
         d2d.map_jar_to_jvm_source(
