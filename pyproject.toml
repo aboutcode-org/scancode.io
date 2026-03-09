@@ -36,7 +36,7 @@ dependencies = [
   "importlib-metadata==8.7.1",
   "setuptools==82.0.0",
   # Django related
-  "Django==6.0.2",
+  "Django==6.0.3",
   "django-environ==0.13.0",
   "django-crispy-forms==2.6",
   "crispy-bootstrap3==2024.1",
@@ -51,7 +51,7 @@ dependencies = [
   # Task queue
   "rq==2.7.0",
   "django-rq==3.2.2",
-  "redis==7.2.1",
+  "redis==7.3.0",
   # WSGI server
   "gunicorn==25.1.0",
   # Docker
@@ -103,7 +103,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   # Validation
-  "ruff==0.15.4",
+  "ruff==0.15.5",
   "doc8==2.0.0",
   # Debug
   "django-debug-toolbar==6.2.0",
