@@ -28,7 +28,7 @@ from pathlib import Path
 
 import git
 
-VERSION = "36.0.1"
+VERSION = "36.1.0"
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = PROJECT_DIR.parent
@@ -88,6 +88,7 @@ __version__ = get_version(VERSION)
 warnings.filterwarnings("ignore", module="extractcode")
 warnings.filterwarnings("ignore", module="typecode")
 warnings.filterwarnings("ignore", module="clamd")
+warnings.filterwarnings("ignore", module="cyclonedx")
 
 
 def command_line():

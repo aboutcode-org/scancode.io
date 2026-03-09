@@ -57,7 +57,7 @@
             {% for entry in scan_summary.primary_language %}
               {% if entry.value %}
                 <li>
-                  <a href="{% url 'project_resources' project.slug %}?programming_language={{ entry.value }}" target="_blank">
+                  <a href="{% url 'project_resources' project.slug %}?programming_language={{ entry.value|urlencode }}" target="_blank">
                   {{ entry.value }}
                   {% if entry.count %}
                     <span class="tag is-rounded">
@@ -123,7 +123,7 @@
           <ul>
             {% for entry in scan_summary.other_languages %}
               {% if entry.value %}
-                <a href="{% url 'project_resources' project.slug %}?programming_language={{ entry.value }}" target="_blank">
+                <a href="{% url 'project_resources' project.slug %}?programming_language={{ entry.value|urlencode }}" target="_blank">
                   <li>
                     {{ entry.value }}
                     {% if entry.count %}
