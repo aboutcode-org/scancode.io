@@ -22,8 +22,37 @@
       {% endblock %}
     </div>
   </div>
+
+  <!-- Modal Search Palette -->
+  <div id="search-modal" class="search-modal" style="display: none;">
+    <div class="search-modal-overlay"></div>
+    <div class="search-modal-content">
+      <div class="search-modal-header">
+        <input 
+          type="text" 
+          id="search-modal-input" 
+          class="search-modal-input" 
+          placeholder="Search resources in {{ project.name }}..."
+          autocomplete="off"
+        >
+        <div class="search-modal-hint">
+          <kbd>↑</kbd><kbd>↓</kbd> navigate • <kbd>Enter</kbd> select • <kbd>Esc</kbd> close
+        </div>
+      </div>
+      <div id="search-results" class="search-results">
+        <div class="search-empty-state">
+          Type to search resources...
+        </div>
+      </div>
+      <div id="search-loading" class="search-loading" style="display: none;">
+        <span class="icon"><i class="fa-solid fa-spinner fa-spin"></i></span> Searching...
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
+{% block scripts %}\n  <script src="{% static 'ace-1.42.0.min.js' %}" crossorigin="anonymous"></script>
+  <script src="{% static 'ace-1.42.0-ext-searchbox.min.js' %}" crossorigin="anonymous"></script>
 {% block scripts %}
   {{ detected_values|json_script:"detected_values" }}
   <script>
@@ -113,33 +142,36 @@
             scrollPositionIndex = 0;
             setDetectedValues(detected_data);
             editor.renderer.scrollToLine(detected_data[0].start_line - 1);
-            previousBtn.disabled = true;
-            nextBtn.disabled = detected_data.length - 1 === 0;
+            if (previousBtn) previousBtn.disabled = true;
+            if (nextBtn) nextBtn.disabled = detected_data.length - 1 === 0;
           } else {
             scrollPositionIndex = 0;
             editor.renderer.scrollToLine(0);
-            previousBtn.disabled = true;
-            nextBtn.disabled = true;
+            if (previousBtn) previousBtn.disabled = true;
+            if (nextBtn) nextBtn.disabled = true;
           }
         });
       });
     }
 
-    nextBtn.addEventListener('click', function() {
-      if (scrollPositionIndex >= detected_data.length - 1) return false;
-      scrollPositionIndex++;
-      editor.renderer.scrollToLine(detected_data[scrollPositionIndex].start_line - 1);
-      nextBtn.disabled = scrollPositionIndex === detected_data.length - 1;
-      previousBtn.disabled = false;
-    });
+    // Safety guard: only add listeners if buttons exist
+    if (nextBtn && previousBtn) {
+      nextBtn.addEventListener('click', function() {
+        if (scrollPositionIndex >= detected_data.length - 1) return false;
+        scrollPositionIndex++;
+        editor.renderer.scrollToLine(detected_data[scrollPositionIndex].start_line - 1);
+        nextBtn.disabled = scrollPositionIndex === detected_data.length - 1;
+        previousBtn.disabled = false;
+      });
 
-    previousBtn.addEventListener('click', function() {
-      if (scrollPositionIndex <= 0) return false;
-      scrollPositionIndex--;
-      editor.renderer.scrollToLine(detected_data[scrollPositionIndex].start_line - 1);
-      previousBtn.disabled = scrollPositionIndex === 0;
-      nextBtn.disabled = false;
-    });
+      previousBtn.addEventListener('click', function() {
+        if (scrollPositionIndex <= 0) return false;
+        scrollPositionIndex--;
+        editor.renderer.scrollToLine(detected_data[scrollPositionIndex].start_line - 1);
+        previousBtn.disabled = scrollPositionIndex === 0;
+        nextBtn.disabled = false;
+      });
+    }
 
     const fullscreenBtn = document.querySelector('#toggle-fullscreen');
     fullscreenBtn.addEventListener('click', function() {
@@ -147,6 +179,169 @@
       let is_full_screen = body.classList.toggle("full-screen");
       editor.resize()
     });
-  }
+
+    // Modal Search Functionality
+    const searchModal = document.getElementById('search-modal');
+    const searchInput = document.getElementById('search-modal-input');
+    const searchResults = document.getElementById('search-results');
+    const searchLoading = document.getElementById('search-loading');
+    const modalOverlay = document.querySelector('.search-modal-overlay');
+    
+    // Safety guard: only initialize modal if all elements exist
+    if (!searchModal || !searchInput || !searchResults || !modalOverlay) {
+      console.warn('Modal search elements not found, skipping initialization');
+    } else {
+      let selectedIndex = -1;
+      let currentResults = [];
+      let searchTimeout = null;
+      const PROJECT_SLUG = '{{ project.slug }}';
+
+    // Open modal
+    function openSearchModal() {
+      searchModal.style.display = 'flex';
+      searchInput.value = '';
+      searchInput.focus();
+      selectedIndex = -1;
+      searchResults.scrollTop = 0;  // Reset scroll position
+      searchLoading.style.display = 'none';  // Hide loading state
+      showEmptyState();
+    }
+
+    // Close modal
+    function closeSearchModal() {
+      searchModal.style.display = 'none';
+      searchInput.value = '';
+      currentResults = [];
+    }
+
+    // Show empty state
+    function showEmptyState() {
+      searchResults.innerHTML = '<div class="search-empty-state">Type to search resources...</div>';
+      searchLoading.style.display = 'none';
+    }
+
+    // Perform search via AJAX
+    function performSearch(query) {
+      if (!query || query.trim().length < 2) {
+        showEmptyState();
+        return;
+      }
+
+      searchLoading.style.display = 'block';
+      searchResults.innerHTML = '';
+
+      fetch(`/project/${PROJECT_SLUG}/resources/search/?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+          searchLoading.style.display = 'none';
+          displayResults(data.results || []);
+        })
+        .catch(error => {
+          console.error('Search error:', error);
+          searchLoading.style.display = 'none';
+          searchResults.innerHTML = '<div class="search-empty-state">Error loading results. Please try again.</div>';
+        });
+    }
+
+    // Display search results
+    function displayResults(results) {
+      currentResults = results;
+      selectedIndex = -1;
+
+      if (results.length === 0) {
+        searchResults.innerHTML = '<div class="search-empty-state">No resources found matching your query.</div>';
+        return;
+      }
+
+      searchResults.innerHTML = results.map((result, index) => `
+        <div class="search-result-item" data-index="${index}" data-path="${result.path}">
+          <div class="search-result-path">${result.path}</div>
+          <div class="search-result-meta">${result.type || 'file'} ${result.size ? '• ' + result.size : ''}</div>
+        </div>
+      `).join('');
+
+      // Add click handlers to results
+      document.querySelectorAll('.search-result-item').forEach(item => {
+        item.addEventListener('click', function() {
+          navigateToResource(this.dataset.path);
+        });
+      });
+    }
+
+    // Navigate to selected resource
+    function navigateToResource(path) {
+      window.location.href = `/project/${PROJECT_SLUG}/resources/${encodeURIComponent(path)}/`;
+    }
+
+    // Update selected item visually
+    function updateSelection() {
+      document.querySelectorAll('.search-result-item').forEach((item, index) => {
+        item.classList.toggle('selected', index === selectedIndex);
+      });
+
+      // Scroll selected item into view
+      if (selectedIndex >= 0) {
+        const selectedItem = document.querySelector(`.search-result-item[data-index="${selectedIndex}"]`);
+        if (selectedItem) {
+          selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      }
+    }
+
+    // Keyboard shortcuts for opening/closing modal
+    document.addEventListener('keydown', function(e) {
+      // Ctrl-K or Cmd-K to open modal
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        openSearchModal();
+        return;
+      }
+
+      // "/" to open modal (only when not in input/textarea)
+      if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+        e.preventDefault();
+        openSearchModal();
+        return;
+      }
+
+      // Escape to close modal
+      if (e.key === 'Escape' && searchModal.style.display === 'flex') {
+        e.preventDefault();
+        closeSearchModal();
+        return;
+      }
+
+      // Arrow navigation and Enter in modal
+      if (searchModal.style.display === 'flex' && currentResults.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          selectedIndex = Math.min(selectedIndex + 1, currentResults.length - 1);
+          updateSelection();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          selectedIndex = Math.max(selectedIndex - 1, -1);
+          updateSelection();
+        } else if (e.key === 'Enter' && selectedIndex >= 0) {
+          e.preventDefault();
+          navigateToResource(currentResults[selectedIndex].path);
+        }
+      }
+    });
+
+    // Search input handler with debouncing
+    searchInput.addEventListener('input', function(e) {
+      clearTimeout(searchTimeout);
+      const query = e.target.value;
+      
+      searchTimeout = setTimeout(() => {
+        performSearch(query);
+      }, 300); // 300ms debounce
+    });
+
+    // Click overlay to close
+    modalOverlay.addEventListener('click', closeSearchModal);
+
+  }  // End of safety guard check
+
   </script>
 {% endblock %}

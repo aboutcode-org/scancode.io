@@ -607,3 +607,134 @@ body.full-screen #resource-viewer .message-header {
   background-color: var(--bulma-background);
   border-radius: var(--bulma-radius);
 }
+
+/* Modal Search Palette Styles */
+.search-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 10vh;
+}
+
+.search-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(2px);
+}
+
+.search-modal-content {
+  position: relative;
+  width: 90%;
+  max-width: 600px;
+  background: #1f2937;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.search-modal-header {
+  border-bottom: 1px solid #374151;
+  padding: 0;
+}
+
+.search-modal-input {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  font-size: 1.1rem;
+  border: none;
+  background: transparent;
+  color: #f3f4f6;
+  outline: none;
+}
+
+.search-modal-input::placeholder {
+  color: #9ca3af;
+}
+
+.search-modal-hint {
+  padding: 0.5rem 1.5rem;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  border-top: 1px solid #374151;
+}
+
+.search-modal-hint kbd {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.7rem;
+  background: #374151;
+  border: 1px solid #4b5563;
+  border-radius: 3px;
+  margin: 0 0.1rem;
+  font-family: monospace;
+}
+
+.search-results {
+  max-height: 400px;
+  overflow-y: auto;
+  background: #111827;
+}
+
+.search-empty-state {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.search-result-item {
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid #374151;
+  cursor: pointer;
+  transition: background-color 0.1s;
+  color: #e5e7eb;
+}
+
+.search-result-item:hover,
+.search-result-item.selected {
+  background: #1f2937;
+}
+
+.search-result-item.selected {
+  border-left: 3px solid #3b82f6;
+}
+
+.search-result-path {
+  font-size: 0.95rem;
+  color: #e5e7eb;
+  margin-bottom: 0.25rem;
+}
+
+.search-result-meta {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.search-loading {
+  padding: 1rem 1.5rem;
+  text-align: center;
+  color: #9ca3af;
+  background: #111827;
+}
+
