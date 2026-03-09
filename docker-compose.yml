@@ -71,38 +71,6 @@ services:
       - redis_data:/data
     restart: always
 
-  # This service is responsible for ensuring the correct ownership of files
-  # in the shared volumes used by the application (static and workspace).
-  # It ensures that all files inside the `/var/scancodeio/` directory are owned
-  # by the user and group with the UID and GID defined in the environment variables
-  # APP_UID and APP_GID, which default to 1000 if not set.
-  #
-  # The service runs only once (due to "restart: no") and performs a `chown` operation
-  # to change the ownership of the static and workspace directories, ensuring proper
-  # file access rights for the running application containers.
-  #
-  # Volumes mounted:
-  # - static: Ensures the ownership of static files in the /var/scancodeio/static directory
-  # - media: Ensures the ownership of media files in the /var/scancodeio/workspace directory
-  #
-  # Notes: This service can be removed in future ScanCode.io release.
-  chown:
-    image: docker.io/library/alpine:latest
-    restart: "no"
-    command: sh -c "
-      if [ ! -f /var/scancodeio/workspace/.chown_done ]; then
-        chown -R ${APP_UID:-1000}:${APP_GID:-1000} /var/scancodeio/ &&
-        touch /var/scancodeio/workspace/.chown_done;
-        echo 'Chown applied!';
-      else
-        echo 'Chown already applied, skipping...';
-      fi"
-    env_file:
-      - docker.env
-    volumes:
-      - static:/var/scancodeio/static/
-      - workspace:/var/scancodeio/workspace/
-
   web:
     build: .
     command: sh -c "
@@ -124,8 +92,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-      chown:
-        condition: service_completed_successfully
 
   worker:
     build: .
@@ -144,7 +110,6 @@ services:
       - redis
       - db
       - web
-      - chown
 
   nginx:
     image: docker.io/library/nginx:alpine
