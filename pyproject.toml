@@ -51,7 +51,7 @@ dependencies = [
   # Task queue
   "rq==2.7.0",
   "django-rq==3.2.2",
-  "redis==7.3.0",
+  "redis==7.2.1",
   # WSGI server
   "gunicorn==25.1.0",
   # Docker
@@ -103,7 +103,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   # Validation
-  "ruff==0.15.5",
+  "ruff==0.15.4",
   "doc8==2.0.0",
   # Debug
   "django-debug-toolbar==6.2.0",
