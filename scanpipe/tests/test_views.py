@@ -590,6 +590,18 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, expected1)
         self.assertContains(response, expected2)
 
+    def test_scanpipe_views_project_details_scan_summary_language_url_encoding(self):
+        summary_file = self.project1.get_output_file_path("summary", "json")
+        scan_summary_json = {
+            "primary_language": [{"value": "C#", "count": 1}],
+            "other_languages": [{"value": "C#", "count": 1}],
+        }
+        summary_file.write_text(json.dumps(scan_summary_json))
+        url = self.project1.get_absolute_url()
+        response = self.client.get(url)
+        self.assertContains(response, "?programming_language=C%23")
+        self.assertNotContains(response, "?programming_language=C#")
+
     def test_scanpipe_views_project_details_get_license_clarity_data(self):
         get_license_clarity_data = ProjectDetailView.get_license_clarity_data
 
@@ -1038,6 +1050,17 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url, data=data)
         expected_error = "The provided search value is invalid: No closing quotation"
         self.assertContains(response, expected_error)
+
+    def test_scanpipe_views_codebase_resource_list_programming_language_url_encoding(
+        self,
+    ):
+        make_resource_file(
+            self.project1, path="csharp_file.cs", programming_language="C#"
+        )
+        url = reverse("project_resources", args=[self.project1.slug])
+        response = self.client.get(url)
+        self.assertContains(response, "?programming_language=C%23")
+        self.assertNotContains(response, "?programming_language=C#")
 
     def test_scanpipe_views_codebase_resource_details_view_tab_image(self):
         resource1 = make_resource_file(self.project1, "file1.ext")

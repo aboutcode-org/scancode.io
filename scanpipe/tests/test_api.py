@@ -788,6 +788,18 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.get(url + "?slug=aaa")
         self.assertEqual(2, response.data["count"])
 
+    def test_scanpipe_api_project_action_resources_filterset_special_chars(self):
+        make_resource_file(
+            self.project1,
+            path="csharp_file.cs",
+            programming_language="C#",
+        )
+        url = reverse("project-resources", args=[self.project1.uuid])
+        response = self.csrf_client.get(url + "?programming_language=C%23")
+        self.assertEqual(1, response.data["count"])
+        self.assertEqual("csharp_file.cs", response.data["results"][0]["path"])
+        self.assertEqual("C#", response.data["results"][0]["programming_language"])
+
     def test_scanpipe_api_project_action_packages(self):
         url = reverse("project-packages", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
