@@ -152,7 +152,7 @@
               // Keep in sync with FilterSetUtilsMixin.(empty_value|other_value)
               if (name === "(No value detected)") name = "_EMPTY_";
               if (name === "Other") name = "_OTHER_";
-              let full_url = `${base_url}?${field}=${name}`;
+              let full_url = `${base_url}?${field}=${encodeURIComponent(name)}`;
               if (in_package) full_url += `&in_package=${in_package}`;
               if (event.ctrlKey || event.metaKey) window.open(full_url, '_blank');
               else window.location.href = full_url;
