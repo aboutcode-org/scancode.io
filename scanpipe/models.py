@@ -57,7 +57,6 @@ from django.db.models import TextField
 from django.db.models import When
 from django.db.models.functions import Cast
 from django.db.models.functions import Lower
-from django.dispatch import receiver
 from django.forms import model_to_dict
 from django.urls import NoReverseMatch
 from django.urls import reverse
@@ -70,6 +69,7 @@ import django_rq
 import redis
 import requests
 import saneyaml
+from aboutcode.api_auth import AbstractAPIToken
 from commoncode.fileutils import parent_directory
 from cyclonedx import model as cyclonedx_model
 from cyclonedx.model import component as cyclonedx_component
@@ -86,7 +86,6 @@ from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
 from packageurl.contrib.django.models import PackageURLMixin
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
-from rest_framework.authtoken.models import Token
 from rq.command import send_stop_job_command
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
@@ -144,6 +143,11 @@ class UUIDFieldMixin(models.Model):
 
     class Meta:
         abstract = True
+
+
+class APIToken(AbstractAPIToken):
+    class Meta:
+        verbose_name = "API Token"
 
 
 class HashFieldsMixin(models.Model):
@@ -4961,13 +4965,6 @@ class WebhookDelivery(UUIDPKModel, ProjectRelatedModel):
     @property
     def success(self):
         return self.response_status_code in (200, 201, 202)
-
-
-@receiver(models.signals.post_save, sender=settings.AUTH_USER_MODEL)
-def create_auth_token(sender, instance=None, created=False, **kwargs):
-    """Create an API key token on user creation, using the signal system."""
-    if created:
-        Token.objects.create(user_id=instance.pk)
 
 
 class DiscoveredPackageScore(UUIDPKModel, PackageScoreMixin):
