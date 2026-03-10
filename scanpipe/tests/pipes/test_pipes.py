@@ -461,10 +461,3 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         cleaned = _clean_package_data(package_data)
 
         self.assertTrue(cleaned["is_virtual"])
-
-
-
-
-
-
-
