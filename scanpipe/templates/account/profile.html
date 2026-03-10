@@ -14,21 +14,47 @@
       </nav>
     </div>
 
-    <article class="message is-warning">
-      <div class="message-body">
-        <strong>An API key is like a password and should be treated with the same care.</strong>
-      </div>
-    </article>
-
-    <div class="field">
-      <label class="label">API Key</label>
-      <div class="control has-icons-left">
-        <input class="input" type="text" value="{{ request.user.auth_token.key|default:'Not available' }}" readonly>
-        <span class="icon is-small is-left">
-          <i class="fa-solid fa-key"></i>
-        </span>
+    <div class="columns">
+      <div class="column is-7">
+        <div class="content">
+          <p>
+            Your personal API key provides access to the <a href="{% url 'project-list' %}" target="_blank">REST API</a>.<br>
+            <strong>Treat it like a password and keep it secure.</strong>
+          </p>
+          {% if request.user.api_token %}
+            <div class="notification is-info is-light mb-4">
+              Your API key <strong>{{ request.user.api_token.prefix }}...</strong>
+              was generated on {{ request.user.api_token.created }}<br>
+              For security reasons, the full key is only shown once at generation time.<br>
+              If you lose it, you will need to regenerate a new one.
+            </div>
+          {% else %}
+            <div class="notification is-warning is-light mb-4">
+              <strong>No API key created.</strong><br>
+              Generate one using the button below to access the REST API.
+            </div>
+          {% endif %}
+        </div>
+        <div class="buttons">
+          <button type="button" class="button is-link is-outlined modal-button">
+            Generate API key
+          </button>
+          {% if request.user.api_token %}
+            <button type="button" class="button is-danger is-outlined modal-button">
+              Revoke API key
+            </button>
+          {% endif %}
+        </div>
       </div>
     </div>
+
+    <form action="{% url 'generate_api_key' %}" id="generate-api-key-form" method="post">{% csrf_token %}
+      <button type="submit" class="btn btn-success">Generate</button>
+    </form>
+
+    <form action="{% url 'revoke_api_key' %}" id="revoke-api-key-form" method="post">{% csrf_token %}
+      <button type="submit" class="btn btn-danger">Revoke API key</button>
+    </form>
 
   </section>
 </div>
