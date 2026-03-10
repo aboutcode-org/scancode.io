@@ -448,3 +448,18 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         self.assertEqual("from", from_resource.tag)
         to_resource = p1.codebaseresources.get(path="to/a.txt")
         self.assertEqual("to", to_resource.tag)
+
+    def test_clean_package_data_normalizes_boolean_strings():
+    from scanpipe.pipes import _clean_package_data
+
+    package_data = {
+        "type": "npm",
+        "name": "react",
+        "version": "1.0",
+        "is_virtual": "true",
+    }
+
+    cleaned = _clean_package_data(package_data)
+
+    assert cleaned["is_virtual"] is True
+

@@ -171,6 +171,20 @@ def update_or_create_resource(project, resource_data):
 def _clean_package_data(package_data):
     """Clean provided `package_data` to make it compatible with the model."""
     package_data = package_data.copy()
+    boolean_fields = {
+        field.name
+        for field in DiscoveredPackage._meta.fields
+        if field.get_internal_type() == "BooleanField"
+    }
+
+    for key in boolean_fields:
+        value = package_data.get(key)
+        if isinstance(value, str):
+            lower = value.lower()
+            if lower == "true":
+                package_data[key] = True
+            elif lower == "false":
+                package_data[key] = False
     if release_date := package_data.get("release_date"):
         if type(release_date) is str:
             release_date = release_date.removesuffix("Z")
