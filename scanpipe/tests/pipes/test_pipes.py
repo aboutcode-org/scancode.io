@@ -37,6 +37,7 @@ from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
 from scanpipe.pipes import get_text_str_diff_ratio
 from scanpipe.pipes import scancode
+from scanpipe.pipes import _clean_package_data
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import dependency_data1
@@ -45,7 +46,6 @@ from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 from scanpipe.tests import resource_data1
-from scanpipe.pipes import _clean_package_data
 
 
 class ScanPipePipesTest(TestCase):
@@ -449,16 +449,18 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         self.assertEqual("from", from_resource.tag)
         to_resource = p1.codebaseresources.get(path="to/a.txt")
         self.assertEqual("to", to_resource.tag)
-    
-    def test_clean_package_data_normalizes_boolean_strings():
+
+    def test_clean_package_data_normalizes_boolean_strings(self):
         package_data = {
             "type": "npm",
             "name": "react",
             "version": "1.0",
             "is_virtual": "true",
         }
+
         cleaned = _clean_package_data(package_data)
-        assert cleaned["is_virtual"] is True
+
+        self.assertTrue(cleaned["is_virtual"])
 
 
 
