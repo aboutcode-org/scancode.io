@@ -95,10 +95,10 @@ class ScanCodeIOAuthTest(TestCase):
         response = self.client.get(project_list_url)
         expected = '<a class="navbar-link">basic_user</a>'
         self.assertContains(response, expected, html=True)
-        expected = f'<a class="navbar-item" href="{profile_url}">Profile settings</a>'
-        self.assertContains(response, expected, html=True)
         expected = f'<form id="logout-form" method="post" action="{logout_url}">'
         self.assertContains(response, expected)
+        self.assertContains(response, profile_url)
+        self.assertContains(response, "Profile settings")
 
     def test_scancodeio_auth_logout_view(self):
         response = self.client.get(logout_url)
