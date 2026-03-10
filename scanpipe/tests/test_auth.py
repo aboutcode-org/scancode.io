@@ -36,6 +36,7 @@ User = get_user_model()
 
 TEST_PASSWORD = str(uuid.uuid4())
 
+APIToken = apps.get_model("scanpipe", "APIToken")
 login_url = reverse("login")
 project_list_url = reverse("project_list")
 logout_url = reverse("logout")
@@ -112,12 +113,22 @@ class ScanCodeIOAuthTest(TestCase):
 
     def test_scancodeio_account_profile_view(self):
         self.client.login(username=self.basic_user.username, password=TEST_PASSWORD)
-        APIToken = apps.get_model("scanpipe", "APIToken")
+
+        expected1 = "No API key created."
+        expected2 = "Generate API key"
+        expected3 = "Revoke API key"
+
+        response = self.client.get(profile_url)
+        self.assertContains(response, expected1)
+        self.assertContains(response, expected2)
+        self.assertNotContains(response, expected3)
+
         APIToken.create_token(user=self.basic_user)
         response = self.client.get(profile_url)
-        expected = '<label class="label">API Key</label>'
-        self.assertContains(response, expected, html=True)
-        # self.assertContains(response, self.basic_user.auth.key)
+        self.assertNotContains(response, expected1)
+        self.assertContains(response, expected2)
+        self.assertContains(response, expected3)
+        self.assertContains(response, self.basic_user.api_token.prefix)
 
     def test_scancodeio_auth_views_are_protected(self):
         a_uuid = uuid.uuid4()

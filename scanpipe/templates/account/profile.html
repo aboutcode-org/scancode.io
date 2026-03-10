@@ -13,16 +13,18 @@
         </ul>
       </nav>
     </div>
-
     <div class="columns">
       <div class="column is-7">
         <div class="content">
-          <p>
-            Your personal API key provides access to the <a href="{% url 'project-list' %}" target="_blank">REST API</a>.<br>
-            <strong>Treat it like a password and keep it secure.</strong>
-          </p>
+          <div class="mb-2">
+            Your personal API key provides access to the
+            <a href="{% url 'project-list' %}" target="_blank">REST API</a>
+            <div class="has-text-weight-semibold">
+              Treat it like a password and keep it secure.
+            </div>
+          </div>
           {% if request.user.api_token %}
-            <div class="notification is-info is-light mb-4">
+            <div class="notification is-grey mb-4">
               Your API key <strong>{{ request.user.api_token.prefix }}...</strong>
               was generated on {{ request.user.api_token.created }}<br>
               For security reasons, the full key is only shown once at generation time.<br>
@@ -36,26 +38,21 @@
           {% endif %}
         </div>
         <div class="buttons">
-          <button type="button" class="button is-link is-outlined modal-button">
+          <button type="button" class="button is-success is-outlined modal-button" data-target="modal-generate-api-key" aria-haspopup="true">
             Generate API key
           </button>
           {% if request.user.api_token %}
-            <button type="button" class="button is-danger is-outlined modal-button">
+            <button type="button" class="button is-danger is-outlined modal-button" data-target="modal-revoke-api-key" aria-haspopup="true">
               Revoke API key
             </button>
           {% endif %}
         </div>
       </div>
     </div>
-
-    <form action="{% url 'generate_api_key' %}" id="generate-api-key-form" method="post">{% csrf_token %}
-      <button type="submit" class="btn btn-success">Generate</button>
-    </form>
-
-    <form action="{% url 'revoke_api_key' %}" id="revoke-api-key-form" method="post">{% csrf_token %}
-      <button type="submit" class="btn btn-danger">Revoke API key</button>
-    </form>
-
   </section>
+  {% include 'scanpipe/modals/profile_generate_api_key_modal.html' %}
+  {% if request.user.api_token %}
+    {% include 'scanpipe/modals/profile_revoke_api_key_modal.html' %}
+  {% endif %}
 </div>
 {% endblock %}
