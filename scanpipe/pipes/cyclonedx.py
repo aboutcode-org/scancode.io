@@ -254,6 +254,31 @@ def delete_ignored_root_properties(cyclonedx_document_json):
     return cleaned_document
 
 
+def strip_empty_values(data):
+    """
+    Remove keys with empty containers or empty date-time strings in place.
+
+    Empty dicts and lists are never useful.
+    Empty strings are left alone since some fields like "url" are required by
+    cyclonedx-python-lib and an empty string is less harmful than a missing key.
+    Date-time fields are the exception: an empty string there causes deserialization
+    failures when py-serializable tries to parse it as an ISO date.
+    """
+    DATE_TIME_FIELDS = {"published", "updated", "created", "timestamp"}
+
+    if isinstance(data, dict):
+        for key, value in list(data.items()):
+            strip_empty_values(value)
+            if value in ({}, []) or (key in DATE_TIME_FIELDS and value == ""):
+                del data[key]
+
+    elif isinstance(data, list):
+        for item in data:
+            strip_empty_values(item)
+
+    return data
+
+
 def cleanup_components_properties(cyclonedx_document_json):
     """
     Remove entries for which no values are set, such as ``{"name": ""}`` or
@@ -315,6 +340,10 @@ def get_bom_instance_from_file(input_location):
 
         # Apply a few fixes pre-validation for maximum compatibility
         cyclonedx_document = delete_ignored_root_properties(cyclonedx_document)
+        # Some SBOM producers include fields with empty values (e.g., "published":"")
+        # instead of omitting them. These cause deserialization failures in
+        # py-serializable when it tries to parse empty strings as ISO dates.
+        cyclonedx_document = strip_empty_values(cyclonedx_document)
         cyclonedx_document = cleanup_components_properties(cyclonedx_document)
 
         # Instead of validating and raising an error (which halts the entire loading

@@ -212,6 +212,7 @@ TEST_DATA = {
         ],
     },
     ### OWASP dep-scan
+    #   $ pip install owasp-depscan==6.1.0
     #   $ depscan --src alpine:3.17.0 --type docker
     "depscan-alpine-3.17-sbom.json": {
         "resources": 1,
