@@ -224,6 +224,15 @@ class ScanPipeResolvePipesTest(TestCase):
             "qualifiers": "arch=all",
             "md5": "76cf50f29e47676962645632737365a7",
         }
+        expected["extra_data"] = {
+            "identity": {
+                "source": "declared",
+                "origin": {
+                    "download_location": "https://download.url/package.zip",
+                    "homepage": "https://packages.debian.org",
+                },
+            }
+        }
         self.assertEqual(expected, package_data)
 
     def test_scanpipe_pipes_spdx_relationship_to_dependency_data(self):
@@ -249,6 +258,55 @@ class ScanPipeResolvePipesTest(TestCase):
         input_location = self.data / "spdx" / "SPDXJSONExample-v2.3.spdx.json"
         packages_data = resolve.resolve_spdx_packages(input_location)
         self.assertEqual(4, len(packages_data))
+
+    def test_scanpipe_resolve_spdx_package_generates_generic_purl_when_missing(self):
+        """
+        SPDX package without externalRefs should generate
+        a deterministic generic PURL and mark it as inferred.
+        """
+        spdx_content = {
+            "spdxVersion": "SPDX-2.3",
+            "SPDXID": "SPDXRef-DOCUMENT",
+            "name": "test-doc",
+            "dataLicense": "CC0-1.0",
+            "documentNamespace": "http://example.com/spdx/test",
+            "creationInfo": {
+                "created": "2024-01-01T00:00:00Z",
+                "creators": ["Tool: pytest"],
+            },
+            "packages": [
+                {
+                    "name": "examplepkg",
+                    "SPDXID": "SPDXRef-Package-examplepkg",
+                    "versionInfo": "1.0.0",
+                    "downloadLocation": "NOASSERTION",
+                    "licenseConcluded": "MIT",
+                    "licenseDeclared": "MIT",
+                    "copyrightText": "NOASSERTION",
+                }
+            ],
+            "relationships": [],
+        }
+
+        test_file = self.data / "spdx" / "temp_test.spdx.json"
+        test_file.write_text(json.dumps(spdx_content))
+
+        try:
+            packages = resolve.resolve_spdx_packages(test_file)
+        finally:
+            test_file.unlink(missing_ok=True)
+
+        self.assertEqual(1, len(packages))
+        package = packages[0]
+
+        self.assertEqual("generic", package.get("type"))
+        self.assertEqual("examplepkg", package.get("name"))
+        self.assertEqual("1.0.0", package.get("version"))
+
+        self.assertEqual(
+            "inferred",
+            package.get("extra_data", {}).get("identity", {}).get("source"),
+        )
 
     def test_scanpipe_pipes_resolve_spdx_dependencies(self):
         input_location = self.data / "spdx" / "SPDXJSONExample-v2.3.spdx.json"

@@ -311,26 +311,76 @@ def convert_spdx_expression(license_expression_spdx):
     return get_license_detections_and_expression(license_expression_spdx)[1]
 
 
+def build_spdx_purl(spdx_package):
+    """
+    Return a PackageURL dict for the SPDX package.
+
+    Resolution order:
+    1. Use declared PURL unless type == "unknown"
+    2. Fallback to deterministic generic PURL
+    """
+    for ref in spdx_package.external_refs:
+        if ref.type == "purl" and ref.locator:
+            declared = PackageURL.from_string(ref.locator)
+
+            # If declared type is meaningful it will use it
+            if declared.type and declared.type != "unknown":
+                return declared.to_dict(encode=True), False
+
+            # If declared type is unknown it will upgrade to generic
+            name = declared.name
+            version = declared.version
+
+            if name:
+                generic = PackageURL(
+                    type="generic",
+                    name=name,
+                    version=version,
+                )
+                return generic.to_dict(encode=True), True
+
+    # No declared PURL - fallback
+    name = (spdx_package.name or "").strip()
+    version = (spdx_package.version or "").strip()
+
+    if name:
+        generic = PackageURL(
+            type="generic",
+            name=name,
+            version=version or None,
+        )
+        return generic.to_dict(encode=True), True
+
+    return {}, False
+
+
 def spdx_package_to_package_data(spdx_package):
     """Convert the provided spdx_package into package_data."""
-    package_url_dict = {}
-    # Store the original "SPDXID" as package_uid for dependencies resolution.
     package_uid = spdx_package.spdx_id
 
-    for ref in spdx_package.external_refs:
-        if ref.type == "purl":
-            purl = ref.locator
-            package_url_dict = PackageURL.from_string(purl).to_dict(encode=True)
+    # Resolve declared or fallback PURL
+    package_url_dict, inferred = build_spdx_purl(spdx_package)
 
+    # Collect checksums
     checksum_data = {
         checksum.algorithm.lower(): checksum.value
         for checksum in spdx_package.checksums
     }
 
+    # License handling
     declared_license_expression_spdx = spdx_package.license_concluded
     declared_expression = ""
     if declared_license_expression_spdx:
         declared_expression = convert_spdx_expression(declared_license_expression_spdx)
+
+    # Structured identity metadata
+    identity = {
+        "source": "inferred" if inferred else "declared",
+        "origin": {
+            "download_location": spdx_package.download_location,
+            "homepage": spdx_package.homepage,
+        },
+    }
 
     package_data = {
         "package_uid": package_uid,
@@ -345,6 +395,9 @@ def spdx_package_to_package_data(spdx_package):
         "filename": spdx_package.filename,
         "description": spdx_package.description,
         "release_date": spdx_package.release_date,
+        "extra_data": {
+            "identity": identity,
+        },
         **package_url_dict,
         **checksum_data,
     }
