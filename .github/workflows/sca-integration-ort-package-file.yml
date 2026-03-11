@@ -17,7 +17,7 @@ permissions:
 
 env:
   SCIO_IMAGE_INPUT: "docker://osadl/alpine-docker-base-image:v3.22-latest"
-  ORT_VERSION: "68.1.0"
+  ORT_VERSION: "82.0.0"
 
 jobs:
   generate-and-load-sbom:
@@ -30,7 +30,7 @@ jobs:
           input-urls:
             "${{ env.SCIO_IMAGE_INPUT }}"
           scancodeio-repo-branch: "main"
-          output-formats: "ort-package-list spdx:2.2 cyclonedx json xlsx"
+          output-formats: "ort-package-list"
 
       - name: Copy package-list.yml to workspace root
         run: |
