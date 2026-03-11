@@ -194,7 +194,6 @@ INSTALLED_APPS = [
     "crispy_bootstrap3",  # required for the djangorestframework browsable API
     "django_filters",
     "rest_framework",
-    "rest_framework.authtoken",
     "django_rq",
     "django_probes",
     "taggit",
@@ -401,12 +400,12 @@ if not SCANCODEIO_ASYNC:
 CLAMD_USE_TCP = env.bool("CLAMD_USE_TCP", default=True)
 CLAMD_TCP_ADDR = env.str("CLAMD_TCP_ADDR", default="clamav")
 
-# Django restframework
+# REST API
+
+API_TOKEN_MODEL = "scanpipe.APIToken"  # noqa: S105
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework.authentication.TokenAuthentication",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("aboutcode.api_auth.APITokenAuthentication",),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": (
         "rest_framework.renderers.JSONRenderer",

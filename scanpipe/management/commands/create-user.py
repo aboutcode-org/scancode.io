@@ -28,7 +28,7 @@ from django.core import exceptions
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 
-from rest_framework.authtoken.models import Token
+from scanpipe.models import APIToken
 
 
 class Command(BaseCommand):
@@ -43,12 +43,20 @@ class Command(BaseCommand):
         )
 
     def add_arguments(self, parser):
-        parser.add_argument("username", help="Specifies the username for the user.")
+        parser.add_argument(
+            "username",
+            help=f"Specifies the {self.UserModel.USERNAME_FIELD} for the user.",
+        )
         parser.add_argument(
             "--no-input",
             action="store_false",
             dest="interactive",
             help="Do not prompt the user for input of any kind.",
+        )
+        parser.add_argument(
+            "--generate-api-key",
+            action="store_true",
+            help="Generate an API key for this user and print it to the console.",
         )
         parser.add_argument(
             "--admin",
@@ -63,8 +71,15 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         username = options["username"]
+        generate_api_key = options["generate_api_key"]
         is_admin = options["admin"]
         is_superuser = options["super"]
+
+        if options["verbosity"] <= 0 and generate_api_key:
+            raise CommandError(
+                "Cannot display the API key with verbosity disabled. "
+                "The key is only shown once at generation time."
+            )
 
         error_msg = self._validate_username(username)
         if error_msg:
@@ -75,18 +90,26 @@ class Command(BaseCommand):
             password = self.get_password_from_stdin(username)
 
         user_kwargs = {
-            "username": username,
+            self.UserModel.USERNAME_FIELD: username,
             "password": password,
             "is_staff": is_admin or is_superuser,
             "is_superuser": is_superuser,
         }
-
         user = self.UserModel._default_manager.create_user(**user_kwargs)
-        token, _ = Token._default_manager.get_or_create(user=user)
 
         if options["verbosity"] > 0:
-            msg = f"User {username} created with API key: {token.key}"
+            msg = f"User {username} created."
             self.stdout.write(msg, self.style.SUCCESS)
+
+        if generate_api_key:
+            plain_api_key = APIToken.create_token(user=user)
+            self.stdout.write(f"API key: {plain_api_key}", self.style.SUCCESS)
+            warning_msg = (
+                "Treat your API key like a password and keep it secure. "
+                "For security reasons, the key is only shown once at generation time. "
+                "If you lose it, you will need to regenerate a new one."
+            )
+            self.stdout.write(warning_msg, self.style.WARNING)
 
     def get_password_from_stdin(self, username):
         # Validators, such as UserAttributeSimilarityValidator, depends on other user's
