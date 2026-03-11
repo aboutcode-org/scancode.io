@@ -34,25 +34,25 @@ jobs:
 
       - name: Copy package-list.yml to workspace root
         run: |
-          FILE=$(ls ${{ env.PROJECT_WORK_DIRECTORY }}/output/*.package-list.yml | head -n 1)
-          sudo mkdir -p ${GITHUB_WORKSPACE}/ort-data/
+          FILE=$(ls "${PROJECT_WORK_DIRECTORY}/output/"*.package-list.yml | head -n 1)
+          sudo mkdir -p "${GITHUB_WORKSPACE}/ort-data/"
           sudo cp "$FILE" "${GITHUB_WORKSPACE}/ort-data/package-list.yml"
-          sudo chmod -R 777 ${GITHUB_WORKSPACE}/ort-data/
+          sudo chmod -R 777 "${GITHUB_WORKSPACE}/ort-data/"
           ls -lh "${GITHUB_WORKSPACE}/ort-data/"
 
       - name: Generates an ORT analyzer-result.yml file
         run: |
-          docker run --rm -v ${GITHUB_WORKSPACE}/ort-data:/data \
+          docker run --rm -v "${GITHUB_WORKSPACE}/ort-data:/data" \
             --entrypoint /opt/ort/bin/orth \
-            ghcr.io/oss-review-toolkit/ort:${{ env.ORT_VERSION }} \
+            "ghcr.io/oss-review-toolkit/ort:${ORT_VERSION}" \
             create-analyzer-result-from-package-list \
               --package-list-file /data/package-list.yml \
               --ort-file /data/analyzer-result.yml
 
       - name: Report as CycloneDX and SPDX using the analyzer-result.yml file
         run: |
-          docker run --rm -v ${GITHUB_WORKSPACE}/ort-data:/data \
-          ghcr.io/oss-review-toolkit/ort:${{ env.ORT_VERSION }} \
+          docker run --rm -v "${GITHUB_WORKSPACE}/ort-data:/data" \
+          "ghcr.io/oss-review-toolkit/ort:${ORT_VERSION}" \
           report \
             --ort-file /data/analyzer-result.yml \
             --output-dir /data/results/ \
