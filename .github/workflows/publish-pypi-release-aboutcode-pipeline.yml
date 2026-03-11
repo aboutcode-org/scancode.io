@@ -6,6 +6,11 @@ on:
     tags:
       - "aboutcode.pipeline/*"
 
+env:
+  PYPI_PROJECT_URL: "https://pypi.org/p/aboutcode.pipeline"
+  PYPROJECT_TOML: "pipeline-pyproject.toml"
+  FLOT_VERSION: "0.7.2"
+
 jobs:
   build:
     name: Build and publish library to PyPI
@@ -24,10 +29,10 @@ jobs:
           python-version: 3.14
 
       - name: Install flot
-        run: python -m pip install flot==0.7.2 --user
+        run: python -m pip install "flot==${FLOT_VERSION}" --user
 
       - name: Build a binary wheel and a source tarball
-        run: python -m flot --pyproject pipeline-pyproject.toml --sdist --wheel --output-dir dist/
+        run: python -m flot --pyproject "$PYPROJECT_TOML" --sdist --wheel --output-dir dist/
 
       - name: Upload package distributions as GitHub workflow artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
@@ -36,7 +41,7 @@ jobs:
           path: dist/
 
   # Only set the id-token: write permission in the job that does publishing, not globally.
-  # Also, separate building from publishing — this makes sure that any scripts
+  # Also, separate building from publishing, this makes sure that any scripts
   # maliciously injected into the build or test environment won't be able to elevate
   # privileges while flying under the radar.
   pypi-publish:
@@ -47,7 +52,7 @@ jobs:
     runs-on: ubuntu-24.04
     environment:
       name: pypi
-      url: https://pypi.org/p/aboutcode.pipeline
+      url: ${{ env.PYPI_PROJECT_URL }}
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
 
