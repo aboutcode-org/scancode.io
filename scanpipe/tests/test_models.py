@@ -2635,11 +2635,6 @@ class ScanPipeModelsTest(TestCase):
         expected = ["Debian X Strike Force", "JBoss.org Community"]
         self.assertEqual(expected, package1.get_author_names(roles))
 
-    def test_scanpipe_model_create_user_creates_auth_token(self):
-        basic_user = User.objects.create_user(username="basic_user")
-        self.assertTrue(basic_user.auth_token.key)
-        self.assertEqual(40, len(basic_user.auth_token.key))
-
     def test_scanpipe_discovered_dependency_model_update_from_data(self):
         DiscoveredPackage.create_from_data(self.project1, package_data1)
         CodebaseResource.objects.create(

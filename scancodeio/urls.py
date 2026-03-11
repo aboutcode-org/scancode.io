@@ -32,6 +32,8 @@ from scanpipe.admin import admin_site
 from scanpipe.api.views import ProjectViewSet
 from scanpipe.api.views import RunViewSet
 from scanpipe.views import AccountProfileView
+from scanpipe.views import GenerateAPIKeyView
+from scanpipe.views import RevokeAPIKeyView
 
 api_router = DefaultRouter()
 api_router.register(r"projects", ProjectViewSet)
@@ -45,6 +47,16 @@ auth_urlpatterns = [
         name="logout",
     ),
     path("accounts/profile/", AccountProfileView.as_view(), name="account_profile"),
+    path(
+        "accounts/profile/api_key/generate/",
+        GenerateAPIKeyView.as_view(),
+        name="generate_api_key",
+    ),
+    path(
+        "accounts/profile/api_key/revoke/",
+        RevokeAPIKeyView.as_view(),
+        name="revoke_api_key",
+    ),
 ]
 
 

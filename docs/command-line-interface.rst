@@ -717,21 +717,32 @@ Optional arguments:
 .. note:: This command is to be used when ScanCode.io's authentication system
   :ref:`scancodeio_settings_require_authentication` is enabled.
 
-Creates a user and generates an API key for authentication.
+Creates a new user and optionally generates an API key for authentication.
 
 You will be prompted for a password. After you enter one, the user will be created
 immediately.
 
-The API key for the new user account will be displayed on the terminal output.
+.. code-block:: console
+
+    $ scanpipe create-user <username>
+    User <username> created.
+
+Use the ``--generate-api-key`` option to generate an API key for this user and print it
+to the console.
 
 .. code-block:: console
 
-    User <username> created with API key: abcdef123456
-
-The API key can also be retrieved from the :guilabel:`Profile settings` menu in the UI.
+    $ scanpipe create-user <username> --generate-api-key
+    User <username> created.
+    API key: 1234567890abcdef
 
 .. warning::
-    Your API key is like a password and should be treated with the same care.
+    Treat your API key like a password and keep it secure.
+    For security reasons, the key is only shown once at generation time.
+    If you lose it, you will need to regenerate a new one.
+
+.. tip::
+    The API key can be regenerated from the :guilabel:`Profile settings` menu in the UI.
 
 By default, this command will prompt for a password for the new user account.
 When run non-interactively with the ``--no-input`` option, no password will be set,
@@ -741,6 +752,7 @@ API key.
 Optional arguments:
 
 - ``--no-input`` Does not prompt the user for input of any kind.
+- ``--generate-api-key`` Generate an API key for this user and print it to the console.
 - ``--admin`` Specifies that the user should be created as an admin user.
 - ``--super`` Specifies that the user should be created as a superuser.
 
