@@ -49,6 +49,8 @@ from scanpipe.models import Run
 from scanpipe.models import WebhookSubscription
 from scanpipe.pipes import flag
 from scanpipe.pipes import purldb
+from scanpipe.pipes.output import PRINT_SUPPORTED_FORMATS
+from scanpipe.pipes.output import SUPPORTED_FORMATS as PIPE_SUPPORTED_FORMATS
 from scanpipe.tests import filter_warnings
 from scanpipe.tests import make_dependency
 from scanpipe.tests import make_mock_response
@@ -757,6 +759,29 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn('"bomFormat": "CycloneDX"', out_value)
         self.assertIn('"specVersion": "1.5",', out_value)
 
+    def test_supported_formats_sync(self):
+        """
+        Ensure SUPPORTED_FORMATS in management/commands/output.py always matches
+        the canonical list in pipes/output.py, and that PRINT_SUPPORTED_FORMATS
+        is a strict subset of SUPPORTED_FORMATS (never includes csv or xlsx).
+        """
+        from scanpipe.management.commands.output import SUPPORTED_FORMATS as CMD_FORMATS
+
+        self.assertEqual(
+            set(PIPE_SUPPORTED_FORMATS),
+            set(CMD_FORMATS),
+            "SUPPORTED_FORMATS in management/commands/output.py is out of sync "
+            "with pipes/output.py. Update one of them.",
+        )
+        # PRINT_SUPPORTED_FORMATS must be a subset of SUPPORTED_FORMATS
+        self.assertTrue(
+            set(PRINT_SUPPORTED_FORMATS).issubset(set(PIPE_SUPPORTED_FORMATS)),
+            "PRINT_SUPPORTED_FORMATS contains formats not in SUPPORTED_FORMATS.",
+        )
+        # csv and xlsx must never be in PRINT_SUPPORTED_FORMATS (--print incompatible)
+        self.assertNotIn("csv", PRINT_SUPPORTED_FORMATS)
+        self.assertNotIn("xlsx", PRINT_SUPPORTED_FORMATS)
+
     def test_scanpipe_management_command_delete_project(self):
         project = make_project(name="my_project")
         work_path = project.work_path
@@ -997,6 +1022,31 @@ class ScanPipeManagementCommandTest(TestCase):
 
         json_data = json.loads(out.getvalue())
         self.assertEqual(3, len(json_data["files"]))
+
+        # Test --format spdx
+        out = StringIO()
+        with redirect_stdout(out):
+            call_command("run", "do_nothing", input_location, "--format", "spdx")
+        out_value = out.getvalue()
+        self.assertIn('"spdxVersion":', out_value)
+
+        # Test --format cyclonedx
+        out = StringIO()
+        with redirect_stdout(out):
+            call_command("run", "do_nothing", input_location, "--format", "cyclonedx")
+        out_value = out.getvalue()
+        self.assertIn('"bomFormat": "CycloneDX"', out_value)
+
+        # Test --format ort-package-list
+        # do_nothing pipeline doesn't find packages, so it generates an empty list, but it shouldn't crash
+        out = StringIO()
+        with redirect_stdout(out):
+            call_command("run", "do_nothing", input_location, "--format", "ort-package-list")
+        
+        # Test incompatible streaming formats are rejected by argparse choices
+        expected = "Error: argument --format: invalid choice: 'csv'"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("run", "do_nothing", input_location, "--format", "csv")
 
         # Multiple pipeline and selected_groups are supported
         out = StringIO()
