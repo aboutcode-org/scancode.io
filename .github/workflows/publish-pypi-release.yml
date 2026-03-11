@@ -1,4 +1,4 @@
-name: Build Python distributions and publish on PyPI
+name: Build Python distributions, publish on PyPI, and create a GH release
 
 on:
   workflow_dispatch:
@@ -6,16 +6,24 @@ on:
     tags:
       - "v*.*.*"
 
+env:
+  PYPI_PROJECT_URL: "https://pypi.org/p/scancodeio"
+
 jobs:
-  build-and-publish:
-    name: Build and publish library to PyPI
+  build-python-dist:
+    name: Build Python distributions
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false  # do not keep the token around
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: 3.14
 
@@ -23,23 +31,56 @@ jobs:
         run: python -m pip install build --user
 
       - name: Build a binary wheel and a source tarball
-        run: python -m build --sdist --wheel --outdir dist/ .
+        run: python -m build --sdist --wheel --outdir dist/
+
+      - name: Upload package distributions as GitHub workflow artifacts
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  # Only set the id-token: write permission in the job that does publishing, not globally.
+  # Also, separate building from publishing — this makes sure that any scripts
+  # maliciously injected into the build or test environment won't be able to elevate
+  # privileges while flying under the radar.
+  pypi-publish:
+    name: Upload package distributions to PyPI
+    if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
+    needs:
+      - build-python-dist
+    runs-on: ubuntu-24.04
+    environment:
+      name: pypi
+      url: ${{ env.PYPI_PROJECT_URL }}
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+
+    steps:
+      - name: Download package distributions
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8.0.0
+        with:
+          name: python-package-distributions
+          path: dist/
 
       - name: Publish to PyPI
-        if: startsWith(github.ref, 'refs/tags')
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e  # v1.13.0
 
-      - name: Upload built archives
-        uses: actions/upload-artifact@v4
-        with:
-          name: pypi_archives
-          path: dist/*
+  create-gh-release:
+    name: Create GitHub release
+    needs:
+      - build-python-dist
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
 
-      - name: Create a GitHub release
-        uses: softprops/action-gh-release@v2
+    steps:
+      - name: Download package distributions
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8.0.0
         with:
-          generate_release_notes: true
-          draft: false
-          files: dist/*
+          name: python-package-distributions
+          path: dist/
+
+      - name: Create GitHub release
+        run: gh release create "$GITHUB_REF_NAME" dist/* --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
