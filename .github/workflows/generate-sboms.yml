@@ -12,10 +12,14 @@ env:
 jobs:
   generate-sboms:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false  # do not keep the token around
 
       - name: Ensure INPUTS_PATH directory exists
         run: mkdir -p "${{ env.INPUTS_PATH }}"
@@ -32,7 +36,7 @@ jobs:
           find scancodeio/ -type f -name "*.ABOUT" -exec cp {} "${{ env.INPUTS_PATH }}/about-files/" \;
 
       - name: Resolve the dependencies using ScanCode-action
-        uses: aboutcode-org/scancode-action@main
+        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
         with:
           pipelines: "resolve_dependencies:DynamicResolver"
           inputs-path: ${{ env.INPUTS_PATH }}

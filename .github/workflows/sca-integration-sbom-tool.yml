@@ -19,6 +19,7 @@ permissions:
 
 env:
   IMAGE_REFERENCE: "python:3.13.0-slim"
+  SBOM_TOOL_URL: "https://github.com/microsoft/sbom-tool/releases/download/v4.1.5/sbom-tool-linux-x64"
   EXPECTED_PACKAGE: 90
   EXPECTED_VULNERABLE_PACKAGE: 0
   EXPECTED_DEPENDENCY: 90
@@ -29,7 +30,7 @@ jobs:
     steps:
     - name: Download SBOM tool
       run: |
-        curl -Lo $RUNNER_TEMP/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64
+        curl -Lo $RUNNER_TEMP/sbom-tool "$SBOM_TOOL_URL"
         chmod +x $RUNNER_TEMP/sbom-tool
 
     - name: Generate SBOM with SBOM tool
@@ -45,13 +46,13 @@ jobs:
           -V Verbose
 
     - name: Upload SBOM artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
       with:
         name: sbom-output
         path: sbom-output
 
     - name: Import SBOM into ScanCode.io
-      uses: aboutcode-org/scancode-action@main
+      uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
       with:
         pipelines: "load_sbom"
         inputs-path: "sbom-output/_manifest/spdx_2.2/manifest.spdx.json"

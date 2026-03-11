@@ -21,11 +21,13 @@ jobs:
   checkout-ort-test-assets-from-scancode-io-repo:
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout ScanCode.io repository
-        uses: actions/checkout@v5
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false  # do not keep the token around
 
       - name: Upload orthw mime types example
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: npm-mime-types-2.1.26-scan-result.json
           path: scanpipe/tests/data/integrations-ort/orthw-example-scan-result/npm-mime-types-2.1.26-scan-result.json
@@ -44,7 +46,7 @@ jobs:
           EOF
 
       - name: Run GitHub Action for ORT
-        uses: oss-review-toolkit/ort-ci-github-action@v1
+        uses: oss-review-toolkit/ort-ci-github-action@1805edcf1f4f55f35ae6e4d2d9795ccfb29b6021  # v1.1.0
         with:
           ort-cli-report-args: "-O CycloneDX=output.file.formats=json -O CycloneDX=schema.version=1.5"
           report-formats: "CycloneDx"
@@ -55,7 +57,7 @@ jobs:
             reporter
 
       - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@main
+        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
         with:
           pipelines: "load_sbom"
           inputs-path: "${{ env.ORT_RESULTS_PATH }}/bom.cyclonedx.json"
@@ -83,7 +85,7 @@ jobs:
           EOF
 
       - name: Run GitHub Action for ORT
-        uses: oss-review-toolkit/ort-ci-github-action@v1
+        uses: oss-review-toolkit/ort-ci-github-action@1805edcf1f4f55f35ae6e4d2d9795ccfb29b6021  # v1.1.0
         with:
           ort-cli-report-args: "-O CycloneDX=output.file.formats=json -O CycloneDX=schema.version=1.6"
           report-formats: "CycloneDx"
@@ -94,7 +96,7 @@ jobs:
             reporter
 
       - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@main
+        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
         with:
           pipelines: "load_sbom"
           inputs-path: "${{ env.ORT_RESULTS_PATH }}/bom.cyclonedx.json"
@@ -114,7 +116,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Download mime-type-2.1.26-scan-result file
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8.0.0
         with:
           name: npm-mime-types-2.1.26-scan-result.json
 
@@ -126,16 +128,16 @@ jobs:
           cat $HOME/.ort/ort-results/current-result.json
 
       - name: Run GitHub Action for ORT
-        uses: oss-review-toolkit/ort-ci-github-action@v1
+        uses: oss-review-toolkit/ort-ci-github-action@1805edcf1f4f55f35ae6e4d2d9795ccfb29b6021  # v1.1.0
         with:
           report-formats: "CycloneDx,SpdxDocument"
           run: >
             evaluator,
             advisor,
             reporter
-            - name: Upload orthw mime type example
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload orthw mime type example
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: npm-mime-types-2.1.26-ort-sboms
           path: |
@@ -151,12 +153,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Download ORT CycloneDX JSON SBOM for mime-types 2.1.26
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8.0.0
         with:
           name: npm-mime-types-2.1.26-ort-sboms
 
       - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@main
+        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
         with:
           pipelines: "load_sbom"
           inputs-path: "bom.cyclonedx.json"
@@ -177,12 +179,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
      - name: Download ORT CycloneDX JSON SBOM for mime-types 2.1.26
-       uses: actions/download-artifact@v5
+       uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8.0.0
        with:
          name: npm-mime-types-2.1.26-ort-sboms
 
      - name: Import SBOM into ScanCode.io
-       uses: aboutcode-org/scancode-action@main
+       uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
        with:
          pipelines: "load_sbom"
          inputs-path: "bom.cyclonedx.xml"
@@ -203,12 +205,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Download ORT SPDX JSON SBOM for mime-types 2.1.26
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8.0.0
         with:
           name: npm-mime-types-2.1.26-ort-sboms
 
       - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@main
+        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
         with:
           pipelines: "load_sbom"
           inputs-path: "bom.spdx.json"
@@ -229,12 +231,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Download ORT SPDX YAML SBOM for mime-types 2.1.26
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8.0.0
         with:
           name: npm-mime-types-2.1.26-ort-sboms
 
       - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@main
+        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
         with:
           pipelines: "load_sbom"
           inputs-path: "bom.spdx.yml"
