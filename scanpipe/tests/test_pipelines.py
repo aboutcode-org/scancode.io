@@ -1681,7 +1681,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(57, project1.codebaseresources.count())
+        self.assertEqual(59, project1.codebaseresources.count())
         self.assertEqual(18, project1.codebaserelations.count())
         self.assertEqual(1, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
@@ -1708,7 +1708,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(17, project1.codebaseresources.count())
+        self.assertEqual(19, project1.codebaseresources.count())
         self.assertEqual(7, project1.codebaserelations.count())
 
         result_file = output.to_json(project1)
@@ -1746,6 +1746,76 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual({"filename": "resource"}, project_error.details)
         self.assertEqual("", project_error.traceback)
 
+    def test_scanpipe_deploy_to_develop_extract_archive_with_full_filename(self):
+        """
+        Test that extract_inputs_to_codebase_directory extracts archives into
+        subdirectories named after the archive file (show full filename feature).
+
+        This ensures that extracted content is isolated by archive name, making
+        it clear which archive each file originated from.
+        """
+        project1 = make_project()
+        run = project1.add_pipeline("map_deploy_to_develop")
+        pipeline_instance = deploy_to_develop.DeployToDevelop(run)
+
+        jar_location = self.data / "d2d" / "jars"
+        from_archive = jar_location / "from-flume-ng-node-1.9.0.zip"
+        to_archive = jar_location / "to-flume-ng-node-1.9.0.zip"
+
+        project1.copy_input_from(from_archive)
+        project1.copy_input_from(to_archive)
+
+        pipeline_instance.get_inputs()
+        self.assertEqual(1, len(pipeline_instance.from_files))
+        self.assertEqual(1, len(pipeline_instance.to_files))
+
+        pipeline_instance.extract_inputs_to_codebase_directory()
+
+        expected_from_dir = (
+            project1.codebase_path / "from" / "from-flume-ng-node-1.9.0.zip"
+        )
+        expected_to_dir = project1.codebase_path / "to" / "to-flume-ng-node-1.9.0.zip"
+
+        self.assertTrue(
+            expected_from_dir.exists(),
+            f"FROM archive should be extracted to {expected_from_dir}",
+        )
+        self.assertTrue(expected_from_dir.is_dir())
+
+        self.assertTrue(
+            expected_to_dir.exists(),
+            f"TO archive should be extracted to {expected_to_dir}",
+        )
+        self.assertTrue(expected_to_dir.is_dir())
+
+        from_files = list(expected_from_dir.rglob("*.jar"))
+        to_files = list(expected_to_dir.rglob("*.jar"))
+
+        self.assertGreater(
+            len(from_files), 0, "FROM archive should contain extracted JAR files"
+        )
+        self.assertGreater(
+            len(to_files), 0, "TO archive should contain extracted JAR files"
+        )
+
+        direct_from_files = [
+            f for f in (project1.codebase_path / "from").iterdir() if f.is_file()
+        ]
+        direct_to_files = [
+            f for f in (project1.codebase_path / "to").iterdir() if f.is_file()
+        ]
+
+        self.assertEqual(
+            0,
+            len(direct_from_files),
+            "No files should be extracted directly to from/ directory",
+        )
+        self.assertEqual(
+            0,
+            len(direct_to_files),
+            "No files should be extracted directly to to/ directory",
+        )
+
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("uuid.uuid4")
     def test_scanpipe_deploy_to_develop_pipeline_with_about_file(
@@ -1770,7 +1840,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(44, project1.codebaseresources.count())
+        self.assertEqual(46, project1.codebaseresources.count())
         self.assertEqual(31, project1.codebaserelations.count())
         self.assertEqual(2, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
