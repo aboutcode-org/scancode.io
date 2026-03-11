@@ -35,14 +35,11 @@
         </a>
         <div class="navbar-dropdown is-right">
           <a class="navbar-item" href="{% url 'account_profile' %}">
+            <span class="icon mr-1">
+              <i class="fa-solid fa-user-circle"></i>
+            </span>
             Profile settings
           </a>
-          <form id="logout-form" method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button class="navbar-item button is-white has-text-grey-dark is-fullwidth is-justify-content-flex-start" type="submit">
-              Sign out
-            </button>
-          </form>
           <hr class="navbar-divider">
           <div class="navbar-item">
             <i>ScanCode.io {{ SCANCODEIO_VERSION }}</i>
@@ -50,6 +47,16 @@
           <div class="navbar-item">
             <i>ScanCode-toolkit {{ SCANCODE_TOOLKIT_VERSION }}</i>
           </div>
+          <hr class="navbar-divider">
+          <form id="logout-form" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button class="navbar-item button is-white is-fullwidth is-justify-content-flex-start" type="submit">
+              <span class="icon mr-1">
+                <i class="fa-solid fa-power-off"></i>
+              </span>
+              Sign out
+            </button>
+          </form>
         </div>
       </div>
     {% else %}

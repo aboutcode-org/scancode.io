@@ -45,6 +45,7 @@ from scanpipe.api.serializers import ProjectMessageSerializer
 from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import get_model_serializer
 from scanpipe.api.serializers import get_serializer_fields
+from scanpipe.models import APIToken
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -91,7 +92,8 @@ class ScanPipeAPITest(TransactionTestCase):
         self.project1_detail_url = reverse("project-detail", args=[self.project1.uuid])
 
         self.user = User.objects.create_user("username", "e@mail.com", "secret")
-        self.auth = f"Token {self.user.auth_token.key}"
+        self.user_api_key = APIToken.create_token(user=self.user)
+        self.auth = f"Token {self.user_api_key}"
 
         self.csrf_client = APIClient(enforce_csrf_checks=True)
         self.csrf_client.credentials(HTTP_AUTHORIZATION=self.auth)

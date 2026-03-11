@@ -31,6 +31,7 @@ from unittest import mock
 
 from django.apps import apps
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.management import CommandError
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
@@ -928,15 +929,28 @@ class ScanPipeManagementCommandTest(TestCase):
 
         username = "my_username"
         call_command("create-user", "--no-input", username, stdout=out)
-        self.assertIn(f"User {username} created with API key:", out.getvalue())
+        self.assertIn(f"User {username} created.", out.getvalue())
+        self.assertNotIn("API key", out.getvalue())
         user = get_user_model().objects.get(username=username)
-        self.assertTrue(user.auth_token)
         self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
 
+        message = "User has no api_token"
+        with self.assertRaisesMessage(ObjectDoesNotExist, message):
+            user.api_token
+
+        username = "verbosity_issue"
+        options = ["--no-input", "--generate-api-key", "--verbosity=0"]
+        expected = (
+            "Cannot display the API key with verbosity disabled. "
+            "The key is only shown once at generation time."
+        )
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("create-user", username, *options)
+
         expected = "Error: That username is already taken."
         with self.assertRaisesMessage(CommandError, expected):
-            call_command("create-user", "--no-input", username)
+            call_command("create-user", "--no-input", user.username)
 
         username = "^&*"
         expected = (

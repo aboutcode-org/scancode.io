@@ -60,6 +60,8 @@ from django.views.generic.edit import UpdateView
 
 import saneyaml
 import xlsxwriter
+from aboutcode.api_auth.views import BaseGenerateAPIKeyView
+from aboutcode.api_auth.views import BaseRevokeAPIKeyView
 from django_filters.views import FilterView
 from django_htmx.http import HttpResponseClientRedirect
 from licensedcode.spans import Span
@@ -2835,3 +2837,18 @@ class ProjectResourceTreeRightPaneView(
             context["parent_path"] = "/".join(parent_segments)
 
         return context
+
+
+class GenerateAPIKeyView(ConditionalLoginRequired, BaseGenerateAPIKeyView):
+    success_url = reverse_lazy("account_profile")
+    success_message = (
+        "<strong>Copy your API key now, it will not be shown again:</strong>"
+        '<pre class="mt-2 p-3">'
+        '<i class="fa fa-key mr-3" aria-hidden="true"></i>{plain_key}'
+        "</pre>"
+    )
+
+
+class RevokeAPIKeyView(ConditionalLoginRequired, BaseRevokeAPIKeyView):
+    success_url = reverse_lazy("account_profile")
+    success_message = "API key revoked."
