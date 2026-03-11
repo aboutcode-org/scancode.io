@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-24.04
     name: Detects and automatically closes low-quality and AI slop PRs
     steps:
-      - uses: peakoss/anti-slop@v0
+      - uses: peakoss/anti-slop@e158eeefe5c43e1d3ba8533b84e0e35d9d6761de
         with:
           # Number of check failures needed before failure actions are triggered
           max-failures: 3

@@ -27,25 +27,26 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout minimal Go repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           repository: opencontainers/runc
+          persist-credentials: false  # do not keep the token around
 
       - name: Generate SBOM with cyclonedx-gomod
-        uses: CycloneDX/gh-gomod-generate-sbom@v2
+        uses: CycloneDX/gh-gomod-generate-sbom@efc74245d6802c8cefd925620515442756c70d8f  # v2.0.0
         with:
           version: v1
           args: mod -licenses -json -output gomod-sbom.cdx.json
 
       - name: Upload SBOM as GitHub Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: sbom-report
           path: "gomod-sbom.cdx.json"
           retention-days: 20
 
       - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@main
+        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
         with:
           pipelines: "load_sbom"
           inputs-path: "gomod-sbom.cdx.json"
