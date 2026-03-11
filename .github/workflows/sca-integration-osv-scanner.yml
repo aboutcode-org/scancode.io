@@ -19,6 +19,7 @@ permissions:
 
 env:
   IMAGE_REFERENCE: "python:3.13.0-slim"
+  OSV_SCANNER_URL: "https://github.com/google/osv-scanner/releases/download/v2.3.3/osv-scanner_linux_amd64"
   EXPECTED_PACKAGE: 100
   EXPECTED_VULNERABLE_PACKAGE: 0
   EXPECTED_DEPENDENCY: 90
@@ -29,7 +30,7 @@ jobs:
     steps:
       - name: Install OSV-Scanner
         run: |
-          curl -sLO https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64
+          curl -sLO "$OSV_SCANNER_URL"
           chmod +x osv-scanner_linux_amd64
           sudo mv osv-scanner_linux_amd64 /usr/local/bin/osv-scanner
 
@@ -43,14 +44,14 @@ jobs:
             || true
 
       - name: Upload SBOM as GitHub Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: osv-scanner-sbom-report
           path: osv-sbom.spdx.json
           retention-days: 20
 
       - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@main
+        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
         with:
           pipelines: "load_sbom"
           inputs-path: "osv-sbom.spdx.json"

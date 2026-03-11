@@ -29,8 +29,8 @@ jobs:
     steps:
       - name: Install OWASP dep-scan
         run: |
-          sudo npm install -g @cyclonedx/cdxgen
-          pip install owasp-depscan
+          sudo npm install -g @cyclonedx/cdxgen@12.1.2
+          pip install owasp-depscan==6.1.0
 
       - name: Generate SBOM with OWASP dep-scan
         run: |
@@ -41,7 +41,7 @@ jobs:
             --explain
 
       - name: Upload SBOM as GitHub Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: depscan-sbom
           path: reports/
@@ -51,7 +51,7 @@ jobs:
         run: pip uninstall --yes owasp-depscan
 
       - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@main
+        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
         with:
           pipelines: "load_sbom"
           inputs-path: "reports/sbom-docker.vdr.json"

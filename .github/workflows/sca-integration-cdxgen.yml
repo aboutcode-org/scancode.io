@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Install CycloneDX cdxgen
-        run: npm install @cyclonedx/cdxgen
+        run: npm install @cyclonedx/cdxgen@12.1.2
 
       - name: Generate SBOM with CycloneDX cdxgen
         run: |
@@ -39,14 +39,14 @@ jobs:
             --json-pretty
 
       - name: Upload SBOM as GitHub Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: cdxgen-sbom
           path: "cdxgen-sbom.cdx.json"
           retention-days: 20
 
       - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@main
+        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
         with:
           pipelines: "load_sbom"
           inputs-path: "cdxgen-sbom.cdx.json"
