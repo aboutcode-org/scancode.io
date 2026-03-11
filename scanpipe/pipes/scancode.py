@@ -619,16 +619,22 @@ def assemble_package(resource, project, processed_paths):
             package_adder=add_resource_to_package,
         )
 
-        for item in extracted_items:
-            logger.info(f"    Processing item: {item}")
-            if isinstance(item, packagedcode_models.Package):
-                pipes.update_or_create_package(project, item.to_dict())
-            elif isinstance(item, packagedcode_models.Dependency):
-                pipes.update_or_create_dependency(project, item.to_dict())
-            elif isinstance(item, CodebaseResource):
-                processed_paths.add(item.path)
-            else:
-                logger.info(f"Unknown Package assembly item type: {item!r}")
+        try:
+            for item in extracted_items:
+                logger.info(f"    Processing item: {item}")
+                if isinstance(item, packagedcode_models.Package):
+                    pipes.update_or_create_package(project, item.to_dict())
+                elif isinstance(item, packagedcode_models.Dependency):
+                    pipes.update_or_create_dependency(project, item.to_dict())
+                elif isinstance(item, CodebaseResource):
+                    processed_paths.add(item.path)
+                else:
+                    logger.info(f"Unknown Package assembly item type: {item!r}")
+        except AttributeError as e:
+            # Occurs when the handler cannot resolve a parent resource,
+            # e.g. a manifest at the root of the codebase with no parent path.
+            logger.warning(f"  Package assembly skipped for {resource.path}: {e}")
+            logger.debug("", exc_info=True)
 
 
 def process_package_data(project, static_resolve=False):
