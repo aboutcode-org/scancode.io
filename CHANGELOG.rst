@@ -1,18 +1,32 @@
 Changelog
 =========
 
+**v37 Breaking Changes:**
+
+- Drop support for Python3.10 and Python3.11
+
+v37.0.0 (2026-03-11)
+--------------------
+
+- Upgrade Django to release 6.x
+
+- Remove the chown service in compose file
+  https://github.com/aboutcode-org/scancode.io/issues/2086
+
+- Replace plain-text DRF token with PBKDF2-hashed API token
+  https://github.com/aboutcode-org/scancode.io/issues/2087
+
+- Rename "Grammar" optional step group to "Antlr" in d2d pipeline
+  https://github.com/aboutcode-org/scancode.io/issues/2059
+
+- Fix URL-encode programming language filter values in resource list
+  https://github.com/aboutcode-org/scancode.io/issues/2079
+
 **v36 Breaking Change:** PostgreSQL 17 is now required (previously 13).
 
 Docker Compose users with existing data: run `./migrate-pg13-to-17.sh` before starting
 the stack.
 Fresh installations require no action.
-
-v37.0.0 (unreleased)
---------------------
-
-- Upgrade Django to release 6.x
-
-- Drop support for Python3.10 and Python3.11
 
 v36.1.0 (2026-01-22)
 --------------------
