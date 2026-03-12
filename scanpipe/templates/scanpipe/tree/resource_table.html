@@ -27,53 +27,7 @@
         </tr>
       {% endif %}
       {% for resource in resources %}
-        <tr>
-           <td class="break-all" style="min-width: 100px;">
-            <div class="is-flex is-align-items-center">
-              <span class="icon is-small mr-2">
-                {% if resource.is_dir %}
-                  <i class="fas fa-folder"></i>
-                {% else %}
-                  <i class="far fa-file"></i>
-                {% endif %}
-              </span>
-              {% if resource.is_dir %}
-                <a
-                  class="expand-in-tree"
-                  href="{% url 'project_resource_tree' project.slug resource.path %}"
-                  data-path="{{ resource.path }}"
-                  hx-get="{% url 'project_resource_tree_right_pane' project.slug resource.path %}"
-                  hx-target="#right-pane"
-                  hx-push-url="{% url 'project_resource_tree' project.slug resource.path %}">
-                  {{ resource.name }}
-                </a>
-              {% else %}
-                <a
-                  href="{% url 'resource_detail' project.slug resource.path %}"
-                  hx-get="{% url 'resource_detail' project.slug resource.path %}"
-                  hx-target="#right-pane"
-                  hx-push-url="{% url 'project_resource_tree' project.slug resource.path %}">
-                  {{ resource.name }}
-                </a>
-              {% endif %}
-              {% if resource.tag %}
-                <span class="tag is-rounded ml-2">{{ resource.tag }}</span>
-              {% endif %}
-            </div>
-          </td>
-          <td>
-            {{ resource.status }}
-          </td>
-          <td class="break-all">
-            {{ resource.programming_language }}
-          </td>
-          <td>
-            {{ resource.detected_license_expression }}
-          </td>
-          <td>
-            {{ resource.compliance_alert }}
-          </td>
-        </tr>
+        {% include 'scanpipe/tree/resource_table_resource_row.html' %}
       {% endfor %}
     </tbody>
 </table>
