@@ -220,6 +220,8 @@ dependencies:
       This repository is part of the Channels project. For the shepherd and maintenance team, please see the
       `main Channels readme <https://github.com/django/channels/blob/master/README.rst>`_.
     homepageUrl: https://github.com/django/asgiref/
+    authors:
+      - Django Software Foundation
   - id: pypi::asgiref:3.3.0
     purl: pkg:pypi/asgiref@3.3.0
     vcs:
@@ -435,3 +437,5 @@ dependencies:
       This repository is part of the Channels project. For the shepherd and maintenance team, please see the
       `main Channels readme <https://github.com/django/channels/blob/master/README.rst>`_.
     homepageUrl: https://github.com/django/asgiref/
+    authors:
+      - Django Software Foundation

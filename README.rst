@@ -1,32 +1,40 @@
+===========
 ScanCode.io
 ===========
 
-ScanCode.io is a server to script and automate software composition analysis
-with ScanPipe pipelines.
+ScanCode.io provides a Web UI and API to run and review complex scans in rich scripted pipelines, on different kinds of containers, docker images, package archives, manifests etc, to get information on licenses, copyrights, sources, and vulnerabilities.
 
-First application is for Docker container and VM composition analysis.
+Why Use ScanCode.io?
+====================
 
-Getting started
----------------
+ScanCode.io provides an easy-to-use front-end to ScanCode Toolkit and other AboutCode projects.The flexible pipeline technology supports advanced scanning tasks such as container scanning and deploy-to-develop analysis. You can run ScanCode.io in a Docker container or install it on a Linux server. It provides full support for generating and consuming CycloneDX and SPDX SBOMs.
 
-The ScanCode.io documentation is available here: https://scancodeio.readthedocs.org/
+Getting Started
+===============
 
-If you have questions that are not covered by our
-`Documentation <https://scancodeio.readthedocs.io/en/latest/faq.html>`_ or
-`FAQs <https://scancodeio.readthedocs.io/en/latest/faq.html>`_,
+Instructions to get you up and running on your local machine are at `Getting Started <https://scancodeio.readthedocs.org/>`_
+
+The ScanCode.io documentation also provides:
+
+- prerequisites for installing the software.
+- instructions guiding you to start scanning code.
+- tutorials that provide hands-on guidance to ScanCode features.
+- how to customize your own pipelines.
+- how to use a GitHub action to run ScanCode.io pipelines from your GitHub Workflows. 
+- references explaining integration with other AboutCode projects.
+- guidelines for contributing to code development.
+
+If you have questions that are not covered by our documentation, 
 please ask them in `Discussions <https://github.com/aboutcode-org/scancode.io/discussions>`_.
 
-If you want to contribute to ScanCode.io, start with our
-`Contributing <https://scancodeio.readthedocs.io/en/latest/contributing.html>`_ page.
+Contributing
+============
 
-A new GitHub action is now available at
-`scancode-action <https://github.com/aboutcode-org/scancode-action>`_
-to run ScanCode.io pipelines from your GitHub Workflows.
-Visit https://scancodeio.readthedocs.io/en/latest/automation.html to learn more
-about automation.
+Thank you for your interest in contributing to AboutCode projects.
+Please `read the following guidelines carefully <https://github.com/aboutcode-org/scancode.io/blob/main/CONTRIBUTING.md>`_  before getting started.
 
 Build and tests status
-----------------------
+======================
 
 +------------+-------------------+
 | **Tests**  | **Documentation** |
@@ -35,7 +43,7 @@ Build and tests status
 +------------+-------------------+
 
 License
--------
+=======
 
 SPDX-License-Identifier: Apache-2.0
 
@@ -56,10 +64,8 @@ ScanCode.io should be considered or used as legal advice. Consult an Attorney
 for any legal advice.
 
 
-
-
-.. |ci-tests| image:: https://github.com/aboutcode-org/scancode.io/actions/workflows/ci.yml/badge.svg?branch=main
-    :target: https://github.com/aboutcode-org/scancode.io/actions/workflows/ci.yml
+.. |ci-tests| image:: https://github.com/aboutcode-org/scancode.io/actions/workflows/run-unit-tests.yml/badge.svg?branch=main
+    :target: https://github.com/aboutcode-org/scancode.io/actions/workflows/run-unit-tests.yml
     :alt: CI Tests Status
 
 .. |docs-rtd| image:: https://readthedocs.org/projects/scancodeio/badge/?version=latest
@@ -68,7 +74,7 @@ for any legal advice.
 
 
 Acknowledgements, Funding, Support and Sponsoring
---------------------------------------------------------
+=================================================
 
 This project is funded, supported and sponsored by:
 

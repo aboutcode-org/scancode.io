@@ -60,6 +60,8 @@ from django.views.generic.edit import UpdateView
 
 import saneyaml
 import xlsxwriter
+from aboutcode.api_auth.views import BaseGenerateAPIKeyView
+from aboutcode.api_auth.views import BaseRevokeAPIKeyView
 from django_filters.views import FilterView
 from django_htmx.http import HttpResponseClientRedirect
 from licensedcode.spans import Span
@@ -1626,7 +1628,7 @@ class ProjectRelatedViewMixin:
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["project"] = self.project
+        context["project"] = self.get_project()
         context["model_label"] = self.model_label
         return context
 
@@ -1949,6 +1951,28 @@ class CodebaseRelationListView(
         kwargs = super().get_filterset_kwargs(filterset_class)
         kwargs.update({"project": self.project})
         return kwargs
+
+
+class VulnerabilityListView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    TableColumnsMixin,
+    generic.ListView,
+):
+    template_name = "scanpipe/vulnerability_list.html"
+    table_columns = [
+        "vulnerability_id",
+        "summary",
+        "affects",
+    ]
+
+    def get_queryset(self):
+        return []
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["object_list"] = self.project.vulnerabilities
+        return context
 
 
 class CodebaseResourceDetailsView(
@@ -2813,3 +2837,18 @@ class ProjectResourceTreeRightPaneView(
             context["parent_path"] = "/".join(parent_segments)
 
         return context
+
+
+class GenerateAPIKeyView(ConditionalLoginRequired, BaseGenerateAPIKeyView):
+    success_url = reverse_lazy("account_profile")
+    success_message = (
+        "<strong>Copy your API key now, it will not be shown again:</strong>"
+        '<pre class="mt-2 p-3">'
+        '<i class="fa fa-key mr-3" aria-hidden="true"></i>{plain_key}'
+        "</pre>"
+    )
+
+
+class RevokeAPIKeyView(ConditionalLoginRequired, BaseRevokeAPIKeyView):
+    success_url = reverse_lazy("account_profile")
+    success_message = "API key revoked."

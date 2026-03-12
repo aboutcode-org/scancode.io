@@ -83,6 +83,17 @@ class DeployToDevelop(Pipeline):
             cls.find_grammar_packages,
             cls.map_grammar_to_class,
             cls.map_jar_to_grammar_source,
+            cls.find_groovy_packages,
+            cls.map_groovy_to_class,
+            cls.map_jar_to_groovy_source,
+            cls.find_aspectj_packages,
+            cls.map_aspectj_to_class,
+            cls.map_jar_to_aspectj_source,
+            cls.find_clojure_packages,
+            cls.map_clojure_to_class,
+            cls.map_jar_to_clojure_source,
+            cls.find_xtend_packages,
+            cls.map_xtend_to_class,
             cls.map_javascript,
             cls.map_javascript_symbols,
             cls.map_javascript_strings,
@@ -206,7 +217,7 @@ class DeployToDevelop(Pipeline):
 
     @optional_step("Scala")
     def map_scala_to_class(self):
-        """Map a .class compiled file to its .java source."""
+        """Map a .class compiled file to its .scala source."""
         d2d.map_jvm_to_class(
             project=self.project, jvm_lang=jvm.ScalaLanguage, logger=self.log
         )
@@ -220,14 +231,14 @@ class DeployToDevelop(Pipeline):
 
     @optional_step("Kotlin")
     def find_kotlin_packages(self):
-        """Find the java package of the .java source files."""
+        """Find the java package of the kotlin source files."""
         d2d.find_jvm_packages(
             project=self.project, jvm_lang=jvm.KotlinLanguage, logger=self.log
         )
 
     @optional_step("Kotlin")
     def map_kotlin_to_class(self):
-        """Map a .class compiled file to its .java source."""
+        """Map a .class compiled file to its kotlin source."""
         d2d.map_jvm_to_class(
             project=self.project, jvm_lang=jvm.KotlinLanguage, logger=self.log
         )
@@ -239,25 +250,102 @@ class DeployToDevelop(Pipeline):
             project=self.project, jvm_lang=jvm.KotlinLanguage, logger=self.log
         )
 
-    @optional_step("Grammar")
+    @optional_step("Antlr")
     def find_grammar_packages(self):
         """Find the java package of the .g/.g4 source files."""
         d2d.find_jvm_packages(
             project=self.project, jvm_lang=jvm.GrammarLanguage, logger=self.log
         )
 
-    @optional_step("Grammar")
+    @optional_step("Antlr")
     def map_grammar_to_class(self):
         """Map a .class compiled file to its .g/.g4 source."""
         d2d.map_jvm_to_class(
             project=self.project, jvm_lang=jvm.GrammarLanguage, logger=self.log
         )
 
-    @optional_step("Grammar")
+    @optional_step("Antlr")
     def map_jar_to_grammar_source(self):
         """Map .jar files to their related source directory."""
         d2d.map_jar_to_jvm_source(
             project=self.project, jvm_lang=jvm.GrammarLanguage, logger=self.log
+        )
+
+    @optional_step("Groovy")
+    def find_groovy_packages(self):
+        """Find the package of the .groovy source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.GroovyLanguage, logger=self.log
+        )
+
+    @optional_step("Groovy")
+    def map_groovy_to_class(self):
+        """Map a .class compiled file to its .groovy source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.GroovyLanguage, logger=self.log
+        )
+
+    @optional_step("Groovy")
+    def map_jar_to_groovy_source(self):
+        """Map .jar files to their related source directory."""
+        d2d.map_jar_to_jvm_source(
+            project=self.project, jvm_lang=jvm.GroovyLanguage, logger=self.log
+        )
+
+    @optional_step("AspectJ")
+    def find_aspectj_packages(self):
+        """Find the package of the .aj source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.AspectJLanguage, logger=self.log
+        )
+
+    @optional_step("AspectJ")
+    def map_aspectj_to_class(self):
+        """Map a .class compiled file to its .aj source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.AspectJLanguage, logger=self.log
+        )
+
+    @optional_step("AspectJ")
+    def map_jar_to_aspectj_source(self):
+        """Map .jar files to their related source directory."""
+        d2d.map_jar_to_jvm_source(
+            project=self.project, jvm_lang=jvm.AspectJLanguage, logger=self.log
+        )
+
+    @optional_step("Clojure")
+    def find_clojure_packages(self):
+        """Find the package of the .clj source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.ClojureLanguage, logger=self.log
+        )
+
+    @optional_step("Clojure")
+    def map_clojure_to_class(self):
+        """Map a .class compiled file to its .clj source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.ClojureLanguage, logger=self.log
+        )
+
+    @optional_step("Clojure")
+    def map_jar_to_clojure_source(self):
+        """Map .jar files to their related source directory."""
+        d2d.map_jar_to_jvm_source(
+            project=self.project, jvm_lang=jvm.ClojureLanguage, logger=self.log
+        )
+
+    @optional_step("Xtend")
+    def find_xtend_packages(self):
+        """Find the java package of the xtend source files."""
+        d2d.find_jvm_packages(
+            project=self.project, jvm_lang=jvm.XtendLanguage, logger=self.log
+        )
+
+    @optional_step("Xtend")
+    def map_xtend_to_class(self):
+        """Map a .class compiled file to its xtend source."""
+        d2d.map_jvm_to_class(
+            project=self.project, jvm_lang=jvm.XtendLanguage, logger=self.log
         )
 
     @optional_step("JavaScript")
@@ -320,6 +408,7 @@ class DeployToDevelop(Pipeline):
         symbols.
         """
         d2d.map_python_pyx_to_binaries(project=self.project, logger=self.log)
+        d2d.map_python_protobuf_files(project=self.project, logger=self.log)
 
     def match_directories_to_purldb(self):
         """Match selected directories in PurlDB."""

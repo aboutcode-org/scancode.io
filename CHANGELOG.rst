@@ -1,6 +1,127 @@
 Changelog
 =========
 
+**v37 Breaking Changes:**
+
+- Drop support for Python3.10 and Python3.11
+
+v37.0.0 (2026-03-11)
+--------------------
+
+- Upgrade Django to release 6.x
+
+- Remove the chown service in compose file
+  https://github.com/aboutcode-org/scancode.io/issues/2086
+
+- Replace plain-text DRF token with PBKDF2-hashed API token
+  https://github.com/aboutcode-org/scancode.io/issues/2087
+
+- Rename "Grammar" optional step group to "Antlr" in d2d pipeline
+  https://github.com/aboutcode-org/scancode.io/issues/2059
+
+- Fix URL-encode programming language filter values in resource list
+  https://github.com/aboutcode-org/scancode.io/issues/2079
+
+**v36 Breaking Change:** PostgreSQL 17 is now required (previously 13).
+
+Docker Compose users with existing data: run `./migrate-pg13-to-17.sh` before starting
+the stack.
+Fresh installations require no action.
+
+v36.1.0 (2026-01-22)
+--------------------
+
+- Bump to latest scancode-toolkit v32.5.0 with:
+  * package and license detection performance improvement
+  * python3.14 support with updated dependencies
+  * improved copyright, license and package detection
+  For more details see https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.5.0
+  https://github.com/aboutcode-org/scancode.io/pull/2000
+
+- Support python3.14
+  https://github.com/aboutcode-org/scancode.io/pull/2000
+
+- Update to scancode-toolkit v32.4.1
+  https://github.com/aboutcode-org/scancode.io/pull/1984
+  For more details see https://github.com/aboutcode-org/scancode-toolkit/releases/tag/v32.4.1
+
+- Store the whole vulnerability data from cdx to local models
+  https://github.com/aboutcode-org/scancode.io/pull/2007
+
+- Add project vulnerability list view
+  https://github.com/aboutcode-org/scancode.io/pull/2018
+
+- Update minecode-pipelines to latest v0.1.1
+  https://github.com/aboutcode-org/scancode.io/pull/2013
+
+- Refine d2d pipelines with misc improvements
+  https://github.com/aboutcode-org/scancode.io/pull/1996
+  https://github.com/aboutcode-org/scancode.io/pull/1995
+  https://github.com/aboutcode-org/scancode.io/pull/1999
+  https://github.com/aboutcode-org/scancode.io/pull/2021
+
+- Sanitize ORT package IDs to handle colons in versions
+  https://github.com/aboutcode-org/scancode.io/pull/2005
+
+- Restructure docs and README
+  https://github.com/aboutcode-org/scancode.io/pull/2032
+
+
+
+v36.0.1 (2025-12-09)
+--------------------
+
+- Add support for authors in ORT package list generation.
+  https://github.com/aboutcode-org/scancode.io/issues/1988
+
+- Add authors field to the CycloneDX output.
+  https://github.com/aboutcode-org/scancode.io/issues/1990
+
+- Store non-supported fields in the comment SPDX field.
+  https://github.com/aboutcode-org/scancode.io/issues/1989
+
+- Add support for CycloneDX spec v1.7.
+  https://github.com/aboutcode-org/scancode.io/issues/1975
+
+v36.0.0 (2025-12-05)
+--------------------
+
+- Upgrade PostgreSQL from 13 to 17 in Docker compose file
+  https://github.com/aboutcode-org/scancode.io/issues/1973
+
+- Upgrade Django to latest 5.2.x version
+  https://github.com/aboutcode-org/scancode.io/issues/1976
+
+- Remove the dependency on scipy
+  https://github.com/aboutcode-org/scancode.io/issues/1754
+
+- Add "ort-package-list" to the formats list in run command
+  https://github.com/aboutcode-org/scancode.io/issues/1982
+
+v35.5.0 (2025-12-01)
+--------------------
+
+- Add arguments support for the reset action in REST API.
+  https://github.com/aboutcode-org/scancode.io/issues/1948
+
+- Add management command to analyze Kubernetes cluster.
+  https://github.com/aboutcode-org/scancode.io/issues/1950
+
+- Improve source mapping for .py and .pyi files.
+  https://github.com/aboutcode-org/scancode.io/issues/1920
+
+- Keep webhook subscription in project reset.
+  https://github.com/aboutcode-org/scancode.io/issues/1963
+
+- Add --vulnerabilities and --strict options in verify-project.
+  https://github.com/aboutcode-org/scancode.io/issues/1964
+
+- Add support for PyPI PURLs as Inputs.
+  https://github.com/aboutcode-org/scancode.io/issues/1966
+
+- Add JFrog Artifactory and Sonatype Nexus integrations documentation.
+  https://github.com/aboutcode-org/scancode.io/issues/1970
+
 v35.4.1 (2025-10-24)
 --------------------
 

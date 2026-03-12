@@ -1,0 +1,27 @@
+<div class="modal" id="modal-generate-api-key">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Generate API key</p>
+      <button class="delete" aria-label="close"></button>
+    </header>
+    <form action="{% url 'generate_api_key' %}" method="post">{% csrf_token %}
+      <section class="modal-card-body">
+        <p class="mb-2">
+          You are about to generate your API key.
+        </p>
+        {% if request.user.api_token %}
+          <div class="notification is-danger has-text-weight-semibold">
+            Your existing key will be immediately revoked.
+          </div>
+        {% endif %}
+      </section>
+      <footer class="modal-card-foot is-justify-content-flex-end">
+        <div class="buttons">
+          <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
+          <button class="button is-success is-no-close" type="submit">Generate API key</button>
+        </div>
+      </footer>
+    </form>
+  </div>
+</div>

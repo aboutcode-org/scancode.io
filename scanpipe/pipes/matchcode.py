@@ -30,6 +30,7 @@ from matchcode_toolkit.fingerprinting import compute_codebase_directory_fingerpr
 from matchcode_toolkit.fingerprinting import get_file_fingerprint_hashes
 from matchcode_toolkit.fingerprinting import get_line_by_pos
 from matchcode_toolkit.fingerprinting import get_stemmed_file_fingerprint_hashes
+from matchcode_toolkit.stemming import TS_LANGUAGE_CONF
 from scancode import Scanner
 
 from scanpipe.pipes import codebase
@@ -285,7 +286,9 @@ def fingerprint_stemmed_codebase_resources(
     """
     # Checking for None to make the distinction with an empty resource_qs queryset
     if resource_qs is None:
-        resource_qs = project.codebaseresources.filter(is_text=True)
+        resource_qs = project.codebaseresources.filter(
+            programming_language__in=TS_LANGUAGE_CONF.keys()
+        )
 
     if to_codebase_only:
         resource_qs = resource_qs.to_codebase()

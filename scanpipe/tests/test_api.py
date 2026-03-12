@@ -45,6 +45,7 @@ from scanpipe.api.serializers import ProjectMessageSerializer
 from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import get_model_serializer
 from scanpipe.api.serializers import get_serializer_fields
+from scanpipe.models import APIToken
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -91,7 +92,8 @@ class ScanPipeAPITest(TransactionTestCase):
         self.project1_detail_url = reverse("project-detail", args=[self.project1.uuid])
 
         self.user = User.objects.create_user("username", "e@mail.com", "secret")
-        self.auth = f"Token {self.user.auth_token.key}"
+        self.user_api_key = APIToken.create_token(user=self.user)
+        self.auth = f"Token {self.user_api_key}"
 
         self.csrf_client = APIClient(enforce_csrf_checks=True)
         self.csrf_client.credentials(HTTP_AUTHORIZATION=self.auth)
@@ -788,6 +790,18 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.get(url + "?slug=aaa")
         self.assertEqual(2, response.data["count"])
 
+    def test_scanpipe_api_project_action_resources_filterset_special_chars(self):
+        make_resource_file(
+            self.project1,
+            path="csharp_file.cs",
+            programming_language="C#",
+        )
+        url = reverse("project-resources", args=[self.project1.uuid])
+        response = self.csrf_client.get(url + "?programming_language=C%23")
+        self.assertEqual(1, response.data["count"])
+        self.assertEqual("csharp_file.cs", response.data["results"][0]["path"])
+        self.assertEqual("C#", response.data["results"][0]["programming_language"])
+
     def test_scanpipe_api_project_action_packages(self):
         url = reverse("project-packages", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
@@ -909,10 +923,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         response = self.csrf_client.delete(self.project1_detail_url)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
-        expected = (
-            "Cannot execute this action until all associated pipeline runs are "
-            "completed."
-        )
+        expected = "Cannot delete project while a run is in progress."
         self.assertEqual(expected, response.data["status"])
 
         run.set_task_ended(exitcode=0)
@@ -962,10 +973,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        expected = {
-            "status": "All data, except inputs, for the Analysis project have been "
-            "removed."
-        }
+        expected = {"status": "The Analysis project has been reset."}
         self.assertEqual(expected, response.data)
         self.assertEqual(0, self.project1.runs.count())
         self.assertEqual(0, self.project1.codebaseresources.count())
@@ -1040,6 +1048,16 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual("", input_source.filename)
         self.assertEqual(data["input_urls"], input_source.download_url)
         self.assertEqual("tag", input_source.tag)
+
+        data = {
+            "input_urls": ["docker://alpine", "docker://postgresql"],
+        }
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual({"status": "Input(s) added."}, response.data)
+        input_sources = self.project1.inputsources.filter(
+            download_url__startswith="docker://"
+        )
+        self.assertEqual(2, len(input_sources))
 
         data = {
             "upload_file": io.BytesIO(b"Content"),

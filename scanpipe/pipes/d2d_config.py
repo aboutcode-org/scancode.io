@@ -80,22 +80,45 @@ ECOSYSTEM_CONFIGS = {
             ".odt",
             ".odp",
         ],
+        deployed_resource_path_exclusions=["*.properties", "*.html", "*/.github/*"],
     ),
     "Java": EcosystemConfig(
         ecosystem_option="Java",
         matchable_package_extensions=[".jar", ".war"],
         matchable_resource_extensions=[".class"],
-        deployed_resource_path_exclusions=["*META-INF/*", "*/module-info.class"],
+        deployed_resource_path_exclusions=[
+            "*META-INF/*",
+            "*/module-info.class",
+            "*/OSGI-INF/*.xml",
+            "*/OSGI-INF/*.json",
+            "*spring-configuration-metadata.json",
+        ],
     ),
     "Scala": EcosystemConfig(
         ecosystem_option="Scala",
         matchable_package_extensions=[".jar", ".war"],
         matchable_resource_extensions=[".class"],
+        deployed_resource_path_exclusions=[
+            "*META-INF/*",
+        ],
     ),
     "Kotlin": EcosystemConfig(
         ecosystem_option="Kotlin",
         matchable_package_extensions=[".jar", ".war"],
         matchable_resource_extensions=[".class"],
+        deployed_resource_path_exclusions=[
+            "*META-INF/*",
+            "*.knm",
+            "*kotlin-project-structure-metadata.json",
+        ],
+    ),
+    "Groovy": EcosystemConfig(
+        ecosystem_option="Groovy",
+        matchable_package_extensions=[".jar", ".war"],
+        matchable_resource_extensions=[".class"],
+        deployed_resource_path_exclusions=[
+            "*META-INF/*",
+        ],
     ),
     "JavaScript": EcosystemConfig(
         ecosystem_option="JavaScript",
@@ -141,7 +164,16 @@ ECOSYSTEM_CONFIGS = {
     ),
     "MacOS": EcosystemConfig(
         ecosystem_option="MacOS",
-        source_symbol_extensions=[".c", ".cpp", ".h", ".m", ".swift"],
+        source_symbol_extensions=[
+            ".c",
+            ".cpp",
+            ".h",
+            ".m",
+            ".swift",
+            ".go",
+            ".ts",
+            ".tsx",
+        ],
     ),
     "Windows": EcosystemConfig(
         ecosystem_option="Windows",
@@ -149,7 +181,8 @@ ECOSYSTEM_CONFIGS = {
     ),
     "Python": EcosystemConfig(
         ecosystem_option="Python",
-        source_symbol_extensions=[".pyx", ".pxd"],
+        source_symbol_extensions=[".pyx", ".pxd", ".py", ".pyi"],
+        matchable_resource_extensions=[".py", ".pyi"],
     ),
 }
 

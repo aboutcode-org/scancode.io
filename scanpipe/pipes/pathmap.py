@@ -164,11 +164,12 @@ def get_reversed_path_segments(path):
     Return reversed segments list given a POSIX ``path`` string. We reverse
     based on path segments separated by a "/".
 
-    Note that the inputh ``path`` is assumed to be normalized, not relative and
+    Note that the input ``path`` is assumed to be normalized, not relative and
     not containing double slash.
 
-    For example::
-    >>> assert get_reversed_path_segments("a/b/c.js") == ["c.js", "b", "a"]
+    For example:
+    >>> get_reversed_path_segments("a/b/c.js")
+    ['c.js', 'b', 'a']
     """
     # [::-1] does the list reversing
     reversed_segments = path.strip("/").split("/")[::-1]
@@ -177,13 +178,14 @@ def get_reversed_path_segments(path):
 
 def convert_segments_to_path(segments):
     """
-    Return a path string is suitable for indexing or matching given a
+    Return a path string suitable for indexing or matching given a
     ``segments`` sequence of path segment strings.
     The resulting reversed path is prefixed and suffixed by a "/" irrespective
     of whether the original path is a file or directory and had such prefix or
     suffix.
 
-    For example::
-    >>> assert convert_segments_to_path(["c.js", "b", "a"]) == "/c.js/b/a/"
+    For example:
+    >>> convert_segments_to_path(["c.js", "b", "a"])
+    '/c.js/b/a/'
     """
     return "/" + "/".join(segments) + "/"

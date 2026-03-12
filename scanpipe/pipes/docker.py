@@ -82,6 +82,7 @@ def extract_image_from_tarball(input_tarball, extract_target, verify=False):
         target_dir=extract_target,
         skip_symlinks=False,
         as_events=False,
+        tar_filter="tar",
     )
     images = Image.get_images_from_dir(
         extracted_location=str(extract_target),
@@ -126,6 +127,7 @@ def extract_layers_from_images_to_base_path(base_path, images):
                 target_dir=extract_target,
                 skip_symlinks=False,
                 as_events=False,
+                tar_filter="tar",
             )
             errors.extend(extract_errors)
             layer.extracted_location = str(extract_target)

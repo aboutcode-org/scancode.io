@@ -22,6 +22,7 @@
 
 import uuid
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
@@ -35,6 +36,7 @@ User = get_user_model()
 
 TEST_PASSWORD = str(uuid.uuid4())
 
+APIToken = apps.get_model("scanpipe", "APIToken")
 login_url = reverse("login")
 project_list_url = reverse("project_list")
 logout_url = reverse("logout")
@@ -93,10 +95,10 @@ class ScanCodeIOAuthTest(TestCase):
         response = self.client.get(project_list_url)
         expected = '<a class="navbar-link">basic_user</a>'
         self.assertContains(response, expected, html=True)
-        expected = f'<a class="navbar-item" href="{profile_url}">Profile settings</a>'
-        self.assertContains(response, expected, html=True)
         expected = f'<form id="logout-form" method="post" action="{logout_url}">'
         self.assertContains(response, expected)
+        self.assertContains(response, profile_url)
+        self.assertContains(response, "Profile settings")
 
     def test_scancodeio_auth_logout_view(self):
         response = self.client.get(logout_url)
@@ -111,10 +113,22 @@ class ScanCodeIOAuthTest(TestCase):
 
     def test_scancodeio_account_profile_view(self):
         self.client.login(username=self.basic_user.username, password=TEST_PASSWORD)
+
+        expected1 = "No API key created."
+        expected2 = "Generate API key"
+        expected3 = "Revoke API key"
+
         response = self.client.get(profile_url)
-        expected = '<label class="label">API Key</label>'
-        self.assertContains(response, expected, html=True)
-        self.assertContains(response, self.basic_user.auth_token.key)
+        self.assertContains(response, expected1)
+        self.assertContains(response, expected2)
+        self.assertNotContains(response, expected3)
+
+        APIToken.create_token(user=self.basic_user)
+        response = self.client.get(profile_url)
+        self.assertNotContains(response, expected1)
+        self.assertContains(response, expected2)
+        self.assertContains(response, expected3)
+        self.assertContains(response, self.basic_user.api_token.prefix)
 
     def test_scancodeio_auth_views_are_protected(self):
         a_uuid = uuid.uuid4()

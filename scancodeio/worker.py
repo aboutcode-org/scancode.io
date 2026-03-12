@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+from django import db as django_db
 from django.apps import apps
 
 from rq.queue import Queue
@@ -54,6 +55,21 @@ class ScanCodeIOWorker(Worker):
         scanpipe_app.sync_runs_and_jobs()
 
 
+class ScanCodeIOTlsWorker(ScanCodeIOWorker):
+    """
+    Modified version of RQ Worker including ScanCode.io customizations for
+    maintenance tasks and TLS.
+    """
+
+    def execute_job(self, job, queue):
+        """
+        Terminate existing database connection to avoid issues with TLS.
+        https://github.com/aboutcode-org/scancode.io/issues/1523
+        """
+        django_db.connection.close()
+        super().execute_job(job, queue)
+
+
 class ScanCodeIOQueue(Queue):
     """Modified version of RQ Queue including ScanCode.io customizations."""
 
@@ -63,7 +79,7 @@ class ScanCodeIOQueue(Queue):
     def acquire_maintenance_lock(self) -> bool:
         """Return a boolean indicating if a lock to clean this queue is acquired."""
         lock_acquired = self.connection.set(
-            self.registry_cleaning_key, 1, nx=1, ex=self.cleaning_lock_ttl
+            self.registry_cleaning_key, 1, nx=True, ex=self.cleaning_lock_ttl
         )
         if not lock_acquired:
             return False

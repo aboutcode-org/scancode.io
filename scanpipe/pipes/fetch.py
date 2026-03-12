@@ -24,7 +24,6 @@ import json
 import logging
 import os
 import re
-import subprocess
 import tempfile
 from collections import namedtuple
 from pathlib import Path
@@ -39,10 +38,13 @@ import requests
 from commoncode import command
 from commoncode.hash import multi_checksums
 from commoncode.text import python_safe_name
+from fetchcode.pypi import Pypi as PyPIFetcher
 from packageurl import PackageURL
 from packageurl.contrib import purl2url
 from plugincode.location_provider import get_location
 from requests import auth as request_auth
+
+from scanpipe.pipes import run_command_safely
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -58,43 +60,6 @@ Download = namedtuple("Download", "uri directory filename path size sha1 md5")
 # (e.g., https://cdn.kernel.org/) may take longer to respond to HTTP requests under
 # certain conditions.
 HTTP_REQUEST_TIMEOUT = 30
-
-
-def run_command_safely(command_args):
-    """
-    Execute the external commands following security best practices.
-
-    This function is using the subprocess.run function which simplifies running external
-    commands. It provides a safer and more straightforward API compared to older methods
-    like subprocess.Popen.
-
-    WARNING: Please note that the `--option=value` syntax is required for args entries,
-    and not the `--option value` format.
-
-    - This does not use the Shell (shell=False) to prevent injection vulnerabilities.
-    - The command should be provided as a list of ``command_args`` arguments.
-    - Only full paths to executable commands should be provided to avoid any ambiguity.
-
-    WARNING: If you're incorporating user input into the command, make
-    sure to sanitize and validate the input to prevent any malicious commands from
-    being executed.
-
-    Raise a SubprocessError if the exit code was non-zero.
-    """
-    completed_process = subprocess.run(  # noqa: S603
-        command_args,
-        capture_output=True,
-        text=True,
-    )
-
-    if completed_process.returncode:
-        error_msg = (
-            f'Error while executing cmd="{completed_process.args}": '
-            f'"{completed_process.stderr.strip()}"'
-        )
-        raise subprocess.SubprocessError(error_msg)
-
-    return completed_process.stdout
 
 
 def get_request_session(uri):
@@ -360,11 +325,17 @@ def fetch_git_repo(url, to=None):
 
 def fetch_package_url(url):
     # Ensure the provided Package URL is valid, or raise a ValueError.
-    PackageURL.from_string(url)
+    purl = PackageURL.from_string(url)
 
     # Resolve a Download URL using purl2url.
     if download_url := purl2url.get_download_url(url):
         return fetch_http(download_url)
+
+    # PyPI is not supported by purl2url.
+    # It requires an API call to resolve download URLs.
+    if purl.type == "pypi":
+        if download_url := PyPIFetcher.get_download_url(url, preferred_type="sdist"):
+            return fetch_http(download_url)
 
     raise ValueError(f"Could not resolve a download URL for {url}.")
 

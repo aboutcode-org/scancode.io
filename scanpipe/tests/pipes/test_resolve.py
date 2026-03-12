@@ -59,16 +59,19 @@ class ScanPipeResolvePipesTest(TestCase):
         input_location = self.manifest_location / "curl-7.70.0.yaml"
         self.assertEqual("spdx", resolve.get_default_package_type(input_location))
 
-        input_location = self.data / "cyclonedx/nested.cdx.json"
+        input_location = self.data / "cyclonedx" / "nested.cdx.json"
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
-        input_location = self.data / "cyclonedx/asgiref-3.3.0.json"
+        input_location = self.data / "cyclonedx" / "asgiref-3.3.0.json"
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
-        input_location = self.data / "cyclonedx/missing_schema.json"
+        input_location = self.data / "cyclonedx" / "missing_schema.json"
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
-        input_location = self.data / "cyclonedx/laravel-7.12.0/bom.1.4.xml"
+        input_location = self.data / "cyclonedx" / "laravel-7.12.0" / "bom.1.4.xml"
+        self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
+
+        input_location = self.data / "cyclonedx" / "laravel-7.12.0" / "bom.1.7.json"
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
     def test_scanpipe_pipes_resolve_set_license_expression(self):

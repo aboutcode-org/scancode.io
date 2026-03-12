@@ -22,7 +22,10 @@
 
 import sys
 
+from django.core.management import CommandError
+
 from scanpipe.management.commands import ProjectCommand
+from scanpipe.models import RunInProgressError
 
 
 class Command(ProjectCommand):
@@ -38,6 +41,26 @@ class Command(ProjectCommand):
             action="store_false",
             dest="interactive",
             help="Do not prompt the user for input of any kind.",
+        )
+        parser.add_argument(
+            "--remove-input",
+            action="store_true",
+            help="Remove the input directory and input sources when resetting.",
+        )
+        parser.add_argument(
+            "--remove-webhook",
+            action="store_true",
+            help="Remove webhook subscriptions when resetting.",
+        )
+        parser.add_argument(
+            "--restore-pipelines",
+            action="store_true",
+            help="Restore all pipelines that were previously existing on the project.",
+        )
+        parser.add_argument(
+            "--execute-now",
+            action="store_true",
+            help="Execute the restored pipelines immediately after restoration.",
         )
 
     def handle(self, *inputs, **options):
@@ -56,11 +79,19 @@ class Command(ProjectCommand):
                     self.stdout.write("Reset cancelled.")
                 sys.exit(0)
 
-        self.project.reset(keep_input=True)
+        keep_input = not options["remove_input"]
+        keep_webhook = not options["remove_webhook"]
+
+        try:
+            self.project.reset(
+                keep_input=keep_input,
+                keep_webhook=keep_webhook,
+                restore_pipelines=options["restore_pipelines"],
+                execute_now=options["execute_now"],
+            )
+        except RunInProgressError as error:
+            raise CommandError(error)
 
         if self.verbosity > 0:
-            msg = (
-                f"All data, except inputs, for the {self.project} project have been "
-                f"removed."
-            )
+            msg = f"The {self.project} project has been reset."
             self.stdout.write(msg, self.style.SUCCESS)

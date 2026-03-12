@@ -1,0 +1,35 @@
+name: PR Quality
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: write
+
+on:
+  # pull_request_target is required so the action can close/comment on fork PRs.
+  # This is safe because: no untrusted code is checked out, and no attacker-controlled
+  # values are interpolated into shell commands. All action inputs are hardcoded.
+  pull_request_target:
+    types: [opened, reopened]
+
+jobs:
+  anti-slop:
+    runs-on: ubuntu-24.04
+    name: Detects and automatically closes low-quality and AI slop PRs
+    steps:
+      - uses: peakoss/anti-slop@e158eeefe5c43e1d3ba8533b84e0e35d9d6761de
+        with:
+          # Number of check failures needed before failure actions are triggered
+          max-failures: 3
+          # List of commit author usernames to block
+          blocked-commit-authors: "claude,copilot"
+          # Require the PR to reference at least one issue in the PR description.
+          require-linked-issue: true
+          # List of terms blocked from appearing in the PR description
+          blocked-terms: "MANGO"
+          # Require all changed files to end with a newline character
+          require-final-newline: false
+          # PR does not allow maintainers to push to the source
+          require-maintainer-can-modify: false
+          # Minimum number of profile signals the user must have to pass. Disabled.
+          min-profile-completeness: 0

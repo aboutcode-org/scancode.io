@@ -43,8 +43,9 @@ Example:
     "trivy-alpine-3.17-sbom.json": {
         "resources": 1,
         "packages": 16,
-        "packages_vulnerable": 7,
+        "vulnerable_packages": 7,
         "dependencies": 25,
+        "vulnerabilities": 10,
         "purls": [
             "pkg:unknown/alpine@3.17.0",
         ],
@@ -73,8 +74,9 @@ from scanpipe.tests import make_project
 # Keys are filenames, values are dicts with expected numbers of:
 # - ``resources``: CodebaseResource
 # - ``packages``: DiscoveredPackages
-# - ``packages_vulnerable``: Vulnerable DiscoveredPackages
+# - ``vulnerable_packages``: Vulnerable DiscoveredPackages
 # - ``dependencies``: DiscoveredDependencies
+# - ``vulnerabilities``: Expected number of unique vulnerabilities.
 # - ``purls``: The list of PURLs present in the SBOM
 TEST_DATA = {
     ### Anchore Grype
@@ -83,8 +85,9 @@ TEST_DATA = {
     "anchore-alpine-3.17-sbom.json": {
         "resources": 1,
         "packages": 94,
-        "packages_vulnerable": 7,
+        "vulnerable_packages": 7,
         "dependencies": 20,
+        "vulnerabilities": 37,
         "purls": [
             "pkg:apk/alpine/alpine-baselayout-data@3.4.0-r0?arch=x86_64&distro=alpine-3.17.0&upstream=alpine-baselayout",
             "pkg:apk/alpine/alpine-baselayout@3.4.0-r0?arch=x86_64&distro=alpine-3.17.0",
@@ -188,8 +191,9 @@ TEST_DATA = {
     "cdxgen-alpine-3.17-sbom.json": {
         "resources": 1,
         "packages": 14,
-        "packages_vulnerable": 0,
+        "vulnerable_packages": 0,
         "dependencies": 0,
+        "vulnerabilities": 0,
         "purls": [
             "pkg:generic/apk",
             "pkg:generic/busybox",
@@ -212,8 +216,9 @@ TEST_DATA = {
     "depscan-alpine-3.17-sbom.json": {
         "resources": 1,
         "packages": 33,
-        "packages_vulnerable": 3,
+        "vulnerable_packages": 3,
         "dependencies": 20,
+        "vulnerabilities": 35,
         "purls": [
             "pkg:apk/alpine/alpine-baselayout-data@3.4.0-r0?arch=x86_64&distro=alpine-3.17.0&distro_name=alpine-3.17",
             "pkg:apk/alpine/alpine-baselayout@3.4.0-r0?arch=x86_64&distro=alpine-3.17.0&distro_name=alpine-3.17",
@@ -258,8 +263,9 @@ TEST_DATA = {
     "osv-scanner-alpine-3.17-sbom.spdx.json": {
         "resources": 1,
         "packages": 16,
-        "packages_vulnerable": 0,
+        "vulnerable_packages": 0,
         "dependencies": 15,
+        "vulnerabilities": 0,
         "purls": [
             "pkg:apk/alpine/alpine-baselayout-data@3.4.0-r0?arch=x86_64&distro=3.17.0&origin=alpine-baselayout",
             "pkg:apk/alpine/alpine-baselayout@3.4.0-r0?arch=x86_64&distro=3.17.0&origin=alpine-baselayout",
@@ -284,8 +290,9 @@ TEST_DATA = {
     "osv-scanner-vulns-sbom.cdx.json": {
         "resources": 1,
         "packages": 3,
-        "packages_vulnerable": 1,
+        "vulnerable_packages": 1,
         "dependencies": 0,
+        "vulnerabilities": 1,
         "purls": [
             "pkg:composer/league/flysystem@1.0.8",
             "pkg:npm/has-flag@4.0.0",
@@ -298,8 +305,9 @@ TEST_DATA = {
     "sbom-tool-alpine-3.17-sbom.spdx.json": {
         "resources": 1,
         "packages": 16,
-        "packages_vulnerable": 0,
+        "vulnerable_packages": 0,
         "dependencies": 15,
+        "vulnerabilities": 0,
         "purls": [
             "pkg:swid/Company/sbom.company.com/DockerImage@1.0.0?tag_id=60e3f440-f9a8-449e-b516-da3049700fff",
             "pkg:unknown/alpine-baselayout-data@3.4.0-r0",
@@ -325,8 +333,9 @@ TEST_DATA = {
     "trivy-alpine-3.17-sbom.json": {
         "resources": 1,
         "packages": 16,
-        "packages_vulnerable": 7,
+        "vulnerable_packages": 7,
         "dependencies": 25,
+        "vulnerabilities": 33,
         "purls": [
             "pkg:apk/alpine/alpine-baselayout-data@3.4.0-r0?arch=x86_64&distro=3.17.0",
             "pkg:apk/alpine/alpine-baselayout@3.4.0-r0?arch=x86_64&distro=3.17.0",
@@ -381,23 +390,42 @@ class ScanPipeIntegrationsBaseTest(TestCase):
         self.assertEqual(
             expected_results["resources"],
             project.codebaseresources.count(),
-            msg=sbom_filename,
+            msg=f"[resources] {sbom_filename}",
         )
         self.assertEqual(
             expected_results["packages"],
             project.discoveredpackages.count(),
-            msg=sbom_filename,
-        )
-        self.assertEqual(
-            expected_results["packages_vulnerable"],
-            project.discoveredpackages.vulnerable().count(),
-            msg=sbom_filename,
+            msg=f"[packages] {sbom_filename}",
         )
         self.assertEqual(
             expected_results["dependencies"],
             project.discovereddependencies.count(),
-            msg=sbom_filename,
+            msg=f"[dependencies] {sbom_filename}",
         )
+
+        vulnerable_packages = expected_results.get("vulnerable_packages")
+        if vulnerable_packages:
+            self.assertEqual(
+                vulnerable_packages,
+                project.discoveredpackages.vulnerable().count(),
+                msg=f"[vulnerable_packages] {sbom_filename}",
+            )
+
+        vulnerable_dependencies = expected_results.get("vulnerable_dependencies")
+        if vulnerable_dependencies:
+            self.assertEqual(
+                vulnerable_dependencies,
+                project.discovereddependencies.vulnerable().count(),
+                msg=f"[vulnerable_dependencies] {sbom_filename}",
+            )
+
+        vulnerabilities = expected_results.get("vulnerabilities")
+        if vulnerabilities:
+            self.assertEqual(
+                vulnerabilities,
+                len(project.vulnerabilities),
+                msg=f"[vulnerabilities] {sbom_filename}",
+            )
 
         # Verify that all the expected PURLs are present in the project
         expected_purls = expected_results.get("purls", [])
