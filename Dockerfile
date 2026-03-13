@@ -67,15 +67,31 @@ RUN apt-get update \
        wait-for-it \
        universal-ctags \
        gettext \
+       # Added for RUST support in ScanCode, see
+       # https://github.com/aboutcode-org/scancode.io/issues/1767
+       build-essential \
+       curl \
+       pkg-config \
+       libssl-dev \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install Rust Toolchain
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH
+
+# Reference: https://rust-lang.org/tools/install/
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path \
+ && chmod -R a+w $RUSTUP_HOME $CARGO_HOME
 
 # Create the APP_USER group, user, and directory with specific UID and GID
 RUN groupadd --gid $APP_GID --system $APP_USER \
  && useradd --uid $APP_UID --gid $APP_GID --home-dir $APP_DIR --system --create-home $APP_USER \
  && chown $APP_USER:$APP_USER $APP_DIR \
  && mkdir -p /var/$APP_NAME \
- && chown $APP_USER:$APP_USER /var/$APP_NAME
+ && chown $APP_USER:$APP_USER /var/$APP_NAME \
+ && chown -R $APP_USER:$APP_USER /usr/local/cargo
 
 # Setup the work directory and the user as APP_USER for the remaining stages
 WORKDIR $APP_DIR
@@ -87,7 +103,8 @@ RUN mkdir -p /var/$APP_NAME/static/ /var/$APP_NAME/workspace/
 # Create the virtualenv
 RUN python -m venv $VENV_LOCATION
 # Enable the virtualenv, similar effect as "source activate"
-ENV PATH=$VENV_LOCATION/bin:$PATH
+# ENV PATH=$VENV_LOCATION/bin:$PATH
+ENV PATH=$VENV_LOCATION/bin:/usr/local/cargo/bin:$PATH
 
 # Install the dependencies before the codebase COPY for proper Docker layer caching
 COPY --chown=$APP_USER:$APP_USER pyproject.toml $APP_DIR/

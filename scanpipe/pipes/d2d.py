@@ -1737,20 +1737,25 @@ def map_paths_resource(
                     relations_to_create[rel_key] = relation
         if paths_not_mapped:
             to_resource.status = flag.REQUIRES_REVIEW
-            logger(
-                f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT mapped for: "
-                f"{to_resource.path!r}"
-            )
+            if logger:
+                logger(
+                    f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT "
+                    f" mapped for: {to_resource.path!r}"
+                )
         to_resource.save()
 
     if relations_to_create:
         rels = CodebaseRelation.objects.bulk_create(relations_to_create.values())
-        logger(
-            f"Created {len(rels)} mappings using "
-            f"{', '.join(map_types)} for: {to_resource.path!r}"
-        )
+        if logger:
+            logger(
+                f"Created {len(rels)} mappings using "
+                f"{', '.join(map_types)} for: {to_resource.path!r}"
+            )
     else:
-        logger(f"No mappings using {', '.join(map_types)} for: {to_resource.path!r}")
+        if logger:
+            logger(
+                f"No mappings using {', '.join(map_types)} for: {to_resource.path!r}"
+            )
 
 
 def process_paths_in_binary(
@@ -1938,6 +1943,92 @@ def map_go_paths(project, logger=None):
             map_types=["go_file_paths"],
             logger=logger,
         )
+
+
+def get_rust_file_paths(location):
+    """Retrieve Rust file paths."""
+    file_paths = {}
+    rust_file_paths = parse_d_file(location) or []
+    if rust_file_paths:
+        file_paths["rust_file_paths"] = rust_file_paths
+    return file_paths
+
+
+def parse_d_file(path):
+    """Parse the .d file from rust package."""
+    context = Path(path).read_text()
+    cleaned_context = context.replace("\\\n", " ")
+
+    # Invalid .d file
+    if ":" not in cleaned_context:
+        return []
+
+    _, dep_paths = cleaned_context.split(":", 1)
+
+    file_paths = []
+    for file_path in dep_paths.split():
+        file_path = file_path.strip()
+        if file_path:
+            file_paths.append(file_path)
+
+    return file_paths
+
+
+def map_rust_paths(project, logger=None):
+    """Map the path listed in the .d file to the source in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    to_resources = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .exclude(path__contains="/deps/")
+        .exclude(path__contains="/build/")
+        .filter(path__endswith=".d")
+    )
+    for resource in to_resources:
+        try:
+            paths = get_rust_file_paths(resource.location_path)
+            resource.update_extra_data(paths)
+        except Exception as exception:
+            project.add_warning(
+                exception=exception,
+                object_instance=resource,
+                description=f"Cannot parse file at {resource.path}",
+                model="map_rust_paths",
+                details={"path": resource.path},
+            )
+
+    if logger:
+        logger(
+            f"Mapping {to_resources.count():,d} to/ resources using paths "
+            f"with {from_resources.count():,d} from/ resources."
+        )
+
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
+    )
+
+    if logger:
+        logger("Done building from/ resources index.")
+
+    resource_iterator = to_resources.iterator(chunk_size=2000)
+    progress = LoopProgress(to_resources.count(), logger)
+    for to_resource in progress.iter(resource_iterator):
+        map_paths_resource(
+            to_resource,
+            from_resources,
+            from_resources_index,
+            map_types=["rust_file_paths"],
+            logger=logger,
+        )
+
+
+def update_from_to_tag(project):
+    """Update 'from' or 'to' tag to resources based on their path."""
+    for resource in project.codebaseresources.files():
+        if resource.path.startswith("from/"):
+            resource.update(tag="from")
+        elif resource.path.startswith("to/"):
+            resource.update(tag="to")
 
 
 RUST_BINARY_OPTIONS = ["Rust"]
