@@ -28,6 +28,7 @@ from scanpipe.pipelines.scan_single_package import ScanSinglePackage
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import rust
+from scanpipe.pipes import utils
 
 # from scanpipe.pipes.maven import update_package_license_from_resource_if_missing
 
@@ -59,6 +60,7 @@ class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
             cls.run_scan,
             cls.load_inventory_from_toolkit_scan,
             cls.add_from_to_tag,
+            cls.validate_package_license_integrity,
             cls.identify_built_sources,
             cls.flag_mapped_status,
             cls.make_summary_from_scan_results,
@@ -88,6 +90,13 @@ class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
     def add_from_to_tag(self):
         """Update 'from' or 'to' tag to resources based on their path."""
         d2d.update_from_to_tag(self.project)
+
+    def validate_package_license_integrity(self):
+        """
+        Validate the correctness of the package license compare with the
+        detected license from the codebase.
+        """
+        utils.validate_package_license_integrity(self.project)
 
     def identify_built_sources(self):
         """Identify the built sources from the '.d' file in the "to" directory."""

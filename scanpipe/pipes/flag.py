@@ -66,6 +66,7 @@ NPM_PACKAGE_LOOKUP = "npm-package-lookup"
 REQUIRES_REVIEW = "requires-review"
 REVIEW_DANGLING_LEGAL_FILE = "review-dangling-legal-file"
 NOT_DEPLOYED = "not-deployed"
+LICENSE_ISSUE = "license-mismatch-declared-vs-detected"
 
 
 # Target files that should be ignored during processing as those are related to the app
