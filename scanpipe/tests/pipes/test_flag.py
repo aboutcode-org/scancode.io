@@ -20,8 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from django.test import TestCase
 from fnmatch import fnmatch
+from django.test import TestCase
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
@@ -139,19 +139,19 @@ class ScanPipeFlagPipesTest(TestCase):
         self.assertEqual("mapped", self.resource1.status)
         self.assertEqual("mapped", self.resource2.status)
 
-def test_nuget_ignored_patterns_match_expected_files():
-    paths = [
-        "package/_rels/.rels",
-        "package/[Content_Types].xml",
-        "package/services/metadata/core-properties",
-        "foo.runtimeconfig.json",
-        "bar.dll.config",
-        "baz.exe.config",
-        "test.shasum",
-    ]
-
-    for path in paths:
-        assert any(
-            fnmatch(path, pattern)
-            for pattern in flag.NUGET_IGNORED_PATTERNS
-        ), path
+    def test_nuget_ignored_patterns_match_expected_files(self):
+        paths = [
+            "package/_rels/.rels",
+            "package/[Content_Types].xml",
+            "package/services/metadata/core-properties",
+            "foo.runtimeconfig.json",
+            "bar.dll.config",
+            "baz.exe.config",
+            "test.shasum",
+        ]
+        for path in paths:
+            matched = any(
+                fnmatch(path, pattern)
+                for pattern in flag.NUGET_IGNORED_PATTERNS
+            )
+            self.assertTrue(matched, path)
