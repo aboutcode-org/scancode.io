@@ -77,7 +77,6 @@ class CommonStepsMixin:
         if isinstance(ignored_patterns, str):
             ignored_patterns = ignored_patterns.splitlines()
         ignored_patterns.extend(flag.DEFAULT_IGNORED_PATTERNS)
-        ignored_patterns.extend(flag.NUGET_IGNORED_PATTERNS)
 
         flag.flag_ignored_patterns(
             codebaseresources=self.project.codebaseresources.no_status(),
