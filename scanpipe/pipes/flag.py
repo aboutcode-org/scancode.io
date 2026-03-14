@@ -81,7 +81,7 @@ DEFAULT_IGNORED_PATTERNS = [
 # extracted .nupkg archives.
 NUGET_IGNORED_PATTERNS = [
     "*_rels/.rels",
-    "*\\[Content_Types\\].xml",
+    "*Content_Types*.xml",
     "*package/services/metadata*",
     "*.signature.p7s",
     "*.runtimeconfig.json",
