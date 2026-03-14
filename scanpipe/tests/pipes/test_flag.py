@@ -152,7 +152,6 @@ class ScanPipeFlagPipesTest(TestCase):
         ]
         for path in paths:
             matched = any(
-                fnmatch(path, pattern)
-                for pattern in flag.NUGET_IGNORED_PATTERNS
+                fnmatch(path, pattern) for pattern in flag.NUGET_IGNORED_PATTERNS
             )
             self.assertTrue(matched, path)

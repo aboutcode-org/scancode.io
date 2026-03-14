@@ -90,6 +90,7 @@ NUGET_IGNORED_PATTERNS = [
     "*.shasum",
 ]
 
+
 def flag_empty_files(project):
     """Flag empty files as ignored."""
     qs = (
