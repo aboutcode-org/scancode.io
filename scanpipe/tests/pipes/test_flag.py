@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from fnmatch import fnmatch
+
 from django.test import TestCase
 
 from scanpipe import pipes
