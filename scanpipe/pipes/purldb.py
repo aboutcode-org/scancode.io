@@ -147,6 +147,7 @@ def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT, raise_on_error=False
 
 
 def request_post(url, data=None, headers=None, files=None, timeout=DEFAULT_TIMEOUT):
+    """Wrap the HTTP POST request calls on the API."""
     try:
         response = session.post(
             url, data=data, timeout=timeout, headers=headers, files=files
