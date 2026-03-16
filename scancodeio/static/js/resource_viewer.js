@@ -151,3 +151,10 @@ function initResourceViewer(editorId) {
 
 // Init on page load if editor is present
 initResourceViewer('editor');
+
+// Re-initialize the editor when new content is loaded via htmx
+document.addEventListener('htmx:afterSettle', function(event) {
+  if (event.detail.target.querySelector('#editor')) {
+    initResourceViewer('editor');
+  }
+});

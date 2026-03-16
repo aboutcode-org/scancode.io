@@ -20,8 +20,8 @@
           {% include 'scanpipe/tree/resource_path_breadcrumb.html' with path=object.path %}
         {% endif %}
         {% include 'scanpipe/tabset/tabset.html' %}
+        {{ detected_values|json_script:"detected_values" }}
       {% endblock %}
     </div>
   </div>
-  {{ detected_values|json_script:"detected_values" }}
 {% endblock %}
