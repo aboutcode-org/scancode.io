@@ -210,6 +210,7 @@
 {% block scripts %}
   <script src="{% static 'billboard-3.0.1.pkgd.min.js' %}" crossorigin="anonymous"></script>
   <script>
+  document.addEventListener("DOMContentLoaded", function() {
     hljs.highlightAll();
 
     const execute_pipeline_links = document.querySelector(".execute-pipeline-link");
@@ -231,5 +232,6 @@
     onSubmitOverlay("#add-labels-modal form");
     onSubmitOverlay("#edit-input-tag-modal form");
     onSubmitOverlay("#clone-modal form");
+  });
   </script>
 {% endblock %}

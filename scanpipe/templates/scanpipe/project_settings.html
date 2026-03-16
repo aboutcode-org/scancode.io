@@ -43,18 +43,20 @@
       }
     });
 
-    onSubmitOverlay = function (selector) {
-      let element = document.querySelector(selector);
-      if (element) {
-        element.addEventListener("submit", function() {
-          displayOverlay();
-        });
-      }
-    };
+    document.addEventListener("DOMContentLoaded", function() {
+      onSubmitOverlay = function (selector) {
+        let element = document.querySelector(selector);
+        if (element) {
+          element.addEventListener("submit", function() {
+            displayOverlay();
+          });
+        }
+      };
 
-    onSubmitOverlay("#modal-archive form");
-    onSubmitOverlay("#modal-reset form");
-    onSubmitOverlay("#modal-delete form");
-    onSubmitOverlay("#modal-webhook-add form");
+      onSubmitOverlay("#modal-archive form");
+      onSubmitOverlay("#modal-reset form");
+      onSubmitOverlay("#modal-delete form");
+      onSubmitOverlay("#modal-webhook-add form");
+    });
   </script>
 {% endblock %}

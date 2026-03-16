@@ -95,6 +95,7 @@
   {{ dependency_is_optional|json_script:"dependency_is_optional" }}
   {{ dependency_is_pinned|json_script:"dependency_is_pinned" }}
   <script>
+  document.addEventListener("DOMContentLoaded", function() {
     let makeChart = function(data_source_id, element_id, title) {
       let data_source = document.getElementById(data_source_id);
       if (!data_source) return false;
@@ -181,5 +182,6 @@
       makeChart("file_detected_license_expression", "#detected_license_expression_chart", "Detected\nLicense\nExpression");
       makeChart("file_compliance_alert", "#compliance_alert_chart", "Resource\nCompliance\nAlert");
     {% endif %}
+  });
   </script>
 {% endblock %}
