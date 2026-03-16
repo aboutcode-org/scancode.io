@@ -22,17 +22,22 @@
 
 'use strict';
 
-(function() {
-  document.addEventListener('htmx:beforeSwap', function(evt) {
-    // Clean up editor before HTMX swaps content
-    if (window.editor) {
-      window.editor.destroy();
-      window.editor.container.remove();
-      window.editor = null;
-    }
-  });
+function cleanupEditor() {
+  if (window.editor && window.editor.destroy) {
+    window.editor.destroy();
+    window.editor.container.remove();
+    window.editor = null;
+  }
+}
 
-  let editor = ace.edit("editor", {
+function initResourceViewer(editorId) {
+  const editorElement = document.getElementById(editorId);
+  if (!editorElement) return;
+
+  // Clean up previous instance if any
+  cleanupEditor();
+
+  let editor = ace.edit(editorId, {
     mode: "ace/mode/text",
     autoScrollEditorIntoView: true,
     wrap: true,
@@ -142,5 +147,7 @@
     let is_full_screen = body.classList.toggle("full-screen");
     editor.resize()
   });
+}
 
-})();
+// Init on page load if editor is present
+initResourceViewer('editor');

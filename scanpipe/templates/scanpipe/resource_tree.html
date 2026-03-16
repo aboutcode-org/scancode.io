@@ -3,8 +3,9 @@
 {% block title %}ScanCode.io: {{ project.name }} - Resources tree{% endblock %}
 
 {% block extrahead %}
-  <script src="{% static 'ace-1.43.3.min.js' %}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="{% static 'ace-1.43.3-ext-searchbox.min.js' %}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="{% static 'ace-1.43.3.min.js' %}" defer></script>
+  <script src="{% static 'ace-1.43.3-ext-searchbox.min.js' %}" defer></script>
+  <script src="{% static 'js/resource_viewer.js' %}" defer></script>
 {% endblock %}
 
 {% block content %}
