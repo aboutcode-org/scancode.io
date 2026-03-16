@@ -2759,13 +2759,14 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
 
 
 class ProjectResourceTreeView(ConditionalLoginRequired, generic.DetailView):
+    model = Project
     template_name = "scanpipe/resource_tree.html"
 
     def get(self, request, *args, **kwargs):
-        slug = self.kwargs.get("slug")
-        project = get_object_or_404(Project, slug=slug)
+        project = self.get_object()
         path = self.kwargs.get("path", "")
-        parent_path = path if request.GET.get("tree_panel") == "true" else ""
+        is_tree_panel = request.GET.get("tree_panel") == "true"
+        parent_path = path if is_tree_panel else ""
 
         children = (
             project.codebaseresources.filter(parent_path=parent_path)
@@ -2786,7 +2787,7 @@ class ProjectResourceTreeView(ConditionalLoginRequired, generic.DetailView):
             "resource": resource,
         }
 
-        if request.GET.get("tree_panel") == "true":
+        if is_tree_panel:
             return render(
                 request, "scanpipe/tree/resource_left_pane_tree.html", context
             )
