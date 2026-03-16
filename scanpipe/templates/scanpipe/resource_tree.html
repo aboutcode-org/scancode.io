@@ -21,24 +21,21 @@
   <div id="resource-tree-container" class="container is-fluid p-0">
     <div class="resizable-container is-flex">
       <div id="left-pane" class="left-pane px-2">
-        {% include "scanpipe/tree/resource_left_pane_header.html" only %}
-        <div id="resource-tree">
-          {% include "scanpipe/tree/resource_left_pane_tree.html" with children=children path=path %}
-        </div>
+        {% include 'scanpipe/tree/resource_left_pane.html' %}
       </div>
       <div id="resizer" class="resizer"></div>
       <div id="right-pane" class="right-pane px-3">
-          <div
-            {% if resource.is_file %}
-              hx-get="{% url 'resource_detail' project.slug resource.path %}"
-            {% elif path %}
-              hx-get="{% url 'project_resource_tree_right_pane' project.slug path %}"
-            {% else %}
-              hx-get="{% url 'project_resource_tree_right_pane' project.slug %}"
-            {% endif %}
-            hx-trigger="load"
-            hx-target="this">
-          </div>
+        <div
+          {% if resource.is_file %}
+            hx-get="{% url 'resource_detail' project.slug resource.path %}"
+          {% elif path %}
+            hx-get="{% url 'project_resource_tree_right_pane' project.slug path %}"
+          {% else %}
+            hx-get="{% url 'project_resource_tree_right_pane' project.slug %}"
+          {% endif %}
+          hx-trigger="load"
+          hx-target="this">
+        </div>
       </div>
     </div>
   </div>

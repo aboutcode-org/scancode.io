@@ -28,8 +28,10 @@ from unittest import mock
 from django.test import TestCase
 
 from scanpipe.models import Project
+from scanpipe.pipes.vulnerablecode import chunked
 from scanpipe.pipes.vulnerablecode import fetch_vulnerabilities
 from scanpipe.pipes.vulnerablecode import filter_vulnerabilities
+from scanpipe.pipes.vulnerablecode import get_purls
 from scanpipe.tests import make_package
 
 
@@ -81,3 +83,29 @@ class ScanPipeVulnerableCodeTest(TestCase):
         vulnerability2 = vulnerability_data[1]
         ignore_set.add(vulnerability2.get("aliases")[1])
         self.assertEqual([], filter_vulnerabilities(vulnerability_data, ignore_set))
+
+    def test_scanpipe_pipes_vulnerablecode_chunked(self):
+        result = list(chunked([1, 2, 3, 4, 5], 2))
+        self.assertEqual([[1, 2], [3, 4], [5]], result)
+
+        result = list(chunked([1, 2, 3, 4, 5], 3))
+        self.assertEqual([[1, 2, 3], [4, 5]], result)
+
+        result = list(chunked([], 10))
+        self.assertEqual([], result)
+
+        result = list(chunked([1], 5))
+        self.assertEqual([[1]], result)
+
+        result = list(chunked([1, 2, 3], 3))
+        self.assertEqual([[1, 2, 3]], result)
+
+    def test_scanpipe_pipes_vulnerablecode_get_purls(self):
+        pkg1 = make_package(self.project1, "pkg:pypi/django@5.0")
+        pkg2 = make_package(self.project1, "pkg:npm/express@4.18.2")
+        purls = get_purls([pkg1, pkg2])
+        self.assertEqual(["pkg:pypi/django@5.0", "pkg:npm/express@4.18.2"], purls)
+
+    def test_scanpipe_pipes_vulnerablecode_get_purls_empty(self):
+        purls = get_purls([])
+        self.assertEqual([], purls)
