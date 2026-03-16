@@ -37,7 +37,10 @@ class ScanPipeClamAVPipesTest(TestCase):
     def test_scanpipe_pipes_clamav_scan_for_virus(self, mock_multiscan):
         project = Project.objects.create(name="project")
         r1 = make_resource_file(project=project, path="eicar.zip")
-        r2 = make_resource_file(project=project, path="eicar.zip-extract/eicar.com")
+        r2 = make_resource_file(
+            project=project,
+            path="eicar.zip-extract/eicar.com",
+        )
 
         mock_multiscan.return_value = {
             r1.location: ("FOUND", "Win.Test.EICAR_HDB-1"),
@@ -45,11 +48,20 @@ class ScanPipeClamAVPipesTest(TestCase):
         }
 
         clamav.scan_for_virus(project)
+
         self.assertEqual(2, len(project.projectmessages.all()))
+
         error_message = project.projectmessages.all()[0]
         self.assertEqual("error", error_message.severity)
-        self.assertEqual("Virus detected", error_message.description)
-        self.assertEqual("ScanForVirus", error_message.model)
+        self.assertEqual(
+            "Virus detected",
+            error_message.description,
+        )
+        self.assertEqual(
+            "ScanForVirus",
+            error_message.model,
+        )
+
         expected_details = {
             "reason": "Win.Test.EICAR_HDB-1",
             "status": "FOUND",
@@ -60,10 +72,39 @@ class ScanPipeClamAVPipesTest(TestCase):
         resource1 = project.codebaseresources.first()
         expected_virus_report_extra_data = {
             "virus_report": {
-                "calmav": {
+                "clamav": {
                     "status": "FOUND",
                     "reason": "Win.Test.EICAR_HDB-1",
                 }
             }
         }
-        self.assertEqual(expected_virus_report_extra_data, resource1.extra_data)
+        self.assertEqual(
+            expected_virus_report_extra_data,
+            resource1.extra_data,
+        )
+
+    @mock.patch("clamd.ClamdNetworkSocket.multiscan")
+    def test_scanpipe_pipes_clamav_missing_resource_does_not_crash(
+        self, mock_multiscan
+    ):
+        project = Project.objects.create(name="project")
+
+        r1 = make_resource_file(
+            project=project,
+            path="indexed.txt",
+        )
+
+        mock_multiscan.return_value = {
+            r1.location: ("FOUND", "Test.Virus"),
+            str(project.codebase_path / "non_indexed.txt"): (
+                "FOUND",
+                "Test.Virus",
+            ),
+        }
+
+        clamav.scan_for_virus(project)
+
+        self.assertEqual(
+            2,
+            len(project.projectmessages.all()),
+        )
