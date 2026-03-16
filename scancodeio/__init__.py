@@ -95,6 +95,14 @@ def command_line():
     """Command line entry point."""
     from django.core.management import execute_from_command_line
 
+    # Display ScanCode.io and ScanCode-toolkit versions in place of Django version.
+    if "--version" in sys.argv:
+        from scancode_config import __version__ as scancode_toolkit_version
+
+        print(f"ScanCode.io version: {__version__}")
+        print(f"ScanCode-toolkit version: v{scancode_toolkit_version}")
+        sys.exit(0)
+
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "scancodeio.settings")
     execute_from_command_line(sys.argv)
 
