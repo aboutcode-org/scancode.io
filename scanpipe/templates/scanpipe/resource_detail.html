@@ -1,4 +1,4 @@
-{% extends request.htmx|yesno:"scanpipe/base_htmx.html,scanpipe/base.html" %}
+{% extends "scanpipe/base.html" %}
 {% load static %}
 
 {% block title %}ScanCode.io: {{ project.name }} - {{ object.name }}{% endblock %}
@@ -15,13 +15,7 @@
     <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
     {% include 'scanpipe/includes/breadcrumb_detail_view.html' with template_title="scanpipe/includes/resource_path_links.html" url_name="project_resources" %}
     <div class="mx-5">
-      {% block partial-content %}
-        {% if request.htmx %}
-          {% include 'scanpipe/tree/resource_path_breadcrumb.html' with path=object.path %}
-        {% endif %}
-        {% include 'scanpipe/tabset/tabset.html' %}
-        {{ detected_values|json_script:"detected_values" }}
-      {% endblock %}
+      {% include 'scanpipe/partials/resource_detail_content.html' %}
     </div>
   </div>
 {% endblock %}
