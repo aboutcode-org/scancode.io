@@ -4,7 +4,8 @@
 {% block title %}ScanCode.io: {{ project.name }} - Dependency tree{% endblock %}
 
 {% block extrahead %}
-  <link rel="stylesheet" href="{% static 'iamkate-tree-views/tree.css' %}" crossorigin="anonymous">
+  <link rel="stylesheet" href="{% static 'iamkate-tree-views/tree.css' %}">
+  <script src="{% static 'js/dependency_tree.js' %}" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -67,78 +68,4 @@
       </ul>
     </section>
   </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-  document.addEventListener("DOMContentLoaded", function() {
-    const treeContainer = document.getElementById('tree');
-    const collapseAllButton = document.getElementById('collapseAll');
-    const expendAllButton = document.getElementById('expendAll');
-
-    function collapseAllDetails() {
-      document.querySelectorAll('details').forEach(details => {
-        details.removeAttribute('open');
-      });
-      showAllListItems();
-    }
-
-    function expendAllDetails() {
-      document.querySelectorAll('details').forEach(details => {
-        details.setAttribute('open', ''); // Adding 'open' attribute to open the details
-      });
-      showAllListItems();
-    }
-
-    collapseAllButton.addEventListener('click', collapseAllDetails);
-    expendAllButton.addEventListener('click', expendAllDetails);
-
-    // Following function are use to limit the display to specific elements.
-
-    function expandAncestors(detailsElement) {
-      let parent = detailsElement.parentElement.closest('details');
-      while (parent) {
-        parent.setAttribute('open', '');
-        parent.parentElement.style.display = '';
-        parent = parent.parentElement.closest('details');
-      }
-    }
-
-    function showAllListItems() {
-      const listItems = treeContainer.querySelectorAll('li');
-      listItems.forEach(item => {
-          item.style.display = '';
-      });
-    }
-
-    function hideAllListItems() {
-      const listItems = treeContainer.querySelectorAll('li');
-      listItems.forEach(item => {
-          item.style.display = 'none';
-      });
-    }
-
-    function handleItems(attribute, value) {
-      collapseAllDetails();
-      hideAllListItems();
-
-      const items = document.querySelectorAll(`li[${attribute}="${value}"]`);
-      items.forEach(item => {
-          item.style.display = 'block';
-          expandAncestors(item);
-      });
-    }
-
-    function handleVulnerableItems() {
-      handleItems('data-is-vulnerable', 'true');
-    }
-
-    function handleComplianceAlertItems() {
-      handleItems('data-compliance-alert', 'true');
-    }
-
-    showVulnerableOnlyButton.addEventListener('click', handleVulnerableItems);
-    showComplianceAlertOnlyButton.addEventListener('click', handleComplianceAlertItems);
-  });
-</script>
 {% endblock %}
