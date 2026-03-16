@@ -4,8 +4,9 @@
 {% block title %}ScanCode.io: {{ project.name }} - {{ object.name }}{% endblock %}
 
 {% block extrahead %}
-  <script src="{% static 'ace-1.43.3.min.js' %}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="{% static 'ace-1.43.3-ext-searchbox.min.js' %}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="{% static 'ace-1.43.3.min.js' %}" defer></script>
+  <script src="{% static 'ace-1.43.3-ext-searchbox.min.js' %}" defer></script>
+  <script src="{% static 'js/resource_viewer.js' %}" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -22,131 +23,5 @@
       {% endblock %}
     </div>
   </div>
-{% endblock %}
-
-{% block scripts %}
   {{ detected_values|json_script:"detected_values" }}
-  <script>
-  {
-    document.addEventListener('htmx:beforeSwap', function(evt) {
-      // Clean up editor before HTMX swaps content
-      if (window.editor) {
-        window.editor.destroy();
-        window.editor.container.remove();
-        window.editor = null;
-      }
-    });
-
-    let editor = ace.edit("editor", {
-      mode: "ace/mode/text",
-      autoScrollEditorIntoView: true,
-      wrap: true,
-      readOnly: true,
-      showPrintMargin: false,
-      highlightActiveLine: false,
-      highlightGutterLine: false,
-      fontSize: 15,
-      foldStyle: "manual",
-      fontFamily: "SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace",
-    });
-
-    // Store globally for cleanup
-    window.editor = editor;
-
-    function removeAllMarkers() {
-      let session = editor.getSession();
-      let markers = session.getMarkers();
-      for (const [key, value] of Object.entries(markers)) {
-        session.removeMarker(value.id);
-      }
-    }
-
-    // Range(startRow, startColumn, endRow, endColumn)
-    const Range = require("ace/range").Range
-
-    function setDetectedValues(detected_data) {
-      let annotations = [];
-      removeAllMarkers();
-
-      detected_data.forEach(function($el) {
-        // Indexes a 0-based in ace.js
-        let start_row = $el.start_line - 1;
-        let start_column = 0;
-        let end_row = $el.end_line - 1;
-        let end_column = 10000;
-
-        let range = new Range(start_row, start_column, end_row, end_column);
-        editor.session.addMarker(range, 'ace-marker', 'line'); // "fullLine" also available
-
-        annotations.push({
-          row: start_row,
-          column: 0,
-          text: $el.text,
-          type: "info",
-          className: $el.className,
-        });
-
-      });
-      editor.getSession().setAnnotations(annotations);
-    }
-
-    let scrollPositionIndex = 0;
-    const selectionButtons = getAll('#detected-data-buttons button');
-    const previousBtn = document.querySelector('.previous-btn');
-    const nextBtn = document.querySelector('.next-btn');
-
-    let detected_values = JSON.parse(document.querySelector("#detected_values").textContent);
-    let detected_data;
-
-    if (selectionButtons.length > 0) {
-      selectionButtons.forEach(function($el) {
-        $el.addEventListener('click', function() {
-          removeAllMarkers();
-          let active_button = document.querySelector("#detected-data-buttons button.is-info");
-          if (active_button) active_button.classList.remove("is-info");
-
-          $el.classList.add("is-info");
-          let type = $el.getAttribute("data-type");
-          detected_data = detected_values[type];
-
-          if (detected_data.length) {
-            scrollPositionIndex = 0;
-            setDetectedValues(detected_data);
-            editor.renderer.scrollToLine(detected_data[0].start_line - 1);
-            previousBtn.disabled = true;
-            nextBtn.disabled = detected_data.length - 1 === 0;
-          } else {
-            scrollPositionIndex = 0;
-            editor.renderer.scrollToLine(0);
-            previousBtn.disabled = true;
-            nextBtn.disabled = true;
-          }
-        });
-      });
-    }
-
-    nextBtn.addEventListener('click', function() {
-      if (scrollPositionIndex >= detected_data.length - 1) return false;
-      scrollPositionIndex++;
-      editor.renderer.scrollToLine(detected_data[scrollPositionIndex].start_line - 1);
-      nextBtn.disabled = scrollPositionIndex === detected_data.length - 1;
-      previousBtn.disabled = false;
-    });
-
-    previousBtn.addEventListener('click', function() {
-      if (scrollPositionIndex <= 0) return false;
-      scrollPositionIndex--;
-      editor.renderer.scrollToLine(detected_data[scrollPositionIndex].start_line - 1);
-      previousBtn.disabled = scrollPositionIndex === 0;
-      nextBtn.disabled = false;
-    });
-
-    const fullscreenBtn = document.querySelector('#toggle-fullscreen');
-    fullscreenBtn.addEventListener('click', function() {
-      let body = document.querySelector('body');
-      let is_full_screen = body.classList.toggle("full-screen");
-      editor.resize()
-    });
-  }
-  </script>
 {% endblock %}
