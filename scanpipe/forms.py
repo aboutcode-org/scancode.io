@@ -553,7 +553,7 @@ class ProjectSettingsForm(forms.ModelForm):
         label="Max file size to scan",
         required=False,
         help_text=(
-            "Maximum file size in bytes which should be skipped from scanning."
+            "Maximum file size in bytes which should be skipped from scanning. "
             "File size is in bytes. Example: 5 MB is 5242880 bytes."
         ),
         widget=forms.NumberInput(attrs={"class": "input"}),
