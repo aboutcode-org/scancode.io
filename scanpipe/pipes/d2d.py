@@ -461,7 +461,7 @@ def get_project_resources_qs(project, resources):
             # intend to. For example, if we have matched on the directory with
             # the path `foo/bar/1`, using the __startswith filter without
             # including a trailing slash on the path would have us get all
-            # diretories under `foo/bar/` that start with 1, such as
+            # directories under `foo/bar/` that start with 1, such as
             # `foo/bar/10001`, `foo/bar/123`, etc., when we just want `foo/bar/1`
             # and its descendants.
             path = f"{resource.path}/"
@@ -595,7 +595,7 @@ def match_sha1s_to_purldb(
 ):
     """
     Process `resources_by_sha1` with `matcher_func` and return a 3-tuple
-    contaning an empty defaultdict(list), the number of matches and the number
+    containing an empty defaultdict(list), the number of matches and the number
     of sha1s sent to purldb.
     """
     matched_count = matcher_func(
