@@ -95,7 +95,7 @@
   {{ dependency_is_optional|json_script:"dependency_is_optional" }}
   {{ dependency_is_pinned|json_script:"dependency_is_pinned" }}
   <script>
-  document.addEventListener("DOMContentLoaded", function() {
+  document.addEventListener('htmx:afterSettle', function() {
     let makeChart = function(data_source_id, element_id, title) {
       let data_source = document.getElementById(data_source_id);
       if (!data_source) return false;
