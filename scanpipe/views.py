@@ -2101,11 +2101,6 @@ class CodebaseResourceDetailsView(
     def get_queryset(self):
         return super().get_queryset().select_related("project")
 
-    def get_template_names(self):
-        if self.request.htmx:
-            return ["scanpipe/partials/resource_detail_content.html"]
-        return ["scanpipe/resource_detail.html"]
-
     @staticmethod
     def get_annotations(entries, value_key):
         annotations = []
