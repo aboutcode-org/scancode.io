@@ -5,7 +5,7 @@
       <p class="modal-card-title">Reset this project, are you sure?</p>
       <button class="delete" aria-label="close"></button>
     </header>
-    <form action="{% url 'project_reset' project.slug %}" method="post">{% csrf_token %}
+    <form action="{% url 'project_reset' project.slug %}" method="post" data-submit-overlay>{% csrf_token %}
       <section class="modal-card-body">
         <div class="notification is-danger has-text-weight-semibold">
           This action cannot be undone.

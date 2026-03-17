@@ -8,7 +8,9 @@
     <form
       hx-post="{% url 'project_clone' project.slug %}"
       hx-target="#clone-modal-form-body"
-      hx-on::after-settle="removeOverlay()">
+      hx-on::after-settle="removeOverlay()"
+      data-submit-overlay
+    >
       <section id="clone-modal-form-body" class="modal-card-body">
         {% include 'scanpipe/forms/project_clone_form.html' with form=project_clone_form %}
       </section>

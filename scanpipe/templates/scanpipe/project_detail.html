@@ -4,7 +4,8 @@
 {% block title %}ScanCode.io: {{ project.name }}{% endblock %}
 
 {% block extrahead %}
-  <link rel="stylesheet" href="{% static 'billboard-3.0.1-datalab.min.css' %}" crossorigin="anonymous">
+  <link rel="stylesheet" href="{% static 'billboard-3.0.1-datalab.min.css' %}">
+  <script src="{% static 'billboard-3.0.1.pkgd.min.js' %}" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -200,7 +201,9 @@
       </section>
     {% endif %}
   </div>
+{% endblock %}
 
+{% block modals %}
   {% include 'scanpipe/modals/run_modal.html' %}
   {% include 'scanpipe/modals/clone_modal.html' %}
   {% include "scanpipe/modals/add_labels_modal.html" %}
@@ -208,28 +211,14 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="{% static 'billboard-3.0.1.pkgd.min.js' %}" crossorigin="anonymous"></script>
   <script>
+  document.addEventListener("DOMContentLoaded", function() {
     hljs.highlightAll();
 
     const execute_pipeline_links = document.querySelector(".execute-pipeline-link");
     if (execute_pipeline_links) {
       execute_pipeline_links.addEventListener('click', displayOverlay);
     }
-
-    onSubmitOverlay = function (selector) {
-      let element = document.querySelector(selector);
-      if (element) {
-        element.addEventListener("submit", function() {
-          displayOverlay();
-        });
-      }
-    };
-
-    onSubmitOverlay("#add-pipeline-modal form");
-    onSubmitOverlay("#add-inputs-modal form");
-    onSubmitOverlay("#add-labels-modal form");
-    onSubmitOverlay("#edit-input-tag-modal form");
-    onSubmitOverlay("#clone-modal form");
+  });
   </script>
 {% endblock %}

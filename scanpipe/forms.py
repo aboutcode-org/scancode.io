@@ -81,7 +81,7 @@ class InputsBaseForm(forms.Form):
     )
 
     class Media:
-        js = ("add-inputs.js",)
+        js = ("js/add_inputs.js",)
 
     @staticmethod
     def validate_scheme(input_urls):

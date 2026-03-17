@@ -26,12 +26,3 @@
     </form>
   </div>
 </div>
-<script>
-  document.addEventListener("openModal", function(event) {
-    const modal_id = event.detail.modal;
-    if (modal_id !== "modal-webhook-delete") return;
-
-    const $form = document.getElementById("form-webhook-delete");
-    $form.action = event.detail.$button.dataset.url;
-  });
-</script>

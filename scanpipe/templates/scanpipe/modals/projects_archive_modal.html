@@ -6,7 +6,7 @@
       <p class="modal-card-title">Archive selected projects, are you sure?</p>
       <button class="delete" aria-label="close"></button>
     </header>
-    <form action="{% url 'project_action' %}" method="post" id="archive-projects-form">{% csrf_token %}
+    <form action="{% url 'project_action' %}" method="post" id="archive-projects-form" data-submit-overlay>{% csrf_token %}
       <section class="modal-card-body">
         <div class="notification is-warning has-text-weight-semibold">
           The selected projects will be marked as archived and will become read-only.

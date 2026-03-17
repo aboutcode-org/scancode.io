@@ -7,19 +7,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}ScanCode.io{% endblock %}</title>
     <link rel="icon" href="{% static 'favicon.ico' %}">
-    <link rel="stylesheet" href="{% static 'bulma-1.0.4.min.css' %}" crossorigin="anonymous">
-    <link rel="stylesheet" href="{% static 'highlight-10.6.0.css' %}" crossorigin="anonymous">
-    <link rel="stylesheet" href="{% static 'main.css' %}" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'bulma-1.0.4.min.css' %}">
+    <link rel="stylesheet" href="{% static 'highlight-10.6.0.css' %}">
+    <link rel="stylesheet" href="{% static 'main.css' %}">
+    {% htmx_script %}
+    <script src="{% static 'fontawesome-6.7.2/all.min.js' %}" defer></script>
+    <script src="{% static 'highlight-10.6.0.min.js' %}" defer></script>
+    <script src="{% static 'bulma-toast-2.4.1.min.js' %}" defer></script>
+    <script src="{% static 'js/main.js' %}" defer></script>
     {% block extrahead %}{% endblock %}
   </head>
   <body class="pb-5" hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
     {% block content %}{% endblock %}
-    {% include 'scanpipe/modals/search_syntax_modal.html' %}
-    <script src="{% static 'main.js' %}" crossorigin="anonymous"></script>
-    <script src="{% static 'fontawesome-6.7.2/all.min.js' %}" crossorigin="anonymous" defer></script>
-    <script src="{% static 'highlight-10.6.0.min.js' %}" crossorigin="anonymous"></script>
-    <script src="{% static 'bulma-toast-2.4.1.min.js' %}" crossorigin="anonymous" defer></script>
-    {% htmx_script %}
+    {% block modals %}{% endblock %}
     {% block scripts %}{% endblock %}
   </body>
 </html>
