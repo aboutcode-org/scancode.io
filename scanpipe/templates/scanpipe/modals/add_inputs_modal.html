@@ -1,7 +1,7 @@
 <div id="add-inputs-modal" class="modal">
   <div class="modal-background"></div>
   {# Keep the <form> outside the .modal-card head/body/footer sections #}
-  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+  <form method="post" enctype="multipart/form-data" data-submit-overlay>{% csrf_token %}
     <div class="modal-card">
       <header class="modal-card-head">
         <p class="modal-card-title">Add inputs</p>

@@ -21,7 +21,7 @@
         related database entries and all data on disk except for the input/ directories.
       </p>
     </section>
-    <form action="{% url 'project_action' %}" method="post" id="delete-projects-form">{% csrf_token %}
+    <form action="{% url 'project_action' %}" method="post" id="delete-projects-form" data-submit-overlay>{% csrf_token %}
       <input type="hidden" name="{{ action_form.url_query.html_name }}" value="{{ request.GET.urlencode }}">
       <input type="hidden" name="action" value="delete">
       <footer class="modal-card-foot is-justify-content-flex-end">

@@ -1,7 +1,7 @@
 <div id="add-pipeline-modal" class="modal">
   <div class="modal-background"></div>
   {# Keep the <form> outside the .modal-card head/body/footer sections #}
-  <form method="post">{% csrf_token %}
+  <form method="post" data-submit-overlay>{% csrf_token %}
     <div class="modal-card">
       <header class="modal-card-head">
         <p class="modal-card-title">Add pipeline</p>
@@ -33,7 +33,7 @@
                 {% if pipeline_info.available_groups %}
                   <div class="ml-2 mt-1">
                     {% for group in pipeline_info.available_groups %}
-                      <label class="checkbox ml-1" for="id_{{ pipeline_name }}_{{ group }}">
+                      <label class="checkbox ml-1 mb-1" for="id_{{ pipeline_name }}_{{ group }}">
                         <span class="tag is-warning has-text-weight-bold">
                           <input type="checkbox" name="selected_groups" value="{{ group }}" id="id_{{ pipeline_name }}_{{ group }}" class="mr-1">
                           {{ group }}

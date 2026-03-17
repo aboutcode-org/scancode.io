@@ -21,7 +21,9 @@
 
     </section>
   </div>
+{% endblock %}
 
+{% block modals %}
   {% include "scanpipe/modals/project_webhook_add_modal.html" %}
   {% include "scanpipe/modals/project_webhook_delete_modal.html" %}
   {% if not project.is_archived %}
@@ -42,19 +44,5 @@
         window.location.reload();
       }
     });
-
-    onSubmitOverlay = function (selector) {
-      let element = document.querySelector(selector);
-      if (element) {
-        element.addEventListener("submit", function() {
-          displayOverlay();
-        });
-      }
-    };
-
-    onSubmitOverlay("#modal-archive form");
-    onSubmitOverlay("#modal-reset form");
-    onSubmitOverlay("#modal-delete form");
-    onSubmitOverlay("#modal-webhook-add form");
   </script>
 {% endblock %}
