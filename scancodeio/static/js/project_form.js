@@ -61,18 +61,31 @@
   const idSelectedGroups = document.getElementById("id_selected_groups");
 
   function clearSelectedGroups() {
-    idSelectedGroups.innerHTML = "";
+    idSelectedGroups.replaceChildren();
   }
 
   function buildCheckbox(group) {
     const id = `id_${group}`;
-    return `
-      <label class="checkbox ml-1 mb-1" for="${id}">
-        <span class="tag is-warning has-text-weight-bold">
-          <input type="checkbox" name="selected_groups" value="${group}" id="${id}" class="mr-1">
-          ${group}
-        </span>
-      </label>`;
+    const label = document.createElement('label');
+    label.className = 'checkbox ml-1 mb-1';
+    label.htmlFor = id;
+
+    const span = document.createElement('span');
+    span.className = 'tag is-warning has-text-weight-bold';
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.name = 'selected_groups';
+    input.value = group;
+    input.id = id;
+    input.className = 'mr-1';
+
+    span.appendChild(input);
+    span.appendChild(document.createTextNode(' ' + group));
+
+    label.appendChild(span);
+
+    return label;
   }
 
   function handlePipelineChange() {
@@ -84,12 +97,15 @@
     const availableGroups = availableGroupsMapping[selectedPipelineName];
     if (availableGroups && availableGroups.length > 0) {
       const strongElement = document.createElement('strong');
-      strongElement.innerHTML = '<i class="fa-solid fa-circle-arrow-right"></i> Include:';
+      const icon = document.createElement('i');
+      icon.className = 'fa-solid fa-circle-arrow-right';
+      strongElement.appendChild(icon);
+      strongElement.appendChild(document.createTextNode(' Include:'));
       idSelectedGroups.appendChild(strongElement);
 
       availableGroups.forEach((group) => {
-        const checkboxHtml = buildCheckbox(group);
-        idSelectedGroups.insertAdjacentHTML('beforeend', checkboxHtml);
+        const checkboxElement = buildCheckbox(group);
+        idSelectedGroups.appendChild(checkboxElement);
       });
     }
   }
