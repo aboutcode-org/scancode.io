@@ -146,7 +146,7 @@ def get_vulnerabilities_by_purl(
     timeout=None,
     api_url=VULNERABLECODE_API_URL,
 ):
-    """Get the list of vulnerabilities providing a package `purl`."""
+    """Get the list of advisories providing a package `purl`."""
     return _get_vulnerabilities(
         url=f"{api_url}packages/",
         field_name="purl",
@@ -160,7 +160,7 @@ def get_vulnerabilities_by_cpe(
     timeout=None,
     api_url=VULNERABLECODE_API_URL,
 ):
-    """Get the list of vulnerabilities providing a package or component `cpe`."""
+    """Get the list of advisories providing a package or component `cpe`."""
     return _get_vulnerabilities(
         url=f"{api_url}cpes/",
         field_name="cpe",
@@ -202,50 +202,50 @@ def bulk_search_by_cpes(
     return request_post(url, data, timeout)
 
 
-def filter_vulnerabilities(vulnerabilities, ignore_set):
-    """Filter out vulnerabilities based on a list of ignored IDs and aliases."""
+def filter_vulnerabilities(advisories, ignore_set):
+    """Filter out advisories based on a list of ignored IDs and aliases."""
     return [
-        vulnerability
-        for vulnerability in vulnerabilities
-        if vulnerability.get("vulnerability_id") not in ignore_set
-        and not any(alias in ignore_set for alias in vulnerability.get("aliases", []))
+        advisory
+        for advisory in advisories
+        if advisory.get("advisory_id") not in ignore_set
+        and not any(alias in ignore_set for alias in advisory.get("aliases", []))
     ]
 
 
-def fetch_vulnerabilities(
+def fetch_advisories(
     packages, chunk_size=1000, logger=logger.info, ignore_set=None
 ):
     """
-    Fetch and store vulnerabilities for each provided ``packages``.
+    Fetch and store advisory for each provided ``packages``.
     The PURLs are used for the lookups in batch of ``chunk_size`` per request.
     """
-    vulnerabilities_by_purl = {}
+    advisories_by_purl = {}
 
     for purls_batch in chunked(get_purls(packages), chunk_size):
         response_data = bulk_search_by_purl(purls_batch)
-        for vulnerability_data in response_data:
-            vulnerabilities_by_purl[vulnerability_data["purl"]] = vulnerability_data
+        for advisory_data in response_data:
+            advisories_by_purl[advisory_data["purl"]] = advisory_data
 
     unsaved_objects = []
     for package in packages:
-        if package_data := vulnerabilities_by_purl.get(package.package_url):
-            affected_by = package_data.get("affected_by_vulnerabilities", [])
+        if package_data := advisories_by_purl.get(package.package_url):
+            affected_by = package_data.get("affected_by_advisories", [])
 
             if ignore_set and affected_by:
-                affected_by = filter_vulnerabilities(affected_by, ignore_set)
+                affected_by = filter_advisories(affected_by, ignore_set)
 
             if affected_by:
-                package.affected_by_vulnerabilities = affected_by
+                package.affected_by_advisories = affected_by
                 unsaved_objects.append(package)
 
     if unsaved_objects:
         model_class = unsaved_objects[0].__class__
         model_class.objects.bulk_update(
             objs=unsaved_objects,
-            fields=["affected_by_vulnerabilities"],
+            fields=["affected_by_advisories"],
             batch_size=1000,
         )
         logger(
             f"{len(unsaved_objects)} {model_class._meta.verbose_name_plural} updated "
-            f"with vulnerability data."
+            f"with advisory data."
         )
