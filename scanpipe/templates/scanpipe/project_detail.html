@@ -4,7 +4,8 @@
 {% block title %}ScanCode.io: {{ project.name }}{% endblock %}
 
 {% block extrahead %}
-  <link rel="stylesheet" href="{% static 'billboard-3.0.1-datalab.min.css' %}" crossorigin="anonymous">
+  <link rel="stylesheet" href="{% static 'billboard-3.0.1-datalab.min.css' %}">
+  <script src="{% static 'billboard-3.0.1.pkgd.min.js' %}" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -208,7 +209,6 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="{% static 'billboard-3.0.1.pkgd.min.js' %}" crossorigin="anonymous"></script>
   <script>
   document.addEventListener("DOMContentLoaded", function() {
     hljs.highlightAll();
