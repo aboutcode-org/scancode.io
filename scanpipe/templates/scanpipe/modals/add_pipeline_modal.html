@@ -1,7 +1,7 @@
 <div id="add-pipeline-modal" class="modal">
   <div class="modal-background"></div>
   {# Keep the <form> outside the .modal-card head/body/footer sections #}
-  <form method="post">{% csrf_token %}
+  <form method="post" data-submit-overlay>{% csrf_token %}
     <div class="modal-card">
       <header class="modal-card-head">
         <p class="modal-card-title">Add pipeline</p>

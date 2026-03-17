@@ -315,6 +315,14 @@ function removeOverlay() {
   if (background) background.remove();
 }
 
+// Display a loading overlay on form submission.
+// Usage: <form data-submit-overlay>
+document.addEventListener("submit", function(event) {
+  if (event.target.matches("[data-submit-overlay]")) {
+    displayOverlay();
+  }
+});
+
 // Display and update the `$progress` object on `$form` submitted using XHR
 function displayFormUploadProgress($form, $progress, $form_errors, update_title=false) {
 
