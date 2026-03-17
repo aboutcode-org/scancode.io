@@ -80,6 +80,26 @@ function setupCloseModalButtons() {
   }
 }
 
+// Populate dynamic modals on open.
+// - Sets form action from the button's data-url
+// - Fills [data-label] elements from matching button data attributes
+// Usage: <button class="modal-button" data-target="modal-id" data-url="/path/" data-label="Label">
+document.addEventListener("openModal", function(event) {
+  const modal = document.getElementById(event.detail.modal);
+  if (!modal) return;
+
+  const form = modal.querySelector("form");
+  if (form && event.detail.$button.dataset.url) {
+    form.action = event.detail.$button.dataset.url;
+  }
+
+  const labels = modal.querySelectorAll("[data-label]");
+  labels.forEach(function(label) {
+    const value = event.detail.$button.dataset[label.dataset.label];
+    if (value) label.textContent = value;
+  });
+});
+
 // Tabs
 
 function activateTab(tabLink) {
