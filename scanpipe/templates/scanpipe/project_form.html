@@ -1,4 +1,9 @@
 {% extends "scanpipe/base.html" %}
+{% load static %}
+
+{% block extrahead %}
+  <script src="{% static 'js/project_form.js' %}" defer></script>
+{% endblock %}
 
 {% block content %}
   <div class="container is-max-widescreen">
@@ -97,144 +102,12 @@
             </div>
           {% endfor %}
         </div>
-        {% include "scanpipe/modals/pipeline_help_modal.html" %}
       </div>
     </section>
   </div>
+ {{ pipelines_available_groups|json_script:"pipelines_available_groups" }}
 {% endblock %}
 
-{% block scripts %}
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      let form = document.querySelector('form');
-
-      form.addEventListener('submit', function(event) {
-        let background = displayOverlay();
-
-        // The upload progress is only added when input files are provided.
-        if (!form["input_files"].files.length) return false;
-
-        event.preventDefault();
-
-        let progress_bar = document.createElement('progress');
-        progress_bar.className = 'progress is-success is-medium file-upload';
-        progress_bar.setAttribute('value', '0');
-        progress_bar.setAttribute('max', '100');
-
-        let progress_container = document.createElement('div');
-        progress_container.className = 'container is-max-desktop mt-6 px-6';
-        progress_container.appendChild(progress_bar)
-        background.appendChild(progress_container);
-
-        let form_errors = document.getElementById('form-errors');
-        displayFormUploadProgress(form, progress_bar, form_errors, true);
-      });
-    });
-  </script>
-
-  {{ pipelines_available_groups|json_script:"pipelines_available_groups" }}
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      const availableGroupsDataSource = document.getElementById("pipelines_available_groups");
-      const availableGroupsMapping = JSON.parse(availableGroupsDataSource.textContent);
-
-      const pipelineSelect = document.getElementById("id_pipeline");
-      const idSelectedGroups = document.getElementById("id_selected_groups");
-
-      function clearSelectedGroups() {
-        idSelectedGroups.innerHTML = "";
-      }
-
-      function buildCheckbox(group) {
-        const id = `id_${group}`;
-        return `
-          <label class="checkbox ml-2" for="${id}">
-            <span class="tag is-warning has-text-weight-bold">
-              <input type="checkbox" name="selected_groups" value="${group}" id="${id}" class="mr-1">
-              ${group}
-            </span>
-          </label>`;
-      }
-
-      function handlePipelineChange() {
-        clearSelectedGroups();
-
-        const selectedPipelineName = pipelineSelect.value;
-        if (!selectedPipelineName) return;
-
-        const availableGroups = availableGroupsMapping[selectedPipelineName];
-        if (availableGroups && availableGroups.length > 0) {
-          const strongElement = document.createElement('strong');
-          strongElement.innerHTML = '<i class="fa-solid fa-circle-arrow-right"></i> Include:';
-          idSelectedGroups.appendChild(strongElement);
-
-          availableGroups.forEach((group) => {
-            const checkboxHtml = buildCheckbox(group);
-            idSelectedGroups.insertAdjacentHTML('beforeend', checkboxHtml);
-          });
-        }
-      }
-
-      handlePipelineChange();
-      pipelineSelect.addEventListener("change", handlePipelineChange);
-    });
-  </script>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      function detectPipelineFromValue(value) {
-        value = value.trim().toLowerCase();
-
-        if (!value) return "";
-
-        // Handle Docker reference
-        if (value.startsWith("docker:")) return "analyze_docker_image";
-
-        // Handle Package URL
-        if (value.startsWith("pkg:")) return "scan_single_package";
-
-        // Handle SBOM file formats
-        if (
-          value.endsWith(".spdx") ||
-          value.endsWith(".spdx.json") ||
-          value.endsWith(".spdx.yml") ||
-          value.endsWith("bom.json") ||
-          value.endsWith(".cdx.json") ||
-          value.endsWith(".cyclonedx.json") ||
-          value.endsWith("bom.xml") ||
-          value.endsWith(".cdx.xml") ||
-          value.endsWith(".cyclonedx.xml")
-        ) return "load_sbom";
-
-        // No match
-        return "";
-      }
-
-      const textarea = document.getElementById("id_input_urls");
-      const pipelineSelect = document.getElementById("id_pipeline");
-      const fileInput = document.getElementById("id_input_files");
-
-      // Handle textarea input
-      textarea.addEventListener("input", () => {
-        const value = textarea.value.trim();
-        const pipeline = detectPipelineFromValue(value);
-        pipelineSelect.value = pipeline;
-      });
-
-      // Handle file uploads
-      fileInput.addEventListener("change", () => {
-        const files = Array.from(fileInput.files);
-
-        // Detect based on first file, multiple input files not supported.
-        if (files.length === 1) {
-          const firstFile = files[0].name.toLowerCase();
-          const pipeline = detectPipelineFromValue(firstFile);
-          pipelineSelect.value = pipeline;
-        } else {
-          pipelineSelect.value = "";
-        }
-      });
-
-    });
-  </script>
+{% block modals %}
+  {% include "scanpipe/modals/pipeline_help_modal.html" %}
 {% endblock %}

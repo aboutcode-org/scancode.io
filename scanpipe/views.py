@@ -260,6 +260,7 @@ class TabSetMixin:
             "icon_class": "",
             "display_condition": <func>,
             "disable_condition": <func>,
+            "tab_context": {},
         }
     }
     """
@@ -291,6 +292,8 @@ class TabSetMixin:
         elif fields_have_no_values(fields_data):
             is_disabled = True
 
+        tab_context = tab_definition.get("tab_context") or {}
+
         tab_data = {
             "verbose_name": tab_definition.get("verbose_name"),
             "icon_class": tab_definition.get("icon_class"),
@@ -298,6 +301,7 @@ class TabSetMixin:
             "fields": fields_data,
             "disabled": is_disabled,
             "label_count": self.get_label_count(fields_data),
+            **tab_context,
         }
 
         return tab_data
@@ -1972,6 +1976,7 @@ class VulnerabilityListView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["object_list"] = self.project.vulnerabilities
+        context["VULNERABLECODE_URL"] = settings.VULNERABLECODE_URL
         return context
 
 
@@ -2336,6 +2341,7 @@ class DiscoveredPackageDetailsView(
             ],
             "icon_class": "fa-solid fa-bug",
             "template": "scanpipe/tabset/tab_vulnerabilities.html",
+            "tab_context": {"VULNERABLECODE_URL": settings.VULNERABLECODE_URL},
         },
         "extra_data": {
             "fields": ["extra_data"],

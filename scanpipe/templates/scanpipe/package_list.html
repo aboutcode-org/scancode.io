@@ -77,20 +77,3 @@
     {% endif %}
   </div>
 {% endblock %}
-
-{% block scripts %}
-  <script>
-    let $showClippedButton = getAll("button.show-clipped");
-
-    $showClippedButton.forEach(function ($el) {
-      $el.addEventListener("click", function () {
-        $el.parentNode.classList.toggle("is-clipped-list");
-        let text = $el.textContent;
-        if (text.startsWith("Show"))
-          $el.textContent = text.replace("Show", "Hide");
-        else
-          $el.textContent = text.replace("Hide", "Show");
-      });
-    });
-  </script>
-{% endblock %}

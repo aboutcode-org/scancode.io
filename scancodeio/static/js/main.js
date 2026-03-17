@@ -1,3 +1,25 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// http://nexb.com and https://github.com/aboutcode-org/scancode.io
+// The ScanCode.io software is licensed under the Apache License version 2.0.
+// Data generated with ScanCode.io is provided as-is without warranties.
+// ScanCode is a trademark of nexB Inc.
+//
+// You may not use this software except in compliance with the License.
+// You may obtain a copy of the License at: http://apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software distributed
+// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+// specific language governing permissions and limitations under the License.
+//
+// Data Generated with ScanCode.io is provided on an "AS IS" BASIS, WITHOUT WARRANTIES
+// OR CONDITIONS OF ANY KIND, either express or implied. No content created from
+// ScanCode.io should be considered or used as legal advice. Consult an Attorney
+// for any legal advice.
+//
+// ScanCode.io is a free software code scanning tool from nexB Inc. and others.
+// Visit https://github.com/aboutcode-org/scancode.io for support and download.
+
 //
 // Selected parts from https://bulma.io/lib/main.js?v=202104191409
 //
@@ -57,6 +79,26 @@ function setupCloseModalButtons() {
     });
   }
 }
+
+// Populate dynamic modals on open.
+// - Sets form action from the button's data-url
+// - Fills [data-label] elements from matching button data attributes
+// Usage: <button class="modal-button" data-target="modal-id" data-url="/path/" data-label="Label">
+document.addEventListener("openModal", function(event) {
+  const modal = document.getElementById(event.detail.modal);
+  if (!modal) return;
+
+  const form = modal.querySelector("form");
+  if (form && event.detail.$button.dataset.url) {
+    form.action = event.detail.$button.dataset.url;
+  }
+
+  const labels = modal.querySelectorAll("[data-label]");
+  labels.forEach(function(label) {
+    const value = event.detail.$button.dataset[label.dataset.label];
+    if (value) label.textContent = value;
+  });
+});
 
 // Tabs
 
@@ -272,6 +314,14 @@ function removeOverlay() {
   const background = document.getElementById("background-overlay");
   if (background) background.remove();
 }
+
+// Display a loading overlay on form submission.
+// Usage: <form data-submit-overlay>
+document.addEventListener("submit", function(event) {
+  if (event.target.matches("[data-submit-overlay]")) {
+    displayOverlay();
+  }
+});
 
 // Display and update the `$progress` object on `$form` submitted using XHR
 function displayFormUploadProgress($form, $progress, $form_errors, update_title=false) {
