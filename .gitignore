@@ -55,3 +55,4 @@ local
 
 # This is only created when packaging for external redistribution
 /thirdparty/
+.history/
