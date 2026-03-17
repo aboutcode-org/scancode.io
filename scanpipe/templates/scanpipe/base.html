@@ -20,6 +20,7 @@
   <body class="pb-5" hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
     {% block content %}{% endblock %}
     {% include 'scanpipe/modals/search_syntax_modal.html' %}
+    {% block modals %}{% endblock %}
     {% block scripts %}{% endblock %}
   </body>
 </html>

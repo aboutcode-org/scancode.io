@@ -21,7 +21,9 @@
 
     </section>
   </div>
+{% endblock %}
 
+{% block modals %}
   {% include "scanpipe/modals/project_webhook_add_modal.html" %}
   {% include "scanpipe/modals/project_webhook_delete_modal.html" %}
   {% if not project.is_archived %}

@@ -97,10 +97,13 @@
             </div>
           {% endfor %}
         </div>
-        {% include "scanpipe/modals/pipeline_help_modal.html" %}
       </div>
     </section>
   </div>
+{% endblock %}
+
+{% block modals %}
+  {% include "scanpipe/modals/pipeline_help_modal.html" %}
 {% endblock %}
 
 {% block scripts %}

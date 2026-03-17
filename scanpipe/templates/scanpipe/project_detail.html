@@ -201,7 +201,9 @@
       </section>
     {% endif %}
   </div>
+{% endblock %}
 
+{% block modals %}
   {% include 'scanpipe/modals/run_modal.html' %}
   {% include 'scanpipe/modals/clone_modal.html' %}
   {% include "scanpipe/modals/add_labels_modal.html" %}
