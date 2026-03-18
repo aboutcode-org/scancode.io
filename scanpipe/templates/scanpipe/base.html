@@ -18,6 +18,12 @@
     {% block extrahead %}{% endblock %}
   </head>
   <body class="pb-5" hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
+    {% block header %}
+      <div id="header" class="container is-max-widescreen">
+        {% include 'scanpipe/includes/navbar_header.html' %}
+        <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
+      </div>
+    {% endblock %}
     {% block content %}{% endblock %}
     {% block modals %}{% endblock %}
     {% block scripts %}{% endblock %}
