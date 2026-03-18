@@ -276,5 +276,4 @@ urlpatterns = [
         views.LicenseListView.as_view(),
         name="license_list",
     ),
-    path("monitor/", include("django_rq.urls")),
 ]
