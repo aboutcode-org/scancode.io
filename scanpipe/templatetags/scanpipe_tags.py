@@ -20,14 +20,22 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+from django import template
 
 from scancode_config import __version__ as scancode_toolkit_version
 
 from scancodeio import __version__ as scancodeio_version
 
+register = template.Library()
 
-def versions(request):
-    return {
-        "SCANCODEIO_VERSION": scancodeio_version.lstrip("v"),
-        "SCANCODE_TOOLKIT_VERSION": scancode_toolkit_version,
-    }
+
+@register.simple_tag
+def scancodeio_version_tag():
+    """Return the ScanCode.io version string."""
+    return scancodeio_version.lstrip("v")
+
+
+@register.simple_tag
+def scancode_toolkit_version_tag():
+    """Return the ScanCode toolkit version string."""
+    return scancode_toolkit_version
