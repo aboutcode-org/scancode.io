@@ -149,6 +149,7 @@ class ScanPipeFlagPipesTest(TestCase):
             "bar.dll.config",
             "baz.exe.config",
             "test.shasum",
+            "image.png",
         ]
         for path in paths:
             matched = any(

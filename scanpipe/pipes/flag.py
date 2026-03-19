@@ -88,6 +88,7 @@ NUGET_IGNORED_PATTERNS = [
     "*.dll.config",
     "*.exe.config",
     "*.shasum",
+    "*.png",
 ]
 
 
