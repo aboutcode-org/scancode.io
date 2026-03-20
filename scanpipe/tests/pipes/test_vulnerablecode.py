@@ -64,6 +64,23 @@ class ScanPipeVulnerableCodeTest(TestCase):
         django_5_0.refresh_from_db()
         self.assertEqual(1, len(django_5_0.affected_by_vulnerabilities))
 
+    @mock.patch("scanpipe.pipes.vulnerablecode.bulk_search_by_purl")
+    def test_fetch_vulnerabilities_handles_none_response(self, mock_search_by_purl):
+        """fetch_vulnerabilities must not crash when bulk_search_by_purl returns None.
+
+        This happens when VulnerableCode is unreachable or returns an error,
+        causing request_post() to return None implicitly.
+        """
+        package = make_package(self.project1, "pkg:pypi/requests@2.31.0")
+        mock_search_by_purl.return_value = None
+
+        buffer = io.StringIO()
+        fetch_vulnerabilities(packages=[package], logger=buffer.write)
+
+        package.refresh_from_db()
+        self.assertEqual([], package.affected_by_vulnerabilities)
+        self.assertIn("VulnerableCode did not return data", buffer.getvalue())
+
     def test_scanpipe_pipes_vulnerablecode_filter_vulnerabilities(self):
         data = self.data / "vulnerablecode/django-5.0_package_data.json"
         package_data = json.loads(data.read_text())
