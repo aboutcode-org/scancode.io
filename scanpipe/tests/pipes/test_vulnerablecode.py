@@ -66,7 +66,8 @@ class ScanPipeVulnerableCodeTest(TestCase):
 
     @mock.patch("scanpipe.pipes.vulnerablecode.bulk_search_by_purl")
     def test_fetch_vulnerabilities_handles_none_response(self, mock_search_by_purl):
-        """fetch_vulnerabilities must not crash when bulk_search_by_purl returns None.
+        """
+        fetch_vulnerabilities must not crash when bulk_search_by_purl returns None.
 
         This happens when VulnerableCode is unreachable or returns an error,
         causing request_post() to return None implicitly.
