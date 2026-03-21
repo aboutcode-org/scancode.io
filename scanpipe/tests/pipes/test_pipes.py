@@ -457,12 +457,12 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
     def test_normalize_extension_no_extension(self):
         name = "file"
         result = pipes.normalize_extension(name, None)
-        self.assertIsNone(result)
+        self.assertEqual("", result)
 
     def test_normalize_extension_rejects_long_invalid(self):
         name = "file.$VeryVeryVeryLongInvalidExtensionNameThatShouldNotBeAccepted"
         result = pipes.normalize_extension(name, None)
-        self.assertIsNone(result)
+        self.assertEqual("", result)
 
     def test_normalize_extension_ignores_input_extension(self):
         name = "file.py"

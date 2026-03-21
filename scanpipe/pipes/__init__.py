@@ -48,15 +48,18 @@ def normalize_extension(name, extension, max_length=100):
     if not name:
         return ""
 
-    suffix = Path(name).suffix
+    suffixes = Path(name).suffixes
 
-    if not suffix:
+    if not suffixes:
         return ""
+
+    suffix = "".join(suffixes)
 
     if not suffix.startswith("."):
         return ""
 
-    if len(suffix) > 20:
+    # Reject clearly invalid extensions (like Java class names)
+    if "$" in suffix:
         return ""
 
     return suffix
