@@ -43,21 +43,33 @@ from scanpipe.pipes import scancode
 
 logger = logging.getLogger("scanpipe.pipes")
 
+
 def normalize_extension(name, extension, max_length=100):
     """
     Return a safe file extension or None.
+
+    Ensures the extension is derived from the file name and avoids
+    storing invalid or oversized values.
     """
-    # If there is no name, we cannot infer an extension
     if not name:
         return None
 
-    # Recompute extension from the name (do not trust incoming value)
+    # Recompute extension from name (do not trust incoming value)
     suffix = Path(name).suffix
+
     if not suffix:
         return None
 
-    return suffix[:max_length]
+    # Reject suspicious or non-standard extensions
+    if not suffix.startswith("."):
+        return None
 
+    # Typical extensions are short (.py, .json, etc.)
+    # Reject overly long ones instead of truncating garbage
+    if len(suffix) > 20:
+        return None
+
+    return suffix
 
 
 def make_codebase_resource(project, location, save=True, **extra_fields):
@@ -109,14 +121,13 @@ def make_codebase_resource(project, location, save=True, **extra_fields):
 
     if extra_fields:
         resource_data.update(**extra_fields)
-    
+
     # Normalize extension to avoid oversized non-extension values
     resource_data["extension"] = normalize_extension(
         resource_data.get("name"),
         resource_data.get("extension"),
     )
 
- 
     codebase_resource = CodebaseResource(
         project=project,
         path=relative_path,
