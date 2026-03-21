@@ -365,6 +365,14 @@ def spdx_relationship_to_dependency_data(spdx_relationship):
     else:  # spdx_id depends on related_spdx_id
         for_package_uid = spdx_relationship.spdx_id
         resolve_to_package_uid = spdx_relationship.related_spdx_id
+    
+    # SPDX relationships can originate from the document itself
+    # (SPDXRef-DOCUMENT). In that case, the dependency is a
+    # project-level dependency and must not be treated as a
+    # package-to-package relationship.
+    if for_package_uid == "SPDXRef-DOCUMENT":
+        for_package_uid = None
+
 
     dependency_data = {
         "for_package_uid": for_package_uid,
