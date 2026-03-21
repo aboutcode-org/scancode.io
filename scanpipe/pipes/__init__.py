@@ -53,16 +53,18 @@ def normalize_extension(name, extension, max_length=100):
     if not suffixes:
         return ""
 
-    suffix = "".join(suffixes)
+    full_suffix = "".join(suffixes)
 
-    if not suffix.startswith("."):
+    # Reject invalid extensions
+    if "$" in full_suffix:
         return ""
 
-    # Reject clearly invalid extensions (like Java class names)
-    if "$" in suffix:
-        return ""
+    # If first suffix starts with a number then likely version noise
+    first = suffixes[0].lstrip(".")
+    if first and first[0].isdigit():
+        return suffixes[-1]
 
-    return suffix
+    return full_suffix
 
 
 def make_codebase_resource(project, location, save=True, **extra_fields):
