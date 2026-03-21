@@ -45,29 +45,19 @@ logger = logging.getLogger("scanpipe.pipes")
 
 
 def normalize_extension(name, extension, max_length=100):
-    """
-    Return a safe file extension or None.
-
-    Ensures the extension is derived from the file name and avoids
-    storing invalid or oversized values.
-    """
     if not name:
-        return None
+        return ""
 
-    # Recompute extension from name (do not trust incoming value)
     suffix = Path(name).suffix
 
     if not suffix:
-        return None
+        return ""
 
-    # Reject suspicious or non-standard extensions
     if not suffix.startswith("."):
-        return None
+        return ""
 
-    # Typical extensions are short (.py, .json, etc.)
-    # Reject overly long ones instead of truncating garbage
     if len(suffix) > 20:
-        return None
+        return ""
 
     return suffix
 
