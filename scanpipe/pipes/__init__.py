@@ -44,6 +44,29 @@ from scanpipe.pipes import scancode
 logger = logging.getLogger("scanpipe.pipes")
 
 
+def normalize_extension(name, extension, max_length=100):
+    if not name:
+        return ""
+
+    suffixes = Path(name).suffixes
+
+    if not suffixes:
+        return ""
+
+    full_suffix = "".join(suffixes)
+
+    # Reject invalid extensions
+    if "$" in full_suffix:
+        return ""
+
+    # If first suffix starts with a number then likely version noise
+    first = suffixes[0].lstrip(".")
+    if first and first[0].isdigit():
+        return suffixes[-1]
+
+    return full_suffix
+
+
 def make_codebase_resource(project, location, save=True, **extra_fields):
     """
     Create a CodebaseResource instance in the database for the given ``project``.
@@ -93,6 +116,12 @@ def make_codebase_resource(project, location, save=True, **extra_fields):
 
     if extra_fields:
         resource_data.update(**extra_fields)
+
+    # Normalize extension to avoid oversized non-extension values
+    resource_data["extension"] = normalize_extension(
+        resource_data.get("name"),
+        resource_data.get("extension"),
+    )
 
     codebase_resource = CodebaseResource(
         project=project,
