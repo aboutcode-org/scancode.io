@@ -139,7 +139,10 @@ class ProjectViewSet(
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     from rest_framework.response import Response
+
+
 from rest_framework import status
+
 
 @action(detail=True, methods=["get"])
 def sbom(self, request, *args, **kwargs):
@@ -147,13 +150,17 @@ def sbom(self, request, *args, **kwargs):
     purl = request.query_params.get("purl")
 
     if not purl:
-        return Response({"error": "purl is required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "purl is required"}, status=status.HTTP_400_BAD_REQUEST
+        )
 
-    return Response({
-        "project": project.name,
-        "purl": purl,
-        "sbom": "CycloneDX SBOM will be generated here"
-    })
+    return Response(
+        {
+            "project": project.name,
+            "purl": purl,
+            "sbom": "CycloneDX SBOM will be generated here",
+        }
+    )
     """
     A viewset that provides the ability to list, get, create, and destroy projects.
     Multiple actions are available to manage project instances.
