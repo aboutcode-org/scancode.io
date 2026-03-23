@@ -136,23 +136,22 @@ class ProjectViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
-    @action(detail=True, methods=["get"])
+    from rest_framework.response import Response
+from rest_framework import status
+
+@action(detail=True, methods=["get"])
 def sbom(self, request, *args, **kwargs):
-    """
-    Return SBOM for a given PURL.
-    """
     project = self.get_object()
     purl = request.query_params.get("purl")
 
     if not purl:
-        return ErrorResponse("purl is required")
+        return Response({"error": "purl is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # TODO: integrate actual SBOM generation logic
     return Response({
         "project": project.name,
         "purl": purl,
         "sbom": "CycloneDX SBOM will be generated here"
-    },status=200)
+    })
     """
     A viewset that provides the ability to list, get, create, and destroy projects.
     Multiple actions are available to manage project instances.
