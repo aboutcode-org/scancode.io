@@ -136,6 +136,8 @@ class ProjectViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
     from rest_framework.response import Response
 from rest_framework import status
 
