@@ -46,7 +46,6 @@ from scanpipe.api.serializers import PipelineSerializer
 from scanpipe.api.serializers import ProjectArchiveSerializer
 from scanpipe.api.serializers import ProjectMessageSerializer
 from scanpipe.api.serializers import ProjectResetSerializer
-from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import RunSerializer
 from scanpipe.api.serializers import WebhookSubscriptionSerializer
 from scanpipe.filters import DependencyFilterSet
@@ -129,8 +128,6 @@ class ProjectFilterSet(django_filters.rest_framework.FilterSet):
         return qs.filter(lookups)
 
 
-
-
 class ProjectViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
@@ -138,13 +135,10 @@ class ProjectViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
-   
     """
     A viewset that provides the ability to list, get, create, and destroy projects.
     Multiple actions are available to manage project instances.
     """
-
-    
 
     def get_queryset(self):
         return (
@@ -157,7 +151,7 @@ class ProjectViewSet(
             )
         )
 
-       @action(
+    @action(
         detail=True,
         methods=["get"],
         url_path="results",
@@ -185,6 +179,7 @@ class ProjectViewSet(
                 "sbom": "CycloneDX SBOM will be generated here",
             }
         )
+
     @action(detail=True, name="Results (download)")
     def results_download(self, request, *args, **kwargs):
         """Return the results in the provided `output_format` as an attachment."""
