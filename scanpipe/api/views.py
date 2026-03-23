@@ -129,6 +129,8 @@ class ProjectFilterSet(django_filters.rest_framework.FilterSet):
         return qs.filter(lookups)
 
 
+
+
 class ProjectViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
@@ -136,39 +138,13 @@ class ProjectViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
-    from rest_framework.response import Response
-
-
-from rest_framework import status
-
-
-@action(detail=True, methods=["get"])
-def sbom(self, request, *args, **kwargs):
-    project = self.get_object()
-    purl = request.query_params.get("purl")
-
-    if not purl:
-        return Response(
-            {"error": "purl is required"}, status=status.HTTP_400_BAD_REQUEST
-        )
-
-    return Response(
-        {
-            "project": project.name,
-            "purl": purl,
-            "sbom": "CycloneDX SBOM will be generated here",
-        }
-    )
+   
     """
     A viewset that provides the ability to list, get, create, and destroy projects.
     Multiple actions are available to manage project instances.
     """
 
-    queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
-    filterset_class = ProjectFilterSet
+    
 
     def get_queryset(self):
         return (
@@ -181,15 +157,34 @@ def sbom(self, request, *args, **kwargs):
             )
         )
 
-    @action(detail=True, renderer_classes=[renderers.JSONRenderer])
+       @action(
+        detail=True,
+        methods=["get"],
+        url_path="results",
+        url_name="results",
+        renderer_classes=[renderers.JSONRenderer],
+    )
     def results(self, request, *args, **kwargs):
-        """
-        Return the results compatible with ScanCode data format.
-        The content is returned as a stream of JSON content using the
-        JSONResultsGenerator class.
-        """
         return project_results_json_response(self.get_object())
 
+    @action(detail=True, methods=["get"], url_path="sbom")
+    def sbom(self, request, *args, **kwargs):
+        project = self.get_object()
+        purl = request.query_params.get("purl")
+
+        if not purl:
+            return Response(
+                {"error": "purl is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "project": project.name,
+                "purl": purl,
+                "sbom": "CycloneDX SBOM will be generated here",
+            }
+        )
     @action(detail=True, name="Results (download)")
     def results_download(self, request, *args, **kwargs):
         """Return the results in the provided `output_format` as an attachment."""
