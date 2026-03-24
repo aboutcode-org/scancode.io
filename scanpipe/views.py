@@ -2859,7 +2859,7 @@ class ProjectResourceSearchView(
     def get_queryset(self):
         search_query = self.request.GET.get("search", "").strip()
         if not search_query:
-            return CodebaseResource.objects.none()
+            return super().get_queryset().none()
 
         return (
             super()

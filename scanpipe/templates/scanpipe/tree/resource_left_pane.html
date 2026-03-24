@@ -1,34 +1,5 @@
 {% include "scanpipe/tree/resource_left_pane_header.html" only %}
-<div class="mb-3 search-container" id="resource-search-container">
-  <div class="field mb-0">
-    <div class="control has-icons-left has-icons-right is-expanded">
-      <input
-        id="file-search-input"
-        class="input is-small"
-        type="text"
-        placeholder="Go to file..."
-        autocomplete="off"
-        hx-get="{% url 'project_resource_tree_search' project.slug %}"
-        hx-target="#search-results"
-        hx-trigger="input changed delay:200ms"
-        hx-include="this"
-        name="search"
-      >
-      <span class="icon is-small is-left">
-        <i class="fas fa-search"></i>
-      </span>
-      <button
-        id="clear-search"
-        class="icon is-small is-right is-hidden has-text-grey"
-        type="button"
-        aria-label="Clear search"
-        >
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-  </div>
-  <div id="search-results" class="search-dropdown is-hidden"></div>
-</div>
+{% include "scanpipe/tree/resource_search_bar.html" %}
 
 <div id="resource-tree" class="resource-tree-scroll">
   {% include "scanpipe/tree/resource_left_pane_tree.html" with children=children %}
