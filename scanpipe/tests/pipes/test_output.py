@@ -810,6 +810,51 @@ class ScanPipeXLSXOutputPipesTest(TestCase):
             if r != x:
                 self.assertEqual(r[-50:], x)
 
+    def test_add_xlsx_worksheet_writes_xlsx_errors_after_all_data_columns(self):
+        """
+        With multiple data columns, truncation errors must go to the trailing
+        ``xlsx_errors`` column, not overwrite the last data field.
+        """
+        test_dir = Path(tempfile.mkdtemp(prefix="scancode-io-test"))
+        output_file = test_dir / "multi-field-long-cell.xlsx"
+        len_32760_string = "f" * 32760
+        len_10_string = "0123456789"
+        long_name = len_32760_string + len_10_string
+        path_value = "/expected/path/value"
+
+        rows = [{"name": long_name, "path": path_value}]
+        fields = ["name", "path"]
+
+        with xlsxwriter.Workbook(str(output_file)) as workbook:
+            output.add_xlsx_worksheet(
+                workbook=workbook,
+                worksheet_name="packages",
+                rows=rows,
+                fields=fields,
+            )
+
+        wb = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
+        try:
+            ws = wb["packages"]
+
+            self.assertEqual(ws.cell(1, 1).value, "name")
+            self.assertEqual(ws.cell(1, 2).value, "path")
+            self.assertEqual(ws.cell(1, 3).value, "xlsx_errors")
+
+            name_cell = ws.cell(2, 1).value
+            path_cell = ws.cell(2, 2).value
+            errors_cell = ws.cell(2, 3).value
+        finally:
+            wb.close()
+
+        self.assertEqual(len(name_cell), 32767)
+        self.assertTrue(name_cell.startswith("f"))
+        self.assertEqual(path_value, path_cell)
+        self.assertIsNotNone(errors_cell)
+        self.assertIn("name", errors_cell)
+        self.assertIn("truncated", errors_cell.lower())
+        self.assertIn("32767", errors_cell)
+
     def test_add_xlsx_worksheet_does_not_munge_long_strings_of_over_1024_lines(self):
         # This test verifies that we do not truncate long text silently
 
