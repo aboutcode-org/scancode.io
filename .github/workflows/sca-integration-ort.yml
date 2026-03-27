@@ -57,7 +57,7 @@ jobs:
             reporter
 
       - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
+        uses: aboutcode-org/scancode-action@6e900c920928c44932e756e308561451b09ec58b
         with:
           pipelines: "load_sbom"
           inputs-path: "${{ env.ORT_RESULTS_PATH }}/bom.cyclonedx.json"
@@ -96,7 +96,7 @@ jobs:
             reporter
 
       - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
+        uses: aboutcode-org/scancode-action@6e900c920928c44932e756e308561451b09ec58b
         with:
           pipelines: "load_sbom"
           inputs-path: "${{ env.ORT_RESULTS_PATH }}/bom.cyclonedx.json"
@@ -158,7 +158,7 @@ jobs:
           name: npm-mime-types-2.1.26-ort-sboms
 
       - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
+        uses: aboutcode-org/scancode-action@6e900c920928c44932e756e308561451b09ec58b
         with:
           pipelines: "load_sbom"
           inputs-path: "bom.cyclonedx.json"
@@ -184,7 +184,7 @@ jobs:
          name: npm-mime-types-2.1.26-ort-sboms
 
      - name: Import SBOM into ScanCode.io
-       uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
+       uses: aboutcode-org/scancode-action@6e900c920928c44932e756e308561451b09ec58b
        with:
          pipelines: "load_sbom"
          inputs-path: "bom.cyclonedx.xml"
@@ -210,7 +210,7 @@ jobs:
           name: npm-mime-types-2.1.26-ort-sboms
 
       - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
+        uses: aboutcode-org/scancode-action@6e900c920928c44932e756e308561451b09ec58b
         with:
           pipelines: "load_sbom"
           inputs-path: "bom.spdx.json"
@@ -236,7 +236,7 @@ jobs:
           name: npm-mime-types-2.1.26-ort-sboms
 
       - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
+        uses: aboutcode-org/scancode-action@6e900c920928c44932e756e308561451b09ec58b
         with:
           pipelines: "load_sbom"
           inputs-path: "bom.spdx.yml"
