@@ -81,6 +81,8 @@ def chunked(iterable, chunk_size):
     >>> list(chunked([1, 2, 3, 4, 5], 3))
     [[1, 2, 3], [4, 5]]
     """
+    if chunk_size <= 0:
+        return []
     for index in range(0, len(iterable), chunk_size):
         end = index + chunk_size
         yield iterable[index:end]
