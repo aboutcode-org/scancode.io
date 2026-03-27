@@ -63,7 +63,15 @@ HTTP_REQUEST_TIMEOUT = 30
 
 
 def get_request_session(uri):
-    """Return a Requests session setup with authentication and headers."""
+    """
+    Return a configured Requests session for a given URI.
+
+    This includes:
+    - Applying authentication (basic or digest) if configured
+    - Attaching custom headers based on the target domain
+
+    The configuration is derived from ScanCode.io settings.
+    """
     session = requests.Session()
     netloc = urlparse(uri).netloc
 
@@ -81,14 +89,23 @@ def get_request_session(uri):
 
 def fetch_http(uri, to=None):
     """
-    Download a given `uri` in a temporary directory and return the directory's
-    path.
+    Download content from a given URI and store it locally.
+
+    - Uses a configured request session for authentication and headers
+    - Determines filename from content-disposition or URL
+    - Saves file to a temporary or provided directory
+    - Computes file checksums (md5, sha1)
+
+    Returns:
+        Download: metadata about the downloaded file
     """
     request_session = get_request_session(uri)
     response = request_session.get(uri, timeout=HTTP_REQUEST_TIMEOUT)
 
     if response.status_code != 200:
-        raise requests.RequestException
+    # Raise exception if the request did not succeed
+    # (non-200 HTTP response from server)
+    raise requests.RequestException
 
     content_disposition = response.headers.get("content-disposition", "")
     _, params = parse_header_parameters(content_disposition)
@@ -397,7 +414,8 @@ def fetch_urls(urls):
         try:
             downloaded = fetch_url(url)
         except Exception:
-            errors.append(url)
+    # Capture failed URL fetch attempts for reporting
+    errors.append(url)
         else:
             downloads.append(downloaded)
 
