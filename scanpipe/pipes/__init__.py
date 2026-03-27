@@ -402,9 +402,36 @@ def _clean_license_detection_data(detection_data):
         if from_file_path:
             match_data["from_file"] = from_file_path.removeprefix("codebase/")
 
+        if license_key := match_data.get("license_expression_spdx"):
+            match_data["license_expression_spdx"] = scancode.normalize_spdx_identifier(
+                license_key
+            )
+
         updated_matches.append(match_data)
 
     detection_data["matches"] = updated_matches
+
+    if license_expression_spdx := detection_data.get("license_expression_spdx"):
+        from licensedcode.cache import get_licensing
+        licensing = get_licensing()
+        try:
+            parsed = licensing.parse(license_expression_spdx, simple=True)
+            if parsed:
+                normalized_keys = [
+                    scancode.normalize_spdx_identifier(key)
+                    for key in parsed.keys()
+                ]
+                expression_parts = license_expression_spdx.split()
+                for i, part in enumerate(expression_parts):
+                    if part in parsed.keys():
+                        idx = list(parsed.keys()).index(part)
+                        expression_parts[i] = normalized_keys[idx]
+                detection_data["license_expression_spdx"] = " ".join(expression_parts)
+        except Exception:
+            detection_data["license_expression_spdx"] = scancode.normalize_spdx_identifier(
+                license_expression_spdx
+            )
+
     return detection_data
 
 
