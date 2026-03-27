@@ -36,7 +36,7 @@ jobs:
           find scancodeio/ -type f -name "*.ABOUT" -exec cp {} "${{ env.INPUTS_PATH }}/about-files/" \;
 
       - name: Resolve the dependencies using ScanCode-action
-        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
+        uses: aboutcode-org/scancode-action@6e900c920928c44932e756e308561451b09ec58b
         with:
           pipelines: "resolve_dependencies:DynamicResolver"
           inputs-path: ${{ env.INPUTS_PATH }}

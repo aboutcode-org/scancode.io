@@ -52,7 +52,7 @@ jobs:
         path: sbom-output
 
     - name: Import SBOM into ScanCode.io
-      uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
+      uses: aboutcode-org/scancode-action@6e900c920928c44932e756e308561451b09ec58b
       with:
         pipelines: "load_sbom"
         inputs-path: "sbom-output/_manifest/spdx_2.2/manifest.spdx.json"

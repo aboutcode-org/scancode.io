@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Analyze Docker image with ScanCode.io
-        uses: aboutcode-org/scancode-action@8adbf888f487c3cdf6c15386035769cd03a94c66
+        uses: aboutcode-org/scancode-action@6e900c920928c44932e756e308561451b09ec58b
         with:
           pipelines: "analyze_docker_image"
           input-urls:
