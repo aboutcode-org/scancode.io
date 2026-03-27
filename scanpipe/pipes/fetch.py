@@ -38,9 +38,8 @@ import requests
 from commoncode import command
 from commoncode.hash import multi_checksums
 from commoncode.text import python_safe_name
-from fetchcode.pypi import Pypi as PyPIFetcher
+from fetchcode import fetch as fetchcode_fetch
 from packageurl import PackageURL
-from packageurl.contrib import purl2url
 from plugincode.location_provider import get_location
 from requests import auth as request_auth
 
@@ -325,20 +324,28 @@ def fetch_git_repo(url, to=None):
 
 def fetch_package_url(url):
     # Ensure the provided Package URL is valid, or raise a ValueError.
-    purl = PackageURL.from_string(url)
+    PackageURL.from_string(url)
 
-    # Resolve a Download URL using purl2url.
-    if download_url := purl2url.get_download_url(url):
-        return fetch_http(download_url)
+    try:
+        result = fetchcode_fetch(url)
+    except Exception as e:
+        raise ValueError(f"Could not fetch package for {url}: {e}")
 
-    # PyPI is not supported by purl2url.
-    # It requires an API call to resolve download URLs.
-    if purl.type == "pypi":
-        if download_url := PyPIFetcher.get_download_url(url, preferred_type="sdist"):
-            return fetch_http(download_url)
+    if not result or not result.location:
+        raise ValueError(f"Could not resolve a download URL for {url}.")
 
-    raise ValueError(f"Could not resolve a download URL for {url}.")
+    path = Path(result.location)
+    checksums = multi_checksums(path, ("md5", "sha1"))
 
+    return Download(
+        uri=url,
+        directory=str(path.parent),
+        filename=path.name,
+        path=path,
+        size=path.stat().st_size,
+        sha1=checksums["sha1"],
+        md5=checksums["md5"],
+    )
 
 SCHEME_TO_FETCHER_MAPPING = {
     "http": fetch_http,
