@@ -1,31 +1,39 @@
 # Release instructions for `ScanCode.io`
 
-### Automated release workflow
+## 🚀 Automated Release Workflow
 
-- Create a new `release-x.x.x` branch
-- Update the version in:
-  - `pyproject.toml`
-  - `scancodeio/__init__.py`
-  - `CHANGELOG.rst` (set date)
-- Commit and push this branch
-- Create a PR and merge once approved
-- Tag and push that tag. This will trigger the `pypi-release.yml` GitHub workflow that 
-  takes care of building the dist release files and upload those to pypi:
-  ```
-  VERSION=vx.x.x  # <- Set the new version here
-  git tag -a $VERSION -m ""
-  git push origin $VERSION
-  ```
-- Review the GitHub release created by the workflow at 
-  https://github.com/aboutcode-org/scancode.io/releases
+Releases are fully automated using **python-semantic-release**.
 
-### Manual build
+When commits following the Conventional Commits specification are merged into the `main` branch:
 
-```
-cd scancode.io
-source .venv/bin/activate
-python -m pip install build
-python -m build --sdist --wheel --outdir dist/ .
-```
+- The next semantic version is computed automatically.
+- `pyproject.toml` and `scancodeio/__init__.py` are updated.
+- `CHANGELOG.rst` is generated/updated automatically.
+- A Git tag is automatically created (vX.Y.Z).
+- The tag triggers the existing PyPI publishing workflow.
+- The PyPI workflow builds distributions and creates the GitHub Release.
 
-The distribution files will be available in the local `dist/` directory.
+No manual version bumping, branching, or tagging is required.
+
+---
+
+## 📌 Commit Message Requirements
+
+Commits must follow the Conventional Commits format:
+
+- `feat: add new feature`
+- `fix: correct issue in pipeline`
+- `feat!: introduce breaking change`
+- `chore: maintenance update`
+
+The commit type determines the version bump:
+
+- `fix` → patch
+- `feat` → minor
+- `feat!` or `BREAKING CHANGE:` → major
+
+---
+
+## 🛠 Manual Build (Optional)
+
+If you need to build distribution files locally:
