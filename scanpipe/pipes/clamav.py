@@ -48,6 +48,18 @@ def scan_for_virus(project):
         resource_path = Path(resource_location).relative_to(project.codebase_path)
 
         resource = project.codebaseresources.get(path=resource_path)
+        if not resource:
+            project.add_error(
+                description="Virus detected but resource not found",
+                model="ScanForVirus",
+                details={
+                    "status": status,
+                    "reason": reason,
+                    "resource_path": str(resource_path),
+                },
+            )
+            continue
+
         virus_report = {
             "calmav": {
                 "status": status,
