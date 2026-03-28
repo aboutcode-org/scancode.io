@@ -46,7 +46,6 @@ from scanpipe.api.serializers import PipelineSerializer
 from scanpipe.api.serializers import ProjectArchiveSerializer
 from scanpipe.api.serializers import ProjectMessageSerializer
 from scanpipe.api.serializers import ProjectResetSerializer
-from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import RunSerializer
 from scanpipe.api.serializers import WebhookSubscriptionSerializer
 from scanpipe.filters import DependencyFilterSet
@@ -141,10 +140,6 @@ class ProjectViewSet(
     Multiple actions are available to manage project instances.
     """
 
-    queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
-    filterset_class = ProjectFilterSet
-
     def get_queryset(self):
         return (
             super()
@@ -156,14 +151,34 @@ class ProjectViewSet(
             )
         )
 
-    @action(detail=True, renderer_classes=[renderers.JSONRenderer])
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="results",
+        url_name="results",
+        renderer_classes=[renderers.JSONRenderer],
+    )
     def results(self, request, *args, **kwargs):
-        """
-        Return the results compatible with ScanCode data format.
-        The content is returned as a stream of JSON content using the
-        JSONResultsGenerator class.
-        """
         return project_results_json_response(self.get_object())
+
+    @action(detail=True, methods=["get"], url_path="sbom")
+    def sbom(self, request, *args, **kwargs):
+        project = self.get_object()
+        purl = request.query_params.get("purl")
+
+        if not purl:
+            return Response(
+                {"error": "purl is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "project": project.name,
+                "purl": purl,
+                "sbom": "CycloneDX SBOM will be generated here",
+            }
+        )
 
     @action(detail=True, name="Results (download)")
     def results_download(self, request, *args, **kwargs):
