@@ -39,7 +39,7 @@
           "severity": "warning",
           "model": "map_resources_with_symbols",
           "details": {
-            "from/common/version.h": {
+            "from/from-brotli-d2d.zip/common/version.h": {
               "matched_symbols": [],
               "unmatched_symbols": [
                 "A",
@@ -60,7 +60,7 @@
               "matched_symbols_ratio": "0.00",
               "matched_symbols_unique_ratio": "0.00"
             },
-            "from/common/platform.h": {
+            "from/from-brotli-d2d.zip/common/platform.h": {
               "matched_symbols": [
                 "BrotliDefaultAllocFunc",
                 "BrotliDefaultFreeFunc"
@@ -246,7 +246,7 @@
               "matched_symbols_ratio": "0.01",
               "matched_symbols_unique_ratio": "0.01"
             },
-            "from/common/constants.h": {
+            "from/from-brotli-d2d.zip/common/constants.h": {
               "matched_symbols": [
                 "_kBrotliPrefixCodeRanges"
               ],
@@ -306,7 +306,7 @@
               "matched_symbols_ratio": "0.01",
               "matched_symbols_unique_ratio": "0.02"
             },
-            "from/common/transform.c": {
+            "from/from-brotli-d2d.zip/common/transform.c": {
               "matched_symbols": [
                 "BrotliGetTransforms",
                 "BrotliTransformDictionaryWord"
@@ -373,7 +373,7 @@
               "matched_symbols_ratio": "0.01",
               "matched_symbols_unique_ratio": "0.04"
             },
-            "from/common/transform.h": {
+            "from/from-brotli-d2d.zip/common/transform.h": {
               "matched_symbols": [
                 "BrotliGetTransforms",
                 "BrotliTransformDictionaryWord"
@@ -428,7 +428,7 @@
               "matched_symbols_ratio": "0.04",
               "matched_symbols_unique_ratio": "0.04"
             },
-            "from/common/shared_dictionary_internal.h": {
+            "from/from-brotli-d2d.zip/common/shared_dictionary_internal.h": {
               "matched_symbols": [],
               "unmatched_symbols": [
                 "BROTLI_COMMON_SHARED_DICTIONARY_INTERNAL_H_",
@@ -537,7 +537,43 @@
       "extra_data": {}
     },
     {
-      "path": "from/common",
+      "path": "from/from-brotli-d2d.zip",
+      "type": "directory",
+      "name": "from-brotli-d2d.zip",
+      "status": "ignored-directory",
+      "for_packages": [],
+      "tag": "from",
+      "extension": ".zip",
+      "programming_language": "",
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "sha1_git": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "extra_data": {}
+    },
+    {
+      "path": "from/from-brotli-d2d.zip/common",
       "type": "directory",
       "name": "common",
       "status": "ignored-directory",
@@ -573,7 +609,7 @@
       "extra_data": {}
     },
     {
-      "path": "from/common/constants.c",
+      "path": "from/from-brotli-d2d.zip/common/constants.c",
       "type": "file",
       "name": "constants.c",
       "status": "scanned",
@@ -672,7 +708,7 @@
       }
     },
     {
-      "path": "from/common/constants.h",
+      "path": "from/from-brotli-d2d.zip/common/constants.h",
       "type": "file",
       "name": "constants.h",
       "status": "not-deployed",
@@ -885,7 +921,7 @@
       }
     },
     {
-      "path": "from/common/context.c",
+      "path": "from/from-brotli-d2d.zip/common/context.c",
       "type": "file",
       "name": "context.c",
       "status": "no-licenses",
@@ -938,7 +974,7 @@
       }
     },
     {
-      "path": "from/common/context.h",
+      "path": "from/from-brotli-d2d.zip/common/context.h",
       "type": "file",
       "name": "context.h",
       "status": "scanned",
@@ -1058,7 +1094,7 @@
       }
     },
     {
-      "path": "from/common/dictionary.c",
+      "path": "from/from-brotli-d2d.zip/common/dictionary.c",
       "type": "file",
       "name": "dictionary.c",
       "status": "scanned",
@@ -1188,7 +1224,7 @@
       }
     },
     {
-      "path": "from/common/dictionary.h",
+      "path": "from/from-brotli-d2d.zip/common/dictionary.h",
       "type": "file",
       "name": "dictionary.h",
       "status": "scanned",
@@ -1307,7 +1343,7 @@
       }
     },
     {
-      "path": "from/common/platform.c",
+      "path": "from/from-brotli-d2d.zip/common/platform.c",
       "type": "file",
       "name": "platform.c",
       "status": "scanned",
@@ -1424,7 +1460,7 @@
       }
     },
     {
-      "path": "from/common/platform.h",
+      "path": "from/from-brotli-d2d.zip/common/platform.h",
       "type": "file",
       "name": "platform.h",
       "status": "not-deployed",
@@ -2201,7 +2237,7 @@
       }
     },
     {
-      "path": "from/common/shared_dictionary.c",
+      "path": "from/from-brotli-d2d.zip/common/shared_dictionary.c",
       "type": "file",
       "name": "shared_dictionary.c",
       "status": "scanned",
@@ -3135,7 +3171,7 @@
       }
     },
     {
-      "path": "from/common/shared_dictionary_internal.h",
+      "path": "from/from-brotli-d2d.zip/common/shared_dictionary_internal.h",
       "type": "file",
       "name": "shared_dictionary_internal.h",
       "status": "not-deployed",
@@ -3206,7 +3242,7 @@
       }
     },
     {
-      "path": "from/common/transform.c",
+      "path": "from/from-brotli-d2d.zip/common/transform.c",
       "type": "file",
       "name": "transform.c",
       "status": "not-deployed",
@@ -3636,7 +3672,7 @@
       }
     },
     {
-      "path": "from/common/transform.h",
+      "path": "from/from-brotli-d2d.zip/common/transform.h",
       "type": "file",
       "name": "transform.h",
       "status": "not-deployed",
@@ -3790,7 +3826,7 @@
       }
     },
     {
-      "path": "from/common/version.h",
+      "path": "from/from-brotli-d2d.zip/common/version.h",
       "type": "file",
       "name": "version.h",
       "status": "not-deployed",
@@ -3910,7 +3946,46 @@
       }
     },
     {
-      "path": "to/libbrotlicommon-5b2eba61.so.1.1.0",
+      "path": "to/to-brotli-d2d.zip",
+      "type": "directory",
+      "name": "to-brotli-d2d.zip",
+      "status": "ignored-directory",
+      "for_packages": [],
+      "tag": "to",
+      "extension": ".zip",
+      "programming_language": "",
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "sha1_git": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "extra_data": {
+        "directory_content": "",
+        "directory_structure": ""
+      }
+    },
+    {
+      "path": "to/to-brotli-d2d.zip/libbrotlicommon-5b2eba61.so.1.1.0",
       "type": "file",
       "name": "libbrotlicommon-5b2eba61.so.1.1.0",
       "status": "requires-review",
@@ -3982,12 +4057,12 @@
           "_kBrotliPrefixCodeRanges"
         ],
         "elf_symbols_paths_not_mapped": [
-          "from/common/constants.h",
-          "from/common/platform.h",
-          "from/common/shared_dictionary_internal.h",
-          "from/common/transform.c",
-          "from/common/transform.h",
-          "from/common/version.h"
+          "from/from-brotli-d2d.zip/common/constants.h",
+          "from/from-brotli-d2d.zip/common/platform.h",
+          "from/from-brotli-d2d.zip/common/shared_dictionary_internal.h",
+          "from/from-brotli-d2d.zip/common/transform.c",
+          "from/from-brotli-d2d.zip/common/transform.h",
+          "from/from-brotli-d2d.zip/common/version.h"
         ],
         "dwarf_compiled_paths_not_mapped": [],
         "dwarf_included_paths_not_mapped": []
@@ -3996,53 +4071,53 @@
   ],
   "relations": [
     {
-      "to_resource": "to/libbrotlicommon-5b2eba61.so.1.1.0",
+      "to_resource": "to/to-brotli-d2d.zip/libbrotlicommon-5b2eba61.so.1.1.0",
       "status": "requires-review",
       "map_type": "elf_symbols",
       "score": "",
-      "from_resource": "from/common/constants.c"
+      "from_resource": "from/from-brotli-d2d.zip/common/constants.c"
     },
     {
-      "to_resource": "to/libbrotlicommon-5b2eba61.so.1.1.0",
+      "to_resource": "to/to-brotli-d2d.zip/libbrotlicommon-5b2eba61.so.1.1.0",
       "status": "requires-review",
       "map_type": "elf_symbols",
       "score": "",
-      "from_resource": "from/common/context.c"
+      "from_resource": "from/from-brotli-d2d.zip/common/context.c"
     },
     {
-      "to_resource": "to/libbrotlicommon-5b2eba61.so.1.1.0",
+      "to_resource": "to/to-brotli-d2d.zip/libbrotlicommon-5b2eba61.so.1.1.0",
       "status": "requires-review",
       "map_type": "elf_symbols",
       "score": "",
-      "from_resource": "from/common/context.h"
+      "from_resource": "from/from-brotli-d2d.zip/common/context.h"
     },
     {
-      "to_resource": "to/libbrotlicommon-5b2eba61.so.1.1.0",
+      "to_resource": "to/to-brotli-d2d.zip/libbrotlicommon-5b2eba61.so.1.1.0",
       "status": "requires-review",
       "map_type": "elf_symbols",
       "score": "",
-      "from_resource": "from/common/dictionary.c"
+      "from_resource": "from/from-brotli-d2d.zip/common/dictionary.c"
     },
     {
-      "to_resource": "to/libbrotlicommon-5b2eba61.so.1.1.0",
+      "to_resource": "to/to-brotli-d2d.zip/libbrotlicommon-5b2eba61.so.1.1.0",
       "status": "requires-review",
       "map_type": "elf_symbols",
       "score": "",
-      "from_resource": "from/common/dictionary.h"
+      "from_resource": "from/from-brotli-d2d.zip/common/dictionary.h"
     },
     {
-      "to_resource": "to/libbrotlicommon-5b2eba61.so.1.1.0",
+      "to_resource": "to/to-brotli-d2d.zip/libbrotlicommon-5b2eba61.so.1.1.0",
       "status": "requires-review",
       "map_type": "elf_symbols",
       "score": "",
-      "from_resource": "from/common/platform.c"
+      "from_resource": "from/from-brotli-d2d.zip/common/platform.c"
     },
     {
-      "to_resource": "to/libbrotlicommon-5b2eba61.so.1.1.0",
+      "to_resource": "to/to-brotli-d2d.zip/libbrotlicommon-5b2eba61.so.1.1.0",
       "status": "requires-review",
       "map_type": "elf_symbols",
       "score": "",
-      "from_resource": "from/common/shared_dictionary.c"
+      "from_resource": "from/from-brotli-d2d.zip/common/shared_dictionary.c"
     }
   ]
 }
