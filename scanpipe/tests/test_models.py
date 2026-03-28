@@ -3241,8 +3241,8 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
 
         package = DiscoveredPackage.create_from_data(project1, incomplete_data)
         self.assertEqual(project1, package.project)
-        self.assertEqual("pkg:unknown/debian/adduser@3.118?arch=all", str(package))
-        self.assertEqual("unknown", package.type)
+        self.assertEqual("pkg:generic/debian/adduser@3.118?arch=all", str(package))
+        self.assertEqual("generic", package.type)
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_discovered_dependency_model_create_from_data(self):
