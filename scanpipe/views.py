@@ -1590,21 +1590,9 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
 
         if format == "json":
             return project_results_json_response(project, as_attachment=True)
-        elif format == "xlsx":
-            output_file = output.to_xlsx(project)
-        elif format == "spdx":
-            output_file = output.to_spdx(project, **output_kwargs)
-        elif format == "cyclonedx":
-            output_file = output.to_cyclonedx(project, **output_kwargs)
-        elif format == "attribution":
-            output_file = output.to_attribution(project)
-        elif format == "ort-package-list":
-            output_file = output.to_ort_package_list_yml(project)
-        elif format == "all_formats":
-            output_file = output.to_all_formats(project)
-        elif format == "all_outputs":
-            output_file = output.to_all_outputs(project)
-        else:
+        try:
+            output_file = output.get_output_for_format(project, format, **output_kwargs)
+        except ValueError:
             raise Http404("Format not supported.")
 
         filename = output.safe_filename(f"scancodeio_{project.name}_{output_file.name}")
