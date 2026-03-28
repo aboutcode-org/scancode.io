@@ -10,11 +10,23 @@ def migrate_api_tokens(apps, schema_editor):
     PREFIX_LENGTH = 8
 
     with schema_editor.connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT EXISTS (SELECT 1 FROM information_schema.tables "
-            "WHERE table_name = 'authtoken_token')"
-        )
-        table_exists = cursor.fetchone()[0]
+        # Check if authtoken_token table exists (works for both PostgreSQL and SQLite)
+        db_vendor = schema_editor.connection.vendor
+        
+        if db_vendor == 'postgresql':
+            cursor.execute(
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables "
+                "WHERE table_name = 'authtoken_token')"
+            )
+            table_exists = cursor.fetchone()[0]
+        elif db_vendor == 'sqlite':
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='authtoken_token'"
+            )
+            table_exists = cursor.fetchone() is not None
+        else:
+            # For other databases, assume table doesn't exist
+            table_exists = False
 
         if not table_exists:
             return
