@@ -22,6 +22,7 @@
 
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 from django.test import TestCase
 
@@ -60,6 +61,23 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         self.assertTrue(cyclonedx.is_cyclonedx_bom(input_location))
         input_location = self.data / "not_valid.xml"
         self.assertFalse(cyclonedx.is_cyclonedx_bom(input_location))
+
+    def test_scanpipe_cyclonedx_is_cyclonedx_bom_does_not_silence_json_runtime_error(
+        self,
+    ):
+        with patch("scanpipe.pipes.cyclonedx.Path.read_text", side_effect=RuntimeError):
+            with self.assertRaises(RuntimeError):
+                cyclonedx.is_cyclonedx_bom("/tmp/example.json")
+
+    def test_scanpipe_cyclonedx_is_cyclonedx_bom_does_not_silence_xml_runtime_error(
+        self,
+    ):
+        with patch(
+            "scanpipe.pipes.cyclonedx.SafeElementTree.parse",
+            side_effect=RuntimeError,
+        ):
+            with self.assertRaises(RuntimeError):
+                cyclonedx.is_cyclonedx_bom("/tmp/example.xml")
 
     def test_scanpipe_cyclonedx_get_components(self):
         empty_bom = Bom()

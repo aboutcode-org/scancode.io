@@ -22,8 +22,8 @@
 
 import json
 from collections import defaultdict
-from contextlib import suppress
 from pathlib import Path
+from xml.etree.ElementTree import ParseError
 
 from django.core.validators import EMPTY_VALUES
 
@@ -143,16 +143,20 @@ def validate_document(document):
 def is_cyclonedx_bom(input_location):
     """Return True if the file at `input_location` is a CycloneDX BOM."""
     if str(input_location).endswith(".json"):
-        with suppress(Exception):
+        try:
             data = json.loads(Path(input_location).read_text())
             if data.get("bomFormat") == "CycloneDX":
                 return True
+        except (OSError, TypeError, ValueError, json.JSONDecodeError):
+            return False
 
     elif str(input_location).endswith(".xml"):
-        with suppress(Exception):
+        try:
             et = SafeElementTree.parse(input_location)
             if "cyclonedx" in et.getroot().tag:
                 return True
+        except (OSError, TypeError, ValueError, ParseError):
+            return False
 
     return False
 
