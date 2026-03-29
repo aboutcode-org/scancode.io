@@ -94,6 +94,10 @@ class ScanPipeJvmTest(TestCase):
         )
         self.assertEqual("foo/org/common/Bar$inner.java", njp)
 
+    def test_scanpipe_pipes_jvm_get_source_java_path_windows_style(self):
+        njp = jvm.JavaLanguage.get_source_path("\\foo\\org\\common\\Bar.class", ".java")
+        self.assertEqual("foo/org/common/Bar.java", njp)
+
     def test_scanpipe_pipes_jvm_get_normalized_java_path(self):
         njp = jvm.JavaLanguage.get_normalized_path("foo/org/common/Bar.class", ".java")
         self.assertEqual("foo/org/common/Bar.java", njp)
@@ -101,6 +105,12 @@ class ScanPipeJvmTest(TestCase):
     def test_scanpipe_pipes_jvm_get_normalized_java_path_with_inner_class(self):
         njp = jvm.JavaLanguage.get_normalized_path(
             "foo/org/common/Bar$inner.class", ".java"
+        )
+        self.assertEqual("foo/org/common/Bar.java", njp)
+
+    def test_scanpipe_pipes_jvm_get_normalized_java_path_windows_style(self):
+        njp = jvm.JavaLanguage.get_normalized_path(
+            "\\foo\\org\\common\\Bar$inner.class", ".java"
         )
         self.assertEqual("foo/org/common/Bar.java", njp)
 
@@ -202,6 +212,12 @@ class ScanPipeJvmKotlinTest(TestCase):
     def test_scanpipe_pipes_jvm_get_normalized_kotlin_path_with_Kt_suffix(self):
         njp = jvm.KotlinLanguage.get_normalized_path(
             "foo/org/common/LoggerKt.class", ".kt"
+        )
+        self.assertEqual("foo/org/common/Logger.kt", njp)
+
+    def test_scanpipe_pipes_jvm_get_normalized_kotlin_path_windows_style(self):
+        njp = jvm.KotlinLanguage.get_normalized_path(
+            "\\foo\\org\\common\\LoggerKt.class", ".kt"
         )
         self.assertEqual("foo/org/common/Logger.kt", njp)
 

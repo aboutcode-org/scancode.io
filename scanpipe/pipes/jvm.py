@@ -27,6 +27,7 @@ Support for JVM-specific file formats such as
 
 import re
 from pathlib import Path
+from pathlib import PurePosixPath
 from re import Pattern
 
 from scanpipe.pipes import scancode
@@ -45,6 +46,16 @@ class JvmLanguage:
     package_regex: Pattern = None
     # Type of relation for a binary file to its source file
     binary_map_type: str = None
+
+    @staticmethod
+    def get_jvm_path(path):
+        """
+        Return a normalized relative POSIX path from ``path``.
+
+        JVM paths are treated as POSIX-style paths regardless of host OS.
+        """
+        normalized_path = str(path).replace("\\", "/").lstrip("/")
+        return PurePosixPath(normalized_path)
 
     @classmethod
     def get_source_package(cls, location, **kwargs):
@@ -134,7 +145,7 @@ class JvmLanguage:
             raise ValueError(
                 f"Only path ending with {cls.binary_extensions} are supported."
             )
-        path = Path(path.strip("/"))
+        path = cls.get_jvm_path(path)
         class_name = path.name
         # Handled generated logger class
         # https://github.com/aboutcode-org/scancode.io/issues/1994
@@ -151,12 +162,15 @@ class JvmLanguage:
         """
         Return a JVM file path for ``path`` .class file path string.
         No normalization is performed.
+
+        Raises:
+            ValueError: if ``path`` does not end with ``cls.binary_extensions``.
         """
         if not path.endswith(cls.binary_extensions):
             raise ValueError(
                 f"Only path ending with {cls.binary_extensions} are supported."
             )
-        path = Path(path.strip("/"))
+        path = cls.get_jvm_path(path)
         class_name = path.name
         class_name, _, _ = class_name.partition(".")  # plain .class
         return str(path.parent / f"{class_name}{extension}")
@@ -244,7 +258,7 @@ class KotlinLanguage(JvmLanguage):
             raise ValueError(
                 f"Only path ending with {cls.binary_extensions} are supported."
             )
-        path = Path(path.strip("/"))
+        path = cls.get_jvm_path(path)
         class_name = path.name
         if "$" in class_name:  # inner class
             class_name, _, _ = class_name.partition("$")
