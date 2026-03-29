@@ -53,7 +53,7 @@ def evaluate_scorecard_compliance(project):
         try:
             score = float(latest_score.score)
             alert = scorecard_policy.get_alert_for_score(score)
-        except Exception:
+        except (TypeError, ValueError):
             alert = "error"
 
         order = {"ok": 0, "warning": 1, "error": 2}

@@ -1,4 +1,5 @@
 from unittest.mock import patch
+from unittest.mock import Mock
 
 from django.test import TestCase
 from django.utils import timezone
@@ -100,3 +101,18 @@ class EvaluateScorecardComplianceTest(TestCase):
 
             self.project.refresh_from_db()
             self.assertNotIn("scorecard_compliance_alert", self.project.extra_data)
+
+    def test_unexpected_policy_error_is_not_silenced(self):
+        """Test that non parsing exceptions raised by policy are propagated."""
+        self.create_package_with_score("package_with_score", 9.5)
+
+        policy = Mock()
+        policy.get_alert_for_score.side_effect = RuntimeError("policy failure")
+
+        with patch(
+            "scanpipe.pipes.scorecard_compliance.get_project_scorecard_thresholds"
+        ) as mock_get_policy:
+            mock_get_policy.return_value = policy
+
+            with self.assertRaises(RuntimeError):
+                evaluate_scorecard_compliance(self.project)
