@@ -22,7 +22,6 @@
 
 import json
 import re
-from contextlib import suppress
 from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
@@ -702,11 +701,13 @@ def is_spdx_document(input_location):
     input_location = str(input_location)
     data = {}
 
-    with suppress(Exception):
+    try:
         if input_location.endswith(".json"):
             data = json.loads(Path(input_location).read_text())
         elif input_location.endswith((".yml", ".yaml")):
             data = saneyaml.load(Path(input_location).read_text())
+    except (OSError, TypeError, ValueError):
+        return False
 
     if data.get("SPDXID"):
         return True

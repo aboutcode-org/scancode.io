@@ -21,7 +21,9 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from unittest import TestCase
+from unittest.mock import patch
 
 from scanpipe.pipes import spdx
 
@@ -412,3 +414,19 @@ class ScanPipeSPDXPipesTest(TestCase):
 
         with self.assertRaises(Exception):
             spdx.validate_document({}, self.schema_2_3)
+
+    def test_spdx_is_spdx_document(self):
+        document_location = self.data / "spdx" / "SPDXJSONExample-v2.3.spdx.json"
+        assert spdx.is_spdx_document(document_location)
+
+        not_spdx_json = '{"name": "not-spdx"}'
+        with NamedTemporaryFile(suffix=".json", mode="w+") as not_spdx_file:
+            not_spdx_file.write(not_spdx_json)
+            not_spdx_file.flush()
+
+            assert not spdx.is_spdx_document(not_spdx_file.name)
+
+    def test_spdx_is_spdx_document_does_not_silence_unexpected_errors(self):
+        with patch("scanpipe.pipes.spdx.Path.read_text", side_effect=RuntimeError):
+            with self.assertRaises(RuntimeError):
+                spdx.is_spdx_document("/tmp/example.json")
