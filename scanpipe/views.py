@@ -2846,6 +2846,35 @@ class ProjectResourceTreeRightPaneView(
         return context
 
 
+class ProjectResourceSearchView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    generic.ListView,
+):
+    model = CodebaseResource
+    template_name = "scanpipe/tree/resource_search_results.html"
+    context_object_name = "search_results"
+    paginate_by = 30
+
+    def get_queryset(self):
+        search_query = self.request.GET.get("search", "").strip()
+        if not search_query:
+            return super().get_queryset().none()
+
+        return (
+            super()
+            .get_queryset()
+            .filter(path__icontains=search_query)
+            .only("project_id", "path", "type")
+            .order_by("path")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["query"] = self.request.GET.get("search", "").strip()
+        return context
+
+
 class GenerateAPIKeyView(ConditionalLoginRequired, BaseGenerateAPIKeyView):
     success_url = reverse_lazy("account_profile")
     success_message = (

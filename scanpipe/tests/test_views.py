@@ -1741,6 +1741,21 @@ class ScanPipeViewsTest(TestCase):
         resources = list(response.context["resources"])
         self.assertEqual(0, len(resources))
 
+    def test_scanpipe_views_project_resource_tree_search_view_filters_results(self):
+        make_resource_file(self.project1, path="src/FooBar.py")
+        make_resource_file(self.project1, path="src/other.py")
+
+        url = reverse(
+            "project_resource_tree_search", kwargs={"slug": self.project1.slug}
+        )
+        response = self.client.get(url, data={"search": "foobar"})
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("foobar", response.context["query"])
+        self.assertEqual(
+            ["src/FooBar.py"], [r.path for r in response.context["search_results"]]
+        )
+
     @mock.patch("scanpipe.views.ProjectResourceTreeRightPaneView.paginate_by", 2)
     def test_scanpipe_views_project_resource_tree_right_pane_view_pagination(self):
         make_resource_directory(self.project1, path="parent")

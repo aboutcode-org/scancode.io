@@ -67,6 +67,196 @@
     }
   }
 
+  function isTypingElement(element) {
+    if (!element) return false;
+    const tagName = element.tagName ? element.tagName.toLowerCase() : "";
+    return (
+      ["input", "textarea", "select"].includes(tagName) ||
+      element.isContentEditable
+    );
+  }
+
+  function initSearchInteractions() {
+    const searchContainer = document.getElementById('resource-search-container');
+    const searchInput = document.getElementById('file-search-input');
+    const searchResults = document.getElementById('search-results');
+    const clearSearchBtn = document.getElementById('clear-search');
+    if (!searchContainer || !searchInput || !searchResults || !clearSearchBtn) return;
+
+    let activeIndex = -1;
+
+    if (searchResults.parentNode !== document.body) {
+      searchResults.classList.add('search-dropdown-portal');
+      document.body.appendChild(searchResults);
+    }
+
+    function getResultItems() {
+      return Array.from(searchResults.querySelectorAll('.search-result-item'));
+    }
+
+    function updateDropdownPosition() {
+      if (searchResults.classList.contains('is-hidden')) return;
+
+      const rect = searchContainer.getBoundingClientRect();
+      const viewportPadding = 8;
+      const baseWidth = Math.max(rect.width + 300, window.innerWidth * 0.5);
+      const width = Math.min(baseWidth, window.innerWidth - viewportPadding * 2);
+      const left = Math.max(
+        viewportPadding,
+        Math.min(rect.left, window.innerWidth - width - viewportPadding)
+      );
+      const dropdownTop = rect.bottom + 4;
+      const availableHeight = window.innerHeight - dropdownTop - viewportPadding;
+      const maxHeight = Math.max(180, Math.min(window.innerHeight * 0.62, availableHeight));
+
+      searchResults.style.left = `${left}px`;
+      searchResults.style.top = `${dropdownTop}px`;
+      searchResults.style.width = `${width}px`;
+      searchResults.style.maxHeight = `${maxHeight}px`;
+    }
+
+    function showDropdown() {
+      if (searchInput.value.trim()) {
+        searchResults.classList.remove('is-hidden');
+        updateDropdownPosition();
+      }
+    }
+
+    function hideDropdown() {
+      searchResults.classList.add('is-hidden');
+      setActiveItem(-1);
+    }
+
+    function updateClearButtonVisibility() {
+      clearSearchBtn.classList.toggle('is-hidden', !searchInput.value.trim());
+    }
+
+    function setActiveItem(nextIndex) {
+      const items = getResultItems();
+      if (!items.length) {
+        activeIndex = -1;
+        return;
+      }
+
+      items.forEach(item => item.classList.remove('is-active'));
+      if (nextIndex < 0) {
+        activeIndex = -1;
+        return;
+      }
+
+      activeIndex = ((nextIndex % items.length) + items.length) % items.length;
+      const activeItem = items[activeIndex];
+      activeItem.classList.add('is-active');
+      activeItem.scrollIntoView({ block: 'nearest' });
+    }
+
+    function triggerActiveItem() {
+      const items = getResultItems();
+      if (!items.length) return;
+
+      const index = activeIndex >= 0 ? activeIndex : 0;
+      const activeItem = items[index];
+      activeItem.click();
+    }
+
+    function clearSearch() {
+      searchInput.value = '';
+      updateClearButtonVisibility();
+      hideDropdown();
+      searchResults.innerHTML = '';
+      searchInput.focus();
+    }
+
+    clearSearchBtn.addEventListener('click', clearSearch);
+
+    searchInput.addEventListener('input', function() {
+      activeIndex = -1;
+      updateClearButtonVisibility();
+      if (!searchInput.value.trim()) {
+        hideDropdown();
+      } else {
+        updateDropdownPosition();
+      }
+    });
+
+    searchInput.addEventListener('focus', showDropdown);
+
+    window.addEventListener('resize', updateDropdownPosition);
+    window.addEventListener('scroll', updateDropdownPosition, true);
+
+    searchInput.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        hideDropdown();
+        searchInput.blur();
+        return;
+      }
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        const items = getResultItems();
+        if (!items.length) return;
+        showDropdown();
+        const nextIndex = activeIndex < 0 ? 0 : activeIndex + 1;
+        setActiveItem(nextIndex);
+        return;
+      }
+
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        const items = getResultItems();
+        if (!items.length) return;
+        showDropdown();
+        const nextIndex = activeIndex < 0 ? items.length - 1 : activeIndex - 1;
+        setActiveItem(nextIndex);
+        return;
+      }
+
+      if (event.key === 'Enter') {
+        const items = getResultItems();
+        if (!items.length || searchResults.classList.contains('is-hidden')) return;
+        event.preventDefault();
+        triggerActiveItem();
+      }
+    });
+
+    document.addEventListener('click', function(event) {
+      const resultItem = event.target.closest('.search-result-item');
+      if (resultItem && searchResults.contains(resultItem)) {
+        hideDropdown();
+        searchInput.blur();
+        expandToPath(resultItem.dataset.path);
+        return;
+      }
+
+      if (!searchContainer.contains(event.target) && !searchResults.contains(event.target)) {
+        hideDropdown();
+      }
+    });
+
+    document.addEventListener('keydown', function(event) {
+      const target = event.target;
+      if (event.key.toLowerCase() === 't' && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        if (isTypingElement(target)) return;
+        event.preventDefault();
+        searchInput.focus();
+      }
+    });
+
+    document.body.addEventListener('htmx:afterSettle', function(event) {
+      if (event.target !== searchResults) return;
+      activeIndex = -1;
+      updateClearButtonVisibility();
+      if (searchInput.value.trim()) {
+        showDropdown();
+        updateDropdownPosition();
+      } else {
+        hideDropdown();
+      }
+    });
+
+    updateClearButtonVisibility();
+  }
+
   document.addEventListener("click", async e => {
     const node = e.target.closest("[data-folder], .is-file[data-file], .expand-in-tree, [data-chevron]");
     if (!node) return;
@@ -142,5 +332,6 @@
       });
     });
 
+    initSearchInteractions();
   });
 })();
