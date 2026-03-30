@@ -28,7 +28,7 @@ fileInput.onchange = updateFiles;
 function updateFiles() {
   if (fileInput.files.length > 0) {
     const fileName = document.querySelector("#inputs_file_name");
-    fileName.innerHTML = "";
+    fileName.replaceChildren();
 
     // Update the selectedFiles array
     const newFiles = Array.from(fileInput.files);
@@ -40,22 +40,40 @@ function updateFiles() {
     selectedFiles = selectedFiles.concat(filteredNewFiles);
 
     for (let file of selectedFiles) {
-      const fileNameWithoutSpaces = file.name.replace(/\s/g, '');
-      fileName.innerHTML += `
-      <span class="is-flex is-justify-content-space-between is-block" id="file-name-${fileNameWithoutSpaces}">
-        <span class="is-block">${file.name}</span>
-        <a href="#" onclick="removeFile('${fileNameWithoutSpaces}')" class="model-button" id="file-delete-btn-${fileNameWithoutSpaces}">
-          <i class="fa-solid fa-trash-can"></i>
-        </a>
-      </span>
-      `;
-      document.getElementById("file-delete-btn-"+ fileNameWithoutSpaces).addEventListener("click", function(event){
+      const fileNameWithoutSpaces = file.name.replace(/\s/g, "");
+
+      // Build the wrapper span
+      const wrapper = document.createElement("span");
+      wrapper.className = "is-flex is-justify-content-space-between is-block";
+      wrapper.id = `file-name-${fileNameWithoutSpaces}`;
+
+      // File name label - textContent is safe, no HTML injection possible
+      const label = document.createElement("span");
+      label.className = "is-block";
+      label.textContent = file.name;
+
+      // Delete button
+      const deleteLink = document.createElement("a");
+      deleteLink.href = "#";
+      deleteLink.className = "model-button";
+      deleteLink.id = `file-delete-btn-${fileNameWithoutSpaces}`;
+      deleteLink.addEventListener("click", function(event) {
         disableEvent(event);
         removeFile(fileNameWithoutSpaces);
-        if(selectedFiles.length == 0){
-          fileName.innerHTML ="<i>No files selected</i>"
+        if (selectedFiles.length == 0) {
+          const emptyNotice = document.createElement("i");
+          emptyNotice.textContent = "No files selected";
+          fileName.replaceChildren(emptyNotice);
         }
       });
+
+      const icon = document.createElement("i");
+      icon.className = "fa-solid fa-trash-can";
+
+      deleteLink.appendChild(icon);
+      wrapper.appendChild(label);
+      wrapper.appendChild(deleteLink);
+      fileName.appendChild(wrapper);
     }
   }
 }
@@ -68,7 +86,7 @@ function disableEvent(event) {
 
 function removeFile(fileName) {
   selectedFiles = selectedFiles.filter(file => {
-    const fileNameWithoutSpaces = file.name.replace(/\s/g, '');
+    const fileNameWithoutSpaces = file.name.replace(/\s/g, "");
     return fileNameWithoutSpaces !== fileName;
   });
 
@@ -87,18 +105,10 @@ function removeFile(fileName) {
 
 function dropHandler(event) {
   disableEvent(event);
-  const droppedFiles = event.dataTransfer.files;
-  const updatedFilesSet = new Set(Array.from(fileInput.files));
 
-  for (let file of droppedFiles) {
-    updatedFilesSet.add(file);
-  }
-
-  // Convert the Set back to an array if needed
-  const updatedFiles = Array.from(updatedFilesSet);
-
+  // Merge existing files and dropped files, let updateFiles handle dedup
   const dataTransfer = new DataTransfer();
-  for (let file of updatedFiles) {
+  for (const file of [...fileInput.files, ...event.dataTransfer.files]) {
     dataTransfer.items.add(file);
   }
 
