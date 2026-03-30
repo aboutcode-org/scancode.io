@@ -304,7 +304,7 @@ def fetch_docker_image(docker_url, to=None):
 
 
 def fetch_git_repo(url, to=None):
-    """Fetch provided git ``url`` as a clone and return a ``Download`` object."""
+    """Fetch provided git `url` as a clone and return a `Download` object."""
     download_directory = to or tempfile.mkdtemp()
     url = url.rstrip("/")
     filename = url.split("/")[-1]
@@ -326,6 +326,7 @@ def fetch_git_repo(url, to=None):
 
 
 def fetch_package_url(url):
+    """Fetch a package from the provided `url` and return a `Download` object."""
     # Ensure the provided Package URL is valid, or raise a ValueError.
     purl = PackageURL.from_string(url)
 
@@ -373,7 +374,7 @@ def get_fetcher(url):
 
 
 def fetch_url(url):
-    """Fetch provided `url` and returns the result as a `Download` object."""
+    """Fetch provided `url` and return the result as a `Download` object."""
     fetcher = get_fetcher(url)
     logger.info(f'Fetching "{url}" using {fetcher.__name__}')
     downloaded = fetcher(url)
