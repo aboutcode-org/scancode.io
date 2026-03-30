@@ -118,6 +118,8 @@ def request_post(
     data,
     timeout=None,
 ):
+    """Wrap the HTTP POST request calls on the API."""
+    logger.debug(f"{label}: url={url} data_keys={list(data.keys()) if data else []}")
     try:
         response = session.post(url, json=data, timeout=timeout)
         response.raise_for_status()
@@ -223,6 +225,8 @@ def fetch_vulnerabilities(
 
     for purls_batch in chunked(get_purls(packages), chunk_size):
         response_data = bulk_search_by_purl(purls_batch)
+        if not response_data:
+            continue
         for vulnerability_data in response_data:
             vulnerabilities_by_purl[vulnerability_data["purl"]] = vulnerability_data
 
