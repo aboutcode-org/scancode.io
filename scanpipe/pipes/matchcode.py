@@ -93,7 +93,7 @@ def is_available():
 
 
 def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
-    """Wrap the HTTP request calls on the API."""
+    """Send a GET request to `url` with optional `payload` and return the response."""
     if not url:
         return
 
@@ -113,6 +113,7 @@ def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
 
 
 def request_post(url, data=None, headers=None, files=None, timeout=DEFAULT_TIMEOUT):
+    """Send a POST request with `data` to `url` and return the response."""
     try:
         response = session.post(
             url, data=data, timeout=timeout, headers=headers, files=files
