@@ -551,10 +551,11 @@ body.full-screen #resource-viewer .message-header {
   min-width: 0;
   max-width: 100%;
   border-right: 1px solid #ccc;
-  overflow: visible;
+  min-height: 0;
+  height: 100vh;
+  overflow: auto;
   display: flex;
   flex-direction: column;
-  min-height: 0;
   flex-basis: 25%;
   transition: opacity 0.2s ease;
   position: relative;
