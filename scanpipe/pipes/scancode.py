@@ -1057,8 +1057,18 @@ def create_discovered_licenses(project, scanned_codebase):
 
 
 def load_todo_issues(project, scanned_codebase):
-    if hasattr(scanned_codebase.attributes, "todo"):
-        for todo_issue in scanned_codebase.attributes.todo:
+    todo_issues = getattr(scanned_codebase.attributes, "todo", None)
+    if todo_issues:
+        if isinstance(todo_issues, dict):
+            todo_issues = [todo_issues]
+        elif not isinstance(todo_issues, list | tuple):
+            logger.warning(
+                "Ignoring invalid 'todo' issues payload with type=%s",
+                type(todo_issues).__name__,
+            )
+            todo_issues = []
+
+        for todo_issue in todo_issues:
             pipes.update_license_detection_with_issue(project, todo_issue)
 
     license_clues = project.discoveredlicenses.filter(

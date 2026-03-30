@@ -409,19 +409,32 @@ def _clean_license_detection_data(detection_data):
 
 
 def update_license_detection_with_issue(project, todo_issue):
-    detection_data = todo_issue.get("detection")
-    if "identifier" not in detection_data:
+    if not isinstance(todo_issue, dict):
+        return
+
+    detection_data = todo_issue.get("detection") or {}
+    if not isinstance(detection_data, dict):
         return
 
     detection_identifier = detection_data.get("identifier")
+    if not detection_identifier:
+        return
+
     license_detection = project.discoveredlicenses.get_or_none(
         identifier=detection_identifier,
     )
     if license_detection:
-        review_comments = todo_issue.get("review_comments").values()
+        review_comments = todo_issue.get("review_comments") or {}
+        if isinstance(review_comments, dict):
+            review_comments = list(review_comments.values())
+        elif isinstance(review_comments, list):
+            review_comments = review_comments
+        else:
+            review_comments = []
+
         license_detection.update(
             needs_review=True,
-            review_comments=list(review_comments),
+            review_comments=review_comments,
         )
 
 
