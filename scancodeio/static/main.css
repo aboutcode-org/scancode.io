@@ -551,10 +551,11 @@ body.full-screen #resource-viewer .message-header {
   min-width: 0;
   max-width: 100%;
   border-right: 1px solid #ccc;
-  overflow: visible;
+  min-height: 0;
+  height: 100vh;
+  overflow: auto;
   display: flex;
   flex-direction: column;
-  min-height: 0;
   flex-basis: 25%;
   transition: opacity 0.2s ease;
   position: relative;
@@ -573,7 +574,6 @@ body.full-screen #resource-viewer .message-header {
   top: 0;
   z-index: 20;
   background: var(--bulma-scheme-main);
-  padding: .25rem 0 .5rem;
 }
 #resource-tree-container #clear-search {
   display: inline-flex;
@@ -615,7 +615,7 @@ body.full-screen #resource-viewer .message-header {
   align-items: center;
   gap: .5rem;
   color: var(--bulma-text);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 20px;
   font-weight: 400;
   white-space: nowrap;
@@ -635,13 +635,13 @@ body.full-screen #resource-viewer .message-header {
 }
 #resource-tree-container .search-result-item .icon i,
 .search-dropdown.search-dropdown-portal .search-result-item .icon i {
-  font-size: 13px;
+  font-size: 15px;
 }
 #resource-tree-container .search-result-path,
 .search-dropdown.search-dropdown-portal .search-result-path {
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 14px;
+  font-size: 15px;
 }
 #resource-tree-container .left-pane.collapsed {
   opacity: 0;

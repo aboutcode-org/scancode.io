@@ -137,7 +137,7 @@ urlpatterns = [
     ),
     path(
         "project/<slug:slug>/resource_tree/search/",
-        views.ProjectResourceSearchView.as_view(),
+        views.ProjectResourceTreeSearchView.as_view(),
         name="project_resource_tree_search",
     ),
     path(

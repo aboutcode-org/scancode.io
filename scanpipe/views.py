@@ -2846,7 +2846,7 @@ class ProjectResourceTreeRightPaneView(
         return context
 
 
-class ProjectResourceSearchView(
+class ProjectResourceTreeSearchView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
     generic.ListView,
@@ -2856,22 +2856,25 @@ class ProjectResourceSearchView(
     context_object_name = "search_results"
     paginate_by = 30
 
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        self.search_query = request.GET.get("search", "").strip()
+
     def get_queryset(self):
-        search_query = self.request.GET.get("search", "").strip()
-        if not search_query:
+        if not self.search_query:
             return super().get_queryset().none()
 
         return (
             super()
             .get_queryset()
-            .filter(path__icontains=search_query)
+            .filter(path__icontains=self.search_query)
             .only("project_id", "path", "type")
             .order_by("path")
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["query"] = self.request.GET.get("search", "").strip()
+        context["query"] = self.search_query
         return context
 
 
