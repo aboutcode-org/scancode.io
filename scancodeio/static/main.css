@@ -573,7 +573,6 @@ body.full-screen #resource-viewer .message-header {
   top: 0;
   z-index: 20;
   background: var(--bulma-scheme-main);
-  padding: .25rem 0 .5rem;
 }
 #resource-tree-container #clear-search {
   display: inline-flex;

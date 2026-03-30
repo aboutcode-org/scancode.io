@@ -46,7 +46,7 @@
     {% if page_obj.has_next %}
       <a
         class="pagination-next"
-        hx-get="{% url 'project_resource_tree_right_pane' project.slug path%}?page={{ page_obj.next_page_number }}"
+        hx-get="{% url 'project_resource_tree_right_pane' project.slug path %}?page={{ page_obj.next_page_number }}"
         hx-target="#right-pane"
         hx-push-url="{% url 'project_resource_tree' project.slug path %}?page={{ page_obj.next_page_number }}">
         Next page

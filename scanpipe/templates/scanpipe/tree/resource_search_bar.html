@@ -5,12 +5,11 @@
         id="file-search-input"
         class="input is-small"
         type="text"
-        placeholder="Go to file..."
+        placeholder="Go to file"
         autocomplete="off"
         hx-get="{% url 'project_resource_tree_search' project.slug %}"
         hx-target="#search-results"
-        hx-trigger="input changed delay:200ms"
-        hx-include="this"
+        hx-trigger="input changed delay:300ms"
         name="search"
       >
       <span class="icon is-small is-left">
