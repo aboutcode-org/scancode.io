@@ -1016,7 +1016,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual("do_nothing", runs[1]["pipeline_name"])
         self.assertEqual(["Group1", "Group2"], runs[1]["selected_groups"])
 
-    @mock.patch("scanpipe.pipes.fetch.check_url_availability")
+    @mock.patch("scanpipe.pipes.fetch.check_url")
     @mock.patch("requests.sessions.Session.get")
     def test_scanpipe_management_command_run_multiple_inputs(
         self, mock_get, mock_check_url

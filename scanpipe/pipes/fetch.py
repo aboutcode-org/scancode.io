@@ -439,7 +439,7 @@ def is_safe_url(url):
     return not unsafe
 
 
-def check_url_availability(url):
+def check_url(url):
     """Check that a URL is safe and accessible."""
     if not is_safe_url(url):
         return False
@@ -456,5 +456,5 @@ def check_url_availability(url):
 
 def check_urls_availability(urls):
     """Check the safety and accessibility of a list of URLs."""
-    errors = [url for url in urls if not check_url_availability(url)]
+    errors = [url for url in urls if not check_url(url)]
     return errors

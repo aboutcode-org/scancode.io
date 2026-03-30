@@ -312,24 +312,22 @@ class ScanPipeFetchPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.fetch.socket.gethostbyname")
     @mock.patch("requests.sessions.Session.head")
-    def test_scanpipe_pipes_fetch_check_url_availability(
-        self, mock_head, mock_gethostbyname
-    ):
+    def test_scanpipe_pipes_fetch_check_url(self, mock_head, mock_gethostbyname):
         url = "https://example.com/file.zip"
 
         # Safe and accessible URL
         mock_gethostbyname.return_value = "93.184.216.34"
         mock_head.return_value = make_mock_response(url=url)
-        self.assertTrue(fetch.check_url_availability(url))
+        self.assertTrue(fetch.check_url(url))
 
         # Unsafe URL
         mock_gethostbyname.return_value = "127.0.0.1"
-        self.assertFalse(fetch.check_url_availability("http://localhost/"))
+        self.assertFalse(fetch.check_url("http://localhost/"))
 
         # Safe URL but request fails
         mock_gethostbyname.return_value = "93.184.216.34"
         mock_head.side_effect = requests.exceptions.RequestException
-        self.assertFalse(fetch.check_url_availability(url))
+        self.assertFalse(fetch.check_url(url))
 
     @mock.patch("scanpipe.pipes.fetch.socket.gethostbyname")
     @mock.patch("requests.sessions.Session.head")

@@ -2012,7 +2012,7 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
         if not self.download_url:
             raise ValueError("No `download_url` value to be fetched.")
 
-        is_safe_and_available = fetch.check_url_availability(self.download_url)
+        is_safe_and_available = fetch.check_url(self.download_url)
         if not is_safe_and_available:
             raise ValidationError(f"Could not fetch: {self.download_url}")
 
