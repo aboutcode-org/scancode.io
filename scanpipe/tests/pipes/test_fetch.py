@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import socket
 from pathlib import Path
 from unittest import mock
 
@@ -265,3 +266,45 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual("", download.size)
         self.assertEqual("", download.sha1)
         self.assertEqual("", download.md5)
+
+    @mock.patch("scanpipe.pipes.fetch.socket.gethostbyname")
+    def test_scanpipe_pipes_fetch_is_safe_url(self, mock_gethostbyname):
+        # Valid public URLs
+        mock_gethostbyname.return_value = "93.184.216.34"  # example.com
+        self.assertTrue(fetch.is_safe_url("https://example.com/file.zip"))
+        self.assertTrue(fetch.is_safe_url("http://example.com/file.zip"))
+
+        # Invalid schemes
+        self.assertFalse(fetch.is_safe_url("ftp://example.com/file.zip"))
+        self.assertFalse(fetch.is_safe_url("docker://example.com/image"))
+        self.assertFalse(fetch.is_safe_url(""))
+
+        # No hostname
+        self.assertFalse(fetch.is_safe_url("https://"))
+
+        # Unresolvable hostname
+        mock_gethostbyname.side_effect = socket.gaierror
+        self.assertFalse(fetch.is_safe_url("https://thisdomaindoesnotexist.invalid/"))
+        mock_gethostbyname.side_effect = None
+
+        # Private ranges
+        mock_gethostbyname.return_value = "192.168.1.1"
+        self.assertFalse(fetch.is_safe_url("http://192.168.1.1/"))
+        mock_gethostbyname.return_value = "10.0.0.1"
+        self.assertFalse(fetch.is_safe_url("http://10.0.0.1/"))
+        mock_gethostbyname.return_value = "172.16.0.1"
+        self.assertFalse(fetch.is_safe_url("http://172.16.0.1/"))
+
+        # Loopback
+        mock_gethostbyname.return_value = "127.0.0.1"
+        self.assertFalse(fetch.is_safe_url("http://127.0.0.1/"))
+        mock_gethostbyname.return_value = "127.0.0.1"
+        self.assertFalse(fetch.is_safe_url("http://localhost/"))
+
+        # Link-local
+        mock_gethostbyname.return_value = "169.254.169.254"
+        self.assertFalse(fetch.is_safe_url("http://169.254.169.254/"))
+
+        # Multicast
+        mock_gethostbyname.return_value = "224.0.0.1"
+        self.assertFalse(fetch.is_safe_url("http://224.0.0.1/"))
