@@ -105,18 +105,10 @@ function removeFile(fileName) {
 
 function dropHandler(event) {
   disableEvent(event);
-  const droppedFiles = event.dataTransfer.files;
-  const updatedFilesSet = new Set(Array.from(fileInput.files));
 
-  for (let file of droppedFiles) {
-    updatedFilesSet.add(file);
-  }
-
-  // Convert the Set back to an array if needed
-  const updatedFiles = Array.from(updatedFilesSet);
-
+  // Merge existing files and dropped files, let updateFiles handle dedup
   const dataTransfer = new DataTransfer();
-  for (let file of updatedFiles) {
+  for (const file of [...fileInput.files, ...event.dataTransfer.files]) {
     dataTransfer.items.add(file);
   }
 
