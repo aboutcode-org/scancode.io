@@ -49,7 +49,7 @@ def scan_for_virus(project):
 
         resource = project.codebaseresources.get(path=resource_path)
         virus_report = {
-            "calmav": {
+            "clamav": {
                 "status": status,
                 "reason": reason,
             }

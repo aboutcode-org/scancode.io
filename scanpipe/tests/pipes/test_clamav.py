@@ -60,7 +60,7 @@ class ScanPipeClamAVPipesTest(TestCase):
         resource1 = project.codebaseresources.first()
         expected_virus_report_extra_data = {
             "virus_report": {
-                "calmav": {
+                "clamav": {
                     "status": "FOUND",
                     "reason": "Win.Test.EICAR_HDB-1",
                 }
