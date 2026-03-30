@@ -27,6 +27,7 @@ from unittest import mock
 from django.test import TestCase
 from django.test import override_settings
 
+import requests
 from requests import auth as request_auth
 
 from scanpipe.pipes import fetch
@@ -308,3 +309,43 @@ class ScanPipeFetchPipesTest(TestCase):
         # Multicast
         mock_gethostbyname.return_value = "224.0.0.1"
         self.assertFalse(fetch.is_safe_url("http://224.0.0.1/"))
+
+    @mock.patch("scanpipe.pipes.fetch.socket.gethostbyname")
+    @mock.patch("requests.sessions.Session.head")
+    def test_scanpipe_pipes_fetch_check_url_availability(
+        self, mock_head, mock_gethostbyname
+    ):
+        url = "https://example.com/file.zip"
+
+        # Safe and accessible URL
+        mock_gethostbyname.return_value = "93.184.216.34"
+        mock_head.return_value = make_mock_response(url=url)
+        self.assertTrue(fetch.check_url_availability(url))
+
+        # Unsafe URL
+        mock_gethostbyname.return_value = "127.0.0.1"
+        self.assertFalse(fetch.check_url_availability("http://localhost/"))
+
+        # Safe URL but request fails
+        mock_gethostbyname.return_value = "93.184.216.34"
+        mock_head.side_effect = requests.exceptions.RequestException
+        self.assertFalse(fetch.check_url_availability(url))
+
+    @mock.patch("scanpipe.pipes.fetch.socket.gethostbyname")
+    @mock.patch("requests.sessions.Session.head")
+    def test_scanpipe_pipes_fetch_check_urls_availability(
+        self, mock_head, mock_gethostbyname
+    ):
+        urls = [
+            "https://example.com/file.zip",
+            "https://example.com/archive.tar.gz",
+        ]
+
+        # All URLs safe and accessible
+        mock_gethostbyname.return_value = "93.184.216.34"
+        mock_head.return_value = make_mock_response(url="mocked_url")
+        self.assertEqual([], fetch.check_urls_availability(urls))
+
+        # All URLs fail
+        mock_head.side_effect = requests.exceptions.RequestException
+        self.assertEqual(urls, fetch.check_urls_availability(urls))

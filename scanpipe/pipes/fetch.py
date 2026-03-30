@@ -439,19 +439,22 @@ def is_safe_url(url):
     return not unsafe
 
 
+def check_url_availability(url):
+    """Check that a URL is safe and accessible."""
+    if not is_safe_url(url):
+        return False
+
+    request_session = get_request_session(url)
+    try:
+        response = request_session.head(url, timeout=HTTP_REQUEST_TIMEOUT)
+        response.raise_for_status()
+    except requests.exceptions.RequestException:
+        return False
+
+    return True
+
+
 def check_urls_availability(urls):
-    """Check the accessibility of a list of URLs."""
-    errors = []
-
-    for url in urls:
-        if not is_safe_url(url):
-            continue
-
-        request_session = get_request_session(url)
-        try:
-            response = request_session.head(url, timeout=HTTP_REQUEST_TIMEOUT)
-            response.raise_for_status()
-        except requests.exceptions.RequestException:
-            errors.append(url)
-
+    """Check the safety and accessibility of a list of URLs."""
+    errors = [url for url in urls if not check_url_availability(url)]
     return errors
