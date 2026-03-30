@@ -90,8 +90,8 @@ RUN python -m venv $VENV_LOCATION
 ENV PATH=$VENV_LOCATION/bin:$PATH
 
 # Install the dependencies before the codebase COPY for proper Docker layer caching
-COPY --chown=$APP_USER:$APP_USER pyproject.toml $APP_DIR/
-RUN pip install --no-cache-dir .
+COPY --chown=$APP_USER:$APP_USER pyproject.toml requirements.lock $APP_DIR/
+RUN pip install --no-cache-dir --require-hashes -r requirements.lock
 
 # Copy the codebase and set the proper permissions for the APP_USER
 COPY --chown=$APP_USER:$APP_USER . $APP_DIR
