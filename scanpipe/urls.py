@@ -136,6 +136,11 @@ urlpatterns = [
         name="project_codebase",
     ),
     path(
+        "project/<slug:slug>/resource_tree/search/",
+        views.ProjectResourceSearchView.as_view(),
+        name="project_resource_tree_search",
+    ),
+    path(
         "project/<slug:slug>/resource_tree/<path:path>/",
         views.ProjectResourceTreeView.as_view(),
         name="project_resource_tree",
