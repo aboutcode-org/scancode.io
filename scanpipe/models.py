@@ -4843,7 +4843,8 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             logger.info(f"Webhook {self.uuid} is not active.")
             return False
 
-        if "hooks.slack.com" in self.target_url:
+        parsed = urlparse(self.target_url)
+        if parsed.hostname == "hooks.slack.com":
             payload = self.get_slack_payload(pipeline_run)
         else:
             payload = self.get_payload(pipeline_run)
