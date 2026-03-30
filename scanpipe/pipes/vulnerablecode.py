@@ -96,7 +96,7 @@ def request_get(
     payload=None,
     timeout=None,
 ):
-    """Wrap the HTTP request calls on the API."""
+    """Send a GET request to `url` with optional `payload` and return the response."""
     if not url:
         return
 
@@ -118,6 +118,7 @@ def request_post(
     data,
     timeout=None,
 ):
+    """Send a POST request with `data` as JSON to `url` and return the response."""
     try:
         response = session.post(url, json=data, timeout=timeout)
         response.raise_for_status()
@@ -216,8 +217,8 @@ def fetch_vulnerabilities(
     packages, chunk_size=1000, logger=logger.info, ignore_set=None
 ):
     """
-    Fetch and store vulnerabilities for each provided ``packages``.
-    The PURLs are used for the lookups in batch of ``chunk_size`` per request.
+    Fetch and store vulnerabilities for each provided `packages`.
+    The PURLs are used for the lookups in batch of `chunk_size` per request.
     """
     vulnerabilities_by_purl = {}
 

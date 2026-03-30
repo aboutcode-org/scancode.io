@@ -123,7 +123,7 @@ def check_service_availability(*args):
 
 
 def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT, raise_on_error=False):
-    """Wrap the HTTP request calls on the API."""
+    """Send a GET request to `url` with optional `payload` and return the response."""
     if not url:
         return
 
@@ -147,6 +147,7 @@ def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT, raise_on_error=False
 
 
 def request_post(url, data=None, headers=None, files=None, timeout=DEFAULT_TIMEOUT):
+    """Send a POST request with `data` to `url` and return the response."""
     try:
         response = session.post(
             url, data=data, timeout=timeout, headers=headers, files=files
@@ -413,6 +414,7 @@ def get_packages_for_purl(package_url):
 
 
 def collect_data_for_purl(package_url, raise_on_error=False):
+    """Fetch and return PurlDB entries for the provided `package_url`."""
     collect_api_url = f"{PURLDB_API_URL}collect/"
     payload = {
         "purl": str(package_url),
