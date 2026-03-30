@@ -20,10 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import ipaddress
 import json
 import logging
 import os
 import re
+import socket
 import tempfile
 from collections import namedtuple
 from pathlib import Path
@@ -302,7 +304,7 @@ def fetch_docker_image(docker_url, to=None):
 
 
 def fetch_git_repo(url, to=None):
-    """Fetch provided git ``url`` as a clone and return a ``Download`` object."""
+    """Fetch provided git `url` as a clone and return a `Download` object."""
     download_directory = to or tempfile.mkdtemp()
     url = url.rstrip("/")
     filename = url.split("/")[-1]
@@ -324,6 +326,7 @@ def fetch_git_repo(url, to=None):
 
 
 def fetch_package_url(url):
+    """Fetch a package from the provided `url` and return a `Download` object."""
     # Ensure the provided Package URL is valid, or raise a ValueError.
     purl = PackageURL.from_string(url)
 
@@ -371,7 +374,7 @@ def get_fetcher(url):
 
 
 def fetch_url(url):
-    """Fetch provided `url` and returns the result as a `Download` object."""
+    """Fetch provided `url` and return the result as a `Download` object."""
     fetcher = get_fetcher(url)
     logger.info(f'Fetching "{url}" using {fetcher.__name__}')
     downloaded = fetcher(url)
@@ -404,19 +407,55 @@ def fetch_urls(urls):
     return downloads, errors
 
 
+def is_safe_url(url):
+    """
+    Check that a URL does not point to a private or internal network address.
+    Mitigates SSRF by ensuring the target host resolves only to public IPs.
+    """
+    parsed = urlparse(url)
+
+    # Only allow http and https schemes
+    if parsed.scheme not in ("http", "https"):
+        return False
+
+    # Reject URLs with no hostname
+    if not parsed.hostname:
+        return False
+
+    # Resolve the hostname to catch internal addresses hidden behind DNS
+    try:
+        resolved_ip = socket.gethostbyname(parsed.hostname)
+    except socket.gaierror:
+        return False
+
+    # Reject private, loopback, link-local, and reserved addresses
+    ip = ipaddress.ip_address(resolved_ip)
+    unsafe = (
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_reserved
+        or ip.is_multicast
+    )
+    return not unsafe
+
+
+def check_url(url):
+    """Check that a URL is safe and accessible."""
+    if not is_safe_url(url):
+        return False
+
+    request_session = get_request_session(url)
+    try:
+        response = request_session.head(url, timeout=HTTP_REQUEST_TIMEOUT)
+        response.raise_for_status()
+    except requests.exceptions.RequestException:
+        return False
+
+    return True
+
+
 def check_urls_availability(urls):
-    """Check the accessibility of a list of URLs."""
-    errors = []
-
-    for url in urls:
-        if not url.startswith("http"):
-            continue
-
-        request_session = get_request_session(url)
-        try:
-            response = request_session.head(url, timeout=HTTP_REQUEST_TIMEOUT)
-            response.raise_for_status()
-        except requests.exceptions.RequestException:
-            errors.append(url)
-
+    """Check the safety and accessibility of a list of URLs."""
+    errors = [url for url in urls if not check_url(url)]
     return errors

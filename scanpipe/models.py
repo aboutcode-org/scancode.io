@@ -2003,16 +2003,20 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
 
     def fetch(self):
         """Fetch the file from this instance ``download_url`` field."""
-        from scanpipe.pipes.fetch import fetch_url
+        from scanpipe.pipes import fetch
 
         if self.exists():
             logger.info("The input source file already exists.")
             return
 
         if not self.download_url:
-            raise Exception("No `download_url` value to be fetched.")
+            raise ValueError("No `download_url` value to be fetched.")
 
-        downloaded = fetch_url(url=self.download_url)
+        is_safe_and_available = fetch.check_url(self.download_url)
+        if not is_safe_and_available:
+            raise ValidationError(f"Could not fetch: {self.download_url}")
+
+        downloaded = fetch.fetch_url(url=self.download_url)
         destination = self.project.move_input_from(downloaded.path)
 
         # Force a commit to the database to ensure the file on disk is not rendered
