@@ -396,7 +396,12 @@ def fetch_urls(urls):
 
         try:
             downloaded = fetch_url(url)
-        except Exception:
+        except Exception as error:
+            logger.exception(
+                'Failed fetching "%s": %s',
+                url,
+                error,
+            )
             errors.append(url)
         else:
             downloads.append(downloaded)
