@@ -298,27 +298,20 @@ class AbstractTaskFieldsModel(models.Model):
     @property
     def status(self):
         """Return the task current status."""
-        status = self.Status
+        statuses_by_precedence = (
+            (self.task_succeeded, self.Status.SUCCESS),
+            (self.task_staled, self.Status.STALE),
+            (self.task_stopped, self.Status.STOPPED),
+            (self.task_failed, self.Status.FAILURE),
+            (self.task_start_date, self.Status.RUNNING),
+            (self.task_id, self.Status.QUEUED),
+        )
 
-        if self.task_succeeded:
-            return status.SUCCESS
+        for condition, run_status in statuses_by_precedence:
+            if condition:
+                return run_status
 
-        elif self.task_staled:
-            return status.STALE
-
-        elif self.task_stopped:
-            return status.STOPPED
-
-        elif self.task_failed:
-            return status.FAILURE
-
-        elif self.task_start_date:
-            return status.RUNNING
-
-        elif self.task_id:
-            return status.QUEUED
-
-        return status.NOT_STARTED
+        return self.Status.NOT_STARTED
 
     @property
     def execution_time(self):
