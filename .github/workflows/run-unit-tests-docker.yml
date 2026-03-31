@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   run-unit-tests:
-    runs-on: ubuntu-24.04-20260213
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout repository
@@ -25,11 +25,6 @@ jobs:
 
       - name: Build and run the Docker Compose stack
         run: docker compose up -d
-
-      - name: Debug libguestfs capabilities
-        run: |
-          docker compose run web sh -c "ls -la /dev/fuse /dev/kvm 2>&1 || true"
-          docker compose run web sh -c "libguestfs-test-tool 2>&1 | tail -20 || true"
 
       - name: Run tests
         run: docker compose run -e FROM_DOCKER_IMAGE=1 web python ./manage.py test --verbosity=2 --noinput
