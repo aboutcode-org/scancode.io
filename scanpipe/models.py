@@ -3835,7 +3835,7 @@ class DiscoveredPackage(
             return
 
         if not package_data.get("type"):
-            package_data["type"] = "unknown"
+            package_data["type"] = "generic"
 
         qualifiers = package_data.get("qualifiers")
         if qualifiers:
