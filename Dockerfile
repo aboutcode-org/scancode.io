@@ -89,9 +89,13 @@ RUN python -m venv $VENV_LOCATION
 # Enable the virtualenv, similar effect as "source activate"
 ENV PATH=$VENV_LOCATION/bin:$PATH
 
-# Install the dependencies before the codebase COPY for proper Docker layer caching
-COPY --chown=$APP_USER:$APP_USER pyproject.toml requirements.lock $APP_DIR/
-RUN pip install --no-cache-dir --require-hashes -r requirements.lock
+# Install uv by copying the binary from the official distroless Docker image
+COPY --from=ghcr.io/astral-sh/uv:0.11.2 /uv /uvx /bin/
 
-# Copy the codebase and set the proper permissions for the APP_USER
+# Only re-runs when uv.lock changes
+COPY --chown=$APP_USER:$APP_USER pyproject.toml uv.lock $APP_DIR/
+RUN uv sync --frozen --no-install-project
+
+# Only re-runs when local code changes
 COPY --chown=$APP_USER:$APP_USER . $APP_DIR
+RUN uv sync --frozen
