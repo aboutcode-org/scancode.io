@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   run-unit-tests:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-20260213
 
     steps:
       - name: Checkout repository
@@ -32,4 +32,4 @@ jobs:
           docker compose run web sh -c "libguestfs-test-tool 2>&1 | tail -20 || true"
 
       - name: Run tests
-        run: docker compose run --privileged -e FROM_DOCKER_IMAGE=1 web python ./manage.py test --verbosity=2 --noinput
+        run: docker compose run -e FROM_DOCKER_IMAGE=1 web python ./manage.py test --verbosity=2 --noinput
