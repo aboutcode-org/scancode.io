@@ -98,7 +98,7 @@ dependencies = [
   "aboutcode.pipeline==0.2.1",
   "aboutcode.api-auth==0.2.0",
   # ScoreCode
-  "scorecode==0.0.4"
+  "scorecode==0.0.4",
 ]
 
 [project.optional-dependencies]
