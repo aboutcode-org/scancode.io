@@ -10,14 +10,15 @@ def migrate_api_tokens(apps, schema_editor):
     PREFIX_LENGTH = 8
 
     table_name = "authtoken_token"
-    cursor = schema_editor.connection.cursor()
-    existing_tables = schema_editor.connection.introspection.table_names(cursor)
 
-    if table_name not in existing_tables:
-        return
+    with schema_editor.connection.cursor() as cursor:
+        existing_tables = schema_editor.connection.introspection.table_names(cursor)
+        if table_name not in existing_tables:
+            return
 
-    cursor.execute(f"SELECT user_id, key, created FROM {table_name}")
-    rows = cursor.fetchall()
+        cursor.execute(f"SELECT user_id, key, created FROM {table_name}")
+        rows = cursor.fetchall()
+
     if not rows:
         return
 
