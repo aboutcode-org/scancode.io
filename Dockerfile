@@ -20,7 +20,43 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-FROM python:3.13-slim
+# ============================================
+# Stage 1: Build stage
+# ============================================
+
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
+
+# Compile bytecode for faster startup
+ENV UV_COMPILE_BYTECODE=1
+# Copy files instead of linking (cache and target are on different filesystems)
+ENV UV_LINK_MODE=copy
+# Skip dev dependencies
+ENV UV_NO_DEV=1
+# Use the system Python, don't download one
+ENV UV_PYTHON_DOWNLOADS=0
+# Set uv cache directory for BuildKit cache mounts
+ENV UV_CACHE_DIR=/root/.cache/uv
+
+ENV APP_NAME=scancodeio
+ENV APP_DIR=/opt/$APP_NAME
+WORKDIR $APP_DIR
+
+# Only re-runs when uv.lock changes
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project
+
+# Only re-runs when local code changes
+COPY . $APP_DIR
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen
+
+# ============================================
+# Stage 2: Production stage
+# ============================================
+
+FROM python:3.13-slim-bookworm
 
 LABEL org.opencontainers.image.source="https://github.com/aboutcode-org/scancode.io"
 LABEL org.opencontainers.image.description="ScanCode.io"
@@ -32,10 +68,7 @@ ARG APP_GID=1000
 
 ENV APP_NAME=scancodeio
 ENV APP_USER=app
-ENV APP_UID=${APP_UID}
-ENV APP_GID=${APP_GID}
 ENV APP_DIR=/opt/$APP_NAME
-ENV VENV_LOCATION=/opt/$APP_NAME/.venv
 
 # Force Python unbuffered stdout and stderr (they are flushed to terminal immediately)
 ENV PYTHONUNBUFFERED=1
@@ -52,8 +85,8 @@ RUN apt-get update \
        bzip2 \
        xz-utils \
        zlib1g \
-       libxml2-dev \
-       libxslt1-dev \
+       libxml2 \
+       libxslt1.1 \
        libgomp1 \
        libsqlite3-0 \
        libgcrypt20 \
@@ -77,25 +110,15 @@ RUN groupadd --gid $APP_GID --system $APP_USER \
  && mkdir -p /var/$APP_NAME \
  && chown $APP_USER:$APP_USER /var/$APP_NAME
 
-# Setup the work directory and the user as APP_USER for the remaining stages
+# Copy the application from the builder
+COPY --from=builder --chown=$APP_USER:$APP_USER $APP_DIR $APP_DIR
+
+# Place executables in the environment at the front of the path
+ENV PATH="$APP_DIR/.venv/bin:$PATH"
+
+# Setup the $APP_DIR as work directory and the user as APP_USER for the remaining stages
 WORKDIR $APP_DIR
 USER $APP_USER
 
 # Create static/ and workspace/ directories
 RUN mkdir -p /var/$APP_NAME/static/ /var/$APP_NAME/workspace/
-
-# Create the virtualenv
-RUN python -m venv $VENV_LOCATION
-# Enable the virtualenv, similar effect as "source activate"
-ENV PATH=$VENV_LOCATION/bin:$PATH
-
-# Install uv by copying the binary from the official distroless Docker image
-COPY --from=ghcr.io/astral-sh/uv:0.11.2 /uv /uvx /bin/
-
-# Only re-runs when uv.lock changes
-COPY --chown=$APP_USER:$APP_USER pyproject.toml uv.lock $APP_DIR/
-RUN uv sync --frozen --no-install-project
-
-# Only re-runs when local code changes
-COPY --chown=$APP_USER:$APP_USER . $APP_DIR
-RUN uv sync --frozen
