@@ -9,33 +9,30 @@ def migrate_api_tokens(apps, schema_editor):
     APIToken = apps.get_model("scanpipe", "APIToken")
     PREFIX_LENGTH = 8
 
-    with schema_editor.connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT EXISTS (SELECT 1 FROM information_schema.tables "
-            "WHERE table_name = 'authtoken_token')"
+    table_name = "authtoken_token"
+    cursor = schema_editor.connection.cursor()
+    existing_tables = schema_editor.connection.introspection.table_names(cursor)
+
+    if table_name not in existing_tables:
+        return
+
+    cursor.execute(f"SELECT user_id, key, created FROM {table_name}")
+    rows = cursor.fetchall()
+    if not rows:
+        return
+
+    tokens_to_create = [
+        APIToken(
+            user_id=user_id,
+            prefix=key[:PREFIX_LENGTH],
+            key_hash=make_password(key),
+            created=created,
         )
-        table_exists = cursor.fetchone()[0]
-
-        if not table_exists:
-            return
-
-        cursor.execute("SELECT user_id, key, created FROM authtoken_token")
-        rows = cursor.fetchall()
-        if not rows:
-            return
-
-        tokens_to_create = [
-            APIToken(
-                user_id=user_id,
-                prefix=key[:PREFIX_LENGTH],
-                key_hash=make_password(key),
-                created=created,
-            )
-            for user_id, key, created in rows
-        ]
-        migrated_tokens = APIToken.objects.bulk_create(tokens_to_create, ignore_conflicts=True)
-        if migrated_tokens:
-            print(f" -> {len(migrated_tokens)} tokens migrated.")
+        for user_id, key, created in rows
+    ]
+    migrated_tokens = APIToken.objects.bulk_create(tokens_to_create, ignore_conflicts=True)
+    if migrated_tokens:
+        print(f" -> {len(migrated_tokens)} tokens migrated.")
 
 
 def reverse_migrate_api_tokens(apps, schema_editor):
