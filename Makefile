@@ -37,6 +37,7 @@ SCANCODEIO_DB_USER=scancodeio
 SCANCODEIO_DB_PASSWORD=scancodeio
 POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
 DATE=$(shell date +"%Y-%m-%d_%H%M")
+IMAGE_NAME=scancodeio
 
 # Use sudo for postgres, only on Linux
 UNAME := $(shell uname)
@@ -148,6 +149,12 @@ docs:
 	rm -rf docs/_build/
 	@${ACTIVATE} sphinx-build docs/ docs/_build/
 
+build:
+	docker build -t $(IMAGE_NAME) .
+
+bash:
+	docker run -it $(IMAGE_NAME) bash
+
 docker-images:
 	@echo "-> Build Docker services"
 	docker compose build
@@ -164,4 +171,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run run-docker-dev test fasttest docs docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run run-docker-dev test fasttest docs build bash docker-images offline-package
