@@ -7,7 +7,8 @@
   - `pyproject.toml`
   - `scancodeio/__init__.py`
   - `CHANGELOG.rst` (set date)
-- Commit and push this branch
+- Run `$ uv lock` to update the version in the `uv.lock` file
+- Commit and push this branch: "chore: bump version to vx.x.x for release"
 - Create a PR and merge once approved
 - Tag and push that tag. This will trigger the `pypi-release.yml` GitHub workflow that 
   takes care of building the dist release files and upload those to pypi:
