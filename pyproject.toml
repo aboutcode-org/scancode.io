@@ -76,7 +76,7 @@ dependencies = [
   # Utilities
   "XlsxWriter==3.2.9",
   "openpyxl==3.1.5",
-  "requests==2.32.5",
+  "requests==2.33.1",
   "GitPython==3.1.46",
   # Profiling
   "pyinstrument==5.1.2",
@@ -98,7 +98,7 @@ dependencies = [
   "aboutcode.pipeline==0.2.1",
   "aboutcode.api-auth==0.2.0",
   # ScoreCode
-  "scorecode==0.0.4"
+  "scorecode==0.0.4",
 ]
 
 [project.optional-dependencies]
