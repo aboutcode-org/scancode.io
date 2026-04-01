@@ -76,7 +76,7 @@ dependencies = [
   # Utilities
   "XlsxWriter==3.2.9",
   "openpyxl==3.1.5",
-  "requests==2.32.5",
+  "requests==2.33.1",
   "GitPython==3.1.46",
   # Profiling
   "pyinstrument==5.1.2",
