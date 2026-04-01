@@ -122,6 +122,3 @@ USER $APP_USER
 
 # Create static/ and workspace/ directories
 RUN mkdir -p /var/$APP_NAME/static/ /var/$APP_NAME/workspace/
-
-# Run the scanpipe CLI entry point by default
-ENTRYPOINT ["run"]
