@@ -5,6 +5,38 @@ Changelog
 
 - Drop support for Python3.10 and Python3.11
 
+v37.1.0 (2026-04-01)
+--------------------
+
+- feat: display scio and toolkit versions in place of django version
+  https://github.com/aboutcode-org/scancode.io/pull/2101
+
+- feat: display layers information (created_by, comment) in tree view
+  https://github.com/aboutcode-org/scancode.io/pull/2102
+
+- feat: enhance the global HTML structure
+  https://github.com/aboutcode-org/scancode.io/pull/2103
+
+- feat: remove the need for context processor and improve base template
+  https://github.com/aboutcode-org/scancode.io/pull/2106
+
+- fix: XSS and duplicate file detection in file upload UI
+  https://github.com/aboutcode-org/scancode.io/pull/2129
+
+- fix: incomplete URL sanitization for Slack webhook detection
+  https://github.com/aboutcode-org/scancode.io/pull/2130
+
+- feat: is_safe_url to mitigate SSRF in URL requests
+  https://github.com/aboutcode-org/scancode.io/pull/2131
+
+- feat: add search to resource tree
+  https://github.com/aboutcode-org/scancode.io/pull/2114
+
+- feat!: use uv and uv.lock for reproducible builds in Docker image
+  https://github.com/aboutcode-org/scancode.io/pull/2134
+
+- feat!: convert Dockerfile to multi-stage build
+
 v37.0.0 (2026-03-11)
 --------------------
 
