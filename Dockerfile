@@ -53,10 +53,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
 
 # ============================================
-# Stage 2: Production stage
+# Stage 2: Production stage (base)
 # ============================================
 
-FROM python:3.13-slim-bookworm
+FROM python:3.13-slim-bookworm AS base
 
 LABEL org.opencontainers.image.source="https://github.com/aboutcode-org/scancode.io"
 LABEL org.opencontainers.image.description="ScanCode.io"
@@ -94,8 +94,6 @@ RUN apt-get update \
        libzstd1 \
        libgpgme11 \
        libdevmapper1.02.1 \
-       libguestfs-tools \
-       linux-image-amd64 \
        git \
        wait-for-it \
        universal-ctags \
@@ -122,3 +120,18 @@ USER $APP_USER
 
 # Create static/ and workspace/ directories
 RUN mkdir -p /var/$APP_NAME/static/ /var/$APP_NAME/workspace/
+
+# ============================================
+# Stage 3: Full image (with VM inspection)
+# ============================================
+
+FROM base AS full
+
+USER root
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+       libguestfs-tools \
+       linux-image-amd64 \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+USER $APP_USER
