@@ -51,7 +51,7 @@ jobs:
         run: pip uninstall --yes owasp-depscan
 
       - name: Import SBOM into ScanCode.io
-        uses: aboutcode-org/scancode-action@6e900c920928c44932e756e308561451b09ec58b
+        uses: aboutcode-org/scancode-action@76777db8400d719de67ba3e465c5881037b45cb9  # v0.1
         with:
           pipelines: "load_sbom"
           inputs-path: "reports/sbom-docker.vdr.json"
