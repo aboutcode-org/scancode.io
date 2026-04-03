@@ -9,7 +9,7 @@ Archives Formats
 ScanCode.io recognizes and **can extract most archive formats**; however, it offers
 special support for VM and container image formats:
 
-- **Docker image tarbal** archives using a Docker image layout
+- **Docker image tarball** archives using a Docker image layout
 - **Virtual machine images** using **QCOW** and **VHDI** image format
 
 Operating Systems Detection
@@ -53,7 +53,7 @@ their license metadata, and their installed files.
   :ref:`analyze_docker_image <pipeline_analyze_docker_image>` pipeline; package and
   license metadata are also detected.
   However, some work needs to be done to achieve comprehensive support and fix
-  the issue of system packages ot tracking their installed files. Check `this
+  the issue of system packages not tracking their installed files. Check `this
   open GitHub issue <https://github.com/GoogleContainerTools/distroless/issues/741>`_
   for more details.
 
