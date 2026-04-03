@@ -22,6 +22,7 @@
 
 import io
 import json
+import os
 import shutil
 import sys
 import tempfile
@@ -410,6 +411,27 @@ class ScanPipeModelsTest(TestCase):
         self.project1.move_input_from(input_location)
         self.assertEqual([input_filename], self.project1.input_files)
         self.assertFalse(Path(input_location).exists())
+
+    def test_move_input_handles_duplicate_filenames(self):
+        # Create first file
+        fd1, path1 = tempfile.mkstemp(suffix=".txt")
+        os.close(fd1)
+        Path(path1).write_text("one")
+
+        # Create second file with same name in same directory
+        temp_dir = Path(path1).parent
+        path2 = temp_dir / Path(path1).name
+        Path(path2).write_text("two")
+
+        # Move both into project input
+        dest1 = self.project1.move_input_from(path1)
+        dest2 = self.project1.move_input_from(path2)
+
+        # Ensure both files exist
+        self.assertTrue(Path(dest1).exists())
+        self.assertTrue(Path(dest2).exists())
+        # Ensure filenames are different
+        self.assertNotEqual(Path(dest1).name, Path(dest2).name)
 
     def test_scanpipe_project_model_get_inputs_with_source(self):
         self.assertEqual([], self.project1.get_inputs_with_source())
