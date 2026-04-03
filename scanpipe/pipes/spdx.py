@@ -47,6 +47,8 @@ SPDX_SCHEMA_2_2_URL = (
     "https://github.com/spdx/spdx-spec/raw/development/v2.2/schemas/spdx-schema.json"
 )
 
+EMPTY = [None, "", "NOASSERTION"]
+
 """
 Generate SPDX Documents.
 Spec documentation: https://spdx.github.io/spdx-spec/v2.3/
