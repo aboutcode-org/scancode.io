@@ -150,7 +150,10 @@ docs:
 	@${ACTIVATE} sphinx-build docs/ docs/_build/
 
 build:
-	docker build -t $(IMAGE_NAME) .
+	docker build --target base -t $(IMAGE_NAME) .
+
+build-full:
+	docker build --target full -t $(IMAGE_NAME) .
 
 bash:
 	docker run -it $(IMAGE_NAME) bash
