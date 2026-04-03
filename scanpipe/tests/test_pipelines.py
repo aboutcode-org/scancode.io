@@ -431,7 +431,11 @@ class ScanPipePipelinesTest(TestCase):
             pipeline.flag_ignored_resources()
 
         mock_flag.assert_called_once()
-        patterns_args = ["*.ext", *flag.DEFAULT_IGNORED_PATTERNS]
+        patterns_args = [
+            "*.ext",
+            *flag.DEFAULT_IGNORED_PATTERNS,
+            *flag.NUGET_IGNORED_PATTERNS,
+        ]
         self.assertEqual(mock_flag.mock_calls[0].kwargs["patterns"], patterns_args)
         self.assertEqual(mock_flag.mock_calls[0].kwargs["codebaseresources"].count(), 0)
 
