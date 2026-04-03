@@ -327,7 +327,11 @@ def spdx_package_to_package_data(spdx_package):
         for checksum in spdx_package.checksums
     }
 
-    declared_license_expression_spdx = spdx_package.license_concluded
+    if spdx_package.license_concluded not in spdx.EMPTY:
+        declared_license_expression_spdx = spdx_package.license_concluded
+    else:
+        declared_license_expression_spdx = spdx_package.license_declared
+
     declared_expression = ""
     if declared_license_expression_spdx:
         declared_expression = convert_spdx_expression(declared_license_expression_spdx)
@@ -350,9 +354,7 @@ def spdx_package_to_package_data(spdx_package):
     }
 
     return {
-        key: value
-        for key, value in package_data.items()
-        if value not in [None, "", "NOASSERTION"]
+        key: value for key, value in package_data.items() if value not in spdx.EMPTY
     }
 
 
