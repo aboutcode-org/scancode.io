@@ -1,0 +1,31 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "analysis",
+  "documentNamespace": "https://scancode.io/spdxdocs/abc",
+  "creationInfo": {
+    "created": "2000-01-01T01:02:03Z",
+    "creators": [
+      "Tool: ABC"
+    ],
+    "licenseListVersion": "3.27"
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-abc",
+      "name": "abc",
+      "downloadLocation": "NOASSERTION",
+      "licenseInfoFromFiles": [
+        "NOASSERTION"
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "(GPL-2.0-only AND LGPL-2.1-only)",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "1.0"
+    }
+  ],
+  "documentDescribes": [
+    "SPDXRef-Package-abc"
+  ]
+}
