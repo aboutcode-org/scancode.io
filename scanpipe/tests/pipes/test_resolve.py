@@ -250,6 +250,21 @@ class ScanPipeResolvePipesTest(TestCase):
         packages_data = resolve.resolve_spdx_packages(input_location)
         self.assertEqual(4, len(packages_data))
 
+    def test_scanpipe_pipes_resolve_spdx_packages_license_fields(self):
+        input_location = self.data / "spdx" / "license-fields.spdx.json"
+        packages_data = resolve.resolve_spdx_packages(input_location)
+        expected = [
+            {
+                "package_uid": "SPDXRef-Package-abc",
+                "name": "abc",
+                "declared_license_expression": "gpl-2.0 AND lgpl-2.1",
+                "declared_license_expression_spdx": "(GPL-2.0-only AND LGPL-2.1-only)",
+                "extracted_license_statement": "(GPL-2.0-only AND LGPL-2.1-only)",
+                "version": "1.0",
+            }
+        ]
+        self.assertEqual(expected, packages_data)
+
     def test_scanpipe_pipes_resolve_spdx_dependencies(self):
         input_location = self.data / "spdx" / "SPDXJSONExample-v2.3.spdx.json"
         dependencies_data = resolve.resolve_spdx_dependencies(input_location)
