@@ -7,16 +7,27 @@
 # $ SCANCODEIO_TEST_FIXTURES_REGEN=1 ./manage.py test
 
 name: scancodeio
+
+x-dev-env: &dev-env
+  SCANCODEIO_DEBUG: "True"
+  GUNICORN_RELOAD_FLAG: "--reload"
+
+x-dev-build: &dev-build
+  context: .
+  target: base
+
 services:
   web:
-    env_file:
-      - docker.dev.env
+    build: *dev-build
+    environment:
+      <<: *dev-env
     volumes:
       - ./scanpipe:/opt/scancodeio/scanpipe
 
   worker:
-    env_file:
-      - docker.dev.env
+    build: *dev-build
+    environment:
+      <<: *dev-env
     develop:
       watch:
         - action: sync+restart
