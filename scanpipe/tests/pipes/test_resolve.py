@@ -376,3 +376,22 @@ class ScanPipeResolvePipesTest(TestCase):
         ]
         headers = resolve.get_manifest_headers(resource)
         self.assertEqual(expected, list(headers.keys()))
+
+    def test_spdx_document_root_becomes_project_dependency(self):
+        spdx_relationship_data = {
+            "spdxElementId": "SPDXRef-DOCUMENT",
+            "relatedSpdxElement": "SPDXRef-packageA",
+            "relationshipType": "DEPENDS_ON",
+        }
+
+        spdx_relationship = spdx.Relationship.from_data(spdx_relationship_data)
+
+        dependency_data = resolve.spdx_relationship_to_dependency_data(
+            spdx_relationship
+        )
+
+        self.assertIsNone(dependency_data["for_package_uid"])
+        self.assertEqual(
+            "SPDXRef-packageA",
+            dependency_data["resolve_to_package_uid"],
+        )

@@ -366,6 +366,10 @@ def spdx_relationship_to_dependency_data(spdx_relationship):
         for_package_uid = spdx_relationship.spdx_id
         resolve_to_package_uid = spdx_relationship.related_spdx_id
 
+    # SPDXRef-DOCUMENT represents the project; treat as project-level dependency
+    if for_package_uid == "SPDXRef-DOCUMENT":
+        for_package_uid = None
+
     dependency_data = {
         "for_package_uid": for_package_uid,
         "resolve_to_package_uid": resolve_to_package_uid,
