@@ -1,16 +1,12 @@
-# Dev mode, https://docs.docker.com/compose/how-tos/file-watch/
-
-# Mount the local scanpipe/ directory in the containers
-# This can be used to refresh fixtures from the docker container:
-# $ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
-# $ docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm web bash
-# $ SCANCODEIO_TEST_FIXTURES_REGEN=1 ./manage.py test
+# Dev mode: overlay for local development with hot reload.
+# Usage: $ make run
+# See the Makefile for all available commands (test, migrate, bash, etc.)
 
 name: scancodeio
 
 x-dev-env: &dev-env
   SCANCODEIO_DEBUG: "True"
-  GUNICORN_RELOAD_FLAG: "--reload"
+  DJANGO_RUNSERVER_HIDE_WARNING: "true"
 
 x-dev-build: &dev-build
   context: .
@@ -21,15 +17,16 @@ services:
     build: *dev-build
     environment:
       <<: *dev-env
+    command: ./manage.py runserver --skip-checks 0.0.0.0:8001
     volumes:
       - ./scanpipe:/opt/scancodeio/scanpipe
+    ports:
+      - "8001:8001"
 
+  # Volume mount keeps code in sync. Restart manually with: make restart-worker
   worker:
     build: *dev-build
     environment:
       <<: *dev-env
-    develop:
-      watch:
-        - action: sync+restart
-          path: ./scanpipe
-          target: /opt/scancodeio/scanpipe
+    volumes:
+      - ./scanpipe:/opt/scancodeio/scanpipe
