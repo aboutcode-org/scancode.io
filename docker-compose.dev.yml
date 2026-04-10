@@ -28,5 +28,18 @@ services:
     build: *dev-build
     environment:
       <<: *dev-env
+    command: ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker
+                                  --queue-class scancodeio.worker.ScanCodeIOQueue
+                                  --verbosity 1
     volumes:
       - ./scanpipe:/opt/scancodeio/scanpipe
+
+  # Disable nginx in dev mode, the runserver serves requests directly.
+  nginx:
+    profiles:
+      - production
+
+  # Disable clamav in dev mode, not needed for local development.
+  clamav:
+    profiles:
+      - production
