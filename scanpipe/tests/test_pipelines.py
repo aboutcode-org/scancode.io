@@ -265,7 +265,10 @@ class ScanPipePipelinesTest(TestCase):
         self.assertIn("https://download.url/file.zip could not be fetched.", run.log)
 
     @mock.patch("git.repo.base.Repo.clone_from")
-    def test_scanpipe_pipeline_class_download_missing_inputs_git_repo(self, mock_clone):
+    @mock.patch("scanpipe.pipes.fetch.check_url", return_value=True)
+    def test_scanpipe_pipeline_class_download_missing_inputs_git_repo(
+        self, mock_check_url, mock_clone
+    ):
         project1 = make_project()
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
@@ -818,7 +821,10 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, scancode_file)
 
     @mock.patch("git.repo.base.Repo.clone_from")
-    def test_scanpipe_scan_package_single_package_git_repo(self, mock_clone):
+    @mock.patch("scanpipe.pipes.fetch.check_url", return_value=True)
+    def test_scanpipe_scan_package_single_package_git_repo(
+        self, mock_check_url, mock_clone
+    ):
         pipeline_name = "scan_single_package"
         project1 = make_project()
 

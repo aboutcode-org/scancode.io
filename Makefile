@@ -20,11 +20,66 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+########################################################################################
+# Docker dev commands
+########################################################################################
+
+IMAGE_NAME=scancodeio
+COMPOSE=docker compose -f docker-compose.yml -f docker-compose.dev.yml
+MANAGE=${COMPOSE} exec web ./manage.py
+
+run:
+	@echo "-> Run the Docker compose services in dev mode (hot reload on code changes)"
+	${COMPOSE} up
+
+bash:
+	# Open a bash session in the running web container
+	${COMPOSE} exec web bash
+
+shell:
+	# Open a bash session in a standalone container (no stack required)
+	docker run -it $(IMAGE_NAME) bash
+
+test:
+	@echo "-> Run the test suite"
+	${MANAGE} test --noinput
+
+fasttest:
+	@echo "-> Run the test suite without the PipelinesIntegrationTest"
+	${MANAGE} test --noinput --exclude-tag slow
+
+migrations:
+	@echo "-> Creates new database migrations"
+	${MANAGE} makemigrations
+
+migrate:
+	@echo "-> Apply database migrations"
+	${MANAGE} migrate
+
+restart-worker:
+	${COMPOSE} restart worker
+
+build:
+	# Build the dev Docker images
+	${COMPOSE} build
+
+build-full:
+	# Build the full production Docker image
+	docker build --target full -t $(IMAGE_NAME) .
+
+regen-fixtures:
+	@echo "-> Regenerate test fixtures from the running Docker stack"
+	${COMPOSE} exec -e SCANCODEIO_TEST_FIXTURES_REGEN=1 web ./manage.py test
+
+########################################################################################
+# Local venv commands (legacy)
+########################################################################################
+
 # Python version can be specified with `$ PYTHON_EXE=python3.x make conf`
 PYTHON_EXE?=python3
 VENV_LOCATION=.venv
 ACTIVATE?=. ${VENV_LOCATION}/bin/activate;
-MANAGE=${VENV_LOCATION}/bin/python manage.py
+VENV_MANAGE=${VENV_LOCATION}/bin/python manage.py
 VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
 PIP_ARGS=--find-links=./etc/thirdparty/dummy_dist
 # Do not depend on Python to generate the SECRET_KEY
@@ -37,7 +92,6 @@ SCANCODEIO_DB_USER=scancodeio
 SCANCODEIO_DB_PASSWORD=scancodeio
 POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
 DATE=$(shell date +"%Y-%m-%d_%H%M")
-IMAGE_NAME=scancodeio
 
 # Use sudo for postgres, only on Linux
 UNAME := $(shell uname)
@@ -70,6 +124,13 @@ envfile:
 	@mkdir -p $(shell dirname ${ENV_FILE}) && touch ${ENV_FILE}
 	@echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
 
+runserver:
+	DJANGO_RUNSERVER_HIDE_WARNING=true ${VENV_MANAGE} runserver 8001 --insecure
+
+check-deploy:
+	@echo "-> Check Django deployment settings"
+	${VENV_MANAGE} check --deploy
+
 doc8:
 	@echo "-> Run doc8 validation"
 	@${ACTIVATE} doc8 --max-line-length 100 --ignore-path docs/_build/ --quiet docs/
@@ -89,23 +150,10 @@ check:
 	@echo "-> Run ABOUT files validation"
 	@${ACTIVATE} about check --exclude .venv/ --exclude scanpipe/tests/ .
 
-check-deploy:
-	@echo "-> Check Django deployment settings"
-	${MANAGE} check --deploy
-
 clean:
 	@echo "-> Clean the Python env"
 	rm -rf .venv/ .*cache/ *.egg-info/ build/ dist/
 	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
-
-migrate:
-	@echo "-> Apply database migrations"
-	${MANAGE} migrate
-
-upgrade:
-	@echo "-> Upgrade local git checkout"
-	@git pull
-	@$(MAKE) migrate
 
 postgresdb:
 	@echo "-> Configure PostgreSQL database"
@@ -127,36 +175,12 @@ sqlitedb:
 	@echo SCANCODEIO_DB_NAME=\"sqlite3.db\" >> ${ENV_FILE}
 	@$(MAKE) migrate
 
-run:
-	DJANGO_RUNSERVER_HIDE_WARNING=true ${MANAGE} runserver 8001 --insecure
-
-run-docker-dev:
-	@echo "-> Run the Docker compose services in dev mode (hot reload on code changes)"
-	docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build --watch
-
-test:
-	@echo "-> Run the test suite"
-	${MANAGE} test --noinput
-
-fasttest:
-	@echo "-> Run the test suite without the PipelinesIntegrationTest"
-	${MANAGE} test --noinput --exclude-tag slow
-
 worker:
 	${MANAGE} rqworker --worker-class scancodeio.worker.ScanCodeIOWorker --queue-class scancodeio.worker.ScanCodeIOQueue --verbosity 2
 
 docs:
 	rm -rf docs/_build/
 	@${ACTIVATE} sphinx-build docs/ docs/_build/
-
-build:
-	docker build --target base -t $(IMAGE_NAME) .
-
-build-full:
-	docker build --target full -t $(IMAGE_NAME) .
-
-bash:
-	docker run -it $(IMAGE_NAME) bash
 
 docker-images:
 	@echo "-> Build Docker services"
@@ -174,4 +198,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate upgrade postgresdb sqlitedb backupdb run run-docker-dev test fasttest docs build bash docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate makemigrations restart-worker postgresdb sqlitedb backupdb run test fasttest regen-fixtures docs build bash shell docker-images offline-package

@@ -12,7 +12,7 @@ services:
   #
   # For fresh installations (no existing data), this check passes automatically.
   db-check:
-    image: docker.io/library/postgres:17
+    image: docker.io/library/postgres:17.9
     volumes:
       - db_data:/var/lib/postgresql/data/:ro
     entrypoint: [ "/bin/bash", "-c" ]
@@ -46,7 +46,7 @@ services:
     restart: "no"
 
   db:
-    image: docker.io/library/postgres:17
+    image: docker.io/library/postgres:17.9
     depends_on:
       db-check:
         condition: service_completed_successfully
@@ -63,7 +63,7 @@ services:
       retries: 5
 
   redis:
-    image: docker.io/library/redis:latest
+    image: docker.io/library/redis:8.6-alpine
     # Enable redis data persistence using the "Append Only File" with the
     # default policy of fsync every second. See https://redis.io/topics/persistence
     command: redis-server --appendonly yes
@@ -112,7 +112,7 @@ services:
       - web
 
   nginx:
-    image: docker.io/library/nginx:alpine
+    image: docker.io/library/nginx:1.29-alpine
     ports:
       - "${NGINX_PUBLISHED_HTTP_PORT:-80}:80"
       - "${NGINX_PUBLISHED_HTTPS_PORT:-443}:443"
@@ -125,7 +125,7 @@ services:
     restart: always
 
   clamav:
-    image: docker.io/clamav/clamav:latest
+    image: docker.io/clamav/clamav:1.5_base
     volumes:
       - clamav_data:/var/lib/clamav
       - workspace:/var/scancodeio/workspace/
