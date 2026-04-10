@@ -2258,6 +2258,11 @@ class DiscoveredPackageDetailsView(
                     "field_name": "declared_license_expression_spdx",
                     "label": "Declared license expression (SPDX)",
                 },
+                "concluded_license_expression",
+                {
+                    "field_name": "condluded_license_expression_spdx",
+                    "label": "Concluded license expression (SPDX)",
+                },
                 "primary_language",
                 "homepage_url",
                 "download_url",

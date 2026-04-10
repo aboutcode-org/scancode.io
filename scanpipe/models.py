@@ -3762,6 +3762,17 @@ class DiscoveredPackage(
     notes = models.TextField(blank=True)
     source_packages = models.JSONField(default=list, blank=True)
     tag = models.CharField(blank=True, max_length=50)
+    concluded_license_expression = models.TextField(
+        blank=True,
+        help_text=_("TODO"),
+    )
+    concluded_license_expression_spdx = models.TextField(
+        blank=True,
+        help_text=_(
+            "The SPDX license expression for this package converted "
+            "from its concluded_license_expression."
+        ),
+    )
 
     objects = DiscoveredPackageQuerySet.as_manager()
 
@@ -3777,6 +3788,7 @@ class DiscoveredPackage(
             models.Index(fields=["primary_language"]),
             models.Index(fields=["declared_license_expression"]),
             models.Index(fields=["other_license_expression"]),
+            models.Index(fields=["concluded_license_expression"]),
             models.Index(fields=["size"]),
             models.Index(fields=["md5"]),
             models.Index(fields=["sha1"]),
@@ -3889,7 +3901,7 @@ class DiscoveredPackage(
 
     def get_declared_license_expression(self):
         """
-        Return this package license expression.
+        Return this declared package license expression.
 
         Use `declared_license_expression` when available or compute the expression
         from `declared_license_expression_spdx`.
@@ -3904,7 +3916,7 @@ class DiscoveredPackage(
 
     def get_declared_license_expression_spdx(self):
         """
-        Return this package license expression using SPDX keys.
+        Return this package declared license expression using SPDX keys.
 
         Use `declared_license_expression_spdx` when available or compute the expression
         from `declared_license_expression`.
@@ -3913,6 +3925,34 @@ class DiscoveredPackage(
             return self.declared_license_expression_spdx
         elif self.declared_license_expression:
             return build_spdx_license_expression(self.declared_license_expression)
+        return ""
+
+    def get_concluded_license_expression(self):
+        """
+        Return this package concluded license expression.
+
+        Use `concluded_license_expression` when available or compute the expression
+        from `concluded_license_expression_spdx`.
+        """
+        from scanpipe.pipes.resolve import convert_spdx_expression
+
+        if self.concluded_license_expression:
+            return self.concluded_license_expression
+        elif self.concluded_license_expression_spdx:
+            return convert_spdx_expression(self.concluded_license_expression_spdx)
+        return ""
+
+    def get_concluded_license_expression_spdx(self):
+        """
+        Return this package concluded license expression using SPDX keys.
+
+        Use `concluded_license_expression_spdx` when available or compute the expression
+        from `concluded_license_expression`.
+        """
+        if self.concluded_license_expression_spdx:
+            return self.concluded_license_expression_spdx
+        elif self.concluded_license_expression:
+            return build_spdx_license_expression(self.concluded_license_expression)
         return ""
 
     def as_spdx(self):
@@ -3960,7 +4000,7 @@ class DiscoveredPackage(
             spdx_id=self.spdx_id,
             download_location=self.download_url,
             license_declared=self.get_declared_license_expression_spdx(),
-            license_concluded=self.get_declared_license_expression_spdx(),
+            license_concluded=self.get_concluded_license_expression_spdx(),
             copyright_text=self.copyright,
             version=self.version,
             homepage=self.homepage_url,

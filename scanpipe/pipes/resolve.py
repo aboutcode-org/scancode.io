@@ -327,21 +327,26 @@ def spdx_package_to_package_data(spdx_package):
         for checksum in spdx_package.checksums
     }
 
-    if spdx_package.license_concluded not in spdx.EMPTY:
-        declared_license_expression_spdx = spdx_package.license_concluded
-    else:
-        declared_license_expression_spdx = spdx_package.license_declared
-
     declared_expression = ""
-    if declared_license_expression_spdx:
-        declared_expression = convert_spdx_expression(declared_license_expression_spdx)
+    declared_expression_spdx = ""
+    if spdx_package.license_declared not in spdx.EMPTY:
+        declared_expression_spdx = spdx_package.license_declared
+        declared_expression = convert_spdx_expression(declared_expression_spdx)
+
+    concluded_expression = ""
+    concluded_expression_spdx = ""
+    if spdx_package.license_concluded not in spdx.EMPTY:
+        concluded_expression_spdx = spdx_package.license_concluded
+        concluded_expression = convert_spdx_expression(concluded_expression_spdx)
 
     package_data = {
         "package_uid": package_uid,
         "name": spdx_package.name,
         "download_url": spdx_package.download_location,
         "declared_license_expression": declared_expression,
-        "declared_license_expression_spdx": declared_license_expression_spdx,
+        "declared_license_expression_spdx": declared_expression_spdx,
+        "concluded_license_expression": concluded_expression,
+        "concluded_license_expression_spdx": concluded_expression_spdx,
         "extracted_license_statement": spdx_package.license_declared,
         "copyright": spdx_package.copyright_text,
         "version": spdx_package.version,
