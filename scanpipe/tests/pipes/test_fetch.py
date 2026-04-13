@@ -334,9 +334,13 @@ class ScanPipeFetchPipesTest(TestCase):
     def test_scanpipe_pipes_fetch_check_urls_availability(
         self, mock_head, mock_gethostbyname
     ):
-        urls = [
+        http_urls = [
             "https://example.com/file.zip",
             "https://example.com/archive.tar.gz",
+        ]
+        urls = http_urls + [
+            "docker://image",
+            "pkg:npm/name@version",
         ]
 
         # All URLs safe and accessible
@@ -346,4 +350,4 @@ class ScanPipeFetchPipesTest(TestCase):
 
         # All URLs fail
         mock_head.side_effect = requests.exceptions.RequestException
-        self.assertEqual(urls, fetch.check_urls_availability(urls))
+        self.assertEqual(http_urls, fetch.check_urls_availability(urls))
