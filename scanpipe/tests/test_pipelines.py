@@ -1351,7 +1351,7 @@ class PipelinesIntegrationTest(TestCase):
                 "purl": "pkg:deb/debian/adduser@3.118?arch=all",
                 "affected_by_vulnerabilities": [
                     {
-                        "vulnerability_id": "VCID-cah8-awtr-aaad",
+                        "advisory_id": "ID-1",
                         "summary": "An issue was discovered.",
                     },
                 ],
@@ -1360,13 +1360,14 @@ class PipelinesIntegrationTest(TestCase):
                 "purl": "pkg:deb/debian/adduser@3.118?qualifiers=1",
                 "affected_by_vulnerabilities": [
                     {
-                        "vulnerability_id": "VCID-cah8-awtr-aaad",
+                        "advisory_id": "ID-2",
                         "summary": "An issue was discovered.",
                     },
                 ],
             },
         ]
-        mock_bulk_search_by_purl.return_value = vulnerability_data
+        response_json = {"results": vulnerability_data}
+        mock_bulk_search_by_purl.return_value = response_json
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
