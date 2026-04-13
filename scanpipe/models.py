@@ -2012,9 +2012,10 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
         if not self.download_url:
             raise ValueError("No `download_url` value to be fetched.")
 
-        is_safe_and_available = fetch.check_url(self.download_url)
-        if not is_safe_and_available:
-            raise ValidationError(f"Could not fetch: {self.download_url}")
+        if self.download_url.startswith("http"):
+            is_safe_and_available = fetch.check_url(self.download_url)
+            if not is_safe_and_available:
+                raise ValidationError(f"Could not fetch: {self.download_url}")
 
         downloaded = fetch.fetch_url(url=self.download_url)
         destination = self.project.move_input_from(downloaded.path)
