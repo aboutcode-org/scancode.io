@@ -5,7 +5,6 @@
 name: scancodeio
 
 x-dev-env: &dev-env
-  SCANCODEIO_DEBUG: "True"
   DJANGO_RUNSERVER_HIDE_WARNING: "true"
 
 x-dev-build: &dev-build
@@ -15,6 +14,8 @@ x-dev-build: &dev-build
 services:
   web:
     build: *dev-build
+    env_file:
+      - .env
     environment:
       <<: *dev-env
     command: ./manage.py runserver --skip-checks 0.0.0.0:8001
@@ -26,6 +27,8 @@ services:
   # Volume mount keeps code in sync. Restart manually with: make restart-worker
   worker:
     build: *dev-build
+    env_file:
+      - .env
     environment:
       <<: *dev-env
     command: ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker
