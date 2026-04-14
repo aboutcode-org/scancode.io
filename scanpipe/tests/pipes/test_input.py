@@ -233,3 +233,111 @@ class ScanPipeInputPipesTest(TestCase):
             "datasource_id": "pypi_wheel_metadata",
         }
         self.assertEqual(expected, results)
+
+    def test_scanpipe_pipes_input_get_integrated_tool_name(self):
+        """Test detection of integrated tool name from scan data structure."""
+        vuln_data_list = [
+            {"purl": "pkg:pypi/django@5.0", "affected_by_vulnerabilities": []}
+        ]
+        self.assertEqual("vulnerablecode", input.get_integrated_tool_name(vuln_data_list))
+
+        vuln_data_dict = {"vulnerabilities": [{"id": "test"}]}
+        self.assertEqual("vulnerablecode", input.get_integrated_tool_name(vuln_data_dict))
+
+        purldb_data = {
+            "packages": [
+                {
+                    "purl": "pkg:npm/lodash@4.17.21",
+                    "repository_homepage_url": "https://npmjs.com",
+                }
+            ]
+        }
+        self.assertEqual("purldb", input.get_integrated_tool_name(purldb_data))
+
+        matchcode_data = {
+            "files": [
+                {
+                    "path": "test.js",
+                    "for_packages": ["pkg:npm/test@1.0"],
+                    "extra_data": {"matched_to": "test", "path_score": 100},
+                }
+            ],
+            "packages": [{"purl": "pkg:npm/test@1.0"}],
+        }
+        self.assertEqual("matchcodeio", input.get_integrated_tool_name(matchcode_data))
+
+        unknown_data = {"random_key": "value"}
+        self.assertIsNone(input.get_integrated_tool_name(unknown_data))
+
+    def test_scanpipe_pipes_input_load_vulnerabilities_from_vulnerablecode(self):
+        """Test loading vulnerability data from VulnerableCode export."""
+        from scanpipe.models import DiscoveredPackage
+
+        project = Project.objects.create(name="vuln_test")
+
+        DiscoveredPackage.objects.create(
+            project=project,
+            type="pypi",
+            name="django",
+            version="5.0",
+        )
+
+        input_location = self.data / "integrations" / "vulnerablecode_import.json"
+        scan_data = json.loads(input_location.read_text())
+        updated_count = input.load_vulnerabilities_from_vulnerablecode(project, scan_data)
+
+        self.assertEqual(1, updated_count)
+
+        package = project.discoveredpackages.get(name="django")
+        self.assertIsNotNone(package.affected_by_vulnerabilities)
+        self.assertEqual(1, len(package.affected_by_vulnerabilities))
+        self.assertEqual(
+            "VCID-3gge-bre2-aaac",
+            package.affected_by_vulnerabilities[0]["vulnerability_id"],
+        )
+
+    def test_scanpipe_pipes_input_load_enrichment_from_purldb(self):
+        """Test loading package enrichment data from PurlDB export."""
+        project = Project.objects.create(name="purldb_test")
+
+        input_location = self.data / "integrations" / "purldb_import.json"
+        scan_data = json.loads(input_location.read_text())
+        result = input.load_enrichment_from_purldb(project, scan_data)
+
+        self.assertEqual(2, result["created"])
+        self.assertEqual(0, result["updated"])
+        self.assertEqual(2, project.discoveredpackages.count())
+
+        lodash = project.discoveredpackages.get(name="lodash")
+        self.assertEqual("pkg:npm/lodash@4.17.21", lodash.package_url)
+        self.assertEqual("mit", lodash.declared_license_expression)
+
+        requests_pkg = project.discoveredpackages.get(name="requests")
+        self.assertEqual("pkg:pypi/requests@2.28.0", requests_pkg.package_url)
+        self.assertEqual("apache-2.0", requests_pkg.declared_license_expression)
+
+    def test_scanpipe_pipes_input_load_matches_from_matchcode(self):
+        """Test loading matching results from MatchCode.io export."""
+        project = Project.objects.create(name="matchcode_test")
+
+        CodebaseResource.objects.create(
+            project=project,
+            path="src/utils.js",
+            type=CodebaseResource.Type.FILE,
+        )
+        CodebaseResource.objects.create(
+            project=project,
+            path="src/helper.js",
+            type=CodebaseResource.Type.FILE,
+        )
+
+        input_location = self.data / "integrations" / "matchcode_import.json"
+        scan_data = json.loads(input_location.read_text())
+        created_count = input.load_matches_from_matchcode(project, scan_data)
+
+        self.assertEqual(1, created_count)
+        self.assertEqual(1, project.discoveredpackages.count())
+
+        package = project.discoveredpackages.first()
+        self.assertEqual("lodash", package.name)
+        self.assertEqual("4.17.21", package.version)
