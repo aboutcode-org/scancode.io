@@ -78,7 +78,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONPATH=$APP_DIR
 
 # OS requirements as per
-# https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html
+# https://scancode-toolkit.readthedocs.io/en/stable/getting-started/installation/index.html#installation-prerequisites
 # Also install universal-ctags and xgettext for symbol and string collection.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -94,6 +94,7 @@ RUN apt-get update \
        libzstd1 \
        libgpgme11 \
        libdevmapper1.02.1 \
+       libmagic1 \
        git \
        wait-for-it \
        universal-ctags \
