@@ -2888,6 +2888,7 @@ class ScanPipeModelsTest(TestCase):
             self.assertEqual(check.reason, expected["reason"])
             self.assertEqual(check.details, expected["details"] or [])
 
+    @override_settings(TIME_ZONE="UTC")
     def test_scanpipe_parse_score_date(self):
         """Test parse_score_date with valid, invalid, and custom date formats."""
         # Valid date formats

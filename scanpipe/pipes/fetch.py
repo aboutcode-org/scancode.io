@@ -457,5 +457,5 @@ def check_url(url):
 
 def check_urls_availability(urls):
     """Check the safety and accessibility of a list of URLs."""
-    errors = [url for url in urls if not check_url(url)]
+    errors = [url for url in urls if not check_url(url) if url.startswith("http")]
     return errors
