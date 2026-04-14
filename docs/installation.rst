@@ -156,7 +156,7 @@ and **build the Docker image**::
 .. warning::
     The Docker image has been updated to run as a non-root user.
     If you encounter "permissions" issues while running the ScanCode.io Docker images
-    following the ``docker compose build``, you will need to update the the permissions
+    following the ``docker compose build``, you will need to update the permissions
     of the ``/var/scancodeio/`` directory of the Docker volumes using::
 
         docker compose run -u 0:0 web chown -R app:app /var/scancodeio/
