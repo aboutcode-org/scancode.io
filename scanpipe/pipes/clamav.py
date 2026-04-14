@@ -20,18 +20,22 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import logging
 from pathlib import Path
 
 from django.conf import settings
 
 import clamd
 
+logger = logging.getLogger(__name__)
+
 
 def scan_for_virus(project):
     """
     Run a ClamAV scan to detect virus infection.
-    Create one Project error message per found virus and store the detection data
-    on the related codebase resource ``extra_data`` field.
+    - Avoid crashes when ClamAV reports files not indexed in CodebaseResource.
+    - Avoid per-file DB queries by preloading valid resource paths.
+    - Record a project-level error for any detected virus.
     """
     if settings.CLAMD_USE_TCP:
         clamd_socket = clamd.ClamdNetworkSocket(settings.CLAMD_TCP_ADDR)
@@ -43,17 +47,37 @@ def scan_for_virus(project):
     except clamd.ClamdError as e:
         raise Exception(f"Error with the ClamAV service: {e}")
 
+    # Preload all valid indexed resource paths
+    valid_paths = set(project.codebaseresources.values_list("path", flat=True))
+
+    missing_resources = []
+
     for resource_location, results in scan_response.items():
         status, reason = results
-        resource_path = Path(resource_location).relative_to(project.codebase_path)
 
-        resource = project.codebaseresources.get(path=resource_path)
+        if status != "FOUND":
+            continue
+
+        resource_path = Path(resource_location).relative_to(project.codebase_path)
+        resource_path_str = str(resource_path)
+
+        if resource_path_str not in valid_paths:
+            missing_resources.append(resource_path_str)
+            logger.warning(
+                "ClamAV detected virus in non-indexed file: %s",
+                resource_path_str,
+            )
+            continue
+
+        resource = project.codebaseresources.filter(path=resource_path_str).first()
+
         virus_report = {
             "clamav": {
                 "status": status,
                 "reason": reason,
             }
         }
+
         resource.update_extra_data({"virus_report": virus_report})
 
         project.add_error(
@@ -62,6 +86,13 @@ def scan_for_virus(project):
             details={
                 "status": status,
                 "reason": reason,
-                "resource_path": str(resource_path),
+                "resource_path": resource_path_str,
             },
+        )
+
+    if missing_resources:
+        project.add_error(
+            description="ClamAV detected virus in files not indexed in DB",
+            model="ScanForVirus",
+            details={"missing_resources": missing_resources},
         )
