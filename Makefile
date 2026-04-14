@@ -71,6 +71,12 @@ regen-fixtures:
 	@echo "-> Regenerate test fixtures from the running Docker stack"
 	${COMPOSE} exec -e SCANCODEIO_TEST_FIXTURES_REGEN=1 web ./manage.py test
 
+fix:
+	@echo "-> Run Ruff format"
+	uvx ruff format
+	@echo "-> Run Ruff linter"
+	uvx ruff check --fix
+
 ########################################################################################
 # Local venv commands (legacy)
 ########################################################################################
@@ -198,4 +204,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate makemigrations restart-worker postgresdb sqlitedb backupdb run test fasttest regen-fixtures docs build bash shell docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate makemigrations restart-worker postgresdb sqlitedb backupdb run test fasttest regen-fixtures fix docs build bash shell docker-images offline-package
