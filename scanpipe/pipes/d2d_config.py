@@ -183,6 +183,18 @@ ECOSYSTEM_CONFIGS = {
         ecosystem_option="Python",
         source_symbol_extensions=[".pyx", ".pxd", ".py", ".pyi"],
         matchable_resource_extensions=[".py", ".pyi"],
+        deployed_resource_path_exclusions=[
+            "*.cmake",
+            "*.mo",
+            "*.toml",
+            "*.txt",
+            "*.db",
+            "*.conf",
+            "*.pth",
+            "*.dist-info/*",
+            "*.pc",
+            "*.la",
+        ],
     ),
 }
 
