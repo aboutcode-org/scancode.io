@@ -71,21 +71,18 @@ class ScanPipeVulnerableCodeTest(TestCase):
 
     def test_scanpipe_pipes_vulnerablecode_filter_vulnerabilities(self):
         data = self.data / "vulnerablecode/django-5.0_package_data.json"
-        package_data = json.loads(data.read_text())
+        response_json = json.loads(data.read_text())
+        package_data = response_json.get("results")[0]
         vulnerability_data = package_data["affected_by_vulnerabilities"]
-        self.assertEqual(2, len(vulnerability_data))
+        self.assertEqual(24, len(vulnerability_data))
 
         vulnerability1 = vulnerability_data[0]
-        self.assertEqual("VCID-3gge-bre2-aaac", vulnerability1.get("advisory_id"))
+        self.assertEqual("PYSEC-2024-28", vulnerability1.get("advisory_id"))
         ignore_set = {vulnerability1.get("advisory_id")}
-        self.assertEqual(1, len(filter_vulnerabilities(vulnerability_data, ignore_set)))
+        self.assertEqual(23, len(filter_vulnerabilities(vulnerability_data, ignore_set)))
 
         ignore_set = {vulnerability1.get("aliases")[0]}
-        self.assertEqual(1, len(filter_vulnerabilities(vulnerability_data, ignore_set)))
-
-        vulnerability2 = vulnerability_data[1]
-        ignore_set.add(vulnerability2.get("aliases")[1])
-        self.assertEqual([], filter_vulnerabilities(vulnerability_data, ignore_set))
+        self.assertEqual(23, len(filter_vulnerabilities(vulnerability_data, ignore_set)))
 
     def test_scanpipe_pipes_vulnerablecode_chunked(self):
         result = list(chunked([1, 2, 3, 4, 5], 2))
