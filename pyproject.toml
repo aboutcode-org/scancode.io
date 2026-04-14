@@ -36,7 +36,7 @@ dependencies = [
   "importlib-metadata==8.7.1",
   "setuptools==82.0.0",
   # Django related
-  "Django==6.0.3",
+  "Django==6.0.4",
   "django-environ==0.13.0",
   "django-crispy-forms==2.6",
   "crispy-bootstrap3==2024.1",
