@@ -79,10 +79,14 @@ class ScanPipeVulnerableCodeTest(TestCase):
         vulnerability1 = vulnerability_data[0]
         self.assertEqual("PYSEC-2024-28", vulnerability1.get("advisory_id"))
         ignore_set = {vulnerability1.get("advisory_id")}
-        self.assertEqual(23, len(filter_vulnerabilities(vulnerability_data, ignore_set)))
+        self.assertEqual(
+            23, len(filter_vulnerabilities(vulnerability_data, ignore_set))
+        )
 
         ignore_set = {vulnerability1.get("aliases")[0]}
-        self.assertEqual(23, len(filter_vulnerabilities(vulnerability_data, ignore_set)))
+        self.assertEqual(
+            23, len(filter_vulnerabilities(vulnerability_data, ignore_set))
+        )
 
     def test_scanpipe_pipes_vulnerablecode_chunked(self):
         result = list(chunked([1, 2, 3, 4, 5], 2))
