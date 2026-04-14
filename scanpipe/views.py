@@ -1965,8 +1965,20 @@ class VulnerabilityListView(
 ):
     template_name = "scanpipe/vulnerability_list.html"
     table_columns = [
-        "advisory_id",
+        {
+            "field_name": "advisory_id",
+            "label": "Advisory ID",
+        },
         "summary",
+        "exploitability",
+        {
+            "field_name": "weighted_severity",
+            "label": "Severity",
+        },
+        {
+            "field_name": "risk_score",
+            "label": "Risk",
+        },
         "affects",
     ]
 

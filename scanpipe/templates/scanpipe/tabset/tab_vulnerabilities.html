@@ -1,40 +1,38 @@
-<div class="content">
-  <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
-    <thead>
+<table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+  <thead>
+    <tr>
+      <th style="width: 220px;">Affected by</th>
+      <th>Summary</th>
+      <th>Exploitability</th>
+      <th>Severity</th>
+      <th>Risk</th>
+      <th>Analysis</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for vulnerability in tab_data.fields.affected_by_vulnerabilities.value %}
       <tr>
-        <th style="width: 220px;">Affected by</th>
-        <th>Summary</th>
-        <th>Exploitability</th>
-        <th>Severity</th>
-        <th>Risk</th>
-        <th>Analysis</th>
+        <td>
+          {% include 'scanpipe/includes/vulnerability_id.html' with vulnerability=vulnerability VULNERABLECODE_URL=tab_data.VULNERABLECODE_URL %}
+        </td>
+        <td>
+          {% include 'scanpipe/includes/vulnerability_summary.html' with vulnerability=vulnerability only %}
+        </td>
+        <td>
+          {{ vulnerability.exploitability|default_if_none:"" }}
+        </td>
+        <td>
+          {{ vulnerability.weighted_severity|default_if_none:"" }}
+        </td>
+        <td>
+          {{ vulnerability.risk_score|default_if_none:"" }}
+        </td>
+        <td>
+          {% for key, value in vulnerability.cdx_vulnerability.analysis.items %}
+            <strong>{{ key }}:</strong> {{ value }}{% if not forloop.last %}<br>{% endif %}
+          {% endfor %}
+        </td>
       </tr>
-    </thead>
-    <tbody>
-      {% for vulnerability in tab_data.fields.affected_by_vulnerabilities.value %}
-        <tr>
-          <td>
-            {% include 'scanpipe/includes/vulnerability_id.html' with vulnerability=vulnerability VULNERABLECODE_URL=tab_data.VULNERABLECODE_URL %}
-          </td>
-          <td>
-            {% include 'scanpipe/includes/vulnerability_summary.html' with vulnerability=vulnerability only %}
-          </td>
-          <td>
-            {{ vulnerability.exploitability }}
-          </td>
-          <td>
-            {{ vulnerability.weighted_severity }}
-          </td>
-          <td>
-            {{ vulnerability.risk_score|default_if_none:"" }}
-          </td>
-          <td>
-            {% for key, value in vulnerability.cdx_vulnerability.analysis.items %}
-              <strong>{{ key }}:</strong> {{ value }}{% if not forloop.last %}<br>{% endif %}
-            {% endfor %}
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+    {% endfor %}
+  </tbody>
+</table>
