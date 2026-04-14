@@ -250,7 +250,7 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         self.assertEqual(1, len(packages))
 
         affected_by = packages[0]["affected_by_vulnerabilities"]
-        self.assertEqual("CVE-2005-2541", affected_by[0]["vulnerability_id"])
+        self.assertEqual("CVE-2005-2541", affected_by[0]["advisory_id"])
         self.assertEqual(
             "Tar 1.15.1 does not properly warn the user when...",
             affected_by[0]["summary"],

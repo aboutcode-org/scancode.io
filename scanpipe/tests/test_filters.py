@@ -194,9 +194,7 @@ class ScanPipeFilterTest(TestCase):
     def test_scanpipe_filters_package_filterset_is_vulnerable(self):
         p1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
         p2 = DiscoveredPackage.create_from_data(self.project1, package_data2)
-        p2.update(
-            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
-        )
+        p2.update(affected_by_vulnerabilities=[{"advisory_id": "VCID-cah8-awtr-aaad"}])
 
         filterset = PackageFilterSet(data={"is_vulnerable": ""})
         self.assertEqual(2, len(filterset.qs))

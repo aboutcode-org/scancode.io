@@ -1390,7 +1390,7 @@ class ScanPipeManagementCommandTest(TestCase):
         out_value = out.getvalue().strip()
         self.assertEqual("No vulnerabilities found", out_value)
 
-        vulnerability_data = [{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
+        vulnerability_data = [{"advisory_id": "VCID-cah8-awtr-aaad"}]
         package1.update(affected_by_vulnerabilities=vulnerability_data)
         make_dependency(
             project,

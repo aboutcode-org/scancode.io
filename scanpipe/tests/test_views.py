@@ -1200,7 +1200,7 @@ class ScanPipeViewsTest(TestCase):
 
         package1.add_resources([make_resource_file(self.project1, "file1.ext")])
         package1.update(
-            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}],
+            affected_by_vulnerabilities=[{"advisory_id": "VCID-cah8-awtr-aaad"}],
             extra_data={"extra": "data"},
         )
         dependency_data = dependency_data1.copy()
@@ -1219,7 +1219,7 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_discovered_package_details_view_tab_vulnerabilities(self):
         package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
         package1.update(
-            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
+            affected_by_vulnerabilities=[{"advisory_id": "VCID-cah8-awtr-aaad"}]
         )
         response = self.client.get(package1.get_absolute_url())
         self.assertContains(response, "tab-vulnerabilities")
@@ -1307,8 +1307,8 @@ class ScanPipeViewsTest(TestCase):
             response = self.client.get(url)
         self.assertContains(response, "No Vulnerabilities found.")
 
-        v1 = {"vulnerability_id": "VCID-1"}
-        v2 = {"vulnerability_id": "VCID-2"}
+        v1 = {"advisory_id": "VCID-1"}
+        v2 = {"advisory_id": "VCID-2"}
         project = make_project()
         make_package(project, "pkg:type/a", affected_by_vulnerabilities=[v1])
         make_dependency(project, affected_by_vulnerabilities=[v2])

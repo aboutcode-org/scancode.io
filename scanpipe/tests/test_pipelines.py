@@ -1652,7 +1652,7 @@ class PipelinesIntegrationTest(TestCase):
         affected_by = package.affected_by_vulnerabilities[0]
         cdx_vulnerability_data = affected_by.pop("cdx_vulnerability_data")
         expected = {
-            "vulnerability_id": "CVE-2005-2541",
+            "advisory_id": "CVE-2005-2541",
             "summary": "Tar 1.15.1 does not properly warn the user when...",
         }
         self.assertEqual(expected, affected_by)

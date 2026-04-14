@@ -1573,7 +1573,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         Return a dict of all vulnerabilities affecting this project.
 
-        Combines package and dependency vulnerabilities, keyed by vulnerability_id.
+        Combines package and dependency vulnerabilities, keyed by advisory_id.
         Each vulnerability includes an "affects" list of all affected packages
         and dependencies.
         """
@@ -1583,11 +1583,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         for queryset in querysets:
             vulnerabilities = queryset.get_vulnerabilities_dict()
-            for vcid, vuln_data in vulnerabilities.items():
-                if vcid in vulnerabilities_dict:
-                    vulnerabilities_dict[vcid]["affects"].extend(vuln_data["affects"])
+            for advisory_id, vuln_data in vulnerabilities.items():
+                if advisory_id in vulnerabilities_dict:
+                    vulnerabilities_dict[advisory_id]["affects"].extend(
+                        vuln_data["affects"]
+                    )
                 else:
-                    vulnerabilities_dict[vcid] = vuln_data
+                    vulnerabilities_dict[advisory_id] = vuln_data
 
         return vulnerabilities_dict
 
@@ -3361,24 +3363,22 @@ class VulnerabilityQuerySetMixin:
         queryset.
 
         Extracts and flattens the affected_by_vulnerabilities field from
-        all objects in the queryset. Removes duplicates based on vulnerability_id
+        all objects in the queryset. Removes duplicates based on advisory_id
         while preserving the first occurrence of each unique vulnerability.
         """
         vulnerabilities_lists = self.values_list(self.AFFECTED_BY_FIELD, flat=True)
         flatten_vulnerabilities = chain.from_iterable(vulnerabilities_lists)
 
-        # Deduplicate by vulnerability_id while preserving order
+        # Deduplicate by advisory_id while preserving order
         unique_vulnerabilities = {
-            vuln["vulnerability_id"]: vuln for vuln in flatten_vulnerabilities
+            vuln["advisory_id"]: vuln for vuln in flatten_vulnerabilities
         }
 
-        return sorted(
-            unique_vulnerabilities.values(), key=itemgetter("vulnerability_id")
-        )
+        return sorted(unique_vulnerabilities.values(), key=itemgetter("advisory_id"))
 
     def get_vulnerabilities_dict(self):
         """
-        Return a dict of vulnerabilities keyed by vulnerability_id.
+        Return a dict of vulnerabilities keyed by advisory_id.
 
         Each vulnerability includes an "affects" list containing all
         objects from this queryset affected by that vulnerability.
@@ -3386,7 +3386,7 @@ class VulnerabilityQuerySetMixin:
         Returns:
             dict: {
                 'VCID-1': {
-                    'vulnerability_id': 'VCID-1',
+                    'advisory_id': 'VCID-1',
                     'affects': [obj1, obj2, ...]
                 },
                 ...
@@ -3397,13 +3397,13 @@ class VulnerabilityQuerySetMixin:
 
         for obj in self.vulnerable_ordered():
             for vulnerability in obj.affected_by_vulnerabilities:
-                vcid = vulnerability.get("vulnerability_id")
-                if not vcid:
+                advisory_id = vulnerability.get("advisory_id")
+                if not advisory_id:
                     continue
 
-                if vcid not in vulnerabilities_dict:
-                    vulnerabilities_dict[vcid] = {**vulnerability, "affects": []}
-                vulnerabilities_dict[vcid]["affects"].append(obj)
+                if advisory_id not in vulnerabilities_dict:
+                    vulnerabilities_dict[advisory_id] = {**vulnerability, "affects": []}
+                vulnerabilities_dict[advisory_id]["affects"].append(obj)
 
         return vulnerabilities_dict
 
