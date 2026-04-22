@@ -141,6 +141,7 @@ collect_strings_gettext = "scanpipe.pipelines.collect_strings_gettext:CollectStr
 collect_symbols_ctags = "scanpipe.pipelines.collect_symbols_ctags:CollectSymbolsCtags"
 collect_symbols_pygments = "scanpipe.pipelines.collect_symbols_pygments:CollectSymbolsPygments"
 collect_symbols_tree_sitter = "scanpipe.pipelines.collect_symbols_tree_sitter:CollectSymbolsTreeSitter"
+collect_symbols_patches = "scanpipe.pipelines.collect_patch_symbols:CollectPatchSymbols"
 enrich_with_purldb = "scanpipe.pipelines.enrich_with_purldb:EnrichWithPurlDB"
 fetch_scores = "scanpipe.pipelines.fetch_scores:FetchScores"
 find_vulnerabilities = "scanpipe.pipelines.find_vulnerabilities:FindVulnerabilities"
