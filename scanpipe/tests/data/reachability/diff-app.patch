@@ -1,0 +1,39 @@
+From 8f7b1c3d9a4e2b6f5d8c1a2e3f4b5c6d7e8f9a0b Mon Sep 17 00:00:00 2001
+From: Security Team <security@aboutcode.org>
+Date: Tue, 2 Jun 2026 10:00:00 +0000
+Subject: [PATCH] Fix path traversal vulnerability in report generator
+
+- Validates that target paths stay within the designated base_dir.
+- Catches ValueError on invalid path resolution.
+---
+ app.py | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/app.py b/app.py
+index a1b2c3d..e4f5g6h 100644
+--- a/app.py
++++ b/app.py
+@@ -15,13 +15,19 @@ def serve_report(request_payload):
+     # Helper function nested inside serve_report
+     def build_file_path(filename):
+-        # VULNERABLE: Direct concatenation allows Path Traversal
+-        # An attacker passing "../../etc/passwd" could read system files.
+-        return os.path.join(generator.base_dir, filename)
++        # FIXED: Validate that the resolved path stays within the base_dir
++        base = os.path.abspath(generator.base_dir)
++        target = os.path.abspath(os.path.join(base, filename))
++        if not target.startswith(base):
++            raise ValueError("Path Traversal Detected")
++        return target
+
+     if not requested_file:
+         return "Error: No file specified"
+
+-    target_path = build_file_path(requested_file)
++    try:
++        target_path = build_file_path(requested_file)
++    except ValueError:
++        return "Error: Invalid path"
+
+     if os.path.exists(target_path):
+         return f"Serving content of {target_path}"
