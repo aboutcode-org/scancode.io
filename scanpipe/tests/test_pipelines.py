@@ -1351,7 +1351,7 @@ class PipelinesIntegrationTest(TestCase):
                 "purl": "pkg:deb/debian/adduser@3.118?arch=all",
                 "affected_by_vulnerabilities": [
                     {
-                        "vulnerability_id": "VCID-cah8-awtr-aaad",
+                        "advisory_id": "ID-1",
                         "summary": "An issue was discovered.",
                     },
                 ],
@@ -1360,13 +1360,14 @@ class PipelinesIntegrationTest(TestCase):
                 "purl": "pkg:deb/debian/adduser@3.118?qualifiers=1",
                 "affected_by_vulnerabilities": [
                     {
-                        "vulnerability_id": "VCID-cah8-awtr-aaad",
+                        "advisory_id": "ID-2",
                         "summary": "An issue was discovered.",
                     },
                 ],
             },
         ]
-        mock_bulk_search_by_purl.return_value = vulnerability_data
+        response_json = {"results": vulnerability_data}
+        mock_bulk_search_by_purl.return_value = response_json
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
@@ -1651,7 +1652,7 @@ class PipelinesIntegrationTest(TestCase):
         affected_by = package.affected_by_vulnerabilities[0]
         cdx_vulnerability_data = affected_by.pop("cdx_vulnerability_data")
         expected = {
-            "vulnerability_id": "CVE-2005-2541",
+            "advisory_id": "CVE-2005-2541",
             "summary": "Tar 1.15.1 does not properly warn the user when...",
         }
         self.assertEqual(expected, affected_by)

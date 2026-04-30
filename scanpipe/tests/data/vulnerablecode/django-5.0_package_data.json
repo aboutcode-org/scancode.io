@@ -1,696 +1,2355 @@
 {
-    "url": "http://vulnerablecode/api/packages/807568",
-    "purl": "pkg:pypi/django@5.0",
-    "type": "pypi",
-    "namespace": "",
-    "name": "django",
-    "version": "5.0",
-    "qualifiers": {},
-    "subpath": "",
-    "next_non_vulnerable_version": "5.0.3",
-    "latest_non_vulnerable_version": "5.0.3",
-    "affected_by_vulnerabilities": [
+    "count": 1,
+    "next": null,
+    "previous": null,
+    "results": [
         {
-            "url": "http://vulnerablecode/api/vulnerabilities/516832",
-            "vulnerability_id": "VCID-3gge-bre2-aaac",
-            "summary": "",
-            "references": [
+            "purl": "pkg:pypi/django@5.0",
+            "affected_by_vulnerabilities": [
                 {
-                    "reference_url": "https://access.redhat.com/hydra/rest/securitydata/cve/CVE-2024-24680.json",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "7.5",
-                            "scoring_system": "cvssv3",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
-                        }
+                    "advisory_id": "PYSEC-2024-102",
+                    "aliases": [
+                        "BIT-django-2024-45230",
+                        "CVE-2024-45230",
+                        "GHSA-5hgc-2vfp-mqvc"
                     ],
-                    "url": "https://access.redhat.com/hydra/rest/securitydata/cve/CVE-2024-24680.json"
-                },
-                {
-                    "reference_url": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-24680",
-                    "reference_id": "",
-                    "scores": [],
-                    "url": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-24680"
-                },
-                {
-                    "reference_url": "https://docs.djangoproject.com/en/5.0/releases/security",
-                    "reference_id": "",
-                    "scores": [
+                    "weighted_severity": 6.2,
+                    "exploitability": 0.5,
+                    "risk_score": 3.1,
+                    "summary": "An issue was discovered in Django 5.1 before 5.1.1, 5.0 before 5.0.9, and 4.2 before 4.2.16. The urlize() and urlizetrunc() template filters are subject to a potential denial-of-service attack via very large inputs with a specific sequence of characters.",
+                    "ssvc_trees": [
                         {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-10-30T16:30:05Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/45xxx/CVE-2024-45230.json"
                         },
                         {
-                            "value": "LOW",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://docs.djangoproject.com/en/5.0/releases/security"
-                },
-                {
-                    "reference_url": "https://docs.djangoproject.com/en/5.0/releases/security/",
-                    "reference_id": "",
-                    "scores": [],
-                    "url": "https://docs.djangoproject.com/en/5.0/releases/security/"
-                },
-                {
-                    "reference_url": "https://ftp.suse.com/pub/projects/security/yaml/suse-cvss-scores.yaml",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "2.1",
-                            "scoring_system": "cvssv2",
-                            "scoring_elements": "AV:N/AC:H/Au:S/C:N/I:P/A:N"
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-10-30T16:30:05Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/45xxx/CVE-2024-45230.json"
                         },
                         {
-                            "value": "4.4",
-                            "scoring_system": "cvssv3",
-                            "scoring_elements": "CVSS:3.0/AV:L/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:L"
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-10-30T16:30:05Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/45xxx/CVE-2024-45230.json"
                         },
                         {
-                            "value": "4.7",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:H"
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-10-30T16:30:05Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/45xxx/CVE-2024-45230.json"
                         }
                     ],
-                    "url": "https://ftp.suse.com/pub/projects/security/yaml/suse-cvss-scores.yaml"
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.0.9",
+                        "pkg:pypi/django@5.1.1",
+                        "pkg:pypi/django@4.2.16"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/pypa_importer_v2/django/PYSEC-2024-102"
                 },
                 {
-                    "reference_url": "https://github.com/django/django",
-                    "reference_id": "",
-                    "scores": [
+                    "advisory_id": "GHSA-6w2r-r2m5-xq5w",
+                    "aliases": [
+                        "CVE-2025-57833"
+                    ],
+                    "weighted_severity": 6.4,
+                    "exploitability": 0.5,
+                    "risk_score": 3.2,
+                    "summary": "Django is subject to SQL injection through its column aliases\nAn issue was discovered in Django 4.2 before 4.2.24, 5.1 before 5.1.12, and 5.2 before 5.2.6. FilteredRelation is subject to SQL injection in column aliases, using a suitably crafted dictionary, with dictionary expansion, as the **kwargs passed QuerySet.annotate() or QuerySet.alias().",
+                    "ssvc_trees": [
                         {
-                            "value": "7.5",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                            "vector": "SSVCv2/E:P/A:N/T:T/P:M/B:A/M:M/D:R/2025-09-08T17:33:03Z/",
+                            "decision": "Track*",
+                            "options": [
+                                {
+                                    "Exploitation": "poc"
+                                },
+                                {
+                                    "Automatable": "no"
+                                },
+                                {
+                                    "Technical Impact": "total"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2025/57xxx/CVE-2025-57833.json"
                         },
                         {
-                            "value": "HIGH",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
+                            "vector": "SSVCv2/E:P/A:N/T:T/P:M/B:A/M:M/D:R/2025-09-08T17:33:03Z/",
+                            "decision": "Track*",
+                            "options": [
+                                {
+                                    "Exploitation": "poc"
+                                },
+                                {
+                                    "Automatable": "no"
+                                },
+                                {
+                                    "Technical Impact": "total"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2025/57xxx/CVE-2025-57833.json"
                         }
                     ],
-                    "url": "https://github.com/django/django"
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.1.12"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/github_osv_importer_v2/GHSA-6w2r-r2m5-xq5w"
                 },
                 {
-                    "reference_url": "https://github.com/django/django/commit/16a8fe18a3b81250f4fa57e3f93f0599dc4895bc",
-                    "reference_id": "",
-                    "scores": [
+                    "advisory_id": "PYSEC-2024-67",
+                    "aliases": [
+                        "BIT-django-2024-41989",
+                        "CVE-2024-41989",
+                        "GHSA-jh75-99hh-qvx9"
+                    ],
+                    "weighted_severity": 6.2,
+                    "exploitability": 0.5,
+                    "risk_score": 3.1,
+                    "summary": "An issue was discovered in Django 5.0 before 5.0.8 and 4.2 before 4.2.15. The floatformat template filter is subject to significant memory consumption when given a string representation of a number in scientific notation with a large exponent.",
+                    "ssvc_trees": [
                         {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-08-08T19:34:43Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/41xxx/CVE-2024-41989.json"
                         },
                         {
-                            "value": "MODERATE",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://github.com/django/django/commit/16a8fe18a3b81250f4fa57e3f93f0599dc4895bc"
-                },
-                {
-                    "reference_url": "https://github.com/django/django/commit/55519d6cf8998fe4c8f5c8abffc2b10a7c3d14e9",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-08-08T19:34:43Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/41xxx/CVE-2024-41989.json"
                         },
                         {
-                            "value": "MODERATE",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://github.com/django/django/commit/55519d6cf8998fe4c8f5c8abffc2b10a7c3d14e9"
-                },
-                {
-                    "reference_url": "https://github.com/django/django/commit/572ea07e84b38ea8de0551f4b4eda685d91d09d2",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-08-08T19:34:43Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/41xxx/CVE-2024-41989.json"
                         },
                         {
-                            "value": "MODERATE",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-08-08T19:34:43Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/41xxx/CVE-2024-41989.json"
                         }
                     ],
-                    "url": "https://github.com/django/django/commit/572ea07e84b38ea8de0551f4b4eda685d91d09d2"
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.0.8",
+                        "pkg:pypi/django@4.2.15"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/pypa_importer_v2/django/PYSEC-2024-67"
                 },
                 {
-                    "reference_url": "https://github.com/django/django/commit/c1171ffbd570db90ca206c30f8e2b9f691243820",
-                    "reference_id": "",
-                    "scores": [
+                    "advisory_id": "PYSEC-2024-68",
+                    "aliases": [
+                        "BIT-django-2024-41990",
+                        "CVE-2024-41990",
+                        "GHSA-795c-9xpc-xw6g"
+                    ],
+                    "weighted_severity": 6.2,
+                    "exploitability": 0.5,
+                    "risk_score": 3.1,
+                    "summary": "An issue was discovered in Django 5.0 before 5.0.8 and 4.2 before 4.2.15. The urlize() and urlizetrunc() template filters are subject to a potential denial-of-service attack via very large inputs with a specific sequence of characters.",
+                    "ssvc_trees": [
                         {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-08-07T15:20:51Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/41xxx/CVE-2024-41990.json"
                         },
                         {
-                            "value": "MODERATE",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://github.com/django/django/commit/c1171ffbd570db90ca206c30f8e2b9f691243820"
-                },
-                {
-                    "reference_url": "https://github.com/pypa/advisory-database/tree/main/vulns/django/PYSEC-2024-28.yaml",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-08-07T15:20:51Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/41xxx/CVE-2024-41990.json"
                         },
                         {
-                            "value": "MODERATE",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://github.com/pypa/advisory-database/tree/main/vulns/django/PYSEC-2024-28.yaml"
-                },
-                {
-                    "reference_url": "https://groups.google.com/forum/#%21forum/django-announce",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-08-07T15:20:51Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/41xxx/CVE-2024-41990.json"
                         },
                         {
-                            "value": "LOW",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-08-07T15:20:51Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/41xxx/CVE-2024-41990.json"
                         }
                     ],
-                    "url": "https://groups.google.com/forum/#%21forum/django-announce"
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.0.8",
+                        "pkg:pypi/django@4.2.15"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/pypa_importer_v2/django/PYSEC-2024-68"
                 },
                 {
-                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/D2JIRXEDP4ZET5KFMAPPYSK663Q52NEX",
-                    "reference_id": "",
-                    "scores": [
+                    "advisory_id": "PYSEC-2024-69",
+                    "aliases": [
+                        "BIT-django-2024-41991",
+                        "CVE-2024-41991",
+                        "GHSA-r836-hh6v-rg5g"
+                    ],
+                    "weighted_severity": 6.2,
+                    "exploitability": 0.5,
+                    "risk_score": 3.1,
+                    "summary": "An issue was discovered in Django 5.0 before 5.0.8 and 4.2 before 4.2.15. The urlize and urlizetrunc template filters, and the AdminURLFieldWidget widget, are subject to a potential denial-of-service attack via certain inputs with a very large number of Unicode characters.",
+                    "ssvc_trees": [
                         {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-08-07T17:57:11Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/41xxx/CVE-2024-41991.json"
                         },
                         {
-                            "value": "LOW",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/D2JIRXEDP4ZET5KFMAPPYSK663Q52NEX"
-                },
-                {
-                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/D2JIRXEDP4ZET5KFMAPPYSK663Q52NEX/",
-                    "reference_id": "",
-                    "scores": [],
-                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/D2JIRXEDP4ZET5KFMAPPYSK663Q52NEX/"
-                },
-                {
-                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SN2PLJGYSAAG5KUVIUFJYKD3BLQ4OSN6",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-08-07T17:57:11Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/41xxx/CVE-2024-41991.json"
                         },
                         {
-                            "value": "LOW",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SN2PLJGYSAAG5KUVIUFJYKD3BLQ4OSN6"
-                },
-                {
-                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SN2PLJGYSAAG5KUVIUFJYKD3BLQ4OSN6/",
-                    "reference_id": "",
-                    "scores": [],
-                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SN2PLJGYSAAG5KUVIUFJYKD3BLQ4OSN6/"
-                },
-                {
-                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZQJOMNRMVPCN5WMIZ7YSX5LQ7IR2NY4D",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-08-07T17:57:11Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/41xxx/CVE-2024-41991.json"
                         },
                         {
-                            "value": "LOW",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-08-07T17:57:11Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/41xxx/CVE-2024-41991.json"
                         }
                     ],
-                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZQJOMNRMVPCN5WMIZ7YSX5LQ7IR2NY4D"
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.0.8",
+                        "pkg:pypi/django@4.2.15"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/pypa_importer_v2/django/PYSEC-2024-69"
                 },
                 {
-                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZQJOMNRMVPCN5WMIZ7YSX5LQ7IR2NY4D/",
-                    "reference_id": "",
-                    "scores": [],
-                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZQJOMNRMVPCN5WMIZ7YSX5LQ7IR2NY4D/"
-                },
-                {
-                    "reference_url": "https://www.djangoproject.com/weblog/2024/feb/06/security-releases",
-                    "reference_id": "",
-                    "scores": [
+                    "advisory_id": "PYSEC-2024-70",
+                    "aliases": [
+                        "BIT-django-2024-42005",
+                        "CVE-2024-42005",
+                        "GHSA-pv4p-cwwg-4rph"
+                    ],
+                    "weighted_severity": 8.4,
+                    "exploitability": 0.5,
+                    "risk_score": 4.2,
+                    "summary": "An issue was discovered in Django 5.0 before 5.0.8 and 4.2 before 4.2.15. QuerySet.values() and values_list() methods on models with a JSONField are subject to SQL injection in column aliases via a crafted JSON object key as a passed *arg.",
+                    "ssvc_trees": [
                         {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                            "vector": "SSVCv2/E:N/A:Y/T:T/P:M/B:A/M:M/D:T/2024-08-16T20:19:17Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "total"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/42xxx/CVE-2024-42005.json"
                         },
                         {
-                            "value": "MODERATE",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://www.djangoproject.com/weblog/2024/feb/06/security-releases"
-                },
-                {
-                    "reference_url": "https://www.djangoproject.com/weblog/2024/feb/06/security-releases/",
-                    "reference_id": "",
-                    "scores": [],
-                    "url": "https://www.djangoproject.com/weblog/2024/feb/06/security-releases/"
-                },
-                {
-                    "reference_url": "https://bugzilla.redhat.com/show_bug.cgi?id=2261856",
-                    "reference_id": "2261856",
-                    "scores": [],
-                    "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2261856"
-                },
-                {
-                    "reference_url": "https://nvd.nist.gov/vuln/search/results?adv_search=true&isCpeNameSearch=true&query=cpe:2.3:a:djangoproject:django:*:*:*:*:*:*:*:*",
-                    "reference_id": "cpe:2.3:a:djangoproject:django:*:*:*:*:*:*:*:*",
-                    "scores": [],
-                    "url": "https://nvd.nist.gov/vuln/search/results?adv_search=true&isCpeNameSearch=true&query=cpe:2.3:a:djangoproject:django:*:*:*:*:*:*:*:*"
-                },
-                {
-                    "reference_url": "https://nvd.nist.gov/vuln/detail/CVE-2024-24680",
-                    "reference_id": "CVE-2024-24680",
-                    "scores": [
+                            "vector": "SSVCv2/E:N/A:Y/T:T/P:M/B:A/M:M/D:T/2024-08-16T20:19:17Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "total"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/42xxx/CVE-2024-42005.json"
+                        },
                         {
-                            "value": "7.5",
-                            "scoring_system": "cvssv3",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
-                        }
-                    ],
-                    "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-24680"
-                },
-                {
-                    "reference_url": "https://github.com/advisories/GHSA-xxj9-f6rv-m3x4",
-                    "reference_id": "GHSA-xxj9-f6rv-m3x4",
-                    "scores": [
+                            "vector": "SSVCv2/E:N/A:Y/T:T/P:M/B:A/M:M/D:T/2024-08-16T20:19:17Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "total"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/42xxx/CVE-2024-42005.json"
+                        },
                         {
-                            "value": "MODERATE",
-                            "scoring_system": "cvssv3.1_qr",
-                            "scoring_elements": ""
+                            "vector": "SSVCv2/E:N/A:Y/T:T/P:M/B:A/M:M/D:T/2024-08-16T20:19:17Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "total"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/42xxx/CVE-2024-42005.json"
                         }
                     ],
-                    "url": "https://github.com/advisories/GHSA-xxj9-f6rv-m3x4"
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.0.8",
+                        "pkg:pypi/django@4.2.15"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/pypa_importer_v2/django/PYSEC-2024-70"
                 },
                 {
-                    "reference_url": "https://access.redhat.com/errata/RHSA-2024:1057",
-                    "reference_id": "RHSA-2024:1057",
-                    "scores": [],
-                    "url": "https://access.redhat.com/errata/RHSA-2024:1057"
+                    "advisory_id": "GHSA-7xr5-9hcq-chf9",
+                    "aliases": [
+                        "CVE-2025-48432"
+                    ],
+                    "weighted_severity": 3.6,
+                    "exploitability": 0.5,
+                    "risk_score": 1.8,
+                    "summary": "Django Improper Output Neutralization for Logs vulnerability\nAn issue was discovered in Django 5.2 before 5.2.2, 5.1 before 5.1.10, and 4.2 before 4.2.22. Internal HTTP response logging does not escape request.path, which allows remote attackers to potentially manipulate log output via crafted URLs. This may lead to log injection or forgery when logs are viewed in terminals or processed by external systems.",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:N/T:P/P:M/B:A/M:M/D:T/2025-06-05T13:20:12Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "no"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2025/48xxx/CVE-2025-48432.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:N/T:P/P:M/B:A/M:M/D:T/2025-06-05T13:20:12Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "no"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2025/48xxx/CVE-2025-48432.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.1.10"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/github_osv_importer_v2/GHSA-7xr5-9hcq-chf9"
                 },
                 {
-                    "reference_url": "https://access.redhat.com/errata/RHSA-2024:1878",
-                    "reference_id": "RHSA-2024:1878",
-                    "scores": [],
-                    "url": "https://access.redhat.com/errata/RHSA-2024:1878"
+                    "advisory_id": "GHSA-8498-2h75-472j",
+                    "aliases": [
+                        "CVE-2024-53907"
+                    ],
+                    "weighted_severity": 6.8,
+                    "exploitability": 0.5,
+                    "risk_score": 3.4,
+                    "summary": "Django denial-of-service in django.utils.html.strip_tags()\nAn issue was discovered in Django 5.1 before 5.1.4, 5.0 before 5.0.10, and 4.2 before 4.2.17. The strip_tags() method and striptags template filter are subject to a potential denial-of-service attack via certain inputs containing large sequences of nested incomplete HTML entities.",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-12-06T16:22:53Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/53xxx/CVE-2024-53907.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.0.10"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/github_osv_importer_v2/GHSA-8498-2h75-472j"
                 },
                 {
-                    "reference_url": "https://access.redhat.com/errata/RHSA-2024:2731",
-                    "reference_id": "RHSA-2024:2731",
-                    "scores": [],
-                    "url": "https://access.redhat.com/errata/RHSA-2024:2731"
+                    "advisory_id": "GHSA-m9g8-fxxm-xg86",
+                    "aliases": [
+                        "CVE-2024-53908"
+                    ],
+                    "weighted_severity": 8.8,
+                    "exploitability": 0.5,
+                    "risk_score": 4.4,
+                    "summary": "Django SQL injection in HasKey(lhs, rhs) on Oracle\nAn issue was discovered in Django 5.1 before 5.1.4, 5.0 before 5.0.10, and 4.2 before 4.2.17. Direct usage of the django.db.models.fields.json.HasKey lookup, when an Oracle database is used, is subject to SQL injection if untrusted data is used as an lhs value. (Applications that use the jsonfield.has_key lookup via __ are unaffected.)",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:T/P:M/B:A/M:M/D:T/2024-12-06T16:19:13Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "total"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/53xxx/CVE-2024-53908.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.0.10"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/github_osv_importer_v2/GHSA-m9g8-fxxm-xg86"
                 },
                 {
-                    "reference_url": "https://usn.ubuntu.com/6623-1/",
-                    "reference_id": "USN-6623-1",
-                    "scores": [],
-                    "url": "https://usn.ubuntu.com/6623-1/"
+                    "advisory_id": "PYSEC-2024-56",
+                    "aliases": [
+                        "BIT-django-2024-38875",
+                        "CVE-2024-38875",
+                        "GHSA-qg2p-9jwr-mmqf"
+                    ],
+                    "weighted_severity": 7.8,
+                    "exploitability": 0.5,
+                    "risk_score": 3.9,
+                    "summary": "An issue was discovered in Django 4.2 before 4.2.14 and 5.0 before 5.0.7. urlize and urlizetrunc were subject to a potential denial of service attack via certain inputs with a very large number of brackets.",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-07-10T13:43:12Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/38xxx/CVE-2024-38875.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-07-10T13:43:12Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/38xxx/CVE-2024-38875.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-07-10T13:43:12Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/38xxx/CVE-2024-38875.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-07-10T13:43:12Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/38xxx/CVE-2024-38875.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.0.7",
+                        "pkg:pypi/django@4.2.14"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/pypa_importer_v2/django/PYSEC-2024-56"
+                },
+                {
+                    "advisory_id": "PYSEC-2024-57",
+                    "aliases": [
+                        "BIT-django-2024-39329",
+                        "CVE-2024-39329",
+                        "GHSA-x7q2-wr7g-xqmf"
+                    ],
+                    "weighted_severity": 6.2,
+                    "exploitability": 0.5,
+                    "risk_score": 3.1,
+                    "summary": "An issue was discovered in Django 5.0 before 5.0.7 and 4.2 before 4.2.14. The django.contrib.auth.backends.ModelBackend.authenticate() method allows remote attackers to enumerate users via a timing attack involving login requests for users with an unusable password.",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-07-10T16:17:00Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/39xxx/CVE-2024-39329.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-07-10T16:17:00Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/39xxx/CVE-2024-39329.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-07-10T16:17:00Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/39xxx/CVE-2024-39329.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-07-10T16:17:00Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/39xxx/CVE-2024-39329.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.0.7",
+                        "pkg:pypi/django@4.2.14"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/pypa_importer_v2/django/PYSEC-2024-57"
+                },
+                {
+                    "advisory_id": "PYSEC-2024-58",
+                    "aliases": [
+                        "BIT-django-2024-39330",
+                        "CVE-2024-39330",
+                        "GHSA-9jmf-237g-qf46"
+                    ],
+                    "weighted_severity": 7.8,
+                    "exploitability": 0.5,
+                    "risk_score": 3.9,
+                    "summary": "An issue was discovered in Django 5.0 before 5.0.7 and 4.2 before 4.2.14. Derived classes of the django.core.files.storage.Storage base class, when they override generate_filename() without replicating the file-path validations from the parent class, potentially allow directory traversal via certain inputs during a save() call. (Built-in Storage sub-classes are unaffected.)",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:N/T:P/P:M/B:A/M:M/D:T/2024-07-10T13:59:56Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "no"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/39xxx/CVE-2024-39330.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:N/T:P/P:M/B:A/M:M/D:T/2024-07-10T13:59:56Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "no"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/39xxx/CVE-2024-39330.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:N/T:P/P:M/B:A/M:M/D:T/2024-07-10T13:59:56Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "no"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/39xxx/CVE-2024-39330.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:N/T:P/P:M/B:A/M:M/D:T/2024-07-10T13:59:56Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "no"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/39xxx/CVE-2024-39330.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.0.7",
+                        "pkg:pypi/django@4.2.14"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/pypa_importer_v2/django/PYSEC-2024-58"
+                },
+                {
+                    "advisory_id": "PYSEC-2024-59",
+                    "aliases": [
+                        "BIT-django-2024-39614",
+                        "CVE-2024-39614",
+                        "GHSA-f6f8-9mx6-9mx2"
+                    ],
+                    "weighted_severity": 7.8,
+                    "exploitability": 0.5,
+                    "risk_score": 3.9,
+                    "summary": "An issue was discovered in Django 5.0 before 5.0.7 and 4.2 before 4.2.14. get_supported_language_variant() was subject to a potential denial-of-service attack when used with very long strings containing specific characters.",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-07-10T13:29:40Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/39xxx/CVE-2024-39614.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-07-10T13:29:40Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/39xxx/CVE-2024-39614.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-07-10T13:29:40Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/39xxx/CVE-2024-39614.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-07-10T13:29:40Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/39xxx/CVE-2024-39614.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.0.7",
+                        "pkg:pypi/django@4.2.14"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/pypa_importer_v2/django/PYSEC-2024-59"
+                },
+                {
+                    "advisory_id": "GHSA-frmv-pr5f-9mcr",
+                    "aliases": [
+                        "CVE-2025-64459"
+                    ],
+                    "weighted_severity": 8.2,
+                    "exploitability": 2.0,
+                    "risk_score": 10.0,
+                    "summary": "Django vulnerable to SQL injection via _connector keyword argument in QuerySet and Q objects.\nAn issue was discovered in 5.1 before 5.1.14, 4.2 before 4.2.26, and 5.2 before 5.2.8.\nThe methods `QuerySet.filter()`, `QuerySet.exclude()`, and `QuerySet.get()`, and the class `Q()`, are subject to SQL injection when using a suitably crafted dictionary, with dictionary expansion, as the `_connector` argument.\nEarlier, unsupported Django series (such as 5.0.x, 4.1.x, and 3.2.x) were not evaluated and may also be affected.\nDjango would like to thank cyberstan for reporting this issue.",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:T/P:M/B:A/M:M/D:T/2025-11-06T04:55:36Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "total"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2025/64xxx/CVE-2025-64459.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:T/P:M/B:A/M:M/D:T/2025-11-06T04:55:36Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "total"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2025/64xxx/CVE-2025-64459.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.1.14"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/github_osv_importer_v2/GHSA-frmv-pr5f-9mcr"
+                },
+                {
+                    "advisory_id": "GHSA-qw25-v68c-qjf3",
+                    "aliases": [
+                        "CVE-2025-64458"
+                    ],
+                    "weighted_severity": 6.8,
+                    "exploitability": 0.5,
+                    "risk_score": 3.4,
+                    "summary": "Django has a denial-of-service vulnerability in HttpResponseRedirect and HttpResponsePermanentRedirect on Windows\nAn issue was discovered in 5.1 before 5.1.14, 4.2 before 4.2.26, and 5.2 before 5.2.8.\nNFKC normalization in Python is slow on Windows. As a consequence, `django.http.HttpResponseRedirect`, `django.http.HttpResponsePermanentRedirect`, and the shortcut `django.shortcuts.redirect`  were subject to a potential  denial-of-service attack via certain inputs with a very large number of Unicode characters.\nEarlier, unsupported Django series (such as 5.0.x, 4.1.x, and 3.2.x) were not evaluated and may also be affected.\nDjango would like to thank Seokchan Yoon for reporting this issue.",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2025-11-05T16:20:23Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2025/64xxx/CVE-2025-64458.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2025-11-05T16:20:23Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2025/64xxx/CVE-2025-64458.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.1.14"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/github_osv_importer_v2/GHSA-qw25-v68c-qjf3"
+                },
+                {
+                    "advisory_id": "PYSEC-2025-13",
+                    "aliases": [
+                        "BIT-django-2025-26699",
+                        "CVE-2025-26699",
+                        "GHSA-p3fp-8748-vqfq"
+                    ],
+                    "weighted_severity": 4.5,
+                    "exploitability": 0.5,
+                    "risk_score": 2.2,
+                    "summary": "An issue was discovered in Django 5.1 before 5.1.7, 5.0 before 5.0.13, and 4.2 before 4.2.20. The django.utils.text.wrap() method and wordwrap template filter are subject to a potential denial-of-service attack when used with very long strings.",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:N/T:P/P:M/B:A/M:M/D:T/2025-03-06T20:30:28Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "no"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2025/26xxx/CVE-2025-26699.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:N/T:P/P:M/B:A/M:M/D:T/2025-03-06T20:30:28Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "no"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2025/26xxx/CVE-2025-26699.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:N/T:P/P:M/B:A/M:M/D:T/2025-03-06T20:30:28Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "no"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2025/26xxx/CVE-2025-26699.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:N/T:P/P:M/B:A/M:M/D:T/2025-03-06T20:30:28Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "no"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2025/26xxx/CVE-2025-26699.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.0.13",
+                        "pkg:pypi/django@4.2.20",
+                        "pkg:pypi/django@5.1.7"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/pypa_importer_v2/django/PYSEC-2025-13"
+                },
+                {
+                    "advisory_id": "GHSA-qcgg-j2x8-h9g8",
+                    "aliases": [
+                        "CVE-2024-56374"
+                    ],
+                    "weighted_severity": 5.2,
+                    "exploitability": 0.5,
+                    "risk_score": 2.6,
+                    "summary": "Django has a potential denial-of-service vulnerability in IPv6 validation\nAn issue was discovered in Django 5.1 before 5.1.5, 5.0 before 5.0.11, and 4.2 before 4.2.18. Lack of upper-bound limit enforcement in strings passed when performing IPv6 validation could lead to a potential denial-of-service attack. The undocumented and private functions `clean_ipv6_address` and `is_valid_ipv6_address` are vulnerable, as is the `django.forms.GenericIPAddressField` form field. (The django.db.models.GenericIPAddressField model field is not affected.)",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2025-01-15T19:40:35Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/56xxx/CVE-2024-56374.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.0.11"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/github_osv_importer_v2/GHSA-qcgg-j2x8-h9g8"
+                },
+                {
+                    "advisory_id": "GHSA-rrqc-c2jx-6jgv",
+                    "aliases": [
+                        "CVE-2024-45231"
+                    ],
+                    "weighted_severity": 5.7,
+                    "exploitability": 0.5,
+                    "risk_score": 2.8,
+                    "summary": "Django allows enumeration of user e-mail addresses\nAn issue was discovered in Django v5.1.1, v5.0.9, and v4.2.16. The django.contrib.auth.forms.PasswordResetForm class, when used in a view implementing password reset flows, allows remote attackers to enumerate user e-mail addresses by sending password reset requests and observing the outcome (only when e-mail sending is consistently failing).",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-10-30T16:35:34Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/45xxx/CVE-2024-45231.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-10-30T16:35:34Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/45xxx/CVE-2024-45231.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.0.9"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/github_osv_importer_v2/GHSA-rrqc-c2jx-6jgv"
+                },
+                {
+                    "advisory_id": "PYSEC-2024-47",
+                    "aliases": [
+                        "BIT-django-2024-27351",
+                        "CVE-2024-27351",
+                        "GHSA-vm8q-m57g-pff3"
+                    ],
+                    "weighted_severity": 4.8,
+                    "exploitability": 0.5,
+                    "risk_score": 2.4,
+                    "summary": "In Django 3.2 before 3.2.25, 4.2 before 4.2.11, and 5.0 before 5.0.3, the django.utils.text.Truncator.words() method (with html=True) and the truncatewords_html template filter are subject to a potential regular expression denial-of-service attack via a crafted string. NOTE: this issue exists because of an incomplete fix for CVE-2019-14232 and CVE-2023-43665.",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:N/T:P/P:M/B:A/M:M/D:T/2024-04-20T19:41:21Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "no"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/27xxx/CVE-2024-27351.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:N/T:P/P:M/B:A/M:M/D:T/2024-04-20T19:41:21Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "no"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/27xxx/CVE-2024-27351.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:N/T:P/P:M/B:A/M:M/D:T/2024-04-20T19:41:21Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "no"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/27xxx/CVE-2024-27351.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:N/T:P/P:M/B:A/M:M/D:T/2024-04-20T19:41:21Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "no"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/27xxx/CVE-2024-27351.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.0.3",
+                        "pkg:pypi/django@4.2.11",
+                        "pkg:pypi/django@3.2.25"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/pypa_importer_v2/django/PYSEC-2024-47"
+                },
+                {
+                    "advisory_id": "PYSEC-2025-14",
+                    "aliases": [
+                        "BIT-django-2025-27556",
+                        "CVE-2025-27556",
+                        "GHSA-wqfg-m96j-85vm"
+                    ],
+                    "weighted_severity": 5.2,
+                    "exploitability": 0.5,
+                    "risk_score": 2.6,
+                    "summary": "An issue was discovered in Django 5.1 before 5.1.8 and 5.0 before 5.0.14. The NFKC normalization is slow on Windows. As a consequence, django.contrib.auth.views.LoginView, django.contrib.auth.views.LogoutView, and django.views.i18n.set_language are subject to a potential denial-of-service attack via certain inputs with a very large number of Unicode characters.",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2025-04-02T13:21:14Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2025/27xxx/CVE-2025-27556.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2025-04-02T13:21:14Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2025/27xxx/CVE-2025-27556.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2025-04-02T13:21:14Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2025/27xxx/CVE-2025-27556.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2025-04-02T13:21:14Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2025/27xxx/CVE-2025-27556.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.1.8",
+                        "pkg:pypi/django@5.0.14"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/pypa_importer_v2/django/PYSEC-2025-14"
+                },
+                {
+                    "advisory_id": "PYSEC-2024-28",
+                    "aliases": [
+                        "BIT-django-2024-24680",
+                        "CVE-2024-24680",
+                        "GHSA-xxj9-f6rv-m3x4"
+                    ],
+                    "weighted_severity": 7.4,
+                    "exploitability": 0.5,
+                    "risk_score": 3.7,
+                    "summary": "An issue was discovered in Django 3.2 before 3.2.24, 4.2 before 4.2.10, and Django 5.0 before 5.0.2. The intcomma template filter was subject to a potential denial-of-service attack when used with very long strings.",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2025-05-08T17:27:36Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/24xxx/CVE-2024-24680.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2025-05-08T17:27:36Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/24xxx/CVE-2024-24680.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2025-05-08T17:27:36Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/24xxx/CVE-2024-24680.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2025-05-08T17:27:36Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/24xxx/CVE-2024-24680.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@4.2.10",
+                        "pkg:pypi/django@3.2.24",
+                        "pkg:pypi/django@5.0.2"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/pypa_importer_v2/django/PYSEC-2024-28"
+                },
+                {
+                    "advisory_id": "CVE-2024-53907",
+                    "aliases": [
+                        "GHSA-8498-2h75-472j"
+                    ],
+                    "weighted_severity": null,
+                    "exploitability": 0.5,
+                    "risk_score": null,
+                    "summary": "Django denial-of-service in django.utils.html.strip_tags()\nAn issue was discovered in Django 5.1 before 5.1.4, 5.0 before 5.0.10, and 4.2 before 4.2.17. The strip_tags() method and striptags template filter are subject to a potential denial-of-service attack via certain inputs containing large sequences of nested incomplete HTML entities.",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-12-06T16:22:53Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/53xxx/CVE-2024-53907.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@4.2.17",
+                        "pkg:pypi/django@5.1.4",
+                        "pkg:pypi/django@5.0.10"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/gitlab_importer_v2/pypi/Django/CVE-2024-53907"
+                },
+                {
+                    "advisory_id": "CVE-2024-53908",
+                    "aliases": [
+                        "GHSA-m9g8-fxxm-xg86"
+                    ],
+                    "weighted_severity": null,
+                    "exploitability": 0.5,
+                    "risk_score": null,
+                    "summary": "Django SQL injection in HasKey(lhs, rhs) on Oracle\nAn issue was discovered in Django 5.1 before 5.1.4, 5.0 before 5.0.10, and 4.2 before 4.2.17. Direct usage of the django.db.models.fields.json.HasKey lookup, when an Oracle database is used, is subject to SQL injection if untrusted data is used as an lhs value. (Applications that use the jsonfield.has_key lookup via __ are unaffected.)",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:T/P:M/B:A/M:M/D:T/2024-12-06T16:19:13Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "total"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/53xxx/CVE-2024-53908.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@4.2.17",
+                        "pkg:pypi/django@5.1.4",
+                        "pkg:pypi/django@5.0.10"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/gitlab_importer_v2/pypi/Django/CVE-2024-53908"
+                },
+                {
+                    "advisory_id": "CVE-2024-56374",
+                    "aliases": [
+                        "GHSA-qcgg-j2x8-h9g8"
+                    ],
+                    "weighted_severity": null,
+                    "exploitability": 0.5,
+                    "risk_score": null,
+                    "summary": "Django has a potential denial-of-service vulnerability in IPv6 validation\nAn issue was discovered in Django 5.1 before 5.1.5, 5.0 before 5.0.11, and 4.2 before 4.2.18. Lack of upper-bound limit enforcement in strings passed when performing IPv6 validation could lead to a potential denial-of-service attack. The undocumented and private functions `clean_ipv6_address` and `is_valid_ipv6_address` are vulnerable, as is the `django.forms.GenericIPAddressField` form field. (The django.db.models.GenericIPAddressField model field is not affected.)",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2025-01-15T19:40:35Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/56xxx/CVE-2024-56374.json"
+                        }
+                    ],
+                    "fixed_by_packages": [],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/gitlab_importer_v2/pypi/Django/CVE-2024-56374"
+                },
+                {
+                    "advisory_id": "PYSEC-2024-156",
+                    "aliases": [
+                        "BIT-django-2024-53907",
+                        "CVE-2024-53907",
+                        "GHSA-8498-2h75-472j"
+                    ],
+                    "weighted_severity": null,
+                    "exploitability": 0.5,
+                    "risk_score": null,
+                    "summary": "An issue was discovered in Django 5.1 before 5.1.4, 5.0 before 5.0.10, and 4.2 before 4.2.17. The strip_tags() method and striptags template filter are subject to a potential denial-of-service attack via certain inputs containing large sequences of nested incomplete HTML entities.",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-12-06T16:22:53Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/53xxx/CVE-2024-53907.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2024-12-06T16:22:53Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/53xxx/CVE-2024-53907.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@4.2.17",
+                        "pkg:pypi/django@5.1.4",
+                        "pkg:pypi/django@5.0.10"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/pypa_importer_v2/django/PYSEC-2024-156"
+                },
+                {
+                    "advisory_id": "PYSEC-2024-157",
+                    "aliases": [
+                        "BIT-django-2024-53908",
+                        "CVE-2024-53908",
+                        "GHSA-m9g8-fxxm-xg86"
+                    ],
+                    "weighted_severity": null,
+                    "exploitability": 0.5,
+                    "risk_score": null,
+                    "summary": "An issue was discovered in Django 5.1 before 5.1.4, 5.0 before 5.0.10, and 4.2 before 4.2.17. Direct usage of the django.db.models.fields.json.HasKey lookup, when an Oracle database is used, is subject to SQL injection if untrusted data is used as an lhs value. (Applications that use the jsonfield.has_key lookup via __ are unaffected.)",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:T/P:M/B:A/M:M/D:T/2024-12-06T16:19:13Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "total"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/53xxx/CVE-2024-53908.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:T/P:M/B:A/M:M/D:T/2024-12-06T16:19:13Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "total"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/53xxx/CVE-2024-53908.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@4.2.17",
+                        "pkg:pypi/django@5.1.4",
+                        "pkg:pypi/django@5.0.10"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/pypa_importer_v2/django/PYSEC-2024-157"
+                },
+                {
+                    "advisory_id": "PYSEC-2025-1",
+                    "aliases": [
+                        "BIT-django-2024-56374",
+                        "CVE-2024-56374",
+                        "GHSA-qcgg-j2x8-h9g8"
+                    ],
+                    "weighted_severity": null,
+                    "exploitability": 0.5,
+                    "risk_score": null,
+                    "summary": "An issue was discovered in Django 5.1 before 5.1.5, 5.0 before 5.0.11, and 4.2 before 4.2.18. Lack of upper-bound limit enforcement in strings passed when performing IPv6 validation could lead to a potential denial-of-service attack. The undocumented and private functions clean_ipv6_address and is_valid_ipv6_address are vulnerable, as is the django.forms.GenericIPAddressField form field. (The django.db.models.GenericIPAddressField model field is not affected.)",
+                    "ssvc_trees": [
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2025-01-15T19:40:35Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/56xxx/CVE-2024-56374.json"
+                        },
+                        {
+                            "vector": "SSVCv2/E:N/A:Y/T:P/P:M/B:A/M:M/D:T/2025-01-15T19:40:35Z/",
+                            "decision": "Track",
+                            "options": [
+                                {
+                                    "Exploitation": "none"
+                                },
+                                {
+                                    "Automatable": "yes"
+                                },
+                                {
+                                    "Technical Impact": "partial"
+                                },
+                                {
+                                    "Mission Prevalence": "minimal"
+                                },
+                                {
+                                    "Public Well-being Impact": "material"
+                                },
+                                {
+                                    "Mission & Well-being": "medium"
+                                }
+                            ],
+                            "source_url": "https://github.com/cisagov/vulnrichment/blob/develop/2024/56xxx/CVE-2024-56374.json"
+                        }
+                    ],
+                    "fixed_by_packages": [
+                        "pkg:pypi/django@5.0.11",
+                        "pkg:pypi/django@5.1.5",
+                        "pkg:pypi/django@4.2.18"
+                    ],
+                    "resource_url": "http://public2.vulnerablecode.io/advisories/pypa_importer_v2/django/PYSEC-2025-1"
                 }
             ],
-            "fixed_packages": [
-                {
-                    "url": "http://vulnerablecode/api/packages/807572",
-                    "purl": "pkg:pypi/django@5.0.2",
-                    "is_vulnerable": true,
-                    "affected_by_vulnerabilities": [
-                        {
-                            "vulnerability": "VCID-q4q6-yfng-aaag"
-                        }
-                    ],
-                    "resource_url": "http://vulnerablecode/packages/pkg:pypi/django@5.0.2"
-                }
-            ],
-            "aliases": [
-                "BIT-django-2024-24680",
-                "CVE-2024-24680",
-                "GHSA-xxj9-f6rv-m3x4",
-                "PYSEC-2024-28"
-            ],
-            "resource_url": "http://vulnerablecode/vulnerabilities/VCID-3gge-bre2-aaac"
-        },
-        {
-            "url": "http://vulnerablecode/api/vulnerabilities/522941",
-            "vulnerability_id": "VCID-q4q6-yfng-aaag",
-            "summary": "In Django 3.2 before 3.2.25, 4.2 before 4.2.11, and 5.0 before 5.0.3, the django.utils.text.Truncator.words() method (with html=True) and the truncatewords_html template filter are subject to a potential regular expression denial-of-service attack via a crafted string. NOTE: this issue exists because of an incomplete fix for CVE-2019-14232 and CVE-2023-43665.",
-            "references": [
-                {
-                    "reference_url": "https://access.redhat.com/hydra/rest/securitydata/cve/CVE-2024-27351.json",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "7.5",
-                            "scoring_system": "cvssv3",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
-                        }
-                    ],
-                    "url": "https://access.redhat.com/hydra/rest/securitydata/cve/CVE-2024-27351.json"
-                },
-                {
-                    "reference_url": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-27351",
-                    "reference_id": "",
-                    "scores": [],
-                    "url": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-27351"
-                },
-                {
-                    "reference_url": "https://docs.djangoproject.com/en/5.0/releases/security",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
-                        },
-                        {
-                            "value": "LOW",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://docs.djangoproject.com/en/5.0/releases/security"
-                },
-                {
-                    "reference_url": "https://docs.djangoproject.com/en/5.0/releases/security/",
-                    "reference_id": "",
-                    "scores": [],
-                    "url": "https://docs.djangoproject.com/en/5.0/releases/security/"
-                },
-                {
-                    "reference_url": "https://ftp.suse.com/pub/projects/security/yaml/suse-cvss-scores.yaml",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "2.1",
-                            "scoring_system": "cvssv2",
-                            "scoring_elements": "AV:N/AC:H/Au:S/C:N/I:P/A:N"
-                        },
-                        {
-                            "value": "4.4",
-                            "scoring_system": "cvssv3",
-                            "scoring_elements": "CVSS:3.0/AV:L/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:L"
-                        },
-                        {
-                            "value": "4.7",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:H"
-                        }
-                    ],
-                    "url": "https://ftp.suse.com/pub/projects/security/yaml/suse-cvss-scores.yaml"
-                },
-                {
-                    "reference_url": "https://github.com/django/django",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "7.5",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
-                        },
-                        {
-                            "value": "HIGH",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://github.com/django/django"
-                },
-                {
-                    "reference_url": "https://github.com/django/django/commit/072963e4c4d0b3a7a8c5412bc0c7d27d1a9c3521",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "LOW",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://github.com/django/django/commit/072963e4c4d0b3a7a8c5412bc0c7d27d1a9c3521"
-                },
-                {
-                    "reference_url": "https://github.com/django/django/commit/3394fc6132436eca89e997083bae9985fb7e761e",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "LOW",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://github.com/django/django/commit/3394fc6132436eca89e997083bae9985fb7e761e"
-                },
-                {
-                    "reference_url": "https://github.com/django/django/commit/3c9a2771cc80821e041b16eb36c1c37af5349d4a",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "LOW",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://github.com/django/django/commit/3c9a2771cc80821e041b16eb36c1c37af5349d4a"
-                },
-                {
-                    "reference_url": "https://github.com/pypa/advisory-database/tree/main/vulns/django/PYSEC-2024-47.yaml",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "LOW",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://github.com/pypa/advisory-database/tree/main/vulns/django/PYSEC-2024-47.yaml"
-                },
-                {
-                    "reference_url": "https://groups.google.com/forum/#%21forum/django-announce",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
-                        },
-                        {
-                            "value": "LOW",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://groups.google.com/forum/#%21forum/django-announce"
-                },
-                {
-                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/D2JIRXEDP4ZET5KFMAPPYSK663Q52NEX",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
-                        },
-                        {
-                            "value": "LOW",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/D2JIRXEDP4ZET5KFMAPPYSK663Q52NEX"
-                },
-                {
-                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/D2JIRXEDP4ZET5KFMAPPYSK663Q52NEX/",
-                    "reference_id": "",
-                    "scores": [],
-                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/D2JIRXEDP4ZET5KFMAPPYSK663Q52NEX/"
-                },
-                {
-                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SN2PLJGYSAAG5KUVIUFJYKD3BLQ4OSN6",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
-                        },
-                        {
-                            "value": "LOW",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SN2PLJGYSAAG5KUVIUFJYKD3BLQ4OSN6"
-                },
-                {
-                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SN2PLJGYSAAG5KUVIUFJYKD3BLQ4OSN6/",
-                    "reference_id": "",
-                    "scores": [],
-                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SN2PLJGYSAAG5KUVIUFJYKD3BLQ4OSN6/"
-                },
-                {
-                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZQJOMNRMVPCN5WMIZ7YSX5LQ7IR2NY4D",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
-                        },
-                        {
-                            "value": "LOW",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZQJOMNRMVPCN5WMIZ7YSX5LQ7IR2NY4D"
-                },
-                {
-                    "reference_url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZQJOMNRMVPCN5WMIZ7YSX5LQ7IR2NY4D/",
-                    "reference_id": "",
-                    "scores": [],
-                    "url": "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZQJOMNRMVPCN5WMIZ7YSX5LQ7IR2NY4D/"
-                },
-                {
-                    "reference_url": "https://www.djangoproject.com/weblog/2024/mar/04/security-releases",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "LOW",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://www.djangoproject.com/weblog/2024/mar/04/security-releases"
-                },
-                {
-                    "reference_url": "https://www.djangoproject.com/weblog/2024/mar/04/security-releases/",
-                    "reference_id": "",
-                    "scores": [],
-                    "url": "https://www.djangoproject.com/weblog/2024/mar/04/security-releases/"
-                },
-                {
-                    "reference_url": "http://www.openwall.com/lists/oss-security/2024/03/04/1",
-                    "reference_id": "",
-                    "scores": [
-                        {
-                            "value": "5.9",
-                            "scoring_system": "cvssv3.1",
-                            "scoring_elements": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
-                        },
-                        {
-                            "value": "LOW",
-                            "scoring_system": "generic_textual",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "http://www.openwall.com/lists/oss-security/2024/03/04/1"
-                },
-                {
-                    "reference_url": "https://bugzilla.redhat.com/show_bug.cgi?id=2266045",
-                    "reference_id": "2266045",
-                    "scores": [],
-                    "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2266045"
-                },
-                {
-                    "reference_url": "https://nvd.nist.gov/vuln/detail/CVE-2024-27351",
-                    "reference_id": "CVE-2024-27351",
-                    "scores": [],
-                    "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-27351"
-                },
-                {
-                    "reference_url": "https://github.com/advisories/GHSA-vm8q-m57g-pff3",
-                    "reference_id": "GHSA-vm8q-m57g-pff3",
-                    "scores": [
-                        {
-                            "value": "LOW",
-                            "scoring_system": "cvssv3.1_qr",
-                            "scoring_elements": ""
-                        }
-                    ],
-                    "url": "https://github.com/advisories/GHSA-vm8q-m57g-pff3"
-                },
-                {
-                    "reference_url": "https://access.redhat.com/errata/RHSA-2024:1878",
-                    "reference_id": "RHSA-2024:1878",
-                    "scores": [],
-                    "url": "https://access.redhat.com/errata/RHSA-2024:1878"
-                },
-                {
-                    "reference_url": "https://access.redhat.com/errata/RHSA-2024:3781",
-                    "reference_id": "RHSA-2024:3781",
-                    "scores": [],
-                    "url": "https://access.redhat.com/errata/RHSA-2024:3781"
-                },
-                {
-                    "reference_url": "https://usn.ubuntu.com/6674-1/",
-                    "reference_id": "USN-6674-1",
-                    "scores": [],
-                    "url": "https://usn.ubuntu.com/6674-1/"
-                },
-                {
-                    "reference_url": "https://usn.ubuntu.com/6674-2/",
-                    "reference_id": "USN-6674-2",
-                    "scores": [],
-                    "url": "https://usn.ubuntu.com/6674-2/"
-                }
-            ],
-            "fixed_packages": [
-                {
-                    "url": "http://vulnerablecode/api/packages/810988",
-                    "purl": "pkg:pypi/django@5.0.3",
-                    "is_vulnerable": false,
-                    "affected_by_vulnerabilities": [],
-                    "resource_url": "http://vulnerablecode/packages/pkg:pypi/django@5.0.3"
-                }
-            ],
-            "aliases": [
-                "CVE-2024-27351",
-                "GHSA-vm8q-m57g-pff3",
-                "PYSEC-2024-47"
-            ],
-            "resource_url": "http://vulnerablecode/vulnerabilities/VCID-q4q6-yfng-aaag"
+            "fixing_vulnerabilities": [],
+            "next_non_vulnerable_version": "5.1.15",
+            "latest_non_vulnerable_version": "6.0.4",
+            "risk_score": 10.0
         }
-    ],
-    "fixing_vulnerabilities": [],
-    "resource_url": "http://vulnerablecode/packages/pkg:pypi/django@5.0"
+    ]
 }

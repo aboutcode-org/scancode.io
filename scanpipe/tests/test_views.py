@@ -1200,7 +1200,7 @@ class ScanPipeViewsTest(TestCase):
 
         package1.add_resources([make_resource_file(self.project1, "file1.ext")])
         package1.update(
-            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}],
+            affected_by_vulnerabilities=[{"advisory_id": "VCID-cah8-awtr-aaad"}],
             extra_data={"extra": "data"},
         )
         dependency_data = dependency_data1.copy()
@@ -1219,7 +1219,7 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_discovered_package_details_view_tab_vulnerabilities(self):
         package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
         package1.update(
-            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
+            affected_by_vulnerabilities=[{"advisory_id": "VCID-cah8-awtr-aaad"}]
         )
         response = self.client.get(package1.get_absolute_url())
         self.assertContains(response, "tab-vulnerabilities")
@@ -1299,7 +1299,6 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(5):
             self.client.get(url)
 
-    @override_settings(VULNERABLECODE_URL="https://vcio/")
     def test_scanpipe_views_vulnerability_list_view(self):
         self.assertEqual(0, self.project1.vulnerability_count)
         url = reverse("project_vulnerabilities", args=[self.project1.slug])
@@ -1307,8 +1306,11 @@ class ScanPipeViewsTest(TestCase):
             response = self.client.get(url)
         self.assertContains(response, "No Vulnerabilities found.")
 
-        v1 = {"vulnerability_id": "VCID-1"}
-        v2 = {"vulnerability_id": "VCID-2"}
+        v1 = {"advisory_id": "VCID-1"}
+        v2 = {
+            "advisory_id": "VCID-2",
+            "resource_url": "https://vcio/advisories/VCID-2",
+        }
         project = make_project()
         make_package(project, "pkg:type/a", affected_by_vulnerabilities=[v1])
         make_dependency(project, affected_by_vulnerabilities=[v2])
@@ -1318,9 +1320,9 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(5):
             response = self.client.get(url)
 
-        expected = '<a href="https://vcio//vulnerabilities/VCID-1" target="_blank">'
-        self.assertContains(response, expected)
-        expected = '<a href="https://vcio//vulnerabilities/VCID-2" target="_blank">'
+        expected = "<td>VCID-1</td>"
+        self.assertContains(response, expected, html=True)
+        expected = '<a href="https://vcio/advisories/VCID-2" target="_blank">'
         self.assertContains(response, expected)
         self.assertContains(response, "pkg:type/a")
 

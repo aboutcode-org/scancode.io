@@ -46,14 +46,17 @@ class ScanPipeVulnerableCodeTest(TestCase):
         self, mock_search_by_purl
     ):
         django_5_0 = make_package(self.project1, "pkg:pypi/django@5.0")
-        data = self.data / "vulnerablecode/django-5.0_package_data.json"
-        package_data = json.loads(data.read_text())
-        mock_search_by_purl.return_value = [package_data]
+        # POST /api/v3/packages with data:
+        # {"purls": ["pkg:pypi/django@5.0"], "details": true}
+        data = self.data / "vulnerablecode" / "django-5.0_package_data.json"
+        response_json = json.loads(data.read_text())
+        mock_search_by_purl.return_value = response_json
         buffer = io.StringIO()
 
+        package_data = response_json.get("results")[0]
         fetch_vulnerabilities(packages=[django_5_0], logger=buffer.write)
         django_5_0.refresh_from_db()
-        self.assertEqual(2, len(package_data.get("affected_by_vulnerabilities")))
+        self.assertEqual(27, len(package_data.get("affected_by_vulnerabilities")))
         self.assertEqual(
             package_data.get("affected_by_vulnerabilities"),
             django_5_0.affected_by_vulnerabilities,
@@ -62,27 +65,28 @@ class ScanPipeVulnerableCodeTest(TestCase):
             "1 discovered packages updated with vulnerability data.", buffer.getvalue()
         )
 
-        fetch_vulnerabilities(packages=[django_5_0], ignore_set={"VCID-3gge-bre2-aaac"})
+        fetch_vulnerabilities(packages=[django_5_0], ignore_set={"PYSEC-2024-28"})
         django_5_0.refresh_from_db()
-        self.assertEqual(1, len(django_5_0.affected_by_vulnerabilities))
+        self.assertEqual(26, len(django_5_0.affected_by_vulnerabilities))
 
     def test_scanpipe_pipes_vulnerablecode_filter_vulnerabilities(self):
         data = self.data / "vulnerablecode/django-5.0_package_data.json"
-        package_data = json.loads(data.read_text())
+        response_json = json.loads(data.read_text())
+        package_data = response_json.get("results")[0]
         vulnerability_data = package_data["affected_by_vulnerabilities"]
-        self.assertEqual(2, len(vulnerability_data))
+        self.assertEqual(27, len(vulnerability_data))
 
         vulnerability1 = vulnerability_data[0]
-        self.assertEqual("VCID-3gge-bre2-aaac", vulnerability1.get("vulnerability_id"))
-        ignore_set = {vulnerability1.get("vulnerability_id")}
-        self.assertEqual(1, len(filter_vulnerabilities(vulnerability_data, ignore_set)))
+        self.assertEqual("PYSEC-2024-102", vulnerability1.get("advisory_id"))
+        ignore_set = {vulnerability1.get("advisory_id")}
+        self.assertEqual(
+            26, len(filter_vulnerabilities(vulnerability_data, ignore_set))
+        )
 
         ignore_set = {vulnerability1.get("aliases")[0]}
-        self.assertEqual(1, len(filter_vulnerabilities(vulnerability_data, ignore_set)))
-
-        vulnerability2 = vulnerability_data[1]
-        ignore_set.add(vulnerability2.get("aliases")[1])
-        self.assertEqual([], filter_vulnerabilities(vulnerability_data, ignore_set))
+        self.assertEqual(
+            26, len(filter_vulnerabilities(vulnerability_data, ignore_set))
+        )
 
     def test_scanpipe_pipes_vulnerablecode_chunked(self):
         result = list(chunked([1, 2, 3, 4, 5], 2))

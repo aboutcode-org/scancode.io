@@ -110,8 +110,8 @@ class Command(ProjectCommand):
         if self.verbosity > 0:
             if vulnerabilities_count:
                 self.stderr.write(f"{vulnerabilities_count} vulnerabilities found:")
-                for vulnerability_id, vulnerability_data in all_vulnerabilities.items():
-                    self.stderr.write(str(vulnerability_id))
+                for advisory_id, vulnerability_data in all_vulnerabilities.items():
+                    self.stderr.write(str(advisory_id))
                     for affected_obj in vulnerability_data.get("affects", []):
                         self.stderr.write(f" > {affected_obj}")
             else:
