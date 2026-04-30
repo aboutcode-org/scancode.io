@@ -77,7 +77,7 @@ class ScanPipeVulnerableCodeTest(TestCase):
         self.assertEqual(27, len(vulnerability_data))
 
         vulnerability1 = vulnerability_data[0]
-        self.assertEqual("PYSEC-2024-28", vulnerability1.get("advisory_id"))
+        self.assertEqual("PYSEC-2024-102", vulnerability1.get("advisory_id"))
         ignore_set = {vulnerability1.get("advisory_id")}
         self.assertEqual(
             26, len(filter_vulnerabilities(vulnerability_data, ignore_set))
