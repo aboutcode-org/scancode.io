@@ -18,7 +18,7 @@ services:
       - .env
     environment:
       <<: *dev-env
-    command: ./manage.py runserver --skip-checks 0.0.0.0:8001
+    command: ./manage.py runserver --skip-checks --insecure 0.0.0.0:8001
     volumes:
       - ./scanpipe:/opt/scancodeio/scanpipe
     ports:
