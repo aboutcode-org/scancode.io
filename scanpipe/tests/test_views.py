@@ -1299,7 +1299,6 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(5):
             self.client.get(url)
 
-    @override_settings(VULNERABLECODE_URL="https://vcio/")
     def test_scanpipe_views_vulnerability_list_view(self):
         self.assertEqual(0, self.project1.vulnerability_count)
         url = reverse("project_vulnerabilities", args=[self.project1.slug])
@@ -1308,7 +1307,10 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, "No Vulnerabilities found.")
 
         v1 = {"advisory_id": "VCID-1"}
-        v2 = {"advisory_id": "VCID-2"}
+        v2 = {
+            "advisory_id": "VCID-2",
+            "resource_url": "https://vcio/advisories/VCID-2",
+        }
         project = make_project()
         make_package(project, "pkg:type/a", affected_by_vulnerabilities=[v1])
         make_dependency(project, affected_by_vulnerabilities=[v2])
@@ -1318,9 +1320,9 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(5):
             response = self.client.get(url)
 
-        expected = '<a href="https://vcio//vulnerabilities/VCID-1" target="_blank">'
-        self.assertContains(response, expected)
-        expected = '<a href="https://vcio//vulnerabilities/VCID-2" target="_blank">'
+        expected = "<td>VCID-1</td>"
+        self.assertContains(response, expected, html=True)
+        expected = '<a href="https://vcio/advisories/VCID-2" target="_blank">'
         self.assertContains(response, expected)
         self.assertContains(response, "pkg:type/a")
 

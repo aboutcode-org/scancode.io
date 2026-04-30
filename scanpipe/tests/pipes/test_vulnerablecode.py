@@ -56,7 +56,7 @@ class ScanPipeVulnerableCodeTest(TestCase):
         package_data = response_json.get("results")[0]
         fetch_vulnerabilities(packages=[django_5_0], logger=buffer.write)
         django_5_0.refresh_from_db()
-        self.assertEqual(24, len(package_data.get("affected_by_vulnerabilities")))
+        self.assertEqual(27, len(package_data.get("affected_by_vulnerabilities")))
         self.assertEqual(
             package_data.get("affected_by_vulnerabilities"),
             django_5_0.affected_by_vulnerabilities,
@@ -67,25 +67,25 @@ class ScanPipeVulnerableCodeTest(TestCase):
 
         fetch_vulnerabilities(packages=[django_5_0], ignore_set={"PYSEC-2024-28"})
         django_5_0.refresh_from_db()
-        self.assertEqual(23, len(django_5_0.affected_by_vulnerabilities))
+        self.assertEqual(26, len(django_5_0.affected_by_vulnerabilities))
 
     def test_scanpipe_pipes_vulnerablecode_filter_vulnerabilities(self):
         data = self.data / "vulnerablecode/django-5.0_package_data.json"
         response_json = json.loads(data.read_text())
         package_data = response_json.get("results")[0]
         vulnerability_data = package_data["affected_by_vulnerabilities"]
-        self.assertEqual(24, len(vulnerability_data))
+        self.assertEqual(27, len(vulnerability_data))
 
         vulnerability1 = vulnerability_data[0]
         self.assertEqual("PYSEC-2024-28", vulnerability1.get("advisory_id"))
         ignore_set = {vulnerability1.get("advisory_id")}
         self.assertEqual(
-            23, len(filter_vulnerabilities(vulnerability_data, ignore_set))
+            26, len(filter_vulnerabilities(vulnerability_data, ignore_set))
         )
 
         ignore_set = {vulnerability1.get("aliases")[0]}
         self.assertEqual(
-            23, len(filter_vulnerabilities(vulnerability_data, ignore_set))
+            26, len(filter_vulnerabilities(vulnerability_data, ignore_set))
         )
 
     def test_scanpipe_pipes_vulnerablecode_chunked(self):
