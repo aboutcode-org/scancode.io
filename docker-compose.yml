@@ -92,8 +92,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-      clamav:
-        condition: service_started
 
   worker:
     build: .
