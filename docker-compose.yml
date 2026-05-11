@@ -77,7 +77,7 @@ services:
         ./manage.py migrate &&
         ./manage.py collectstatic --no-input --verbosity 0 --clear &&
         gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 \
-          --workers 8 ${GUNICORN_RELOAD_FLAG:-}"
+          --workers 8 --worker-tmp-dir /dev/shm ${GUNICORN_RELOAD_FLAG:-}"
     env_file:
       - docker.env
     expose:
@@ -118,8 +118,8 @@ services:
       - "${NGINX_PUBLISHED_HTTPS_PORT:-443}:443"
     volumes:
       - ./etc/nginx/conf.d/:/etc/nginx/conf.d/
-      - /var/www/html:/var/www/html
       - static:/var/scancodeio/static/
+      - webroot:/var/www/html/
     depends_on:
       - web
     restart: always
@@ -137,3 +137,4 @@ volumes:
   clamav_data:
   static:
   workspace:
+  webroot:
