@@ -36,10 +36,12 @@ services:
       - .env
     environment:
       <<: *dev-env
-    command: ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker
-                                  --queue-class scancodeio.worker.ScanCodeIOQueue
-                                  --verbosity 1
+    command: wait-for-it --strict --timeout=180 web:8001 -- sh -c "
+      ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker
+      --queue-class scancodeio.worker.ScanCodeIOQueue
+      --verbosity 1"
     volumes:
+      - ./scancodeio:/opt/scancodeio/scancodeio
       - ./scanpipe:/opt/scancodeio/scanpipe
 
   # Disable nginx in dev mode, the runserver serves requests directly.
