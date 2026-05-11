@@ -23,6 +23,7 @@ services:
       ./manage.py migrate --check || ./manage.py migrate;
       ./manage.py runserver --skip-checks 0.0.0.0:8001"
     volumes:
+      - ./scancodeio:/opt/scancodeio/scancodeio
       - ./scanpipe:/opt/scancodeio/scanpipe
     ports:
       # Port 8001 to avoid conflict when running side-by-side with dejacode on 8000
