@@ -26,6 +26,7 @@ import shutil
 import tempfile
 import textwrap
 from pathlib import Path
+from time import sleep
 from urllib.parse import urljoin
 from urllib.parse import urlparse
 
@@ -194,7 +195,7 @@ def get_github_org(url):
     return org_name
 
 
-def create_repository(repo_name, clone_path, logger, shallow_clone=True):
+def create_repository(repo_name, clone_path, logger, shallow_clone=True, timeout=3):
     """
     Create and initialize remote FederatedCode `repo_name` repository,
     perform local checkout, and return it.
@@ -222,6 +223,10 @@ def create_repository(repo_name, clone_path, logger, shallow_clone=True):
         timeout=5,
     )
     response.raise_for_status()
+
+    # sleep to allow github time to create the repo before we clone it
+    sleep(timeout)
+
     return clone_repository(
         repo_url=repo_url,
         clone_path=clone_path,
