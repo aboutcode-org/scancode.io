@@ -201,6 +201,47 @@ def _map_jvm_to_class_resource(
             )
 
 
+def extract_fqcn_from_java(location_path):
+    """
+    Extract fully qualified class/interface/enum names from a Java source file.
+
+    Example:
+        package to.lombok.delombok.ant;
+        class Tasks {}
+
+    Returns:
+        ["to.lombok.delombok.ant.Tasks"]
+    """
+    try:
+        text = Path(location_path).read_text(encoding="utf-8", errors="ignore")
+    except Exception:
+        return []
+
+    # Extract package
+    package_name = None
+    package_match = re.search(
+        r"^\s*package\s+([a-zA-Z_][\w\.]*)\s*;", text, re.MULTILINE
+    )
+    if package_match:
+        package_name = package_match.group(1)
+
+    # Extract top-level class / interface / enum names
+    fqcn_list = []
+    for match in re.finditer(
+        r"^\s*(?:public\s+|abstract\s+|final\s+)?"
+        r"(class|interface|enum)\s+([A-Za-z_]\w*)",
+        text,
+        re.MULTILINE,
+    ):
+        class_name = match.group(2)
+        if package_name:
+            fqcn_list.append(f"{package_name}.{class_name}")
+        else:
+            fqcn_list.append(class_name)
+
+    return fqcn_list
+
+
 def map_jvm_to_class(project, jvm_lang: jvm.JvmLanguage, logger=None):
     """
     Map to/ compiled Jvm's binary files to from/ using Jvm language's fully
@@ -246,6 +287,32 @@ def map_jvm_to_class(project, jvm_lang: jvm.JvmLanguage, logger=None):
     # build an index using from-side fully qualified class file names
     # built from the source_package_attribute_name and file name
     indexables = jvm_lang.get_indexable_qualified_paths(from_resources_source_extension)
+
+
+# ------------------------------------------------------------
+supplemental_indexables = []
+
+for from_res in from_resources_source_extension:
+    location = getattr(from_res, "location", None) or getattr(
+        from_res, "location_path", None
+    )
+    if not location:
+        continue
+
+    fqcns = extract_fqcn_from_java(location)
+    if not fqcns:
+        continue
+
+    for fqcn in fqcns:
+        for ext in jvm_lang.source_extensions:
+            supplemental_indexables.append((from_res.id, fqcn.replace(".", "/") + ext))
+
+# Merge fallback entries safely
+if supplemental_indexables:
+    existing = set(indexables)
+    for entry in supplemental_indexables:
+        if entry not in existing:
+            indexables.append(entry)
 
     # we do not index subpath since we want to match only fully qualified names
     from_classes_index = pathmap.build_index(indexables, with_subpaths=False)
