@@ -66,6 +66,12 @@ def copy_inputs(input_locations, dest_path):
 def move_input(input_location, dest_path):
     """Move the provided ``input_location`` to the ``dest_path``."""
     destination = dest_path / Path(input_location).name
+    i = 2
+    while destination.exists():
+        input_path = Path(input_location)
+        destination = dest_path / f"{input_path.stem}_{i}{input_path.suffix}"
+        i += 1
+
     return shutil.move(input_location, destination)
 
 
