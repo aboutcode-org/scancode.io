@@ -17,7 +17,7 @@ results using the ScanCode.io web interface.
 
 On the homepage, you can click on the project name in the summary table to
 access a detailed project output page. You can also click any of the numbers
-underneath the **Packages**, **Resources**, or **Errors** fields to be directed
+underneath the **Packages**, **Resources**, or **Messages** fields to be directed
 to the field's corresponding information. Further, clicking on the pipeline's
 execution status —**Success** in this case— expands some extra pipeline details,
 Resources status, and Run log.
@@ -68,13 +68,23 @@ resources by **Programming Language**, **Mime Type**, **Holder**, **Copyright**,
 
 .. image:: images/tutorial-web-ui-resources-filter.png
 
-Errors
-------
+Messages
+--------
 In addition to discovered packages and codebase resources, the ScanCode.io
-homepage shows the number of existing errors, which you can click for detailed
-description of each error.
+homepage shows the number of project messages. These messages may include
+different severity levels such as **INFO**, **WARNING**, and **ERROR**.
 
-.. image:: images/tutorial-web-ui-errors-list.png
+Clicking on the **Messages** count will display a detailed list of all
+project messages along with their severity and description.
+
+.. note::
+
+    In earlier versions of ScanCode.io, project issues were displayed under
+    an **Errors** section. In recent versions (v36.x and later), this has been
+    generalized into a **Messages** section that includes INFO, WARNING,
+    and ERROR severities.
+
+.. image:: images/tutorial-web-ui-messages-list.png
 
 Other Information
 -----------------
