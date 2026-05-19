@@ -77,6 +77,19 @@ DEFAULT_IGNORED_PATTERNS = [
     "*/policies.yml",
     "*/__MACOSX*",  # macOS metadata folder
 ]
+# NuGet ecosystem files that are not useful for analysis when found inside
+# extracted .nupkg archives.
+NUGET_IGNORED_PATTERNS = [
+    "*_rels/.rels",
+    "*Content_Types*.xml",
+    "*package/services/metadata*",
+    "*.signature.p7s",
+    "*.runtimeconfig.json",
+    "*.dll.config",
+    "*.exe.config",
+    "*.shasum",
+    "*.png",
+]
 
 
 def flag_empty_files(project):
