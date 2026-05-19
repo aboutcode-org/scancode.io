@@ -1,0 +1,10 @@
+{
+  "version": 3,
+  "sources": ["src/queue.ts", "src/missing.ts"],
+  "sourcesContent": [
+    "export function queue() {}",
+    null
+  ],
+  "mappings": "AAAA",
+  "file": "partial.js"
+}
