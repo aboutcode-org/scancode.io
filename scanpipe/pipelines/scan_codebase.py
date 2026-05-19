@@ -22,6 +22,7 @@
 
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipes import maven
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_inputs
 
@@ -44,6 +45,7 @@ class ScanCodebase(Pipeline):
             cls.flag_empty_files,
             cls.flag_ignored_resources,
             cls.scan_for_application_packages,
+            cls.fix_maven_jar_packages,
             cls.scan_for_files,
             cls.collect_and_create_license_detections,
         )
@@ -62,6 +64,10 @@ class ScanCodebase(Pipeline):
     def scan_for_application_packages(self):
         """Scan unknown resources for packages information."""
         scancode.scan_for_application_packages(self.project, progress_logger=self.log)
+
+    def fix_maven_jar_packages(self):
+        """Fix JAR packages that should be Maven packages based on pom.properties."""
+        maven.detect_maven_jars_from_pom_properties(self.project, logger_func=self.log)
 
     def scan_for_files(self):
         """Scan unknown resources for copyrights, licenses, emails, and urls."""
