@@ -224,6 +224,8 @@ def fetch_vulnerabilities(
 
     for purls_batch in chunked(get_purls(packages), chunk_size):
         response_data = bulk_search_by_purl(purls_batch)
+        if not response_data:
+            continue
         for vulnerability_data in response_data:
             vulnerabilities_by_purl[vulnerability_data["purl"]] = vulnerability_data
 
