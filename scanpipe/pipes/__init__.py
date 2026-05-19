@@ -341,7 +341,7 @@ def update_or_create_license_detection(
     Use the `project` and `detection_data` mapping to lookup and creates the
     DiscoveredLicense using its detection identifier as a unique key.
 
-    Additonally if `resource_path` is passed, add the file region where
+    Additionally if `resource_path` is passed, add the file region where
     the license was detected to the DiscoveredLicense object, if not present
     already. `from_package` is True if the license detection was in a
     `extracted_license_statement` from a package metadata.

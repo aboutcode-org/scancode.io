@@ -16,7 +16,7 @@ and run the appropriate pipeline.
 ScanCode.io offers several :ref:`built_in_pipelines` depending on your input, see
 the :ref:`faq_which_pipeline` below.
 
-As an alternative, If you simply which to run a pipeline without installing ScanCode.io
+As an alternative, If you simply wish to run a pipeline without installing ScanCode.io
 you may use the Docker image to run pipelines as a single command:
 
 .. code-block:: bash

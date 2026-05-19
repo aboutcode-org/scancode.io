@@ -1204,7 +1204,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(0, run1.task_exitcode)
         self.assertEqual("output", run1.task_output)
         self.assertTrue(run1.task_end_date)
-        # Ensure the initial value for `log` was not overriden during the
+        # Ensure the initial value for `log` was not overridden during the
         # `set_task_ended.save()`
         self.assertIn("entry in log", run1.log)
 

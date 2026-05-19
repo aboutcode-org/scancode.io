@@ -232,7 +232,7 @@ class ProjectPipeline(CommonStepsMixin, BasePipeline):
 
             for resource in self.project.codebaseresources.all():
                 with self.save_errors(Exception, resource=resource):
-                    analyse(resource)
+                    analyze(resource)
         """
         try:
             yield

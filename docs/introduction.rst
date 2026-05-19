@@ -98,7 +98,7 @@ The second essential part of ScanCode.io is the **ScanCode Toolkit**, which is u
 for archives extraction and as the scanning engine.
 
 The nexB `container-inspector <https://github.com/aboutcode-org/container-inspector>`_ library
-is also a key component of ScanCode.io as this tool is used to analyse Docker
+is also a key component of ScanCode.io as this tool is used to analyze Docker
 images, containers, root filesystems, and virtual machine images.
 
 .. note::
