@@ -274,3 +274,11 @@ Fetch Scores (addon)
 .. autoclass:: scanpipe.pipelines.fetch_scores.FetchScores()
     :members:
     :member-order: bysource
+
+.. _pipeline_analyze_nixpkg:
+
+Analyze Nixpkg
+--------------
+.. autoclass:: scanpipe.pipelines.analyze_nixpkg.NixpkgClarity()
+    :members:
+    :member-order: bysource
