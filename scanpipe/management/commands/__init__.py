@@ -360,6 +360,8 @@ def handle_input_urls(project, input_urls, command=None):
     for url in input_urls:
         project.add_input_source(download_url=url)
 
+    project.auto_populate_purl_if_single_package_url()
+
     if input_urls and command and command.verbosity > 0:
         msg = "URL(s) added as project input sources:"
         command.stdout.write(msg, command.style.SUCCESS)
