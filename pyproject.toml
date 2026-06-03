@@ -54,6 +54,7 @@ dependencies = [
   "redis==7.4.0",
   # WSGI server
   "gunicorn==26.0.0",
+  "packaging==26.2",
   # Docker
   "container-inspector==33.1.0",
   # ScanCode-toolkit
@@ -63,20 +64,22 @@ dependencies = [
   "Beautifulsoup4[chardet]==4.14.3",
   "packageurl-python==0.17.6",
   # FetchCode
-  "fetchcode==0.8.0",
+  "fetchcode==0.8.2",
   "fetchcode-container==1.2.3.210512; sys_platform == 'linux'",
   # Inspectors
   "elf-inspector==0.0.3",
   "go-inspector==0.5.0",
   "rust-inspector==0.2.1",
   "binary-inspector==0.2.0",
-  "python-inspector==0.15.0",
+  "python-inspector==0.15.2",
   "source-inspector==0.7.1; sys_platform != 'darwin' and platform_machine != 'arm64'",
   "aboutcode-toolkit==11.1.1",
   # Utilities
   "XlsxWriter==3.2.9",
   "openpyxl==3.1.5",
   "requests==2.33.1",
+  "charset-normalizer==3.4.7",
+  "chardet==7.4.3",
   "urllib3==2.7.0",
   "idna==3.16",
   "GitPython==3.1.50",
@@ -84,12 +87,12 @@ dependencies = [
   # Profiling
   "pyinstrument==5.1.2",
   # CycloneDX
-  "cyclonedx-python-lib==11.6.0",
+  "cyclonedx-python-lib==11.7.0",
   "jsonschema==4.26.0",
   # MatchCode-toolkit
   "matchcode-toolkit==7.2.2",
   # Univers
-  "univers==31.1.0",
+  "univers==32.0.1",
   # Markdown
   "markdown-it-py==4.0.0",
   "bleach==6.3.0",
