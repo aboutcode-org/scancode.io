@@ -207,6 +207,7 @@ TS_QUERIES = {
     },
 }
 
+
 @cache
 def load_language(language: str) -> Language:
     if language not in TS_LANGUAGE_WHEELS:
@@ -256,7 +257,48 @@ def run_query(query: Query, root_node):
         yield def_nodes[0], name
 
 
-def extract_calls_in_node(node, language: str) -> set[str]:
+def query_captures(language, kind, node):
+    """Re-run a definition query on the root of node's tree."""
+    query = get_query(language, kind)
+    return list(run_query(query, _root_of(node)))
+
+
+def _root_of(node):
+    while node.parent is not None:
+        node = node.parent
+    return node
+
+
+def is_nested_function(node, language):
+    function_nodes = {
+        captured_node
+        for captured_node, _ in query_captures(language, "functions", node)
+    }
+    class_nodes = {
+        captured_node for captured_node, _ in query_captures(language, "classes", node)
+    }
+
+    if node not in function_nodes:
+        return False
+
+    function_types = {captured_node.type for captured_node in function_nodes}
+    class_types = {captured_node.type for captured_node in class_nodes}
+
+    parent = node.parent
+
+    while parent is not None:
+        if parent.type in function_types:
+            return True
+
+        if parent.type in class_types:
+            return False
+
+        parent = parent.parent
+
+    return False
+
+
+def extract_calls_in_node(node, language: str):
     query = get_query(language, "calls")
     if query is None or node is None:
         return set()
@@ -270,7 +312,7 @@ def extract_calls_in_node(node, language: str) -> set[str]:
     return names
 
 
-def collect_definitions(root_node, language: str) -> dict[int, dict]:
+def collect_definitions(root_node, language: str):
     index: dict[int, dict] = {}
     for kind in ("functions", "classes"):
         query = get_query(language, kind)
@@ -311,13 +353,7 @@ def extract_symbols(tree, changed_lines: list[int], language: str):
     return enclosing
 
 
-def _root_of(node):
-    while node.parent is not None:
-        node = node.parent
-    return node
-
-
-def qualified_name_from_index(node, index: dict[int, dict]) -> str:
+def qualified_name_from_index(node, index):
     parts = []
     curr = node
     while curr is not None:

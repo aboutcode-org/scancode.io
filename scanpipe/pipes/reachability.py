@@ -39,6 +39,7 @@ from scanpipe.pipes.symbols import collect_definitions
 from scanpipe.pipes.symbols import extract_calls_in_node
 from scanpipe.pipes.symbols import extract_definitions
 from scanpipe.pipes.symbols import extract_symbols
+from scanpipe.pipes.symbols import is_nested_function
 from scanpipe.pipes.symbols import parse_code_to_ast
 from scanpipe.pipes.symbols import qualified_name_from_index
 
@@ -217,52 +218,6 @@ def get_changed_lines(diff_text, file_path):
                     added.append(line.target_line_no)
 
     return removed, added
-
-
-def query_captures(language, kind, node):
-    """
-    Re-run a definition query on the root of `node`'s tree so ancestors can
-    be compared. Query caching is handled by `scanpipe.pipes.symbols`.
-    """
-    from scanpipe.pipes.symbols import get_query
-    from scanpipe.pipes.symbols import run_query
-
-    root = node
-
-    while root.parent is not None:
-        root = root.parent
-
-    query = get_query(language, kind)
-    return list(run_query(query, root))
-
-
-def is_nested_function(node, language):
-    function_nodes = {
-        captured_node
-        for captured_node, _ in query_captures(language, "functions", node)
-    }
-    class_nodes = {
-        captured_node for captured_node, _ in query_captures(language, "classes", node)
-    }
-
-    if node not in function_nodes:
-        return False
-
-    function_types = {captured_node.type for captured_node in function_nodes}
-    class_types = {captured_node.type for captured_node in class_nodes}
-
-    parent = node.parent
-
-    while parent is not None:
-        if parent.type in function_types:
-            return True
-
-        if parent.type in class_types:
-            return False
-
-        parent = parent.parent
-
-    return False
 
 
 def diff_changed_symbols(vuln_meta, fixed_meta):
@@ -506,7 +461,7 @@ def collect_and_store_symbol_reachability_results(project, logger=None):
                 append_symbol_reachability_result(resource, result)
 
         except Exception as e:
-            logger.exception(
+            logger(
                 "Failed to collect symbol reachability for "
                 f"{vcs_url}@{commit_hash}: {e}"
             )
@@ -515,24 +470,36 @@ def collect_and_store_symbol_reachability_results(project, logger=None):
 
 
 def compute_reachable_symbols(call_graph, target_simple_names):
+    """
+    Find all symbols that can transitively reach any of ``target_simple_names``.
+
+    Reachability is matched on *simple* names (the call graph records callee
+    tokens, not fully-qualified names), so distinct symbols sharing a name are
+    treated as equivalent. This can over-approximate reachability.
+
+    Returns:
+        (reachable_callers, has_direct_call)
+            reachable_callers: qualified names of all transitive callers
+            has_direct_call:   whether any symbol calls a target directly
+
+    """
     if not call_graph or not target_simple_names:
         return set(), False
 
     edges = call_graph["edges"]
     targets = set(target_simple_names)
 
-    callers_of = {}
+    callers_of: dict[str, set[str]] = {}
     for caller_qn, callees in edges.items():
         for callee_simple in callees:
             callers_of.setdefault(callee_simple, set()).add(caller_qn)
 
-    direct_callers = set()
+    direct_callers: set[str] = set()
     for target in targets:
         direct_callers |= callers_of.get(target, set())
 
     has_direct_call = bool(direct_callers)
 
-    by_simple = call_graph["by_simple_name"]
     qn_to_simple = {qn: meta["simple_name"] for qn, meta in call_graph["nodes"].items()}
 
     reachable = set(direct_callers)

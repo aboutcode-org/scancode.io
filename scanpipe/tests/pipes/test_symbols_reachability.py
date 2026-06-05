@@ -30,9 +30,12 @@ from scanpipe.pipes import collect_and_create_codebase_resources
 from scanpipe.pipes.reachability import ReachabilityStatus
 from scanpipe.pipes.reachability import analyze_patched_file
 from scanpipe.pipes.reachability import build_call_graph
+from scanpipe.pipes.reachability import build_symbol_metadata
 from scanpipe.pipes.reachability import classify_reachability
 from scanpipe.pipes.reachability import collect_and_store_symbol_reachability_results
-from scanpipe.pipes.symbols import collect_definitions
+from scanpipe.pipes.reachability import diff_changed_symbols
+from scanpipe.pipes.reachability import get_changed_lines
+from scanpipe.pipes.symbols import collect_definitions, extract_symbols
 from scanpipe.pipes.symbols import extract_definitions
 from scanpipe.pipes.symbols import parse_code_to_ast
 from scanpipe.pipes.symbols import qualified_name_from_index
@@ -291,3 +294,173 @@ class FleetManagement:
             classify_reachability({"sym1": {"file_path": "src/vulnerable.py"}})
             == ReachabilityStatus.NOT_REACHABLE
         )
+
+    def test_get_changed_lines(self):
+        data = Path(__file__).parent.parent / "data" / "reachability"
+        diff_text = (data / "diff-app.patch").read_text(encoding="utf-8")
+
+        removed, added = get_changed_lines(diff_text, "app.py")
+        assert removed == [17, 18, 19, 24]
+        assert added == [17, 18, 19, 20, 21, 22, 27, 28, 29, 30]
+
+    def test_build_symbol_metadata_processing(self):
+        source_code = """
+class Controller:
+    def process_data(payload):
+        def inner_helper():
+            return True
+        return payload.strip()
+
+if True:
+    def process_data(payload):
+        return payload
+"""
+        tree, _ = parse_code_to_ast(source_code, "Python")
+        nodes = extract_definitions(tree, "Python", kinds=("functions",))
+
+        metadata = build_symbol_metadata(nodes, "Python")
+        assert metadata == {
+            "Controller.process_data": {
+                "qualified_name": "Controller.process_data",
+                "simple_name": "process_data",
+                "text": "def process_data(payload):\n        def inner_helper():\n            return True\n        return payload.strip()",
+                "fingerprint": "0000000888014a04b037189a42b238a2c50f218c",
+                "start_line": 3,
+                "end_line": 6,
+                "node_type": "function_definition",
+            },
+            "process_data": {
+                "qualified_name": "process_data",
+                "simple_name": "process_data",
+                "text": "def process_data(payload):\n        return payload",
+                "fingerprint": "000000022020300e882a900807880d0300010000",
+                "start_line": 9,
+                "end_line": 10,
+                "node_type": "function_definition",
+            },
+        }
+
+    def test_diff_changed_symbols(self):
+        vuln_meta = {
+            "serve_report": {
+                "qualified_name": "app.serve_report",
+                "text": "def serve_report():\n    return os.path.join(base, filename)",
+            },
+            "sanitize_input": {
+                "qualified_name": "app.sanitize_input",
+                "text": "def sanitize_input(x):\n    return x.strip()",
+            },
+            "deprecated_logger": {
+                "qualified_name": "app.deprecated_logger",
+                "text": "def deprecated_logger():\n    print('legacy')",
+            },
+        }
+
+        fixed_meta = {
+            "serve_report": {
+                "qualified_name": "app.serve_report",
+                "text": "def serve_report():\n    if not target.startswith(base): raise ValueError\n    return target",
+            },
+            "sanitize_input": {
+                "qualified_name": "app.sanitize_input",
+                "text": "def sanitize_input(x):\n    return x.strip()",
+            },
+            "audit_trail": {
+                "qualified_name": "app.audit_trail",
+                "text": "def audit_trail():\n    log.info('action')",
+            },
+        }
+
+        vuln_only, fixed_only = diff_changed_symbols(vuln_meta, fixed_meta)
+
+        assert vuln_only == {
+            "serve_report": {
+                "qualified_name": "app.serve_report",
+                "text": "def serve_report():\n    return os.path.join(base, filename)",
+            },
+            "deprecated_logger": {
+                "qualified_name": "app.deprecated_logger",
+                "text": "def deprecated_logger():\n    print('legacy')",
+            },
+        }
+        assert fixed_only == {
+            "serve_report": {
+                "qualified_name": "app.serve_report",
+                "text": "def serve_report():\n    if not target.startswith(base): raise ValueError\n    return target",
+            },
+            "audit_trail": {
+                "qualified_name": "app.audit_trail",
+                "text": "def audit_trail():\n    log.info('action')",
+            },
+        }
+
+    def test_analyze_patched_file(self):
+        vuln_text = (self.data / "vuln-app.py").read_text(encoding="utf-8")
+        fixed_text = (self.data / "fixed-app.py").read_text(encoding="utf-8")
+        diff_text = (self.data / "diff-app.patch").read_text(encoding="utf-8")
+
+        vuln_meta, fixed_meta, lang = analyze_patched_file(
+            vulnerable_text=vuln_text,
+            fixed_text=fixed_text,
+            diff_text=diff_text,
+            file_path="app.py",
+        )
+
+        assert vuln_meta == {
+            "serve_report": {
+                "qualified_name": "serve_report",
+                "simple_name": "serve_report",
+                "text": 'def serve_report(request_payload):\n    """Top-level function handling a request."""\n    generator = ReportGenerator("/var/reports")\n    requested_file = request_payload.get("file")\n\n    # Helper function nested inside serve_report\n    def build_file_path(filename):\n        # VULNERABLE: Direct concatenation allows Path Traversal\n        # An attacker passing "../../etc/passwd" could read system files.\n        return os.path.join(generator.base_dir, filename)\n\n    if not requested_file:\n        return "Error: No file specified"\n\n    target_path = build_file_path(requested_file)\n\n    if os.path.exists(target_path):\n        return f"Serving content of {target_path}"\n\n    return "Error: File not found"',
+                "fingerprint": "000000556d322a47595af353274b000aa324e014",
+                "start_line": 11,
+                "end_line": 30,
+                "node_type": "function_definition",
+            }
+        }
+        assert fixed_meta == {
+            "serve_report": {
+                "qualified_name": "serve_report",
+                "simple_name": "serve_report",
+                "text": 'def serve_report(request_payload):\n    """Top-level function handling a request."""\n    generator = ReportGenerator("/var/reports")\n    requested_file = request_payload.get("file")\n\n    # Helper function nested inside serve_report\n    def build_file_path(filename):\n        # FIXED: Validate that the resolved path stays within the base_dir\n        base = os.path.abspath(generator.base_dir)\n        target = os.path.abspath(os.path.join(base, filename))\n        if not target.startswith(base):\n            raise ValueError("Path Traversal Detected")\n        return target\n\n    if not requested_file:\n        return "Error: No file specified"\n\n    try:\n        target_path = build_file_path(requested_file)\n    except ValueError:\n        return "Error: Invalid path"\n\n    if os.path.exists(target_path):\n        return f"Serving content of {target_path}"\n\n    return "Error: File not found"',
+                "fingerprint": "0000006cceea8aedf1da91830f67b64927086d24",
+                "start_line": 11,
+                "end_line": 36,
+                "node_type": "function_definition",
+            }
+        }
+
+    def test_extract_symbols(self):
+        source_code = (
+            "def serve_report(request):\n"  # Line 1 (Row 0)
+            "    # Some processing here\n"  # Line 2 (Row 1)
+            "    def build_path(filename):\n"  # Line 3 (Row 2)
+            "        return filename.strip()\n"  # Line 4 (Row 3) <- Targeted Change
+            "    return build_path(request)\n"  # Line 5 (Row 4)
+        )
+
+        tree, _ = parse_code_to_ast(source_code, "Python")
+
+        changed_lines = [4]
+        enclosing_symbols = extract_symbols(tree, changed_lines, "Python")
+
+        assert len(enclosing_symbols) == 1
+        target_node = enclosing_symbols[0]
+        assert target_node.type == "function_definition"
+
+        node_text = target_node.text.decode("utf-8")
+        assert "def build_path" in node_text
+        assert "def serve_report" not in node_text
+
+    def test_extract_symbols_deduplication(self):
+        source_code = (
+            "def calculate_total(price, tax):\n"
+            "    amount = price * tax\n"  # Line 2 -> Changed
+            "    return price + amount\n"  # Line 3 -> Changed
+        )
+
+        tree, _ = parse_code_to_ast(source_code, "Python")
+        changed_lines = [2, 3]
+
+        enclosing_symbols = extract_symbols(tree, changed_lines, "Python")
+        assert len(enclosing_symbols) == 1
+        assert enclosing_symbols[0].type == "function_definition"
