@@ -45,12 +45,12 @@ WORKDIR $APP_DIR
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-project
+    uv sync --extra android_analysis --frozen --no-install-project
 
 # Only re-runs when local code changes
 COPY . $APP_DIR
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen
+    uv sync --extra android_analysis --frozen
 
 # ============================================
 # Stage 2: Production stage (base)
@@ -133,6 +133,15 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends \
        libguestfs-tools \
        linux-image-amd64 \
+       openjdk-17-jre-headless \
+       unzip \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Download jadx-1.5.0.zip and extract contents to /usr/bin/ and /usr/lib/
+ADD https://github.com/skylot/jadx/releases/download/v1.5.0/jadx-1.5.0.zip /tmp/jadx-1.5.0.zip
+RUN unzip -d /usr/ /tmp/jadx-1.5.0.zip && chmod +x /usr/bin/jadx && rm /tmp/jadx-1.5.0.zip
+RUN chmod +x /usr/bin/jadx
+RUN apt-get purge -y unzip
+
 USER $APP_USER
