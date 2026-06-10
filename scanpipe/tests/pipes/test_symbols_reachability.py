@@ -29,14 +29,15 @@ from scanpipe.models import Project
 from scanpipe.pipes import collect_and_create_codebase_resources
 from scanpipe.pipes.reachability import ReachabilityStatus
 from scanpipe.pipes.reachability import analyze_patched_file
-from scanpipe.pipes.reachability import build_call_graph
 from scanpipe.pipes.reachability import build_symbol_metadata
 from scanpipe.pipes.reachability import classify_reachability
 from scanpipe.pipes.reachability import collect_and_store_symbol_reachability_results
+from scanpipe.pipes.reachability import compute_reachable_symbols
 from scanpipe.pipes.reachability import diff_changed_symbols
 from scanpipe.pipes.reachability import get_changed_lines
-from scanpipe.pipes.symbols import collect_definitions, extract_symbols
+from scanpipe.pipes.symbols import collect_definitions
 from scanpipe.pipes.symbols import extract_definitions
+from scanpipe.pipes.symbols import extract_symbols
 from scanpipe.pipes.symbols import parse_code_to_ast
 from scanpipe.pipes.symbols import qualified_name_from_index
 
@@ -101,85 +102,31 @@ class SymbolReachabilityPipesTest(TestCase):
         resource.refresh_from_db()
         results = resource.extra_data.get("symbols_reachability")
 
-        assert results == [
-            {
-                "patch": {
-                    "vcs_url": "https://github.com/aboutcode-org/test",
-                    "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
-                },
-                "summary": {
-                    "call_paths": {},
+        self.assertEqual(
+            results,
+            [
+                {
+                    "patch": {
+                        "vcs_url": "https://github.com/aboutcode-org/test",
+                        "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
+                    },
+                    "summary": {"call_paths": {}},
+                    "evidence": {
+                        "serve_report": {
+                            "called": False,
+                            "defined": True,
+                            "reachable_from": [],
+                            "exact_match_fingerprint": (
+                                "e341b914f9823915e0685396a730d421ec9e3635"
+                            ),
+                        }
+                    },
                     "fixed_symbols": ["serve_report"],
                     "vulnerable_symbols": ["serve_report"],
-                },
-                "evidence": {
-                    "serve_report": {
-                        "called": False,
-                        "defined": True,
-                        "reachable_from": [],
-                        "exact_match_fingerprint": "000000556d322a47595af353274b000aa324e014",
-                    }
-                },
-                "reachability_status": "POTENTIALLY_REACHABLE",
-            }
-        ]
-
-    def test_build_call_graph(self):
-        source_code = """
-def calculate_total(price, tax):
-    return price + get_tax_amount(price, tax)
-
-def get_tax_amount(price, tax):
-    return price * tax
-
-def process_order():
-    total = calculate_total(100, 0.05)
-    print("Done")
-"""
-        tree, _ = parse_code_to_ast(source_code, "Python")
-        result = build_call_graph(tree, "Python")
-
-        assert result == {
-            "nodes": {
-                "calculate_total": {
-                    "qualified_name": "calculate_total",
-                    "simple_name": "calculate_total",
-                    "text": "def calculate_total(price, tax):\n    return price + get_tax_amount(price, tax)",
-                    "fingerprint": "00000008060105fd3624134884412006ce880936",
-                    "start_line": 2,
-                    "end_line": 3,
-                    "node_type": "function_definition",
-                },
-                "get_tax_amount": {
-                    "qualified_name": "get_tax_amount",
-                    "simple_name": "get_tax_amount",
-                    "text": "def get_tax_amount(price, tax):\n    return price * tax",
-                    "fingerprint": "000000058f0ee87d9669f20b1f473137b665bb20",
-                    "start_line": 5,
-                    "end_line": 6,
-                    "node_type": "function_definition",
-                },
-                "process_order": {
-                    "qualified_name": "process_order",
-                    "simple_name": "process_order",
-                    "text": 'def process_order():\n    total = calculate_total(100, 0.05)\n    print("Done")',
-                    "fingerprint": "000000071c3e6902da5c2b322386eff29068e3e2",
-                    "start_line": 8,
-                    "end_line": 10,
-                    "node_type": "function_definition",
-                },
-            },
-            "edges": {
-                "calculate_total": {"get_tax_amount"},
-                "get_tax_amount": set(),
-                "process_order": {"print", "calculate_total"},
-            },
-            "by_simple_name": {
-                "calculate_total": {"calculate_total"},
-                "get_tax_amount": {"get_tax_amount"},
-                "process_order": {"process_order"},
-            },
-        }
+                    "reachability_status": "POTENTIALLY_REACHABLE",
+                }
+            ],
+        )
 
     def test_extract_definitions(self):
         source_code = """
@@ -198,25 +145,25 @@ class InventoryItem:
 """
         tree, _ = parse_code_to_ast(source_code, "Python")
         functions = extract_definitions(tree, "Python", kinds=("functions",))
-        assert (
-            len(functions) == 3
+        self.assertEqual(
+            len(functions), 3
         )  # '__init__', 'process_payment', and 'calculate_discount'
 
-        assert functions[0].type == "function_definition"
+        self.assertEqual(functions[0].type, "function_definition")
         first_func_text = functions[0].text.decode("utf-8")
-        assert "def __init__" in first_func_text
+        self.assertIn("def __init__", first_func_text)
 
         classes = extract_definitions(tree, "Python", kinds=("classes",))
-        assert len(classes) == 2  # OrderManager, InventoryItem
+        self.assertEqual(len(classes), 2)
         second_class_text = classes[1].text.decode("utf-8")
-        assert "class InventoryItem" in second_class_text
+        self.assertIn("class InventoryItem", second_class_text)
 
     def test_extract_definitions_empty(self):
         tree, _ = parse_code_to_ast("", "Python")
-        assert extract_definitions(tree, "Python", kinds=("functions",)) == []
-        assert extract_definitions(tree, "Python", kinds=("functions",)) == []
-        assert extract_definitions(None, "Python", kinds=("classes",)) == []
-        assert extract_definitions(None, "Python", kinds=("classes",)) == []
+        self.assertEqual(extract_definitions(tree, "Python", kinds=("functions",)), [])
+        self.assertEqual(extract_definitions(tree, "Python", kinds=("functions",)), [])
+        self.assertEqual(extract_definitions(None, "Python", kinds=("classes",)), [])
+        self.assertEqual(extract_definitions(None, "Python", kinds=("classes",)), [])
 
     def test_get_qualified_name_functions(self):
         source_code = """
@@ -233,13 +180,13 @@ def global_utility():
         index = collect_definitions(tree.root_node, "Python")
 
         functions = extract_definitions(tree, "Python", kinds=("functions",))
-        assert len(functions) == 2
+        self.assertEqual(len(functions), 2)
 
         outer_function_name = qualified_name_from_index(functions[0], index)
         inner_function_name = qualified_name_from_index(functions[1], index)
 
-        assert outer_function_name == "CoreService.Validator.validate_payload"
-        assert inner_function_name == "global_utility"
+        self.assertEqual(outer_function_name, "CoreService.Validator.validate_payload")
+        self.assertEqual(inner_function_name, "global_utility")
 
     def test_get_qualified_classes(self):
         source_code = """
@@ -251,25 +198,25 @@ class FleetManagement:
         index = collect_definitions(tree.root_node, "Python")
 
         classes = extract_definitions(tree, "Python", kinds=("classes",))
-        assert len(classes) == 2
+        self.assertEqual(len(classes), 2)
 
         outer_class_name = qualified_name_from_index(classes[0], index)
         inner_class_name = qualified_name_from_index(classes[1], index)
 
-        assert outer_class_name == "FleetManagement"
-        assert inner_class_name == "FleetManagement.DroneController"
+        self.assertEqual(outer_class_name, "FleetManagement")
+        self.assertEqual(inner_class_name, "FleetManagement.DroneController")
 
     def test_classify_reachability(self):
-        assert classify_reachability(None) == ReachabilityStatus.NOT_REACHABLE
-        assert classify_reachability({}) == ReachabilityStatus.NOT_REACHABLE
-        assert (
+        self.assertEqual(classify_reachability(None), ReachabilityStatus.NOT_REACHABLE)
+        self.assertEqual(classify_reachability({}), ReachabilityStatus.NOT_REACHABLE)
+        self.assertEqual(
             classify_reachability(
                 {"sym1": {"exact_match_fingerprint": "hash123", "called": True}}
-            )
-            == ReachabilityStatus.REACHABLE
+            ),
+            ReachabilityStatus.REACHABLE,
         )
 
-        assert (
+        self.assertEqual(
             classify_reachability(
                 {
                     "sym1": {
@@ -277,22 +224,22 @@ class FleetManagement:
                         "reachable_from": ["main_function", "api_handler"],
                     }
                 }
-            )
-            == ReachabilityStatus.REACHABLE
+            ),
+            ReachabilityStatus.REACHABLE,
         )
-        assert (
-            classify_reachability({"sym1": {"defined": True, "called": False}})
-            == ReachabilityStatus.POTENTIALLY_REACHABLE
+        self.assertEqual(
+            classify_reachability({"sym1": {"defined": True, "called": False}}),
+            ReachabilityStatus.POTENTIALLY_REACHABLE,
         )
-        assert (
+        self.assertEqual(
             classify_reachability(
                 {"sym1": {"exact_match_fingerprint": "hash123", "called": False}}
-            )
-            == ReachabilityStatus.POTENTIALLY_REACHABLE
+            ),
+            ReachabilityStatus.POTENTIALLY_REACHABLE,
         )
-        assert (
-            classify_reachability({"sym1": {"file_path": "src/vulnerable.py"}})
-            == ReachabilityStatus.NOT_REACHABLE
+        self.assertEqual(
+            classify_reachability({"sym1": {"file_path": "src/vulnerable.py"}}),
+            ReachabilityStatus.NOT_REACHABLE,
         )
 
     def test_get_changed_lines(self):
@@ -300,8 +247,8 @@ class FleetManagement:
         diff_text = (data / "diff-app.patch").read_text(encoding="utf-8")
 
         removed, added = get_changed_lines(diff_text, "app.py")
-        assert removed == [17, 18, 19, 24]
-        assert added == [17, 18, 19, 20, 21, 22, 27, 28, 29, 30]
+        self.assertEqual(removed, [17, 18, 19, 24])
+        self.assertEqual(added, [17, 18, 19, 20, 21, 22, 27, 28, 29, 30])
 
     def test_build_symbol_metadata_processing(self):
         source_code = """
@@ -319,26 +266,30 @@ if True:
         nodes = extract_definitions(tree, "Python", kinds=("functions",))
 
         metadata = build_symbol_metadata(nodes, "Python")
-        assert metadata == {
-            "Controller.process_data": {
-                "qualified_name": "Controller.process_data",
-                "simple_name": "process_data",
-                "text": "def process_data(payload):\n        def inner_helper():\n            return True\n        return payload.strip()",
-                "fingerprint": "0000000888014a04b037189a42b238a2c50f218c",
-                "start_line": 3,
-                "end_line": 6,
-                "node_type": "function_definition",
+        self.assertEqual(
+            metadata,
+            {
+                "Controller.process_data": {
+                    "qualified_name": "Controller.process_data",
+                    "text": "def process_data(payload):\n"
+                    "        def inner_helper():\n"
+                    "            return True\n"
+                    "        return payload.strip()",
+                    "fingerprint": "0000000888014a04b037189a42b238a2c50f218c",
+                    "start_line": 3,
+                    "end_line": 6,
+                    "node_type": "function_definition",
+                },
+                "process_data": {
+                    "qualified_name": "process_data",
+                    "text": "def process_data(payload):\n        return payload",
+                    "fingerprint": "000000022020300e882a900807880d0300010000",
+                    "start_line": 9,
+                    "end_line": 10,
+                    "node_type": "function_definition",
+                },
             },
-            "process_data": {
-                "qualified_name": "process_data",
-                "simple_name": "process_data",
-                "text": "def process_data(payload):\n        return payload",
-                "fingerprint": "000000022020300e882a900807880d0300010000",
-                "start_line": 9,
-                "end_line": 10,
-                "node_type": "function_definition",
-            },
-        }
+        )
 
     def test_diff_changed_symbols(self):
         vuln_meta = {
@@ -359,7 +310,10 @@ if True:
         fixed_meta = {
             "serve_report": {
                 "qualified_name": "app.serve_report",
-                "text": "def serve_report():\n    if not target.startswith(base): raise ValueError\n    return target",
+                "text": "def serve_report():\n   "
+                " if not target.startswith(base): "
+                "raise ValueError\n "
+                "   return target",
             },
             "sanitize_input": {
                 "qualified_name": "app.sanitize_input",
@@ -373,26 +327,34 @@ if True:
 
         vuln_only, fixed_only = diff_changed_symbols(vuln_meta, fixed_meta)
 
-        assert vuln_only == {
-            "serve_report": {
-                "qualified_name": "app.serve_report",
-                "text": "def serve_report():\n    return os.path.join(base, filename)",
+        self.assertEqual(
+            vuln_only,
+            {
+                "serve_report": {
+                    "qualified_name": "app.serve_report",
+                    "text": "def serve_report():\n "
+                    "   return os.path.join(base, filename)",
+                },
+                "deprecated_logger": {
+                    "qualified_name": "app.deprecated_logger",
+                    "text": "def deprecated_logger():\n    print('legacy')",
+                },
             },
-            "deprecated_logger": {
-                "qualified_name": "app.deprecated_logger",
-                "text": "def deprecated_logger():\n    print('legacy')",
+        )
+        self.assertEqual(
+            fixed_only,
+            {
+                "serve_report": {
+                    "qualified_name": "app.serve_report",
+                    "text": "def serve_report():\n    if not target.startswith(base): "
+                    "raise ValueError\n    return target",
+                },
+                "audit_trail": {
+                    "qualified_name": "app.audit_trail",
+                    "text": "def audit_trail():\n    log.info('action')",
+                },
             },
-        }
-        assert fixed_only == {
-            "serve_report": {
-                "qualified_name": "app.serve_report",
-                "text": "def serve_report():\n    if not target.startswith(base): raise ValueError\n    return target",
-            },
-            "audit_trail": {
-                "qualified_name": "app.audit_trail",
-                "text": "def audit_trail():\n    log.info('action')",
-            },
-        }
+        )
 
     def test_analyze_patched_file(self):
         vuln_text = (self.data / "vuln-app.py").read_text(encoding="utf-8")
@@ -406,28 +368,70 @@ if True:
             file_path="app.py",
         )
 
-        assert vuln_meta == {
-            "serve_report": {
-                "qualified_name": "serve_report",
-                "simple_name": "serve_report",
-                "text": 'def serve_report(request_payload):\n    """Top-level function handling a request."""\n    generator = ReportGenerator("/var/reports")\n    requested_file = request_payload.get("file")\n\n    # Helper function nested inside serve_report\n    def build_file_path(filename):\n        # VULNERABLE: Direct concatenation allows Path Traversal\n        # An attacker passing "../../etc/passwd" could read system files.\n        return os.path.join(generator.base_dir, filename)\n\n    if not requested_file:\n        return "Error: No file specified"\n\n    target_path = build_file_path(requested_file)\n\n    if os.path.exists(target_path):\n        return f"Serving content of {target_path}"\n\n    return "Error: File not found"',
-                "fingerprint": "000000556d322a47595af353274b000aa324e014",
-                "start_line": 11,
-                "end_line": 30,
-                "node_type": "function_definition",
-            }
-        }
-        assert fixed_meta == {
-            "serve_report": {
-                "qualified_name": "serve_report",
-                "simple_name": "serve_report",
-                "text": 'def serve_report(request_payload):\n    """Top-level function handling a request."""\n    generator = ReportGenerator("/var/reports")\n    requested_file = request_payload.get("file")\n\n    # Helper function nested inside serve_report\n    def build_file_path(filename):\n        # FIXED: Validate that the resolved path stays within the base_dir\n        base = os.path.abspath(generator.base_dir)\n        target = os.path.abspath(os.path.join(base, filename))\n        if not target.startswith(base):\n            raise ValueError("Path Traversal Detected")\n        return target\n\n    if not requested_file:\n        return "Error: No file specified"\n\n    try:\n        target_path = build_file_path(requested_file)\n    except ValueError:\n        return "Error: Invalid path"\n\n    if os.path.exists(target_path):\n        return f"Serving content of {target_path}"\n\n    return "Error: File not found"',
-                "fingerprint": "0000006cceea8aedf1da91830f67b64927086d24",
-                "start_line": 11,
-                "end_line": 36,
-                "node_type": "function_definition",
-            }
-        }
+        self.assertEqual(
+            vuln_meta,
+            {
+                "serve_report": {
+                    "qualified_name": "serve_report",
+                    "text": "def serve_report(request_payload):\n   "
+                    ' """Top-level function handling a request."""\n   '
+                    ' generator = ReportGenerator("/var/reports")\n   '
+                    ' requested_file = request_payload.get("file")\n\n    '
+                    "# Helper function nested inside serve_report\n    "
+                    "def build_file_path(filename):\n     "
+                    "   # VULNERABLE: Direct concatenation allows Path Traversal\n    "
+                    '    # An attacker passing "../../etc/passwd" '
+                    "could read system files.\n     "
+                    "   return os.path.join(generator.base_dir, filename)\n\n  "
+                    "  if not requested_file:\n       "
+                    ' return "Error: No file specified"\n\n '
+                    "   target_path = build_file_path(requested_file)\n\n"
+                    "  "
+                    "  "
+                    "if os.path.exists(target_path):\n"
+                    "    "
+                    '    return f"Serving content of {target_path}"\n\n  '
+                    '  return "Error: File not found"',
+                    "fingerprint": "000000556d322a47595af353274b000aa324e014",
+                    "start_line": 11,
+                    "end_line": 30,
+                    "node_type": "function_definition",
+                }
+            },
+        )
+
+        self.assertEqual(
+            fixed_meta,
+            {
+                "serve_report": {
+                    "qualified_name": "serve_report",
+                    "text": "def serve_report(request_payload):\n "
+                    '   """Top-level function handling a request."""\n  '
+                    '  generator = ReportGenerator("/var/reports")\n   '
+                    ' requested_file = request_payload.get("file")\n\n '
+                    "   # Helper function nested inside serve_report\n   "
+                    " def build_file_path(filename):\n    "
+                    "    # FIXED: Validate that the resolved "
+                    "path stays within the base_dir\n   "
+                    "     base = os.path.abspath(generator.base_dir)\n    "
+                    "    target = os.path.abspath(os.path.join(base, filename))\n    "
+                    "    if not target.startswith(base):\n          "
+                    '  raise ValueError("Path Traversal Detected")\n     '
+                    "   return target\n\n    if not requested_file:\n      "
+                    '  return "Error: No file specified"\n\n    try:\n       '
+                    " target_path = build_file_path(requested_file)\n  "
+                    "  except ValueError:\n    "
+                    '    return "Error: Invalid path"\n\n'
+                    "    if os.path.exists(target_path):\n   "
+                    '     return f"Serving content of {target_path}"\n\n   '
+                    ' return "Error: File not found"',
+                    "fingerprint": "0000006cceea8aedf1da91830f67b64927086d24",
+                    "start_line": 11,
+                    "end_line": 36,
+                    "node_type": "function_definition",
+                }
+            },
+        )
 
     def test_extract_symbols(self):
         source_code = (
@@ -443,13 +447,13 @@ if True:
         changed_lines = [4]
         enclosing_symbols = extract_symbols(tree, changed_lines, "Python")
 
-        assert len(enclosing_symbols) == 1
+        self.assertEqual(len(enclosing_symbols), 1)
         target_node = enclosing_symbols[0]
-        assert target_node.type == "function_definition"
+        self.assertEqual(target_node.type, "function_definition")
 
         node_text = target_node.text.decode("utf-8")
-        assert "def build_path" in node_text
-        assert "def serve_report" not in node_text
+        self.assertIn("def build_path", node_text)
+        self.assertNotIn("def serve_report", node_text)
 
     def test_extract_symbols_deduplication(self):
         source_code = (
@@ -462,5 +466,22 @@ if True:
         changed_lines = [2, 3]
 
         enclosing_symbols = extract_symbols(tree, changed_lines, "Python")
-        assert len(enclosing_symbols) == 1
-        assert enclosing_symbols[0].type == "function_definition"
+        self.assertEqual(len(enclosing_symbols), 1)
+        self.assertEqual(enclosing_symbols[0].type, "function_definition")
+
+    def test_compute_reachable_symbols(self):
+        call_graph = {
+            "edges_qualified": {
+                "app.main": {"app.helper", "app.safe_func"},
+                "app.helper": {"app.vuln_func"},
+                "app.direct_caller": {"app.vuln_func"},
+                "app.unrelated": {"app.safe_func"},
+            }
+        }
+
+        target_qns = ["app.vuln_func"]
+        reachable, has_direct = compute_reachable_symbols(call_graph, target_qns)
+        self.assertTrue(has_direct)
+
+        expected_reachable = {"app.main", "app.helper", "app.direct_caller"}
+        self.assertEqual(reachable, expected_reachable)
