@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import hashlib
 import importlib
 from functools import cache
 
@@ -191,7 +192,6 @@ SYMBOLS_TYPE_SUPPORTED = {
     "pygments": symbols_pygments.get_pygments_symbols,
 }
 
-# https://github.com/Aider-AI/aider/tree/5dc9490bb35f9729ef2c95d00a19ccd30c26339c/aider/queries/tree-sitter-language-pack
 TS_QUERIES = {
     "Python": {
         "functions": """
@@ -202,7 +202,9 @@ TS_QUERIES = {
         """,
         "calls": """
             (call function: (identifier) @callee)
-            (call function: (attribute attribute: (identifier) @callee))
+            (call function: (attribute
+                object: (_) @receiver
+                attribute: (identifier) @callee))
         """,
     },
 }
@@ -362,3 +364,11 @@ def qualified_name_from_index(node, index):
             parts.append(definition["name"])
         curr = curr.parent
     return ".".join(reversed(parts))
+
+
+def create_exact_symbol_fingerprint(text):
+    if text is None:
+        return None
+
+    text = text.encode("utf-8", errors="replace")
+    return hashlib.sha256(text).hexdigest()
