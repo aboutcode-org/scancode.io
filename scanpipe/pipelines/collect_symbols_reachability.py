@@ -12,9 +12,7 @@ from scanpipe.pipes import reachability
 
 
 class SymbolReachability(Pipeline):
-    """
-    Patch reachability analysis, for given a vulnerability patches
-    """
+    """Patch reachability analysis for given vulnerability patches."""
 
     download_inputs = False
     is_addon = True
@@ -26,8 +24,8 @@ class SymbolReachability(Pipeline):
 
     def analyze_and_store_symbol_reachability(self):
         """
-        Perform symbol-level reachability analysis for each patch.
-        This step compares the AST of patched/vulnerable files against the codebase resources.
+        Perform symbol-level reachability analysis for each patch. This step compares
+        the AST of patched/vulnerable files against the codebase resources.
         Results are stored directly in the 'extra_data' of each CodebaseResource.
         """
         reachability.collect_and_store_symbol_reachability_results(
