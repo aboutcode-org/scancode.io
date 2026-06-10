@@ -31,5 +31,5 @@ def serve_report(request_payload):
 
 
 def unrelated_top_level_function():
-    """An extra function to test AST node boundaries."""
+    """Test AST node boundaries."""
     return "I am just here to add AST complexity."
