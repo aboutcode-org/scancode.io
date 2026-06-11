@@ -55,14 +55,14 @@ class ReachabilityStatus(str, Enum):
 def api_mocker():
     """TODO: Remove this once the API patch url is done"""
     return [
-        {
-            "vcs_url": "https://github.com/pallets/flask",
-            "commit_hash": "089cb86dd22bff589a4eafb7ab8e42dc357623b4",
-        },
         # {
-        #     "vcs_url": "https://github.com/aio-libs/aiohttp",
-        #     "commit_hash": "0c2e9da51126238a421568eb7c5b53e5b5d17b36",
-        # }
+        #     "vcs_url": "https://github.com/pallets/flask",
+        #     "commit_hash": "089cb86dd22bff589a4eafb7ab8e42dc357623b4",
+        # },
+        {
+            "vcs_url": "https://github.com/aio-libs/aiohttp",
+            "commit_hash": "0c2e9da51126238a421568eb7c5b53e5b5d17b36",
+        }
     ]
 
 
@@ -139,7 +139,7 @@ def get_commit_and_parent(repo, commit_hash):
 def get_commit_diff_text(repo, parent_commit, commit):
     """Whole-commit unified diff (used to extract changed line numbers)."""
     base = parent_commit.hexsha if parent_commit else EMPTY_TREE_SHA
-    return repo.git.diff(base, commit.hexsha, unified=0)
+    return repo.git.diff(base, commit.hexsha, unified=3)
 
 
 def get_changed_files(parent_commit, commit):
@@ -195,7 +195,13 @@ def get_changed_files(parent_commit, commit):
 
 
 def get_changed_lines(diff_text, file_path):
-    """Return `(removed_lines, added_lines)` for one file from a unified diff."""
+    """
+    Return `(removed_lines, added_lines)` for one file.
+
+    For pure-insertion hunks (no removed lines) we anchor the vulnerable side
+    to the hunk's source location so the enclosing old symbol is still found.
+    For pure-deletion hunks we do the mirror image on the added side.
+    """
     removed = []
     added = []
 
@@ -208,19 +214,36 @@ def get_changed_lines(diff_text, file_path):
             (patched_file.source_file or "").removeprefix("a/"),
             (patched_file.target_file or "").removeprefix("b/"),
         }
-
         if file_path not in candidates:
             continue
 
         for hunk in patched_file:
-            for line in hunk:
-                if line.is_removed and line.source_line_no:
-                    removed.append(line.source_line_no)
-                elif line.is_added and line.target_line_no:
-                    added.append(line.target_line_no)
+            hunk_removed = [
+                line.source_line_no
+                for line in hunk
+                if line.is_removed and line.source_line_no
+            ]
+            hunk_added = [
+                line.target_line_no
+                for line in hunk
+                if line.is_added and line.target_line_no
+            ]
+
+            # Pure insertion: nothing removed -> anchor old side to the
+            # line just before the insertion point in the source file.
+            if hunk_added and not hunk_removed:
+                anchor = max(hunk.source_start, 1)
+                hunk_removed = [anchor]
+
+            # Pure deletion: nothing added -> anchor new side similarly.
+            if hunk_removed and not hunk_added:
+                anchor = max(hunk.target_start, 1)
+                hunk_added = [anchor]
+
+            removed.extend(hunk_removed)
+            added.extend(hunk_added)
 
     return removed, added
-
 
 def diff_changed_symbols(vuln_meta, fixed_meta):
     """
@@ -343,26 +366,6 @@ def collect_patch_symbols(repo, commit_hash):
     return by_language
 
 
-def append_symbol_reachability_result(resource, result):
-    """
-    Append one symbol reachability result to the resource extra_data without
-    overwriting previous results.
-    """
-    extra_data = resource.extra_data or {}
-    existing_results = extra_data.get("symbols_reachability", [])
-
-    if not isinstance(existing_results, list):
-        existing_results = [existing_results]
-
-    existing_results.append(result)
-
-    resource.update_extra_data(
-        {
-            "symbols_reachability": existing_results,
-        }
-    )
-
-
 def collect_and_store_symbol_reachability_results(project, logger=None):
     """
     For each known patch commit, determine whether each project codebase
@@ -398,9 +401,6 @@ def collect_and_store_symbol_reachability_results(project, logger=None):
                     continue
 
                 patch_symbols = patch_symbols_by_language[resource_language]
-                vuln_patch_metadata = patch_symbols["vulnerable"]
-                fixed_patch_metadata = patch_symbols["fixed"]
-
                 resource_index = build_resource_index(
                     resource_text,
                     resource_language,
@@ -409,38 +409,34 @@ def collect_and_store_symbol_reachability_results(project, logger=None):
                 if not resource_index:
                     continue
 
-                vuln_match_symbols = match_symbols_against_resource(
-                    vuln_patch_metadata,
+                vuln_evidence = match_symbols_against_resource(
+                    patch_symbols["vulnerable"],
+                    resource_index,
+                )
+                fixed_evidence = match_symbols_against_resource(
+                    patch_symbols["fixed"],
                     resource_index,
                 )
 
-                fixed_match_symbols = match_symbols_against_resource(
-                    fixed_patch_metadata,
-                    resource_index,
-                )
-
-                if not vuln_match_symbols and not fixed_match_symbols:
+                if not vuln_evidence and not fixed_evidence:
                     continue
 
                 result = {
-                    "reachability_status": classify_reachability(vuln_match_symbols),
-                    "summary": {
-                        "call_paths": {
-                            qualified_name: ev.get("reachable_from", [])
-                            for qualified_name, ev in vuln_match_symbols.items()
-                            if ev.get("called")
-                        },
-                    },
-                    "evidence": vuln_match_symbols,
-                    "vulnerable_symbols": sorted(vuln_match_symbols),
-                    "fixed_symbols": sorted(fixed_match_symbols),
+                    "reachability_status": classify_reachability(vuln_evidence).value,
+                    "vulnerable_symbols": sorted(vuln_evidence),
+                    "fixed_symbols": sorted(fixed_evidence),
+                    "evidence": vuln_evidence,
                     "patch": {
                         "vcs_url": vcs_url,
                         "commit_hash": commit_hash,
                     },
                 }
-                print(result)
-                append_symbol_reachability_result(resource, result)
+
+                resource.update_extra_data(
+                    {
+                        "symbols_reachability": result,
+                    }
+                )
 
         except Exception as e:
             logger(
@@ -448,11 +444,8 @@ def collect_and_store_symbol_reachability_results(project, logger=None):
                 f"{vcs_url}@{commit_hash}: {e}"
             )
         finally:
-            if repo:
-                repo.close()
-
             # cleanup_repo(repo_path)
-
+            pass
 
 def build_resource_index(resource_text, language):
     if not is_supported_language(language) or not resource_text:
@@ -489,7 +482,11 @@ def match_symbols_against_resource(patch_symbols_metadata, resource_index):
     if not patch_symbols_metadata or not resource_index:
         return {}
 
-    call_graph = resource_index.get("call_graph")
+    call_graph = resource_index.get("call_graph") or {}
+    imports = call_graph.get("imports", {})
+
+    # Set of fully-qualified names the resource imports, e.g. "aiohttp.ClientSession"
+    imported_fq_names = set(imports.values())
 
     target_qualified_names = {
         metadata["qualified_name"] for metadata in patch_symbols_metadata.values()
@@ -501,24 +498,37 @@ def match_symbols_against_resource(patch_symbols_metadata, resource_index):
     )
 
     called_qualified_names = set()
-
-    if call_graph:
-        for callees in call_graph.get("edges_qualified", {}).values():
-            called_qualified_names |= set(callees)
+    for callees in call_graph.get("edges_qualified", {}).values():
+        called_qualified_names |= set(callees)
 
     matched = {}
-
     for metadata in patch_symbols_metadata.values():
         qualified_name = metadata["qualified_name"]
         fingerprint = metadata["fingerprint"]
 
-        defined = qualified_name in resource_index.get("definitions", {})
+        defined = qualified_name in resource_index.get("definitions", set())
         fingerprint_hit = bool(
-            fingerprint and fingerprint in resource_index.get("fingerprints", {})
+            fingerprint and fingerprint in resource_index.get("fingerprints", set())
         )
-        called = qualified_name in called_qualified_names
 
-        if not (defined or fingerprint_hit or called):
+        # Does the resource *import* this symbol?
+        # Match either the bare name (import key) or any fq import target
+        # that ends with ".<qualified_name>".
+        imported = (
+            qualified_name in imports
+            or qualified_name in imported_fq_names
+            or any(
+                fq == qualified_name or fq.endswith("." + qualified_name)
+                for fq in imported_fq_names
+            )
+        )
+
+        called = any(
+            fq_name == qualified_name or fq_name.endswith("." + qualified_name)
+            for fq_name in called_qualified_names
+        )
+
+        if not (defined or fingerprint_hit or called or imported):
             continue
 
         entry = matched.setdefault(
@@ -526,18 +536,29 @@ def match_symbols_against_resource(patch_symbols_metadata, resource_index):
             {
                 "defined": False,
                 "called": False,
+                "imported": False,
+                "fingerprint": None,
                 "reachable_from": [],
+                "external": False,
             },
         )
 
-        entry["defined"] = entry["defined"] or defined
-        entry["called"] = entry["called"] or called
+        if defined:
+            entry["defined"] = True
 
-        if fingerprint_hit:
-            entry["exact_match_fingerprint"] = fingerprint
+        if imported:
+            entry["imported"] = True
+            if not defined:
+                entry["external"] = True
 
         if called:
+            entry["called"] = True
             entry["reachable_from"] = sorted(reachable_callers)
+            if not defined:
+                entry["external"] = True
+
+        if fingerprint_hit:
+            entry["fingerprint"] = fingerprint
 
     return matched
 
@@ -553,8 +574,9 @@ def classify_reachability(evidence):
         has_path = bool(item.get("reachable_from"))
         is_exact = "exact_match_fingerprint" in item
         is_defined = bool(item.get("defined"))
+        is_imported = bool(item.get("imported"))
 
-        if is_called or has_path:
+        if is_called or has_path or is_imported:
             return ReachabilityStatus.REACHABLE
 
         if is_exact or is_defined:
@@ -601,6 +623,7 @@ def build_call_graph(tree, language):
         return None
 
     index = collect_definitions(tree.root_node, language)
+    import_map = collect_imports(tree.root_node, language)
 
     graph_meta = {}
     for definition in index.values():
@@ -611,13 +634,12 @@ def build_call_graph(tree, language):
             continue
 
         body_text = node.text.decode("utf-8", errors="replace")
-        fingerprints = create_exact_symbol_fingerprint(body_text) or {}
-
+        fingerprint = create_exact_symbol_fingerprint(body_text)
         graph_meta[qualified_name] = {
             "qualified_name": qualified_name,
             "node": node,
             "node_type": node.type,
-            "fingerprint": fingerprints,
+            "fingerprint": fingerprint,
         }
 
     definitions_by_name = {}
@@ -635,7 +657,6 @@ def build_call_graph(tree, language):
         direct_calls = extract_direct_calls(metadata["node"], language, index)
 
         resolved_callees = set()
-
         for receiver_name, callee_name in direct_calls:
             resolved_callees |= resolve_callee(
                 receiver_name=receiver_name,
@@ -643,6 +664,7 @@ def build_call_graph(tree, language):
                 owner_qn=qualified_name,
                 definitions_by_name=definitions_by_name,
                 class_methods=class_methods,
+                import_map=import_map,
             )
 
         edges_qualified[qualified_name] = resolved_callees
@@ -650,6 +672,7 @@ def build_call_graph(tree, language):
     return {
         "nodes": graph_meta,
         "edges_qualified": edges_qualified,
+        "imports": import_map,
     }
 
 
@@ -741,27 +764,30 @@ def get_call_receiver(callee_node):
 
 
 def resolve_callee(
-    receiver_name, callee_name, owner_qn, definitions_by_name, class_methods
+    receiver_name,
+    callee_name,
+    owner_qn,
+    definitions_by_name,
+    class_methods,
+    import_map=None,
 ):
-    """
-    Resolve a call to candidate qualified names.
+    import_map = import_map or {}
 
-    Examples:
-        self.foo() from class A -> {"A.foo"} if A.foo exists
-        foo()                  -> definitions named "foo"
-
-    """
     if receiver_name == "self":
         owner_class = get_owner_class_name(owner_qn)
-
         if owner_class:
             method_qn = f"{owner_class}.{callee_name}"
-
             if method_qn in class_methods:
                 return {method_qn}
 
-    candidates = definitions_by_name.get(callee_name, set())
-    return set(candidates)
+    if callee_name in import_map:
+        return {import_map[callee_name]}
+
+    if receiver_name is not None and receiver_name in import_map:
+        base = import_map[receiver_name]
+        return {f"{base}.{callee_name}"}
+
+    return set(definitions_by_name.get(callee_name, set()))
 
 
 def get_owner_class_name(owner_qn):
@@ -809,3 +835,46 @@ def compute_reachable_symbols(call_graph, target_qualified_names):
                 frontier.append(parent)
 
     return reachable, bool(direct)
+
+
+def collect_imports(root_node, language: str):
+    """
+    Returns a dict mapping local names/aliases to their absolute import path.
+    Examples:
+    'from django.db import models' -> {'models': 'django.db.models'}
+    'import os.path' -> {'os.path': 'os.path'}
+    'import numpy as np' -> {'np': 'numpy'}
+    'from a.b import c as d' -> {'d': 'a.b.c'}
+    """
+    import_map = {}
+    query = get_query(language, "imports")
+    if not query or not root_node:
+        return import_map
+
+    for _pattern_index, captures in query.matches(root_node):
+        module_name = None
+        import_name = None
+        alias = None
+
+        for node_name, nodes in captures.items():
+            if not nodes:
+                continue
+
+            text = nodes[0].text.decode("utf-8", errors="replace")
+            if node_name == "module_name":
+                module_name = text
+            elif node_name == "import_name":
+                import_name = text
+            elif node_name == "alias":
+                alias = text
+
+        if not import_name:
+            continue
+
+        local_name = alias or import_name
+        if module_name:
+            import_map[local_name] = f"{module_name}.{import_name}"
+        else:
+            import_map[local_name] = import_name
+
+    return import_map
