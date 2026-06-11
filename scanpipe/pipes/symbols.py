@@ -206,6 +206,21 @@ TS_QUERIES = {
                 object: (_) @receiver
                 attribute: (identifier) @callee))
         """,
+        "imports": """
+            (import_statement name: (dotted_name) @import_name)
+            (import_statement
+                name: (aliased_import
+                    name: (dotted_name) @import_name
+                    alias: (identifier) @alias))
+            (import_from_statement
+                module_name: (dotted_name) @module_name
+                name: (dotted_name) @import_name)
+            (import_from_statement
+                module_name: (dotted_name) @module_name
+                name: (aliased_import
+                    name: (dotted_name) @import_name
+                    alias: (identifier) @alias))
+        """,
     },
 }
 

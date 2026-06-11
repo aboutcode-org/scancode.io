@@ -27,7 +27,7 @@ from django.test import TestCase
 
 from scanpipe.models import Project
 from scanpipe.pipes import collect_and_create_codebase_resources
-from scanpipe.pipes.reachability import ReachabilityStatus
+from scanpipe.pipes.reachability import ReachabilityStatus, collect_imports, extract_direct_calls
 from scanpipe.pipes.reachability import analyze_patched_file
 from scanpipe.pipes.reachability import build_symbol_metadata
 from scanpipe.pipes.reachability import classify_reachability
@@ -485,3 +485,40 @@ if True:
 
         expected_reachable = {"app.main", "app.helper", "app.direct_caller"}
         self.assertEqual(reachable, expected_reachable)
+
+    def test_collect_imports(self):
+        source_code = """
+from django.db import models
+import os.path
+import numpy as np
+from a.b import c as d
+        """.strip()
+
+        tree, _ = parse_code_to_ast(source_code, "Python")
+        real_root_node = tree.root_node
+        result = collect_imports(real_root_node, language="Python")
+
+        expected_map = {
+            "models": "django.db.models",
+            "os.path": "os.path",
+            "np": "numpy",
+            "d": "a.b.c",
+        }
+        self.assertEqual(result, expected_map)
+
+    def test_extract_direct(self):
+        source_code = """
+def hello():
+    return 10
+    
+def clean_function():
+    x = 10
+    y = 20
+    return hello() + x + y
+        """.strip()
+
+        tree, _ = parse_code_to_ast(source_code, "Python")
+        functions = extract_definitions(tree, "Python", kinds=("functions",))
+
+        result = extract_direct_calls(functions[1], "Python", [])
+        self.assertEqual(result, [(None, 'hello')])
