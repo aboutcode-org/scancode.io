@@ -5,6 +5,22 @@ Changelog
 
 - Drop support for Python3.10 and Python3.11
 
+v37.2.0 (2026-06-12)
+--------------------
+
+* chore: upgrade scancode-action to docker base v0.1 release by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2141
+* feat: add "base" Docker build stage by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2142
+* fix: fallback to license_declared when loading SPDX SBOM by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2144
+* feat!: Switch development workflow from local venv to Docker Compose by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2145
+* fix: relax validation for non-HTTP URLs by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2147
+* fix: load the .env in the Docker dev compose by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2149
+* chore: upgrade Django and cryptography to latest version by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2150
+* fix: replace the hardcoded /var/www/html by named volume by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2160
+* chore: bump minecode-pipelines version to 1.0.0 by @JonoYang in https://github.com/aboutcode-org/scancode.io/pull/2170
+* chore: update minecode-pipelines version to 1.0.1 by @JonoYang in https://github.com/aboutcode-org/scancode.io/pull/2171
+* Install Java and jadx in Dockerfile by @JonoYang in https://github.com/aboutcode-org/scancode.io/pull/2174
+* chore: upgrade dependencies by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2173
+
 v37.1.0 (2026-04-01)
 --------------------
 
