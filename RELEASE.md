@@ -1,6 +1,6 @@
 # Release instructions for `ScanCode.io`
 
-### Automated release workflow
+## Automated release workflow
 
 - Create a new `release-x.x.x` branch
 - Update the version in:
@@ -10,19 +10,21 @@
 - Run `$ uv lock` to update the version in the `uv.lock` file
 - Commit and push this branch: "chore: bump version to vx.x.x for release"
 - Create a PR and merge once approved
-- Tag and push that tag. This will trigger the `pypi-release.yml` GitHub workflow that 
+- Tag and push that tag. This will trigger the `pypi-release.yml` GitHub workflow that
   takes care of building the dist release files and upload those to pypi:
-  ```
+
+  ```sh
   VERSION=vx.x.x  # <- Set the new version here
   git tag -a $VERSION -m ""
   git push origin $VERSION
   ```
+
 - Review the GitHub release created by the workflow at 
   https://github.com/aboutcode-org/scancode.io/releases
 
-### Manual build
+## Manual build
 
-```
+```sh
 cd scancode.io
 source .venv/bin/activate
 python -m pip install build

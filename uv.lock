@@ -3,7 +3,7 @@ revision = 3
 requires-python = ">=3.12, <3.15"
 
 [options]
-exclude-newer = "2026-05-28T14:25:10.384549Z"
+exclude-newer = "2026-06-05T14:24:15.866111Z"
 exclude-newer-span = "P7D"
 
 [[package]]
@@ -2909,7 +2909,7 @@ packages = [
 
 [[package]]
 name = "scancodeio"
-version = "37.1.0"
+version = "37.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "aboutcode-api-auth" },
