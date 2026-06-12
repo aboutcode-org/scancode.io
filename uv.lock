@@ -17,7 +17,7 @@ wheels = [
 
 [[package]]
 name = "aboutcode-federated"
-version = "1.0.3"
+version = "1.0.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packageurl-python" },
@@ -25,9 +25,9 @@ dependencies = [
     { name = "saneyaml" },
     { name = "uritemplate" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7f/be/ad32e9d4ac5cb3a9f7e21f7003becb9f8ec83b53c638a39f1e3701d9c8f8/aboutcode_federated-1.0.3.tar.gz", hash = "sha256:816caeb18648bc11b084fa130a16bb6a9f590b4b33c8cede6c86d088920b44b7", size = 34533, upload-time = "2026-05-16T01:20:12.445Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/dd/61/c803f75b5f7b1d3c43fb52085527980f012dd46ee2fd52c6f18f06b2dae6/aboutcode_federated-1.0.4.tar.gz", hash = "sha256:3999244301fabd8a4fcc69c5015251b183983a090a2bfdbfe114bf97f2f05099", size = 34532, upload-time = "2026-06-03T18:26:12.303Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/65/79/b4cf266bfa020bda4ca808fd9276936b562bd26510eabadb78b356c55fa8/aboutcode_federated-1.0.3-py3-none-any.whl", hash = "sha256:372d67ba932970ad5344e08e960c65d37d187531149f0c3153964b86b3ab34db", size = 21985, upload-time = "2026-05-16T01:20:10.989Z" },
+    { url = "https://files.pythonhosted.org/packages/68/b2/72af1562cdceb780dacbd4adb5891b19f89b3a7dd4da4d7ce2df7a76241b/aboutcode_federated-1.0.4-py3-none-any.whl", hash = "sha256:e5fe1a709d620fd53864a7ec5dab1311cd50a392e627dfa9354d236c1c2b2387", size = 21986, upload-time = "2026-06-03T18:26:11.184Z" },
 ]
 
 [[package]]

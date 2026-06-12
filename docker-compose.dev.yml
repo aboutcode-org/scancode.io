@@ -9,7 +9,7 @@ x-dev-env: &dev-env
 
 x-dev-build: &dev-build
   context: .
-  target: base
+  target: core
 
 services:
   web:
