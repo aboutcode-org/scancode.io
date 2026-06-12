@@ -60,12 +60,16 @@ restart-worker:
 	${COMPOSE} restart worker
 
 build:
-	# Build the dev Docker images
+	# Build the dev Docker images (core, hot reload)
 	${COMPOSE} build
 
+build-core:
+	# Build the production core Docker image
+	docker build --target core -t $(IMAGE_NAME) .
+
 build-full:
-	# Build the full production Docker image
-	docker build --target full -t $(IMAGE_NAME) .
+	# Build the production full Docker image
+	docker build --target full -t $(IMAGE_NAME):full .
 
 regen-fixtures:
 	@echo "-> Regenerate test fixtures from the running Docker stack"
@@ -204,4 +208,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate makemigrations restart-worker postgresdb sqlitedb backupdb run test fasttest regen-fixtures fix docs build bash shell docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate makemigrations restart-worker postgresdb sqlitedb backupdb run test fasttest regen-fixtures fix docs build build-core build-full bash shell docker-images offline-package
