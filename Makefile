@@ -81,6 +81,16 @@ fix:
 	@echo "-> Run Ruff linter"
 	uvx ruff check --fix
 
+outdated:
+	@echo "-> Check for outdated packages (with 7 days cooldown)"
+	uv tree --outdated --exclude-newer "7 days"
+	@echo "-> Audit the project's dependencies for known vulnerabilities"
+	uv audit
+
+upgrade:
+	# Update the versions in pyproject.toml
+	uv lock
+
 ########################################################################################
 # Local venv commands (legacy)
 ########################################################################################
