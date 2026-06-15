@@ -68,6 +68,7 @@ jobs:
             ${{ steps.meta.outputs.tags }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -80,6 +81,7 @@ jobs:
           push: true
           tags: ${{ steps.meta-full.outputs.tags }}
           labels: ${{ steps.meta-full.outputs.labels }}
+          annotations: ${{ steps.meta-full.outputs.annotations }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
