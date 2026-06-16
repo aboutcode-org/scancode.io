@@ -55,14 +55,14 @@ class ReachabilityStatus(str, Enum):
 def api_mocker():
     """TODO: Remove this once the API patch url is done"""
     return [
-        # {
-        #     "vcs_url": "https://github.com/pallets/flask",
-        #     "commit_hash": "089cb86dd22bff589a4eafb7ab8e42dc357623b4",
-        # },
         {
-            "vcs_url": "https://github.com/aio-libs/aiohttp",
-            "commit_hash": "0c2e9da51126238a421568eb7c5b53e5b5d17b36",
-        }
+            "vcs_url": "https://github.com/pallets/flask",
+            "commit_hash": "089cb86dd22bff589a4eafb7ab8e42dc357623b4",
+        },
+        # {
+        #     "vcs_url": "https://github.com/aio-libs/aiohttp",
+        #     "commit_hash": "0c2e9da51126238a421568eb7c5b53e5b5d17b36",
+        # }
     ]
 
 
@@ -245,6 +245,7 @@ def get_changed_lines(diff_text, file_path):
 
     return removed, added
 
+
 def diff_changed_symbols(vuln_meta, fixed_meta):
     """
     Keep only symbols whose body actually differs between vulnerable and fixed
@@ -382,10 +383,8 @@ def collect_and_store_symbol_reachability_results(project, logger=None):
         vcs_url = patch["vcs_url"]
         commit_hash = patch["commit_hash"]
         try:
-            # repo_path = clone_repo(vcs_url, commit_hash)
-            # repo = Repo("/home/ziad-hany/PycharmProjects/flask/")
-            repo = Repo("/home/ziad-hany/PycharmProjects/aiohttp")
-
+            repo_path = clone_repo(vcs_url, commit_hash)
+            repo = Repo(repo_path)
             patch_symbols_by_language = collect_patch_symbols(repo, commit_hash)
 
             if not patch_symbols_by_language:
@@ -413,6 +412,7 @@ def collect_and_store_symbol_reachability_results(project, logger=None):
                     patch_symbols["vulnerable"],
                     resource_index,
                 )
+
                 fixed_evidence = match_symbols_against_resource(
                     patch_symbols["fixed"],
                     resource_index,
@@ -446,6 +446,7 @@ def collect_and_store_symbol_reachability_results(project, logger=None):
         finally:
             # cleanup_repo(repo_path)
             pass
+
 
 def build_resource_index(resource_text, language):
     if not is_supported_language(language) or not resource_text:
@@ -484,8 +485,6 @@ def match_symbols_against_resource(patch_symbols_metadata, resource_index):
 
     call_graph = resource_index.get("call_graph") or {}
     imports = call_graph.get("imports", {})
-
-    # Set of fully-qualified names the resource imports, e.g. "aiohttp.ClientSession"
     imported_fq_names = set(imports.values())
 
     target_qualified_names = {
@@ -511,9 +510,6 @@ def match_symbols_against_resource(patch_symbols_metadata, resource_index):
             fingerprint and fingerprint in resource_index.get("fingerprints", set())
         )
 
-        # Does the resource *import* this symbol?
-        # Match either the bare name (import key) or any fq import target
-        # that ends with ".<qualified_name>".
         imported = (
             qualified_name in imports
             or qualified_name in imported_fq_names
@@ -539,7 +535,6 @@ def match_symbols_against_resource(patch_symbols_metadata, resource_index):
                 "imported": False,
                 "fingerprint": None,
                 "reachable_from": [],
-                "external": False,
             },
         )
 
@@ -548,14 +543,10 @@ def match_symbols_against_resource(patch_symbols_metadata, resource_index):
 
         if imported:
             entry["imported"] = True
-            if not defined:
-                entry["external"] = True
 
         if called:
             entry["called"] = True
             entry["reachable_from"] = sorted(reachable_callers)
-            if not defined:
-                entry["external"] = True
 
         if fingerprint_hit:
             entry["fingerprint"] = fingerprint
@@ -572,14 +563,14 @@ def classify_reachability(evidence):
     for item in evidence.values():
         is_called = bool(item.get("called"))
         has_path = bool(item.get("reachable_from"))
-        is_exact = "exact_match_fingerprint" in item
         is_defined = bool(item.get("defined"))
         is_imported = bool(item.get("imported"))
+        is_exact = bool(item.get("fingerprint"))
 
-        if is_called or has_path or is_imported:
+        if is_exact or (is_imported and (is_called or has_path)):
             return ReachabilityStatus.REACHABLE
 
-        if is_exact or is_defined:
+        if (is_imported or is_defined) and not is_exact:
             highest_status = ReachabilityStatus.POTENTIALLY_REACHABLE
 
     return highest_status
@@ -839,12 +830,14 @@ def compute_reachable_symbols(call_graph, target_qualified_names):
 
 def collect_imports(root_node, language: str):
     """
-    Returns a dict mapping local names/aliases to their absolute import path.
+    Return a dict mapping local names/aliases to their absolute import path.
+
     Examples:
     'from django.db import models' -> {'models': 'django.db.models'}
     'import os.path' -> {'os.path': 'os.path'}
     'import numpy as np' -> {'np': 'numpy'}
     'from a.b import c as d' -> {'d': 'a.b.c'}
+
     """
     import_map = {}
     query = get_query(language, "imports")
