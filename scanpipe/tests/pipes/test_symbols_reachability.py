@@ -27,13 +27,15 @@ from django.test import TestCase
 
 from scanpipe.models import Project
 from scanpipe.pipes import collect_and_create_codebase_resources
-from scanpipe.pipes.reachability import ReachabilityStatus, collect_imports, extract_direct_calls
+from scanpipe.pipes.reachability import ReachabilityStatus
 from scanpipe.pipes.reachability import analyze_patched_file
 from scanpipe.pipes.reachability import build_symbol_metadata
 from scanpipe.pipes.reachability import classify_reachability
 from scanpipe.pipes.reachability import collect_and_store_symbol_reachability_results
+from scanpipe.pipes.reachability import collect_imports
 from scanpipe.pipes.reachability import compute_reachable_symbols
 from scanpipe.pipes.reachability import diff_changed_symbols
+from scanpipe.pipes.reachability import extract_direct_calls
 from scanpipe.pipes.reachability import get_changed_lines
 from scanpipe.pipes.symbols import collect_definitions
 from scanpipe.pipes.symbols import extract_definitions
@@ -104,28 +106,25 @@ class SymbolReachabilityPipesTest(TestCase):
 
         self.assertEqual(
             results,
-            [
-                {
-                    "patch": {
-                        "vcs_url": "https://github.com/aboutcode-org/test",
-                        "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
-                    },
-                    "summary": {"call_paths": {}},
-                    "evidence": {
-                        "serve_report": {
-                            "called": False,
-                            "defined": True,
-                            "reachable_from": [],
-                            "exact_match_fingerprint": (
-                                "e341b914f9823915e0685396a730d421ec9e3635"
-                            ),
-                        }
-                    },
-                    "fixed_symbols": ["serve_report"],
-                    "vulnerable_symbols": ["serve_report"],
-                    "reachability_status": "POTENTIALLY_REACHABLE",
-                }
-            ],
+            {
+                "patch": {
+                    "vcs_url": "https://github.com/aboutcode-org/test",
+                    "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
+                },
+                "evidence": {
+                    "serve_report": {
+                        "called": False,
+                        "defined": True,
+                        "imported": False,
+                        "fingerprint": "d7675efb263896da2a3c0067951183"
+                        "3553907e7e6ea619115a6dfc8625c3457e",
+                        "reachable_from": [],
+                    }
+                },
+                "fixed_symbols": ["serve_report"],
+                "vulnerable_symbols": ["serve_report"],
+                "reachability_status": "REACHABLE",
+            },
         )
 
     def test_extract_definitions(self):
@@ -210,35 +209,20 @@ class FleetManagement:
         self.assertEqual(classify_reachability(None), ReachabilityStatus.NOT_REACHABLE)
         self.assertEqual(classify_reachability({}), ReachabilityStatus.NOT_REACHABLE)
         self.assertEqual(
-            classify_reachability(
-                {"sym1": {"exact_match_fingerprint": "hash123", "called": True}}
-            ),
+            classify_reachability({"evidence": {"fingerprint": "hash123"}}),
             ReachabilityStatus.REACHABLE,
         )
 
         self.assertEqual(
-            classify_reachability(
-                {
-                    "sym1": {
-                        "called": True,
-                        "reachable_from": ["main_function", "api_handler"],
-                    }
-                }
-            ),
+            classify_reachability({"evidence": {"imported": True, "called": True}}),
             ReachabilityStatus.REACHABLE,
         )
         self.assertEqual(
-            classify_reachability({"sym1": {"defined": True, "called": False}}),
+            classify_reachability({"evidence": {"imported": True, "called": False}}),
             ReachabilityStatus.POTENTIALLY_REACHABLE,
         )
         self.assertEqual(
-            classify_reachability(
-                {"sym1": {"exact_match_fingerprint": "hash123", "called": False}}
-            ),
-            ReachabilityStatus.POTENTIALLY_REACHABLE,
-        )
-        self.assertEqual(
-            classify_reachability({"sym1": {"file_path": "src/vulnerable.py"}}),
+            classify_reachability({"evidence": {"imported": False, "called": False}}),
             ReachabilityStatus.NOT_REACHABLE,
         )
 
@@ -275,7 +259,8 @@ if True:
                     "        def inner_helper():\n"
                     "            return True\n"
                     "        return payload.strip()",
-                    "fingerprint": "0000000888014a04b037189a42b238a2c50f218c",
+                    "fingerprint": "b0d0ad9a92209a6d79b84e932ce302"
+                    "a8bc9054a405131adf7dc21e06e2e7c0c1",
                     "start_line": 3,
                     "end_line": 6,
                     "node_type": "function_definition",
@@ -283,7 +268,8 @@ if True:
                 "process_data": {
                     "qualified_name": "process_data",
                     "text": "def process_data(payload):\n        return payload",
-                    "fingerprint": "000000022020300e882a900807880d0300010000",
+                    "fingerprint": "9b2797712c9ab60ea8452a441396"
+                    "5c94d1b2f63739cab7de695e7b1dc0cf439a",
                     "start_line": 9,
                     "end_line": 10,
                     "node_type": "function_definition",
@@ -373,26 +359,24 @@ if True:
             {
                 "serve_report": {
                     "qualified_name": "serve_report",
-                    "text": "def serve_report(request_payload):\n   "
-                    ' """Top-level function handling a request."""\n   '
-                    ' generator = ReportGenerator("/var/reports")\n   '
-                    ' requested_file = request_payload.get("file")\n\n    '
-                    "# Helper function nested inside serve_report\n    "
-                    "def build_file_path(filename):\n     "
-                    "   # VULNERABLE: Direct concatenation allows Path Traversal\n    "
-                    '    # An attacker passing "../../etc/passwd" '
-                    "could read system files.\n     "
-                    "   return os.path.join(generator.base_dir, filename)\n\n  "
-                    "  if not requested_file:\n       "
-                    ' return "Error: No file specified"\n\n '
-                    "   target_path = build_file_path(requested_file)\n\n"
-                    "  "
-                    "  "
-                    "if os.path.exists(target_path):\n"
-                    "    "
-                    '    return f"Serving content of {target_path}"\n\n  '
-                    '  return "Error: File not found"',
-                    "fingerprint": "000000556d322a47595af353274b000aa324e014",
+                    "text": "def serve_report(request_payload):\n"
+                    '    """Top-level function handling a request."""\n'
+                    '    generator = ReportGenerator("/var/reports")\n'
+                    '    requested_file = request_payload.get("file")\n\n'
+                    "    # Helper function nested inside serve_report\n"
+                    "    def build_file_path(filename):\n"
+                    "        # VULNERABLE: Direct concatenation allows Path Traversal\n"
+                    '        # An attacker passing "../../etc/passwd"'
+                    " could read system files.\n"
+                    "        return os.path.join(generator.base_dir, filename)\n\n"
+                    "    if not requested_file:\n"
+                    '        return "Error: No file specified"\n\n'
+                    "    target_path = build_file_path(requested_file)\n\n"
+                    "    if os.path.exists(target_path):\n"
+                    '        return f"Serving content of {target_path}"\n\n'
+                    '    return "Error: File not found"',
+                    "fingerprint": "d7675efb263896da2a3c0067951183"
+                    "3553907e7e6ea619115a6dfc8625c3457e",
                     "start_line": 11,
                     "end_line": 30,
                     "node_type": "function_definition",
@@ -405,27 +389,30 @@ if True:
             {
                 "serve_report": {
                     "qualified_name": "serve_report",
-                    "text": "def serve_report(request_payload):\n "
-                    '   """Top-level function handling a request."""\n  '
-                    '  generator = ReportGenerator("/var/reports")\n   '
-                    ' requested_file = request_payload.get("file")\n\n '
-                    "   # Helper function nested inside serve_report\n   "
-                    " def build_file_path(filename):\n    "
-                    "    # FIXED: Validate that the resolved "
-                    "path stays within the base_dir\n   "
-                    "     base = os.path.abspath(generator.base_dir)\n    "
-                    "    target = os.path.abspath(os.path.join(base, filename))\n    "
-                    "    if not target.startswith(base):\n          "
-                    '  raise ValueError("Path Traversal Detected")\n     '
-                    "   return target\n\n    if not requested_file:\n      "
-                    '  return "Error: No file specified"\n\n    try:\n       '
-                    " target_path = build_file_path(requested_file)\n  "
-                    "  except ValueError:\n    "
-                    '    return "Error: Invalid path"\n\n'
-                    "    if os.path.exists(target_path):\n   "
-                    '     return f"Serving content of {target_path}"\n\n   '
-                    ' return "Error: File not found"',
-                    "fingerprint": "0000006cceea8aedf1da91830f67b64927086d24",
+                    "text": "def serve_report(request_payload):\n"
+                    '    """Top-level function handling a request."""\n'
+                    '    generator = ReportGenerator("/var/reports")\n'
+                    '    requested_file = request_payload.get("file")\n\n'
+                    "    # Helper function nested inside serve_report\n"
+                    "    def build_file_path(filename):\n"
+                    "        # FIXED: Validate that the resolved"
+                    " path stays within the base_dir\n"
+                    "        base = os.path.abspath(generator.base_dir)\n"
+                    "        target = os.path.abspath(os.path.join(base, filename))\n"
+                    "        if not target.startswith(base):\n"
+                    '            raise ValueError("Path Traversal Detected")\n'
+                    "        return target\n\n"
+                    "    if not requested_file:\n "
+                    '       return "Error: No file specified"\n\n'
+                    "    try:\n"
+                    "        target_path = build_file_path(requested_file)\n"
+                    "    except ValueError:\n"
+                    '        return "Error: Invalid path"\n\n '
+                    "   if os.path.exists(target_path):\n"
+                    '        return f"Serving content of {target_path}"\n\n'
+                    '    return "Error: File not found"',
+                    "fingerprint": "2deedb21d5f9b1409c59f0b1e5512d7"
+                    "3d9afdfc3f469ccf86e8835915d240e76",
                     "start_line": 11,
                     "end_line": 36,
                     "node_type": "function_definition",
@@ -510,7 +497,6 @@ from a.b import c as d
         source_code = """
 def hello():
     return 10
-    
 def clean_function():
     x = 10
     y = 20
@@ -521,4 +507,4 @@ def clean_function():
         functions = extract_definitions(tree, "Python", kinds=("functions",))
 
         result = extract_direct_calls(functions[1], "Python", [])
-        self.assertEqual(result, [(None, 'hello')])
+        self.assertEqual(result, [(None, "hello")])
