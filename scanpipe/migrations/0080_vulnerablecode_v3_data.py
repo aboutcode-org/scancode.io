@@ -25,6 +25,24 @@ def add_advisory_id(apps, schema_editor):
         model.objects.bulk_update(to_update, ["affected_by_vulnerabilities"])
 
 
+def remove_advisory_id(apps, schema_editor):
+    """Remove advisory_uid and advisory_id keys from affected_by_vulnerabilities entries."""
+    DiscoveredPackage = apps.get_model("scanpipe", "DiscoveredPackage")
+    DiscoveredDependency = apps.get_model("scanpipe", "DiscoveredDependency")
+    EMPTY_VALUES = [None, [], ""]
+
+    vulnerable = ~Q(affected_by_vulnerabilities__in=EMPTY_VALUES)
+
+    for model in [DiscoveredPackage, DiscoveredDependency]:
+        to_update = []
+        for instance in model.objects.filter(vulnerable).only("affected_by_vulnerabilities"):
+            for entry in instance.affected_by_vulnerabilities:
+                entry.pop("advisory_uid", None)
+                entry.pop("advisory_id", None)
+            to_update.append(instance)
+        model.objects.bulk_update(to_update, ["affected_by_vulnerabilities"])
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -34,6 +52,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(
             add_advisory_id,
-            reverse_code=migrations.RunPython.noop,
+            reverse_code=remove_advisory_id,
         ),
     ]

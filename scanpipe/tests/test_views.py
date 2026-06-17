@@ -1200,7 +1200,7 @@ class ScanPipeViewsTest(TestCase):
 
         package1.add_resources([make_resource_file(self.project1, "file1.ext")])
         package1.update(
-            affected_by_vulnerabilities=[{"advisory_id": "VCID-cah8-awtr-aaad"}],
+            affected_by_vulnerabilities=[{"advisory_id": "ID-cah8-awtr-aaad"}],
             extra_data={"extra": "data"},
         )
         dependency_data = dependency_data1.copy()
@@ -1219,12 +1219,12 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_discovered_package_details_view_tab_vulnerabilities(self):
         package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
         package1.update(
-            affected_by_vulnerabilities=[{"advisory_id": "VCID-cah8-awtr-aaad"}]
+            affected_by_vulnerabilities=[{"advisory_id": "ID-cah8-awtr-aaad"}]
         )
         response = self.client.get(package1.get_absolute_url())
         self.assertContains(response, "tab-vulnerabilities")
         self.assertContains(response, '<section id="tab-vulnerabilities"')
-        self.assertContains(response, "VCID-cah8-awtr-aaad")
+        self.assertContains(response, "ID-cah8-awtr-aaad")
 
     @mock.patch("scanpipe.pipes.purldb.is_configured")
     def test_scanpipe_views_discovered_package_purldb_tab_view(self, mock_configured):
@@ -1306,10 +1306,10 @@ class ScanPipeViewsTest(TestCase):
             response = self.client.get(url)
         self.assertContains(response, "No Vulnerabilities found.")
 
-        v1 = {"advisory_id": "VCID-1"}
+        v1 = {"advisory_id": "ID-1"}
         v2 = {
-            "advisory_id": "VCID-2",
-            "resource_url": "https://vcio/advisories/VCID-2",
+            "advisory_id": "ID-2",
+            "resource_url": "https://vcio/advisories/ID-2",
         }
         project = make_project()
         make_package(project, "pkg:type/a", affected_by_vulnerabilities=[v1])
@@ -1320,9 +1320,9 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(5):
             response = self.client.get(url)
 
-        expected = "<td>VCID-1</td>"
+        expected = "<td>ID-1</td>"
         self.assertContains(response, expected, html=True)
-        expected = '<a href="https://vcio/advisories/VCID-2" target="_blank">'
+        expected = '<a href="https://vcio/advisories/ID-2" target="_blank">'
         self.assertContains(response, expected)
         self.assertContains(response, "pkg:type/a")
 

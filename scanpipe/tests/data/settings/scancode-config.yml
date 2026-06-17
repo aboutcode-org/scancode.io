@@ -9,6 +9,6 @@ ignored_dependency_scopes:
  - package_type: pypi
    scope: tests
 ignored_vulnerabilities:
- - VCID-q4q6-yfng-aaag
+ - ID-q4q6-yfng-aaag
  - CVE-2024-27351
  - GHSA-vm8q-m57g-pff3
