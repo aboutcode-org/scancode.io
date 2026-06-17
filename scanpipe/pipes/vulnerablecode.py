@@ -100,12 +100,9 @@ def request_post(
     timeout=None,
 ):
     """Send a POST request with `data` as JSON to `url` and return the response."""
-    try:
-        response = session.post(url, json=data, timeout=timeout)
-        response.raise_for_status()
-        return response.json()
-    except (requests.RequestException, ValueError, TypeError) as exception:
-        logger.debug(f"{label} [Exception] {exception}")
+    response = session.post(url, json=data, timeout=timeout)
+    response.raise_for_status()
+    return response.json()
 
 
 def bulk_search_by_purl(
@@ -146,10 +143,13 @@ def fetch_vulnerabilities(
     vulnerabilities_by_purl = {}
 
     for purls_batch in chunked(get_purls(packages), chunk_size):
-        # Add support for pagination
-        #  {'count': 17, 'next': None, 'previous': None, 'results': [....]
-        response_data = bulk_search_by_purl(purls_batch)
-        for vulnerability_data in response_data["results"]:
+        try:
+            response_data = bulk_search_by_purl(purls_batch)
+        except (requests.RequestException, ValueError, TypeError) as exception:
+            logger(f"{label} [Exception] {exception}")
+            return
+
+        for vulnerability_data in response_data.get("results", []):
             purl = vulnerability_data["purl"]
             vulnerabilities_by_purl[purl] = vulnerability_data
 
