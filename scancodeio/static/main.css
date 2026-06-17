@@ -388,6 +388,9 @@ progress.file-upload::before {
 #resource-list th#column-status {
   min-width: 90px;
 }
+th#column-advisory_id {
+  min-width: 220px;
+}
 #message-list th#column-severity {
   min-width: 110px;
 }

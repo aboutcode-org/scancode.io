@@ -5,7 +5,10 @@ from django.db.models import Q
 
 
 def add_advisory_id(apps, schema_editor):
-    """Copy vulnerability_id to advisory_id in affected_by_vulnerabilities entries."""
+    """
+    Copy vulnerability_id to advisory_uid and advisory_id in
+    affected_by_vulnerabilities entries.
+    """
     DiscoveredPackage = apps.get_model("scanpipe", "DiscoveredPackage")
     DiscoveredDependency = apps.get_model("scanpipe", "DiscoveredDependency")
     EMPTY_VALUES = [None, [], ""]
@@ -13,11 +16,13 @@ def add_advisory_id(apps, schema_editor):
     vulnerable = ~Q(affected_by_vulnerabilities__in=EMPTY_VALUES)
 
     for model in [DiscoveredPackage, DiscoveredDependency]:
-        for instance in model.objects.filter(vulnerable):
+        to_update = []
+        for instance in model.objects.filter(vulnerable).only("affected_by_vulnerabilities"):
             for entry in instance.affected_by_vulnerabilities:
-                if "advisory_id" not in entry:
-                    entry["advisory_id"] = entry.get("vulnerability_id", "")
-            instance.save(update_fields=["affected_by_vulnerabilities"])
+                entry.setdefault("advisory_uid", entry.get("vulnerability_id", ""))
+                entry.setdefault("advisory_id", entry.get("vulnerability_id", ""))
+            to_update.append(instance)
+        model.objects.bulk_update(to_update, ["affected_by_vulnerabilities"])
 
 
 class Migration(migrations.Migration):
