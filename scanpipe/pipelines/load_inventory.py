@@ -33,6 +33,11 @@ class LoadInventory(Pipeline):
     Supported format are ScanCode-toolkit JSON scan results, ScanCode.io JSON output,
     and ScanCode.io XLSX output.
 
+    Additionally supports importing scan results from integrated tools:
+    - VulnerableCode: Vulnerability data export
+    - PurlDB: Package enrichment data export
+    - MatchCode.io: Matching results export
+
     An inventory is composed of packages, dependencies, resources, and relations.
     """
 
@@ -78,4 +83,32 @@ class LoadInventory(Pipeline):
                 )
 
             else:
-                raise Exception(f"Input not supported: {str(input_path)} ")
+                integrated_tool = input.get_integrated_tool_name(scan_data)
+
+                if integrated_tool == "vulnerablecode":
+                    updated_count = input.load_vulnerabilities_from_vulnerablecode(
+                        self.project, scan_data
+                    )
+                    self.log(
+                        f"Loaded vulnerability data for {updated_count} packages "
+                        f"from {input_path.name}"
+                    )
+
+                elif integrated_tool == "purldb":
+                    result = input.load_enrichment_from_purldb(self.project, scan_data)
+                    self.log(
+                        f"PurlDB import: {result['created']} packages created, "
+                        f"{result['updated']} packages updated from {input_path.name}"
+                    )
+
+                elif integrated_tool == "matchcodeio":
+                    created_count = input.load_matches_from_matchcode(
+                        self.project, scan_data
+                    )
+                    self.log(
+                        f"MatchCode.io import: {created_count} packages created "
+                        f"from {input_path.name}"
+                    )
+
+                else:
+                    raise Exception(f"Input not supported: {str(input_path)} ")

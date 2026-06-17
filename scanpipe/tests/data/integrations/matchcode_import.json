@@ -1,0 +1,40 @@
+{
+    "files": [
+        {
+            "path": "src/utils.js",
+            "type": "file",
+            "for_packages": [
+                "pkg:npm/lodash@4.17.21?uuid=test-uuid-1234"
+            ],
+            "extra_data": {
+                "matched_to": "lodash",
+                "path_score": 100,
+                "matched_fingerprints": [
+                    "abc123def456"
+                ]
+            }
+        },
+        {
+            "path": "src/helper.js",
+            "type": "file",
+            "for_packages": [
+                "pkg:npm/lodash@4.17.21?uuid=test-uuid-1234"
+            ],
+            "extra_data": {
+                "matched_to": "lodash",
+                "path_score": 95
+            }
+        }
+    ],
+    "packages": [
+        {
+            "purl": "pkg:npm/lodash@4.17.21",
+            "package_uid": "pkg:npm/lodash@4.17.21?uuid=test-uuid-1234",
+            "type": "npm",
+            "name": "lodash",
+            "version": "4.17.21",
+            "description": "Lodash modular utilities",
+            "declared_license_expression": "mit"
+        }
+    ]
+}
