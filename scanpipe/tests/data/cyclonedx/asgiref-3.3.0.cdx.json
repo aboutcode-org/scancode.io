@@ -152,14 +152,8 @@
         }
       ],
       "bom-ref": "BomRef",
-      "cwes": [
-        1
-      ],
-      "description": "Django bypasses validation when using one form field to upload multiple files",
-      "id": "ID-589h-ndhj-aaab",
       "source": {
-        "name": "VulnerableCode",
-        "url": "http://public.vulnerablecode.io/api/vulnerabilities/457137"
+        "name": "VulnerableCode"
       }
     }
   ]

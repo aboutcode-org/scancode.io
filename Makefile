@@ -75,12 +75,6 @@ regen-fixtures:
 	@echo "-> Regenerate test fixtures from the running Docker stack"
 	${COMPOSE} exec -e SCANCODEIO_TEST_FIXTURES_REGEN=1 web ./manage.py test
 
-fix:
-	@echo "-> Run Ruff format"
-	uvx ruff format
-	@echo "-> Run Ruff linter"
-	uvx ruff check --fix
-
 outdated:
 	@echo "-> Check for outdated packages (with 7 days cooldown)"
 	uv tree --outdated --exclude-newer "7 days"
@@ -90,6 +84,29 @@ outdated:
 upgrade:
 	# Update the versions in pyproject.toml
 	uv lock
+
+########################################################################################
+# Utilities
+########################################################################################
+
+DOCS_LOCATION=./docs
+
+doc8:
+	@echo "-> Run documentation .rst validation"
+	uvx doc8==2.0.0 --max-line-length 100 --ignore-path docs/_build/ --quiet docs/
+
+valid:
+	@echo "-> Run Ruff format"
+	uvx ruff format
+	@echo "-> Run Ruff linter"
+	uvx ruff check --fix
+
+check:
+	@echo "-> Run Ruff linter validation (pycodestyle, bandit, isort, and more)"
+	uvx ruff check
+	@echo "-> Run Ruff format validation"
+	uvx ruff format --check
+	@$(MAKE) doc8
 
 ########################################################################################
 # Local venv commands (legacy)
@@ -151,24 +168,24 @@ check-deploy:
 	@echo "-> Check Django deployment settings"
 	${VENV_MANAGE} check --deploy
 
-doc8:
-	@echo "-> Run doc8 validation"
-	@${ACTIVATE} doc8 --max-line-length 100 --ignore-path docs/_build/ --quiet docs/
+# doc8:
+# 	@echo "-> Run doc8 validation"
+# 	@${ACTIVATE} doc8 --max-line-length 100 --ignore-path docs/_build/ --quiet docs/
 
-valid:
-	@echo "-> Run Ruff format"
-	@${ACTIVATE} ruff format
-	@echo "-> Run Ruff linter"
-	@${ACTIVATE} ruff check --fix
+# valid:
+# 	@echo "-> Run Ruff format"
+# 	@${ACTIVATE} ruff format
+# 	@echo "-> Run Ruff linter"
+# 	@${ACTIVATE} ruff check --fix
 
-check:
-	@echo "-> Run Ruff linter validation (pycodestyle, bandit, isort, and more)"
-	@${ACTIVATE} ruff check
-	@echo "-> Run Ruff format validation"
-	@${ACTIVATE} ruff format --check
-	@$(MAKE) doc8
-	@echo "-> Run ABOUT files validation"
-	@${ACTIVATE} about check --exclude .venv/ --exclude scanpipe/tests/ .
+# check:
+# 	@echo "-> Run Ruff linter validation (pycodestyle, bandit, isort, and more)"
+# 	@${ACTIVATE} ruff check
+# 	@echo "-> Run Ruff format validation"
+# 	@${ACTIVATE} ruff format --check
+# 	@$(MAKE) doc8
+# 	@echo "-> Run ABOUT files validation"
+# 	@${ACTIVATE} about check --exclude .venv/ --exclude scanpipe/tests/ .
 
 clean:
 	@echo "-> Clean the Python env"
@@ -218,4 +235,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate makemigrations restart-worker postgresdb sqlitedb backupdb run test fasttest regen-fixtures fix docs build build-core build-full bash shell docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate makemigrations restart-worker postgresdb sqlitedb backupdb run test fasttest regen-fixtures docs build build-core build-full bash shell docker-images offline-package
