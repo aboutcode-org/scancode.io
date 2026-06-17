@@ -49,6 +49,9 @@ VULNERABLECODE_API_KEY = settings.VULNERABLECODE_API_KEY
 if VULNERABLECODE_API_KEY:
     session.headers.update({"Authorization": f"Token {VULNERABLECODE_API_KEY}"})
 
+VULNERABLECODE_USER_AGENT = settings.VULNERABLECODE_USER_AGENT
+session.headers.update({"User-Agent": VULNERABLECODE_USER_AGENT})
+
 
 def is_configured():
     """Return True if the required VulnerableCode settings have been set."""
