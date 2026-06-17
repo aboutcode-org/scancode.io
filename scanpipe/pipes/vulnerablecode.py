@@ -127,7 +127,8 @@ def filter_vulnerabilities(vulnerabilities, ignore_set):
     return [
         vulnerability
         for vulnerability in vulnerabilities
-        if vulnerability.get("advisory_id") not in ignore_set
+        if vulnerability.get("advisory_uid") not in ignore_set
+        and vulnerability.get("advisory_id") not in ignore_set
         and not any(alias in ignore_set for alias in vulnerability.get("aliases", []))
     ]
 

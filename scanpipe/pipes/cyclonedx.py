@@ -186,9 +186,11 @@ def cyclonedx_component_to_package_data(
     if affected_by := vulnerabilities.get(bom_ref):
         for cdx_vulnerability in affected_by:
             cdx_vulnerability_json = cdx_vulnerability.as_json(view_=BaseSchemaVersion)
+            cdx_vulnerability_id = str(cdx_vulnerability.id)
             affected_by_vulnerabilities.append(
                 {
-                    "advisory_id": str(cdx_vulnerability.id),
+                    "advisory_uid": cdx_vulnerability_id,
+                    "advisory_id": cdx_vulnerability_id,
                     "summary": cdx_vulnerability.description,
                     "cdx_vulnerability_data": json.loads(cdx_vulnerability_json),
                 }
