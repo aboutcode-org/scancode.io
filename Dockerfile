@@ -20,9 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-# ============================================
+# ===================================================================
 # Stage 1: Build stage
-# ============================================
+# ===================================================================
 
 FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
 
@@ -52,11 +52,20 @@ COPY . $APP_DIR
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
 
-# ============================================
-# Stage 2: Production stage (base)
-# ============================================
+# ===================================================================
+# Stage 1.5: Build stage for full image
+# ===================================================================
 
-FROM python:3.13-slim-bookworm AS base
+FROM builder AS builder-full
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --extra android_analysis
+
+# ===================================================================
+# Stage 2: Production stage (core)
+# ===================================================================
+
+FROM python:3.13-slim-bookworm AS core
 
 LABEL org.opencontainers.image.source="https://github.com/aboutcode-org/scancode.io"
 LABEL org.opencontainers.image.description="ScanCode.io"
@@ -122,17 +131,27 @@ USER $APP_USER
 # Create static/ and workspace/ directories
 RUN mkdir -p /var/$APP_NAME/static/ /var/$APP_NAME/workspace/
 
-# ============================================
-# Stage 3: Full image (with VM inspection)
-# ============================================
+# ===================================================================
+# Stage 3: Full image (with VM inspection and Android inspector)
+# ===================================================================
 
-FROM base AS full
+FROM core AS full
+
+COPY --from=builder-full --chown=$APP_USER:$APP_USER $APP_DIR $APP_DIR
 
 USER root
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
        libguestfs-tools \
        linux-image-amd64 \
+       openjdk-17-jre-headless \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN python3 -c "import urllib.request, zipfile, io; \
+    zipfile.ZipFile(io.BytesIO(urllib.request.urlopen( \
+    'https://github.com/skylot/jadx/releases/download/v1.5.0/jadx-1.5.0.zip' \
+    ).read())).extractall('/usr/')" \
+ && chmod +x /usr/bin/jadx
+
 USER $APP_USER

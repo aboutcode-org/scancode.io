@@ -40,39 +40,63 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Extract tags and labels that will be applied to the specified image.
-      # The `id` "meta" allows the output of this step to be referenced in a subsequent
-      # step.
-      # The `images` value provides the base name for the tags and labels.
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract metadata (tags, labels) for core image
         id: meta
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051  # v5.10.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      # Build the image based on your repository's `Dockerfile`.
-      # If the build succeeds, it pushes the image to GitHub Packages.
-      # It uses the `context` parameter to define the build's context as the set of
-      # files located in the specified path.
-      # It uses the `tags` and `labels` parameters to tag and label the image with
-      # the output from the "meta" step.
-      - name: Build and push Docker image
+      - name: Extract metadata (tags, labels) for full image
+        id: meta-full
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051  # v5.10.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            suffix=-full
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5  # v4.1.0
+
+      - name: Build and push core Docker image
         id: push
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8  # v6.19.2
         with:
           context: .
+          target: core
           push: true
           tags: |
             ${{ steps.meta.outputs.tags }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      # This step generates an artifact attestation for the image, which is an
-      # unforgeable statement about where and how it was built.
-      # It increases supply chain security for people who consume the image.
-      - name: Generate artifact attestation
+      - name: Build and push full Docker image
+        id: push-full
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8  # v6.19.2
+        with:
+          context: .
+          target: full
+          push: true
+          tags: |
+            ${{ steps.meta-full.outputs.tags }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-full
+          labels: ${{ steps.meta-full.outputs.labels }}
+          annotations: ${{ steps.meta-full.outputs.annotations }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate artifact attestation for core image
         uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  #  v4.1.0
         with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      - name: Generate artifact attestation for full image
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  #  v4.1.0
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push-full.outputs.digest }}
           push-to-registry: true

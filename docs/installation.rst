@@ -51,43 +51,14 @@ create an **environment file**, and **build the Docker image**::
     make envfile
     docker compose build
 
-.. warning::
-    As the ``docker-compose`` v1 command is officially deprecated by Docker, you will
-    only find references to the ``docker compose`` v2 command in this documentation.
-
 .. note::
-    If you intend to run an Android deploy to develop project, ``Java``, ``jadx
-    v1.5.0`` and ``android-inspector`` must be installed in the Docker image by
-    adding the following lines to the ``Dockerfile`` and rebuilding the Docker
-    image:
+    To use the Android analysis pipeline, use the ``full`` Docker image which
+    includes OpenJDK, jadx, and android-inspector. The production
+    ``docker-compose.yml`` builds the ``full`` image by default.
 
-    Add at line 65 after `apt-get` command::
+    For local development, build the full image explicitly::
 
-        # Install Java and utilities to install jadx
-        RUN apt-get update \
-        && apt-get install -y --no-install-recommends \
-            openjdk-17-jre-headless \
-            unzip \
-            wget
-
-        # Download and extract jadx
-        RUN wget https://github.com/skylot/jadx/releases/download/v1.5.0/jadx-1.5.0.zip \
-        && unzip -d /usr jadx-1.5.0.zip
-
-        # Remove jadx archive and installed utilities
-        RUN apt-get remove -y unzip wget \
-        && apt-get clean \
-        && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-        && rm jadx-1.5.0.zip
-
-    Add at end of file::
-
-        # Install android-inspector
-        RUN pip install --no-cache-dir android-inspector
-
-    Rebuild the image::
-
-        docker compose build
+        make build-full
 
 Run the App
 ^^^^^^^^^^^

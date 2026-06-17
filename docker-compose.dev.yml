@@ -9,7 +9,7 @@ x-dev-env: &dev-env
 
 x-dev-build: &dev-build
   context: .
-  target: base
+  target: core
 
 services:
   web:
@@ -18,10 +18,15 @@ services:
       - .env
     environment:
       <<: *dev-env
-    command: ./manage.py runserver --skip-checks --insecure 0.0.0.0:8001
+    # Skip migrate when the DB schema is already up to date (faster reload)
+    command: sh -c "
+      ./manage.py migrate --check || ./manage.py migrate;
+      ./manage.py runserver --skip-checks 0.0.0.0:8001"
     volumes:
+      - ./scancodeio:/opt/scancodeio/scancodeio
       - ./scanpipe:/opt/scancodeio/scanpipe
     ports:
+      # Port 8001 to avoid conflict when running side-by-side with dejacode on 8000
       - "8001:8001"
 
   # Volume mount keeps code in sync. Restart manually with: make restart-worker
@@ -31,10 +36,12 @@ services:
       - .env
     environment:
       <<: *dev-env
-    command: ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker
-                                  --queue-class scancodeio.worker.ScanCodeIOQueue
-                                  --verbosity 1
+    command: wait-for-it --strict --timeout=180 web:8001 -- sh -c "
+      ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker
+      --queue-class scancodeio.worker.ScanCodeIOQueue
+      --verbosity 1"
     volumes:
+      - ./scancodeio:/opt/scancodeio/scancodeio
       - ./scanpipe:/opt/scancodeio/scanpipe
 
   # Disable nginx in dev mode, the runserver serves requests directly.
