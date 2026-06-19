@@ -1965,8 +1965,20 @@ class VulnerabilityListView(
 ):
     template_name = "scanpipe/vulnerability_list.html"
     table_columns = [
-        "vulnerability_id",
+        {
+            "field_name": "advisory_id",
+            "label": "Advisory ID",
+        },
         "summary",
+        "exploitability",
+        {
+            "field_name": "weighted_severity",
+            "label": "Severity",
+        },
+        {
+            "field_name": "risk_score",
+            "label": "Risk",
+        },
         "affects",
     ]
 
@@ -1976,7 +1988,6 @@ class VulnerabilityListView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["object_list"] = self.project.vulnerabilities
-        context["VULNERABLECODE_URL"] = settings.VULNERABLECODE_URL
         return context
 
 
@@ -2341,7 +2352,6 @@ class DiscoveredPackageDetailsView(
             ],
             "icon_class": "fa-solid fa-bug",
             "template": "scanpipe/tabset/tab_vulnerabilities.html",
-            "tab_context": {"VULNERABLECODE_URL": settings.VULNERABLECODE_URL},
         },
         "extra_data": {
             "fields": ["extra_data"],

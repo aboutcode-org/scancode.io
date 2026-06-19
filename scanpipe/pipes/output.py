@@ -579,7 +579,7 @@ def add_vulnerabilities_sheet(workbook, project):
     ]
 
     vulnerability_fields = [
-        "vulnerability_id",
+        "advisory_id",
         "aliases",
         "summary",
         "risk_score",
@@ -863,7 +863,7 @@ def vulnerability_as_cyclonedx(vulnerability_data, component_bom_ref):
     ]
 
     return cdx_vulnerability.Vulnerability(
-        id=vulnerability_data.get("vulnerability_id"),
+        id=vulnerability_data.get("advisory_id"),
         source=source,
         description=vulnerability_data.get("summary"),
         affects=affects,

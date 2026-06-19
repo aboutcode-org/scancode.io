@@ -61,6 +61,10 @@ class RegenTestData(TestCase):
     - Docker:
     $ docker compose run --rm --volume "$(pwd)/scanpipe/":/opt/scancodeio/scanpipe/ \
         -e SCANCODEIO_TEST_FIXTURES_REGEN=True web ./manage.py test
+
+    - Single test:
+    $ docker compose run --rm --volume "$(pwd)/scanpipe/":/opt/scancodeio/scanpipe/ \
+        -e SCANCODEIO_TEST_FIXTURES_REGEN=True web ./manage.py test -k TEST_NAME
     """
 
     data = Path(__file__).parent / "data"

@@ -512,7 +512,7 @@ class ProjectSettingsForm(forms.ModelForm):
             attrs={
                 "class": "textarea is-dynamic",
                 "rows": 2,
-                "placeholder": "VCID-q4q6-yfng-aaag\nCVE-2024-27351",
+                "placeholder": "ID-q4q6-yfng-aaag\nCVE-2024-27351",
             },
         ),
     )

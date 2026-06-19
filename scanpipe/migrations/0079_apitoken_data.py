@@ -31,9 +31,7 @@ def migrate_api_tokens(apps, schema_editor):
         )
         for user_id, key, created in rows
     ]
-    migrated_tokens = APIToken.objects.bulk_create(tokens_to_create, ignore_conflicts=True)
-    if migrated_tokens:
-        print(f" -> {len(migrated_tokens)} tokens migrated.")
+    APIToken.objects.bulk_create(tokens_to_create, ignore_conflicts=True)
 
 
 def reverse_migrate_api_tokens(apps, schema_editor):
