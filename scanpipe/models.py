@@ -3371,7 +3371,8 @@ class VulnerabilityQuerySetMixin:
 
         # Deduplicate by advisory_uid while preserving order
         unique_vulnerabilities = {
-            vuln["advisory_uid"]: vuln for vuln in flatten_vulnerabilities
+            vulnerability["advisory_uid"]: vulnerability
+            for vulnerability in flatten_vulnerabilities
         }
 
         return sorted(unique_vulnerabilities.values(), key=itemgetter("advisory_uid"))

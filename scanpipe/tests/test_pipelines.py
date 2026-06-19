@@ -1351,7 +1351,7 @@ class PipelinesIntegrationTest(TestCase):
                 "purl": "pkg:deb/debian/adduser@3.118?arch=all",
                 "affected_by_vulnerabilities": [
                     {
-                        "advisory_id": "ID-1",
+                        "advisory_uid": "ID-1",
                         "summary": "An issue was discovered.",
                     },
                 ],
@@ -1360,7 +1360,7 @@ class PipelinesIntegrationTest(TestCase):
                 "purl": "pkg:deb/debian/adduser@3.118?qualifiers=1",
                 "affected_by_vulnerabilities": [
                     {
-                        "advisory_id": "ID-2",
+                        "advisory_uid": "ID-2",
                         "summary": "An issue was discovered.",
                     },
                 ],

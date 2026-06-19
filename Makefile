@@ -40,9 +40,10 @@ shell:
 	# Open a bash session in a standalone container (no stack required)
 	docker run -it $(IMAGE_NAME) bash
 
+# make test              - full suite
+# make test k=<pattern>  - filter by name, e.g. make test k=test_name
 test:
-	@echo "-> Run the test suite"
-	${MANAGE} test --noinput
+	${MANAGE} test --noinput $(if $(k),-k $(k),)
 
 fasttest:
 	@echo "-> Run the test suite without the PipelinesIntegrationTest"

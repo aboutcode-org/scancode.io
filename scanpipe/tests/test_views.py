@@ -1200,7 +1200,7 @@ class ScanPipeViewsTest(TestCase):
 
         package1.add_resources([make_resource_file(self.project1, "file1.ext")])
         package1.update(
-            affected_by_vulnerabilities=[{"advisory_id": "ID-cah8-awtr-aaad"}],
+            affected_by_vulnerabilities=[{"advisory_uid": "ID-cah8-awtr-aaad"}],
             extra_data={"extra": "data"},
         )
         dependency_data = dependency_data1.copy()
@@ -1218,9 +1218,8 @@ class ScanPipeViewsTest(TestCase):
 
     def test_scanpipe_views_discovered_package_details_view_tab_vulnerabilities(self):
         package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
-        package1.update(
-            affected_by_vulnerabilities=[{"advisory_id": "ID-cah8-awtr-aaad"}]
-        )
+        v1 = {"advisory_uid": "ID-cah8-awtr-aaad", "advisory_id": "ID-cah8-awtr-aaad"}
+        package1.update(affected_by_vulnerabilities=[v1])
         response = self.client.get(package1.get_absolute_url())
         self.assertContains(response, "tab-vulnerabilities")
         self.assertContains(response, '<section id="tab-vulnerabilities"')
@@ -1306,8 +1305,12 @@ class ScanPipeViewsTest(TestCase):
             response = self.client.get(url)
         self.assertContains(response, "No Vulnerabilities found.")
 
-        v1 = {"advisory_id": "ID-1"}
+        v1 = {
+            "advisory_uid": "ID-1",
+            "advisory_id": "ID-1",
+        }
         v2 = {
+            "advisory_uid": "ID-2",
             "advisory_id": "ID-2",
             "resource_url": "https://vcio/advisories/ID-2",
         }
