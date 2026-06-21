@@ -856,9 +856,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_name = "scan_maven_package"
         project1 = make_project()
 
-        input_location = (
-            self.data / "jvm" / "wisp-logging-2025.11.11.195957-97a44b0.jar"
-        )
+        input_location = self.data / "jvm" / "args4j-tools-2.0.16.jar"
         project1.copy_input_from(input_location)
 
         run = project1.add_pipeline(pipeline_name)
@@ -867,12 +865,12 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(13, project1.codebaseresources.count())
+        self.assertEqual(23, project1.codebaseresources.count())
         self.assertEqual(1, project1.discoveredpackages.count())
-        self.assertEqual(29, project1.discovereddependencies.count())
+        self.assertEqual(3, project1.discovereddependencies.count())
 
         scancode_file = project1.get_latest_output(filename="scancode")
-        expected_file = self.data / "jvm" / "scancodeio_wisp-logging.json"
+        expected_file = self.data / "jvm" / "args4j-tools-2.0.16-sctk.json"
         self.assertPipelineResultEqual(expected_file, scancode_file)
 
     def test_scanpipe_scan_codebase_pipeline_integration(self):
