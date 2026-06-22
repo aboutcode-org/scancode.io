@@ -504,7 +504,7 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_details_charts_view(self):
         url = reverse("project_charts", args=[self.project1.slug])
 
-        with self.assertNumQueries(9):
+        with self.assertNumQueries(6):
             response = self.client.get(url)
 
         self.assertNotContains(response, 'id="package-charts"')
@@ -513,7 +513,7 @@ class ScanPipeViewsTest(TestCase):
 
         make_resource_file(self.project1, path="", programming_language="Python")
 
-        with self.assertNumQueries(12):
+        with self.assertNumQueries(6):
             response = self.client.get(url)
         self.assertContains(response, '{"Python": 1}')
 
@@ -833,7 +833,7 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(7):
             self.client.get(url)
 
-        with self.assertNumQueries(15):
+        with self.assertNumQueries(10):
             self.client.get(self.project1.get_absolute_url())
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
@@ -1123,6 +1123,8 @@ class ScanPipeViewsTest(TestCase):
         make_relation(from_resource=from_1, to_resource=to_2, map_type="path")
 
         self.assertEqual(3, self.project1.codebaserelations.count())
+        self.project1.update_counts()
+        self.project1.refresh_from_db()
         self.assertEqual(3, self.project1.relation_count)
 
         response = self.client.get(url)

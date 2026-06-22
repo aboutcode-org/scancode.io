@@ -121,9 +121,13 @@ class ScanPipePipelinesTest(TestCase):
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
 
-        exitcode, out = pipeline.execute()
+        with mock.patch.object(project1, "update_counts") as mock_update_counts:
+            pipeline.project = project1
+            exitcode, out = pipeline.execute()
+
         self.assertEqual(0, exitcode)
         self.assertEqual("", out)
+        mock_update_counts.assert_called_once()
 
         run.refresh_from_db()
         self.assertIn("Pipeline [do_nothing] starting", run.log)
@@ -138,7 +142,10 @@ class ScanPipePipelinesTest(TestCase):
         run = project1.add_pipeline("raise_exception")
         pipeline = run.make_pipeline_instance()
 
-        exitcode, out = pipeline.execute()
+        with mock.patch.object(project1, "update_counts") as mock_update_counts:
+            pipeline.project = project1
+            exitcode, out = pipeline.execute()
+
         self.assertEqual(1, exitcode)
         self.assertTrue(out.startswith("Error message"))
         self.assertIn("Traceback:", out)
@@ -146,6 +153,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertIn("step(self)", out)
         self.assertIn("in raise_exception", out)
         self.assertIn("raise ValueError", out)
+        mock_update_counts.assert_called_once()
 
         run.refresh_from_db()
         self.assertIn("Pipeline [raise_exception] starting", run.log)
