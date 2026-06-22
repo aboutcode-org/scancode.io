@@ -1452,7 +1452,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     @cached_property
     def resource_count(self):
         """Return the number of resources related to this project."""
-        return self.codebaseresources.count()
+        return self.codebaseresources_count
 
     @cached_property
     def file_count(self):
@@ -1478,7 +1478,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     @cached_property
     def package_count(self):
         """Return the number of packages related to this project."""
-        return self.discoveredpackages.count()
+        return self.discoveredpackages_count
 
     @cached_property
     def vulnerable_package_count(self):
@@ -1498,7 +1498,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     @cached_property
     def dependency_count(self):
         """Return the number of dependencies related to this project."""
-        return self.discovereddependencies.count()
+        return self.discovereddependencies_count
 
     @cached_property
     def license_detections_count(self):
@@ -1532,7 +1532,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     @cached_property
     def message_count(self):
         """Return the number of messages related to this project."""
-        return self.projectmessages.count()
+        return self.projectmessages_count
 
     @cached_property
     def relation_count(self):
