@@ -60,16 +60,7 @@ class ProjectAdmin(ScanPipeBaseAdmin):
     readonly_fields = ["packages_link", "dependencies_link", "resources_link", "uuid"]
 
     def get_queryset(self, request):
-        return (
-            super()
-            .get_queryset(request)
-            .prefetch_related("labels")
-            .with_counts(
-                "codebaseresources",
-                "discoveredpackages",
-                "discovereddependencies",
-            )
-        )
+        return super().get_queryset(request).prefetch_related("labels")
 
     @admin.display(description="Labels")
     def label_list(self, obj):

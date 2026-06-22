@@ -217,6 +217,12 @@ class ProjectPipeline(CommonStepsMixin, BasePipeline):
             object_instance=resource,
         )
 
+    def execute(self):
+        """Execute the pipeline and refresh project counts on completion."""
+        result = super().execute()
+        self.project.update_counts()
+        return result
+
     @contextmanager
     def save_errors(self, *exceptions, **kwargs):
         """

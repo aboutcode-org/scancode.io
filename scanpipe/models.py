@@ -518,29 +518,6 @@ def get_project_work_directory(project):
 
 
 class ProjectQuerySet(models.QuerySet):
-    def with_counts(self, *fields):
-        """
-        Annotate the QuerySet with counts of provided relational `fields`.
-        Using `Subquery` in place of the `Count` aggregate function as it results in
-        poor query performances when combining multiple counts.
-
-        Usage:
-            project_queryset.with_counts("codebaseresources", "discoveredpackages")
-        """
-        annotations = {}
-        for field_name in fields:
-            count_label = f"{field_name}_count"
-            subquery_qs = self.model.objects.annotate(
-                **{count_label: Count(field_name)}
-            ).filter(pk=OuterRef("pk"))
-
-            annotations[count_label] = Subquery(
-                subquery_qs.values(count_label),
-                output_field=IntegerField(),
-            )
-
-        return self.annotate(**annotations)
-
     def get_active_archived_counts(self):
         return self.aggregate(
             active_count=Count(
@@ -605,6 +582,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             "corresponding PURL would be pkg:npm/lodash@4.17.21."
         ),
     )
+    codebaseresources_count = models.PositiveIntegerField(default=0, editable=False)
+    discoveredpackages_count = models.PositiveIntegerField(default=0, editable=False)
+    discovereddependencies_count = models.PositiveIntegerField(
+        default=0, editable=False
+    )
+    projectmessages_count = models.PositiveIntegerField(default=0, editable=False)
 
     objects = ProjectQuerySet.as_manager()
 
@@ -614,6 +597,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             models.Index(fields=["-created_date"]),
             models.Index(fields=["is_archived"]),
             models.Index(fields=["name"]),
+            models.Index(fields=["codebaseresources_count"]),
+            models.Index(fields=["discoveredpackages_count"]),
+            models.Index(fields=["discovereddependencies_count"]),
+            models.Index(fields=["projectmessages_count"]),
         ]
 
     def __str__(self):
@@ -779,6 +766,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.inputsources.all().delete()
 
         self.extra_data = {}
+        self.codebaseresources_count = 0
+        self.discoveredpackages_count = 0
+        self.discovereddependencies_count = 0
+        self.projectmessages_count = 0
         self.save()
 
         for path in work_directories:
@@ -1547,6 +1538,15 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     def relation_count(self):
         """Return the number of relations related to this project."""
         return self.codebaserelations.count()
+
+    def update_counts(self):
+        """Recompute and store the denormalized count fields for this project."""
+        Project.objects.filter(pk=self.pk).update(
+            codebaseresources_count=self.codebaseresources.count(),
+            discoveredpackages_count=self.discoveredpackages.count(),
+            discovereddependencies_count=self.discovereddependencies.count(),
+            projectmessages_count=self.projectmessages.count(),
+        )
 
     @cached_property
     def vulnerable_packages(self):

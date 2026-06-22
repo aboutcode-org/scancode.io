@@ -690,12 +690,10 @@ class ProjectListView(
                 "name",
                 "slug",
                 "created_date",
-            )
-            .with_counts(
-                "codebaseresources",
-                "discoveredpackages",
-                "discovereddependencies",
-                "projectmessages",
+                "codebaseresources_count",
+                "discoveredpackages_count",
+                "discovereddependencies_count",
+                "projectmessages_count",
             )
             .order_by("-created_date")
         )

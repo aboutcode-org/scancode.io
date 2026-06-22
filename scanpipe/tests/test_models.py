@@ -237,12 +237,21 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(1, self.project1.inputsources.count())
         self.assertEqual(1, self.project1.webhooksubscriptions.count())
 
+        self.project1.update_counts()
+        self.project1.refresh_from_db()
+        self.assertEqual(1, self.project1.codebaseresources_count)
+        self.assertEqual(1, self.project1.discoveredpackages_count)
+        self.assertEqual(1, self.project1.projectmessages_count)
+
         self.project1.reset(restore_pipelines=True, execute_now=False)
         self.assertEqual(0, self.project1.projectmessages.count())
         self.assertEqual(1, self.project1.runs.count())
         self.assertEqual(0, self.project1.discoveredpackages.count())
         self.assertEqual(0, self.project1.codebaseresources.count())
         self.assertEqual(1, self.project1.webhooksubscriptions.count())
+        self.assertEqual(0, self.project1.codebaseresources_count)
+        self.assertEqual(0, self.project1.discoveredpackages_count)
+        self.assertEqual(0, self.project1.projectmessages_count)
 
         self.project1.reset(keep_webhook=False)
         self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
@@ -618,23 +627,19 @@ class ScanPipeModelsTest(TestCase):
         with self.assertRaises(RunInProgressError):
             self.project1.reset()
 
-    def test_scanpipe_project_queryset_with_counts(self):
+    def test_scanpipe_project_update_counts(self):
         self.project_asgiref.add_error("error 1", "model")
         self.project_asgiref.add_error("error 2", "model")
 
-        project_qs = Project.objects.with_counts(
-            "codebaseresources",
-            "discoveredpackages",
-            "projectmessages",
-        )
+        self.project_asgiref.update_counts()
+        self.project_asgiref.refresh_from_db()
 
-        project = project_qs.get(pk=self.project_asgiref.pk)
-        self.assertEqual(18, project.codebaseresources_count)
-        self.assertEqual(18, project.codebaseresources.count())
-        self.assertEqual(2, project.discoveredpackages_count)
-        self.assertEqual(2, project.discoveredpackages.count())
-        self.assertEqual(2, project.projectmessages_count)
-        self.assertEqual(2, project.projectmessages.count())
+        self.assertEqual(18, self.project_asgiref.codebaseresources_count)
+        self.assertEqual(18, self.project_asgiref.codebaseresources.count())
+        self.assertEqual(2, self.project_asgiref.discoveredpackages_count)
+        self.assertEqual(2, self.project_asgiref.discoveredpackages.count())
+        self.assertEqual(2, self.project_asgiref.projectmessages_count)
+        self.assertEqual(2, self.project_asgiref.projectmessages.count())
 
     def test_scanpipe_project_related_queryset_get_or_none(self):
         self.assertIsNone(CodebaseResource.objects.get_or_none(path="path/"))
