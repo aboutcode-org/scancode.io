@@ -645,22 +645,22 @@ class ProjectListView(
         {
             "field_name": "discoveredpackages",
             "label": "Packages",
-            "sort_name": "discoveredpackages_count",
+            "sort_name": "package_count",
         },
         {
             "field_name": "discovereddependencies",
             "label": "Dependencies",
-            "sort_name": "discovereddependencies_count",
+            "sort_name": "dependency_count",
         },
         {
             "field_name": "codebaseresources",
             "label": "Resources",
-            "sort_name": "codebaseresources_count",
+            "sort_name": "resource_count",
         },
         {
             "field_name": "projectmessages",
             "label": "Messages",
-            "sort_name": "projectmessages_count",
+            "sort_name": "message_count",
         },
         {
             "field_name": "runs",
@@ -690,12 +690,10 @@ class ProjectListView(
                 "name",
                 "slug",
                 "created_date",
-            )
-            .with_counts(
-                "codebaseresources",
-                "discoveredpackages",
-                "discovereddependencies",
-                "projectmessages",
+                "resource_count",
+                "package_count",
+                "dependency_count",
+                "message_count",
             )
             .order_by("-created_date")
         )

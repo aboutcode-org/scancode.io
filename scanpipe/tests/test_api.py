@@ -193,6 +193,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertContains(response, project3.uuid)
 
     def test_scanpipe_api_project_detail(self):
+        self.project1.update_counts()
         response = self.csrf_client.get(self.project1_detail_url)
         self.assertIn(self.project1_detail_url, response.data["url"])
         self.assertEqual(str(self.project1.uuid), response.data["uuid"])

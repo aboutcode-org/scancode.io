@@ -3,7 +3,7 @@ revision = 3
 requires-python = ">=3.12, <3.15"
 
 [options]
-exclude-newer = "2026-06-05T14:24:15.866111Z"
+exclude-newer = "2026-06-15T08:40:05.385639Z"
 exclude-newer-span = "P7D"
 
 [[package]]
@@ -2929,6 +2929,7 @@ dependencies = [
     { name = "cyclonedx-python-lib" },
     { name = "django" },
     { name = "django-crispy-forms" },
+    { name = "django-debug-toolbar" },
     { name = "django-environ" },
     { name = "django-filter" },
     { name = "django-htmx" },
@@ -2973,7 +2974,6 @@ android-analysis = [
     { name = "android-inspector" },
 ]
 dev = [
-    { name = "django-debug-toolbar" },
     { name = "doc8" },
     { name = "ruff" },
     { name = "sphinx" },
@@ -3005,7 +3005,7 @@ requires-dist = [
     { name = "cyclonedx-python-lib", specifier = "==11.7.0" },
     { name = "django", specifier = "==6.0.5" },
     { name = "django-crispy-forms", specifier = "==2.6" },
-    { name = "django-debug-toolbar", marker = "extra == 'dev'", specifier = "==6.3.0" },
+    { name = "django-debug-toolbar", specifier = "==6.3.0" },
     { name = "django-environ", specifier = "==0.13.0" },
     { name = "django-filter", specifier = "==25.2" },
     { name = "django-htmx", specifier = "==1.27.0" },

@@ -507,7 +507,7 @@ class ScanPipeScancodePipesTest(TestCase):
         resource = project.codebaseresources.get(name="package.json")
 
         # This assembly should not trigger that many queries.
-        with self.assertNumQueries(16):
+        with self.assertNumQueries(15):
             scancode.assemble_package(resource, project, processed_paths)
 
         self.assertEqual(1, project.discoveredpackages.count())

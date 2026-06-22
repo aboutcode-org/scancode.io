@@ -301,10 +301,10 @@ if IS_TESTS:
 # Debug toolbar
 
 DEBUG_TOOLBAR = env.bool("SCANCODEIO_DEBUG_TOOLBAR", default=False)
-if DEBUG and DEBUG_TOOLBAR:
+if DEBUG and DEBUG_TOOLBAR and not IS_TESTS:
     INSTALLED_APPS.append("debug_toolbar")
     MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
-    INTERNAL_IPS = ["127.0.0.1"]
+    DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: True}
 
 # Logging
 

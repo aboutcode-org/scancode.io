@@ -60,16 +60,7 @@ class ProjectAdmin(ScanPipeBaseAdmin):
     readonly_fields = ["packages_link", "dependencies_link", "resources_link", "uuid"]
 
     def get_queryset(self, request):
-        return (
-            super()
-            .get_queryset(request)
-            .prefetch_related("labels")
-            .with_counts(
-                "codebaseresources",
-                "discoveredpackages",
-                "discovereddependencies",
-            )
-        )
+        return super().get_queryset(request).prefetch_related("labels")
 
     @admin.display(description="Labels")
     def label_list(self, obj):
@@ -83,19 +74,19 @@ class ProjectAdmin(ScanPipeBaseAdmin):
             '<a href="{}?project__uuid__exact={}">{}</a>', url, obj.uuid, value
         )
 
-    @admin.display(description="Packages", ordering="discoveredpackages_count")
+    @admin.display(description="Packages", ordering="package_count")
     def packages_link(self, obj):
-        count = obj.discoveredpackages_count
+        count = obj.package_count
         return self.make_filtered_link(obj, count, "discoveredpackage")
 
-    @admin.display(description="Dependencies", ordering="discovereddependencies_count")
+    @admin.display(description="Dependencies", ordering="dependency_count")
     def dependencies_link(self, obj):
-        count = obj.discovereddependencies_count
+        count = obj.dependency_count
         return self.make_filtered_link(obj, count, "discovereddependency")
 
-    @admin.display(description="Resources", ordering="codebaseresources_count")
+    @admin.display(description="Resources", ordering="resource_count")
     def resources_link(self, obj):
-        count = obj.codebaseresources_count
+        count = obj.resource_count
         return self.make_filtered_link(obj, count, "codebaseresource")
 
 
