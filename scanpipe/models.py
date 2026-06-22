@@ -582,25 +582,26 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             "corresponding PURL would be pkg:npm/lodash@4.17.21."
         ),
     )
-    codebaseresources_count = models.PositiveIntegerField(default=0, editable=False)
-    discoveredpackages_count = models.PositiveIntegerField(default=0, editable=False)
-    discovereddependencies_count = models.PositiveIntegerField(
-        default=0, editable=False
-    )
-    projectmessages_count = models.PositiveIntegerField(default=0, editable=False)
+    resource_count = models.PositiveIntegerField(default=0, editable=False)
+    package_count = models.PositiveIntegerField(default=0, editable=False)
+    dependency_count = models.PositiveIntegerField(default=0, editable=False)
+    message_count = models.PositiveIntegerField(default=0, editable=False)
+    relation_count = models.PositiveIntegerField(default=0, editable=False)
 
     objects = ProjectQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_date"]
         indexes = [
+            models.Index(fields=["is_archived", "-created_date"]),
             models.Index(fields=["-created_date"]),
             models.Index(fields=["is_archived"]),
             models.Index(fields=["name"]),
-            models.Index(fields=["codebaseresources_count"]),
-            models.Index(fields=["discoveredpackages_count"]),
-            models.Index(fields=["discovereddependencies_count"]),
-            models.Index(fields=["projectmessages_count"]),
+            models.Index(fields=["resource_count"]),
+            models.Index(fields=["package_count"]),
+            models.Index(fields=["dependency_count"]),
+            models.Index(fields=["message_count"]),
+            models.Index(fields=["relation_count"]),
         ]
 
     def __str__(self):
@@ -766,10 +767,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.inputsources.all().delete()
 
         self.extra_data = {}
-        self.codebaseresources_count = 0
-        self.discoveredpackages_count = 0
-        self.discovereddependencies_count = 0
-        self.projectmessages_count = 0
+        self.resource_count = 0
+        self.package_count = 0
+        self.dependency_count = 0
+        self.message_count = 0
+        self.relation_count = 0
         self.save()
 
         for path in work_directories:
@@ -1450,11 +1452,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         )
 
     @cached_property
-    def resource_count(self):
-        """Return the number of resources related to this project."""
-        return self.codebaseresources_count
-
-    @cached_property
     def file_count(self):
         """Return the number of **file** resources related to this project."""
         return self.codebaseresources.files().count()
@@ -1476,11 +1473,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         return self.codebaseresources.files().not_in_package().count()
 
     @cached_property
-    def package_count(self):
-        """Return the number of packages related to this project."""
-        return self.discoveredpackages_count
-
-    @cached_property
     def vulnerable_package_count(self):
         """Return the number of vulnerable packages related to this project."""
         return self.vulnerable_packages.count()
@@ -1494,11 +1486,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     def vulnerability_count(self):
         """Return the number of vulnerabilities related to this project."""
         return self.vulnerable_package_count + self.vulnerable_dependency_count
-
-    @cached_property
-    def dependency_count(self):
-        """Return the number of dependencies related to this project."""
-        return self.discovereddependencies_count
 
     @cached_property
     def license_detections_count(self):
@@ -1529,23 +1516,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         return self.codebaseresources.has_compliance_alert().count()
 
-    @cached_property
-    def message_count(self):
-        """Return the number of messages related to this project."""
-        return self.projectmessages_count
-
-    @cached_property
-    def relation_count(self):
-        """Return the number of relations related to this project."""
-        return self.codebaserelations.count()
-
     def update_counts(self):
         """Recompute and store the denormalized count fields for this project."""
         Project.objects.filter(pk=self.pk).update(
-            codebaseresources_count=self.codebaseresources.count(),
-            discoveredpackages_count=self.discoveredpackages.count(),
-            discovereddependencies_count=self.discovereddependencies.count(),
-            projectmessages_count=self.projectmessages.count(),
+            resource_count=self.codebaseresources.count(),
+            package_count=self.discoveredpackages.count(),
+            dependency_count=self.discovereddependencies.count(),
+            message_count=self.projectmessages.count(),
+            relation_count=self.codebaserelations.count(),
         )
 
     @cached_property

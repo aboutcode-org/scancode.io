@@ -26,18 +26,18 @@
         </span>
       </th>
       <td>
-        {% if project.discoveredpackages_count %}
+        {% if project.package_count %}
           <a href="{% url 'project_packages' project.slug %}">
-            {{ project.discoveredpackages_count|intcomma }}
+            {{ project.package_count|intcomma }}
           </a>
         {% else %}
           <span>0</span>
         {% endif %}
       </td>
       <td>
-        {% if project.discovereddependencies_count %}
+        {% if project.dependency_count %}
           <a href="{% url 'project_dependencies' project.slug %}">
-            {{ project.discovereddependencies_count|intcomma }}
+            {{ project.dependency_count|intcomma }}
           </a>
           <a href="{% url 'project_dependency_tree' project.slug %}">
             <span class="icon">
@@ -49,11 +49,11 @@
         {% endif %}
       </td>
       <td>
-        {% if project.codebaseresources_count %}
+        {% if project.resource_count %}
           <a href="{% url 'project_resources' project.slug %}">
-            {{ project.codebaseresources_count|intcomma }}
+            {{ project.resource_count|intcomma }}
           </a>
-          {% if project.codebaseresources_count > 1 %}
+          {% if project.resource_count > 1 %}
             <a href="{% url 'project_resource_tree' project.slug %}">
               <span class="icon">
                 <i class="fa-solid fa-folder-tree fa-sm"></i>
@@ -65,9 +65,9 @@
         {% endif %}
       </td>
       <td>
-        {% if project.projectmessages_count %}
+        {% if project.message_count %}
           <a href="{% url 'project_messages' project.slug %}">
-            {{ project.projectmessages_count|intcomma }}
+            {{ project.message_count|intcomma }}
           </a>
         {% else %}
           <span>0</span>
@@ -86,7 +86,7 @@
         {% endfor %}
       </td>
       <td>
-        {% if project.codebaseresources_count or project.discoveredpackages_count %}
+        {% if project.resource_count or project.package_count %}
           {% include "scanpipe/dropdowns/project_download_dropdown.html" with project=project only %}
         {% endif %}
       </td>
