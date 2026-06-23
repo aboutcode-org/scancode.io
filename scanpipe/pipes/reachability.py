@@ -23,8 +23,11 @@
 import os
 import shutil
 import tempfile
+from dataclasses import dataclass
+from dataclasses import field
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 from git import Repo
 from git.diff import NULL_TREE
@@ -35,11 +38,10 @@ from unidiff import PatchSet
 from scanpipe.pipes.symbols import TS_QUERIES
 from scanpipe.pipes.symbols import _root_of
 from scanpipe.pipes.symbols import collect_definitions
-from scanpipe.pipes.symbols import create_exact_symbol_fingerprint
+from scanpipe.pipes.symbols import create_sha256_fingerprint
 from scanpipe.pipes.symbols import extract_definitions
 from scanpipe.pipes.symbols import extract_symbols
 from scanpipe.pipes.symbols import get_query
-from scanpipe.pipes.symbols import is_nested_function
 from scanpipe.pipes.symbols import parse_code_to_ast
 from scanpipe.pipes.symbols import qualified_name_from_index
 
@@ -330,7 +332,7 @@ def collect_patch_symbols(repo, commit_hash):
         }
 
     """
-    commit, parent = get_commit_and_parent(repo, commit_hash)
+    commit, parent = get_commit_and_parent(repo=repo, commit_hash=commit_hash)
     diff_text = get_commit_diff_text(repo, parent, commit)
     changed = get_changed_files(parent, commit)
 
@@ -383,8 +385,11 @@ def collect_and_store_symbol_reachability_results(project, logger=None):
         vcs_url = patch["vcs_url"]
         commit_hash = patch["commit_hash"]
         try:
-            repo_path = clone_repo(vcs_url, commit_hash)
-            repo = Repo(repo_path)
+            # repo_path = clone_repo(vcs_url, commit_hash)
+            # repo = Repo(repo_path)
+
+            repo = Repo("/home/ziad-hany/PycharmProjects/flask")
+            # repo = Repo("/home/ziad-hany/PycharmProjects/vulnerablecode")
             patch_symbols_by_language = collect_patch_symbols(repo, commit_hash)
 
             if not patch_symbols_by_language:
@@ -422,14 +427,18 @@ def collect_and_store_symbol_reachability_results(project, logger=None):
                     continue
 
                 result = {
-                    "reachability_status": classify_reachability(vuln_evidence).value,
-                    "vulnerable_symbols": sorted(vuln_evidence),
-                    "fixed_symbols": sorted(fixed_evidence),
-                    "evidence": vuln_evidence,
-                    "patch": {
-                        "vcs_url": vcs_url,
-                        "commit_hash": commit_hash,
-                    },
+                    "symbols_reachability": {
+                        "patch": {
+                            "vcs_url": vcs_url,
+                            "commit_hash": commit_hash,
+                        },
+                        "evidence": list(vuln_evidence.values()),
+                        "fixed_symbols": sorted(fixed_evidence.keys()),
+                        "vulnerable_symbols": sorted(vuln_evidence.keys()),
+                        "reachability_status": classify_reachability(
+                            vuln_evidence
+                        ).value,
+                    }
                 }
 
                 resource.update_extra_data(
@@ -448,43 +457,147 @@ def collect_and_store_symbol_reachability_results(project, logger=None):
             pass
 
 
-def build_resource_index(resource_text, language):
+@dataclass
+class SymbolNode:
+    qualified_name: str
+    node: Any  # tree-sitter node
+    node_type: str
+    fingerprint: str
+
+
+@dataclass
+class CallGraph:
+    nodes: dict[str, SymbolNode] = field(default_factory=dict)
+    edges_qualified: dict[str, set[str]] = field(default_factory=dict)
+    imports: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
+class ResourceIndex:
+    definitions: set[str] = field(default_factory=set)
+    fingerprints: set[str] = field(default_factory=set)
+    call_graph: CallGraph | None = None
+
+    def to_dict(self):
+        return {
+            "definitions": self.definitions,
+            "fingerprints": self.fingerprints,
+            "call_graph": {
+                "nodes": {k: vars(v) for k, v in self.call_graph.nodes.items()},
+                "edges_qualified": self.call_graph.edges_qualified,
+                "imports": self.call_graph.imports,
+            }
+            if self.call_graph
+            else None,
+        }
+
+
+class CallGraphBuilder:
+    def __init__(self, tree, language: str):
+        self.tree = tree
+        self.language = language
+        self.index = collect_definitions(tree.root_node, language)
+        self.imports = collect_imports(tree.root_node, language)
+
+        self.nodes: dict[str, SymbolNode] = {}
+        self.definitions_by_name: dict[str, set[str]] = {}
+        self.class_methods: set[str] = set()
+
+    def build(self) -> CallGraph:
+        """Main execution flow for building the call graph."""
+        self._extract_nodes()
+        edges = self._resolve_all_edges()
+
+        return CallGraph(nodes=self.nodes, edges_qualified=edges, imports=self.imports)
+
+    def _extract_nodes(self):
+        """Extract all definitions and populate lookup maps."""
+        sep = get_imports_language_config(self.language)["separator"]
+
+        for definition in self.index.values():
+            node = definition["node"]
+            qualified_name = qualified_name_from_index(node, self.index)
+
+            if not qualified_name:
+                continue
+
+            body_text = node.text.decode("utf-8", errors="replace")
+            fingerprint = create_sha256_fingerprint(body_text)
+
+            self.nodes[qualified_name] = SymbolNode(
+                qualified_name=qualified_name,
+                node=node,
+                node_type=node.type,
+                fingerprint=fingerprint,
+            )
+
+            short_name = qualified_name.rsplit(sep, 1)[-1]
+            self.definitions_by_name.setdefault(short_name, set()).add(qualified_name)
+
+            if node.type == "function_definition":
+                parent = node.parent
+                if parent is not None and parent.type == "class_definition":
+                    self.class_methods.add(qualified_name)
+
+    def _resolve_all_edges(self) -> dict[str, set[str]]:
+        """Map out all direct calls for every node in the graph."""
+        edges_qualified = {}
+
+        for qualified_name, symbol_node in self.nodes.items():
+            direct_calls = extract_direct_calls(symbol_node.node, self.language)
+            resolved_callees = set()
+
+            for receiver_name, callee_name in direct_calls:
+                resolved_callees |= resolve_callee(
+                    receiver_name=receiver_name,
+                    callee_name=callee_name,
+                    owner_qn=qualified_name,
+                    definitions_by_name=self.definitions_by_name,
+                    class_methods=self.class_methods,
+                    import_map=self.imports,
+                    language=self.language,
+                )
+
+            edges_qualified[qualified_name] = resolved_callees
+
+        return edges_qualified
+
+
+def build_resource_index(resource_text, language) -> ResourceIndex | None:
     if not is_supported_language(language) or not resource_text:
         return None
 
     tree, _ = parse_code_to_ast(resource_text, language)
-
     if tree is None:
         return None
 
     call_graph = build_call_graph(tree, language)
 
-    meta = (
-        call_graph["nodes"]
-        if call_graph
-        else build_symbol_metadata(
-            extract_definitions(tree, language),
-            language,
-        )
+    if call_graph:
+        definitions = set(call_graph.nodes.keys())
+        fingerprints = {
+            node.fingerprint for node in call_graph.nodes.values() if node.fingerprint
+        }
+    else:
+        meta = build_symbol_metadata(extract_definitions(tree, language), language)
+        definitions = {m["qualified_name"] for m in meta.values()}
+        fingerprints = {m["fingerprint"] for m in meta.values() if m["fingerprint"]}
+
+    return ResourceIndex(
+        definitions=definitions, fingerprints=fingerprints, call_graph=call_graph
     )
 
-    return {
-        "definitions": {metadata["qualified_name"] for metadata in meta.values()},
-        "fingerprints": {
-            metadata["fingerprint"]
-            for metadata in meta.values()
-            if metadata["fingerprint"]
-        },
-        "call_graph": call_graph,
-    }
 
-
-def match_symbols_against_resource(patch_symbols_metadata, resource_index):
+def match_symbols_against_resource(
+    patch_symbols_metadata: dict[str, Any], resource_index: "ResourceIndex"
+) -> dict[str, Any]:
     if not patch_symbols_metadata or not resource_index:
         return {}
 
-    call_graph = resource_index.get("call_graph") or {}
-    imports = call_graph.get("imports", {})
+    call_graph = resource_index.call_graph
+    imports = call_graph.imports if call_graph else {}
+    edges_qualified = call_graph.edges_qualified if call_graph else {}
+
     imported_fq_names = set(imports.values())
 
     target_qualified_names = {
@@ -492,12 +605,12 @@ def match_symbols_against_resource(patch_symbols_metadata, resource_index):
     }
 
     reachable_callers, _ = compute_reachable_symbols(
-        call_graph,
+        edges_qualified,
         target_qualified_names,
     )
 
     called_qualified_names = set()
-    for callees in call_graph.get("edges_qualified", {}).values():
+    for callees in edges_qualified.values():
         called_qualified_names |= set(callees)
 
     matched = {}
@@ -505,9 +618,9 @@ def match_symbols_against_resource(patch_symbols_metadata, resource_index):
         qualified_name = metadata["qualified_name"]
         fingerprint = metadata["fingerprint"]
 
-        defined = qualified_name in resource_index.get("definitions", set())
+        defined = qualified_name in resource_index.definitions
         fingerprint_hit = bool(
-            fingerprint and fingerprint in resource_index.get("fingerprints", set())
+            fingerprint and fingerprint in resource_index.fingerprints
         )
 
         imported = (
@@ -530,8 +643,9 @@ def match_symbols_against_resource(patch_symbols_metadata, resource_index):
         entry = matched.setdefault(
             qualified_name,
             {
-                "defined": False,
+                "symbol_name": qualified_name,
                 "called": False,
+                "defined": False,
                 "imported": False,
                 "fingerprint": None,
                 "reachable_from": [],
@@ -540,15 +654,12 @@ def match_symbols_against_resource(patch_symbols_metadata, resource_index):
 
         if defined:
             entry["defined"] = True
-
         if imported:
             entry["imported"] = True
-
         if called:
             entry["called"] = True
             entry["reachable_from"] = sorted(reachable_callers)
-
-        if fingerprint_hit:
+        if fingerprint:
             entry["fingerprint"] = fingerprint
 
     return matched
@@ -558,8 +669,7 @@ def classify_reachability(evidence):
     if not evidence:
         return ReachabilityStatus.NOT_REACHABLE
 
-    highest_status = ReachabilityStatus.NOT_REACHABLE
-
+    status = ReachabilityStatus.NOT_REACHABLE
     for item in evidence.values():
         is_called = bool(item.get("called"))
         has_path = bool(item.get("reachable_from"))
@@ -571,9 +681,9 @@ def classify_reachability(evidence):
             return ReachabilityStatus.REACHABLE
 
         if (is_imported or is_defined) and not is_exact:
-            highest_status = ReachabilityStatus.POTENTIALLY_REACHABLE
+            status = ReachabilityStatus.POTENTIALLY_REACHABLE
 
-    return highest_status
+    return status
 
 
 def build_symbol_metadata(nodes, language, index=None):
@@ -582,15 +692,12 @@ def build_symbol_metadata(nodes, language, index=None):
 
     metadata = {}
     for node in nodes:
-        if is_nested_function(node, language):
-            continue
-
         qualified_name = qualified_name_from_index(node, index)
         if not qualified_name:
             continue
 
         body_text = node.text.decode("utf-8", errors="replace")
-        fingerprints = create_exact_symbol_fingerprint(body_text)
+        fingerprints = create_sha256_fingerprint(body_text)
 
         key = qualified_name
         suffix = 1
@@ -609,65 +716,15 @@ def build_symbol_metadata(nodes, language, index=None):
     return metadata
 
 
-def build_call_graph(tree, language):
+def build_call_graph(tree, language) -> CallGraph | None:
     if tree is None or not is_supported_language(language):
         return None
 
-    index = collect_definitions(tree.root_node, language)
-    import_map = collect_imports(tree.root_node, language)
-
-    graph_meta = {}
-    for definition in index.values():
-        node = definition["node"]
-        qualified_name = qualified_name_from_index(node, index)
-
-        if not qualified_name:
-            continue
-
-        body_text = node.text.decode("utf-8", errors="replace")
-        fingerprint = create_exact_symbol_fingerprint(body_text)
-        graph_meta[qualified_name] = {
-            "qualified_name": qualified_name,
-            "node": node,
-            "node_type": node.type,
-            "fingerprint": fingerprint,
-        }
-
-    definitions_by_name = {}
-    class_methods = set()
-
-    for qualified_name, metadata in graph_meta.items():
-        name = qualified_name.rsplit(".", 1)[-1]
-        definitions_by_name.setdefault(name, set()).add(qualified_name)
-
-        if metadata["node_type"] == "function_definition" and "." in qualified_name:
-            class_methods.add(qualified_name)
-
-    edges_qualified = {}
-    for qualified_name, metadata in graph_meta.items():
-        direct_calls = extract_direct_calls(metadata["node"], language, index)
-
-        resolved_callees = set()
-        for receiver_name, callee_name in direct_calls:
-            resolved_callees |= resolve_callee(
-                receiver_name=receiver_name,
-                callee_name=callee_name,
-                owner_qn=qualified_name,
-                definitions_by_name=definitions_by_name,
-                class_methods=class_methods,
-                import_map=import_map,
-            )
-
-        edges_qualified[qualified_name] = resolved_callees
-
-    return {
-        "nodes": graph_meta,
-        "edges_qualified": edges_qualified,
-        "imports": import_map,
-    }
+    builder = CallGraphBuilder(tree, language)
+    return builder.build()
 
 
-def extract_direct_calls(node, language, definition_index):
+def extract_direct_calls(node, language):
     """
     Return direct calls inside `node`, excluding calls inside nested definitions.
 
@@ -684,52 +741,28 @@ def extract_direct_calls(node, language, definition_index):
     if query is None or node is None:
         return []
 
-    definition_ids = set(definition_index)
     calls = []
+    definition_types = {"function_definition", "class_definition"}
 
     for _, captures in query.matches(node):
         for callee_node in captures.get("callee", []):
-            if is_inside_nested_definition(
-                node=callee_node,
-                owner_node=node,
-                definition_ids=definition_ids,
-            ):
+            cur = callee_node.parent
+            inside_nested = False
+            while cur is not None and cur.id != node.id:
+                if cur.type in definition_types:
+                    inside_nested = True
+                    break
+                cur = cur.parent
+
+            if inside_nested:
                 continue
 
             receiver_name = get_call_receiver(callee_node)
-            callee_name = node_text(callee_node)
+            callee_name = callee_node.text.decode("utf-8", errors="replace")
 
             if callee_name:
                 calls.append((receiver_name, callee_name))
-
     return calls
-
-
-def is_inside_nested_definition(node, owner_node, definition_ids):
-    """
-    Return True if node is inside a nested function/class within `owner_node`.
-
-    Example:
-        def outer():
-            foo()      # belongs to outer
-
-            def inner():
-                bar()  # nested; should not count as outer's call
-
-    """
-    current = node.parent
-
-    while current is not None and current is not owner_node:
-        if current.id in definition_ids:
-            return True
-
-        current = current.parent
-
-    return False
-
-
-def node_text(node):
-    return node.text.decode("utf-8", errors="replace")
 
 
 def get_call_receiver(callee_node):
@@ -751,50 +784,7 @@ def get_call_receiver(callee_node):
     if object_node is None:
         return None
 
-    return node_text(object_node)
-
-
-def resolve_callee(
-    receiver_name,
-    callee_name,
-    owner_qn,
-    definitions_by_name,
-    class_methods,
-    import_map=None,
-):
-    import_map = import_map or {}
-
-    if receiver_name == "self":
-        owner_class = get_owner_class_name(owner_qn)
-        if owner_class:
-            method_qn = f"{owner_class}.{callee_name}"
-            if method_qn in class_methods:
-                return {method_qn}
-
-    if callee_name in import_map:
-        return {import_map[callee_name]}
-
-    if receiver_name is not None and receiver_name in import_map:
-        base = import_map[receiver_name]
-        return {f"{base}.{callee_name}"}
-
-    return set(definitions_by_name.get(callee_name, set()))
-
-
-def get_owner_class_name(owner_qn):
-    """
-    Return enclosing class name from a qualified name.
-
-    Examples:
-        "User.save"       -> "User"
-        "User.Inner.save" -> "User.Inner"
-        "save"            -> None
-
-    """
-    if "." not in owner_qn:
-        return None
-
-    return owner_qn.rsplit(".", 1)[0]
+    return object_node.text.decode("utf-8", errors="replace")
 
 
 def compute_reachable_symbols(call_graph, target_qualified_names):
@@ -828,46 +818,141 @@ def compute_reachable_symbols(call_graph, target_qualified_names):
     return reachable, bool(direct)
 
 
-def collect_imports(root_node, language: str):
-    """
-    Return a dict mapping local names/aliases to their absolute import path.
+def get_imports_language_config(language: str) -> dict:
+    configs = {
+        "Python": {"self_keyword": "self", "separator": ".", "wildcard_symbol": "*"},
+        "Javascript": {
+            "self_keyword": "this",
+            "separator": ".",
+            "wildcard_symbol": "*",
+        },
+        "Java": {"self_keyword": "this", "separator": ".", "wildcard_symbol": "*"},
+        "C++": {"self_keyword": "this", "separator": "::", "wildcard_symbol": None},
+        "PHP": {"self_keyword": "$this", "separator": "::", "wildcard_symbol": None},
+        "Go": {"self_keyword": None, "separator": "/", "wildcard_symbol": None},
+        "Ruby": {"self_keyword": "self", "separator": "::", "wildcard_symbol": None},
+    }
+    return configs.get(
+        language, {"self_keyword": None, "separator": ".", "wildcard_symbol": None}
+    )
 
-    Examples:
-    'from django.db import models' -> {'models': 'django.db.models'}
-    'import os.path' -> {'os.path': 'os.path'}
-    'import numpy as np' -> {'np': 'numpy'}
-    'from a.b import c as d' -> {'d': 'a.b.c'}
 
+def resolve_callee(
+    receiver_name: str | None,
+    callee_name: str,
+    owner_qn: str,
+    definitions_by_name: dict[str, set[str]],
+    class_methods: set[str],
+    language: str,
+    import_map: dict | None = None,
+) -> set[str]:
+    config = get_imports_language_config(language)
+    sep = config["separator"]
+    self_kw = config["self_keyword"]
+    import_map = import_map or {}
+
+    if receiver_name:
+        receiver_name = receiver_name.strip("'\"")
+    if callee_name:
+        callee_name = callee_name.strip("'\"")
+
+    if self_kw is not None and receiver_name == self_kw:
+        owner_class = owner_qn.rsplit(sep, 1)[0] if sep in owner_qn else owner_qn
+        return {f"{owner_class}{sep}{callee_name}"}
+
+    if callee_name in import_map:
+        return {import_map[callee_name]}
+
+    if receiver_name is not None and receiver_name != self_kw:
+        candidates = set()
+
+        if receiver_name in import_map and receiver_name != "*":
+            base = import_map[receiver_name]
+            candidates.add(f"{base}{sep}{callee_name}")
+
+        static_fqn = f"{receiver_name}{sep}{callee_name}"
+        if static_fqn in class_methods:
+            candidates.add(static_fqn)
+
+        return candidates
+
+    local_defs = definitions_by_name.get(callee_name, set())
+    if local_defs:
+        return local_defs
+
+    if "*" in import_map:
+        return {f"{mod}{sep}{callee_name}" for mod in import_map["*"]}
+
+    return set()
+
+
+def collect_imports(root_node, language: str) -> dict[str, str | list[str]]:
     """
-    import_map = {}
+    Extract import statements from a Tree-sitter AST and map every local alias to its absolute imported path.
+    """
+    config = get_imports_language_config(language)
+    separator = config["separator"]
+    wildcard_sym = config.get("wildcard_symbol")
+
     query = get_query(language, "imports")
     if not query or not root_node:
-        return import_map
+        return {}
+
+    import_map: dict[str, str | list[str]] = {}
+    wildcard_modules: list[str] = []
 
     for _pattern_index, captures in query.matches(root_node):
-        module_name = None
-        import_name = None
-        alias = None
+        flat_captures = []
+        for tag, nodes in captures.items():
+            for n in nodes:
+                flat_captures.append(
+                    (
+                        n.start_byte,
+                        tag,
+                        n.text.decode("utf-8", errors="replace").strip("'\""),
+                    )
+                )
 
-        for node_name, nodes in captures.items():
-            if not nodes:
+        flat_captures.sort(key=lambda x: x[0])
+
+        module_name = None
+        current_import = None
+        pairs = []
+
+        for _, tag, text in flat_captures:
+            if tag == "module_name":
+                module_name = text
+            elif tag == "import_name":
+                if current_import is not None:
+                    pairs.append((current_import, None))
+                current_import = text
+            elif tag == "alias":
+                pairs.append((current_import, text))
+                current_import = None
+
+        if current_import is not None:
+            pairs.append((current_import, None))
+
+        for imp_name, alias in pairs:
+            if not imp_name:
                 continue
 
-            text = nodes[0].text.decode("utf-8", errors="replace")
-            if node_name == "module_name":
-                module_name = text
-            elif node_name == "import_name":
-                import_name = text
-            elif node_name == "alias":
-                alias = text
+            if wildcard_sym is not None and imp_name == wildcard_sym:
+                if module_name:
+                    wildcard_modules.append(module_name)
+                continue
 
-        if not import_name:
-            continue
+            local_name = alias or imp_name
 
-        local_name = alias or import_name
-        if module_name:
-            import_map[local_name] = f"{module_name}.{import_name}"
-        else:
-            import_map[local_name] = import_name
+            if not alias and separator in imp_name:
+                local_name = imp_name.split(separator)[0]
+
+            absolute_path = (
+                f"{module_name}{separator}{imp_name}" if module_name else imp_name
+            )
+            import_map[local_name] = absolute_path
+
+    if wildcard_modules:
+        import_map["*"] = wildcard_modules
 
     return import_map

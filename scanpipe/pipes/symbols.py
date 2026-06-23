@@ -207,19 +207,23 @@ TS_QUERIES = {
                 attribute: (identifier) @callee))
         """,
         "imports": """
-            (import_statement name: (dotted_name) @import_name)
-            (import_statement
-                name: (aliased_import
-                    name: (dotted_name) @import_name
-                    alias: (identifier) @alias))
+            (import_statement name: [
+                (dotted_name) @import_name
+                (aliased_import name: (dotted_name) @import_name alias: (identifier) @alias)
+            ])
+
+            ; Combine explicit, relative, aliased, and wildcard from_imports
             (import_from_statement
-                module_name: (dotted_name) @module_name
-                name: (dotted_name) @import_name)
-            (import_from_statement
-                module_name: (dotted_name) @module_name
-                name: (aliased_import
+                module_name: [
+                    (dotted_name) @module_name
+                    (relative_import) @module_name
+                ]
+                [
                     name: (dotted_name) @import_name
-                    alias: (identifier) @alias))
+                    name: (aliased_import name: (dotted_name) @import_name alias: (identifier) @alias)
+                    (wildcard_import) @import_name
+                ]
+            )
         """,
     },
 }
@@ -274,59 +278,10 @@ def run_query(query: Query, root_node):
         yield def_nodes[0], name
 
 
-def query_captures(language, kind, node):
-    """Re-run a definition query on the root of node's tree."""
-    query = get_query(language, kind)
-    return list(run_query(query, _root_of(node)))
-
-
 def _root_of(node):
     while node.parent is not None:
         node = node.parent
     return node
-
-
-def is_nested_function(node, language):
-    function_nodes = {
-        captured_node
-        for captured_node, _ in query_captures(language, "functions", node)
-    }
-    class_nodes = {
-        captured_node for captured_node, _ in query_captures(language, "classes", node)
-    }
-
-    if node not in function_nodes:
-        return False
-
-    function_types = {captured_node.type for captured_node in function_nodes}
-    class_types = {captured_node.type for captured_node in class_nodes}
-
-    parent = node.parent
-
-    while parent is not None:
-        if parent.type in function_types:
-            return True
-
-        if parent.type in class_types:
-            return False
-
-        parent = parent.parent
-
-    return False
-
-
-def extract_calls_in_node(node, language: str):
-    query = get_query(language, "calls")
-    if query is None or node is None:
-        return set()
-
-    names = set()
-    for _pattern_index, captures in query.matches(node):
-        for callee_node in captures.get("callee", []):
-            name = callee_node.text.decode("utf-8", errors="replace")
-            if name:
-                names.add(name)
-    return names
 
 
 def collect_definitions(root_node, language: str):
@@ -381,7 +336,7 @@ def qualified_name_from_index(node, index):
     return ".".join(reversed(parts))
 
 
-def create_exact_symbol_fingerprint(text):
+def create_sha256_fingerprint(text):
     if text is None:
         return None
 
