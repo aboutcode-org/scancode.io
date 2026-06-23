@@ -107,23 +107,36 @@ class SymbolReachabilityPipesTest(TestCase):
         self.assertEqual(
             results,
             {
-                "patch": {
-                    "vcs_url": "https://github.com/aboutcode-org/test",
-                    "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
-                },
-                "evidence": {
-                    "serve_report": {
-                        "called": False,
-                        "defined": True,
-                        "imported": False,
-                        "fingerprint": "d7675efb263896da2a3c0067951183"
-                        "3553907e7e6ea619115a6dfc8625c3457e",
-                        "reachable_from": [],
-                    }
-                },
-                "fixed_symbols": ["serve_report"],
-                "vulnerable_symbols": ["serve_report"],
-                "reachability_status": "REACHABLE",
+                "symbols_reachability": {
+                    "patch": {
+                        "vcs_url": "https://github.com/aboutcode-org/test",
+                        "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
+                    },
+                    "evidence": [
+                        {
+                            "called": False,
+                            "defined": True,
+                            "imported": False,
+                            "fingerprint": "d7675efb263896da2a3c00679511833553907e7e6ea619115a6dfc8625c3457e",
+                            "symbol_name": "serve_report",
+                            "reachable_from": [],
+                        },
+                        {
+                            "called": False,
+                            "defined": True,
+                            "imported": False,
+                            "fingerprint": "762e4f7d03b1bf4359c3ca364e558140239913bfabcc5aa77156460c2eb0a355",
+                            "symbol_name": "serve_report.build_file_path",
+                            "reachable_from": [],
+                        },
+                    ],
+                    "fixed_symbols": ["serve_report", "serve_report.build_file_path"],
+                    "vulnerable_symbols": [
+                        "serve_report",
+                        "serve_report.build_file_path",
+                    ],
+                    "reachability_status": "REACHABLE",
+                }
             },
         )
 
@@ -479,6 +492,9 @@ from django.db import models
 import os.path
 import numpy as np
 from a.b import c as d
+from . import utils
+from ..core import engine
+from math import *
         """.strip()
 
         tree, _ = parse_code_to_ast(source_code, "Python")
@@ -487,10 +503,14 @@ from a.b import c as d
 
         expected_map = {
             "models": "django.db.models",
-            "os.path": "os.path",
+            "os": "os.path",
             "np": "numpy",
             "d": "a.b.c",
+            "utils": "..utils",
+            "engine": "..core.engine",
+            "*": ["math"],
         }
+
         self.assertEqual(result, expected_map)
 
     def test_extract_direct(self):
@@ -506,5 +526,8 @@ def clean_function():
         tree, _ = parse_code_to_ast(source_code, "Python")
         functions = extract_definitions(tree, "Python", kinds=("functions",))
 
-        result = extract_direct_calls(functions[1], "Python", [])
-        self.assertEqual(result, [(None, "hello")])
+        result = extract_direct_calls(functions[1], "Python")
+        self.assertEqual(
+            result,
+            [(None, "hello")],
+        )
