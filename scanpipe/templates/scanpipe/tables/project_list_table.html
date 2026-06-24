@@ -1,6 +1,6 @@
 {% load humanize %}
 {% now "Y-m-d" as today %}
-<table class="table is-bordered is-striped is-hoverable is-fullwidth">
+<table class="table is-bordered is-striped is-hoverable is-fullwidth is-rounded-table">
   {% include 'scanpipe/includes/list_view_thead.html' with select_all=True %}
   <tbody>
   {% for project in projects %}
@@ -31,7 +31,7 @@
             {{ project.package_count|intcomma }}
           </a>
         {% else %}
-          <span>0</span>
+          <span class="has-text-grey-light">-</span>
         {% endif %}
       </td>
       <td>
@@ -45,7 +45,7 @@
             </span>
           </a>
         {% else %}
-          <span>0</span>
+          <span class="has-text-grey-light">-</span>
         {% endif %}
       </td>
       <td>
@@ -61,7 +61,7 @@
             </a>
           {% endif %}
         {% else %}
-          <span>0</span>
+          <span class="has-text-grey-light">-</span>
         {% endif %}
       </td>
       <td>
@@ -70,7 +70,7 @@
             {{ project.message_count|intcomma }}
           </a>
         {% else %}
-          <span>0</span>
+          <span class="has-text-grey-light">-</span>
         {% endif %}
       </td>
       <td class="break-word">

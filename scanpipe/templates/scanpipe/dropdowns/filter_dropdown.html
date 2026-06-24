@@ -1,8 +1,8 @@
 <div class="dropdown is-right is-hoverable">
   <div class="dropdown-trigger">
-    <button class="button is-smaller" aria-haspopup="true">
+    <button class="button is-smaller{% if check_active and filter_form_field.value %} is-link is-light{% endif %}" aria-haspopup="true">
       {% if icon_class %}
-        <span class="icon has-text-grey">
+        <span class="icon {% if check_active and filter_form_field.value %}has-text-link{% else %}has-text-grey{% endif %}">
           <i class="{{ icon_class }}"></i>
         </span>
       {% endif %}

@@ -7,17 +7,19 @@
       {% endblock %}
     </div>
   {% endif %}
-  <div>
-    {% if page_obj.has_previous %}
-      <a class="previous-page" href="?page={{ page_obj.previous_page_number }}{% if url_params_without_page %}&{{ url_params_without_page }}{% endif %}">&laquo;</a>
-    {% else %}
-      <span>&laquo;</span>
+  {% if page_obj.has_previous or page_obj.has_next %}
+    <div>
+      {% if page_obj.has_previous %}
+        <a class="previous-page" href="?page={{ page_obj.previous_page_number }}{% if url_params_without_page %}&{{ url_params_without_page }}{% endif %}">&laquo;</a>
+      {% else %}
+        <span>&laquo;</span>
+      {% endif %}
+      Page {{ page_obj.number|intcomma }} of {{ page_obj.paginator.num_pages|intcomma }}
+      {% if page_obj.has_next %}
+        <a class="next-page" href="?page={{ page_obj.next_page_number }}{% if url_params_without_page %}&{{ url_params_without_page }}{% endif %}">&raquo;</a>
+      {% else %}
+        <span>&raquo;</span>
+      {% endif %}
+    </div>
     {% endif %}
-    Page {{ page_obj.number|intcomma }} of {{ page_obj.paginator.num_pages|intcomma }}
-    {% if page_obj.has_next %}
-      <a class="next-page" href="?page={{ page_obj.next_page_number }}{% if url_params_without_page %}&{{ url_params_without_page }}{% endif %}">&raquo;</a>
-    {% else %}
-      <span>&raquo;</span>
-    {% endif %}
-  </div>
 </div>

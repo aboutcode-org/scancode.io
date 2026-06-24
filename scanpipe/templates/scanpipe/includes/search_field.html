@@ -3,7 +3,7 @@
     {% include "scanpipe/dropdowns/list_actions_dropdown.html" %}
   {% endif %}
   <form method="get">
-    <p class="control has-icons-left">
+    <p class="control has-icons-left is-small">
       <input class="input {{ extra_class }}" type="search" placeholder="{% if placeholder %}{{ placeholder }}{% else %}Search {{ filter.verbose_name_plural }}{% endif %}" name="{{ filter.form.search.html_name }}" value="{{ filter.form.search.value|default_if_none:'' }}">
       <span class="icon is-small is-left">
         <i class="fa-solid fa-search"></i>

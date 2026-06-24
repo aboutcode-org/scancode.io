@@ -19,20 +19,20 @@
           {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
         </div>
         <div class="has-text-right">
-          <a href="{% url 'project_add' %}" class="button is-smaller is-link" style="height:fit-content;">New Project</a>
           {% include 'scanpipe/includes/pagination_header.html' with hide_results_count=True %}
         </div>
       </div>
 
       <div class="is-flex mb-3">
-        <div class="is-flex-grow-1 mr-2">
+        <div class="is-flex-grow-1 mr-4">
           {% include 'scanpipe/includes/search_field.html' with extra_class="is-smaller" hide_help=True %}
         </div>
-        <div>
-          {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.pipeline icon_class='fa-solid fa-filter' only %}
-          {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.status icon_class='fa-solid fa-filter' only %}
+        <div class="is-flex is-align-items-center is-gap-2">
+          {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.pipeline icon_class='fa-solid fa-filter' check_active=True only %}
+          {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.status icon_class='fa-solid fa-filter' check_active=True only %}
           {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.sort icon_class='fa-solid fa-sort' only %}
           {% include 'scanpipe/dropdowns/project_actions_dropdown.html' %}
+          <a href="{% url 'project_add' %}" class="button is-smaller is-link">New Project</a>
         </div>
       </div>
 

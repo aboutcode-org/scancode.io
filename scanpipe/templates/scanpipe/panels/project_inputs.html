@@ -59,14 +59,18 @@
       </div>
     </div>
   {% endfor %}
-  <div class="panel-block">
-    {% if project.can_change_inputs %}
+  {% if project.can_change_inputs %}
+    <div class="panel-block">
       <button class="button is-link {% if input_sources %}is-outlined{% endif %} is-fullwidth modal-button" data-target="add-inputs-modal" aria-haspopup="true">Add inputs</button>
       {% include "scanpipe/modals/add_inputs_modal.html" %}
-    {% else %}
-      <button class="button is-link is-outlined is-fullwidth" disabled>Add inputs</button>
-    {% endif %}
-  </div>
+    </div>
+  {% else %}
+    <div class="panel-block has-tooltip is-relative"
+      data-title="{% if project.is_archived %}This project is archived.{% else %}A pipeline has already started. Inputs cannot be modified.{% endif %}"
+      data-tooltip-position="top center">
+      <button class="button is-link is-outlined is-fullwidth" aria-disabled="true" disabled>Add inputs</button>
+    </div>
+  {% endif %}
 </article>
 {% if project.can_change_inputs %}
   {% include 'scanpipe/modals/project_inputs_delete_modal.html' %}
