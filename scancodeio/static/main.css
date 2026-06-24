@@ -222,17 +222,31 @@ thead.is-sticky {
   top: -1px;
   z-index: 19;
   background-color: var(--bulma-table-striped-row-even-background-color);
-  box-shadow: 0 2px 0 var(--bulma-border);
+  box-shadow: 0 1px 0 var(--bulma-border);
 }
-.is-rounded-table {
+table.is-rounded-table {
+  border-collapse: separate;
+  border-spacing: 0;
   border-radius: var(--bulma-radius);
-  overflow: hidden;
+  overflow: clip;
   box-shadow: 0 0 0 1px var(--bulma-border);
 }
-.is-rounded-table .table > * > tr > *:first-child { border-left-width: 0; }
-.is-rounded-table .table > * > tr > *:last-child { border-right-width: 0; }
-.is-rounded-table .table > *:first-child > tr:first-child > * { border-top-width: 0; }
-.is-rounded-table .table > *:last-child > tr:last-child > * { border-bottom-width: 0; }
+table.is-rounded-table.is-bordered td,
+table.is-rounded-table.is-bordered th {
+  border-width: 0 1px 1px 0;
+}
+table.is-rounded-table.is-bordered tr td:last-child,
+table.is-rounded-table.is-bordered tr th:last-child {
+  border-right-width: 0;
+}
+table.is-rounded-table.is-bordered > *:last-child > tr:last-child > td,
+table.is-rounded-table.is-bordered > *:last-child > tr:last-child > th {
+  border-bottom-width: 0;
+}
+table.is-rounded-table.is-bordered > thead > tr:last-child > th,
+table.is-rounded-table.is-bordered > thead > tr:last-child > td {
+  border-bottom-width: 1px;
+}
 #column-runs {
   min-width: 280px;
 }
