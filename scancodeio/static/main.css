@@ -224,6 +224,15 @@ thead.is-sticky {
   background-color: var(--bulma-table-striped-row-even-background-color);
   box-shadow: 0 2px 0 var(--bulma-border);
 }
+.is-rounded-table {
+  border-radius: var(--bulma-radius);
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--bulma-border);
+}
+.is-rounded-table .table > * > tr > *:first-child { border-left-width: 0; }
+.is-rounded-table .table > * > tr > *:last-child { border-right-width: 0; }
+.is-rounded-table .table > *:first-child > tr:first-child > * { border-top-width: 0; }
+.is-rounded-table .table > *:last-child > tr:last-child > * { border-bottom-width: 0; }
 #column-runs {
   min-width: 280px;
 }
