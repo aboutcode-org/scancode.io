@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from pathlib import Path
+from unittest.mock import PropertyMock
 from unittest.mock import patch
 
 from django.test import TestCase
@@ -36,7 +37,7 @@ from scanpipe.pipes.reachability import collect_imports
 from scanpipe.pipes.reachability import compute_reachable_symbols
 from scanpipe.pipes.reachability import diff_changed_symbols
 from scanpipe.pipes.reachability import extract_direct_calls
-from scanpipe.pipes.reachability import get_changed_lines
+from scanpipe.pipes.reachability import parse_diff_lines
 from scanpipe.pipes.symbols import collect_definitions
 from scanpipe.pipes.symbols import extract_definitions
 from scanpipe.pipes.symbols import extract_symbols
@@ -51,31 +52,41 @@ class SymbolReachabilityPipesTest(TestCase):
         self.project1 = Project.objects.create(name="Analysis")
         self.project1.codebase_path.mkdir(parents=True, exist_ok=True)
 
-    @patch("scanpipe.pipes.reachability.Repo")
     @patch("scanpipe.pipes.reachability.clone_repo")
-    @patch("scanpipe.pipes.reachability.api_mocker")
     @patch("scanpipe.pipes.reachability.collect_patch_symbols")
+    @patch.object(Project, "package_vulnerabilities", new_callable=PropertyMock)
     def test_collect_and_store_symbol_reachability_results(
-        self, mock_collect_symbols, mock_api, mock_clone_repo, mock_repo
+        self,
+        mock_package_vulnerabilities,
+        mock_collect_symbols,
+        mock_clone_repo,
     ):
         app_text = (self.data / "app.py").read_text()
         vuln_text = (self.data / "vuln-app.py").read_text()
         fixed_text = (self.data / "fixed-app.py").read_text()
         diff_text = (self.data / "diff-app.patch").read_text()
+        diff_line_map = parse_diff_lines(diff_text=diff_text)
+        file_path = "app.py"
+        removed_lines, added_lines = diff_line_map.get(file_path, ([], []))
 
         vuln_meta, fixed_meta, lang = analyze_patched_file(
             vulnerable_text=vuln_text,
             fixed_text=fixed_text,
-            diff_text=diff_text,
-            file_path="app.py",
+            removed_lines=removed_lines,
+            added_lines=added_lines,
+            file_path=file_path,
         )
 
         self.assertTrue(lang)
         self.assertTrue(vuln_meta or fixed_meta)
-        mock_api.return_value = [
+        mock_package_vulnerabilities.return_value = [
             {
-                "vcs_url": "https://github.com/aboutcode-org/test",
-                "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
+                "fixed_in_patches": [
+                    {
+                        "vcs_url": "https://github.com/aboutcode-org/test",
+                        "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
+                    }
+                ]
             }
         ]
 
@@ -99,7 +110,8 @@ class SymbolReachabilityPipesTest(TestCase):
         resource.programming_language = lang
         resource.save()
 
-        collect_and_store_symbol_reachability_results(self.project1)
+        with patch("scanpipe.pipes.reachability.Repo"):
+            collect_and_store_symbol_reachability_results(self.project1)
 
         resource.refresh_from_db()
         results = resource.extra_data.get("symbols_reachability")
@@ -114,19 +126,20 @@ class SymbolReachabilityPipesTest(TestCase):
                     },
                     "evidence": [
                         {
+                            "symbol_name": "serve_report",
                             "called": False,
                             "defined": True,
                             "imported": False,
                             "fingerprint": "d7675efb263896da2a3c00679511833553907e7e6ea619115a6dfc8625c3457e",
-                            "symbol_name": "serve_report",
                             "reachable_from": [],
                         },
                         {
-                            "called": False,
+                            "symbol_name": "serve_report.build_file_path",
+                            "called": True,
                             "defined": True,
                             "imported": False,
-                            "fingerprint": "762e4f7d03b1bf4359c3ca364e558140239913bfabcc5aa77156460c2eb0a355",
-                            "symbol_name": "serve_report.build_file_path",
+                            "fingerprint": "762e4f7d03b1bf4359c3ca364e5581402"
+                            "39913bfabcc5aa77156460c2eb0a355",
                             "reachable_from": [],
                         },
                     ],
@@ -239,14 +252,6 @@ class FleetManagement:
             ReachabilityStatus.NOT_REACHABLE,
         )
 
-    def test_get_changed_lines(self):
-        data = Path(__file__).parent.parent / "data" / "reachability"
-        diff_text = (data / "diff-app.patch").read_text(encoding="utf-8")
-
-        removed, added = get_changed_lines(diff_text, "app.py")
-        self.assertEqual(removed, [17, 18, 19, 24])
-        self.assertEqual(added, [17, 18, 19, 20, 21, 22, 27, 28, 29, 30])
-
     def test_build_symbol_metadata_processing(self):
         source_code = """
 class Controller:
@@ -268,21 +273,24 @@ if True:
             {
                 "Controller.process_data": {
                     "qualified_name": "Controller.process_data",
-                    "text": "def process_data(payload):\n"
-                    "        def inner_helper():\n"
-                    "            return True\n"
-                    "        return payload.strip()",
-                    "fingerprint": "b0d0ad9a92209a6d79b84e932ce302"
-                    "a8bc9054a405131adf7dc21e06e2e7c0c1",
+                    "text": "def process_data(payload):\n        def inner_helper():\n            return True\n        return payload.strip()",
+                    "fingerprint": "b0d0ad9a92209a6d79b84e932ce302a8bc9054a405131adf7dc21e06e2e7c0c1",
                     "start_line": 3,
                     "end_line": 6,
+                    "node_type": "function_definition",
+                },
+                "Controller.process_data.inner_helper": {
+                    "qualified_name": "Controller.process_data.inner_helper",
+                    "text": "def inner_helper():\n            return True",
+                    "fingerprint": "ee2e246e01e960826cb39a9466e58095d209fdd1cbf8458630be430b3371d6a3",
+                    "start_line": 4,
+                    "end_line": 5,
                     "node_type": "function_definition",
                 },
                 "process_data": {
                     "qualified_name": "process_data",
                     "text": "def process_data(payload):\n        return payload",
-                    "fingerprint": "9b2797712c9ab60ea8452a441396"
-                    "5c94d1b2f63739cab7de695e7b1dc0cf439a",
+                    "fingerprint": "9b2797712c9ab60ea8452a4413965c94d1b2f63739cab7de695e7b1dc0cf439a",
                     "start_line": 9,
                     "end_line": 10,
                     "node_type": "function_definition",
@@ -359,11 +367,15 @@ if True:
         vuln_text = (self.data / "vuln-app.py").read_text(encoding="utf-8")
         fixed_text = (self.data / "fixed-app.py").read_text(encoding="utf-8")
         diff_text = (self.data / "diff-app.patch").read_text(encoding="utf-8")
+        diff_line_map = parse_diff_lines(diff_text=diff_text)
+        file_path = "app.py"
+        removed_lines, added_lines = diff_line_map.get(file_path, ([], []))
 
         vuln_meta, fixed_meta, lang = analyze_patched_file(
             vulnerable_text=vuln_text,
             fixed_text=fixed_text,
-            diff_text=diff_text,
+            removed_lines=removed_lines,
+            added_lines=added_lines,
             file_path="app.py",
         )
 
@@ -379,8 +391,7 @@ if True:
                     "    # Helper function nested inside serve_report\n"
                     "    def build_file_path(filename):\n"
                     "        # VULNERABLE: Direct concatenation allows Path Traversal\n"
-                    '        # An attacker passing "../../etc/passwd"'
-                    " could read system files.\n"
+                    '        # An attacker passing "../../etc/passwd" could read system files.\n'
                     "        return os.path.join(generator.base_dir, filename)\n\n"
                     "    if not requested_file:\n"
                     '        return "Error: No file specified"\n\n'
@@ -388,12 +399,23 @@ if True:
                     "    if os.path.exists(target_path):\n"
                     '        return f"Serving content of {target_path}"\n\n'
                     '    return "Error: File not found"',
-                    "fingerprint": "d7675efb263896da2a3c0067951183"
-                    "3553907e7e6ea619115a6dfc8625c3457e",
+                    "fingerprint": "d7675efb263896da2a3c006795118"
+                    "33553907e7e6ea619115a6dfc8625c3457e",
                     "start_line": 11,
                     "end_line": 30,
                     "node_type": "function_definition",
-                }
+                },
+                "serve_report.build_file_path": {
+                    "qualified_name": "serve_report.build_file_path",
+                    "text": "def build_file_path(filename):\n"
+                    "        # VULNERABLE: Direct concatenation allows Path Traversal\n"
+                    '        # An attacker passing "../../etc/passwd" could read system files.\n'
+                    "        return os.path.join(generator.base_dir, filename)",
+                    "fingerprint": "762e4f7d03b1bf4359c3ca364e558140239913bfabcc5aa77156460c2eb0a355",
+                    "start_line": 17,
+                    "end_line": 20,
+                    "node_type": "function_definition",
+                },
             },
         )
 
@@ -404,32 +426,20 @@ if True:
                     "qualified_name": "serve_report",
                     "text": "def serve_report(request_payload):\n"
                     '    """Top-level function handling a request."""\n'
-                    '    generator = ReportGenerator("/var/reports")\n'
-                    '    requested_file = request_payload.get("file")\n\n'
-                    "    # Helper function nested inside serve_report\n"
-                    "    def build_file_path(filename):\n"
-                    "        # FIXED: Validate that the resolved"
-                    " path stays within the base_dir\n"
-                    "        base = os.path.abspath(generator.base_dir)\n"
-                    "        target = os.path.abspath(os.path.join(base, filename))\n"
-                    "        if not target.startswith(base):\n"
-                    '            raise ValueError("Path Traversal Detected")\n'
-                    "        return target\n\n"
-                    "    if not requested_file:\n "
-                    '       return "Error: No file specified"\n\n'
-                    "    try:\n"
-                    "        target_path = build_file_path(requested_file)\n"
-                    "    except ValueError:\n"
-                    '        return "Error: Invalid path"\n\n '
-                    "   if os.path.exists(target_path):\n"
-                    '        return f"Serving content of {target_path}"\n\n'
-                    '    return "Error: File not found"',
-                    "fingerprint": "2deedb21d5f9b1409c59f0b1e5512d7"
-                    "3d9afdfc3f469ccf86e8835915d240e76",
+                    '    generator = ReportGenerator("/var/reports")\n    requested_file = request_payload.get("file")\n\n    # Helper function nested inside serve_report\n    def build_file_path(filename):\n        # FIXED: Validate that the resolved path stays within the base_dir\n        base = os.path.abspath(generator.base_dir)\n        target = os.path.abspath(os.path.join(base, filename))\n        if not target.startswith(base):\n            raise ValueError("Path Traversal Detected")\n        return target\n\n    if not requested_file:\n        return "Error: No file specified"\n\n    try:\n        target_path = build_file_path(requested_file)\n    except ValueError:\n        return "Error: Invalid path"\n\n    if os.path.exists(target_path):\n        return f"Serving content of {target_path}"\n\n    return "Error: File not found"',
+                    "fingerprint": "2deedb21d5f9b1409c59f0b1e5512d73d9afdfc3f469ccf86e8835915d240e76",
                     "start_line": 11,
                     "end_line": 36,
                     "node_type": "function_definition",
-                }
+                },
+                "serve_report.build_file_path": {
+                    "qualified_name": "serve_report.build_file_path",
+                    "text": 'def build_file_path(filename):\n        # FIXED: Validate that the resolved path stays within the base_dir\n        base = os.path.abspath(generator.base_dir)\n        target = os.path.abspath(os.path.join(base, filename))\n        if not target.startswith(base):\n            raise ValueError("Path Traversal Detected")\n        return target',
+                    "fingerprint": "646743b5d5497f6ea3b96f860bcbeb38096ce008ad16d2b9a9c3f77a98faca80",
+                    "start_line": 17,
+                    "end_line": 23,
+                    "node_type": "function_definition",
+                },
             },
         )
 

@@ -182,58 +182,6 @@ def get_changed_files(parent_commit, commit):
     return files
 
 
-def get_changed_lines(diff_text, file_path):
-    """
-    Return `(removed_lines, added_lines)` for one file.
-
-    For pure-insertion hunks (no removed lines) we anchor the vulnerable side
-    to the hunk's source location so the enclosing old symbol is still found.
-    For pure-deletion hunks we do the mirror image on the added side.
-    """
-    removed = []
-    added = []
-
-    if not diff_text:
-        return removed, added
-
-    for patched_file in PatchSet.from_string(diff_text):
-        candidates = {
-            patched_file.path,
-            (patched_file.source_file or "").removeprefix("a/"),
-            (patched_file.target_file or "").removeprefix("b/"),
-        }
-        if file_path not in candidates:
-            continue
-
-        for hunk in patched_file:
-            hunk_removed = [
-                line.source_line_no
-                for line in hunk
-                if line.is_removed and line.source_line_no
-            ]
-            hunk_added = [
-                line.target_line_no
-                for line in hunk
-                if line.is_added and line.target_line_no
-            ]
-
-            # Pure insertion: nothing removed -> anchor old side to the
-            # line just before the insertion point in the source file.
-            if hunk_added and not hunk_removed:
-                anchor = max(hunk.source_start, 1)
-                hunk_removed = [anchor]
-
-            # Pure deletion: nothing added -> anchor new side similarly.
-            if hunk_removed and not hunk_added:
-                anchor = max(hunk.target_start, 1)
-                hunk_added = [anchor]
-
-            removed.extend(hunk_removed)
-            added.extend(hunk_added)
-
-    return removed, added
-
-
 def diff_changed_symbols(vuln_meta, fixed_meta):
     """
     Keep only symbols whose body actually differs between vulnerable and fixed
@@ -254,7 +202,9 @@ def diff_changed_symbols(vuln_meta, fixed_meta):
     return vuln_only, fixed_only
 
 
-def analyze_patched_file(vulnerable_text, fixed_text, diff_text, file_path):
+def analyze_patched_file(
+    vulnerable_text, fixed_text, removed_lines, added_lines, file_path
+):
     """
     Return `(vuln_metadata, fixed_metadata, language)` for one changed file,
     restricted to symbols actually touched by the patch.
@@ -282,8 +232,6 @@ def analyze_patched_file(vulnerable_text, fixed_text, diff_text, file_path):
     if vuln_tree is None and fixed_tree is None:
         return {}, {}, language
 
-    removed_lines, added_lines = get_changed_lines(diff_text, file_path)
-
     vuln_nodes = (
         extract_symbols(vuln_tree, removed_lines, language) if vuln_tree else []
     )
@@ -298,6 +246,57 @@ def analyze_patched_file(vulnerable_text, fixed_text, diff_text, file_path):
     )
 
     return vuln_meta, fixed_meta, language
+
+
+def parse_diff_lines(diff_text) -> dict[str, tuple[list[int], list[int]]]:
+    """
+    Parses the entire unified diff text once and maps each file path to its tuple of (removed_lines, added_lines).
+    """
+    diff_map = {}
+    if not diff_text:
+        return diff_map
+
+    for patched_file in PatchSet.from_string(diff_text):
+        removed = []
+        added = []
+
+        for hunk in patched_file:
+            hunk_removed = [
+                line.source_line_no
+                for line in hunk
+                if line.is_removed and line.source_line_no
+            ]
+            hunk_added = [
+                line.target_line_no
+                for line in hunk
+                if line.is_added and line.target_line_no
+            ]
+
+            # Pure insertion anchor
+            if hunk_added and not hunk_removed:
+                anchor = max(hunk.source_start, 1)
+                hunk_removed = [anchor]
+
+            # Pure deletion anchor
+            if hunk_removed and not hunk_added:
+                anchor = max(hunk.target_start, 1)
+                hunk_added = [anchor]
+
+            removed.extend(hunk_removed)
+            added.extend(hunk_added)
+
+        # Register the line tracking data against all naming variations of this file
+        candidates = {
+            patched_file.path,
+            (patched_file.source_file or "").removeprefix("a/"),
+            (patched_file.target_file or "").removeprefix("b/"),
+        }
+
+        for candidate in candidates:
+            if candidate:
+                diff_map[candidate] = (removed, added)
+
+    return diff_map
 
 
 def collect_patch_symbols(repo, commit_hash):
@@ -319,17 +318,21 @@ def collect_patch_symbols(repo, commit_hash):
 
     """
     commit, parent = get_commit_and_parent(repo=repo, commit_hash=commit_hash)
-    diff_text = get_commit_diff_text(repo, parent, commit)
-    changed = get_changed_files(parent, commit)
+    diff_text = get_commit_diff_text(repo=repo, parent_commit=parent, commit=commit)
+    changed = get_changed_files(parent_commit=parent, commit=commit)
+    diff_line_map = parse_diff_lines(diff_text=diff_text)
 
     by_language = {}
     for file_path, texts in changed.items():
         vulnerable_text = texts["vulnerable_text"]
         fixed_text = texts["fixed_text"]
+        removed_lines, added_lines = diff_line_map.get(file_path, ([], []))
+
         vuln_meta, fixed_meta, language = analyze_patched_file(
             vulnerable_text=vulnerable_text,
             fixed_text=fixed_text,
-            diff_text=diff_text,
+            removed_lines=removed_lines,
+            added_lines=added_lines,
             file_path=file_path,
         )
 
@@ -443,7 +446,6 @@ def collect_and_store_symbol_reachability_results(project, logger=None):
                             "symbols_reachability": result,
                         }
                     )
-                    print(result)
             except Exception as e:
                 if logger:
                     logger(
