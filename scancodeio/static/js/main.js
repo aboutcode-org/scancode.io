@@ -222,6 +222,8 @@ function setupSelectCheckbox() {
   let lastChecked; // Variable to store the last checked checkbox
   const actionDropdown = document.getElementById("list-actions-dropdown");
   const dropdownButton = document.querySelector("#list-actions-dropdown button");
+  const dropdownTrigger = document.querySelector("#list-actions-dropdown .dropdown-trigger");
+  const dropdownTriggerTooltip = dropdownTrigger?.getAttribute("data-title");
 
   // Check if selectAllCheckbox or actionDropdown does not exist before proceeding
   if (!selectAllCheckbox || !actionDropdown) return;
@@ -234,9 +236,11 @@ function setupSelectCheckbox() {
     if (atLeastOneChecked) {
       actionDropdown.classList.remove("is-disabled");
       dropdownButton.removeAttribute("disabled");
+      dropdownTrigger?.removeAttribute("data-title");
     } else {
       actionDropdown.classList.add("is-disabled");
       dropdownButton.setAttribute("disabled", "disabled");
+      if (dropdownTriggerTooltip) dropdownTrigger.setAttribute("data-title", dropdownTriggerTooltip);
     }
   }
 
