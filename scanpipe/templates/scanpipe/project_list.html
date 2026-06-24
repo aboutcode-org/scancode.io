@@ -24,10 +24,10 @@
       </div>
 
       <div class="is-flex mb-3">
-        <div class="is-flex-grow-1 mr-2">
+        <div class="is-flex-grow-1 mr-4">
           {% include 'scanpipe/includes/search_field.html' with extra_class="is-smaller" hide_help=True %}
         </div>
-        <div class="is-flex is-align-items-center is-gap-1">
+        <div class="is-flex is-align-items-center is-gap-2">
           {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.pipeline icon_class='fa-solid fa-filter' check_active=True only %}
           {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.status icon_class='fa-solid fa-filter' check_active=True only %}
           {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.sort icon_class='fa-solid fa-sort' only %}
