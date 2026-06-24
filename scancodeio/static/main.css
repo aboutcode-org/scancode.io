@@ -34,6 +34,7 @@
   --hl-gray-09: #24292e;
   --custom-tooltip-bg-rgb: 54, 59, 65;
   --custom-tooltip-padding: 0.35em 0.75em;
+  --custom-tooltip-gap: 0.3rem;
 }
 .theme-dark,
 [data-theme="dark"] {
@@ -244,81 +245,6 @@ a[target="_blank"] .fa-up-right-from-square {
 }
 .is-wider-x2 .dropdown-menu {
   min-width: 24rem;
-}
-.tooltip {
-  position: absolute;
-  background-color: rgb(var(--custom-tooltip-bg-rgb));
-  color: var(--bulma-white);
-  padding: var(--custom-tooltip-padding);
-  border-radius: var(--bulma-radius-small);
-  font-size: var(--bulma-size-small);
-  width: max-content;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  text-align: center;
-  word-wrap: break-word;
-  z-index: 9999;
-}
-.tooltip.visible {
-  opacity: 1;
-}
-.tooltip.top {
-  bottom: 100%;
-}
-.tooltip.bottom {
-  top: 100%;
-}
-.tooltip.left {
-  right: 0;
-}
-.tooltip.right {
-  left: 0;
-}
-.tooltip.center {
-  left: 50%;
-  transform: translateX(-50%);
-}
-.tooltip:not(.top):not(.bottom) {
-  bottom: 100%;
-}
-.tooltip:not(.left):not(.right):not(.center) {
-  left: 50%;
-  transform: translateX(-50%);
-}
-.copy-to-clipboard {
-  position: relative;
-}
-.copy-tooltip {
-  position: absolute;
-  background-color: rgb(var(--custom-tooltip-bg-rgb));
-  color: var(--bulma-white);
-  padding: var(--custom-tooltip-padding);
-  border-radius: var(--bulma-radius-small);
-  font-size: var(--bulma-size-small);
-  width: max-content;
-  visibility: hidden;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  text-align: center;
-  word-wrap: break-word;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-}
-.copy-tooltip.visible {
-  visibility: visible;
-  opacity: 1;
-  transition: opacity 0.3s ease, visibility 0s linear 0s;
-}
-.is-tooltip .dropdown-content {
-  background-color: rgb(var(--custom-tooltip-bg-rgb));
-  color: var(--bulma-white);
-}
-.is-tooltip .dropdown-item {
-  font-weight: normal;
-  color: var(--bulma-white);
 }
 .dropdown.is-hoverable.is-disabled:hover .dropdown-menu {
   display: none;
@@ -691,4 +617,110 @@ body.full-screen #resource-viewer .message-header {
 #resource-tree-container .tree-node:hover, .tree-node-file:hover {
   background-color: var(--bulma-background);
   border-radius: var(--bulma-radius);
+}
+
+/* Tooltips */
+.tooltip {
+  position: absolute;
+  background-color: rgb(var(--custom-tooltip-bg-rgb));
+  color: var(--bulma-white);
+  padding: var(--custom-tooltip-padding);
+  border-radius: var(--bulma-radius-small);
+  font-size: var(--bulma-size-small);
+  width: max-content;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  text-align: center;
+  word-wrap: break-word;
+  z-index: 9999;
+}
+.tooltip.visible {
+  opacity: 1;
+}
+.tooltip.top {
+  bottom: 100%;
+  margin-bottom: var(--custom-tooltip-gap);
+}
+.tooltip.bottom {
+  top: 100%;
+  margin-top: var(--custom-tooltip-gap);
+}
+.tooltip.left {
+  right: 0;
+}
+.tooltip.right {
+  left: 0;
+}
+.tooltip.center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+.tooltip.top::after,
+.tooltip.bottom::after {
+  content: '';
+  position: absolute;
+  border: 0.35em solid transparent;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.tooltip.top::after {
+  top: 100%;
+  border-top-color: rgb(var(--custom-tooltip-bg-rgb));
+}
+.tooltip.bottom::after {
+  bottom: 100%;
+  border-bottom-color: rgb(var(--custom-tooltip-bg-rgb));
+}
+.tooltip.top.right::after,
+.tooltip.bottom.right::after {
+  left: 0.75em;
+  transform: none;
+}
+.tooltip.top.left::after,
+.tooltip.bottom.left::after {
+  left: auto;
+  right: 0.75em;
+  transform: none;
+}
+.tooltip:not(.top):not(.bottom) {
+  bottom: 100%;
+}
+.tooltip:not(.left):not(.right):not(.center) {
+  left: 50%;
+  transform: translateX(-50%);
+}
+.copy-to-clipboard {
+  position: relative;
+}
+.copy-tooltip {
+  position: absolute;
+  background-color: rgb(var(--custom-tooltip-bg-rgb));
+  color: var(--bulma-white);
+  padding: var(--custom-tooltip-padding);
+  border-radius: var(--bulma-radius-small);
+  font-size: var(--bulma-size-small);
+  width: max-content;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  text-align: center;
+  word-wrap: break-word;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.copy-tooltip.visible {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.3s ease, visibility 0s linear 0s;
+}
+.is-tooltip .dropdown-content {
+  background-color: rgb(var(--custom-tooltip-bg-rgb));
+  color: var(--bulma-white);
+}
+.is-tooltip .dropdown-item {
+  font-weight: normal;
+  color: var(--bulma-white);
 }
