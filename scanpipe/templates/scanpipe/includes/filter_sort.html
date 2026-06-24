@@ -1,6 +1,6 @@
-<a href="?{{ column.sort_query }}" class="is-black-link">
-  {{ column.label }}
-</a>
-{% if column.is_sorted %}
-  <i class="fa-solid fa-sort-{% if column.sort_direction == "-" %}down{% else %}up{% endif %}"></i>
-{% endif %}
+<span class="is-flex is-align-items-center is-flex-wrap-nowrap">
+  <a href="?{{ column.sort_query }}" class="is-black-link">{{ column.label }}</a>
+  {% if column.is_sorted %}
+    <i class="fa-solid fa-sort-{% if column.sort_direction == "-" %}down{% else %}up{% endif %} ml-1"></i>
+  {% endif %}
+</span>
