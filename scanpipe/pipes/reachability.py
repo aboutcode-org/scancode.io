@@ -54,20 +54,6 @@ class ReachabilityStatus(str, Enum):
     NOT_REACHABLE = "NOT_REACHABLE"
 
 
-def api_mocker():
-    """TODO: Remove this once the API patch url is done"""
-    return [
-        {
-            "vcs_url": "https://github.com/pallets/flask",
-            "commit_hash": "089cb86dd22bff589a4eafb7ab8e42dc357623b4",
-        },
-        # {
-        #     "vcs_url": "https://github.com/aio-libs/aiohttp",
-        #     "commit_hash": "0c2e9da51126238a421568eb7c5b53e5b5d17b36",
-        # }
-    ]
-
-
 def clone_repo(vcs_url, commit_hash=None):
     repo_path = tempfile.mkdtemp(prefix="symbol-reachability-")
 
@@ -381,80 +367,96 @@ def collect_and_store_symbol_reachability_results(project, logger=None):
         is_media=False,
     )
 
-    for patch in api_mocker():
-        vcs_url = patch["vcs_url"]
-        commit_hash = patch["commit_hash"]
-        try:
-            # repo_path = clone_repo(vcs_url, commit_hash)
-            # repo = Repo(repo_path)
+    vulnerabilities = project.package_vulnerabilities
 
-            repo = Repo("/home/ziad-hany/PycharmProjects/flask")
-            # repo = Repo("/home/ziad-hany/PycharmProjects/vulnerablecode")
-            patch_symbols_by_language = collect_patch_symbols(repo, commit_hash)
+    for vulnerability in vulnerabilities:
+        patches = vulnerability.get("fixed_in_patches", [])
 
-            if not patch_symbols_by_language:
+        cloned_repos = {}
+        for patch in patches:
+            vcs_url = patch.get("vcs_url")
+            commit_hash = patch.get("commit_hash")
+
+            if not vcs_url or not commit_hash:
                 continue
 
-            for resource in candidate_resources:
-                resource_language = resource.programming_language
-                if resource_language not in patch_symbols_by_language:
+            try:
+                if vcs_url not in cloned_repos:
+                    cloned_repos[vcs_url] = clone_repo(vcs_url, commit_hash)
+
+                repo_path = cloned_repos[vcs_url]
+                repo = Repo(repo_path)
+
+                patch_symbols_by_language = collect_patch_symbols(repo, commit_hash)
+
+                if not patch_symbols_by_language:
                     continue
 
-                resource_text = resource.file_content
-                if not resource_text:
-                    continue
+                for resource in candidate_resources:
+                    resource_language = resource.programming_language
+                    if resource_language not in patch_symbols_by_language:
+                        continue
 
-                patch_symbols = patch_symbols_by_language[resource_language]
-                resource_index = build_resource_index(
-                    resource_text,
-                    resource_language,
-                )
+                    resource_text = resource.file_content
+                    if not resource_text:
+                        continue
 
-                if not resource_index:
-                    continue
+                    patch_symbols = patch_symbols_by_language[resource_language]
+                    resource_index = build_resource_index(
+                        resource_text,
+                        resource_language,
+                    )
 
-                vuln_evidence = match_symbols_against_resource(
-                    patch_symbols["vulnerable"],
-                    resource_index,
-                )
+                    if not resource_index:
+                        continue
 
-                fixed_evidence = match_symbols_against_resource(
-                    patch_symbols["fixed"],
-                    resource_index,
-                )
+                    vuln_evidence = match_symbols_against_resource(
+                        patch_symbols["vulnerable"],
+                        resource_index,
+                    )
 
-                if not vuln_evidence and not fixed_evidence:
-                    continue
+                    fixed_evidence = match_symbols_against_resource(
+                        patch_symbols["fixed"],
+                        resource_index,
+                    )
 
-                result = {
-                    "symbols_reachability": {
-                        "patch": {
-                            "vcs_url": vcs_url,
-                            "commit_hash": commit_hash,
-                        },
-                        "evidence": list(vuln_evidence.values()),
-                        "fixed_symbols": sorted(fixed_evidence.keys()),
-                        "vulnerable_symbols": sorted(vuln_evidence.keys()),
-                        "reachability_status": classify_reachability(
-                            vuln_evidence
-                        ).value,
+                    if not vuln_evidence and not fixed_evidence:
+                        continue
+
+                    result = {
+                        "symbols_reachability": {
+                            "patch": {
+                                "vcs_url": vcs_url,
+                                "commit_hash": commit_hash,
+                            },
+                            "evidence": list(vuln_evidence.values()),
+                            "fixed_symbols": sorted(fixed_evidence.keys()),
+                            "vulnerable_symbols": sorted(vuln_evidence.keys()),
+                            "reachability_status": classify_reachability(
+                                vuln_evidence
+                            ).value,
+                        }
                     }
-                }
 
-                resource.update_extra_data(
-                    {
-                        "symbols_reachability": result,
-                    }
-                )
+                    resource.update_extra_data(
+                        {
+                            "symbols_reachability": result,
+                        }
+                    )
+                    print(result)
+            except Exception as e:
+                if logger:
+                    logger(
+                        f"Failed to collect symbol reachability for "
+                        f"{vcs_url}@{commit_hash}: {e}"
+                    )
 
-        except Exception as e:
-            logger(
-                f"Failed to collect symbol reachability for "
-                f"{vcs_url}@{commit_hash}: {e}"
-            )
-        finally:
-            # cleanup_repo(repo_path)
-            pass
+        for url, path in cloned_repos.items():
+            try:
+                cleanup_repo(path)
+            except Exception as e:
+                if logger:
+                    logger(f"Failed to clean up repo {url} at {path}: {e}")
 
 
 @dataclass
@@ -742,21 +744,9 @@ def extract_direct_calls(node, language):
         return []
 
     calls = []
-    definition_types = {"function_definition", "class_definition"}
 
     for _, captures in query.matches(node):
         for callee_node in captures.get("callee", []):
-            cur = callee_node.parent
-            inside_nested = False
-            while cur is not None and cur.id != node.id:
-                if cur.type in definition_types:
-                    inside_nested = True
-                    break
-                cur = cur.parent
-
-            if inside_nested:
-                continue
-
             receiver_name = get_call_receiver(callee_node)
             callee_name = callee_node.text.decode("utf-8", errors="replace")
 
