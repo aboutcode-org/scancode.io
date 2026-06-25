@@ -382,7 +382,7 @@ def add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     worksheet.write_row(row=0, col=0, data=header, cell_format=cell_format)
 
     errors_count = 0
-    errors_col_index = len(fields) - 1  # rows and cols are zero-indexed
+    errors_col_index = len(fields)  # xlsx_errors column comes after all data fields
 
     for row_index, record in enumerate(rows, start=1):
         row_errors = []
