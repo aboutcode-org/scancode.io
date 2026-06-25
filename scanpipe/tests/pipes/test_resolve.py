@@ -391,3 +391,32 @@ class ScanPipeResolvePipesTest(TestCase):
         ]
         headers = resolve.get_manifest_headers(resource)
         self.assertEqual(expected, list(headers.keys()))
+    def test_get_data_from_manifests_returns_tuple_when_no_resources(self):
+    """
+    Regression test: get_data_from_manifests must always return a tuple
+    of (packages, dependencies), even when manifest_resources is empty.
+
+    Bug: when manifest_resources.exists() is False, the function returned
+    a bare [] instead of ([], []), causing ValueError when callers tried
+    to unpack: packages, dependencies = get_data_from_manifests(...)
+    """
+    project1 = Project.objects.create(name="TestEmptyManifest")
+
+    # Use an empty queryset — no manifest resources exist
+    empty_resources = project1.codebaseresources.none()
+
+    result = resolve.get_data_from_manifests(
+        project=project1,
+        package_registry=resolve.sbom_registry,
+        manifest_resources=empty_resources,
+        model="test",
+    )
+
+    # Must be unpackable as a tuple — this would raise ValueError before the fix
+    packages, dependencies = result
+
+    self.assertEqual(packages, [])
+    self.assertEqual(dependencies, [])
+
+    # A warning should have been added to the project
+    self.assertEqual(1, project1.projectmessages.count())

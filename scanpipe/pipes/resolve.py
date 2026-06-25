@@ -95,7 +95,7 @@ def get_data_from_manifests(project, package_registry, manifest_resources, model
             description="No resources containing package data found in codebase.",
             model=model,
         )
-        return []
+        return [], []
 
     for resource in manifest_resources:
         packages = resolve_manifest_resources(resource, package_registry)
