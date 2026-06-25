@@ -1044,3 +1044,48 @@ def get_cell_texts(original_text, test_dir, workbook_name):
     # in our special case the text we care is the last element of the XML
 
     return [t.text for t in sstet.getroot().iter()]
+def test_add_xlsx_worksheet_errors_col_does_not_overwrite_last_data_column(self):
+    """
+    Regression test: xlsx_errors column must not overwrite the last data column.
+
+    Bug: errors_col_index was set to len(fields) - 1 (last data col index)
+    instead of len(fields) (the appended xlsx_errors column index).
+    """
+    import tempfile
+    from pathlib import Path
+
+    import openpyxl
+
+    class FakeRow:
+        def __init__(self):
+            self.col_a = "value_a"
+            self.col_b = "value_b"
+            self.col_c = "x" * 40000  # exceeds 32767 char XLSX limit → triggers error
+
+    test_dir = Path(tempfile.mkdtemp(prefix="scancode-io-test"))
+    output_file = test_dir / "test_errors_col.xlsx"
+
+    with xlsxwriter.Workbook(str(output_file)) as workbook:
+        output.add_xlsx_worksheet(
+            workbook=workbook,
+            worksheet_name="TEST",
+            rows=[FakeRow()],
+            fields=["col_a", "col_b", "col_c"],
+        )
+
+    workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
+    sheet = workbook["TEST"]
+    rows = list(sheet.iter_rows(values_only=True))
+
+    headers = rows[0]
+    self.assertEqual(headers[0], "col_a")
+    self.assertEqual(headers[1], "col_b")
+    self.assertEqual(headers[2], "col_c")
+    self.assertEqual(headers[3], "xlsx_errors")
+
+    data_row = rows[1]
+    self.assertEqual(data_row[0], "value_a")   # must NOT be overwritten
+    self.assertEqual(data_row[1], "value_b")   # must NOT be overwritten
+    self.assertIsNotNone(data_row[2])           # col_c truncated value
+    self.assertIsNotNone(data_row[3])           # error msg in xlsx_errors col
+    self.assertIn("truncated", data_row[3])
