@@ -1,4 +1,7 @@
 name: scancodeio
+
+x-description: "Full ScanCode.io stack: all services, local image build"
+
 services:
   db:
     image: docker.io/library/postgres:17.9
@@ -9,7 +12,7 @@ services:
     shm_size: "1gb"
     restart: always
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -18,10 +21,15 @@ services:
     image: docker.io/library/redis:8.6-alpine
     # Enable redis data persistence using the "Append Only File" with the
     # default policy of fsync every second. See https://redis.io/topics/persistence
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --loglevel warning
     volumes:
       - redis_data:/data
     restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   web:
     build: .
@@ -29,7 +37,7 @@ services:
         ./manage.py migrate &&
         ./manage.py collectstatic --no-input --verbosity 0 --clear &&
         gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 \
-          --workers 8 --worker-tmp-dir /dev/shm ${GUNICORN_RELOAD_FLAG:-}"
+          --workers ${GUNICORN_WORKERS:-8} --worker-tmp-dir /dev/shm"
     env_file:
       - docker.env
     expose:
@@ -39,11 +47,12 @@ services:
       - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
       - static:/var/scancodeio/static/
+    restart: always
     depends_on:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
 
   worker:
     build: .
@@ -58,10 +67,14 @@ services:
       - .env:/opt/scancodeio/.env
       - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
+    restart: always
     depends_on:
-      - redis
-      - db
-      - web
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      web:
+        condition: service_started
 
   nginx:
     image: docker.io/library/nginx:1.29-alpine
@@ -73,7 +86,8 @@ services:
       - static:/var/scancodeio/static/
       - webroot:/var/www/html/
     depends_on:
-      - web
+      web:
+        condition: service_started
     restart: always
 
   clamav:
