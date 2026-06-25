@@ -209,7 +209,8 @@ TS_QUERIES = {
         "imports": """
             (import_statement name: [
                 (dotted_name) @import_name
-                (aliased_import name: (dotted_name) @import_name alias: (identifier) @alias)
+                (aliased_import name: (dotted_name)
+                @import_name alias: (identifier) @alias)
             ])
 
             ; Combine explicit, relative, aliased, and wildcard from_imports
@@ -220,7 +221,8 @@ TS_QUERIES = {
                 ]
                 [
                     name: (dotted_name) @import_name
-                    name: (aliased_import name: (dotted_name) @import_name alias: (identifier) @alias)
+                    name: (aliased_import name: (dotted_name)
+                    @import_name alias: (identifier) @alias)
                     (wildcard_import) @import_name
                 ]
             )

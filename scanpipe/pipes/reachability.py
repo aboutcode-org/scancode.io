@@ -250,7 +250,8 @@ def analyze_patched_file(
 
 def parse_diff_lines(diff_text) -> dict[str, tuple[list[int], list[int]]]:
     """
-    Parses the entire unified diff text once and maps each file path to its tuple of (removed_lines, added_lines).
+    Parse the entire unified diff text once and map each file path
+    to its tuple of (removed_lines, added_lines).
     """
     diff_map = {}
     if not diff_text:
@@ -358,7 +359,75 @@ def collect_patch_symbols(repo, commit_hash):
     return by_language
 
 
-def collect_and_store_symbol_reachability_results(project, logger=None):
+def generate_reachability_report(patch, candidate_resources, cloned_repos, logger=None):
+    vcs_url = patch.get("vcs_url")
+    commit_hash = patch.get("commit_hash")
+
+    try:
+        if vcs_url not in cloned_repos:
+            cloned_repos[vcs_url] = clone_repo(vcs_url, commit_hash)
+
+        repo_path = cloned_repos[vcs_url]
+        patch_symbols_by_language = collect_patch_symbols(Repo(repo_path), commit_hash)
+
+        if not patch_symbols_by_language:
+            return
+
+        for resource in candidate_resources:
+            resource_language = resource.programming_language
+            patch_symbols = patch_symbols_by_language.get(resource_language)
+
+            if not all([patch_symbols, resource.file_content]):
+                continue
+
+            resource_index = build_resource_index(
+                resource.file_content,
+                resource_language,
+            )
+
+            if not resource_index:
+                continue
+
+            vuln_evidence = match_symbols_against_resource(
+                patch_symbols["vulnerable"],
+                resource_index,
+            )
+
+            fixed_evidence = match_symbols_against_resource(
+                patch_symbols["fixed"],
+                resource_index,
+            )
+
+            if not any([vuln_evidence, fixed_evidence]):
+                continue
+
+            result = {
+                "symbols_reachability": {
+                    "patch": {
+                        "vcs_url": vcs_url,
+                        "commit_hash": commit_hash,
+                    },
+                    "evidence": list(vuln_evidence.values()),
+                    "fixed_symbols": sorted(fixed_evidence.keys()),
+                    "vulnerable_symbols": sorted(vuln_evidence.keys()),
+                    "reachability_status": classify_reachability(vuln_evidence).value,
+                }
+            }
+
+            resource.update_extra_data(
+                {
+                    "symbols_reachability": result,
+                }
+            )
+    except Exception as e:
+        if logger:
+            logger(
+                f"Failed to collect symbol reachability for "
+                f"{vcs_url}@{commit_hash}: {e}"
+            )
+
+
+def get_symbol_reachability_results(project, logger=None):
     """
     For each known patch commit, determine whether each project codebase
     resource is reachable to the vulnerable code by comparing tree-sitter ASTs
@@ -370,88 +439,13 @@ def collect_and_store_symbol_reachability_results(project, logger=None):
         is_media=False,
     )
 
-    vulnerabilities = project.package_vulnerabilities
-
-    for vulnerability in vulnerabilities:
-        patches = vulnerability.get("fixed_in_patches", [])
-
+    for vulnerability in project.package_vulnerabilities:
         cloned_repos = {}
-        for patch in patches:
-            vcs_url = patch.get("vcs_url")
-            commit_hash = patch.get("commit_hash")
-
-            if not vcs_url or not commit_hash:
-                continue
-
-            try:
-                if vcs_url not in cloned_repos:
-                    cloned_repos[vcs_url] = clone_repo(vcs_url, commit_hash)
-
-                repo_path = cloned_repos[vcs_url]
-                repo = Repo(repo_path)
-
-                patch_symbols_by_language = collect_patch_symbols(repo, commit_hash)
-
-                if not patch_symbols_by_language:
-                    continue
-
-                for resource in candidate_resources:
-                    resource_language = resource.programming_language
-                    if resource_language not in patch_symbols_by_language:
-                        continue
-
-                    resource_text = resource.file_content
-                    if not resource_text:
-                        continue
-
-                    patch_symbols = patch_symbols_by_language[resource_language]
-                    resource_index = build_resource_index(
-                        resource_text,
-                        resource_language,
-                    )
-
-                    if not resource_index:
-                        continue
-
-                    vuln_evidence = match_symbols_against_resource(
-                        patch_symbols["vulnerable"],
-                        resource_index,
-                    )
-
-                    fixed_evidence = match_symbols_against_resource(
-                        patch_symbols["fixed"],
-                        resource_index,
-                    )
-
-                    if not vuln_evidence and not fixed_evidence:
-                        continue
-
-                    result = {
-                        "symbols_reachability": {
-                            "patch": {
-                                "vcs_url": vcs_url,
-                                "commit_hash": commit_hash,
-                            },
-                            "evidence": list(vuln_evidence.values()),
-                            "fixed_symbols": sorted(fixed_evidence.keys()),
-                            "vulnerable_symbols": sorted(vuln_evidence.keys()),
-                            "reachability_status": classify_reachability(
-                                vuln_evidence
-                            ).value,
-                        }
-                    }
-
-                    resource.update_extra_data(
-                        {
-                            "symbols_reachability": result,
-                        }
-                    )
-            except Exception as e:
-                if logger:
-                    logger(
-                        f"Failed to collect symbol reachability for "
-                        f"{vcs_url}@{commit_hash}: {e}"
-                    )
+        for patch in vulnerability.get("fixed_in_patches", []):
+            if patch.get("vcs_url") and patch.get("commit_hash"):
+                generate_reachability_report(
+                    patch, candidate_resources, cloned_repos, logger
+                )
 
         for url, path in cloned_repos.items():
             try:
@@ -508,7 +502,6 @@ class CallGraphBuilder:
         self.class_methods: set[str] = set()
 
     def build(self) -> CallGraph:
-        """Main execution flow for building the call graph."""
         self._extract_nodes()
         edges = self._resolve_all_edges()
 
@@ -609,8 +602,8 @@ def match_symbols_against_resource(
     }
 
     reachable_callers, _ = compute_reachable_symbols(
-        edges_qualified,
-        target_qualified_names,
+        edges_qualified=edges_qualified,
+        target_qualified_names=target_qualified_names,
     )
 
     called_qualified_names = set()
@@ -730,11 +723,7 @@ def build_call_graph(tree, language) -> CallGraph | None:
 
 def extract_direct_calls(node, language):
     """
-    Return direct calls inside `node`, excluding calls inside nested definitions.
-
-    Returns:
-        list of (receiver_name, callee_name)
-
+    Return direct calls inside `node`
     Examples:
         foo()       -> (None, "foo")
         self.foo()  -> ("self", "foo")
@@ -779,17 +768,13 @@ def get_call_receiver(callee_node):
     return object_node.text.decode("utf-8", errors="replace")
 
 
-def compute_reachable_symbols(call_graph, target_qualified_names):
+def compute_reachable_symbols(edges_qualified, target_qualified_names):
     """Transitive callers using resolved qualified-name edges."""
-    if not call_graph or not target_qualified_names:
-        return set(), False
-
-    edges = call_graph.get("edges_qualified")
-    if not edges:
+    if not edges_qualified or not target_qualified_names:
         return set(), False
 
     callers_of = {}
-    for caller, callees in edges.items():
+    for caller, callees in edges_qualified.items():
         for callee in callees:
             callers_of.setdefault(callee, set()).add(caller)
 
@@ -878,9 +863,49 @@ def resolve_callee(
     return set()
 
 
+def extract_imports(captures: dict) -> tuple[str | None, list[tuple[str, str | None]]]:
+    """
+    Flatten and sort tree-sitter captures, then extract the module name
+    and a list of import/alias pairs.
+    """
+    flat_captures = []
+    for tag, nodes in captures.items():
+        for n in nodes:
+            flat_captures.append(
+                (
+                    n.start_byte,
+                    tag,
+                    n.text.decode("utf-8", errors="replace").strip("'\""),
+                )
+            )
+
+    flat_captures.sort(key=lambda x: x[0])
+
+    module_name = None
+    current_import = None
+    pairs = []
+
+    for _, tag, text in flat_captures:
+        if tag == "module_name":
+            module_name = text
+        elif tag == "import_name":
+            if current_import is not None:
+                pairs.append((current_import, None))
+            current_import = text
+        elif tag == "alias":
+            pairs.append((current_import, text))
+            current_import = None
+
+    if current_import is not None:
+        pairs.append((current_import, None))
+
+    return module_name, pairs
+
+
 def collect_imports(root_node, language: str) -> dict[str, str | list[str]]:
     """
-    Extract import statements from a Tree-sitter AST and map every local alias to its absolute imported path.
+    Extract import statements from a Tree-sitter AST and map every
+    local alias to its absolute imported path.
     """
     config = get_imports_language_config(language)
     separator = config["separator"]
@@ -894,36 +919,7 @@ def collect_imports(root_node, language: str) -> dict[str, str | list[str]]:
     wildcard_modules: list[str] = []
 
     for _pattern_index, captures in query.matches(root_node):
-        flat_captures = []
-        for tag, nodes in captures.items():
-            for n in nodes:
-                flat_captures.append(
-                    (
-                        n.start_byte,
-                        tag,
-                        n.text.decode("utf-8", errors="replace").strip("'\""),
-                    )
-                )
-
-        flat_captures.sort(key=lambda x: x[0])
-
-        module_name = None
-        current_import = None
-        pairs = []
-
-        for _, tag, text in flat_captures:
-            if tag == "module_name":
-                module_name = text
-            elif tag == "import_name":
-                if current_import is not None:
-                    pairs.append((current_import, None))
-                current_import = text
-            elif tag == "alias":
-                pairs.append((current_import, text))
-                current_import = None
-
-        if current_import is not None:
-            pairs.append((current_import, None))
+        module_name, pairs = extract_imports(captures)
 
         for imp_name, alias in pairs:
             if not imp_name:
