@@ -11,7 +11,7 @@ services:
       - docker.env
     volumes:
       - .env:/opt/scancodeio/.env
-      - /etc/scancodeio/:/etc/scancodeio/
+      - ./etc/scancodeio:/etc/scancodeio
       - workspace:/var/scancodeio/workspace/
     depends_on:
       - db
