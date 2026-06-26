@@ -137,3 +137,53 @@ class ScanPipeFlagPipesTest(TestCase):
         self.resource2.refresh_from_db()
         self.assertEqual("mapped", self.resource1.status)
         self.assertEqual("mapped", self.resource2.status)
+    def test_flag_and_ignore_files_over_max_size_returns_count(self):
+    """
+    Regression test: flag_and_ignore_files_over_max_size must return
+    an integer count of flagged files, not a queryset or None.
+
+    Bug: the docstring claimed to return remaining files within limit,
+    but .update() returns an integer count. The docstring and return
+    value were inconsistent, making callers unclear about what they get.
+    """
+    resource_qs = self.project1.codebaseresources
+
+    # Create resources with different sizes
+    resource_qs.create(path="small.py", size=100)
+    resource_qs.create(path="large.py", size=999999)
+    resource_qs.create(path="huge.py",  size=9999999)
+
+    all_files = resource_qs.files()
+    result = flag.flag_and_ignore_files_over_max_size(
+        resource_qs=all_files,
+        file_size_limit=500000,
+    )
+
+    # Must return an integer — the count of flagged files
+    self.assertIsInstance(result, int)
+    self.assertEqual(result, 2)  # large.py and huge.py flagged
+
+    # Verify the flagged files actually got the correct status
+    flagged = resource_qs.filter(status=flag.IGNORED_BY_MAX_FILE_SIZE)
+    self.assertEqual(flagged.count(), 2)
+
+    # Small file must NOT be flagged
+    small = resource_qs.get(path="small.py")
+    self.assertNotEqual(small.status, flag.IGNORED_BY_MAX_FILE_SIZE)
+
+def test_flag_and_ignore_files_over_max_size_no_limit_returns_qs(self):
+    """
+    When file_size_limit is None/0, the function returns the original
+    queryset unchanged — verify this still works correctly.
+    """
+    resource_qs = self.project1.codebaseresources
+    resource_qs.create(path="any_file.py", size=999999)
+
+    all_files = resource_qs.files()
+    result = flag.flag_and_ignore_files_over_max_size(
+        resource_qs=all_files,
+        file_size_limit=None,
+    )
+
+    # No limit = returns original queryset untouched
+    self.assertEqual(result, all_files)
