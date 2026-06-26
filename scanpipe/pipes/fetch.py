@@ -43,6 +43,7 @@ from commoncode.text import python_safe_name
 from fetchcode.pypi import Pypi as PyPIFetcher
 from packageurl import PackageURL
 from packageurl.contrib import purl2url
+from packageurl.contrib import url2purl
 from plugincode.location_provider import get_location
 from requests import auth as request_auth
 
@@ -459,3 +460,10 @@ def check_urls_availability(urls):
     """Check the safety and accessibility of a list of URLs."""
     errors = [url for url in urls if not check_url(url) if url.startswith("http")]
     return errors
+
+
+def set_project_purl_from_input_url(project, input_urls):
+    """Auto-fill the project PURL when the sole input is a single resolvable URL."""
+    if not project.purl and input_urls and len(input_urls) == 1:
+        if purl := url2purl.get_purl(input_urls[0]):
+            project.update(purl=str(purl))

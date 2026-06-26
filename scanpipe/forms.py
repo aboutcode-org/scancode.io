@@ -124,6 +124,9 @@ class InputsBaseForm(forms.Form):
         for url in input_urls:
             project.add_input_source(download_url=url)
 
+        if not input_files:
+            fetch.set_project_purl_from_input_url(project, input_urls)
+
 
 class CheckboxChoiceField(forms.MultipleChoiceField):
     widget = forms.CheckboxSelectMultiple
