@@ -38,6 +38,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.pipes import count_group_by
+from scanpipe.pipes.fetch import set_project_purl_from_input_url
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -388,6 +389,9 @@ def add_project_inputs(
 
     if input_urls:
         handle_input_urls(project=project, input_urls=input_urls, command=command)
+
+    if not input_files_data:
+        set_project_purl_from_input_url(project, input_urls)
 
     if copy_from:
         handle_copy_codebase(project=project, copy_from=copy_from, command=command)

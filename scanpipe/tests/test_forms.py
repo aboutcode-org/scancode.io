@@ -252,6 +252,26 @@ class ScanPipeFormsTest(TestCase):
         obj = form2.save()
         self.assertEqual("pkg:npm/lodash@4.17.21", obj.purl)
 
+    @mock.patch("requests.sessions.Session.head")
+    def test_scanpipe_forms_handle_inputs_auto_fill_purl(self, mock_head):
+        mock_head.return_value = mock.Mock(headers={}, status_code=200)
+        lodash_url = "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz"
+
+        # Single URL -> purl auto-filled
+        form = InputsBaseForm(data={"input_urls": lodash_url})
+        self.assertTrue(form.is_valid())
+        form.handle_inputs(project=self.project1)
+        self.project1.refresh_from_db()
+        self.assertEqual("pkg:npm/lodash@4.17.21", self.project1.purl)
+
+        # Multiple URLs -> no auto-fill
+        project2 = Project.objects.create(name="Analysis2")
+        form = InputsBaseForm(data={"input_urls": f"{lodash_url} {lodash_url}"})
+        self.assertTrue(form.is_valid())
+        form.handle_inputs(project=project2)
+        project2.refresh_from_db()
+        self.assertEqual("", project2.purl)
+
     def test_scanpipe_forms_edit_input_source_tag_form(self):
         data = {}
         form = EditInputSourceTagForm(data=data)

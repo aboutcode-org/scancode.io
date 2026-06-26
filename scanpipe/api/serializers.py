@@ -39,6 +39,7 @@ from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import WebhookSubscription
 from scanpipe.pipes import count_group_by
+from scanpipe.pipes.fetch import set_project_purl_from_input_url
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -319,6 +320,9 @@ class ProjectSerializer(
 
         for url in input_urls:
             project.add_input_source(download_url=url)
+
+        if not upload_file:
+            set_project_purl_from_input_url(project, input_urls)
 
         for pipeline in pipelines:
             pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline)
