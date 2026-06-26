@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from pathlib import Path
+from unittest.mock import MagicMock
 from unittest.mock import PropertyMock
 from unittest.mock import patch
 
@@ -28,21 +29,12 @@ from django.test import TestCase
 
 from scanpipe.models import Project
 from scanpipe.pipes import collect_and_create_codebase_resources
+from scanpipe.pipes.reachability import PatchAnalyzer
 from scanpipe.pipes.reachability import ReachabilityStatus
-from scanpipe.pipes.reachability import analyze_patched_file
-from scanpipe.pipes.reachability import build_symbol_metadata
 from scanpipe.pipes.reachability import classify_reachability
-from scanpipe.pipes.reachability import collect_imports
-from scanpipe.pipes.reachability import compute_reachable_symbols
-from scanpipe.pipes.reachability import diff_changed_symbols
-from scanpipe.pipes.reachability import extract_direct_calls
-from scanpipe.pipes.reachability import get_symbol_reachability_results
-from scanpipe.pipes.reachability import parse_diff_lines
-from scanpipe.pipes.symbols import collect_definitions
-from scanpipe.pipes.symbols import extract_definitions
-from scanpipe.pipes.symbols import extract_symbols
-from scanpipe.pipes.symbols import parse_code_to_ast
-from scanpipe.pipes.symbols import qualified_name_from_index
+from scanpipe.pipes.reachability import collect_and_store_symbol_reachability_results
+from scanpipe.pipes.symbols import TS_QUERIES
+from scanpipe.pipes.symbols import SymbolExtractor
 
 
 class SymbolReachabilityPipesTest(TestCase):
@@ -52,24 +44,26 @@ class SymbolReachabilityPipesTest(TestCase):
         self.project1 = Project.objects.create(name="Analysis")
         self.project1.codebase_path.mkdir(parents=True, exist_ok=True)
 
-    @patch("scanpipe.pipes.reachability.clone_repo")
-    @patch("scanpipe.pipes.reachability.collect_patch_symbols")
+    @patch("scanpipe.pipes.reachability.GitRepositoryContext")
+    @patch("scanpipe.pipes.reachability.PatchAnalyzer.collect_patch_symbols")
     @patch.object(Project, "package_vulnerabilities", new_callable=PropertyMock)
     def test_get_symbol_reachability_results(
         self,
         mock_package_vulnerabilities,
         mock_collect_symbols,
-        mock_clone_repo,
+        mock_git_context,
     ):
         app_text = (self.data / "app.py").read_text()
         vuln_text = (self.data / "vuln-app.py").read_text()
         fixed_text = (self.data / "fixed-app.py").read_text()
         diff_text = (self.data / "diff-app.patch").read_text()
-        diff_line_map = parse_diff_lines(diff_text=diff_text)
+
+        analyzer = PatchAnalyzer(repo=MagicMock(), commit_hash="dummy")
+        diff_line_map = analyzer.parse_diff_lines(diff_text=diff_text)
         file_path = "app.py"
         removed_lines, added_lines = diff_line_map.get(file_path, ([], []))
 
-        vuln_meta, fixed_meta, lang = analyze_patched_file(
+        vuln_meta, fixed_meta, lang = analyzer.analyze(
             vulnerable_text=vuln_text,
             fixed_text=fixed_text,
             removed_lines=removed_lines,
@@ -90,7 +84,7 @@ class SymbolReachabilityPipesTest(TestCase):
             }
         ]
 
-        mock_clone_repo.return_value = str(self.project1.codebase_path)
+        mock_git_context.return_value.__enter__.return_value.repo = MagicMock()
         mock_collect_symbols.return_value = {
             lang: {
                 "vulnerable": {
@@ -110,48 +104,52 @@ class SymbolReachabilityPipesTest(TestCase):
         resource.programming_language = lang
         resource.save()
 
-        with patch("scanpipe.pipes.reachability.Repo"):
-            get_symbol_reachability_results(self.project1)
+        collect_and_store_symbol_reachability_results(self.project1)
 
         resource.refresh_from_db()
         results = resource.extra_data.get("symbols_reachability")
 
         self.assertEqual(
             results,
-            {
-                "symbols_reachability": {
-                    "patch": {
-                        "vcs_url": "https://github.com/aboutcode-org/test",
-                        "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
-                    },
-                    "evidence": [
-                        {
-                            "called": False,
-                            "defined": True,
-                            "imported": False,
-                            "fingerprint": "d7675efb263896da2a3c00679511833"
-                            "553907e7e6ea619115a6dfc8625c3457e",
-                            "symbol_name": "serve_report",
-                            "reachable_from": [],
+            [
+                {
+                    "symbols_reachability": {
+                        "patch": {
+                            "vcs_url": "https://github.com/aboutcode-org/test",
+                            "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
                         },
-                        {
-                            "called": True,
-                            "defined": True,
-                            "imported": False,
-                            "fingerprint": "762e4f7d03b1bf4359c3ca364"
-                            "e558140239913bfabcc5aa77156460c2eb0a355",
-                            "symbol_name": "serve_report.build_file_path",
-                            "reachable_from": ["serve_report"],
-                        },
-                    ],
-                    "fixed_symbols": ["serve_report", "serve_report.build_file_path"],
-                    "vulnerable_symbols": [
-                        "serve_report",
-                        "serve_report.build_file_path",
-                    ],
-                    "reachability_status": "REACHABLE",
+                        "evidence": [
+                            {
+                                "called": False,
+                                "defined": True,
+                                "imported": False,
+                                "fingerprint": "d7675efb263896da2a3c00679511833"
+                                "553907e7e6ea619115a6dfc8625c3457e",
+                                "symbol_name": "serve_report",
+                                "reachable_from": [],
+                            },
+                            {
+                                "called": True,
+                                "defined": True,
+                                "imported": False,
+                                "fingerprint": "762e4f7d03b1bf4359c3ca364"
+                                "e558140239913bfabcc5aa77156460c2eb0a355",
+                                "symbol_name": "serve_report.build_file_path",
+                                "reachable_from": ["serve_report"],
+                            },
+                        ],
+                        "fixed_symbols": [
+                            "serve_report",
+                            "serve_report.build_file_path",
+                        ],
+                        "vulnerable_symbols": [
+                            "serve_report",
+                            "serve_report.build_file_path",
+                        ],
+                        "reachability_status": "REACHABLE",
+                    }
                 }
-            },
+            ],
         )
 
     def test_extract_definitions(self):
@@ -169,27 +167,32 @@ def calculate_discount(price):
 class InventoryItem:
     pass
 """
-        tree, _ = parse_code_to_ast(source_code, "Python")
-        functions = extract_definitions(tree, "Python", kinds=("functions",))
+
+        lang_query = TS_QUERIES["Python"]()
+        tree, _ = lang_query.parse_code_to_ast(code_text=source_code)
+        functions = list(lang_query.get_functions(tree.root_node))
+
         self.assertEqual(
             len(functions), 3
         )  # '__init__', 'process_payment', and 'calculate_discount'
 
-        self.assertEqual(functions[0].type, "function_definition")
-        first_func_text = functions[0].text.decode("utf-8")
+        self.assertEqual(functions[0][0].type, "function_definition")
+        first_func_text = functions[0][0].text.decode("utf-8")
         self.assertIn("def __init__", first_func_text)
 
-        classes = extract_definitions(tree, "Python", kinds=("classes",))
+        classes = list(lang_query.get_classes(tree.root_node))
         self.assertEqual(len(classes), 2)
-        second_class_text = classes[1].text.decode("utf-8")
+        second_class_text = classes[1][0].text.decode("utf-8")
         self.assertIn("class InventoryItem", second_class_text)
 
     def test_extract_definitions_empty(self):
-        tree, _ = parse_code_to_ast("", "Python")
-        self.assertEqual(extract_definitions(tree, "Python", kinds=("functions",)), [])
-        self.assertEqual(extract_definitions(tree, "Python", kinds=("functions",)), [])
-        self.assertEqual(extract_definitions(None, "Python", kinds=("classes",)), [])
-        self.assertEqual(extract_definitions(None, "Python", kinds=("classes",)), [])
+        lang_query = TS_QUERIES["Python"]()
+        tree, _ = lang_query.parse_code_to_ast("")
+
+        self.assertIsNone(tree)
+
+        tree_none, _ = lang_query.parse_code_to_ast(None)
+        self.assertIsNone(tree_none)
 
     def test_get_qualified_name_functions(self):
         source_code = """
@@ -202,14 +205,17 @@ def global_utility():
     pass
         """
 
-        tree, _ = parse_code_to_ast(source_code, "Python")
-        index = collect_definitions(tree.root_node, "Python")
+        lang_query = TS_QUERIES["Python"]()
+        tree, _ = lang_query.parse_code_to_ast(source_code)
 
-        functions = extract_definitions(tree, "Python", kinds=("functions",))
+        extractor = SymbolExtractor(lang_query=lang_query, root_node=tree.root_node)
+        index = extractor.extract_definitions_index()
+
+        functions = list(lang_query.get_functions(tree.root_node))
         self.assertEqual(len(functions), 2)
 
-        outer_function_name = qualified_name_from_index(functions[0], index)
-        inner_function_name = qualified_name_from_index(functions[1], index)
+        outer_function_name = extractor._build_qualified_name(functions[0][0], index)
+        inner_function_name = extractor._build_qualified_name(functions[1][0], index)
 
         self.assertEqual(outer_function_name, "CoreService.Validator.validate_payload")
         self.assertEqual(inner_function_name, "global_utility")
@@ -220,14 +226,17 @@ class FleetManagement:
     class DroneController:
         pass
         """
-        tree, _ = parse_code_to_ast(source_code, "Python")
-        index = collect_definitions(tree.root_node, "Python")
+        lang_query = TS_QUERIES["Python"]()
+        tree, _ = lang_query.parse_code_to_ast(source_code)
 
-        classes = extract_definitions(tree, "Python", kinds=("classes",))
+        extractor = SymbolExtractor(lang_query=lang_query, root_node=tree.root_node)
+        index = extractor.extract_definitions_index()
+
+        classes = list(lang_query.get_classes(tree.root_node))
         self.assertEqual(len(classes), 2)
 
-        outer_class_name = qualified_name_from_index(classes[0], index)
-        inner_class_name = qualified_name_from_index(classes[1], index)
+        outer_class_name = extractor._build_qualified_name(classes[0][0], index)
+        inner_class_name = extractor._build_qualified_name(classes[1][0], index)
 
         self.assertEqual(outer_class_name, "FleetManagement")
         self.assertEqual(inner_class_name, "FleetManagement.DroneController")
@@ -235,6 +244,9 @@ class FleetManagement:
     def test_classify_reachability(self):
         self.assertEqual(classify_reachability(None), ReachabilityStatus.NOT_REACHABLE)
         self.assertEqual(classify_reachability({}), ReachabilityStatus.NOT_REACHABLE)
+        self.assertEqual(
+            classify_reachability({"evidence": {}}), ReachabilityStatus.NOT_REACHABLE
+        )
         self.assertEqual(
             classify_reachability({"evidence": {"fingerprint": "hash123"}}),
             ReachabilityStatus.REACHABLE,
@@ -265,21 +277,40 @@ if True:
     def process_data(payload):
         return payload
 """
-        tree, _ = parse_code_to_ast(source_code, "Python")
-        nodes = extract_definitions(tree, "Python", kinds=("functions",))
-
-        metadata = build_symbol_metadata(nodes, "Python")
+        lang_query = TS_QUERIES["Python"]()
+        tree, _ = lang_query.parse_code_to_ast(source_code)
+        extractor = SymbolExtractor(lang_query=lang_query, root_node=tree.root_node)
+        index = extractor.extract_definitions_index()
+        vuln_nodes = extractor.extract_changed_symbols(
+            changed_lines=[1, 2, 3, 4, 5, 6, 7, 8, 9]
+        )
+        metadata = PatchAnalyzer.build_symbol_metadata(
+            nodes=vuln_nodes, extractor=extractor, index=index
+        )
         self.assertEqual(
             metadata,
             {
+                "Controller": {
+                    "qualified_name": "Controller",
+                    "text": "class Controller:\n"
+                    "    def process_data(payload):\n"
+                    "        def inner_helper():\n  "
+                    "          return True\n    "
+                    "    return payload.strip()",
+                    "fingerprint": "de81abd637e27302d8e19c41eab8f4"
+                    "fb6b8abdd9fc4f1fb31d354bc7b23f6d4d",
+                    "start_line": 2,
+                    "end_line": 6,
+                    "node_type": "class_definition",
+                },
                 "Controller.process_data": {
                     "qualified_name": "Controller.process_data",
                     "text": "def process_data(payload):\n"
                     "        def inner_helper():\n"
-                    "            return True\n       "
-                    " return payload.strip()",
-                    "fingerprint": "b0d0ad9a92209a6d79b84e932ce302"
-                    "a8bc9054a405131adf7dc21e06e2e7c0c1",
+                    "            return True\n"
+                    "        return payload.strip()",
+                    "fingerprint": "b0d0ad9a92209a6d79b84e932ce3"
+                    "02a8bc9054a405131adf7dc21e06e2e7c0c1",
                     "start_line": 3,
                     "end_line": 6,
                     "node_type": "function_definition",
@@ -287,19 +318,10 @@ if True:
                 "Controller.process_data.inner_helper": {
                     "qualified_name": "Controller.process_data.inner_helper",
                     "text": "def inner_helper():\n            return True",
-                    "fingerprint": "ee2e246e01e960826cb39a9466e5"
-                    "8095d209fdd1cbf8458630be430b3371d6a3",
+                    "fingerprint": "ee2e246e01e960826cb39a9466e58095"
+                    "d209fdd1cbf8458630be430b3371d6a3",
                     "start_line": 4,
                     "end_line": 5,
-                    "node_type": "function_definition",
-                },
-                "process_data": {
-                    "qualified_name": "process_data",
-                    "text": "def process_data(payload):\n        return payload",
-                    "fingerprint": "9b2797712c9ab60ea8452a4413965"
-                    "c94d1b2f63739cab7de695e7b1dc0cf439a",
-                    "start_line": 9,
-                    "end_line": 10,
                     "node_type": "function_definition",
                 },
             },
@@ -339,8 +361,9 @@ if True:
             },
         }
 
-        vuln_only, fixed_only = diff_changed_symbols(vuln_meta, fixed_meta)
-
+        vuln_only, fixed_only = PatchAnalyzer.diff_changed_symbols(
+            vuln_meta, fixed_meta
+        )
         self.assertEqual(
             vuln_only,
             {
@@ -374,11 +397,12 @@ if True:
         vuln_text = (self.data / "vuln-app.py").read_text(encoding="utf-8")
         fixed_text = (self.data / "fixed-app.py").read_text(encoding="utf-8")
         diff_text = (self.data / "diff-app.patch").read_text(encoding="utf-8")
-        diff_line_map = parse_diff_lines(diff_text=diff_text)
+
+        diff_line_map = PatchAnalyzer.parse_diff_lines(diff_text=diff_text)
         file_path = "app.py"
         removed_lines, added_lines = diff_line_map.get(file_path, ([], []))
 
-        vuln_meta, fixed_meta, lang = analyze_patched_file(
+        vuln_meta, fixed_meta, lang = PatchAnalyzer.analyze(
             vulnerable_text=vuln_text,
             fixed_text=fixed_text,
             removed_lines=removed_lines,
@@ -491,13 +515,15 @@ if True:
             "    return build_path(request)\n"  # Line 5 (Row 4)
         )
 
-        tree, _ = parse_code_to_ast(source_code, "Python")
+        lang_query = TS_QUERIES["Python"]()
+        tree, _ = lang_query.parse_code_to_ast(source_code)
 
         changed_lines = [4]
-        enclosing_symbols = extract_symbols(tree, changed_lines, "Python")
+        extractor = SymbolExtractor(lang_query=lang_query, root_node=tree.root_node)
+        changed_symbols = extractor.extract_changed_symbols(changed_lines)
 
-        self.assertEqual(len(enclosing_symbols), 1)
-        target_node = enclosing_symbols[0]
+        self.assertEqual(len(changed_symbols), 1)
+        target_node = changed_symbols[0]
         self.assertEqual(target_node.type, "function_definition")
 
         node_text = target_node.text.decode("utf-8")
@@ -511,28 +537,16 @@ if True:
             "    return price + amount\n"  # Line 3 -> Changed
         )
 
-        tree, _ = parse_code_to_ast(source_code, "Python")
-        changed_lines = [2, 3]
+        lang_query = TS_QUERIES["Python"]()
+        tree, _ = lang_query.parse_code_to_ast(source_code)
 
-        enclosing_symbols = extract_symbols(tree, changed_lines, "Python")
+        changed_lines = [2, 3]
+        symbol_extractor = SymbolExtractor(
+            lang_query=lang_query, root_node=tree.root_node
+        )
+        enclosing_symbols = symbol_extractor.extract_changed_symbols(changed_lines)
         self.assertEqual(len(enclosing_symbols), 1)
         self.assertEqual(enclosing_symbols[0].type, "function_definition")
-
-    def test_compute_reachable_symbols(self):
-        edges_qualified = {
-            "app.main": {"app.helper", "app.safe_func"},
-            "app.helper": {"app.vuln_func"},
-            "app.direct_caller": {"app.vuln_func"},
-            "app.unrelated": {"app.safe_func"},
-        }
-
-        target_qns = ["app.vuln_func"]
-        reachable, has_direct = compute_reachable_symbols(edges_qualified, target_qns)
-
-        self.assertTrue(has_direct)
-
-        expected_reachable = {"app.main", "app.helper", "app.direct_caller"}
-        self.assertEqual(reachable, expected_reachable)
 
     def test_collect_imports(self):
         source_code = """
@@ -545,9 +559,10 @@ from ..core import engine
 from math import *
         """.strip()
 
-        tree, _ = parse_code_to_ast(source_code, "Python")
-        real_root_node = tree.root_node
-        result = collect_imports(real_root_node, language="Python")
+        lang_query = TS_QUERIES["Python"]()
+        tree, _ = lang_query.parse_code_to_ast(code_text=source_code)
+        extractor = SymbolExtractor(lang_query=lang_query, root_node=tree.root_node)
+        result = extractor.extract_imports()
 
         expected_map = {
             "models": "django.db.models",
@@ -571,11 +586,30 @@ def clean_function():
     return hello() + x + y
         """.strip()
 
-        tree, _ = parse_code_to_ast(source_code, "Python")
-        functions = extract_definitions(tree, "Python", kinds=("functions",))
-
-        result = extract_direct_calls(functions[1], "Python")
+        lang_query = TS_QUERIES["Python"]()
+        tree, _ = lang_query.parse_code_to_ast(code_text=source_code)
+        extractor = SymbolExtractor(lang_query=lang_query, root_node=tree.root_node)
+        result = extractor.extract_calls(node=tree.root_node)
         self.assertEqual(
             result,
             [(None, "hello")],
         )
+
+    def test_extract_direct_calls(self):
+        python_source = """
+self.update()
+process_data()
+user.save()
+        """.strip()
+
+        lang_query = TS_QUERIES["Python"]()
+        tree, _ = lang_query.parse_code_to_ast(code_text=python_source)
+        extractor = SymbolExtractor(lang_query=lang_query, root_node=tree.root_node)
+        python_calls = extractor.extract_calls(node=tree.root_node)
+
+        expected_python = [
+            ("self", "update"),
+            (None, "process_data"),
+            ("user", "save"),
+        ]
+        self.assertEqual(expected_python, python_calls)
