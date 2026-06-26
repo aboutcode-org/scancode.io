@@ -30,6 +30,7 @@ from django.test import override_settings
 import requests
 from requests import auth as request_auth
 
+from scanpipe.models import Project
 from scanpipe.pipes import fetch
 from scanpipe.tests import make_mock_response
 
@@ -351,3 +352,38 @@ class ScanPipeFetchPipesTest(TestCase):
         # All URLs fail
         mock_head.side_effect = requests.exceptions.RequestException
         self.assertEqual(http_urls, fetch.check_urls_availability(urls))
+
+    def test_scanpipe_pipes_fetch_set_project_purl_from_input_url(self):
+        project = Project.objects.create(name="purl_from_url")
+
+        # Single resolvable HTTP URL -> purl auto-filled
+        fetch.set_project_purl_from_input_url(
+            project, ["https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz"]
+        )
+        project.refresh_from_db()
+        self.assertEqual("pkg:npm/lodash@4.17.21", project.purl)
+
+        # Existing purl is not overwritten
+        fetch.set_project_purl_from_input_url(
+            project, ["https://registry.npmjs.org/react/-/react-18.0.0.tgz"]
+        )
+        project.refresh_from_db()
+        self.assertEqual("pkg:npm/lodash@4.17.21", project.purl)
+
+        # Multiple URLs -> purl not set
+        project2 = Project.objects.create(name="purl_from_url2")
+        fetch.set_project_purl_from_input_url(
+            project2,
+            [
+                "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz",
+                "https://registry.npmjs.org/react/-/react-18.0.0.tgz",
+            ],
+        )
+        project2.refresh_from_db()
+        self.assertEqual("", project2.purl)
+
+        # Bad input -> no crash, no purl set
+        project3 = Project.objects.create(name="purl_from_url3")
+        fetch.set_project_purl_from_input_url(project3, ["not-a-url"])
+        project3.refresh_from_db()
+        self.assertEqual("", project3.purl)
