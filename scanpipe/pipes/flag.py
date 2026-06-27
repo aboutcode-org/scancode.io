@@ -111,14 +111,15 @@ def flag_ignored_patterns(codebaseresources, patterns, status=IGNORED_PATTERN):
 def flag_and_ignore_files_over_max_size(resource_qs, file_size_limit):
     """
     Flag codebase resources which are over the max file size for scanning
-    and return all other files within the file size limit.
+    and return the count of flagged resources.
     """
     if not file_size_limit:
         return resource_qs
 
-    return resource_qs.filter(size__gte=file_size_limit).update(
+    flagged_count = resource_qs.filter(size__gte=file_size_limit).update(
         status=IGNORED_BY_MAX_FILE_SIZE
     )
+    return flagged_count
 
 
 def analyze_scanned_files(project):
