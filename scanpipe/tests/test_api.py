@@ -193,6 +193,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertContains(response, project3.uuid)
 
     def test_scanpipe_api_project_detail(self):
+        self.project1.update_counts()
         response = self.csrf_client.get(self.project1_detail_url)
         self.assertIn(self.project1_detail_url, response.data["url"])
         self.assertEqual(str(self.project1.uuid), response.data["uuid"])
@@ -419,6 +420,27 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(3, len(response.data["input_sources"]))
+
+    def test_scanpipe_api_project_create_purl_from_input_url(self):
+        lodash_url = "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz"
+
+        # Single URL -> purl auto-filled
+        data = {"name": "purl project", "input_urls": [lodash_url]}
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual("pkg:npm/lodash@4.17.21", response.data["purl"])
+
+        # Multiple URLs -> no auto-fill
+        data = {
+            "name": "multi url project",
+            "input_urls": [
+                lodash_url,
+                "https://registry.npmjs.org/react/-/react-18.0.0.tgz",
+            ],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual("", response.data["purl"])
 
     def test_scanpipe_api_project_create_multiple_pipelines(self):
         data = {

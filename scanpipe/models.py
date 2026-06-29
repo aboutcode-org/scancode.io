@@ -518,29 +518,6 @@ def get_project_work_directory(project):
 
 
 class ProjectQuerySet(models.QuerySet):
-    def with_counts(self, *fields):
-        """
-        Annotate the QuerySet with counts of provided relational `fields`.
-        Using `Subquery` in place of the `Count` aggregate function as it results in
-        poor query performances when combining multiple counts.
-
-        Usage:
-            project_queryset.with_counts("codebaseresources", "discoveredpackages")
-        """
-        annotations = {}
-        for field_name in fields:
-            count_label = f"{field_name}_count"
-            subquery_qs = self.model.objects.annotate(
-                **{count_label: Count(field_name)}
-            ).filter(pk=OuterRef("pk"))
-
-            annotations[count_label] = Subquery(
-                subquery_qs.values(count_label),
-                output_field=IntegerField(),
-            )
-
-        return self.annotate(**annotations)
-
     def get_active_archived_counts(self):
         return self.aggregate(
             active_count=Count(
@@ -605,15 +582,26 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             "corresponding PURL would be pkg:npm/lodash@4.17.21."
         ),
     )
+    resource_count = models.PositiveIntegerField(default=0, editable=False)
+    package_count = models.PositiveIntegerField(default=0, editable=False)
+    dependency_count = models.PositiveIntegerField(default=0, editable=False)
+    message_count = models.PositiveIntegerField(default=0, editable=False)
+    relation_count = models.PositiveIntegerField(default=0, editable=False)
 
     objects = ProjectQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_date"]
         indexes = [
+            models.Index(fields=["is_archived", "-created_date"]),
             models.Index(fields=["-created_date"]),
             models.Index(fields=["is_archived"]),
             models.Index(fields=["name"]),
+            models.Index(fields=["resource_count"]),
+            models.Index(fields=["package_count"]),
+            models.Index(fields=["dependency_count"]),
+            models.Index(fields=["message_count"]),
+            models.Index(fields=["relation_count"]),
         ]
 
     def __str__(self):
@@ -779,6 +767,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.inputsources.all().delete()
 
         self.extra_data = {}
+        self.resource_count = 0
+        self.package_count = 0
+        self.dependency_count = 0
+        self.message_count = 0
+        self.relation_count = 0
         self.save()
 
         for path in work_directories:
@@ -1459,11 +1452,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         )
 
     @cached_property
-    def resource_count(self):
-        """Return the number of resources related to this project."""
-        return self.codebaseresources.count()
-
-    @cached_property
     def file_count(self):
         """Return the number of **file** resources related to this project."""
         return self.codebaseresources.files().count()
@@ -1483,11 +1471,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         project.
         """
         return self.codebaseresources.files().not_in_package().count()
-
-    @cached_property
-    def package_count(self):
-        """Return the number of packages related to this project."""
-        return self.discoveredpackages.count()
 
     @cached_property
     def vulnerable_package_count(self):
@@ -1538,15 +1521,15 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         return self.codebaseresources.has_compliance_alert().count()
 
-    @cached_property
-    def message_count(self):
-        """Return the number of messages related to this project."""
-        return self.projectmessages.count()
-
-    @cached_property
-    def relation_count(self):
-        """Return the number of relations related to this project."""
-        return self.codebaserelations.count()
+    def update_counts(self):
+        """Recompute and store the denormalized count fields for this project."""
+        Project.objects.filter(pk=self.pk).update(
+            resource_count=self.codebaseresources.count(),
+            package_count=self.discoveredpackages.count(),
+            dependency_count=self.discovereddependencies.count(),
+            message_count=self.projectmessages.count(),
+            relation_count=self.codebaserelations.count(),
+        )
 
     @cached_property
     def vulnerable_packages(self):
@@ -1573,7 +1556,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         Return a dict of all vulnerabilities affecting this project.
 
-        Combines package and dependency vulnerabilities, keyed by vulnerability_id.
+        Combines package and dependency vulnerabilities, keyed by advisory_uid.
         Each vulnerability includes an "affects" list of all affected packages
         and dependencies.
         """
@@ -1583,11 +1566,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         for queryset in querysets:
             vulnerabilities = queryset.get_vulnerabilities_dict()
-            for vcid, vuln_data in vulnerabilities.items():
-                if vcid in vulnerabilities_dict:
-                    vulnerabilities_dict[vcid]["affects"].extend(vuln_data["affects"])
+            for advisory_uid, vuln_data in vulnerabilities.items():
+                if advisory_uid in vulnerabilities_dict:
+                    vulnerabilities_dict[advisory_uid]["affects"].extend(
+                        vuln_data["affects"]
+                    )
                 else:
-                    vulnerabilities_dict[vcid] = vuln_data
+                    vulnerabilities_dict[advisory_uid] = vuln_data
 
         return vulnerabilities_dict
 
@@ -3361,51 +3346,50 @@ class VulnerabilityQuerySetMixin:
         queryset.
 
         Extracts and flattens the affected_by_vulnerabilities field from
-        all objects in the queryset. Removes duplicates based on vulnerability_id
+        all objects in the queryset. Removes duplicates based on advisory_uid
         while preserving the first occurrence of each unique vulnerability.
         """
         vulnerabilities_lists = self.values_list(self.AFFECTED_BY_FIELD, flat=True)
         flatten_vulnerabilities = chain.from_iterable(vulnerabilities_lists)
 
-        # Deduplicate by vulnerability_id while preserving order
+        # Deduplicate by advisory_uid while preserving order
         unique_vulnerabilities = {
-            vuln["vulnerability_id"]: vuln for vuln in flatten_vulnerabilities
+            vulnerability["advisory_uid"]: vulnerability
+            for vulnerability in flatten_vulnerabilities
         }
 
-        return sorted(
-            unique_vulnerabilities.values(), key=itemgetter("vulnerability_id")
-        )
+        return sorted(unique_vulnerabilities.values(), key=itemgetter("advisory_uid"))
 
     def get_vulnerabilities_dict(self):
         """
-        Return a dict of vulnerabilities keyed by vulnerability_id.
+        Return a dict of vulnerabilities keyed by advisory_uid.
 
         Each vulnerability includes an "affects" list containing all
         objects from this queryset affected by that vulnerability.
 
         Returns:
             dict: {
-                'VCID-1': {
-                    'vulnerability_id': 'VCID-1',
+                'ID-1': {
+                    'advisory_uid': 'ID-1',
                     'affects': [obj1, obj2, ...]
                 },
                 ...
             }
 
         """
-        vulnerabilities_dict = {}
+        vulnerabilities = {}
 
         for obj in self.vulnerable_ordered():
             for vulnerability in obj.affected_by_vulnerabilities:
-                vcid = vulnerability.get("vulnerability_id")
-                if not vcid:
+                advisory_uid = vulnerability.get("advisory_uid")
+                if not advisory_uid:
                     continue
 
-                if vcid not in vulnerabilities_dict:
-                    vulnerabilities_dict[vcid] = {**vulnerability, "affects": []}
-                vulnerabilities_dict[vcid]["affects"].append(obj)
+                if advisory_uid not in vulnerabilities:
+                    vulnerabilities[advisory_uid] = {**vulnerability, "affects": []}
+                vulnerabilities[advisory_uid]["affects"].append(obj)
 
-        return vulnerabilities_dict
+        return vulnerabilities
 
 
 class DiscoveredPackageQuerySet(

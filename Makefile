@@ -40,9 +40,10 @@ shell:
 	# Open a bash session in a standalone container (no stack required)
 	docker run -it $(IMAGE_NAME) bash
 
+# make test              - full suite
+# make test k=<pattern>  - filter by name, e.g. make test k=test_name
 test:
-	@echo "-> Run the test suite"
-	${MANAGE} test --noinput
+	${MANAGE} test --noinput $(if $(k),-k $(k),)
 
 fasttest:
 	@echo "-> Run the test suite without the PipelinesIntegrationTest"
@@ -87,8 +88,8 @@ outdated:
 	@echo "-> Audit the project's dependencies for known vulnerabilities"
 	uv audit
 
-upgrade:
-	# Update the versions in pyproject.toml
+lock:
+	@echo "-> Regenerate uv.lock from local wheels"
 	uv lock
 
 ########################################################################################
@@ -218,4 +219,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate makemigrations restart-worker postgresdb sqlitedb backupdb run test fasttest regen-fixtures fix docs build build-core build-full bash shell docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate lock makemigrations restart-worker postgresdb sqlitedb backupdb run test fasttest regen-fixtures fix docs build build-core build-full bash shell docker-images offline-package

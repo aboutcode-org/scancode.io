@@ -237,12 +237,21 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(1, self.project1.inputsources.count())
         self.assertEqual(1, self.project1.webhooksubscriptions.count())
 
+        self.project1.update_counts()
+        self.project1.refresh_from_db()
+        self.assertEqual(1, self.project1.resource_count)
+        self.assertEqual(1, self.project1.package_count)
+        self.assertEqual(1, self.project1.message_count)
+
         self.project1.reset(restore_pipelines=True, execute_now=False)
         self.assertEqual(0, self.project1.projectmessages.count())
         self.assertEqual(1, self.project1.runs.count())
         self.assertEqual(0, self.project1.discoveredpackages.count())
         self.assertEqual(0, self.project1.codebaseresources.count())
         self.assertEqual(1, self.project1.webhooksubscriptions.count())
+        self.assertEqual(0, self.project1.resource_count)
+        self.assertEqual(0, self.project1.package_count)
+        self.assertEqual(0, self.project1.message_count)
 
         self.project1.reset(keep_webhook=False)
         self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
@@ -618,23 +627,19 @@ class ScanPipeModelsTest(TestCase):
         with self.assertRaises(RunInProgressError):
             self.project1.reset()
 
-    def test_scanpipe_project_queryset_with_counts(self):
+    def test_scanpipe_project_update_counts(self):
         self.project_asgiref.add_error("error 1", "model")
         self.project_asgiref.add_error("error 2", "model")
 
-        project_qs = Project.objects.with_counts(
-            "codebaseresources",
-            "discoveredpackages",
-            "projectmessages",
-        )
+        self.project_asgiref.update_counts()
+        self.project_asgiref.refresh_from_db()
 
-        project = project_qs.get(pk=self.project_asgiref.pk)
-        self.assertEqual(18, project.codebaseresources_count)
-        self.assertEqual(18, project.codebaseresources.count())
-        self.assertEqual(2, project.discoveredpackages_count)
-        self.assertEqual(2, project.discoveredpackages.count())
-        self.assertEqual(2, project.projectmessages_count)
-        self.assertEqual(2, project.projectmessages.count())
+        self.assertEqual(18, self.project_asgiref.resource_count)
+        self.assertEqual(18, self.project_asgiref.codebaseresources.count())
+        self.assertEqual(2, self.project_asgiref.package_count)
+        self.assertEqual(2, self.project_asgiref.discoveredpackages.count())
+        self.assertEqual(2, self.project_asgiref.message_count)
+        self.assertEqual(2, self.project_asgiref.projectmessages.count())
 
     def test_scanpipe_project_related_queryset_get_or_none(self):
         self.assertIsNone(CodebaseResource.objects.get_or_none(path="path/"))
@@ -654,9 +659,9 @@ class ScanPipeModelsTest(TestCase):
         self.assertNotEqual(cloned_subscription.pk, subscription1.pk)
 
     def test_scanpipe_project_vulnerability_properties(self):
-        v1 = {"vulnerability_id": "VCID-1"}
-        v2 = {"vulnerability_id": "VCID-2"}
-        v3 = {"vulnerability_id": "VCID-3"}
+        v1 = {"advisory_uid": "ID-1"}
+        v2 = {"advisory_uid": "ID-2"}
+        v3 = {"advisory_uid": "ID-3"}
         project = make_project()
         make_package(project, "pkg:type/0")
         p1 = make_package(project, "pkg:type/a", affected_by_vulnerabilities=[v1, v2])
@@ -673,9 +678,9 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual([v1, v3], project.dependency_vulnerabilities)
 
         expected = {
-            "VCID-1": {"vulnerability_id": "VCID-1", "affects": [p1, d1]},
-            "VCID-2": {"vulnerability_id": "VCID-2", "affects": [p1]},
-            "VCID-3": {"vulnerability_id": "VCID-3", "affects": [p2, d2]},
+            "ID-1": {"advisory_uid": "ID-1", "affects": [p1, d1]},
+            "ID-2": {"advisory_uid": "ID-2", "affects": [p1]},
+            "ID-3": {"advisory_uid": "ID-3", "affects": [p2, d2]},
         }
         self.assertEqual(expected, project.vulnerabilities)
         self.assertEqual(4, project.vulnerability_count)
@@ -846,7 +851,7 @@ class ScanPipeModelsTest(TestCase):
                 {"package_type": "pypi", "scope": "tests"},
             ],
             "ignored_vulnerabilities": [
-                "VCID-q4q6-yfng-aaag",
+                "ID-q4q6-yfng-aaag",
                 "CVE-2024-27351",
                 "GHSA-vm8q-m57g-pff3",
             ],
@@ -912,12 +917,12 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_project_get_ignored_vulnerabilities_set(self):
         self.project1.settings = {
             "ignored_vulnerabilities": [
-                "VCID-q4q6-yfng-aaag",
+                "ID-q4q6-yfng-aaag",
                 "CVE-2024-27351",
                 "GHSA-vm8q-m57g-pff3",
             ],
         }
-        expected = {"VCID-q4q6-yfng-aaag", "CVE-2024-27351", "GHSA-vm8q-m57g-pff3"}
+        expected = {"ID-q4q6-yfng-aaag", "CVE-2024-27351", "GHSA-vm8q-m57g-pff3"}
         self.assertEqual(expected, self.project1.ignored_vulnerabilities_set)
         self.assertEqual(expected, self.project1.get_ignored_vulnerabilities_set())
 
@@ -2084,7 +2089,7 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_discovered_package_queryset_vulnerable(self):
         p1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
         p2 = DiscoveredPackage.create_from_data(self.project1, package_data2)
-        p2.update(affected_by_vulnerabilities=[{"vulnerability_id": "VCID-1"}])
+        p2.update(affected_by_vulnerabilities=[{"advisory_uid": "ID-1"}])
 
         package_qs = self.project1.discoveredpackages
         self.assertNotIn(p1, DiscoveredPackage.objects.vulnerable())
@@ -2093,21 +2098,21 @@ class ScanPipeModelsTest(TestCase):
 
         p1.update(
             affected_by_vulnerabilities=[
-                {"vulnerability_id": "VCID-1"},
-                {"vulnerability_id": "VCID-2"},
+                {"advisory_uid": "ID-1"},
+                {"advisory_uid": "ID-2"},
             ]
         )
-        expected = [{"vulnerability_id": "VCID-1"}, {"vulnerability_id": "VCID-2"}]
+        expected = [{"advisory_uid": "ID-1"}, {"advisory_uid": "ID-2"}]
         with self.assertNumQueries(1):
             self.assertEqual(expected, package_qs.get_vulnerabilities_list())
 
         expected = {
-            "VCID-1": {
-                "vulnerability_id": "VCID-1",
+            "ID-1": {
+                "advisory_uid": "ID-1",
                 "affects": [p1, p2],
             },
-            "VCID-2": {
-                "vulnerability_id": "VCID-2",
+            "ID-2": {
+                "advisory_uid": "ID-2",
                 "affects": [p1],
             },
         }
@@ -2699,7 +2704,7 @@ class ScanPipeModelsTest(TestCase):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
         self.assertFalse(package.is_vulnerable)
         package.update(
-            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
+            affected_by_vulnerabilities=[{"advisory_uid": "ID-cah8-awtr-aaad"}]
         )
         self.assertTrue(package.is_vulnerable)
 

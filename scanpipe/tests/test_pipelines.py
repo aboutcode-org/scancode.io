@@ -121,9 +121,13 @@ class ScanPipePipelinesTest(TestCase):
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
 
-        exitcode, out = pipeline.execute()
+        with mock.patch.object(project1, "update_counts") as mock_update_counts:
+            pipeline.project = project1
+            exitcode, out = pipeline.execute()
+
         self.assertEqual(0, exitcode)
         self.assertEqual("", out)
+        mock_update_counts.assert_called_once()
 
         run.refresh_from_db()
         self.assertIn("Pipeline [do_nothing] starting", run.log)
@@ -138,7 +142,10 @@ class ScanPipePipelinesTest(TestCase):
         run = project1.add_pipeline("raise_exception")
         pipeline = run.make_pipeline_instance()
 
-        exitcode, out = pipeline.execute()
+        with mock.patch.object(project1, "update_counts") as mock_update_counts:
+            pipeline.project = project1
+            exitcode, out = pipeline.execute()
+
         self.assertEqual(1, exitcode)
         self.assertTrue(out.startswith("Error message"))
         self.assertIn("Traceback:", out)
@@ -146,6 +153,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertIn("step(self)", out)
         self.assertIn("in raise_exception", out)
         self.assertIn("raise ValueError", out)
+        mock_update_counts.assert_called_once()
 
         run.refresh_from_db()
         self.assertIn("Pipeline [raise_exception] starting", run.log)
@@ -1374,7 +1382,7 @@ class PipelinesIntegrationTest(TestCase):
                 "purl": "pkg:deb/debian/adduser@3.118?arch=all",
                 "affected_by_vulnerabilities": [
                     {
-                        "vulnerability_id": "VCID-cah8-awtr-aaad",
+                        "advisory_uid": "ID-1",
                         "summary": "An issue was discovered.",
                     },
                 ],
@@ -1383,13 +1391,14 @@ class PipelinesIntegrationTest(TestCase):
                 "purl": "pkg:deb/debian/adduser@3.118?qualifiers=1",
                 "affected_by_vulnerabilities": [
                     {
-                        "vulnerability_id": "VCID-cah8-awtr-aaad",
+                        "advisory_uid": "ID-2",
                         "summary": "An issue was discovered.",
                     },
                 ],
             },
         ]
-        mock_bulk_search_by_purl.return_value = vulnerability_data
+        response_json = {"results": vulnerability_data}
+        mock_bulk_search_by_purl.return_value = response_json
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
@@ -1674,7 +1683,8 @@ class PipelinesIntegrationTest(TestCase):
         affected_by = package.affected_by_vulnerabilities[0]
         cdx_vulnerability_data = affected_by.pop("cdx_vulnerability_data")
         expected = {
-            "vulnerability_id": "CVE-2005-2541",
+            "advisory_id": "CVE-2005-2541",
+            "advisory_uid": "CVE-2005-2541",
             "summary": "Tar 1.15.1 does not properly warn the user when...",
         }
         self.assertEqual(expected, affected_by)

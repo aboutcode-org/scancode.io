@@ -124,6 +124,9 @@ class InputsBaseForm(forms.Form):
         for url in input_urls:
             project.add_input_source(download_url=url)
 
+        if not input_files:
+            fetch.set_project_purl_from_input_url(project, input_urls)
+
 
 class CheckboxChoiceField(forms.MultipleChoiceField):
     widget = forms.CheckboxSelectMultiple
@@ -512,7 +515,7 @@ class ProjectSettingsForm(forms.ModelForm):
             attrs={
                 "class": "textarea is-dynamic",
                 "rows": 2,
-                "placeholder": "VCID-q4q6-yfng-aaag\nCVE-2024-27351",
+                "placeholder": "ID-q4q6-yfng-aaag\nCVE-2024-27351",
             },
         ),
     )

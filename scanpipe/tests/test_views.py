@@ -504,7 +504,7 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_details_charts_view(self):
         url = reverse("project_charts", args=[self.project1.slug])
 
-        with self.assertNumQueries(9):
+        with self.assertNumQueries(6):
             response = self.client.get(url)
 
         self.assertNotContains(response, 'id="package-charts"')
@@ -513,7 +513,7 @@ class ScanPipeViewsTest(TestCase):
 
         make_resource_file(self.project1, path="", programming_language="Python")
 
-        with self.assertNumQueries(12):
+        with self.assertNumQueries(6):
             response = self.client.get(url)
         self.assertContains(response, '{"Python": 1}')
 
@@ -833,7 +833,7 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(7):
             self.client.get(url)
 
-        with self.assertNumQueries(15):
+        with self.assertNumQueries(10):
             self.client.get(self.project1.get_absolute_url())
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
@@ -1123,6 +1123,8 @@ class ScanPipeViewsTest(TestCase):
         make_relation(from_resource=from_1, to_resource=to_2, map_type="path")
 
         self.assertEqual(3, self.project1.codebaserelations.count())
+        self.project1.update_counts()
+        self.project1.refresh_from_db()
         self.assertEqual(3, self.project1.relation_count)
 
         response = self.client.get(url)
@@ -1200,7 +1202,7 @@ class ScanPipeViewsTest(TestCase):
 
         package1.add_resources([make_resource_file(self.project1, "file1.ext")])
         package1.update(
-            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}],
+            affected_by_vulnerabilities=[{"advisory_uid": "ID-cah8-awtr-aaad"}],
             extra_data={"extra": "data"},
         )
         dependency_data = dependency_data1.copy()
@@ -1218,13 +1220,12 @@ class ScanPipeViewsTest(TestCase):
 
     def test_scanpipe_views_discovered_package_details_view_tab_vulnerabilities(self):
         package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
-        package1.update(
-            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
-        )
+        v1 = {"advisory_uid": "ID-cah8-awtr-aaad", "advisory_id": "ID-cah8-awtr-aaad"}
+        package1.update(affected_by_vulnerabilities=[v1])
         response = self.client.get(package1.get_absolute_url())
         self.assertContains(response, "tab-vulnerabilities")
         self.assertContains(response, '<section id="tab-vulnerabilities"')
-        self.assertContains(response, "VCID-cah8-awtr-aaad")
+        self.assertContains(response, "ID-cah8-awtr-aaad")
 
     @mock.patch("scanpipe.pipes.purldb.is_configured")
     def test_scanpipe_views_discovered_package_purldb_tab_view(self, mock_configured):
@@ -1299,7 +1300,6 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(5):
             self.client.get(url)
 
-    @override_settings(VULNERABLECODE_URL="https://vcio/")
     def test_scanpipe_views_vulnerability_list_view(self):
         self.assertEqual(0, self.project1.vulnerability_count)
         url = reverse("project_vulnerabilities", args=[self.project1.slug])
@@ -1307,8 +1307,15 @@ class ScanPipeViewsTest(TestCase):
             response = self.client.get(url)
         self.assertContains(response, "No Vulnerabilities found.")
 
-        v1 = {"vulnerability_id": "VCID-1"}
-        v2 = {"vulnerability_id": "VCID-2"}
+        v1 = {
+            "advisory_uid": "ID-1",
+            "advisory_id": "ID-1",
+        }
+        v2 = {
+            "advisory_uid": "ID-2",
+            "advisory_id": "ID-2",
+            "resource_url": "https://vcio/advisories/ID-2",
+        }
         project = make_project()
         make_package(project, "pkg:type/a", affected_by_vulnerabilities=[v1])
         make_dependency(project, affected_by_vulnerabilities=[v2])
@@ -1318,9 +1325,9 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(5):
             response = self.client.get(url)
 
-        expected = '<a href="https://vcio//vulnerabilities/VCID-1" target="_blank">'
-        self.assertContains(response, expected)
-        expected = '<a href="https://vcio//vulnerabilities/VCID-2" target="_blank">'
+        expected = "<td>ID-1</td>"
+        self.assertContains(response, expected, html=True)
+        expected = '<a href="https://vcio/advisories/ID-2" target="_blank">'
         self.assertContains(response, expected)
         self.assertContains(response, "pkg:type/a")
 

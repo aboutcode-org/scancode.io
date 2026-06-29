@@ -172,6 +172,26 @@ class ScanPipeManagementCommandTest(TestCase):
         tagged_source = project.inputsources.get(filename="test_models.py")
         self.assertEqual("tag", tagged_source.tag)
 
+    def test_scanpipe_management_command_create_project_purl_from_input_url(self):
+        lodash_url = "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz"
+
+        # Single URL -> purl auto-filled
+        call_command("create-project", "purl-project", "--input-url", lodash_url)
+        project = Project.objects.get(name="purl-project")
+        self.assertEqual("pkg:npm/lodash@4.17.21", project.purl)
+
+        # Multiple URLs -> no auto-fill
+        call_command(
+            "create-project",
+            "multi-url-project",
+            "--input-url",
+            lodash_url,
+            "--input-url",
+            "https://registry.npmjs.org/react/-/react-18.0.0.tgz",
+        )
+        project2 = Project.objects.get(name="multi-url-project")
+        self.assertEqual("", project2.purl)
+
     def test_scanpipe_management_command_create_project_execute(self):
         options = ["--execute"]
         expected = "The --execute option requires one or more pipelines."
@@ -1390,7 +1410,7 @@ class ScanPipeManagementCommandTest(TestCase):
         out_value = out.getvalue().strip()
         self.assertEqual("No vulnerabilities found", out_value)
 
-        vulnerability_data = [{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
+        vulnerability_data = [{"advisory_uid": "ID-cah8-awtr-aaad"}]
         package1.update(affected_by_vulnerabilities=vulnerability_data)
         make_dependency(
             project,
@@ -1405,7 +1425,7 @@ class ScanPipeManagementCommandTest(TestCase):
         out_value = out.getvalue().strip()
         expected = (
             "1 vulnerabilities found:\n"
-            "VCID-cah8-awtr-aaad\n"
+            "ID-cah8-awtr-aaad\n"
             " > pkg:generic/name@1.0\n"
             " > dependency1"
         )
