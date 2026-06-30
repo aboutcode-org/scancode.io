@@ -28,7 +28,6 @@ from collections import Counter
 from contextlib import suppress
 
 from django.apps import apps
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
@@ -106,6 +105,7 @@ from scanpipe.pipes import count_group_by
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import output
 from scanpipe.pipes import purldb
+from scanpipe.settings import scanpipe_settings
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -623,7 +623,7 @@ class ProjectListView(
 ):
     model = Project
     filterset_class = ProjectFilterSet
-    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("project", 20)
+    paginate_by = scanpipe_settings.PAGINATE_BY.get("project", 20)
     template_name = "scanpipe/project_list.html"
     prefetch_related = [
         "labels",
@@ -971,7 +971,7 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
             streaming_content=project.get_settings_as_yml(),
             content_type="application/x-yaml",
         )
-        filename = output.safe_filename(settings.SCANCODEIO_CONFIG_FILE)
+        filename = output.safe_filename(scanpipe_settings.CONFIG_FILE)
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
 
@@ -998,7 +998,7 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
     template_name = "scanpipe/project_charts.html"
 
     @staticmethod
-    def get_summary(values_list, limit=settings.SCANCODEIO_MOST_COMMON_LIMIT):
+    def get_summary(values_list, limit=scanpipe_settings.MOST_COMMON_LIMIT):
         counter = Counter(values_list)
 
         has_only_empty_string = list(counter.keys()) == [""]
@@ -1647,7 +1647,7 @@ class CodebaseResourceListView(
     model = CodebaseResource
     filterset_class = ResourceFilterSet
     template_name = "scanpipe/resource_list.html"
-    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("resource", 100)
+    paginate_by = scanpipe_settings.PAGINATE_BY.get("resource", 100)
     prefetch_related = [
         Prefetch(
             "discovered_packages",
@@ -1721,7 +1721,7 @@ class DiscoveredPackageListView(
     model = DiscoveredPackage
     filterset_class = PackageFilterSet
     template_name = "scanpipe/package_list.html"
-    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 100)
+    paginate_by = scanpipe_settings.PAGINATE_BY.get("package", 100)
     table_columns = [
         {
             "field_name": "package_url",
@@ -1778,7 +1778,7 @@ class DiscoveredDependencyListView(
     model = DiscoveredDependency
     filterset_class = DependencyFilterSet
     template_name = "scanpipe/dependency_list.html"
-    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("dependency", 100)
+    paginate_by = scanpipe_settings.PAGINATE_BY.get("dependency", 100)
     prefetch_related = [
         Prefetch(
             "for_package",
@@ -1847,7 +1847,7 @@ class DiscoveredLicenseListView(
     model = DiscoveredLicense
     filterset_class = LicenseFilterSet
     template_name = "scanpipe/license_detection_list.html"
-    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("license", 10)
+    paginate_by = scanpipe_settings.PAGINATE_BY.get("license", 10)
     table_columns = [
         "identifier",
         {
@@ -1899,7 +1899,7 @@ class ProjectMessageListView(
     model = ProjectMessage
     filterset_class = ProjectMessageFilterSet
     template_name = "scanpipe/message_list.html"
-    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("error", 50)
+    paginate_by = scanpipe_settings.PAGINATE_BY.get("error", 50)
     table_columns = [
         {
             "field_name": "severity",
@@ -1934,7 +1934,7 @@ class CodebaseRelationListView(
             queryset=unordered_resources.only("path", "is_text", "status"),
         ),
     ]
-    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("relation", 100)
+    paginate_by = scanpipe_settings.PAGINATE_BY.get("relation", 100)
     table_columns = [
         "to_resource",
         {
@@ -2816,7 +2816,7 @@ class ProjectResourceTreeRightPaneView(
 ):
     model = CodebaseResource
     template_name = "scanpipe/tree/resource_right_pane.html"
-    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("resource", 100)
+    paginate_by = scanpipe_settings.PAGINATE_BY.get("resource", 100)
     context_object_name = "resources"
 
     def get_queryset(self):

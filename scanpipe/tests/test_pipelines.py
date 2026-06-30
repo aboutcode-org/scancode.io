@@ -30,7 +30,6 @@ from pathlib import Path
 from unittest import mock
 from unittest import skipIf
 
-from django.conf import settings
 from django.test import TestCase
 from django.test import tag
 
@@ -53,6 +52,7 @@ from scanpipe.pipes import flag
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
+from scanpipe.settings import scanpipe_settings
 from scanpipe.tests import FIXTURES_REGEN
 from scanpipe.tests import make_mock_response
 from scanpipe.tests import make_package
@@ -397,7 +397,7 @@ class ScanPipePipelinesTest(TestCase):
         pipeline = run.make_pipeline_instance()
         self.assertEqual({}, pipeline.env)
 
-        config_file = project1.input_path / settings.SCANCODEIO_CONFIG_FILE
+        config_file = project1.input_path / scanpipe_settings.CONFIG_FILE
         config_file.write_text("{*this is not valid yml*}")
         pipeline = run.make_pipeline_instance()
         self.assertEqual({}, pipeline.env)

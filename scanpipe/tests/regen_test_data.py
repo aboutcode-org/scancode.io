@@ -80,7 +80,7 @@ class RegenTestData(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        with override_settings(SCANCODEIO_PROCESSES=-1):
+        with override_settings(SCANPIPE={"PROCESSES": -1}):
             exitcode, _ = pipeline.execute()
         self.assertEqual(0, exitcode)
 

@@ -32,7 +32,6 @@ from pathlib import Path
 from urllib.parse import unquote
 from urllib.parse import urlparse
 
-from django.conf import settings
 from django.utils.http import parse_header_parameters
 
 import git
@@ -48,6 +47,7 @@ from plugincode.location_provider import get_location
 from requests import auth as request_auth
 
 from scanpipe.pipes import run_command_safely
+from scanpipe.settings import scanpipe_settings
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -70,13 +70,13 @@ def get_request_session(uri):
     session = requests.Session()
     netloc = urlparse(uri).netloc
 
-    if credentials := settings.SCANCODEIO_FETCH_BASIC_AUTH.get(netloc):
+    if credentials := scanpipe_settings.FETCH_BASIC_AUTH.get(netloc):
         session.auth = request_auth.HTTPBasicAuth(*credentials)
 
-    elif credentials := settings.SCANCODEIO_FETCH_DIGEST_AUTH.get(netloc):
+    elif credentials := scanpipe_settings.FETCH_DIGEST_AUTH.get(netloc):
         session.auth = request_auth.HTTPDigestAuth(*credentials)
 
-    if headers := settings.SCANCODEIO_FETCH_HEADERS.get(netloc):
+    if headers := scanpipe_settings.FETCH_HEADERS.get(netloc):
         session.headers.update(headers)
 
     return session
@@ -179,12 +179,12 @@ def get_docker_image_platform(docker_url):
     skopeo_executable = _get_skopeo_location()
 
     authentication_args = []
-    authfile = settings.SCANCODEIO_SKOPEO_AUTHFILE_LOCATION
+    authfile = scanpipe_settings.SKOPEO_AUTHFILE_LOCATION
     if authfile:
         authentication_args.append(f"--authfile={authfile}")
 
     netloc = urlparse(docker_url).netloc
-    if credential := settings.SCANCODEIO_SKOPEO_CREDENTIALS.get(netloc):
+    if credential := scanpipe_settings.SKOPEO_CREDENTIALS.get(netloc):
         # Username and password for accessing the registry.
         authentication_args.append(f"--creds={credential}")
     elif not authfile:
@@ -270,11 +270,11 @@ def fetch_docker_image(docker_url, to=None):
             platform_args.append(f"--override-variant={variant}")
 
     authentication_args = []
-    if authfile := settings.SCANCODEIO_SKOPEO_AUTHFILE_LOCATION:
+    if authfile := scanpipe_settings.SKOPEO_AUTHFILE_LOCATION:
         authentication_args.append(f"--authfile={authfile}")
 
     netloc = urlparse(docker_url).netloc
-    if credential := settings.SCANCODEIO_SKOPEO_CREDENTIALS.get(netloc):
+    if credential := scanpipe_settings.SKOPEO_CREDENTIALS.get(netloc):
         # Credentials for accessing the source registry.
         authentication_args.append(f"--src-creds={credential}")
 

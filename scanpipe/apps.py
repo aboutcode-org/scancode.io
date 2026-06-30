@@ -39,6 +39,7 @@ from django.utils.translation import gettext_lazy as _
 from licensedcode.models import load_licenses
 
 from scanpipe.policies import load_policies_file
+from scanpipe.settings import scanpipe_settings
 
 try:
     from importlib import metadata as importlib_metadata
@@ -62,7 +63,7 @@ class ScanPipeConfig(AppConfig):
         self._pipelines = {}
         self.policies = {}
 
-        workspace_location = settings.SCANCODEIO_WORKSPACE_LOCATION
+        workspace_location = scanpipe_settings.WORKSPACE_LOCATION
         self.workspace_path = Path(workspace_location).expanduser().resolve()
 
     def ready(self):
@@ -96,7 +97,7 @@ class ScanPipeConfig(AppConfig):
         for entry_point in sorted(pipeline_entry_points):
             self.register_pipeline(name=entry_point.name, cls=entry_point.load())
 
-        pipelines_dirs = getattr(settings, "SCANCODEIO_PIPELINES_DIRS", [])
+        pipelines_dirs = scanpipe_settings.PIPELINES_DIRS
         logger.debug(f"Load user provided pipelines from {pipelines_dirs}")
 
         for pipelines_dir in pipelines_dirs:
@@ -231,7 +232,7 @@ class ScanPipeConfig(AppConfig):
         include the proper content, we want to raise an exception while the app
         is loading to warn system admins about the issue.
         """
-        policies_file_setting = getattr(settings, "SCANCODEIO_POLICIES_FILE", None)
+        policies_file_setting = scanpipe_settings.POLICIES_FILE
         if not policies_file_setting:
             return
 
@@ -259,5 +260,5 @@ class ScanPipeConfig(AppConfig):
 
     @property
     def site_url(self):
-        if site_url := settings.SCANCODEIO_SITE_URL:
+        if site_url := scanpipe_settings.SITE_URL:
             return site_url.rstrip("/")

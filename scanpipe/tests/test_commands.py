@@ -176,7 +176,10 @@ class ScanPipeManagementCommandTest(TestCase):
         lodash_url = "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz"
 
         # Single URL -> purl auto-filled
-        call_command("create-project", "purl-project", "--input-url", lodash_url)
+        call_command(
+            "create-project", "purl-project", "--input-url", lodash_url,
+            stdout=StringIO(),
+        )
         project = Project.objects.get(name="purl-project")
         self.assertEqual("pkg:npm/lodash@4.17.21", project.purl)
 
@@ -188,6 +191,7 @@ class ScanPipeManagementCommandTest(TestCase):
             lodash_url,
             "--input-url",
             "https://registry.npmjs.org/react/-/react-18.0.0.tgz",
+            stdout=StringIO(),
         )
         project2 = Project.objects.get(name="multi-url-project")
         self.assertEqual("", project2.purl)
@@ -223,7 +227,9 @@ class ScanPipeManagementCommandTest(TestCase):
             "Project other_project created with work directory", out.getvalue()
         )
 
-    @override_settings(SCANCODEIO_GLOBAL_WEBHOOK={"target_url": "https://webhook.url"})
+    @override_settings(
+        SCANPIPE={"GLOBAL_WEBHOOK": {"target_url": "https://webhook.url"}}
+    )
     @mock.patch.object(Project, "setup_global_webhook")
     def test_scanpipe_management_command_create_project_no_global_webhook(
         self, mock_setup_webhook
@@ -317,7 +323,9 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual("", input_source3.tag)
         self.assertFalse(input_source3.exists())
 
-    @override_settings(SCANCODEIO_GLOBAL_WEBHOOK={"target_url": "https://webhook.url"})
+    @override_settings(
+        SCANPIPE={"GLOBAL_WEBHOOK": {"target_url": "https://webhook.url"}}
+    )
     @mock.patch.object(Project, "setup_global_webhook")
     def test_scanpipe_management_command_batch_create_global_webhook(
         self, mock_setup_webhook
@@ -1679,7 +1687,9 @@ class ScanPipeManagementCommandMixinTest(TestCase):
                     run_async=True,
                 )
 
-    @override_settings(SCANCODEIO_GLOBAL_WEBHOOK={"target_url": "https://webhook.url"})
+    @override_settings(
+        SCANPIPE={"GLOBAL_WEBHOOK": {"target_url": "https://webhook.url"}}
+    )
     @mock.patch.object(Project, "setup_global_webhook")
     def test_scanpipe_management_command_mixin_create_project_no_global_webhook(
         self, mock_setup_webhook

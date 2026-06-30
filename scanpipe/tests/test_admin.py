@@ -50,7 +50,7 @@ def refresh_url_cache():
         reload(sys.modules[settings.ROOT_URLCONF])
 
 
-@override_settings(SCANCODEIO_ENABLE_ADMIN_SITE=True)
+@override_settings(SCANPIPE={"ENABLE_ADMIN_SITE": True})
 class ScanPipeAdminTest(TestCase):
     data = Path(__file__).parent / "data"
 
@@ -68,7 +68,7 @@ class ScanPipeAdminTest(TestCase):
             reverse("admin:scanpipe_project_change", args=[self.project1.pk]),
         )
 
-        with override_settings(SCANCODEIO_ENABLE_ADMIN_SITE=False):
+        with override_settings(SCANPIPE={"ENABLE_ADMIN_SITE": False}):
             refresh_url_cache()
             with self.assertRaises(NoReverseMatch):
                 reverse("admin:index")
@@ -90,7 +90,7 @@ class ScanPipeAdminTest(TestCase):
             dependency.get_admin_url(),
         )
 
-        with override_settings(SCANCODEIO_ENABLE_ADMIN_SITE=False):
+        with override_settings(SCANPIPE={"ENABLE_ADMIN_SITE": False}):
             refresh_url_cache()
             self.assertIsNone(resource.get_admin_url())
             self.assertIsNone(package.get_admin_url())
