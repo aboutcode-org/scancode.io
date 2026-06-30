@@ -1,19 +1,18 @@
-# Dev mode: overlay for local development with hot reload.
-# Usage: $ make run
-# See the Makefile for all available commands (test, migrate, bash, etc.)
+name: scancodeio-dev
 
-name: scancodeio
-
-x-dev-env: &dev-env
-  DJANGO_RUNSERVER_HIDE_WARNING: "true"
+x-description: "Development stack: core image, source mounted, runserver with auto-reload"
 
 x-dev-build: &dev-build
   context: .
   target: core
 
+x-dev-env: &dev-env
+  DJANGO_RUNSERVER_HIDE_WARNING: "true"
+
 services:
   web:
     build: *dev-build
+    image: scancodeio:dev
     env_file:
       - .env
     environment:
@@ -32,10 +31,9 @@ services:
   # Volume mount keeps code in sync. Restart manually with: make restart-worker
   worker:
     build: *dev-build
+    image: scancodeio:dev
     env_file:
       - .env
-    environment:
-      <<: *dev-env
     command: wait-for-it --strict --timeout=180 web:8001 -- sh -c "
       ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker
       --queue-class scancodeio.worker.ScanCodeIOQueue
