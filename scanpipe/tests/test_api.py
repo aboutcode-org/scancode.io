@@ -1183,7 +1183,7 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"status": "Pipeline already executed."}
         self.assertEqual(expected, response.data)
 
-    @override_settings(SCANCODEIO_ASYNC=False)
+    @override_settings(SCANPIPE={"ASYNC": False})
     def test_scanpipe_api_run_action_stop_pipeline(self):
         run1 = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run-stop-pipeline", args=[run1.uuid])
@@ -1201,7 +1201,7 @@ class ScanPipeAPITest(TransactionTestCase):
         run1.refresh_from_db()
         self.assertTrue(run1.task_stopped)
 
-    @override_settings(SCANCODEIO_ASYNC=False)
+    @override_settings(SCANPIPE={"ASYNC": False})
     def test_scanpipe_api_run_action_delete_pipeline(self):
         run1 = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run-delete-pipeline", args=[run1.uuid])

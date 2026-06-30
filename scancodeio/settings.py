@@ -79,12 +79,6 @@ SILENCED_SYSTEM_CHECKS = ["security.W004", "security.W008"]
 
 SCANCODEIO_LOG_LEVEL = env.str("SCANCODEIO_LOG_LEVEL", "INFO")
 
-# SCANCODEIO_NETRC_LOCATION="~/.netrc"
-SCANCODEIO_NETRC_LOCATION = env.str("SCANCODEIO_NETRC_LOCATION", default="")
-if SCANCODEIO_NETRC_LOCATION:
-    # Propagate the location to the environ for `requests.utils.get_netrc_auth`
-    env.ENVIRON["NETRC"] = SCANCODEIO_NETRC_LOCATION
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -302,8 +296,8 @@ RQ_QUEUES = {
     },
 }
 
-SCANCODEIO_ASYNC = env.bool("SCANCODEIO_ASYNC", default=False)
-if not SCANCODEIO_ASYNC:
+# Runtime async mode is accessed via scanpipe_settings.ASYNC
+if not env.bool("SCANCODEIO_ASYNC", default=False):
     for queue_config in RQ_QUEUES.values():
         queue_config["ASYNC"] = False
 

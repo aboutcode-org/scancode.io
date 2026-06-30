@@ -51,6 +51,7 @@ from django.core.signals import setting_changed
 ENV_PREFIX = "SCANCODEIO_"
 
 DEFAULTS = {
+    "ASYNC": False,
     "CONFIG_DIR": ".scancode",
     "CONFIG_FILE": "scancode-config.yml",
     "ENABLE_ADMIN_SITE": False,
@@ -59,6 +60,7 @@ DEFAULTS = {
     "FETCH_HEADERS": {},
     "GLOBAL_WEBHOOK": {},
     "MOST_COMMON_LIMIT": 7,
+    "NETRC_LOCATION": "",
     "PAGINATE_BY": {
         "project": 20,
         "error": 50,

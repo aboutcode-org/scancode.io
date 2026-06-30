@@ -23,6 +23,7 @@
 import importlib.util
 import inspect
 import logging
+import os
 import sys
 import warnings
 from importlib.machinery import SourceFileLoader
@@ -71,13 +72,17 @@ class ScanPipeConfig(AppConfig):
         self.load_pipelines()
         self.set_policies()
 
+        if netrc_location := scanpipe_settings.NETRC_LOCATION:
+            # Propagate the location to the environ for `requests.utils.get_netrc_auth`
+            os.environ["NETRC"] = netrc_location
+
         # In SYNC mode, the Run instances cleanup is triggered on app.ready()
         # only when the app is started through "runserver".
         # This cleanup is required if a running pipeline process gets killed and
         # since KeyboardInterrupt cannot be captured to properly update the Run instance
         # before its running process death.
         # In ASYNC mode, the cleanup is handled by the "ScanCodeIOWorker" worker.
-        if not settings.SCANCODEIO_ASYNC and "runserver" in sys.argv:
+        if not scanpipe_settings.ASYNC and "runserver" in sys.argv:
             warnings.filterwarnings(
                 "ignore",
                 message="Accessing the database during app initialization",

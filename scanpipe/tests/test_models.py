@@ -1244,7 +1244,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(Run.Status.STOPPED, run1.status)
         self.assertTrue(run1.task_stopped)
 
-    @override_settings(SCANCODEIO_ASYNC=False)
+    @override_settings(SCANPIPE={"ASYNC": False})
     def test_scanpipe_run_model_stop_task_method(self):
         run1 = self.create_run()
         run1.stop_task()
@@ -1252,7 +1252,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(run1.task_stopped)
         self.assertIn("Stop task requested", run1.log)
 
-    @override_settings(SCANCODEIO_ASYNC=False)
+    @override_settings(SCANPIPE={"ASYNC": False})
     def test_scanpipe_run_model_delete_task_method(self):
         run1 = self.create_run()
         run1.delete_task()
@@ -1361,7 +1361,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertFalse(run2.can_start)
         self.assertFalse(run3.can_start)
 
-    @override_settings(SCANCODEIO_ASYNC=True)
+    @override_settings(SCANPIPE={"ASYNC": True})
     @mock.patch("scanpipe.models.Run.execute_task_async")
     @mock.patch("scanpipe.models.Run.job_status", new_callable=mock.PropertyMock)
     def test_scanpipe_run_model_sync_with_job_async_mode(
@@ -1400,7 +1400,7 @@ class ScanPipeModelsTest(TestCase):
         running.refresh_from_db()
         self.assertTrue(running.task_staled)
 
-    @override_settings(SCANCODEIO_ASYNC=False)
+    @override_settings(SCANPIPE={"ASYNC": False})
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_run_model_sync_with_job_sync_mode(self, mock_execute_task):
         queued = self.create_run(task_id=uuid.uuid4())

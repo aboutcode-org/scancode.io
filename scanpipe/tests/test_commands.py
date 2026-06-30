@@ -177,7 +177,10 @@ class ScanPipeManagementCommandTest(TestCase):
 
         # Single URL -> purl auto-filled
         call_command(
-            "create-project", "purl-project", "--input-url", lodash_url,
+            "create-project",
+            "purl-project",
+            "--input-url",
+            lodash_url,
             stdout=StringIO(),
         )
         project = Project.objects.get(name="purl-project")
@@ -220,7 +223,7 @@ class ScanPipeManagementCommandTest(TestCase):
         options.append("--async")
         out = StringIO()
         expected = "SCANCODEIO_ASYNC=False is not compatible with --async option."
-        with override_settings(SCANCODEIO_ASYNC=False):
+        with override_settings(SCANPIPE={"ASYNC": False}):
             with self.assertRaisesMessage(CommandError, expected):
                 call_command("create-project", "other_project", *options, stdout=out)
         self.assertIn(
@@ -605,11 +608,11 @@ class ScanPipeManagementCommandTest(TestCase):
 
         project.add_pipeline(self.pipeline_name)
         expected = "SCANCODEIO_ASYNC=False is not compatible with --async option."
-        with override_settings(SCANCODEIO_ASYNC=False):
+        with override_settings(SCANPIPE={"ASYNC": False}):
             with self.assertRaisesMessage(CommandError, expected):
                 commands.execute_project(project, run_async=True)
 
-        with override_settings(SCANCODEIO_ASYNC=True):
+        with override_settings(SCANPIPE={"ASYNC": True}):
             with mock.patch("scanpipe.models.Run.start") as mock_start:
                 returned_value = commands.execute_project(project, run_async=True)
                 mock_start.assert_called_once()
@@ -1678,7 +1681,7 @@ class ScanPipeManagementCommandMixinTest(TestCase):
         self.assertTrue(run.task_succeeded)
 
         expected = "SCANCODEIO_ASYNC=False is not compatible with --async option."
-        with override_settings(SCANCODEIO_ASYNC=False):
+        with override_settings(SCANPIPE={"ASYNC": False}):
             with self.assertRaisesMessage(CommandError, expected):
                 self.create_project_command.create_project(
                     name="other_project",

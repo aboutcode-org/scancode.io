@@ -37,7 +37,6 @@ from traceback import format_tb
 from urllib.parse import urlparse
 
 from django.apps import apps
-from django.conf import settings
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
@@ -390,7 +389,7 @@ class AbstractTaskFieldsModel(models.Model):
         """Stop a "running" task."""
         self.append_to_log("Stop task requested")
 
-        if not settings.SCANCODEIO_ASYNC:
+        if not scanpipe_settings.ASYNC:
             self.set_task_stopped()
             return
 
@@ -414,7 +413,7 @@ class AbstractTaskFieldsModel(models.Model):
 
     def delete_task(self, delete_self=True):
         """Delete a "not started" or "queued" task."""
-        if settings.SCANCODEIO_ASYNC and self.task_id:
+        if scanpipe_settings.ASYNC and self.task_id:
             job = self.job
             if job:
                 self.job.delete()
@@ -2122,7 +2121,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         run_pk = str(self.pk)
 
         # Bypass entirely the queue system and run the pipeline in the current thread.
-        if not settings.SCANCODEIO_ASYNC:
+        if not scanpipe_settings.ASYNC:
             tasks.execute_pipeline_task(run_pk)
             return
 
@@ -2157,7 +2156,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         """
         RunStatus = self.Status
 
-        if settings.SCANCODEIO_ASYNC:
+        if scanpipe_settings.ASYNC:
             job_status = self.job_status
         else:
             job_status = None
