@@ -42,8 +42,8 @@
             </td>
             <td>
               {% if package.compliance_alert %}
-                <a href="?compliance_alert={{ package.compliance_alert }}" class="is-black-link">
-                  {{ package.compliance_alert }}
+                <a href="?compliance_alert={{ package.compliance_alert }}">
+                  {% include 'scanpipe/includes/compliance_alert_tag.html' with compliance_alert=package.compliance_alert only %}
                 </a>
               {% endif %}
             </td>

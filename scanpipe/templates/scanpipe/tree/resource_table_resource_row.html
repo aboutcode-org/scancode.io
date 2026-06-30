@@ -73,6 +73,8 @@
     {{ resource.detected_license_expression }}
   </td>
   <td>
-    {{ resource.compliance_alert }}
+    {% if resource.compliance_alert %}
+      {% include 'scanpipe/includes/compliance_alert_tag.html' with compliance_alert=resource.compliance_alert only %}
+    {% endif %}
   </td>
 </tr>

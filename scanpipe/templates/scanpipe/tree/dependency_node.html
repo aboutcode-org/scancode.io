@@ -11,7 +11,7 @@
     </a>
   {% endif %}
   {% if node.has_compliance_issue %}
-    <a href="{{ node.url }}#terms" target="_blank" class="{% if node.compliance_alert == 'error' %}has-text-danger{% else %}has-text-warning{% endif %}">
+    <a href="{{ node.url }}#terms" target="_blank" class="{% if node.compliance_alert == 'error' %}has-text-danger{% elif node.compliance_alert == 'warning' %}has-text-warning{% elif node.compliance_alert == 'missing' %}has-text-dark{% elif node.compliance_alert == 'ok' %}has-text-success{% endif %}">
       <i class="fa-solid fa-scale-balanced fa-sm" title="Compliance alert: {{ node.compliance_alert }}"></i>
     </a>
   {% endif %}

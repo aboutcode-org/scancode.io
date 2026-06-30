@@ -1,0 +1,9 @@
+<span class="tag is-rounded
+{% if compliance_alert == 'error' %}is-danger
+{% elif compliance_alert == 'warning' %}is-warning
+{% elif compliance_alert == 'missing' %}is-dark
+{% elif compliance_alert == 'ok' %}is-success
+{% endif %}
+">
+  {{ compliance_alert|title }}
+</span>
