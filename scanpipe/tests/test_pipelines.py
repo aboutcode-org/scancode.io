@@ -1872,8 +1872,9 @@ class PipelinesIntegrationTest(TestCase):
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.is_available")
+    @mock.patch("scanpipe.pipes.purldb.is_configured", return_value=True)
     def test_scanpipe_populate_purldb_pipeline_integration(
-        self, mock_is_available, mock_request_post
+        self, mock_is_configured, mock_is_available, mock_request_post
     ):
         pipeline_name1 = "load_inventory"
         pipeline_name2 = "populate_purldb"
@@ -1915,8 +1916,9 @@ class PipelinesIntegrationTest(TestCase):
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.is_available")
+    @mock.patch("scanpipe.pipes.purldb.is_configured", return_value=True)
     def test_scanpipe_populate_purldb_pipeline_integration_without_assembly(
-        self, mock_is_available, mock_request_post
+        self, mock_is_configured, mock_is_available, mock_request_post
     ):
         pipeline_name = "populate_purldb"
         project1 = make_project()
