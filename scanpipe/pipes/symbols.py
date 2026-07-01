@@ -235,9 +235,9 @@ class LanguageQuery(ABC):
         if not code_text:
             return None, None
         parser = Parser(language=self.ts_language)
-        return parser.parse(code_text.encode("utf-8")), symbols_tree_sitter.TS_LANGUAGE_WHEELS[
-            self.language_name
-        ]
+        return parser.parse(
+            code_text.encode("utf-8")
+        ), symbols_tree_sitter.TS_LANGUAGE_WHEELS[self.language_name]
 
     def run_query(self, kind: str, root_node):
         query = self._compiled_queries.get(kind)
