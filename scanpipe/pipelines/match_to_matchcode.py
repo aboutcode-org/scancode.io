@@ -57,6 +57,11 @@ class MatchToMatchCode(Pipeline):
             cls.create_packages_from_match_results,
         )
 
+    @classmethod
+    def get_availability(cls):
+        if not matchcode.is_configured():
+            return "MatchCode.io is not configured."
+
     def check_matchcode_service_availability(self):
         """Check if the MatchCode.io service if configured and available."""
         if not matchcode.is_configured():

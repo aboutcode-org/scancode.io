@@ -38,6 +38,11 @@ class EnrichWithPurlDB(Pipeline):
             cls.enrich_discovered_packages_with_purldb,
         )
 
+    @classmethod
+    def get_availability(cls):
+        if not purldb.is_configured():
+            return "PurlDB is not configured."
+
     def enrich_discovered_packages_with_purldb(self):
         """Lookup discovered packages in PurlDB."""
         purldb.enrich_discovered_packages(self.project, logger=self.log)
