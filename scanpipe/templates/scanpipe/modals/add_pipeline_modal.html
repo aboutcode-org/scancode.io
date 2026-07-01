@@ -1,4 +1,4 @@
-<div id="add-pipeline-modal" class="modal">
+<div id="add-pipeline-modal" class="modal is-medium-size">
   <div class="modal-background"></div>
   {# Keep the <form> outside the .modal-card head/body/footer sections #}
   <form method="post" data-submit-overlay>{% csrf_token %}
@@ -7,16 +7,13 @@
         <p class="modal-card-title">Add pipeline</p>
         <button class="delete" type="button" aria-label="close"></button>
       </header>
-      <section class="modal-card-body">
+      <section class="modal-card-body mb-0 pb-0">
         {% if pipeline_runs %}
-          <div class="message is-info">
-            <div class="message-body">
-              <span class="icon width-1 height-1 mr-1">
-                <i class="fa-solid fa-info-circle"></i>
-              </span>
-              <span>
-                Pipeline selection is <strong>limited to add-ons</strong> as pipelines
-                have already been assigned to this project.
+          <div class="message is-info mb-3">
+            <div class="message-body p-3">
+              <span class="icon-text">
+                <span class="icon"><i class="fa-solid fa-info-circle"></i></span>
+                <span>Only <strong>add-on pipelines</strong> are available, as this project already has a base pipeline assigned.</span>
               </span>
             </div>
           </div>
@@ -24,25 +21,46 @@
         <div class="field">
           <div class="control">
             {% for pipeline_name, pipeline_info in pipeline_choices %}
-              <div class="mb-3">
-                <label class="radio label mb-0">
-                  <input type="radio" name="pipeline" value="{{ pipeline_name }}">
-                  {{ pipeline_name }}
-                </label>
-                <p class="help ml-4">{{ pipeline_info.summary }}</p>
-                {% if pipeline_info.available_groups %}
-                  <div class="ml-2 mt-1">
-                    {% for group in pipeline_info.available_groups %}
-                      <label class="checkbox ml-1 mb-1" for="id_{{ pipeline_name }}_{{ group }}">
-                        <span class="tag is-warning has-text-weight-bold">
-                          <input type="checkbox" name="selected_groups" value="{{ group }}" id="id_{{ pipeline_name }}_{{ group }}" class="mr-1">
-                          {{ group }}
-                        </span>
-                      </label>
-                    {% endfor %}
+              {% if pipeline_info.is_available %}
+                <div class="mb-3">
+                  <label class="radio label mb-0">
+                    <input type="radio" name="pipeline" value="{{ pipeline_name }}">
+                    {{ pipeline_name }}
+                  </label>
+                  <p class="help ml-4 mt-0">{{ pipeline_info.summary }}</p>
+                  {% if pipeline_info.available_groups %}
+                    <div class="ml-2 mt-1">
+                      {% for group in pipeline_info.available_groups %}
+                        <label class="checkbox ml-1" for="id_{{ pipeline_name }}_{{ group }}">
+                          <span class="tag is-warning has-text-weight-bold">
+                            <input type="checkbox" name="selected_groups" value="{{ group }}" id="id_{{ pipeline_name }}_{{ group }}" class="mr-1">
+                            {{ group }}
+                          </span>
+                        </label>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        <hr class="my-2">
+        <div class="field">
+          <div class="control">
+            {% for pipeline_name, pipeline_info in pipeline_choices %}
+              {% if not pipeline_info.is_available %}
+                <div class="mb-3">
+                  <div class="is-flex is-align-items-center">
+                    <span class="has-text-grey ml-4 mr-3">{{ pipeline_name }}</span>
+                    <span class="tag is-light">
+                      <span class="icon is-small"><i class="fa-solid fa-circle-info has-text-grey"></i></span>
+                      <span class="has-text-grey ml-1">{{ pipeline_info.unavailable_reason }}</span>
+                    </span>
                   </div>
-                {% endif %}
-              </div>
+                  <p class="help ml-4 mt-0 has-text-grey-light">{{ pipeline_info.summary }}</p>
+                </div>
+              {% endif %}
             {% endfor %}
           </div>
         </div>
