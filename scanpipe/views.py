@@ -2350,6 +2350,7 @@ class DiscoveredPackageDetailsView(
             ],
             "icon_class": "fa-solid fa-bug",
             "template": "scanpipe/tabset/tab_vulnerabilities.html",
+            "tab_context": {"VULNERABLECODE_URL": settings.VULNERABLECODE_URL},
         },
         "extra_data": {
             "fields": ["extra_data"],
