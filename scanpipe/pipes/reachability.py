@@ -74,9 +74,8 @@ def detect_language_with_scancode(file_path, content):
 
 
 class GitRepositoryContext:
-    def __init__(self, vcs_url: str, commit_hash: str = None):
+    def __init__(self, vcs_url: str):
         self.vcs_url = vcs_url
-        self.commit_hash = commit_hash
         self.repo_path = None
         self._repo = None
 
@@ -84,13 +83,11 @@ class GitRepositoryContext:
         self.repo_path = tempfile.mkdtemp(prefix="symbol-reachability-")
         try:
             self._repo = Repo.clone_from(self.vcs_url, self.repo_path)
-            if self.commit_hash:
-                self._repo.git.checkout(self.commit_hash)
             return self
         except Exception as exc:
             self._cleanup()
             raise ValueError(
-                f"Failed to clone/checkout {self.vcs_url}@{self.commit_hash}"
+                f"Failed to clone/checkout {self.vcs_url}"
             ) from exc
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -288,7 +285,7 @@ class PatchAnalyzer:
 
     @classmethod
     def analyze(
-        self, vulnerable_text, fixed_text, removed_lines, added_lines, file_path
+        cls, vulnerable_text, fixed_text, removed_lines, added_lines, file_path
     ):
         vulnerable_text = normalize_text(vulnerable_text)
         fixed_text = normalize_text(fixed_text)
@@ -326,7 +323,7 @@ class PatchAnalyzer:
             vuln_nodes = vuln_extractor.extract_changed_symbols(
                 changed_lines=removed_lines
             )
-            vuln_meta_all = self.build_symbol_metadata(
+            vuln_meta_all = cls.build_symbol_metadata(
                 nodes=vuln_nodes, extractor=vuln_extractor
             )
 
@@ -337,11 +334,11 @@ class PatchAnalyzer:
             fixed_nodes = fixed_extractor.extract_changed_symbols(
                 changed_lines=added_lines
             )
-            fixed_meta_all = self.build_symbol_metadata(
+            fixed_meta_all = cls.build_symbol_metadata(
                 fixed_nodes, extractor=fixed_extractor
             )
 
-        vuln_meta, fixed_meta = self.diff_changed_symbols(
+        vuln_meta, fixed_meta = cls.diff_changed_symbols(
             vuln_meta=vuln_meta_all, fixed_meta=fixed_meta_all
         )
         return vuln_meta, fixed_meta, language
