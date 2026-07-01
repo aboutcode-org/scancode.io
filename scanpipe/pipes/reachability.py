@@ -86,9 +86,7 @@ class GitRepositoryContext:
             return self
         except Exception as exc:
             self._cleanup()
-            raise ValueError(
-                f"Failed to clone/checkout {self.vcs_url}"
-            ) from exc
+            raise ValueError(f"Failed to clone/checkout {self.vcs_url}") from exc
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._cleanup()

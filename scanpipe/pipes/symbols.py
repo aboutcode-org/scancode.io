@@ -26,6 +26,7 @@ from abc import ABC
 from functools import cache
 
 from django.db.models import Q
+
 from aboutcode.pipeline import LoopProgress
 
 
@@ -175,6 +176,7 @@ def _collect_and_store_tree_sitter_symbols_and_strings(resource):
             "source_strings": result.get("source_strings"),
         }
     )
+
 
 @cache
 def load_language(language: str):
