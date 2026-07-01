@@ -31,6 +31,7 @@ from rest_framework.routers import DefaultRouter
 from scanpipe.admin import admin_site
 from scanpipe.api.views import ProjectViewSet
 from scanpipe.api.views import RunViewSet
+from scanpipe.settings import scanpipe_settings
 from scanpipe.views import AccountProfileView
 from scanpipe.views import GenerateAPIKeyView
 from scanpipe.views import RevokeAPIKeyView
@@ -67,7 +68,7 @@ urlpatterns = auth_urlpatterns + [
 ]
 
 
-if settings.SCANCODEIO_ENABLE_ADMIN_SITE:
+if scanpipe_settings.ENABLE_ADMIN_SITE:
     urlpatterns.append(path("admin/", admin_site.urls))
 
 

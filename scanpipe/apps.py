@@ -23,6 +23,7 @@
 import importlib.util
 import inspect
 import logging
+import os
 import sys
 import warnings
 from importlib.machinery import SourceFileLoader
@@ -39,6 +40,7 @@ from django.utils.translation import gettext_lazy as _
 from licensedcode.models import load_licenses
 
 from scanpipe.policies import load_policies_file
+from scanpipe.settings import scanpipe_settings
 
 try:
     from importlib import metadata as importlib_metadata
@@ -62,7 +64,7 @@ class ScanPipeConfig(AppConfig):
         self._pipelines = {}
         self.policies = {}
 
-        workspace_location = settings.SCANCODEIO_WORKSPACE_LOCATION
+        workspace_location = scanpipe_settings.WORKSPACE_LOCATION
         self.workspace_path = Path(workspace_location).expanduser().resolve()
 
     def ready(self):
@@ -70,13 +72,17 @@ class ScanPipeConfig(AppConfig):
         self.load_pipelines()
         self.set_policies()
 
+        if netrc_location := scanpipe_settings.NETRC_LOCATION:
+            # Propagate the location to the environ for `requests.utils.get_netrc_auth`
+            os.environ["NETRC"] = netrc_location
+
         # In SYNC mode, the Run instances cleanup is triggered on app.ready()
         # only when the app is started through "runserver".
         # This cleanup is required if a running pipeline process gets killed and
         # since KeyboardInterrupt cannot be captured to properly update the Run instance
         # before its running process death.
         # In ASYNC mode, the cleanup is handled by the "ScanCodeIOWorker" worker.
-        if not settings.SCANCODEIO_ASYNC and "runserver" in sys.argv:
+        if not scanpipe_settings.ASYNC and "runserver" in sys.argv:
             warnings.filterwarnings(
                 "ignore",
                 message="Accessing the database during app initialization",
@@ -96,7 +102,7 @@ class ScanPipeConfig(AppConfig):
         for entry_point in sorted(pipeline_entry_points):
             self.register_pipeline(name=entry_point.name, cls=entry_point.load())
 
-        pipelines_dirs = getattr(settings, "SCANCODEIO_PIPELINES_DIRS", [])
+        pipelines_dirs = scanpipe_settings.PIPELINES_DIRS
         logger.debug(f"Load user provided pipelines from {pipelines_dirs}")
 
         for pipelines_dir in pipelines_dirs:
@@ -231,7 +237,7 @@ class ScanPipeConfig(AppConfig):
         include the proper content, we want to raise an exception while the app
         is loading to warn system admins about the issue.
         """
-        policies_file_setting = getattr(settings, "SCANCODEIO_POLICIES_FILE", None)
+        policies_file_setting = scanpipe_settings.POLICIES_FILE
         if not policies_file_setting:
             return
 
@@ -259,5 +265,5 @@ class ScanPipeConfig(AppConfig):
 
     @property
     def site_url(self):
-        if site_url := settings.SCANCODEIO_SITE_URL:
+        if site_url := scanpipe_settings.SITE_URL:
             return site_url.rstrip("/")

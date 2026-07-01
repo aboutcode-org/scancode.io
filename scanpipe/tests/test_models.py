@@ -35,7 +35,6 @@ from unittest import skipIf
 from unittest.mock import patch
 
 from django.apps import apps
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -76,6 +75,7 @@ from scanpipe.models import get_project_work_directory
 from scanpipe.models import normalize_package_url_data
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
+from scanpipe.settings import scanpipe_settings
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import dependency_data2
 from scanpipe.tests import global_policies
@@ -687,21 +687,21 @@ class ScanPipeModelsTest(TestCase):
 
     def test_scanpipe_project_get_codebase_config_directory(self):
         self.assertIsNone(self.project1.get_codebase_config_directory())
-        (self.project1.codebase_path / settings.SCANCODEIO_CONFIG_DIR).mkdir()
+        (self.project1.codebase_path / scanpipe_settings.CONFIG_DIR).mkdir()
         config_directory = str(self.project1.get_codebase_config_directory())
         self.assertTrue(config_directory.endswith("codebase/.scancode"))
 
     def test_scanpipe_project_get_input_config_file(self):
         self.assertIsNone(self.project1.get_input_config_file())
 
-        config_file = self.project1.input_path / settings.SCANCODEIO_CONFIG_FILE
+        config_file = self.project1.input_path / scanpipe_settings.CONFIG_FILE
         config_file.touch()
         config_file_location = str(self.project1.get_input_config_file())
         self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
 
         dir1_path = self.project1.codebase_path / "dir1"
         dir1_path.mkdir(parents=True, exist_ok=True)
-        dir1_config_file = dir1_path / settings.SCANCODEIO_CONFIG_FILE
+        dir1_config_file = dir1_path / scanpipe_settings.CONFIG_FILE
         dir1_config_file.touch()
         # If a config file exists directly in the input directory, return it.
         config_file_location = str(self.project1.get_input_config_file())
@@ -715,7 +715,7 @@ class ScanPipeModelsTest(TestCase):
 
         dir2_path = self.project1.codebase_path / "dir2"
         dir2_path.mkdir(parents=True, exist_ok=True)
-        dir2_config_file = dir2_path / settings.SCANCODEIO_CONFIG_FILE
+        dir2_config_file = dir2_path / scanpipe_settings.CONFIG_FILE
         dir2_config_file.touch()
         # If multiple config files are found, report an error.
         self.assertIsNone(self.project1.get_input_config_file())
@@ -726,7 +726,7 @@ class ScanPipeModelsTest(TestCase):
         dir2_config_file.unlink()
         sub_dir1_path = self.project1.codebase_path / "dir1" / "subdir1"
         sub_dir1_path.mkdir(parents=True, exist_ok=True)
-        sub_dir1_config_file = sub_dir1_path / settings.SCANCODEIO_CONFIG_FILE
+        sub_dir1_config_file = sub_dir1_path / scanpipe_settings.CONFIG_FILE
         sub_dir1_config_file.touch()
         # Search for config files *ONLY* in immediate codebase/ subdirectories.
         self.assertIsNone(self.project1.get_input_config_file())
@@ -871,7 +871,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected, self.project1.get_env())
 
     def test_scanpipe_project_get_env_invalid_yml_content(self):
-        config_file = self.project1.input_path / settings.SCANCODEIO_CONFIG_FILE
+        config_file = self.project1.input_path / scanpipe_settings.CONFIG_FILE
         config_file.write_text("{*this is not valid yml*}")
 
         config_file_location = str(self.project1.get_input_config_file())
@@ -947,7 +947,7 @@ class ScanPipeModelsTest(TestCase):
             "include_results": "False",
         }
 
-        with override_settings(SCANCODEIO_GLOBAL_WEBHOOK=webhook_data):
+        with override_settings(SCANPIPE={"GLOBAL_WEBHOOK": webhook_data}):
             # Case 1: New project, not a clone (Webhook should be called)
             project = Project(name="Test Project")
             project.save()
@@ -965,7 +965,7 @@ class ScanPipeModelsTest(TestCase):
             mock_setup_webhook.assert_not_called()
 
         # Case 4: Global webhook is disabled (Webhook should NOT be called)
-        with override_settings(SCANCODEIO_GLOBAL_WEBHOOK=None):
+        with override_settings(SCANPIPE={"GLOBAL_WEBHOOK": None}):
             project = Project(name="No Webhook Project")
             project.save()
             mock_setup_webhook.assert_not_called()
@@ -975,7 +975,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(0, self.project1.webhooksubscriptions.count())
 
         webhook_data = {"target_url": ""}
-        with override_settings(SCANCODEIO_GLOBAL_WEBHOOK=webhook_data):
+        with override_settings(SCANPIPE={"GLOBAL_WEBHOOK": webhook_data}):
             self.project1.setup_global_webhook()
         self.assertEqual(0, self.project1.webhooksubscriptions.count())
 
@@ -985,7 +985,7 @@ class ScanPipeModelsTest(TestCase):
             "include_summary": "True",
             "include_results": "False",
         }
-        with override_settings(SCANCODEIO_GLOBAL_WEBHOOK=webhook_data):
+        with override_settings(SCANPIPE={"GLOBAL_WEBHOOK": webhook_data}):
             self.project1.setup_global_webhook()
         self.assertEqual(1, self.project1.webhooksubscriptions.count())
         webhook = self.project1.webhooksubscriptions.get()
@@ -1244,7 +1244,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(Run.Status.STOPPED, run1.status)
         self.assertTrue(run1.task_stopped)
 
-    @override_settings(SCANCODEIO_ASYNC=False)
+    @override_settings(SCANPIPE={"ASYNC": False})
     def test_scanpipe_run_model_stop_task_method(self):
         run1 = self.create_run()
         run1.stop_task()
@@ -1252,7 +1252,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(run1.task_stopped)
         self.assertIn("Stop task requested", run1.log)
 
-    @override_settings(SCANCODEIO_ASYNC=False)
+    @override_settings(SCANPIPE={"ASYNC": False})
     def test_scanpipe_run_model_delete_task_method(self):
         run1 = self.create_run()
         run1.delete_task()
@@ -1361,7 +1361,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertFalse(run2.can_start)
         self.assertFalse(run3.can_start)
 
-    @override_settings(SCANCODEIO_ASYNC=True)
+    @override_settings(SCANPIPE={"ASYNC": True})
     @mock.patch("scanpipe.models.Run.execute_task_async")
     @mock.patch("scanpipe.models.Run.job_status", new_callable=mock.PropertyMock)
     def test_scanpipe_run_model_sync_with_job_async_mode(
@@ -1400,7 +1400,7 @@ class ScanPipeModelsTest(TestCase):
         running.refresh_from_db()
         self.assertTrue(running.task_staled)
 
-    @override_settings(SCANCODEIO_ASYNC=False)
+    @override_settings(SCANPIPE={"ASYNC": False})
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_run_model_sync_with_job_sync_mode(self, mock_execute_task):
         queued = self.create_run(task_id=uuid.uuid4())
@@ -2366,7 +2366,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertIn("summary", payload)
         self.assertIn("results", payload)
 
-    @override_settings(SCANCODEIO_SITE_URL="https://example.com")
+    @override_settings(SCANPIPE={"SITE_URL": "https://example.com"})
     def test_scanpipe_webhook_subscription_model_get_slack_payload(self):
         project = self.project1
         run1 = self.create_run()

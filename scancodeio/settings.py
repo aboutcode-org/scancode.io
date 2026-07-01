@@ -63,8 +63,6 @@ SCANCODEIO_REQUIRE_AUTHENTICATION = env.bool(
     "SCANCODEIO_REQUIRE_AUTHENTICATION", default=False
 )
 
-SCANCODEIO_ENABLE_ADMIN_SITE = env.bool("SCANCODEIO_ENABLE_ADMIN_SITE", default=False)
-
 SECURE_CONTENT_TYPE_NOSNIFF = env.bool("SECURE_CONTENT_TYPE_NOSNIFF", default=True)
 
 X_FRAME_OPTIONS = env.str("X_FRAME_OPTIONS", default="DENY")
@@ -79,101 +77,7 @@ SILENCED_SYSTEM_CHECKS = ["security.W004", "security.W008"]
 
 # ScanCode.io
 
-SCANCODEIO_WORKSPACE_LOCATION = env.str("SCANCODEIO_WORKSPACE_LOCATION", default="var")
-
-SCANCODEIO_CONFIG_DIR = env.str("SCANCODEIO_CONFIG_DIR", default=".scancode")
-
-SCANCODEIO_CONFIG_FILE = env.str(
-    "SCANCODEIO_CONFIG_FILE", default="scancode-config.yml"
-)
-
 SCANCODEIO_LOG_LEVEL = env.str("SCANCODEIO_LOG_LEVEL", "INFO")
-
-# Set the number of parallel processes to use for ScanCode related scan execution.
-# If the SCANCODEIO_PROCESSES argument is not set, defaults to an optimal number of CPUs
-# available on the machine.
-SCANCODEIO_PROCESSES = env.int("SCANCODEIO_PROCESSES", default=None)
-
-SCANCODEIO_POLICIES_FILE = env.str("SCANCODEIO_POLICIES_FILE", default="policies.yml")
-
-# This setting defines the additional locations ScanCode.io will search for pipelines.
-# This should be set to a list of strings that contain full paths to your additional
-# pipelines directories.
-SCANCODEIO_PIPELINES_DIRS = env.list("SCANCODEIO_PIPELINES_DIRS", default=[])
-
-# Maximum time allowed for a pipeline to complete.
-SCANCODEIO_TASK_TIMEOUT = env.str("SCANCODEIO_TASK_TIMEOUT", default="24h")
-
-# Default to 2 minutes.
-SCANCODEIO_SCAN_FILE_TIMEOUT = env.int("SCANCODEIO_SCAN_FILE_TIMEOUT", default=120)
-
-# Default to None which scans all files
-SCANCODEIO_SCAN_MAX_FILE_SIZE = env.int("SCANCODEIO_SCAN_MAX_FILE_SIZE", default=None)
-
-# List views pagination, controls the number of items displayed per page.
-# Syntax in .env: SCANCODEIO_PAGINATE_BY=project=10,project_error=10
-SCANCODEIO_PAGINATE_BY = env.dict(
-    "SCANCODEIO_PAGINATE_BY",
-    default={
-        "project": 20,
-        "error": 50,
-        "resource": 100,
-        "package": 100,
-        "dependency": 100,
-        "license": 100,
-        "relation": 100,
-    },
-)
-
-# Default limit for "most common" entries in QuerySets.
-SCANCODEIO_MOST_COMMON_LIMIT = env.int("SCANCODEIO_MOST_COMMON_LIMIT", default=7)
-
-# The base URL (e.g., https://hostname/) of this application instance.
-# Required for generating URLs to reference objects within the app,
-# such as in webhook notifications.
-SCANCODEIO_SITE_URL = env.str("SCANCODEIO_SITE_URL", default="")
-
-# Fetch authentication credentials
-
-# SCANCODEIO_FETCH_BASIC_AUTH="host=user,password;"
-SCANCODEIO_FETCH_BASIC_AUTH = env.dict(
-    "SCANCODEIO_FETCH_BASIC_AUTH",
-    cast={"value": tuple},
-    default={},
-)
-
-# SCANCODEIO_FETCH_DIGEST_AUTH="host=user,password;"
-SCANCODEIO_FETCH_DIGEST_AUTH = env.dict(
-    "SCANCODEIO_FETCH_DIGEST_AUTH",
-    cast={"value": tuple},
-    default={},
-)
-
-# SCANCODEIO_FETCH_HEADERS="host=Header1=value,Header2=value;"
-SCANCODEIO_FETCH_HEADERS = {}
-FETCH_HEADERS_STR = env.str("SCANCODEIO_FETCH_HEADERS", default="")
-for entry in FETCH_HEADERS_STR.split(";"):
-    if entry.strip():
-        host, headers = entry.split("=", 1)
-        SCANCODEIO_FETCH_HEADERS[host] = env.parse_value(headers, cast=dict)
-
-# SCANCODEIO_NETRC_LOCATION="~/.netrc"
-SCANCODEIO_NETRC_LOCATION = env.str("SCANCODEIO_NETRC_LOCATION", default="")
-if SCANCODEIO_NETRC_LOCATION:
-    # Propagate the location to the environ for `requests.utils.get_netrc_auth`
-    env.ENVIRON["NETRC"] = SCANCODEIO_NETRC_LOCATION
-
-# SCANCODEIO_SKOPEO_CREDENTIALS="host1=user:password,host2=user:password"
-SCANCODEIO_SKOPEO_CREDENTIALS = env.dict("SCANCODEIO_SKOPEO_CREDENTIALS", default={})
-
-# SCANCODEIO_SKOPEO_AUTHFILE_LOCATION="/path/to/auth.json"
-SCANCODEIO_SKOPEO_AUTHFILE_LOCATION = env.str(
-    "SCANCODEIO_SKOPEO_AUTHFILE_LOCATION", default=""
-)
-
-# This webhook will be added as WebhookSubscription for each new project.
-# SCANCODEIO_GLOBAL_WEBHOOK=target_url=https://webhook.url,trigger_on_each_run=False,include_summary=True,include_results=False
-SCANCODEIO_GLOBAL_WEBHOOK = env.dict("SCANCODEIO_GLOBAL_WEBHOOK", default={})
 
 # Application definition
 
@@ -289,11 +193,13 @@ if IS_TESTS:
     from django.core.management.utils import get_random_secret_key
 
     SECRET_KEY = get_random_secret_key()
-    # Do not pollute the workspace while running the tests.
-    SCANCODEIO_WORKSPACE_LOCATION = tempfile.mkdtemp()
+    SCANPIPE = {
+        # Do not pollute the workspace while running the tests.
+        "WORKSPACE_LOCATION": tempfile.mkdtemp(),
+        "SCAN_FILE_TIMEOUT": 120,
+        "POLICIES_FILE": None,
+    }
     SCANCODEIO_REQUIRE_AUTHENTICATION = True
-    SCANCODEIO_SCAN_FILE_TIMEOUT = 120
-    SCANCODEIO_POLICIES_FILE = None
     # The default password hasher is rather slow by design.
     # Using a faster hashing algorithm in the testing context to speed up the run.
     PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
@@ -390,8 +296,8 @@ RQ_QUEUES = {
     },
 }
 
-SCANCODEIO_ASYNC = env.bool("SCANCODEIO_ASYNC", default=False)
-if not SCANCODEIO_ASYNC:
+# Runtime async mode is accessed via scanpipe_settings.ASYNC
+if not env.bool("SCANCODEIO_ASYNC", default=False):
     for queue_config in RQ_QUEUES.values():
         queue_config["ASYNC"] = False
 

@@ -47,18 +47,18 @@ class ScanPipeAppsTest(TestCase):
     @patch.object(scanpipe_app, "policies", new_callable=dict)
     def test_scanpipe_apps_set_policies(self, mock_policies):
         # Case 1: No file set
-        with override_settings(SCANCODEIO_POLICIES_FILE=None):
+        with override_settings(SCANPIPE={"POLICIES_FILE": None}):
             scanpipe_app.set_policies()
             self.assertEqual({}, scanpipe_app.policies)
 
         # Case 2: Non-existing file
-        with override_settings(SCANCODEIO_POLICIES_FILE="not_existing"):
+        with override_settings(SCANPIPE={"POLICIES_FILE": "not_existing"}):
             scanpipe_app.set_policies()
             self.assertEqual({}, scanpipe_app.policies)
 
         # Case 3: Valid file
         policies_files = self.data / "policies" / "policies.yml"
-        with override_settings(SCANCODEIO_POLICIES_FILE=str(policies_files)):
+        with override_settings(SCANPIPE={"POLICIES_FILE": str(policies_files)}):
             scanpipe_app.set_policies()
             self.assertEqual(global_policies, scanpipe_app.policies)
 
