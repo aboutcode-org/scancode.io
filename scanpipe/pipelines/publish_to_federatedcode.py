@@ -51,6 +51,11 @@ class PublishToFederatedCode(Pipeline):
             cls.delete_working_dir,
         )
 
+    @classmethod
+    def get_availability(cls):
+        if not federatedcode.is_configured():
+            return "FederatedCode is not configured."
+
     def check_federatedcode_eligibility(self):
         """
         Check if the project fulfills the following criteria for

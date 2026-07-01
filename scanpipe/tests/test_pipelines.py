@@ -48,6 +48,7 @@ from scanpipe.pipelines import analyze_root_filesystem
 from scanpipe.pipelines import deploy_to_develop
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import scan_single_package
+from scanpipe.pipelines.find_vulnerabilities import FindVulnerabilities
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import output
@@ -85,6 +86,8 @@ class ScanPipePipelinesTest(TestCase):
                 {"name": "step2", "doc": "Step2 doc.", "groups": []},
             ],
             "available_groups": [],
+            "is_available": True,
+            "unavailable_reason": "",
         }
         self.assertEqual(expected, DoNothing.get_info())
 
@@ -95,8 +98,68 @@ class ScanPipePipelinesTest(TestCase):
                 {"name": "step", "doc": "", "groups": []},
             ],
             "available_groups": [],
+            "is_available": True,
+            "unavailable_reason": "",
         }
         self.assertEqual(expected, ProfileStep.get_info())
+
+    def test_scanpipe_pipeline_class_get_availability_default(self):
+        self.assertIsNone(DoNothing.get_availability())
+        info = DoNothing.get_info()
+        self.assertTrue(info["is_available"])
+        self.assertEqual("", info["unavailable_reason"])
+
+    def test_scanpipe_pipeline_class_get_availability_unavailable(self):
+        class UnavailablePipeline(DoNothing):
+            @classmethod
+            def get_availability(cls):
+                return "Required service is not configured."
+
+        self.assertEqual(
+            "Required service is not configured.",
+            UnavailablePipeline.get_availability(),
+        )
+        info = UnavailablePipeline.get_info()
+        self.assertFalse(info["is_available"])
+        self.assertEqual(
+            "Required service is not configured.", info["unavailable_reason"]
+        )
+
+    def test_scanpipe_find_vulnerabilities_get_availability_not_configured(self):
+        with mock.patch(
+            "scanpipe.pipes.vulnerablecode.is_configured", return_value=False
+        ):
+            reason = FindVulnerabilities.get_availability()
+
+        self.assertEqual("VulnerableCode is not configured.", reason)
+        self.assertIsNotNone(reason)
+
+    def test_scanpipe_find_vulnerabilities_get_availability_configured(self):
+        with mock.patch(
+            "scanpipe.pipes.vulnerablecode.is_configured", return_value=True
+        ):
+            reason = FindVulnerabilities.get_availability()
+
+        self.assertIsNone(reason)
+
+    def test_scanpipe_find_vulnerabilities_get_info_availability(self):
+        with mock.patch(
+            "scanpipe.pipes.vulnerablecode.is_configured", return_value=False
+        ):
+            info = FindVulnerabilities.get_info()
+
+        self.assertFalse(info["is_available"])
+        self.assertEqual(
+            "VulnerableCode is not configured.", info["unavailable_reason"]
+        )
+
+        with mock.patch(
+            "scanpipe.pipes.vulnerablecode.is_configured", return_value=True
+        ):
+            info = FindVulnerabilities.get_info()
+
+        self.assertTrue(info["is_available"])
+        self.assertEqual("", info["unavailable_reason"])
 
     def test_scanpipe_pipeline_class_get_summary(self):
         expected = "Do nothing, in 2 steps."
@@ -1809,8 +1872,9 @@ class PipelinesIntegrationTest(TestCase):
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.is_available")
+    @mock.patch("scanpipe.pipes.purldb.is_configured", return_value=True)
     def test_scanpipe_populate_purldb_pipeline_integration(
-        self, mock_is_available, mock_request_post
+        self, mock_is_configured, mock_is_available, mock_request_post
     ):
         pipeline_name1 = "load_inventory"
         pipeline_name2 = "populate_purldb"
@@ -1852,8 +1916,9 @@ class PipelinesIntegrationTest(TestCase):
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.is_available")
+    @mock.patch("scanpipe.pipes.purldb.is_configured", return_value=True)
     def test_scanpipe_populate_purldb_pipeline_integration_without_assembly(
-        self, mock_is_available, mock_request_post
+        self, mock_is_configured, mock_is_available, mock_request_post
     ):
         pipeline_name = "populate_purldb"
         project1 = make_project()
