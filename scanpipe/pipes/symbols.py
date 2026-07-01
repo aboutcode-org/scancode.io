@@ -219,6 +219,7 @@ def create_sha256_fingerprint(text):
 
 class LanguageQuery(ABC):
     language_name: str = ""
+    constants_query: str = ""
     functions_query: str = ""
     classes_query: str = ""
     calls_query: str = ""
@@ -233,7 +234,7 @@ class LanguageQuery(ABC):
         self.ts_language = load_language(self.language_name)
         self._compiled_queries = {}
 
-        for kind in ("functions", "classes", "calls", "imports"):
+        for kind in ("constants", "functions", "classes", "calls", "imports"):
             source = getattr(self, f"{kind}_query", "").strip()
             self._compiled_queries[kind] = (
                 Query(self.ts_language, source) if source else None
@@ -319,9 +320,30 @@ class LanguageQuery(ABC):
 
             yield module_name, pairs
 
+    def get_constants(self, root_node):
+        """Yield raw (constant_node, name)."""
+        for _, captures in self.run_query("constants", root_node):
+            def_nodes = captures.get("constant")
+            if not def_nodes:
+                continue
+            name_nodes = captures.get("name")
+            name = (
+                name_nodes[0].text.decode("utf-8", errors="replace")
+                if name_nodes
+                else None
+            )
+            yield def_nodes[0], name
+
 
 class PythonTreeSitterQuery(LanguageQuery):
     language_name = "Python"
+    constants_query = """
+        (assignment
+            left: (identifier) @name) @constant
+
+        (assignment
+            left: (pattern_list (identifier) @name)) @constant
+    """
     functions_query = "(function_definition name: (identifier) @name) @function"
     classes_query = "(class_definition name: (identifier) @name) @class"
     calls_query = """
@@ -334,7 +356,6 @@ class PythonTreeSitterQuery(LanguageQuery):
     (import_statement name: (aliased_import
         name: (dotted_name) @import_name
         alias: (identifier) @alias))
-        
     (import_from_statement
         module_name: [(dotted_name) (relative_import)] @module_name
         name: [
@@ -342,7 +363,6 @@ class PythonTreeSitterQuery(LanguageQuery):
             (aliased_import name: (dotted_name) @import_name
                             alias: (identifier) @alias)
         ])
-        
     (import_from_statement
         module_name: [(dotted_name) (relative_import)] @module_name
         (wildcard_import) @import_name)
@@ -386,6 +406,9 @@ class SymbolExtractor:
 
         for node, name in self.lang_query.get_classes(self.root_node):
             index[node.id] = {"node": node, "name": name, "kind": "classes"}
+
+        for node, name in self.lang_query.get_constants(self.root_node):
+            index[node.id] = {"node": node, "name": name, "kind": "constants"}
 
         for def_info in index.values():
             def_info["qualified_name"] = self._build_qualified_name(
