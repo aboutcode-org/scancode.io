@@ -26,16 +26,6 @@ from abc import ABC
 from functools import cache
 
 from django.db.models import Q
-
-from source_inspector import symbols_ctags
-from source_inspector import symbols_pygments
-from source_inspector import symbols_tree_sitter
-from source_inspector.symbols_tree_sitter import TS_LANGUAGE_WHEELS
-from source_inspector.symbols_tree_sitter import TreeSitterWheelNotInstalled
-from tree_sitter import Language
-from tree_sitter import Parser
-from tree_sitter import Query
-
 from aboutcode.pipeline import LoopProgress
 
 
@@ -186,16 +176,12 @@ def _collect_and_store_tree_sitter_symbols_and_strings(resource):
         }
     )
 
-
-SYMBOLS_TYPE_SUPPORTED = {
-    "ctags": symbols_ctags.get_symbols,
-    "tree_sitter": symbols_tree_sitter.get_treesitter_symbols,
-    "pygments": symbols_pygments.get_pygments_symbols,
-}
-
-
 @cache
-def load_language(language: str) -> Language:
+def load_language(language: str):
+    from source_inspector.symbols_tree_sitter import TS_LANGUAGE_WHEELS
+    from source_inspector.symbols_tree_sitter import TreeSitterWheelNotInstalled
+    from tree_sitter import Language
+
     if language not in TS_LANGUAGE_WHEELS:
         raise ValueError(f"Unsupported language: {language}")
 
@@ -231,6 +217,8 @@ class LanguageQuery(ABC):
     }
 
     def __init__(self):
+        from tree_sitter import Query
+
         self.ts_language = load_language(self.language_name)
         self._compiled_queries = {}
 
@@ -241,6 +229,9 @@ class LanguageQuery(ABC):
             )
 
     def parse_code_to_ast(self, code_text: str):
+        from source_inspector.symbols_tree_sitter import TS_LANGUAGE_WHEELS
+        from tree_sitter import Parser
+
         if not code_text:
             return None, None
         parser = Parser(language=self.ts_language)
