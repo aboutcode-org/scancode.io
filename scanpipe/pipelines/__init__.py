@@ -191,9 +191,23 @@ class ProjectPipeline(CommonStepsMixin, BasePipeline):
             return (cls.download_missing_inputs,)
 
     @classmethod
+    def get_availability(cls):
+        """
+        Return None if this pipeline is available, or a reason string if not.
+
+        Override in subclasses to implement dynamic availability checks,
+        such as verifying that a required external service is configured.
+        """
+        return None
+
+    @classmethod
     def get_info(cls, as_html=False):
         """Add the option to render the values as HTML."""
         info = super().get_info()
+
+        unavailable_reason = cls.get_availability()
+        info["is_available"] = unavailable_reason is None
+        info["unavailable_reason"] = unavailable_reason or ""
 
         if as_html:
             info["summary"] = convert_markdown_to_html(info["summary"])
