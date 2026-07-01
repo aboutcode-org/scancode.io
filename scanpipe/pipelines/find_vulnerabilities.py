@@ -43,6 +43,11 @@ class FindVulnerabilities(Pipeline):
             cls.lookup_dependencies_vulnerabilities,
         )
 
+    @classmethod
+    def get_availability(cls):
+        if not vulnerablecode.is_configured():
+            return "VulnerableCode is not configured."
+
     def check_vulnerablecode_service_availability(self):
         """Check if the VulnerableCode service if configured and available."""
         if not vulnerablecode.is_configured():

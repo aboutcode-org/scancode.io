@@ -33,9 +33,15 @@ class PopulatePurlDB(Pipeline):
     @classmethod
     def steps(cls):
         return (
+            purldb.check_service_availability,
             cls.populate_purldb_with_discovered_packages,
             cls.populate_purldb_with_discovered_dependencies,
         )
+
+    @classmethod
+    def get_availability(cls):
+        if not purldb.is_configured():
+            return "PurlDB is not configured."
 
     def populate_purldb_with_discovered_packages(self):
         """Add DiscoveredPackage to PurlDB."""

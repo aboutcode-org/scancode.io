@@ -119,6 +119,9 @@
   cursor: help;
   border-bottom: dotted 1px;
 }
+.modal.is-medium-size .modal-card {
+  width: 800px;
+}
 .modal.is-desktop-size .modal-card {
   width: 960px;
 }
