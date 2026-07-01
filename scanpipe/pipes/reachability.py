@@ -463,16 +463,32 @@ def classify_reachability(evidence):
 
 class ResourceAnalyzer:
     def __init__(self, resource_text: str, language: str):
-        self.resource_text = resource_text
+        self.resource_text = normalize_text(resource_text)
         self.language = language
 
+    def process_node(
+        self, node, extractor, definitions_index, definitions: set, fingerprints: set
+    ) -> str | None:
+        """Extract the qualified name, update definitions, and fingerprint"""
+        qualified_name = extractor._build_qualified_name(node, definitions_index)
+        if not qualified_name:
+            return None
+
+        definitions.add(qualified_name)
+        body_text = node.text.decode("utf-8", errors="replace")
+        fingerprint = create_sha256_fingerprint(body_text)
+
+        if fingerprint:
+            fingerprints.add(fingerprint)
+
+        return qualified_name
+
     def build_index(self) -> dict | None:
-        text = normalize_text(self.resource_text)
-        if not is_supported_language(self.language) or not text:
+        if not is_supported_language(self.language) or not self.resource_text:
             return None
 
         lang_query = TS_QUERIES[self.language]()
-        tree, _ = lang_query.parse_code_to_ast(text)
+        tree, _ = lang_query.parse_code_to_ast(self.resource_text)
 
         if tree is None:
             return None
@@ -487,29 +503,24 @@ class ResourceAnalyzer:
         callers_of = {}  # callee_name -> set of caller_qualified_names
 
         for node, _ in lang_query.get_functions(tree.root_node):
-            qualified_name = extractor._build_qualified_name(node, definitions_index)
-            if not qualified_name:
-                continue
-
-            definitions.add(qualified_name)
-            body_text = node.text.decode("utf-8", errors="replace")
-            fingerprint = create_sha256_fingerprint(body_text)
-            if fingerprint:
-                fingerprints.add(fingerprint)
-
-            for _, callee_name in extractor.extract_calls(node):
-                callers_of.setdefault(callee_name, set()).add(qualified_name)
+            qualified_name = self.process_node(
+                node, extractor, definitions_index, definitions, fingerprints
+            )
+            if qualified_name:
+                for _, callee_name in extractor.extract_calls(node):
+                    callers_of.setdefault(callee_name, set()).add(qualified_name)
 
         for node, _ in lang_query.get_classes(tree.root_node):
-            qualified_name = extractor._build_qualified_name(node, definitions_index)
-            if not qualified_name:
-                continue
+            self.process_node(
+                node, extractor, definitions_index, definitions, fingerprints
+            )
 
-            definitions.add(qualified_name)
-            body_text = node.text.decode("utf-8", errors="replace")
-            fingerprint = create_sha256_fingerprint(body_text)
-            if fingerprint:
-                fingerprints.add(fingerprint)
+        for node, _ in lang_query.get_constants(tree.root_node):
+            # Skip constants defined inside functions, classes, or other blocks
+            if node.parent == tree.root_node:
+                self.process_node(
+                    node, extractor, definitions_index, definitions, fingerprints
+                )
 
         return {
             "definitions": definitions,

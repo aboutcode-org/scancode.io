@@ -180,21 +180,19 @@ def _collect_and_store_tree_sitter_symbols_and_strings(resource):
 
 @cache
 def load_language(language: str):
-    from source_inspector.symbols_tree_sitter import TS_LANGUAGE_WHEELS
-    from source_inspector.symbols_tree_sitter import TreeSitterWheelNotInstalled
-    from tree_sitter import Language
+    from source_inspector import symbols_tree_sitter
 
-    if language not in TS_LANGUAGE_WHEELS:
+    if language not in symbols_tree_sitter.TS_LANGUAGE_WHEELS:
         raise ValueError(f"Unsupported language: {language}")
 
-    wheel = TS_LANGUAGE_WHEELS[language]["wheel"]
+    wheel = symbols_tree_sitter.TS_LANGUAGE_WHEELS[language]["wheel"]
     try:
         grammar = importlib.import_module(wheel)
     except ModuleNotFoundError as exc:
-        raise TreeSitterWheelNotInstalled(
+        raise symbols_tree_sitter.TreeSitterWheelNotInstalled(
             f"Grammar wheel '{wheel}' is not installed."
         ) from exc
-    return Language(grammar.language())
+    return symbols_tree_sitter.Language(grammar.language())
 
 
 def create_sha256_fingerprint(text):
@@ -231,13 +229,13 @@ class LanguageQuery(ABC):
             )
 
     def parse_code_to_ast(self, code_text: str):
-        from source_inspector.symbols_tree_sitter import TS_LANGUAGE_WHEELS
+        from source_inspector import symbols_tree_sitter
         from tree_sitter import Parser
 
         if not code_text:
             return None, None
         parser = Parser(language=self.ts_language)
-        return parser.parse(code_text.encode("utf-8")), TS_LANGUAGE_WHEELS[
+        return parser.parse(code_text.encode("utf-8")), symbols_tree_sitter.TS_LANGUAGE_WHEELS[
             self.language_name
         ]
 
