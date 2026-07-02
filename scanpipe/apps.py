@@ -30,7 +30,6 @@ from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 from django.apps import AppConfig
-from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.color import color_style
 from django.db.models import BLANK_CHOICE_DASH
@@ -68,7 +67,6 @@ class ScanPipeConfig(AppConfig):
         self.workspace_path = Path(workspace_location).expanduser().resolve()
 
     def ready(self):
-        logger.debug(f"Read environment variables from {settings.ENV_FILE}")
         self.load_pipelines()
         self.set_policies()
 

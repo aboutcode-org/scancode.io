@@ -42,6 +42,15 @@ from aboutcode import hashid
 from scancodeio import VERSION
 from scanpipe.pipes.output import JSONResultsGenerator
 
+FEDERATEDCODE_GIT_ACCOUNT_URL = getattr(settings, "FEDERATEDCODE_GIT_ACCOUNT_URL", "")
+FEDERATEDCODE_GIT_SERVICE_TOKEN = getattr(
+    settings, "FEDERATEDCODE_GIT_SERVICE_TOKEN", ""
+)
+FEDERATEDCODE_GIT_SERVICE_EMAIL = getattr(
+    settings, "FEDERATEDCODE_GIT_SERVICE_EMAIL", ""
+)
+FEDERATEDCODE_GIT_SERVICE_NAME = getattr(settings, "FEDERATEDCODE_GIT_SERVICE_NAME", "")
+
 logger = logging.getLogger(__name__)
 
 
@@ -64,10 +73,10 @@ def is_configured():
     """Return True if the required FederatedCode settings have been set."""
     if all(
         [
-            settings.FEDERATEDCODE_GIT_ACCOUNT_URL,
-            settings.FEDERATEDCODE_GIT_SERVICE_TOKEN,
-            settings.FEDERATEDCODE_GIT_SERVICE_EMAIL,
-            settings.FEDERATEDCODE_GIT_SERVICE_NAME,
+            FEDERATEDCODE_GIT_ACCOUNT_URL,
+            FEDERATEDCODE_GIT_SERVICE_TOKEN,
+            FEDERATEDCODE_GIT_SERVICE_EMAIL,
+            FEDERATEDCODE_GIT_SERVICE_NAME,
         ]
     ):
         return True
@@ -84,14 +93,14 @@ def is_available():
     if not is_configured():
         return False
 
-    return url_exists(settings.FEDERATEDCODE_GIT_ACCOUNT_URL)
+    return url_exists(FEDERATEDCODE_GIT_ACCOUNT_URL)
 
 
 def get_package_repository(project_purl, logger=None):
     """Return the Git repository URL and scan path for a given package."""
     project_package_url = PackageURL.from_string(project_purl)
 
-    git_account_url = f"{settings.FEDERATEDCODE_GIT_ACCOUNT_URL}/"
+    git_account_url = f"{FEDERATEDCODE_GIT_ACCOUNT_URL}/"
     package_base_dir = hashid.get_package_base_dir(purl=project_purl)
     package_repo_name = package_base_dir.parts[0]
 
@@ -167,7 +176,7 @@ def clone_repository(repo_url, clone_path, logger, shallow_clone=True):
 
     authenticated_repo_url = repo_url.replace(
         "https://",
-        f"https://{settings.FEDERATEDCODE_GIT_SERVICE_TOKEN}@",
+        f"https://{FEDERATEDCODE_GIT_SERVICE_TOKEN}@",
     )
     clone_args = {
         "url": authenticated_repo_url,
@@ -178,10 +187,10 @@ def clone_repository(repo_url, clone_path, logger, shallow_clone=True):
 
     repo = Repo.clone_from(**clone_args)
     repo.config_writer(config_level="repository").set_value(
-        "user", "name", settings.FEDERATEDCODE_GIT_SERVICE_NAME
+        "user", "name", FEDERATEDCODE_GIT_SERVICE_NAME
     ).release()
     repo.config_writer(config_level="repository").set_value(
-        "user", "email", settings.FEDERATEDCODE_GIT_SERVICE_EMAIL
+        "user", "email", FEDERATEDCODE_GIT_SERVICE_EMAIL
     ).release()
 
     return repo
@@ -200,11 +209,13 @@ def create_repository(repo_name, clone_path, logger, shallow_clone=True, timeout
     Create and initialize remote FederatedCode `repo_name` repository,
     perform local checkout, and return it.
     """
-    account_url = f"{settings.FEDERATEDCODE_GIT_ACCOUNT_URL}/"
+    account_url = f"{FEDERATEDCODE_GIT_ACCOUNT_URL}/"
     repo_url = urljoin(account_url, repo_name)
 
     headers = {
-        "Authorization": f"token {settings.FEDERATEDCODE_GIT_SERVICE_TOKEN}",
+        "Authorization": (
+            f"token {getattr(settings, 'FEDERATEDCODE_GIT_SERVICE_TOKEN', '')}"
+        ),
         "Accept": "application/vnd.github+json",
     }
 
@@ -245,7 +256,7 @@ def get_or_create_repository(repo_name, working_path, logger, shallow_clone=True
     - If the remote repository does not exist, create and initialize `repo_name`
         repository, perform local checkout, and return it.
     """
-    account_url = f"{settings.FEDERATEDCODE_GIT_ACCOUNT_URL}/"
+    account_url = f"{FEDERATEDCODE_GIT_ACCOUNT_URL}/"
     repo_url = urljoin(account_url, repo_name)
     clone_path = working_path / repo_name
 
@@ -327,8 +338,8 @@ def commit_changes(
         return
 
     if not commit_message:
-        author_name = settings.FEDERATEDCODE_GIT_SERVICE_NAME
-        author_email = settings.FEDERATEDCODE_GIT_SERVICE_EMAIL
+        author_name = FEDERATEDCODE_GIT_SERVICE_NAME
+        author_email = FEDERATEDCODE_GIT_SERVICE_EMAIL
 
         purls = "\n".join(purls)
         commit_message = f"""\

@@ -51,19 +51,19 @@ session = requests.Session()
 
 # Only MATCHCODEIO_URL can be provided through setting
 MATCHCODEIO_API_URL = None
-MATCHCODEIO_URL = settings.MATCHCODEIO_URL
+MATCHCODEIO_URL = getattr(settings, "MATCHCODEIO_URL", "")
 if MATCHCODEIO_URL:
     MATCHCODEIO_API_URL = f"{MATCHCODEIO_URL}/api/"
 
 # Basic Authentication
-MATCHCODEIO_USER = settings.MATCHCODEIO_USER
-MATCHCODEIO_PASSWORD = settings.MATCHCODEIO_PASSWORD
+MATCHCODEIO_USER = getattr(settings, "MATCHCODEIO_USER", "")
+MATCHCODEIO_PASSWORD = getattr(settings, "MATCHCODEIO_PASSWORD", "")
 basic_auth_enabled = MATCHCODEIO_USER and MATCHCODEIO_PASSWORD
 if basic_auth_enabled:
     session.auth = (MATCHCODEIO_USER, MATCHCODEIO_PASSWORD)
 
 # Authentication with single API key
-MATCHCODEIO_API_KEY = settings.MATCHCODEIO_API_KEY
+MATCHCODEIO_API_KEY = getattr(settings, "MATCHCODEIO_API_KEY", "")
 if MATCHCODEIO_API_KEY:
     session.headers.update({"Authorization": f"Token {MATCHCODEIO_API_KEY}"})
 
