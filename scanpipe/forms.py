@@ -26,8 +26,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
 
 from packageurl import PackageURL
-from taggit.forms import TagField
-from taggit.forms import TagWidget
 
 from scanpipe.models import Project
 from scanpipe.models import Run
@@ -210,15 +208,17 @@ class AddPipelineForm(PipelineBaseForm):
 
 
 class AddLabelsForm(forms.Form):
-    labels = TagField(
+    labels = forms.CharField(
         label="Add labels to this project:",
-        widget=TagWidget(
+        widget=forms.TextInput(
             attrs={"class": "input", "placeholder": "Comma-separated list of labels"}
         ),
     )
 
     def save(self, project):
-        project.labels.add(*self.cleaned_data["labels"])
+        new_labels = [label.strip() for label in self.cleaned_data["labels"].split(",")]
+        project.labels = project.labels + new_labels
+        project.save(update_fields=["labels"])
         return project
 
 

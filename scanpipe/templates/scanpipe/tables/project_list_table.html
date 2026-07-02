@@ -11,7 +11,7 @@
       <th class="break-all">
         <a href="{{ project.get_absolute_url }}">{{ project }}</a>
         <div>
-          {% include 'scanpipe/includes/project_labels.html' with labels=project.labels.all only %}
+          {% include 'scanpipe/includes/project_labels.html' with labels=project.labels only %}
         </div>
         <span class="has-text-grey is-size-7 is-block">
           {% if project.created_date|date:"Y-m-d" == today %}

@@ -24,8 +24,6 @@ from django.apps import apps
 
 from rest_framework import serializers
 from rest_framework.reverse import reverse
-from taggit.serializers import TaggitSerializer
-from taggit.serializers import TagListSerializerField
 
 from scanpipe.api import ExcludeFromListViewMixin
 from scanpipe.models import CodebaseRelation
@@ -165,7 +163,6 @@ class ProjectSerializer(
     ExcludeFromListViewMixin,
     SerializerExcludeFieldsMixin,
     PipelineChoicesMixin,
-    TaggitSerializer,
     serializers.ModelSerializer,
 ):
     pipeline = OrderedMultiplePipelineChoiceField(
@@ -198,7 +195,7 @@ class ProjectSerializer(
     discovered_packages_summary = serializers.SerializerMethodField()
     discovered_dependencies_summary = serializers.SerializerMethodField()
     codebase_relations_summary = serializers.SerializerMethodField()
-    labels = TagListSerializerField(required=False)
+    labels = serializers.ListField(child=serializers.CharField(), required=False)
     results_url = serializers.SerializerMethodField()
     summary_url = serializers.SerializerMethodField()
 

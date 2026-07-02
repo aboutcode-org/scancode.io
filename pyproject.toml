@@ -42,7 +42,6 @@ dependencies = [
   "crispy-bootstrap3==2024.1",
   "django-filter==25.2",
   "djangorestframework==3.17.1",
-  "django-taggit==6.1.0",
   "django-htmx==1.27.0",
   "django-debug-toolbar==6.3.0",
   # Database
