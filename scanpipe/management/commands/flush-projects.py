@@ -96,7 +96,7 @@ class Command(BaseCommand):
             projects = projects.filter(created_date__lt=cutoff_date)
 
         if labels:
-            projects = projects.filter(labels__name__in=labels)
+            projects = projects.for_labels(labels)
 
         if pipelines:
             projects = projects.filter(runs__pipeline_name__in=pipelines)
