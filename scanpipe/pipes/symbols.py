@@ -287,14 +287,12 @@ class LanguageQuery(ABC):
         for _, captures in self.run_query("imports", root_node):
             flat_captures = []
             for tag, nodes in captures.items():
-                for n in nodes:
-                    text = n.text.decode("utf-8", errors="replace").strip("'\"")
-                    flat_captures.append((n.start_byte, tag, text))
+                for node in nodes:
+                    text = node.text.decode("utf-8", errors="replace").strip("'\"")
+                    flat_captures.append((node.start_byte, tag, text))
 
-            flat_captures.sort(key=lambda x: x[0])
             module_name, current_import = None, None
             pairs = []
-
             for _, tag, text in flat_captures:
                 if tag == "module_name":
                     module_name = text
@@ -328,13 +326,7 @@ class LanguageQuery(ABC):
 
 class PythonTreeSitterQuery(LanguageQuery):
     language_name = "Python"
-    constants_query = """
-        (assignment
-            left: (identifier) @name) @constant
-
-        (assignment
-            left: (pattern_list (identifier) @name)) @constant
-    """
+    constants_query = "(assignment left: (identifier) @name) @constant"
     functions_query = "(function_definition name: (identifier) @name) @function"
     classes_query = "(class_definition name: (identifier) @name) @class"
     calls_query = """
@@ -471,9 +463,14 @@ class SymbolExtractor:
                 if not alias and separator in imp_name:
                     local_name = imp_name.split(separator)[0]
 
-                absolute_path = (
-                    f"{module_name}{separator}{imp_name}" if module_name else imp_name
-                )
+                if module_name:
+                    if module_name == separator:
+                        absolute_path = f"{separator}{imp_name}"
+                    else:
+                        absolute_path = f"{module_name}{separator}{imp_name}"
+                else:
+                    absolute_path = imp_name
+
                 import_map[local_name] = absolute_path
 
         if wildcard_modules:

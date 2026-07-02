@@ -19,7 +19,6 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
-
 import os
 import shutil
 import tempfile
@@ -174,27 +173,16 @@ class PatchAnalyzer:
             added = []
 
             for hunk in patched_file:
-                hunk_removed = [
+                removed.extend(
                     line.source_line_no
                     for line in hunk
                     if line.is_removed and line.source_line_no
-                ]
-                hunk_added = [
+                )
+                added.extend(
                     line.target_line_no
                     for line in hunk
                     if line.is_added and line.target_line_no
-                ]
-
-                if hunk_added and not hunk_removed:
-                    anchor = max(hunk.source_start, 1)
-                    hunk_removed = [anchor]
-
-                if hunk_removed and not hunk_added:
-                    anchor = max(hunk.target_start, 1)
-                    hunk_added = [anchor]
-
-                removed.extend(hunk_removed)
-                added.extend(hunk_added)
+                )
 
             candidates = {
                 patched_file.path,

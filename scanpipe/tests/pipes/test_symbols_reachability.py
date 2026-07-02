@@ -154,6 +154,7 @@ class SymbolReachabilityPipesTest(TestCase):
 
     def test_extract_definitions(self):
         source_code = """
+price = 0
 class OrderManager:
     def __init__(self, order_id):
         self.order_id = order_id
@@ -184,6 +185,9 @@ class InventoryItem:
         self.assertEqual(len(classes), 2)
         second_class_text = classes[1][0].text.decode("utf-8")
         self.assertIn("class InventoryItem", second_class_text)
+
+        constants = list(lang_query.get_constants(tree.root_node))
+        self.assertEqual(len(constants), 1)
 
     def test_extract_definitions_empty(self):
         lang_query = TS_QUERIES["Python"]()
@@ -569,7 +573,7 @@ from math import *
             "os": "os.path",
             "np": "numpy",
             "d": "a.b.c",
-            "utils": "..utils",
+            "utils": ".utils",
             "engine": "..core.engine",
             "*": ["math"],
         }
@@ -613,3 +617,31 @@ user.save()
             ("user", "save"),
         ]
         self.assertEqual(expected_python, python_calls)
+
+    def test_extract_imports(self):
+        source_code = """
+from django.db import models
+import os.path
+import numpy as np
+from a.b import c as d
+from . import utils
+from ..core import engine
+from math import *
+        """.strip()
+
+        lang_query = TS_QUERIES["Python"]()
+        tree, _ = lang_query.parse_code_to_ast(code_text=source_code)
+        extractor = SymbolExtractor(lang_query=lang_query, root_node=tree.root_node)
+        result = extractor.extract_imports()
+
+        expected_map = {
+            "models": "django.db.models",
+            "os": "os.path",
+            "np": "numpy",
+            "d": "a.b.c",
+            "utils": ".utils",
+            "engine": "..core.engine",
+            "*": ["math"],
+        }
+
+        self.assertEqual(result, expected_map)
