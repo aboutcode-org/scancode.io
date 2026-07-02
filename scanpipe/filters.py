@@ -364,7 +364,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     ]
 
     search = QuerySearchFilter(
-        label="Search", search_fields=["name", "labels__name"], lookup_expr="icontains"
+        label="Search", search_fields=["name", "labels_text"], lookup_expr="icontains"
     )
     sort = django_filters.OrderingFilter(
         label="Sort",
@@ -411,8 +411,8 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     )
     label = django_filters.CharFilter(
         label="Label",
-        field_name="labels__slug",
-        distinct=True,
+        field_name="labels",
+        lookup_expr="contains",
     )
     extra_data = django_filters.CharFilter(lookup_expr="icontains")
 
@@ -424,6 +424,9 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     def __init__(self, data=None, *args, **kwargs):
         """Filter out the archived projects by default."""
         super().__init__(data, *args, **kwargs)
+
+        # Used by the "search" filter, see the "labels_text" search_fields entry.
+        self.queryset = self.queryset.with_labels_text()
 
         # Default filtering by "Active" projects.
         if not data or data.get("is_archived", "") == "":

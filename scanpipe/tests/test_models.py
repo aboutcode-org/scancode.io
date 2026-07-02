@@ -69,7 +69,6 @@ from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.models import RunNotAllowedToStart
 from scanpipe.models import ScorecardCheck
-from scanpipe.models import UUIDTaggedItem
 from scanpipe.models import WebhookSubscription
 from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.models import get_project_work_directory
@@ -172,13 +171,13 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(work_path.exists())
 
         self.project1.add_pipeline("analyze_docker_image")
-        self.project1.labels.add("label1", "label2")
-        self.assertEqual(2, UUIDTaggedItem.objects.count())
+        self.project1.labels = ["label1", "label2"]
+        self.project1.save()
         resource = CodebaseResource.objects.create(project=self.project1, path="path")
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
 
-        delete_log = self.project1.delete_related_objects(keep_labels=True)
+        delete_log = self.project1.delete_related_objects()
         expected = {
             "scanpipe.CodebaseRelation": 0,
             "scanpipe.CodebaseResource": 1,
@@ -194,10 +193,10 @@ class ScanPipeModelsTest(TestCase):
         }
         self.assertEqual(expected, delete_log)
 
-        # Make sure the labels were deleted too.
-        self.assertEqual(2, UUIDTaggedItem.objects.count())
-        self.project1.delete_related_objects()
-        self.assertEqual(0, UUIDTaggedItem.objects.count())
+        # The labels are a plain field on the project itself, unaffected by the
+        # deletion of the other related objects.
+        self.project1.refresh_from_db()
+        self.assertEqual(["label1", "label2"], self.project1.labels)
 
     def test_scanpipe_project_model_delete(self):
         work_path = self.project1.work_path
@@ -276,6 +275,8 @@ class ScanPipeModelsTest(TestCase):
             filename="file2", download_url="https://download.url"
         )
         self.project1.update(settings={"product_name": "My Product"})
+        self.project1.labels = ["label1", "label2"]
+        self.project1.save()
         new_file_path1 = self.project1.input_path / "file.zip"
         new_file_path1.touch()
         run1 = self.project1.add_pipeline("analyze_docker_image", selected_groups=["g"])
@@ -292,6 +293,7 @@ class ScanPipeModelsTest(TestCase):
 
         self.assertEqual("cloned project", cloned_project.name)
         self.assertEqual({}, cloned_project.settings)
+        self.assertEqual(["label1", "label2"], cloned_project.labels)
         self.assertEqual([], cloned_project.input_sources)
         self.assertEqual([], list(cloned_project.inputs()))
         self.assertEqual([], list(cloned_project.runs.all()))
@@ -927,16 +929,45 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected, self.project1.get_ignored_vulnerabilities_set())
 
     def test_scanpipe_project_model_labels(self):
-        self.project1.labels.add("label2", "label1")
-        self.assertEqual(2, UUIDTaggedItem.objects.count())
-        self.assertEqual(["label1", "label2"], list(self.project1.labels.names()))
+        self.assertEqual([], self.project1.labels)
+
+        self.project1.labels = ["label2", "label1"]
+        self.project1.save()
+        self.project1.refresh_from_db()
+        self.assertEqual(["label1", "label2"], self.project1.labels)
 
         self.project1.labels.remove("label1")
-        self.assertEqual(1, UUIDTaggedItem.objects.count())
-        self.assertEqual(["label2"], list(self.project1.labels.names()))
+        self.project1.save()
+        self.project1.refresh_from_db()
+        self.assertEqual(["label2"], self.project1.labels)
 
-        self.project1.labels.clear()
-        self.assertEqual(0, UUIDTaggedItem.objects.count())
+        self.project1.labels = []
+        self.project1.save()
+        self.project1.refresh_from_db()
+        self.assertEqual([], self.project1.labels)
+
+    def test_scanpipe_project_model_labels_normalized_on_save(self):
+        self.project1.labels = ["label2", " label1 ", "label1", "", "   "]
+        self.project1.save()
+        self.project1.refresh_from_db()
+        self.assertEqual(["label1", "label2"], self.project1.labels)
+
+    def test_scanpipe_project_queryset_for_labels(self):
+        project2 = make_project("project2", labels=["label1"])
+        project3 = make_project("project3", labels=["label1", "label2"])
+        project4 = make_project("project4", labels=["label3"])
+
+        qs = Project.objects.for_labels(["label1"])
+        self.assertEqual({project2, project3}, set(qs))
+
+        qs = Project.objects.for_labels(["label2"])
+        self.assertEqual({project3}, set(qs))
+
+        qs = Project.objects.for_labels(["label1", "label3"])
+        self.assertEqual({project2, project3, project4}, set(qs))
+
+        qs = Project.objects.for_labels(["unknown"])
+        self.assertEqual(set(), set(qs))
 
     @patch.object(Project, "setup_global_webhook")
     def test_scanpipe_project_model_call_setup_global_webhook(self, mock_setup_webhook):

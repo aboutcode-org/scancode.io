@@ -477,7 +477,8 @@ def create_project(
     project.save(**save_kwargs)
 
     if labels:
-        project.labels.add(*labels)
+        project.labels = labels
+        project.save(update_fields=["labels"])
 
     if command:
         command.project = project

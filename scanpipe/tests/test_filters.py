@@ -84,7 +84,8 @@ class ScanPipeFilterTest(TestCase):
 
     def test_scanpipe_filters_project_filterset_labels(self):
         Project.objects.create(name="project2")
-        self.project1.labels.add("label1")
+        self.project1.labels = ["label1"]
+        self.project1.save()
 
         filterset = ProjectFilterSet(data={"label": ""})
         self.assertEqual(2, len(filterset.qs))
@@ -93,6 +94,11 @@ class ScanPipeFilterTest(TestCase):
         self.assertEqual([self.project1], list(filterset.qs))
 
         filterset = ProjectFilterSet(data={"label": "label2"})
+        self.assertEqual(0, len(filterset.qs))
+
+        # The "label" filter is an exact match, unlike "search" which is a substring
+        # match.
+        filterset = ProjectFilterSet(data={"label": "lab"})
         self.assertEqual(0, len(filterset.qs))
 
         filterset = ProjectFilterSet(data={"search": "label1"})
