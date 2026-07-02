@@ -109,7 +109,7 @@ class ScanPipeManagementCommandTest(TestCase):
         call_command("create-project", "my_project", *options, stdout=out)
         self.assertIn("Project my_project created", out.getvalue())
         project = Project.objects.get(name="my_project")
-        self.assertEqual(["label1", "label2"], list(project.labels.names()))
+        self.assertEqual(["label1", "label2"], project.labels)
 
     def test_scanpipe_management_command_create_project_notes(self):
         out = StringIO()
@@ -278,7 +278,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(2, Project.objects.count())
         project = Project.objects.get(name="a.txt suffix")
         self.assertEqual("Some notes", project.notes)
-        self.assertEqual(["label1", "label2"], list(project.labels.names()))
+        self.assertEqual(["label1", "label2"], project.labels)
         self.assertEqual("scan_single_package", project.runs.get().pipeline_name)
         self.assertEqual(["a.txt"], project.input_files)
 
@@ -1563,7 +1563,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("Extracting images from Kubernetes cluster", out.getvalue())
         self.assertEqual(1, Project.objects.count())
         project = Project.objects.get(name=project_name)
-        self.assertEqual(["label1"], list(project.labels.names()))
+        self.assertEqual(["label1"], project.labels)
         self.assertEqual("Notes", project.notes)
         self.assertEqual(
             ["analyze_docker_image", "find_vulnerabilities"], project.pipelines

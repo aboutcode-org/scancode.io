@@ -79,15 +79,11 @@ def make_project(name=None, **data):
     """
     name = name or make_string(8)
     pipelines = data.pop("pipelines", [])
-    labels = data.pop("labels", [])
 
     project = Project.objects.create(name=name, **data)
 
     for pipeline in pipelines:
         project.add_pipeline(pipeline)
-
-    if labels:
-        project.labels.add(*labels)
 
     return project
 

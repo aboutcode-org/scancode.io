@@ -14,12 +14,12 @@
               <div class="control">
                 <div class="tags has-addons">
                   <span class="tag is-info">
-                    <span class="has-text-weight-bold ml-1">{{ label.name }}</span>
+                    <span class="has-text-weight-bold ml-1">{{ label }}</span>
                   </span>
                   <a
                     class="tag is-delete"
-                    hx-post="{% url 'project_delete_label' project.slug label.name %}"
-                    hx-target="#label-{{ label.slug }}"
+                    hx-post="{% url 'project_delete_label' project.slug label %}"
+                    hx-target="#label-{{ label|slugify }}"
                     hx-swap="delete"
                     hx-on::after-request="this.parentElement.parentElement.remove()"
                   >

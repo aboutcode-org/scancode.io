@@ -51,9 +51,9 @@
             </td>
             <td>
               {% if display_compliance_alert %}
-              <a href="?compliance_alert={{ license_detection.compliance_alert }}" class="is-black-link">
-                {{ license_detection.compliance_alert }}
-              </a>
+                <a href="?compliance_alert={{ license_detection.compliance_alert }}">
+                  {% include 'scanpipe/includes/compliance_alert_tag.html' with compliance_alert=license_detection.compliance_alert only %}
+                </a>
               {% endif %}
             </td>
           </tr>

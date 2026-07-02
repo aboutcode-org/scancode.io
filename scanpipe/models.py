@@ -91,9 +91,6 @@ from rq.job import Job
 from rq.job import JobStatus
 from scorecode.contrib.django.models import PackageScoreMixin
 from scorecode.contrib.django.models import ScorecardChecksMixin
-from taggit.managers import TaggableManager
-from taggit.models import GenericUUIDTaggedItemBase
-from taggit.models import TaggedItemBase
 
 import scancodeio
 from scanpipe import humanize_time
@@ -528,11 +525,19 @@ class ProjectQuerySet(models.QuerySet):
             ),
         )
 
+    def for_labels(self, labels):
+        """Filter the QuerySet to projects having at least one of the ``labels``."""
+        lookups = Q()
+        for label in labels:
+            lookups |= Q(labels__contains=[label])
+        return self.filter(lookups)
 
-class UUIDTaggedItem(GenericUUIDTaggedItemBase, TaggedItemBase):
-    class Meta:
-        verbose_name = _("Label")
-        verbose_name_plural = _("Labels")
+    def with_labels_text(self):
+        """
+        Annotate with a text representation of the "labels" JSONField, as JSONField
+        does not support the "icontains" lookup used for the project text search.
+        """
+        return self.annotate(labels_text=Cast("labels", output_field=TextField()))
 
 
 class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
@@ -571,7 +576,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     )
     notes = models.TextField(blank=True)
     settings = models.JSONField(default=dict, blank=True)
-    labels = TaggableManager(through=UUIDTaggedItem, ordering=["name"])
+    labels = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_("A list of labels for this project."),
+    )
     purl = models.CharField(
         max_length=2048,
         blank=True,
@@ -626,6 +635,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.work_directory = get_project_work_directory(project=self)
             self.setup_work_directory()
 
+        self.labels = sorted({label.strip() for label in self.labels if label.strip()})
+
         super().save(*args, **kwargs)
 
         global_webhook = scanpipe_settings.GLOBAL_WEBHOOK
@@ -672,9 +683,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         self.update(is_archived=True)
 
-    def delete_related_objects(
-        self, keep_input=False, keep_labels=False, keep_webhook=False
-    ):
+    def delete_related_objects(self, keep_input=False, keep_webhook=False):
         """
         Delete all related object instances using the private `_raw_delete` model API.
         This bypass the objects collection, cascade deletions, and signals.
@@ -689,10 +698,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         # Since this `ManyToManyField` has an implicit model table, we cannot directly
         # run the `_raw_delete()` on its QuerySet.
         _, deleted_counter = self.discoveredpackages.all().delete()
-
-        # Removes all tags from this project by deleting the UUIDTaggedItem instances.
-        if not keep_labels:
-            self.labels.clear()
 
         relationships = [
             self.webhookdeliveries,
@@ -752,9 +757,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
                 for run in self.runs.all()
             ]
 
-        self.delete_related_objects(
-            keep_input=keep_input, keep_labels=True, keep_webhook=keep_webhook
-        )
+        self.delete_related_objects(keep_input=keep_input, keep_webhook=keep_webhook)
 
         work_directories = [
             self.codebase_path,
@@ -796,11 +799,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             name=clone_name,
             purl=self.purl,
             settings=self.settings if copy_settings else {},
+            labels=list(self.labels),
         )
         new_project.save(is_clone=True)
-
-        if labels := self.labels.names():
-            new_project.labels.add(*labels)
 
         if copy_inputs:
             # Clone the InputSource instances

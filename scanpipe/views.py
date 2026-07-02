@@ -626,7 +626,6 @@ class ProjectListView(
     paginate_by = scanpipe_settings.PAGINATE_BY.get("project", 20)
     template_name = "scanpipe/project_list.html"
     prefetch_related = [
-        "labels",
         Prefetch(
             "runs",
             queryset=Run.objects.only(
@@ -690,6 +689,7 @@ class ProjectListView(
                 "name",
                 "slug",
                 "created_date",
+                "labels",
                 "resource_count",
                 "package_count",
                 "dependency_count",
@@ -855,7 +855,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         context.update(
             {
                 "input_sources": project.get_inputs_with_source(),
-                "labels": list(project.labels.all()),
+                "labels": project.labels,
                 "add_pipeline_form": AddPipelineForm(),
                 "pipeline_choices": self.get_pipeline_choices(pipeline_runs),
                 "add_inputs_form": AddInputsForm(),
@@ -1549,7 +1549,8 @@ def download_output_view(request, slug, filename):
 @conditional_login_required
 def delete_label_view(request, slug, label_name):
     project = get_object_or_404(Project, slug=slug)
-    project.labels.remove(label_name)
+    project.labels = [label for label in project.labels if label != label_name]
+    project.save(update_fields=["labels"])
     return JsonResponse({})
 
 

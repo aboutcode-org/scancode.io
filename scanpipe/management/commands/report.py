@@ -82,7 +82,7 @@ class Command(BaseCommand):
 
         project_qs = Project.objects.all()
         if labels:
-            project_qs = project_qs.filter(labels__name__in=labels)
+            project_qs = project_qs.for_labels(labels)
         if search:
             project_qs = project_qs.filter(name__icontains=search)
         project_count = project_qs.count()
