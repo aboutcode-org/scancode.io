@@ -3,7 +3,7 @@ revision = 3
 requires-python = ">=3.12, <3.15"
 
 [options]
-exclude-newer = "2026-06-15T08:40:05.385639Z"
+exclude-newer = "2026-06-25T11:50:12.552829Z"
 exclude-newer-span = "P7D"
 
 [[package]]
@@ -894,18 +894,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/42/41/11a347cacdd4df2849ff12f4d6d988e01cca869e41db90c9dd6d27f13f53/django_rq-4.1.0.tar.gz", hash = "sha256:d08eabd70f3a17f289cd9fc68b15efe8e1f45b0fe64c5504161277e8cd9eeb8e", size = 43660, upload-time = "2026-04-05T10:32:47.81Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/4a/93/4f4d8db1d8ad6adbbdae46dc1d1453729af4dff8b722b8ced5f44447be82/django_rq-4.1.0-py3-none-any.whl", hash = "sha256:ba6e30cfbaefc3b96d9d9c9bd752ad5a9aa8b886e5d9483500b307c1733d2d39", size = 67426, upload-time = "2026-04-05T10:32:46.105Z" },
-]
-
-[[package]]
-name = "django-taggit"
-version = "6.1.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/34/a6/f1beaf8f552fe90c153cc039316ebab942c23dfbc88588dde081fefca816/django_taggit-6.1.0.tar.gz", hash = "sha256:c4d1199e6df34125dd36db5eb0efe545b254dec3980ce5dd80e6bab3e78757c3", size = 38151, upload-time = "2024-09-29T08:07:39.477Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/6b/34/4185c345530b91d05cb82e05d07148f481a5eb5dc2ac44e092b3daa6f206/django_taggit-6.1.0-py3-none-any.whl", hash = "sha256:ab776264bbc76cb3d7e49e1bf9054962457831bd21c3a42db9138b41956e4cf0", size = 75749, upload-time = "2024-09-29T08:07:14.612Z" },
 ]
 
 [[package]]
@@ -2935,7 +2923,6 @@ dependencies = [
     { name = "django-htmx" },
     { name = "django-probes" },
     { name = "django-rq" },
-    { name = "django-taggit" },
     { name = "djangorestframework" },
     { name = "elf-inspector" },
     { name = "extractcode", extra = ["full"] },
@@ -3011,7 +2998,6 @@ requires-dist = [
     { name = "django-htmx", specifier = "==1.27.0" },
     { name = "django-probes", specifier = "==1.8.0" },
     { name = "django-rq", specifier = "==4.1.0" },
-    { name = "django-taggit", specifier = "==6.1.0" },
     { name = "djangorestframework", specifier = "==3.17.1" },
     { name = "doc8", marker = "extra == 'dev'", specifier = "==2.0.0" },
     { name = "elf-inspector", specifier = "==0.0.3" },

@@ -51,7 +51,7 @@ class ProjectAdmin(ScanPipeBaseAdmin):
         "is_archived",
     ]
     search_fields = ["uuid", "name"]
-    list_filter = ["is_archived", "labels"]
+    list_filter = ["is_archived"]
     ordering = ["-created_date"]
     fieldsets = [
         ("", {"fields": ("name", "slug", "notes", "extra_data", "settings", "uuid")}),
@@ -59,12 +59,9 @@ class ProjectAdmin(ScanPipeBaseAdmin):
     ]
     readonly_fields = ["packages_link", "dependencies_link", "resources_link", "uuid"]
 
-    def get_queryset(self, request):
-        return super().get_queryset(request).prefetch_related("labels")
-
     @admin.display(description="Labels")
     def label_list(self, obj):
-        return ", ".join(label.name for label in obj.labels.all())
+        return ", ".join(obj.labels)
 
     @staticmethod
     def make_filtered_link(obj, value, url_name):

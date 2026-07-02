@@ -110,7 +110,7 @@ class ScanPipeAPITest(TransactionTestCase):
         make_project(name="2")
         make_project(name="3")
 
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(7):
             response = self.csrf_client.get(self.project_list_url)
 
         self.assertContains(response, self.project1_detail_url)
@@ -183,8 +183,10 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertContains(response, project2.uuid)
         self.assertContains(response, project3.uuid)
 
-        project2.labels.add("label1")
-        project3.labels.add("label1")
+        project2.labels = ["label1"]
+        project2.save()
+        project3.labels = ["label1"]
+        project3.save()
         data = {"label": "label1"}
         response = self.csrf_client.get(self.project_list_url, data=data)
         self.assertEqual(2, response.data["count"])
@@ -533,7 +535,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(sorted(data["labels"]), response.data["labels"])
         project = Project.objects.get(name=data["name"])
-        self.assertEqual(sorted(data["labels"]), list(project.labels.names()))
+        self.assertEqual(sorted(data["labels"]), project.labels)
 
     def test_scanpipe_api_project_create_pipeline_groups(self):
         data = {
@@ -734,8 +736,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(expected, response.data["error"])
 
         make_package(self.project1, package_url="pkg:generic/p1")
-        project2 = make_project()
-        project2.labels.add("label1")
+        project2 = make_project(labels=["label1"])
         package2 = make_package(project2, package_url="pkg:generic/p2")
 
         data = {

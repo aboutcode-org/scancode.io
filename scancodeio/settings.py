@@ -196,7 +196,6 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_rq",
     "django_probes",
-    "taggit",
     "django_htmx",
 ]
 

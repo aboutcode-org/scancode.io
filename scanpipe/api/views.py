@@ -100,8 +100,8 @@ class ProjectFilterSet(django_filters.rest_framework.FilterSet):
     uuid = django_filters.CharFilter()
     label = django_filters.CharFilter(
         label="Label",
-        field_name="labels__slug",
-        distinct=True,
+        field_name="labels",
+        lookup_expr="contains",
     )
 
     class Meta:
@@ -150,7 +150,6 @@ class ProjectViewSet(
             super()
             .get_queryset()
             .prefetch_related(
-                "labels",
                 "runs",
                 "inputsources",
             )

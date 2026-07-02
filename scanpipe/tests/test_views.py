@@ -471,10 +471,19 @@ class ScanPipeViewsTest(TestCase):
         data["add-labels-submit"] = ""
         response = self.client.post(url, data, follow=True)
         self.assertContains(response, "Label(s) added.")
-        self.assertEqual(["label1", "label2"], list(self.project1.labels.names()))
+        self.project1.refresh_from_db()
+        self.assertEqual(["label1", "label2"], self.project1.labels)
+
+        # Adding labels merges with, rather than replaces, the existing ones.
+        data["labels"] = "label3"
+        response = self.client.post(url, data, follow=True)
+        self.assertContains(response, "Label(s) added.")
+        self.project1.refresh_from_db()
+        self.assertEqual(["label1", "label2", "label3"], self.project1.labels)
 
     def test_scanpipe_views_project_delete_label(self):
-        self.project1.labels.add("label1")
+        self.project1.labels = ["label1"]
+        self.project1.save()
         url = reverse("project_delete_label", args=[self.project1.slug, "label1"])
         response = self.client.get(url)
         self.assertEqual(405, response.status_code)
@@ -482,7 +491,8 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.post(url)
         self.assertEqual(200, response.status_code)
         self.assertEqual({}, response.json())
-        self.assertEqual([], list(self.project1.labels.names()))
+        self.project1.refresh_from_db()
+        self.assertEqual([], self.project1.labels)
 
     def test_scanpipe_views_project_details_edit_input_source_tag(self):
         url = self.project1.get_absolute_url()
@@ -825,15 +835,15 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual("application/x-yaml", response.headers["Content-Type"])
 
     def test_scanpipe_views_project_views(self):
-        self.project1.labels.add("label1", "label2")
-        project2 = Project.objects.create(name="Analysis2")
-        project2.labels.add("label3", "label4")
+        self.project1.labels = ["label1", "label2"]
+        self.project1.save()
+        Project.objects.create(name="Analysis2", labels=["label3", "label4"])
 
         url = reverse("project_list")
-        with self.assertNumQueries(7):
+        with self.assertNumQueries(6):
             self.client.get(url)
 
-        with self.assertNumQueries(10):
+        with self.assertNumQueries(9):
             self.client.get(self.project1.get_absolute_url())
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
