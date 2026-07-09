@@ -67,3 +67,18 @@ class ScanPipeClamAVPipesTest(TestCase):
             }
         }
         self.assertEqual(expected_virus_report_extra_data, resource1.extra_data)
+
+    @mock.patch("clamd.ClamdNetworkSocket.multiscan")
+    def test_scanpipe_pipes_clamav_scan_for_virus_no_detection(self, mock_multiscan):
+        project = Project.objects.create(name="project")
+        make_resource_file(project=project, path="file.txt")
+
+        mock_multiscan.return_value = {
+            str(project.codebase_path): ("OK", None),
+        }
+
+        clamav.scan_for_virus(project)
+        self.assertEqual(0, len(project.projectmessages.all()))
+
+        resource = project.codebaseresources.first()
+        self.assertEqual({}, resource.extra_data)
