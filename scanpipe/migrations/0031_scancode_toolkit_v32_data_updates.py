@@ -16,7 +16,7 @@ def compute_package_declared_license_expression_spdx(apps, schema_editor):
     """
     from licensedcode.cache import build_spdx_license_expression
 
-    if settings.IS_TESTS:
+    if getattr(settings, "IS_TESTS", False):
         return
 
     DiscoveredPackage = apps.get_model("scanpipe", "DiscoveredPackage")
@@ -55,7 +55,7 @@ def compute_resource_detected_license_expression(apps, schema_editor):
     from license_expression import combine_expressions
     from licensedcode.cache import build_spdx_license_expression
 
-    if settings.IS_TESTS:
+    if getattr(settings, "IS_TESTS", False):
         return
 
     CodebaseResource = apps.get_model("scanpipe", "CodebaseResource")
@@ -161,7 +161,7 @@ def _convert_matches_to_detections(license_matches):
 
 def compute_resource_license_detections(apps, schema_editor):
     """Compute CodebaseResource `license_detections` from old `licenses` field."""
-    if settings.IS_TESTS:
+    if getattr(settings, "IS_TESTS", False):
         return
 
     CodebaseResource = apps.get_model("scanpipe", "CodebaseResource")

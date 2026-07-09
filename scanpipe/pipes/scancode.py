@@ -32,7 +32,6 @@ from functools import partial
 from pathlib import Path
 
 from django.apps import apps
-from django.conf import settings
 from django.db.models import ObjectDoesNotExist
 from django.db.models import Q
 
@@ -61,6 +60,7 @@ from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import flag
 from scanpipe.pipes.compliance_thresholds import get_project_clarity_thresholds
+from scanpipe.settings import scanpipe_settings
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -86,7 +86,7 @@ def get_max_workers(keep_available):
     but for example "spawn", such as on macOS, multiprocessing and threading are
     disabled by default returning -1 `max_workers`.
     """
-    processes_from_settings = settings.SCANCODEIO_PROCESSES
+    processes_from_settings = scanpipe_settings.PROCESSES
     if processes_from_settings in [-1, 0, 1]:
         return processes_from_settings
 
@@ -210,7 +210,7 @@ def _scan_resource(
     location,
     scanners,
     with_threading=True,
-    timeout=settings.SCANCODEIO_SCAN_FILE_TIMEOUT,
+    timeout=scanpipe_settings.SCAN_FILE_TIMEOUT,
 ):
     """
     Wrap the scancode-toolkit `scan_resource` method to support timeout on direct
@@ -402,7 +402,7 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
     # get it from scancodeio settings
     file_size_limit = project.get_scan_max_file_size
     if not file_size_limit:
-        file_size_limit = settings.SCANCODEIO_SCAN_MAX_FILE_SIZE
+        file_size_limit = scanpipe_settings.SCAN_MAX_FILE_SIZE
 
     scan_resources(
         resource_qs=resource_qs,
@@ -883,7 +883,7 @@ def run_scan(location, output_file, run_scan_args, processes=None):
         return_results=True,
         echo_func=None,
         pretty_params=get_pretty_params(run_scan_args),
-        timeout=settings.SCANCODEIO_SCAN_FILE_TIMEOUT,
+        timeout=scanpipe_settings.SCAN_FILE_TIMEOUT,
         **run_scan_args,
     )
 

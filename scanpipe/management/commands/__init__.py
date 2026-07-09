@@ -25,7 +25,6 @@ import traceback
 from pathlib import Path
 
 from django.apps import apps
-from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
@@ -39,6 +38,7 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes.fetch import set_project_purl_from_input_url
+from scanpipe.settings import scanpipe_settings
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -405,7 +405,7 @@ def execute_project(project, run_async=False, command=None):  # noqa: C901
         raise CommandError(f"No pipelines to run on project {project}")
 
     if run_async:
-        if not settings.SCANCODEIO_ASYNC:
+        if not scanpipe_settings.ASYNC:
             msg = "SCANCODEIO_ASYNC=False is not compatible with --async option."
             raise CommandError(msg)
 

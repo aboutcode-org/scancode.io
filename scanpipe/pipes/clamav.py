@@ -33,8 +33,11 @@ def scan_for_virus(project):
     Create one Project error message per found virus and store the detection data
     on the related codebase resource ``extra_data`` field.
     """
-    if settings.CLAMD_USE_TCP:
-        clamd_socket = clamd.ClamdNetworkSocket(settings.CLAMD_TCP_ADDR)
+    CLAMD_USE_TCP = getattr(settings, "CLAMD_USE_TCP", True)
+    CLAMD_TCP_ADDR = getattr(settings, "CLAMD_TCP_ADDR", "clamav")
+
+    if CLAMD_USE_TCP:
+        clamd_socket = clamd.ClamdNetworkSocket(CLAMD_TCP_ADDR)
     else:
         clamd_socket = clamd.ClamdUnixSocket()
 
