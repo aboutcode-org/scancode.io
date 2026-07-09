@@ -32,6 +32,10 @@ run:
 	@echo "-> Run the Docker compose services in dev mode (hot reload on code changes)"
 	${COMPOSE} up
 
+start:
+	@echo "-> Start the Docker compose services in background"
+	${COMPOSE} up -d
+
 bash:
 	# Open a bash session in the running web container
 	${COMPOSE} exec web bash
@@ -219,4 +223,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate lock makemigrations restart-worker postgresdb sqlitedb backupdb run test fasttest regen-fixtures fix docs build build-core build-full bash shell docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate lock makemigrations restart-worker postgresdb sqlitedb backupdb run test fasttest regen-fixtures fix docs build build-core build-full bash start shell docker-images offline-package

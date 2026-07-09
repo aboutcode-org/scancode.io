@@ -20,11 +20,14 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import logging
 from pathlib import Path
 
 from django.conf import settings
 
 import clamd
+
+logger = logging.getLogger("scanpipe.pipes")
 
 
 def scan_for_virus(project):
@@ -46,11 +49,17 @@ def scan_for_virus(project):
     except clamd.ClamdError as e:
         raise Exception(f"Error with the ClamAV service: {e}")
 
+    infected_count = 0
     for resource_location, results in scan_response.items():
         status, reason = results
-        resource_path = Path(resource_location).relative_to(project.codebase_path)
 
-        resource = project.codebaseresources.get(path=resource_path)
+        resource_path = Path(resource_location).relative_to(project.codebase_path)
+        if str(resource_path) == ".":
+            # ClamAV reports the codebase directory itself, rather than a file,
+            # as a summary entry when the scan found nothing to flag.
+            continue
+
+        resource = project.codebaseresources.get(path=str(resource_path))
         virus_report = {
             "clamav": {
                 "status": status,
@@ -68,3 +77,6 @@ def scan_for_virus(project):
                 "resource_path": str(resource_path),
             },
         )
+        infected_count += 1
+
+    logger.info(f"ClamAV scan completed: {infected_count} infected")
