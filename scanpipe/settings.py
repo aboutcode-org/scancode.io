@@ -55,12 +55,22 @@ DEFAULTS = {
     "CONFIG_DIR": ".scancode",
     "CONFIG_FILE": "scancode-config.yml",
     "ENABLE_ADMIN_SITE": False,
+    # Syntax in .env: SCANCODEIO_FETCH_BASIC_AUTH="host=user,password;"
     "FETCH_BASIC_AUTH": {},
+    # Syntax in .env: SCANCODEIO_FETCH_DIGEST_AUTH="host=user,password;"
     "FETCH_DIGEST_AUTH": {},
+    # Syntax in .env: SCANCODEIO_FETCH_HEADERS="host=Header1=value,Header2=value;"
     "FETCH_HEADERS": {},
+    # This webhook will be added as WebhookSubscription for each new project.
+    # Syntax in .env: SCANCODEIO_GLOBAL_WEBHOOK=target_url=https://webhook.url,
+    # trigger_on_each_run=False,include_summary=True,include_results=False
     "GLOBAL_WEBHOOK": {},
+    # Default limit for "most common" entries in QuerySets.
     "MOST_COMMON_LIMIT": 7,
+    # Syntax in .env: SCANCODEIO_NETRC_LOCATION="~/.netrc"
     "NETRC_LOCATION": "",
+    # List views pagination, controls the number of items displayed per page.
+    # Syntax in .env: SCANCODEIO_PAGINATE_BY=project=10,project_error=10
     "PAGINATE_BY": {
         "project": 20,
         "error": 50,
@@ -70,14 +80,29 @@ DEFAULTS = {
         "license": 100,
         "relation": 100,
     },
+    # This setting defines the additional locations ScanCode.io will search for
+    # pipelines. This should be set to a list of strings containing full paths
+    # to your additional pipelines directories.
     "PIPELINES_DIRS": [],
     "POLICIES_FILE": "policies.yml",
+    # Set the number of parallel processes to use for ScanCode related scan execution.
+    # If the SCANCODEIO_PROCESSES argument is not set, defaults to an optimal number of
+    # CPUs available on the machine.
     "PROCESSES": None,
+    # Default to 2 minutes.
     "SCAN_FILE_TIMEOUT": 120,
+    # Default to None which scans all files
     "SCAN_MAX_FILE_SIZE": None,
+    # The base URL (e.g., https://hostname/) of this application instance.
+    # Required for generating URLs to reference objects within the app,
+    # such as in webhook notifications.
     "SITE_URL": "",
+    # Syntax in .env: SCANCODEIO_SKOPEO_AUTHFILE_LOCATION="/path/to/auth.json"
     "SKOPEO_AUTHFILE_LOCATION": "",
+    # Syntax in .env: SCANCODEIO_SKOPEO_CREDENTIALS="host1=user:password,
+    # host2=user:password"
     "SKOPEO_CREDENTIALS": {},
+    # Maximum time allowed for a pipeline to complete.
     "TASK_TIMEOUT": "24h",
     "WORKSPACE_LOCATION": "var",
 }
