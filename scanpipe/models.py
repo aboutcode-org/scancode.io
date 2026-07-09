@@ -37,7 +37,6 @@ from traceback import format_tb
 from urllib.parse import urlparse
 
 from django.apps import apps
-from django.conf import settings
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
@@ -97,6 +96,7 @@ import scancodeio
 from scanpipe import humanize_time
 from scanpipe import policies
 from scanpipe import tasks
+from scanpipe.settings import scanpipe_settings
 
 logger = logging.getLogger(__name__)
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -386,7 +386,7 @@ class AbstractTaskFieldsModel(models.Model):
         """Stop a "running" task."""
         self.append_to_log("Stop task requested")
 
-        if not settings.SCANCODEIO_ASYNC:
+        if not scanpipe_settings.ASYNC:
             self.set_task_stopped()
             return
 
@@ -410,7 +410,7 @@ class AbstractTaskFieldsModel(models.Model):
 
     def delete_task(self, delete_self=True):
         """Delete a "not started" or "queued" task."""
-        if settings.SCANCODEIO_ASYNC and self.task_id:
+        if scanpipe_settings.ASYNC and self.task_id:
             job = self.job
             if job:
                 self.job.delete()
@@ -480,9 +480,9 @@ class AdminURLMixin:
         """
         Return the URL for the admin change view of the instance.
         The admin URL is only constructed and returned if the
-        SCANCODEIO_ENABLE_ADMIN_SITE setting is enabled.
+        ENABLE_ADMIN_SITE scanpipe setting is enabled.
         """
-        if not settings.SCANCODEIO_ENABLE_ADMIN_SITE:
+        if not scanpipe_settings.ENABLE_ADMIN_SITE:
             return
 
         opts = self._meta
@@ -639,7 +639,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         super().save(*args, **kwargs)
 
-        global_webhook = settings.SCANCODEIO_GLOBAL_WEBHOOK
+        global_webhook = scanpipe_settings.GLOBAL_WEBHOOK
         if global_webhook and is_new and not is_clone and not skip_global_webhook:
             self.setup_global_webhook()
 
@@ -652,7 +652,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Create a global webhook subscription instance from values defined in the
         settings.
         """
-        webhook_data = settings.SCANCODEIO_GLOBAL_WEBHOOK
+        webhook_data = scanpipe_settings.GLOBAL_WEBHOOK
         if webhook_data.get("target_url"):
             self.add_webhook_subscription(**webhook_data)
 
@@ -869,7 +869,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Return the ``.scancode`` config directory if available in the `codebase`
         directory.
         """
-        config_directory = self.codebase_path / settings.SCANCODEIO_CONFIG_DIR
+        config_directory = self.codebase_path / scanpipe_settings.CONFIG_DIR
         if config_directory.exists():
             return config_directory
 
@@ -914,7 +914,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Return the ``scancode-config.yml`` file from the input/ directory
         or from the codebase/ immediate subdirectories.
         """
-        config_filename = settings.SCANCODEIO_CONFIG_FILE
+        config_filename = scanpipe_settings.CONFIG_FILE
         return self.get_file_from_work_directory(config_filename)
 
     def get_input_policies_file(self):
@@ -1636,7 +1636,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
 
 class GroupingQuerySetMixin:
-    most_common_limit = settings.SCANCODEIO_MOST_COMMON_LIMIT
+    most_common_limit = scanpipe_settings.MOST_COMMON_LIMIT
 
     def group_by(self, field_name):
         """
@@ -2122,7 +2122,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         run_pk = str(self.pk)
 
         # Bypass entirely the queue system and run the pipeline in the current thread.
-        if not settings.SCANCODEIO_ASYNC:
+        if not scanpipe_settings.ASYNC:
             tasks.execute_pipeline_task(run_pk)
             return
 
@@ -2131,7 +2131,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
             job_id=run_pk,
             run_pk=run_pk,
             on_failure=tasks.report_failure,
-            job_timeout=settings.SCANCODEIO_TASK_TIMEOUT,
+            job_timeout=scanpipe_settings.TASK_TIMEOUT,
         )
 
         # In async mode, we want to set the status as "queued" **after** the job was
@@ -2157,7 +2157,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         """
         RunStatus = self.Status
 
-        if settings.SCANCODEIO_ASYNC:
+        if scanpipe_settings.ASYNC:
             job_status = self.job_status
         else:
             job_status = None

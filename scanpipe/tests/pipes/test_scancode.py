@@ -360,12 +360,12 @@ class ScanPipeScancodePipesTest(TestCase):
         scan_func = mock.Mock(return_value=(None, None))
         scan_func.__name__ = ""
 
-        with override_settings(SCANCODEIO_PROCESSES=-1):
+        with override_settings(SCANPIPE={"PROCESSES": -1}):
             scancode.scan_resources(resource_qs, scan_func, noop)
         with_threading = scan_func.call_args[0][-1]
         self.assertFalse(with_threading)
 
-        with override_settings(SCANCODEIO_PROCESSES=0):
+        with override_settings(SCANPIPE={"PROCESSES": 0}):
             scancode.scan_resources(resource_qs, scan_func, noop)
         with_threading = scan_func.call_args[0][-1]
         self.assertTrue(with_threading)
@@ -436,19 +436,19 @@ class ScanPipeScancodePipesTest(TestCase):
         mock_run_scan.return_value = True, {}
         output_file = tempfile.mkstemp()[1]
 
-        with override_settings(SCANCODEIO_SCAN_FILE_TIMEOUT=10):
+        with override_settings(SCANPIPE={"SCAN_FILE_TIMEOUT": 10}):
             scancode.run_scan(location=None, output_file=output_file, run_scan_args={})
             run_scan_kwargs = mock_run_scan.call_args.kwargs
             self.assertEqual(10, run_scan_kwargs.get("timeout"))
 
         expected_processes = -1 if multiprocessing.get_start_method() != "fork" else 2
-        with override_settings(SCANCODEIO_PROCESSES=2):
+        with override_settings(SCANPIPE={"PROCESSES": 2}):
             scancode.run_scan(location=None, output_file=output_file, run_scan_args={})
             run_scan_kwargs = mock_run_scan.call_args.kwargs
             self.assertEqual(expected_processes, run_scan_kwargs.get("processes"))
 
     def test_scanpipe_max_file_size_works(self):
-        with override_settings(SCANCODEIO_SCAN_MAX_FILE_SIZE=10000):
+        with override_settings(SCANPIPE={"SCAN_MAX_FILE_SIZE": 10000}):
             project1 = Project.objects.create(name="Analysis")
             input_location = self.data / "d2d-rust" / "to-trustier-binary-linux.tar.gz"
             project1.copy_input_from(input_location)

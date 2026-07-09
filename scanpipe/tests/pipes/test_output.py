@@ -31,7 +31,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from unittest import mock
 
-from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import TestCase
@@ -47,6 +46,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import flag
 from scanpipe.pipes import output
+from scanpipe.settings import scanpipe_settings
 from scanpipe.tests import FIXTURES_REGEN
 from scanpipe.tests import make_dependency
 from scanpipe.tests import make_message
@@ -59,7 +59,7 @@ from scanpipe.tests import package_data1
 
 def make_config_directory(project):
     """Make and return the `project` config directory."""
-    config_directory = project.codebase_path / settings.SCANCODEIO_CONFIG_DIR
+    config_directory = project.codebase_path / scanpipe_settings.CONFIG_DIR
     config_directory.mkdir(exist_ok=True)
     return config_directory
 
