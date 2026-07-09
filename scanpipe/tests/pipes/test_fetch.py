@@ -157,14 +157,14 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual(expected, cmd_args[0:6])
         self.assertTrue(cmd_args[-1].endswith("debian_10_9.tar"))
 
-        with override_settings(SCANCODEIO_SKOPEO_AUTHFILE_LOCATION="auth.json"):
+        with override_settings(SCANPIPE={"SKOPEO_AUTHFILE_LOCATION": "auth.json"}):
             with self.assertRaises(Exception):
                 fetch.fetch_docker_image(url)
             cmd_args = mock_run_command_safely.call_args[0][0]
             self.assertIn("--authfile=auth.json", cmd_args)
 
         credentials = {"registry.com": "user:password"}
-        with override_settings(SCANCODEIO_SKOPEO_CREDENTIALS=credentials):
+        with override_settings(SCANPIPE={"SKOPEO_CREDENTIALS": credentials}):
             with self.assertRaises(Exception):
                 fetch.fetch_docker_image(url)
             cmd_args = mock_run_command_safely.call_args[0][0]
@@ -194,14 +194,14 @@ class ScanPipeFetchPipesTest(TestCase):
         )
         self.assertEqual(expected, cmd_args)
 
-        with override_settings(SCANCODEIO_SKOPEO_AUTHFILE_LOCATION="auth.json"):
+        with override_settings(SCANPIPE={"SKOPEO_AUTHFILE_LOCATION": "auth.json"}):
             fetch.get_docker_image_platform(url)
             cmd_args = mock_run_command_safely.call_args[0][0]
             self.assertIn("--authfile=auth.json", cmd_args)
             self.assertNotIn("--no-creds", cmd_args)
 
         credentials = {"registry.com": "user:password"}
-        with override_settings(SCANCODEIO_SKOPEO_CREDENTIALS=credentials):
+        with override_settings(SCANPIPE={"SKOPEO_CREDENTIALS": credentials}):
             fetch.get_docker_image_platform(url)
             cmd_args = mock_run_command_safely.call_args[0][0]
             self.assertIn("--creds=user:password", cmd_args)
@@ -241,18 +241,18 @@ class ScanPipeFetchPipesTest(TestCase):
         session = fetch.get_request_session(url)
         self.assertIsNone(session.auth)
 
-        with override_settings(SCANCODEIO_FETCH_BASIC_AUTH={host: credentials}):
+        with override_settings(SCANPIPE={"FETCH_BASIC_AUTH": {host: credentials}}):
             session = fetch.get_request_session(url)
             self.assertEqual(request_auth.HTTPBasicAuth(*credentials), session.auth)
 
-        with override_settings(SCANCODEIO_FETCH_DIGEST_AUTH={host: credentials}):
+        with override_settings(SCANPIPE={"FETCH_DIGEST_AUTH": {host: credentials}}):
             session = fetch.get_request_session(url)
             self.assertEqual(request_auth.HTTPDigestAuth(*credentials), session.auth)
 
         headers = {
             host: {"Authorization": "token TOKEN"},
         }
-        with override_settings(SCANCODEIO_FETCH_HEADERS=headers):
+        with override_settings(SCANPIPE={"FETCH_HEADERS": headers}):
             session = fetch.get_request_session(url)
             self.assertEqual("token TOKEN", session.headers.get("Authorization"))
 

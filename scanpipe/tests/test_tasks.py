@@ -45,7 +45,7 @@ class ScanPipeTasksTest(TestCase):
         self.assertIsNotNone(run.task_start_date)
         self.assertIsNotNone(run.task_end_date)
 
-    @override_settings(SCANCODEIO_ASYNC=False)
+    @override_settings(SCANPIPE={"ASYNC": False})
     @mock.patch("scanpipe.pipelines.Pipeline.execute")
     def test_scanpipe_tasks_execute_pipeline_run_next_on_success(self, mock_execute):
         project = Project.objects.create(name="my_project")
@@ -85,7 +85,7 @@ class ScanPipeTasksTest(TestCase):
         self.assertIsNone(run2.task_start_date)
         self.assertIsNone(run2.task_end_date)
 
-    @override_settings(SCANCODEIO_ASYNC=False)
+    @override_settings(SCANPIPE={"ASYNC": False})
     @mock.patch("requests.post")
     @mock.patch("scanpipe.pipelines.Pipeline.execute")
     def test_scanpipe_tasks_execute_pipeline_task_subscriptions(

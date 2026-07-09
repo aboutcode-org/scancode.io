@@ -40,7 +40,7 @@ class ScanPipeFederatedCodeTest(TestCase):
         self.project1 = models.Project.objects.create(name="Analysis")
 
     @patch(
-        "scanpipe.pipes.federatedcode.settings.FEDERATEDCODE_GIT_ACCOUNT_URL",
+        "scanpipe.pipes.federatedcode.FEDERATEDCODE_GIT_ACCOUNT_URL",
         "https://github.com/test/",
     )
     def test_scanpipe_pipes_federatedcode_get_package_repository(self):

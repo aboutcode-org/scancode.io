@@ -176,7 +176,13 @@ class ScanPipeManagementCommandTest(TestCase):
         lodash_url = "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz"
 
         # Single URL -> purl auto-filled
-        call_command("create-project", "purl-project", "--input-url", lodash_url)
+        call_command(
+            "create-project",
+            "purl-project",
+            "--input-url",
+            lodash_url,
+            stdout=StringIO(),
+        )
         project = Project.objects.get(name="purl-project")
         self.assertEqual("pkg:npm/lodash@4.17.21", project.purl)
 
@@ -188,6 +194,7 @@ class ScanPipeManagementCommandTest(TestCase):
             lodash_url,
             "--input-url",
             "https://registry.npmjs.org/react/-/react-18.0.0.tgz",
+            stdout=StringIO(),
         )
         project2 = Project.objects.get(name="multi-url-project")
         self.assertEqual("", project2.purl)
@@ -216,14 +223,16 @@ class ScanPipeManagementCommandTest(TestCase):
         options.append("--async")
         out = StringIO()
         expected = "SCANCODEIO_ASYNC=False is not compatible with --async option."
-        with override_settings(SCANCODEIO_ASYNC=False):
+        with override_settings(SCANPIPE={"ASYNC": False}):
             with self.assertRaisesMessage(CommandError, expected):
                 call_command("create-project", "other_project", *options, stdout=out)
         self.assertIn(
             "Project other_project created with work directory", out.getvalue()
         )
 
-    @override_settings(SCANCODEIO_GLOBAL_WEBHOOK={"target_url": "https://webhook.url"})
+    @override_settings(
+        SCANPIPE={"GLOBAL_WEBHOOK": {"target_url": "https://webhook.url"}}
+    )
     @mock.patch.object(Project, "setup_global_webhook")
     def test_scanpipe_management_command_create_project_no_global_webhook(
         self, mock_setup_webhook
@@ -317,7 +326,9 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual("", input_source3.tag)
         self.assertFalse(input_source3.exists())
 
-    @override_settings(SCANCODEIO_GLOBAL_WEBHOOK={"target_url": "https://webhook.url"})
+    @override_settings(
+        SCANPIPE={"GLOBAL_WEBHOOK": {"target_url": "https://webhook.url"}}
+    )
     @mock.patch.object(Project, "setup_global_webhook")
     def test_scanpipe_management_command_batch_create_global_webhook(
         self, mock_setup_webhook
@@ -597,11 +608,11 @@ class ScanPipeManagementCommandTest(TestCase):
 
         project.add_pipeline(self.pipeline_name)
         expected = "SCANCODEIO_ASYNC=False is not compatible with --async option."
-        with override_settings(SCANCODEIO_ASYNC=False):
+        with override_settings(SCANPIPE={"ASYNC": False}):
             with self.assertRaisesMessage(CommandError, expected):
                 commands.execute_project(project, run_async=True)
 
-        with override_settings(SCANCODEIO_ASYNC=True):
+        with override_settings(SCANPIPE={"ASYNC": True}):
             with mock.patch("scanpipe.models.Run.start") as mock_start:
                 returned_value = commands.execute_project(project, run_async=True)
                 mock_start.assert_called_once()
@@ -1670,7 +1681,7 @@ class ScanPipeManagementCommandMixinTest(TestCase):
         self.assertTrue(run.task_succeeded)
 
         expected = "SCANCODEIO_ASYNC=False is not compatible with --async option."
-        with override_settings(SCANCODEIO_ASYNC=False):
+        with override_settings(SCANPIPE={"ASYNC": False}):
             with self.assertRaisesMessage(CommandError, expected):
                 self.create_project_command.create_project(
                     name="other_project",
@@ -1679,7 +1690,9 @@ class ScanPipeManagementCommandMixinTest(TestCase):
                     run_async=True,
                 )
 
-    @override_settings(SCANCODEIO_GLOBAL_WEBHOOK={"target_url": "https://webhook.url"})
+    @override_settings(
+        SCANPIPE={"GLOBAL_WEBHOOK": {"target_url": "https://webhook.url"}}
+    )
     @mock.patch.object(Project, "setup_global_webhook")
     def test_scanpipe_management_command_mixin_create_project_no_global_webhook(
         self, mock_setup_webhook

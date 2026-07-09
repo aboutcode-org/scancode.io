@@ -48,19 +48,19 @@ session = requests.Session()
 
 # Only PURLDB_URL can be provided through setting
 PURLDB_API_URL = None
-PURLDB_URL = settings.PURLDB_URL
+PURLDB_URL = getattr(settings, "PURLDB_URL", "")
 if PURLDB_URL:
     PURLDB_API_URL = f"{PURLDB_URL}/api/"
 
 # Basic Authentication
-PURLDB_USER = settings.PURLDB_USER
-PURLDB_PASSWORD = settings.PURLDB_PASSWORD
+PURLDB_USER = getattr(settings, "PURLDB_USER", "")
+PURLDB_PASSWORD = getattr(settings, "PURLDB_PASSWORD", "")
 basic_auth_enabled = PURLDB_USER and PURLDB_PASSWORD
 if basic_auth_enabled:
     session.auth = (PURLDB_USER, PURLDB_PASSWORD)
 
 # Authentication with single API key
-PURLDB_API_KEY = settings.PURLDB_API_KEY
+PURLDB_API_KEY = getattr(settings, "PURLDB_API_KEY", "")
 if PURLDB_API_KEY:
     session.headers.update({"Authorization": f"Token {PURLDB_API_KEY}"})
 
