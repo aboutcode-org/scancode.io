@@ -843,7 +843,7 @@ def match_and_resolve_dependencies(project):
             )
 
     # We need only the direct dependency relationships but not the from indirect
-    # dependency realtionships which are between the main package to resolved packages
+    # dependency relationships which are between the main package to resolved packages
     indirect_dependencies = project.discovereddependencies.filter(is_direct=False)
     indirect_dependencies.delete()
 
