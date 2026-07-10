@@ -395,14 +395,12 @@ class ScanPipeResolvePipesTest(TestCase):
     def test_get_data_from_manifests_returns_tuple_when_no_resources(self):
         project1 = Project.objects.create(name="TestEmptyManifest")
         empty_resources = project1.codebaseresources.none()
-    
         result = resolve.get_data_from_manifests(
             project=project1,
             package_registry=resolve.sbom_registry,
             manifest_resources=empty_resources,
             model="test",
         )
-    
         packages, dependencies = result
         self.assertEqual(packages, [])
         self.assertEqual(dependencies, [])
