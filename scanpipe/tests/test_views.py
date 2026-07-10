@@ -316,8 +316,11 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertContains(response, expected1)
 
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("requests.sessions.Session.head")
-    def test_scanpipe_views_project_details_add_inputs(self, mock_head):
+    def test_scanpipe_views_project_details_add_inputs(
+        self, mock_head, mock_is_safe_url
+    ):
         url = self.project1.get_absolute_url()
 
         data = {
