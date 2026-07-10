@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import json
+import tempfile
 from pathlib import Path
 
 from django.core.management import call_command
@@ -58,6 +59,61 @@ class ScanPipeInputPipesTest(TestCase):
     def test_scanpipe_pipes_input_is_archive(self):
         input_location = self.data / "aboutcode" / "notice.NOTICE"
         self.assertFalse(input.is_archive(input_location))
+
+    def test_scanpipe_pipes_input_get_unique_filename(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            dest_path = Path(tmp_dir)
+            self.assertEqual("LICENSE", input.get_unique_filename("LICENSE", dest_path))
+
+            (dest_path / "LICENSE").touch()
+            self.assertEqual(
+                "LICENSE_1", input.get_unique_filename("LICENSE", dest_path)
+            )
+
+            (dest_path / "LICENSE_1").touch()
+            self.assertEqual(
+                "LICENSE_2", input.get_unique_filename("LICENSE", dest_path)
+            )
+
+    def test_scanpipe_pipes_input_copy_input_filename_collision(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            dest_path = Path(tmp_dir)
+
+            with tempfile.TemporaryDirectory() as source_dir_1:
+                source_file_1 = Path(source_dir_1) / "LICENSE"
+                source_file_1.write_text("license 1")
+                destination_1 = input.copy_input(source_file_1, dest_path)
+
+            with tempfile.TemporaryDirectory() as source_dir_2:
+                source_file_2 = Path(source_dir_2) / "LICENSE"
+                source_file_2.write_text("license 2")
+                destination_2 = input.copy_input(source_file_2, dest_path)
+
+            self.assertNotEqual(destination_1, destination_2)
+            self.assertEqual("LICENSE", destination_1.name)
+            self.assertEqual("LICENSE_1", destination_2.name)
+            self.assertEqual("license 1", destination_1.read_text())
+            self.assertEqual("license 2", destination_2.read_text())
+
+    def test_scanpipe_pipes_input_move_input_filename_collision(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            dest_path = Path(tmp_dir)
+
+            with tempfile.TemporaryDirectory() as source_dir_1:
+                source_file_1 = Path(source_dir_1) / "LICENSE"
+                source_file_1.write_text("license 1")
+                destination_1 = input.move_input(source_file_1, dest_path)
+
+            with tempfile.TemporaryDirectory() as source_dir_2:
+                source_file_2 = Path(source_dir_2) / "LICENSE"
+                source_file_2.write_text("license 2")
+                destination_2 = input.move_input(source_file_2, dest_path)
+
+            self.assertNotEqual(destination_1, destination_2)
+            self.assertEqual("LICENSE", destination_1.name)
+            self.assertEqual("LICENSE_1", destination_2.name)
+            self.assertEqual("license 1", destination_1.read_text())
+            self.assertEqual("license 2", destination_2.read_text())
 
         input_location = self.data / "scancode" / "archive.zip"
         self.assertTrue(input.is_archive(input_location))
