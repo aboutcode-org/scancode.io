@@ -126,7 +126,6 @@ def analyze_scanned_files(project):
     scanned_files.has_no_license_detections().update(status=NO_LICENSES)
     scanned_files.unknown_license().update(status=UNKNOWN_LICENSE)
 
-
 def flag_not_analyzed_codebase_resources(project):
     """Flag codebase resource as `not-analyzed`."""
     return project.codebaseresources.no_status().update(status=NOT_ANALYZED)
