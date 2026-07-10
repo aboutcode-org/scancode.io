@@ -1209,7 +1209,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         from scanpipe.pipes.input import copy_input
 
-        copy_input(input_location, self.input_path)
+        return copy_input(input_location, self.input_path)
 
     def move_input_from(self, input_location):
         """
@@ -1248,10 +1248,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         adds the `input_source` for each entry.
         """
         for downloaded in downloads:
-            self.move_input_from(downloaded.path)
+            destination = self.move_input_from(downloaded.path)
             self.add_input_source(
                 download_url=downloaded.uri,
-                filename=downloaded.filename,
+                filename=destination.name,
             )
 
     def add_upload(self, uploaded_file, tag=""):
@@ -2004,7 +2004,7 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
         # Force a commit to the database to ensure the file on disk is not rendered
         # as "manually uploaded" in the UI.
         with transaction.atomic():
-            self.filename = downloaded.filename
+            self.filename = destination.name
             self.save()
 
         return destination

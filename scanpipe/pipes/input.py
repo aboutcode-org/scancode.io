@@ -41,11 +41,29 @@ from scanpipe.pipes import scancode
 from scanpipe.pipes.output import mappings_key_by_fieldname
 
 
+def get_unique_filename(filename, dest_path):
+    """
+    Return a version of ``filename`` guaranteed to not collide with an
+    existing file or directory in ``dest_path``, appending a numeric suffix
+    when needed.
+    """
+    destination_dir = Path(dest_path)
+    if not (destination_dir / filename).exists():
+        return filename
+
+    stem, suffix = Path(filename).stem, Path(filename).suffix
+    counter = 1
+    while (destination_dir / f"{stem}_{counter}{suffix}").exists():
+        counter += 1
+    return f"{stem}_{counter}{suffix}"
+
+
 def copy_input(input_location, dest_path):
     """Copy the ``input_location`` (file or directory) to the ``dest_path``."""
     input_path = Path(input_location)
     destination_dir = Path(dest_path)
-    destination = destination_dir / input_path.name
+    filename = get_unique_filename(input_path.name, destination_dir)
+    destination = destination_dir / filename
 
     if input_path.is_dir():
         shutil.copytree(input_location, destination)
@@ -65,8 +83,11 @@ def copy_inputs(input_locations, dest_path):
 
 def move_input(input_location, dest_path):
     """Move the provided ``input_location`` to the ``dest_path``."""
-    destination = dest_path / Path(input_location).name
-    return shutil.move(input_location, destination)
+    destination_dir = Path(dest_path)
+    filename = get_unique_filename(Path(input_location).name, destination_dir)
+    destination = destination_dir / filename
+    shutil.move(input_location, destination)
+    return destination
 
 
 def move_inputs(inputs, dest_path):

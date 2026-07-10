@@ -340,8 +340,8 @@ def handle_input_files(project, input_files_data, command=None):
     copied = []
 
     for file_location, tag in input_files_data.items():
-        project.copy_input_from(file_location)
-        filename = Path(file_location).name
+        destination = project.copy_input_from(file_location)
+        filename = destination.name
         copied.append(filename)
         project.add_input_source(
             filename=filename,
