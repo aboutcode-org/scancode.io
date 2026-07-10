@@ -839,6 +839,28 @@ class ScanPipeXLSXOutputPipesTest(TestCase):
             if r != x:
                 self.assertEqual(r[-50:], x)
 
+    def test_add_xlsx_worksheet_writes_errors_to_dedicated_column(self):
+        rows = [{"foo": "some value", "bar": "f" * 40000}]
+
+        test_dir = Path(tempfile.mkdtemp(prefix="scancode-io-test"))
+        output_file = test_dir / "errors-column.xlsx"
+        with xlsxwriter.Workbook(str(output_file)) as workbook:
+            output.add_xlsx_worksheet(
+                workbook=workbook,
+                worksheet_name="packages",
+                rows=rows,
+                fields=["foo", "bar"],
+            )
+
+        workbook = openpyxl.load_workbook(output_file, read_only=True, data_only=True)
+        worksheet = workbook["packages"]
+        header_row, data_row = list(worksheet.iter_rows(values_only=True))
+
+        self.assertEqual(("foo", "bar", "xlsx_errors"), header_row)
+        self.assertEqual("some value", data_row[0])
+        self.assertEqual("f" * 32767, data_row[1])
+        self.assertIn("has been truncated", data_row[2])
+
     def test__adapt_value_for_xlsx_does_adapt(self):
         result, error = output._adapt_value_for_xlsx(
             fieldname="foo",
