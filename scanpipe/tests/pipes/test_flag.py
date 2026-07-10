@@ -137,7 +137,3 @@ class ScanPipeFlagPipesTest(TestCase):
         self.resource2.refresh_from_db()
         self.assertEqual("mapped", self.resource1.status)
         self.assertEqual("mapped", self.resource2.status)
-
-
-    # No limit = returns original queryset untouched
-    self.assertEqual(result, all_files)
