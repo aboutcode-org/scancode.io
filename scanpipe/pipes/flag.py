@@ -120,11 +120,13 @@ def flag_and_ignore_files_over_max_size(resource_qs, file_size_limit):
         status=IGNORED_BY_MAX_FILE_SIZE
     )
 
+
 def analyze_scanned_files(project):
     """Set the status for CodebaseResource to unknown or no license."""
     scanned_files = project.codebaseresources.files().status(SCANNED)
     scanned_files.has_no_license_detections().update(status=NO_LICENSES)
     scanned_files.unknown_license().update(status=UNKNOWN_LICENSE)
+
 
 def flag_not_analyzed_codebase_resources(project):
     """Flag codebase resource as `not-analyzed`."""
