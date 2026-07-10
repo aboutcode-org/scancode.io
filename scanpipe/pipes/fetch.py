@@ -30,12 +30,14 @@ import tempfile
 from collections import namedtuple
 from pathlib import Path
 from urllib.parse import unquote
+from urllib.parse import urljoin
 from urllib.parse import urlparse
 
 from django.utils.http import parse_header_parameters
 
 import git
 import requests
+import urllib3
 from commoncode import command
 from commoncode.hash import multi_checksums
 from commoncode.text import python_safe_name
@@ -64,6 +66,18 @@ Download = namedtuple("Download", "uri directory filename path size sha1 md5")
 # certain conditions.
 HTTP_REQUEST_TIMEOUT = 30
 
+# Maximum number of HTTP redirects to follow when fetching a URL, re-validating
+# the target of each hop with ``is_safe_url`` to prevent a safe URL from
+# redirecting the request to an internal address.
+MAX_REDIRECT_HOPS = 5
+
+REDIRECT_STATUS_CODES = frozenset({301, 302, 303, 307, 308})
+
+# Backslash and control/whitespace characters can make ``urlparse`` and the
+# urllib3-based HTTP client disagree on the host part of a URL, defeating the
+# ``is_safe_url`` check below.
+UNSAFE_URL_CHARS_RE = re.compile(r"[\x00-\x20\x7f\\]")
+
 
 def get_request_session(uri):
     """Return a Requests session setup with authentication and headers."""
@@ -87,8 +101,7 @@ def fetch_http(uri, to=None):
     Download a given `uri` in a temporary directory and return the directory's
     path.
     """
-    request_session = get_request_session(uri)
-    response = request_session.get(uri, timeout=HTTP_REQUEST_TIMEOUT)
+    response = _request_with_safe_redirects(uri, "get")
 
     if response.status_code != 200:
         raise requests.RequestException
@@ -413,42 +426,81 @@ def is_safe_url(url):
     Check that a URL does not point to a private or internal network address.
     Mitigates SSRF by ensuring the target host resolves only to public IPs.
     """
-    parsed = urlparse(url)
-
-    # Only allow http and https schemes
-    if parsed.scheme not in ("http", "https"):
+    # Reject characters that can make `urlparse` and the urllib3-based HTTP
+    # client disagree on the host part of the same URL.
+    if UNSAFE_URL_CHARS_RE.search(url):
         return False
 
-    # Reject URLs with no hostname
-    if not parsed.hostname:
+    if urlparse(url).scheme not in ("http", "https"):
         return False
 
-    # Resolve the hostname to catch internal addresses hidden behind DNS
+    # Use urllib3's own URL parser, the one `requests` relies on to pick a
+    # connection host, so this check and the actual request always agree on
+    # which host is being contacted.
+    host = urllib3.util.parse_url(url).host
+    if not host:
+        return False
+
+    # Resolve the hostname to catch internal addresses hidden behind DNS.
+    # `getaddrinfo` is used instead of `gethostbyname` to also cover IPv6-only
+    # records, since a client may connect over either address family.
     try:
-        resolved_ip = socket.gethostbyname(parsed.hostname)
+        address_infos = socket.getaddrinfo(host, None)
     except socket.gaierror:
         return False
 
-    # Reject private, loopback, link-local, and reserved addresses
-    ip = ipaddress.ip_address(resolved_ip)
-    unsafe = (
-        ip.is_private
-        or ip.is_loopback
-        or ip.is_link_local
-        or ip.is_reserved
-        or ip.is_multicast
-    )
-    return not unsafe
+    resolved_ips = {address_info[4][0] for address_info in address_infos}
+    if not resolved_ips:
+        return False
+
+    # Reject private, loopback, link-local, reserved, and multicast addresses.
+    # If any resolved address is unsafe, the host is rejected since the HTTP
+    # client is free to connect to any of them.
+    for resolved_ip in resolved_ips:
+        ip = ipaddress.ip_address(resolved_ip)
+        unsafe = (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_reserved
+            or ip.is_multicast
+        )
+        if unsafe:
+            return False
+
+    return True
+
+
+def _request_with_safe_redirects(url, method_name):
+    """
+    Perform an HTTP request for `url` using the session `method_name`
+    ("get" or "head"), re-validating each redirect target with `is_safe_url`
+    before following it.
+    Raise `requests.RequestException` if the URL, or any redirect target, is
+    unsafe or if too many redirects are followed.
+    """
+    request_session = get_request_session(url)
+    session_method = getattr(request_session, method_name)
+
+    for _ in range(MAX_REDIRECT_HOPS + 1):
+        if not is_safe_url(url):
+            raise requests.RequestException(f"Unsafe URL: {url}")
+
+        response = session_method(
+            url, timeout=HTTP_REQUEST_TIMEOUT, allow_redirects=False
+        )
+        if response.status_code not in REDIRECT_STATUS_CODES:
+            return response
+
+        url = urljoin(url, response.headers["location"])
+
+    raise requests.RequestException("Too many redirects.")
 
 
 def check_url(url):
     """Check that a URL is safe and accessible."""
-    if not is_safe_url(url):
-        return False
-
-    request_session = get_request_session(url)
     try:
-        response = request_session.head(url, timeout=HTTP_REQUEST_TIMEOUT)
+        response = _request_with_safe_redirects(url, "head")
         response.raise_for_status()
     except requests.exceptions.RequestException:
         return False

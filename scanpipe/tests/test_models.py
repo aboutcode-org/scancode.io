@@ -1582,9 +1582,12 @@ class ScanPipeModelsTest(TestCase):
         input_source.delete_file()
         self.assertFalse(input_source.exists())
 
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("scanpipe.pipes.fetch.check_url")
     @mock.patch("requests.sessions.Session.get")
-    def test_scanpipe_input_source_model_fetch(self, mock_get, mock_check_url):
+    def test_scanpipe_input_source_model_fetch(
+        self, mock_get, mock_check_url, mock_is_safe_url
+    ):
         download_url = "https://download.url/file.zip"
         mock_get.return_value = make_mock_response(url=download_url)
         mock_check_url.return_value = True

@@ -44,8 +44,11 @@ class ScanPipeFormsTest(TestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
 
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("requests.sessions.Session.head")
-    def test_scanpipe_forms_inputs_base_form_input_urls(self, mock_head):
+    def test_scanpipe_forms_inputs_base_form_input_urls(
+        self, mock_head, mock_is_safe_url
+    ):
         data = {
             "input_urls": "Docker://debian",
         }
@@ -252,8 +255,11 @@ class ScanPipeFormsTest(TestCase):
         obj = form2.save()
         self.assertEqual("pkg:npm/lodash@4.17.21", obj.purl)
 
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("requests.sessions.Session.head")
-    def test_scanpipe_forms_handle_inputs_auto_fill_purl(self, mock_head):
+    def test_scanpipe_forms_handle_inputs_auto_fill_purl(
+        self, mock_head, mock_is_safe_url
+    ):
         mock_head.return_value = mock.Mock(headers={}, status_code=200)
         lodash_url = "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz"
 

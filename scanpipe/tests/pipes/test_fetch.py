@@ -73,8 +73,9 @@ class ScanPipeFetchPipesTest(TestCase):
         expected = "SSH 'git@' URLs are not supported. Use https:// instead."
         self.assertEqual(expected, str(cm.exception))
 
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("requests.sessions.Session.get")
-    def test_scanpipe_pipes_fetch_http(self, mock_get):
+    def test_scanpipe_pipes_fetch_http(self, mock_get, mock_is_safe_url):
         url = "https://example.com/filename.zip"
 
         mock_get.return_value = make_mock_response(url=url)
@@ -93,8 +94,9 @@ class ScanPipeFetchPipesTest(TestCase):
         downloaded_file = fetch.fetch_http(url)
         self.assertTrue(Path(downloaded_file.directory, "another_name.zip").exists())
 
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("requests.sessions.Session.get")
-    def test_scanpipe_pipes_fetch_package_url(self, mock_get):
+    def test_scanpipe_pipes_fetch_package_url(self, mock_get, mock_is_safe_url):
         package_url = "pkg:not_a_valid_purl"
         with self.assertRaises(ValueError) as cm:
             fetch.fetch_package_url(package_url)
@@ -112,9 +114,12 @@ class ScanPipeFetchPipesTest(TestCase):
         downloaded_file = fetch.fetch_package_url(package_url)
         self.assertTrue(Path(downloaded_file.directory, "filename.zip").exists())
 
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("fetchcode.pypi.fetch_json_response")
     @mock.patch("requests.sessions.Session.get")
-    def test_scanpipe_pipes_fetch_pypi_package_url(self, mock_get, mock_fetch_json):
+    def test_scanpipe_pipes_fetch_pypi_package_url(
+        self, mock_get, mock_fetch_json, mock_is_safe_url
+    ):
         package_url = "pkg:pypi/django@5.2"
         download_url = "https://files.pythonhosted.org/packages/Django-5.2.tar.gz"
 
@@ -213,8 +218,9 @@ class ScanPipeFetchPipesTest(TestCase):
             fetch.fetch_docker_image(url)
         self.assertEqual("Invalid Docker reference.", str(cm.exception))
 
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("requests.sessions.Session.get")
-    def test_scanpipe_pipes_fetch_fetch_urls(self, mock_get):
+    def test_scanpipe_pipes_fetch_fetch_urls(self, mock_get, mock_is_safe_url):
         urls = [
             "https://example.com/filename.zip",
             "https://example.com/archive.tar.gz",
@@ -269,10 +275,22 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual("", download.sha1)
         self.assertEqual("", download.md5)
 
-    @mock.patch("scanpipe.pipes.fetch.socket.gethostbyname")
-    def test_scanpipe_pipes_fetch_is_safe_url(self, mock_gethostbyname):
+    @staticmethod
+    def make_addrinfo(*ips):
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip, 0)) for ip in ips]
+
+    @staticmethod
+    def make_addrinfo6(*ips):
+        return [
+            (socket.AF_INET6, socket.SOCK_STREAM, 6, "", (ip, 0, 0, 0)) for ip in ips
+        ]
+
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    def test_scanpipe_pipes_fetch_is_safe_url(self, mock_getaddrinfo):
         # Valid public URLs
-        mock_gethostbyname.return_value = "93.184.216.34"  # example.com
+        mock_getaddrinfo.return_value = self.make_addrinfo(
+            "93.184.216.34"
+        )  # example.com
         self.assertTrue(fetch.is_safe_url("https://example.com/file.zip"))
         self.assertTrue(fetch.is_safe_url("http://example.com/file.zip"))
 
@@ -285,55 +303,101 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertFalse(fetch.is_safe_url("https://"))
 
         # Unresolvable hostname
-        mock_gethostbyname.side_effect = socket.gaierror
+        mock_getaddrinfo.side_effect = socket.gaierror
         self.assertFalse(fetch.is_safe_url("https://thisdomaindoesnotexist.invalid/"))
-        mock_gethostbyname.side_effect = None
+        mock_getaddrinfo.side_effect = None
 
         # Private ranges
-        mock_gethostbyname.return_value = "192.168.1.1"
+        mock_getaddrinfo.return_value = self.make_addrinfo("192.168.1.1")
         self.assertFalse(fetch.is_safe_url("http://192.168.1.1/"))
-        mock_gethostbyname.return_value = "10.0.0.1"
+        mock_getaddrinfo.return_value = self.make_addrinfo("10.0.0.1")
         self.assertFalse(fetch.is_safe_url("http://10.0.0.1/"))
-        mock_gethostbyname.return_value = "172.16.0.1"
+        mock_getaddrinfo.return_value = self.make_addrinfo("172.16.0.1")
         self.assertFalse(fetch.is_safe_url("http://172.16.0.1/"))
 
         # Loopback
-        mock_gethostbyname.return_value = "127.0.0.1"
+        mock_getaddrinfo.return_value = self.make_addrinfo("127.0.0.1")
         self.assertFalse(fetch.is_safe_url("http://127.0.0.1/"))
-        mock_gethostbyname.return_value = "127.0.0.1"
+        mock_getaddrinfo.return_value = self.make_addrinfo("127.0.0.1")
         self.assertFalse(fetch.is_safe_url("http://localhost/"))
 
         # Link-local
-        mock_gethostbyname.return_value = "169.254.169.254"
+        mock_getaddrinfo.return_value = self.make_addrinfo("169.254.169.254")
         self.assertFalse(fetch.is_safe_url("http://169.254.169.254/"))
 
         # Multicast
-        mock_gethostbyname.return_value = "224.0.0.1"
+        mock_getaddrinfo.return_value = self.make_addrinfo("224.0.0.1")
         self.assertFalse(fetch.is_safe_url("http://224.0.0.1/"))
 
-    @mock.patch("scanpipe.pipes.fetch.socket.gethostbyname")
+        # One of several resolved addresses is unsafe
+        mock_getaddrinfo.return_value = self.make_addrinfo("93.184.216.34", "127.0.0.1")
+        self.assertFalse(fetch.is_safe_url("http://example.com/file.zip"))
+
+        # A backslash before the "real" host can make `urlparse` and the
+        # urllib3-based HTTP client disagree on which host is contacted.
+        self.assertFalse(fetch.is_safe_url("http://127.0.0.1\\@example.com/"))
+
+        # Control characters (e.g. from a CRLF-injection attempt) are rejected
+        # wherever they appear in the URL.
+        self.assertFalse(fetch.is_safe_url("http://example.com/\x00file.zip"))
+        self.assertFalse(fetch.is_safe_url("http://example.com/\r\nfile.zip"))
+
+        # IPv6 loopback and link-local addresses are rejected, and a safe
+        # public IPv6-only host is accepted.
+        mock_getaddrinfo.return_value = self.make_addrinfo6("::1")
+        self.assertFalse(fetch.is_safe_url("http://example.com/file.zip"))
+        mock_getaddrinfo.return_value = self.make_addrinfo6("fe80::1")
+        self.assertFalse(fetch.is_safe_url("http://example.com/file.zip"))
+        mock_getaddrinfo.return_value = self.make_addrinfo6("2606:4700:4700::1111")
+        self.assertTrue(fetch.is_safe_url("http://example.com/file.zip"))
+
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
     @mock.patch("requests.sessions.Session.head")
-    def test_scanpipe_pipes_fetch_check_url(self, mock_head, mock_gethostbyname):
+    def test_scanpipe_pipes_fetch_check_url(self, mock_head, mock_getaddrinfo):
         url = "https://example.com/file.zip"
 
         # Safe and accessible URL
-        mock_gethostbyname.return_value = "93.184.216.34"
+        mock_getaddrinfo.return_value = self.make_addrinfo("93.184.216.34")
         mock_head.return_value = make_mock_response(url=url)
         self.assertTrue(fetch.check_url(url))
 
         # Unsafe URL
-        mock_gethostbyname.return_value = "127.0.0.1"
+        mock_getaddrinfo.return_value = self.make_addrinfo("127.0.0.1")
         self.assertFalse(fetch.check_url("http://localhost/"))
 
         # Safe URL but request fails
-        mock_gethostbyname.return_value = "93.184.216.34"
+        mock_getaddrinfo.return_value = self.make_addrinfo("93.184.216.34")
         mock_head.side_effect = requests.exceptions.RequestException
         self.assertFalse(fetch.check_url(url))
 
-    @mock.patch("scanpipe.pipes.fetch.socket.gethostbyname")
+    def test_scanpipe_pipes_fetch_check_url_rejects_redirect_to_unsafe_host(self):
+        def getaddrinfo(host, *args, **kwargs):
+            if host == "127.0.0.1":
+                return self.make_addrinfo("127.0.0.1")
+            return self.make_addrinfo("93.184.216.34")
+
+        url = "https://example.com/file.zip"
+        redirect_response = make_mock_response(
+            url=url,
+            status_code=302,
+            headers={"location": "http://127.0.0.1/internal"},
+        )
+
+        with (
+            mock.patch(
+                "scanpipe.pipes.fetch.socket.getaddrinfo", side_effect=getaddrinfo
+            ),
+            mock.patch(
+                "requests.sessions.Session.head", return_value=redirect_response
+            ) as mock_head,
+        ):
+            self.assertFalse(fetch.check_url(url))
+            self.assertEqual(1, mock_head.call_count)
+
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
     @mock.patch("requests.sessions.Session.head")
     def test_scanpipe_pipes_fetch_check_urls_availability(
-        self, mock_head, mock_gethostbyname
+        self, mock_head, mock_getaddrinfo
     ):
         http_urls = [
             "https://example.com/file.zip",
@@ -345,13 +409,134 @@ class ScanPipeFetchPipesTest(TestCase):
         ]
 
         # All URLs safe and accessible
-        mock_gethostbyname.return_value = "93.184.216.34"
+        mock_getaddrinfo.return_value = self.make_addrinfo("93.184.216.34")
         mock_head.return_value = make_mock_response(url="mocked_url")
         self.assertEqual([], fetch.check_urls_availability(urls))
 
         # All URLs fail
         mock_head.side_effect = requests.exceptions.RequestException
         self.assertEqual(http_urls, fetch.check_urls_availability(urls))
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url")
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_request_with_safe_redirects_revalidates_redirects(
+        self, mock_get, mock_is_safe_url
+    ):
+        safe_url = "https://example.com/"
+        unsafe_redirect_url = "http://127.0.0.1/internal"
+        mock_is_safe_url.side_effect = lambda url: url == safe_url
+
+        mock_get.return_value = make_mock_response(
+            url=safe_url, status_code=302, headers={"location": unsafe_redirect_url}
+        )
+
+        with self.assertRaises(requests.RequestException):
+            fetch._request_with_safe_redirects(safe_url, "get")
+
+        mock_is_safe_url.assert_any_call(unsafe_redirect_url)
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_request_with_safe_redirects_follows_safe_redirect(
+        self, mock_get, mock_is_safe_url
+    ):
+        first_url = "https://example.com/"
+        final_url = "https://example.com/final"
+
+        redirect_response = make_mock_response(
+            url=first_url, status_code=302, headers={"location": final_url}
+        )
+        final_response = make_mock_response(url=final_url)
+        mock_get.side_effect = [redirect_response, final_response]
+
+        response = fetch._request_with_safe_redirects(first_url, "get")
+        self.assertEqual(final_response, response)
+        self.assertEqual(2, mock_get.call_count)
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_request_with_safe_redirects_relative_location(
+        self, mock_get, mock_is_safe_url
+    ):
+        first_url = "https://example.com/downloads/"
+        final_url = "https://example.com/downloads/final.zip"
+
+        redirect_response = make_mock_response(
+            url=first_url, status_code=302, headers={"location": "final.zip"}
+        )
+        final_response = make_mock_response(url=final_url)
+        mock_get.side_effect = [redirect_response, final_response]
+
+        response = fetch._request_with_safe_redirects(first_url, "get")
+        self.assertEqual(final_response, response)
+        mock_is_safe_url.assert_any_call(final_url)
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_request_with_safe_redirects_too_many_redirects(
+        self, mock_get, mock_is_safe_url
+    ):
+        url = "https://example.com/"
+        mock_get.return_value = make_mock_response(
+            url=url, status_code=302, headers={"location": url}
+        )
+
+        with self.assertRaises(requests.RequestException):
+            fetch._request_with_safe_redirects(url, "get")
+        self.assertEqual(fetch.MAX_REDIRECT_HOPS + 1, mock_get.call_count)
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_request_with_safe_redirects_max_hops_allowed(
+        self, mock_get, mock_is_safe_url
+    ):
+        url = "https://example.com/"
+        redirect_response = make_mock_response(
+            url=url, status_code=302, headers={"location": url}
+        )
+        final_response = make_mock_response(url=url)
+        # One redirect response per hop, then a final non-redirect response.
+        mock_get.side_effect = [redirect_response] * fetch.MAX_REDIRECT_HOPS + [
+            final_response
+        ]
+
+        response = fetch._request_with_safe_redirects(url, "get")
+        self.assertEqual(final_response, response)
+        self.assertEqual(fetch.MAX_REDIRECT_HOPS + 1, mock_get.call_count)
+
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_http_rejects_unsafe_url(
+        self, mock_get, mock_getaddrinfo
+    ):
+        mock_getaddrinfo.return_value = self.make_addrinfo("127.0.0.1")
+
+        with self.assertRaises(requests.RequestException):
+            fetch.fetch_http("http://127.0.0.1/internal")
+        mock_get.assert_not_called()
+
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_http_rejects_parser_differential_bypass(
+        self, mock_get
+    ):
+        # Same payload as the SSRF advisory: `urlparse` and the urllib3-based
+        # HTTP client would otherwise disagree on which host is contacted.
+        with self.assertRaises(requests.RequestException):
+            fetch.fetch_http("http://127.0.0.1:8081\\@8.8.8.8/")
+        mock_get.assert_not_called()
+
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    @mock.patch("scanpipe.pipes.fetch.purl2url.get_download_url")
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_package_url_rejects_unsafe_download_url(
+        self, mock_get, mock_get_download_url, mock_getaddrinfo
+    ):
+        mock_get_download_url.return_value = "http://127.0.0.1/evil.tar.gz"
+        mock_getaddrinfo.return_value = self.make_addrinfo("127.0.0.1")
+
+        with self.assertRaises(requests.RequestException):
+            fetch.fetch_package_url("pkg:npm/d3@5.8.0")
+        mock_get.assert_not_called()
 
     def test_scanpipe_pipes_fetch_set_project_purl_from_input_url(self):
         project = Project.objects.create(name="purl_from_url")
