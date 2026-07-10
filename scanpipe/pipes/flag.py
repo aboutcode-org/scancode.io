@@ -116,11 +116,9 @@ def flag_and_ignore_files_over_max_size(resource_qs, file_size_limit):
     if not file_size_limit:
         return resource_qs
 
-    flagged_count = resource_qs.filter(size__gte=file_size_limit).update(
+    return resource_qs.filter(size__gte=file_size_limit).update(
         status=IGNORED_BY_MAX_FILE_SIZE
     )
-    return flagged_count
-
 
 def analyze_scanned_files(project):
     """Set the status for CodebaseResource to unknown or no license."""
