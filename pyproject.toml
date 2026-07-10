@@ -36,22 +36,22 @@ dependencies = [
   "importlib-metadata==8.7.1",
   "setuptools==82.0.1",
   # Django related
-  "Django==6.0.5",
-  "django-environ==0.13.0",
+  "django==6.0.6",
+  "django-environ==0.14.0",
   "django-crispy-forms==2.6",
   "crispy-bootstrap3==2024.1",
   "django-filter==25.2",
   "djangorestframework==3.17.1",
   "django-htmx==1.27.0",
-  "django-debug-toolbar==6.3.0",
+  "django-debug-toolbar==7.0.0",
   # Database
   "psycopg[binary]==3.3.4",
   # wait_for_database Django management command
   "django-probes==1.8.0",
   # Task queue
-  "rq==2.9.0",
+  "rq==2.10.0",
   "django-rq==4.1.0",
-  "redis==7.4.0",
+  "redis==8.0.1",
   # WSGI server
   "gunicorn==26.0.0",
   "packaging==26.2",
@@ -60,7 +60,7 @@ dependencies = [
   # ScanCode-toolkit
   "scancode-toolkit[packages]==32.5.0",
   "extractcode[full]==31.1.0",
-  "commoncode==32.4.2",
+  "commoncode==32.5.2",
   "Beautifulsoup4[chardet]==4.14.3",
   "packageurl-python==0.17.6",
   # FetchCode
@@ -77,18 +77,18 @@ dependencies = [
   # Utilities
   "XlsxWriter==3.2.9",
   "openpyxl==3.1.5",
-  "requests==2.33.1",
+  "requests==2.34.2",
   "charset-normalizer==3.4.7",
   "chardet==7.4.3",
   "urllib3==2.7.0",
-  "idna==3.16",
+  "idna==3.18",
   "GitPython==3.1.50",
   "lxml==6.1.1",
-  "certifi==2026.5.20",
+  "certifi==2026.6.17",
   # Profiling
   "pyinstrument==5.1.2",
   # CycloneDX
-  "cyclonedx-python-lib==11.7.0",
+  "cyclonedx-python-lib==11.11.0",
   "jsonschema==4.26.0",
   # MatchCode-toolkit
   "matchcode-toolkit==7.2.2",
@@ -110,6 +110,7 @@ dependencies = [
   "cryptography==49.0.0",
   "aiohttp==3.14.1",
   "pydantic-settings==2.14.2",
+  "croniter==6.2.3",
 ]
 
 [project.optional-dependencies]
