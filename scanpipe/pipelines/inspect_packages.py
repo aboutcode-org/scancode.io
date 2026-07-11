@@ -22,6 +22,7 @@
 
 from aboutcode.pipeline import optional_step
 from scanpipe.pipelines.scan_codebase import ScanCodebase
+from scanpipe.pipes import maven
 from scanpipe.pipes import scancode
 
 
@@ -53,6 +54,7 @@ class InspectPackages(ScanCodebase):
             cls.flag_ignored_resources,
             cls.scan_binaries_for_package,
             cls.scan_for_application_packages,
+            cls.fix_maven_jar_packages,
             cls.resolve_dependencies,
         )
 
@@ -76,6 +78,10 @@ class InspectPackages(ScanCodebase):
             package_only=True,
             progress_logger=self.log,
         )
+
+    def fix_maven_jar_packages(self):
+        """Fix JAR packages that should be Maven packages based on pom.properties."""
+        maven.detect_maven_jars_from_pom_properties(self.project, logger_func=self.log)
 
     @optional_step("StaticResolver")
     def resolve_dependencies(self):
