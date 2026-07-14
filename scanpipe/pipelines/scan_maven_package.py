@@ -62,13 +62,15 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
         )
 
     def check_input_and_return_purl(self):
+        """Validate the input is a PURL string and return the PURL object."""
         self.purl = check_input_and_return_purl(self.project)
 
     def fetch_inputs(self):
+        """Fetch the binary and source of the given PURL."""
         self.from_files, self.to_files = fetch_inputs(self.purl)
 
     def d2d_check(self):
-        """Set D2D enable if both from and to files are present"""
+        """Set D2D enable if both from and to files are present."""
         self.d2d_enabled = False
         if self.from_files and self.to_files:
             self.d2d_enabled = True
