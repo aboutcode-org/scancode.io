@@ -928,16 +928,16 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_name = "scan_maven_package"
         project1 = make_project()
 
-        input_location = self.data / "jvm" / "args4j-tools-2.0.16.jar"
-        project1.copy_input_from(input_location)
-
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
+
+        download_url = "pkg:maven/args4j/args4j-tools@2.0.16"
+        project1.add_input_source(download_url=download_url)
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(23, project1.codebaseresources.count())
+        self.assertEqual(41, project1.codebaseresources.count())
         self.assertEqual(1, project1.discoveredpackages.count())
         self.assertEqual(3, project1.discovereddependencies.count())
 
