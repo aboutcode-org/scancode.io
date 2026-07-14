@@ -44,7 +44,7 @@ jobs:
           port: 5432
 
       - name: Install libmagic
-        run: brew install libmagic
+        run: brew install libmagic universal-ctags gettext
 
       - name: Install Python dependencies
         run: make dev envfile
