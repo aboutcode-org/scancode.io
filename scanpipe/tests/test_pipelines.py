@@ -924,6 +924,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(2, project1.codebaseresources.count())
         self.assertEqual(0, project1.discoveredpackages.count())
 
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     def test_scanpipe_scan_maven_package_single_file(self):
         pipeline_name = "scan_maven_package"
         project1 = make_project()
