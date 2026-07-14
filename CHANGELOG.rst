@@ -1,9 +1,36 @@
 Changelog
 =========
 
+**v38 Breaking Changes:**
+
+* Migrate VulnerableCode integration to API v3
+
+v38.0.0 (2026-07-10)
+--------------------
+
+* feat: Migrate VulnerableCode integration to API v3 by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2148
+* fix: add setup-buildx step to enable GHA cache support by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2176
+* feat: denormalize project counts to improve performances by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2178
+* feat: UI refinements for project list and detail pages by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2180
+* chore: upgrade service images to latest version by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2183
+* feat: auto-fill project PURL from single input URL by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2185
+* feat: render the compliance alert value as a colored label by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2186
+* feat: add pipeline availability check with disabled state in UI by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2188
+* feat: replace django-taggit with a plain Project.labels JSONField by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2189
+* feat: move scanpipe settings to local settings.py with lazy resolutio… by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2187
+* fix: ClamAV scan crash on codebase root directory by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2190
+* chore: upgrade vulnerable dependencies by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2191
+* fix: harden SSRF mitigation against redirect and URL-parser bypasses by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2192
+* fix: spelling typos in docs, models, and pipes by @mr-raj12 in https://github.com/aboutcode-org/scancode.io/pull/2046
+* fix: get_data_from_manifests returning wrong type on early exit by @prajakta128 in https://github.com/aboutcode-org/scancode.io/pull/2182
+* docs: update Errors section to Messages in Web UI tutorial  by @dikshaa2909 in https://github.com/aboutcode-org/scancode.io/pull/2066
+* fix: flag_and_ignore_files_over_max_size inconsistent return value and docstring by @prajakta128 in https://github.com/aboutcode-org/scancode.io/pull/2184
+* fix: silent overwrite when two input sources share the same filename by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2193
+* fix: xlsx_errors column overwriting last data field in XLSX export by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2194
+
 **v37 Breaking Changes:**
 
-- Drop support for Python3.10 and Python3.11
+* Drop support for Python3.10 and Python3.11
 
 v37.2.0 (2026-06-12)
 --------------------
@@ -1296,7 +1323,7 @@ to be updated for the new ``app`` user, using:
 v32.4.0 (2023-07-13)
 --------------------
 
-- Add support for license policies and complaince alert for Discovered Packages.
+- Add support for license policies and compliance alert for Discovered Packages.
   https://github.com/nexB/scancode.io/issues/151
 
 - Refine the details views and tabs:
@@ -1726,7 +1753,7 @@ v30.2.0 (2021-12-17)
 --------------------
 
 - Add authentication for the Web UI views and REST API endpoint.
-  The autentication is disabled by default and can be enabled using the
+  The authentication is disabled by default and can be enabled using the
   SCANCODEIO_REQUIRE_AUTHENTICATION settings.
   When enabled, users have to authenticate through a login form in the Web UI, or using
   their API Key in the REST API.
@@ -1779,7 +1806,7 @@ v30.1.0 (2021-11-22)
   during the next maintenance tasks.
   QUEUED pipeline will be restored in the queue as the worker redis cache backend data
   is now persistent and reloaded on starting the image.
-  Note that internaly, a running job emits a "heartbeat" every 60 seconds to let all the
+  Note that internally, a running job emits a "heartbeat" every 60 seconds to let all the
   workers know that it is properly running.
   After 90 seconds without any heartbeats, a worker will determine that the job is not
   active anymore and that job will be moved to the failed registry during the worker

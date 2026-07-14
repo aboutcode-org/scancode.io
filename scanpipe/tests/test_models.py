@@ -1240,7 +1240,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(0, run1.task_exitcode)
         self.assertEqual("output", run1.task_output)
         self.assertTrue(run1.task_end_date)
-        # Ensure the initial value for `log` was not overriden during the
+        # Ensure the initial value for `log` was not overridden during the
         # `set_task_ended.save()`
         self.assertIn("entry in log", run1.log)
 
@@ -1582,9 +1582,12 @@ class ScanPipeModelsTest(TestCase):
         input_source.delete_file()
         self.assertFalse(input_source.exists())
 
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("scanpipe.pipes.fetch.check_url")
     @mock.patch("requests.sessions.Session.get")
-    def test_scanpipe_input_source_model_fetch(self, mock_get, mock_check_url):
+    def test_scanpipe_input_source_model_fetch(
+        self, mock_get, mock_check_url, mock_is_safe_url
+    ):
         download_url = "https://download.url/file.zip"
         mock_get.return_value = make_mock_response(url=download_url)
         mock_check_url.return_value = True
@@ -1600,6 +1603,31 @@ class ScanPipeModelsTest(TestCase):
 
         self.assertIsNone(input_source.fetch())
         mock_get.assert_called_once()
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("scanpipe.pipes.fetch.check_url")
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_input_source_model_fetch_filename_collision(
+        self, mock_get, mock_check_url, mock_is_safe_url
+    ):
+        mock_check_url.return_value = True
+        download_url1 = "https://download.url/commit-1/LICENSE"
+        download_url2 = "https://download.url/commit-2/LICENSE"
+
+        mock_get.return_value = make_mock_response(url=download_url1, content=b"one")
+        input_source1 = self.project1.add_input_source(download_url=download_url1)
+        destination1 = input_source1.fetch()
+
+        mock_get.return_value = make_mock_response(url=download_url2, content=b"two")
+        input_source2 = self.project1.add_input_source(download_url=download_url2)
+        destination2 = input_source2.fetch()
+
+        self.assertEqual("LICENSE", input_source1.filename)
+        self.assertEqual("LICENSE_1", input_source2.filename)
+        self.assertNotEqual(destination1, destination2)
+        self.assertTrue(input_source1.exists())
+        self.assertTrue(input_source2.exists())
+        self.assertEqual(2, len(list(self.project1.inputs())))
 
     def test_scanpipe_codebase_resource_model_methods(self):
         resource = CodebaseResource.objects.create(

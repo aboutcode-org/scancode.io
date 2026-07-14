@@ -268,10 +268,11 @@ class ScanPipePipelinesTest(TestCase):
         pipeline.execute()
         self.assertNotIn("Step [download_missing_inputs]", run.log)
 
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("scanpipe.pipes.fetch.check_url")
     @mock.patch("requests.sessions.Session.get")
     def test_scanpipe_pipeline_class_download_missing_inputs(
-        self, mock_get, mock_check_url
+        self, mock_get, mock_check_url, mock_is_safe_url
     ):
         mock_check_url.return_value = True
         project1 = make_project()
@@ -604,7 +605,7 @@ class PipelinesIntegrationTest(TestCase):
         "created_date",
         "log",
         "uuid",
-        "size",  # directory sizes are OS dependant
+        "size",  # directory sizes are OS dependent
         "size_count",
         "--json-pp",
         "--processes",

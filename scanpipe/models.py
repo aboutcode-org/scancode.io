@@ -1209,7 +1209,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         from scanpipe.pipes.input import copy_input
 
-        copy_input(input_location, self.input_path)
+        return copy_input(input_location, self.input_path)
 
     def move_input_from(self, input_location):
         """
@@ -1248,10 +1248,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         adds the `input_source` for each entry.
         """
         for downloaded in downloads:
-            self.move_input_from(downloaded.path)
+            destination = self.move_input_from(downloaded.path)
             self.add_input_source(
                 download_url=downloaded.uri,
-                filename=downloaded.filename,
+                filename=destination.name,
             )
 
     def add_upload(self, uploaded_file, tag=""):
@@ -2004,7 +2004,7 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
         # Force a commit to the database to ensure the file on disk is not rendered
         # as "manually uploaded" in the UI.
         with transaction.atomic():
-            self.filename = downloaded.filename
+            self.filename = destination.name
             self.save()
 
         return destination
@@ -3639,7 +3639,7 @@ class AbstractPackage(models.Model):
         blank=True,
         help_text=_(
             "A list of Resource paths for package datafiles which were "
-            "used to assemble this pacakage."
+            "used to assemble this package."
         ),
     )
     file_references = models.JSONField(
@@ -4437,7 +4437,7 @@ class DiscoveredLicenseQuerySet(
         return self.filter(needs_review=False)
 
     def order_by_count_and_expression(self):
-        """Order by detection count and license expression (identifer) fields."""
+        """Order by detection count and license expression (identifier) fields."""
         return self.order_by("-detection_count", "identifier")
 
 
@@ -4554,8 +4554,8 @@ class DiscoveredLicense(
         blank=True,
         help_text=_(
             "A list of review comments for license detection issues which "
-            "needs review. These descriptive comments are based on ambigous "
-            "detection types and could also offers helpful suggestions on "
+            "needs review. These descriptive comments are based on ambiguous "
+            "detection types and could also offer helpful suggestions on "
             "how to review/report these detection issues."
         ),
     )

@@ -215,7 +215,7 @@ similar to the following:
       }
     ]
 
-The results will also include all of the  or files (codebase resources) found.
+The results will also include all of the files (codebase resources) found.
 
 .. note::
     Please note that these files might or might not be included within a package.
