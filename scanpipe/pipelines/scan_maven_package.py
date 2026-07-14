@@ -20,38 +20,36 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-from aboutcode.pipeline import optional_step
 from scanpipe.pipelines.deploy_to_develop import DeployToDevelop
 from scanpipe.pipelines.scan_single_package import ScanSinglePackage
+from scanpipe.pipes.maven import check_input_and_return_purl
 from scanpipe.pipes.maven import fetch_and_scan_remote_pom
+from scanpipe.pipes.maven import fetch_inputs
 from scanpipe.pipes.maven import update_package_license_from_resource_if_missing
 
 
 class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
     """
-    Scan a single maven package archive, or run a D2D scan for a maven package.
+    Scan a single Maven package and run a D2D scan.
 
-    This pipeline scans a single maven package for package metadata,
-    declared dependencies, licenses, license clarity score and copyrights.
-
-    In addition, if the `deploy_to_develop` option is enabled, it performs a
-    D2D (deploy to develop) scan for Maven projects.
-
-    It requires a minimum of two archive files, each properly tagged with:
-
-    - **from** for archives containing the development source code.
-    - **to** for archives containing the deployment compiled code.
+    This pipeline takes a Maven PURL as input, fetches the binary and
+    source archives (if they exist), and then performs scans for package
+    metadata, declared dependencies, licenses, license clarity scores, and
+    copyrights. It also performs a D2D scan if both the source and binary
+    archives are available.
 
     The output is a summary of the scan results in JSON format.
     """
 
     d2d_option_enabled = False
+    download_inputs = False
 
     @classmethod
     def steps(cls):
         return (
-            cls.check_option_status,
-            cls.get_input,
+            cls.check_input_and_return_purl,
+            cls.fetch_inputs,
+            cls.d2d_check,
             cls.collect_input_info,
             cls.extract_input,
             cls.extract_archives,
@@ -63,68 +61,82 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
             cls.make_summary_from_scan_results,
         )
 
-    @optional_step("deploy_to_develop")
-    def check_option_status(self):
-        """Set d2d_option_enabled to True."""
-        self.d2d_option_enabled = True
+    def check_input_and_return_purl(self):
+        self.purl = check_input_and_return_purl(self.project)
 
-    def get_input(self):
-        """Locate the the input."""
-        if not self.d2d_option_enabled:
-            self.get_package_input()
-        else:
-            self.get_inputs()
+    def fetch_inputs(self):
+        self.from_files, self.to_files = fetch_inputs(self.purl)
+
+    def d2d_check(self):
+        """Set D2D enable if both from and to files are present"""
+        self.d2d_enabled = False
+        if self.from_files and self.to_files:
+            self.d2d_enabled = True
 
     def collect_input_info(self):
         """Collect information about the input."""
-        if not self.d2d_option_enabled:
+        if not self.d2d_enabled:
+            if self.from_files:
+                self.input_path = self.from_files[0]
+            else:
+                self.input_path = self.to_files[0]
             self.collect_input_information()
 
     def extract_input(self):
         """Extract the input to the codebase directory."""
-        if not self.d2d_option_enabled:
+        if not self.d2d_enabled:
             self.extract_input_to_codebase_directory()
         else:
             self.extract_inputs_to_codebase_directory()
 
-    @optional_step("deploy_to_develop")
     def maven_d2d_steps(self):
-        """Run D2D steps for Maven projects."""
-        # The following langages will be included:
-        # - Java
-        # - Kotlin
-        # - Scala
-        # - JavaScript
-        from scanpipe.pipes import d2d_config
+        if self.d2d_enabled:
+            """Run D2D steps for Maven projects."""
+            # The following langages will be included:
+            # - Java
+            # - Kotlin
+            # - Scala
+            # - JavaScript
+            from scanpipe.pipes import d2d_config
 
-        self.collect_and_create_codebase_resources()
-        self.fingerprint_codebase_directories()
-        self.flag_empty_files()
-        self.flag_whitespace_files()
-        self.flag_ignored_resources()
+            self.collect_and_create_codebase_resources()
+            self.fingerprint_codebase_directories()
+            self.flag_empty_files()
+            self.flag_whitespace_files()
+            self.flag_ignored_resources()
 
-        options = ["Java", "Kotlin", "Scala", "JavaScript"]
-        d2d_config.load_ecosystem_config(pipeline=self, options=options)
+            options = ["Java", "Kotlin", "Scala", "JavaScript"]
+            d2d_config.load_ecosystem_config(pipeline=self, options=options)
+            self.map_about_files()
+            self.map_checksum()
+            self.match_archives_to_purldb()
+            self.d2d_java()
+            self.d2d_scala()
+            self.d2d_kotlin()
+            self.d2d_javascript()
+            self.d2d_process()
 
-        self.map_about_files()
-        self.map_checksum()
-        self.match_archives_to_purldb()
-        # Java
+    def d2d_java(self):
         self.find_java_packages()
         self.map_java_to_class()
         self.map_jar_to_java_source()
-        # Scala
+
+    def d2d_scala(self):
         self.find_scala_packages()
         self.map_scala_to_class()
         self.map_jar_to_scala_source()
-        # Kotlin
+
+    def d2d_kotlin(self):
         self.find_kotlin_packages()
         self.map_kotlin_to_class()
         self.map_jar_to_kotlin_source()
-        # JavaScript
+
+    def d2d_javascript(self):
         self.map_javascript()
         self.map_javascript_symbols()
         self.map_javascript_strings()
+
+    def d2d_process(self):
         self.get_symbols_from_binaries()
         self.map_elf()
         self.match_directories_to_purldb()
@@ -147,7 +159,7 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
     def fetch_and_scan_remote_pom(self):
         """Fetch and scan remote POM files."""
         scanning_errors = fetch_and_scan_remote_pom(
-            self.project, self.scan_output_location
+            self.purl, self.scan_output_location
         )
         if scanning_errors:
             for scanning_error in scanning_errors:
