@@ -22,6 +22,7 @@
 
 from scanpipe.pipelines.deploy_to_develop import DeployToDevelop
 from scanpipe.pipelines.scan_single_package import ScanSinglePackage
+from scanpipe.pipes import d2d_config
 from scanpipe.pipes.maven import check_input_and_return_purl
 from scanpipe.pipes.maven import fetch_and_scan_remote_pom
 from scanpipe.pipes.maven import fetch_inputs
@@ -94,21 +95,12 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
     def maven_d2d_steps(self):
         if self.d2d_enabled:
             """Run D2D steps for Maven projects."""
-            # The following langages will be included:
-            # - Java
-            # - Kotlin
-            # - Scala
-            # - JavaScript
-            from scanpipe.pipes import d2d_config
-
             self.collect_and_create_codebase_resources()
             self.fingerprint_codebase_directories()
             self.flag_empty_files()
             self.flag_whitespace_files()
             self.flag_ignored_resources()
-
-            options = ["Java", "Kotlin", "Scala", "JavaScript"]
-            d2d_config.load_ecosystem_config(pipeline=self, options=options)
+            self.d2d_ecosystem_config()
             self.map_about_files()
             self.map_checksum()
             self.match_archives_to_purldb()
@@ -117,6 +109,15 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
             self.d2d_kotlin()
             self.d2d_javascript()
             self.d2d_process()
+
+    def d2d_ecosystem_config(self):
+        # The following langages will be included:
+        # - Java
+        # - Kotlin
+        # - Scala
+        # - JavaScript
+        options = ["Java", "Kotlin", "Scala", "JavaScript"]
+        d2d_config.load_ecosystem_config(pipeline=self, options=options)
 
     def d2d_java(self):
         self.find_java_packages()
