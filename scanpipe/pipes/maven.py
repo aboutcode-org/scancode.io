@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 def check_input_and_return_purl(project):
-    """Validate the input and return a PURL."""
+    """Validate the input and return a maven PURL."""
     input_sources = project.inputsources.all()
     if len(input_sources) != 1:
         error_msg = "Only 1 maven purl is accepted."
