@@ -33,10 +33,11 @@ classifiers = [
 ]
 
 dependencies = [
-  "importlib-metadata==8.7.1",
-  "setuptools==82.0.1",
+  "uv==0.11.29",
+  "importlib-metadata==9.0.0",
+  "setuptools==83.0.0",
   # Django related
-  "django==6.0.6",
+  "django==6.0.7",
   "django-environ==0.14.0",
   "django-crispy-forms==2.6",
   "crispy-bootstrap3==2024.1",
@@ -50,7 +51,7 @@ dependencies = [
   "django-probes==1.8.0",
   # Task queue
   "rq==2.10.0",
-  "django-rq==4.1.0",
+  "django-rq==4.1.1",
   "redis==8.0.1",
   # WSGI server
   "gunicorn==26.0.0",
@@ -61,7 +62,7 @@ dependencies = [
   "scancode-toolkit[packages]==32.5.0",
   "extractcode[full]==31.1.0",
   "commoncode==32.5.2",
-  "Beautifulsoup4[chardet]==4.14.3",
+  "beautifulsoup4[chardet]==4.15.0",
   "packageurl-python==0.17.6",
   # FetchCode
   "fetchcode==0.8.2",
@@ -69,8 +70,8 @@ dependencies = [
   # Inspectors
   "elf-inspector==0.0.3",
   "go-inspector==0.5.0",
-  "rust-inspector==0.2.1",
-  "binary-inspector==0.2.0",
+  "rust-inspector==0.2.2",
+  "binary-inspector==0.2.1",
   "python-inspector==0.15.2",
   "source-inspector==0.7.1; sys_platform != 'darwin' and platform_machine != 'arm64'",
   "aboutcode-toolkit==11.1.1",
@@ -78,7 +79,7 @@ dependencies = [
   "XlsxWriter==3.2.9",
   "openpyxl==3.1.5",
   "requests==2.34.2",
-  "charset-normalizer==3.4.7",
+  "charset-normalizer==3.4.9",
   "chardet==7.4.3",
   "urllib3==2.7.0",
   "idna==3.18",
@@ -95,7 +96,7 @@ dependencies = [
   # Univers
   "univers==32.0.1",
   # Markdown
-  "markdown-it-py==4.0.0",
+  "markdown-it-py==4.2.0",
   "bleach==6.4.0",
   # Antivirus
   "clamd==1.0.2",
@@ -111,6 +112,10 @@ dependencies = [
   "aiohttp==3.14.1",
   "pydantic-settings==2.14.2",
   "croniter==6.2.3",
+  "lief==0.17.6",
+  "symbolic==13.8.0",
+  "cffi==2.1.0",
+  "stevedore==5.9.0",
 ]
 
 [project.optional-dependencies]
