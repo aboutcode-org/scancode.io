@@ -63,31 +63,26 @@ def check_input_and_return_purl(project):
 
 
 def fetch_inputs(purl):
-    # Fetch the bianry and source for the given input purl and return the
-    # location of the fetched tarballs
+    """Fetch the binary and source for the given input purl"""
     purl_str = PackageURL.to_string(purl)
-    purl_bin = purl_str
-    purl_src = f"{purl_str}?classifier=sources"
 
-    try:
-        package = fetch.fetch_url(url=purl_bin)
-        purl_bin_path = [package.path]
-    except Exception as e:
-        logger.info("Failed to fetch binary package: %s", e)
-        purl_bin_path = []
-
-    try:
-        package_src = fetch.fetch_url(url=purl_src)
-        purl_src_path = [package_src.path]
-    except Exception as e:
-        logger.info("Failed to fetch source package: %s", e)
-        purl_src_path = []
+    purl_bin_path = fetch_path(purl_str, "binary")
+    purl_src_path = fetch_path(f"{purl_str}?classifier=sources", "source")
 
     if not purl_bin_path and not purl_src_path:
         err_msg = f"No source or binary could be resolved for {purl}."
         raise ValueError(err_msg)
 
-    return purl_src_path, purl_bin_path
+    return [purl_src_path], [purl_bin_path]
+
+
+def fetch_path(url, package_type):
+    """Fetch the url and return the location of the fetched tarball"""
+    try:
+        return fetch.fetch_url(url=url).path
+    except Exception as e:
+        logger.info("Failed to fetch %s package: %s", package_type, e)
+        return None
 
 
 def fetch_and_scan_remote_pom(input_purl, scan_output_location):
@@ -97,7 +92,7 @@ def fetch_and_scan_remote_pom(input_purl, scan_output_location):
         # Return and do nothing if data has pom.xml
         for file in data["files"]:
             if "pom.xml" in file["path"]:
-                return
+                return []
     packages = data.get("packages", [])
 
     pom_url = get_pom_url(input_purl)
@@ -141,33 +136,31 @@ def get_pom_url(input_purl):
 
 def download_pom_file(pom_url):
     """Fetch the pom file from the input pom_url"""
-    pom_file_dict = {}
-
+    # PO: Could we use fetchcode to fetch instead? Yes, we could, but
+    # the issue is do we want to. Following is the code if we switch to
+    # fetchcode which seems making things complicated, OR we can move
+    # the "fetch_http" to fetchcode and use it.
+    """
+    import os
+    import fetchcode
+    downloaded_pom = fetchcode.fetch(pom_url)
+    location = str(downloaded_pom.location)
+    path = location + ".pom"
+    # The fetch function from fetchcode save the file as /tmp/name
+    # without an extension. We need to add the ".pom" extension so that
+    # the package scan can work properly for this file.
+    os.rename(location, path)
+    """
     try:
-        # PO: Could we use fetchcode to fetch instead? Yes, we could, but
-        # the issue is do we want to. Following is the code if we switch to
-        # fetchcode which seems making things complicated, OR we can move
-        # the "fetch_http" to fetchcode and use it.
-        """
-        import os
-        import fetchcode
-        downloaded_pom = fetchcode.fetch(pom_url)
-        location = str(downloaded_pom.location)
-        path = location + ".pom"
-        # The fetch function from fetchcode save the file as /tmp/name
-        # without an extension. We need to add the ".pom" extension so that
-        # the package scan can work properly for this file.
-        os.rename(location, path)
-        """
         downloaded_pom = fetch.fetch_http(pom_url)
-        path = str(downloaded_pom.path)
-
-        pom_file_dict["pom_file_path"] = path
-        pom_file_dict["output_path"] = path + "-output.json"
-        pom_file_dict["pom_url"] = pom_url
     except requests.RequestException:
         # Return an empty dictionary
-        pass
+        return {}
+    path = str(downloaded_pom.path)
+    pom_file_dict = {}
+    pom_file_dict["pom_file_path"] = path
+    pom_file_dict["output_path"] = path + "-output.json"
+    pom_file_dict["pom_url"] = pom_url
     return pom_file_dict
 
 

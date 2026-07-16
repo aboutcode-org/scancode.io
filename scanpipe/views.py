@@ -28,7 +28,6 @@ from collections import Counter
 from contextlib import suppress
 
 from django.apps import apps
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
@@ -2352,7 +2351,6 @@ class DiscoveredPackageDetailsView(
             ],
             "icon_class": "fa-solid fa-bug",
             "template": "scanpipe/tabset/tab_vulnerabilities.html",
-            "tab_context": {"VULNERABLECODE_URL": settings.VULNERABLECODE_URL},
         },
         "extra_data": {
             "fields": ["extra_data"],

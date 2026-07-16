@@ -31,7 +31,8 @@ from scanpipe.pipes.maven import update_package_license_from_resource_if_missing
 
 class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
     """
-    Scan a single Maven package and run a D2D scan.
+    Scan a single Maven package and perform a deployment to development
+    relation scan.
 
     This pipeline takes a Maven PURL as input, fetches the binary and
     source archives (if they exist), and then performs scans for package
@@ -92,8 +93,8 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
             self.extract_inputs_to_codebase_directory()
 
     def maven_d2d_steps(self):
+        """Run D2D steps for Maven projects."""
         if self.d2d_enabled:
-            """Run D2D steps for Maven projects."""
             self.collect_and_create_codebase_resources()
             self.fingerprint_codebase_directories()
             self.flag_empty_files()
@@ -163,16 +164,13 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
         scanning_errors = fetch_and_scan_remote_pom(
             self.purl, self.scan_output_location
         )
-        if scanning_errors:
-            for scanning_error in scanning_errors:
-                for resource_path, errors in scanning_error.items():
-                    self.project.add_error(
-                        description="\n".join(errors),
-                        model=self.pipeline_name,
-                        details={
-                            "resource_path": resource_path.removeprefix("codebase/")
-                        },
-                    )
+        for scanning_error in scanning_errors:
+            for resource_path, errors in scanning_error.items():
+                self.project.add_error(
+                    description="\n".join(errors),
+                    model=self.pipeline_name,
+                    details={"resource_path": resource_path.removeprefix("codebase/")},
+                )
 
     def update_package_license_from_resource_if_missing(self):
         """Update PACKAGE license from the license detected in RESOURCES if missing."""
