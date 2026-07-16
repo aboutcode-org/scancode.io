@@ -73,7 +73,7 @@ dependencies = [
   "rust-inspector==0.2.1",
   "binary-inspector==0.2.0",
   "python-inspector==0.15.2",
-  "source-inspector==0.7.1",
+  "source-inspector==0.7.2",
   "aboutcode-toolkit==11.1.1",
   # Utilities
   "XlsxWriter==3.2.9",

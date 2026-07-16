@@ -43,7 +43,7 @@ jobs:
           password: ${{ env.POSTGRES_PASSWORD }}
           port: 5432
 
-      - name: Install libmagic
+      - name: Install system dependencies 
         run: brew install libmagic universal-ctags gettext
 
       - name: Install Python dependencies
