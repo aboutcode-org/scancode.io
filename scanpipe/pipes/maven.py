@@ -1,3 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
+# The ScanCode.io software is licensed under the Apache License version 2.0.
+# Data generated with ScanCode.io is provided as-is without warranties.
+# ScanCode is a trademark of nexB Inc.
+#
+# You may not use this software except in compliance with the License.
+# You may obtain a copy of the License at: http://apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+# CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+#
+# Data Generated with ScanCode.io is provided on an "AS IS" BASIS, WITHOUT WARRANTIES
+# OR CONDITIONS OF ANY KIND, either express or implied. No content created from
+# ScanCode.io should be considered or used as legal advice. Consult an Attorney
+# for any legal advice.
+#
+# ScanCode.io is a free software code scanning tool from nexB Inc. and others.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
+
 import json
 import logging
 from urllib.parse import urlparse
@@ -14,11 +36,12 @@ logger = logging.getLogger(__name__)
 
 def check_input_and_return_purl(project):
     """Validate the input and return a PURL."""
-    if len(project.inputsources.all()) != 1:
+    input_sources = project.inputsources.all()
+    if len(input_sources) != 1:
         error_msg = "Only 1 maven purl is accepted."
         raise ValueError(error_msg)
-    input = str(project.inputsources.all()[0])
-    input_purl = PackageURL.from_string(input)
+    project_input = str(input_sources[0])
+    input_purl = PackageURL.from_string(project_input)
 
     if input_purl.type != "maven":
         error_msg = "Only maven purl is supported."
@@ -51,14 +74,14 @@ def fetch_inputs(purl):
         purl_bin_path = [package.path]
     except Exception as e:
         logger.info("Failed to fetch binary package: %s", e)
-        purl_bin_path = None
+        purl_bin_path = []
 
     try:
         package_src = fetch.fetch_url(url=purl_src)
         purl_src_path = [package_src.path]
     except Exception as e:
         logger.info("Failed to fetch source package: %s", e)
-        purl_src_path = None
+        purl_src_path = []
 
     if not purl_bin_path and not purl_src_path:
         err_msg = f"No source or binary could be resolved for {purl}."
@@ -77,8 +100,12 @@ def fetch_and_scan_remote_pom(input_purl, scan_output_location):
                 return
     packages = data.get("packages", [])
 
-    pom_url = get_pom_url(PackageURL.to_string(input_purl))
+    pom_url = get_pom_url(input_purl)
+    if not pom_url:
+        return ["Failed to resolve POM URL."]
     pom_file = download_pom_file(pom_url)
+    if not pom_file:
+        return ["Failed to download the POM file."]
     scanning_errors = scan_pom_file(pom_file)
 
     scanned_pom_packages, scanned_dependencies = update_datafile_paths(pom_file)
@@ -94,7 +121,8 @@ def fetch_and_scan_remote_pom(input_purl, scan_output_location):
 
 def get_pom_url(input_purl):
     """Construct a Maven POM URL from the input purl."""
-    input_source_url = purl2url.get_download_url(input_purl)
+    purl_str = PackageURL.to_string(input_purl)
+    input_source_url = purl2url.get_download_url(purl_str)
     if not input_source_url:
         return ""
 
@@ -106,9 +134,8 @@ def get_pom_url(input_purl):
     }
     pom_url = ""
     if parsed_url.netloc in maven_hosts:
-        purl = PackageURL.from_string(input_purl)
         base_url = input_source_url.rsplit("/", 1)[0]
-        pom_url = f"{base_url}/{purl.name}-{purl.version}.pom"
+        pom_url = f"{base_url}/{input_purl.name}-{input_purl.version}.pom"
     return pom_url
 
 

@@ -25,6 +25,8 @@ from unittest import mock
 
 from django.test import TestCase
 
+from packageurl import PackageURL
+
 from scanpipe.models import Project
 from scanpipe.pipes import maven
 from scanpipe.pipes.input import copy_inputs
@@ -99,7 +101,8 @@ class ScanPipeMavenPipesTest(TestCase):
         self.assertEqual(deps, expected_deps)
 
     def test_scanpipe_maven_get_pom_url(self):
-        purl = "pkg:maven/org/apache/commons/commons-lang3@3.12.0"
+        package_url = "pkg:maven/org/apache/commons/commons-lang3@3.12.0"
+        purl = PackageURL.from_string(package_url)
         result = maven.get_pom_url(purl)
         expected = "https://repo.maven.apache.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.pom"
 
