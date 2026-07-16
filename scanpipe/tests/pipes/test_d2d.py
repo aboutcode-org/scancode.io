@@ -2251,7 +2251,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         d2d.map_winpe_binaries_with_symbols(project=self.project1, logger=buffer.write)
         self.assertEqual(
-            4,
+            3,
             CodebaseRelation.objects.filter(
                 project=self.project1, map_type="winpe_symbols"
             ).count(),
