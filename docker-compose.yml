@@ -48,6 +48,16 @@ services:
       - workspace:/var/scancodeio/workspace/
       - static:/var/scancodeio/static/
     restart: always
+    # Without a healthcheck, "docker compose up --wait" only waits for the
+    # container to be running, not for migrate/collectstatic to complete, so
+    # commands relying on the database schema (e.g. `docker compose run web
+    # scanpipe ...`) can race ahead of the migrations.
+    healthcheck:
+      test: ["CMD", "wait-for-it", "--timeout=2", "localhost:8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 48
+      start_period: 120s
     depends_on:
       db:
         condition: service_healthy
