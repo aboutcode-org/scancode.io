@@ -68,7 +68,12 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
 
     def fetch_inputs(self):
         """Fetch the binary and source of the given PURL."""
-        self.from_files, self.to_files = fetch_inputs(self.purl)
+        from_file, to_file = fetch_inputs(self.purl)
+        # The pipeline will call self.extract_inputs_to_codebase_directory()
+        # from deploy_to_develop.py, which expects both self.from_files and
+        # self.to_files to be of list type.
+        self.from_files = [from_file]
+        self.to_files = [to_file]
 
     def d2d_check(self):
         """Set D2D enable if both from and to files are present."""

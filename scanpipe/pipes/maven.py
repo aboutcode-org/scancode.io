@@ -46,8 +46,7 @@ def check_input_and_return_purl(project):
     if input_purl.type != "maven":
         error_msg = "Only maven purl is supported."
         raise ValueError(error_msg)
-    # Should we hande all available versions if no version is provided?
-    # Making the version as required for now
+    # Version is required
     if not input_purl.version:
         error_msg = "Version is required."
         raise ValueError(error_msg)
@@ -73,7 +72,7 @@ def fetch_inputs(purl):
         err_msg = f"No source or binary could be resolved for {purl}."
         raise ValueError(err_msg)
 
-    return [purl_src_path], [purl_bin_path]
+    return purl_src_path, purl_bin_path
 
 
 def fetch_path(url, package_type):
@@ -193,19 +192,19 @@ def update_datafile_paths(pom_file_dict):
 
     with open(scanned_pom_output_path) as scanned_pom_file:
         scanned_pom_data = json.load(scanned_pom_file)
-        scanned_packages = scanned_pom_data.get("packages", [])
-        scanned_dependencies = scanned_pom_data.get("dependencies", [])
-        if scanned_packages:
-            for scanned_package in scanned_packages:
-                # Replace the 'datafile_path' with the pom_url
-                scanned_package["datafile_paths"] = [pom_url]
-                scanned_pom_packages.append(scanned_package)
-        if scanned_dependencies:
-            for scanned_dep in scanned_dependencies:
-                # Replace the 'datafile_path' with empty string
-                # See https://github.com/aboutcode-org/scancode.io/issues/1763#issuecomment-3525165830
-                scanned_dep["datafile_path"] = ""
-                scanned_pom_deps.append(scanned_dep)
+
+    scanned_packages = scanned_pom_data.get("packages", [])
+    scanned_dependencies = scanned_pom_data.get("dependencies", [])
+
+    for scanned_package in scanned_packages:
+        # Replace the 'datafile_path' with the pom_url
+        scanned_package["datafile_paths"] = [pom_url]
+        scanned_pom_packages.append(scanned_package)
+    for scanned_dep in scanned_dependencies:
+        # Replace the 'datafile_path' with empty string
+        # See https://github.com/aboutcode-org/scancode.io/issues/1763#issuecomment-3525165830
+        scanned_dep["datafile_path"] = ""
+        scanned_pom_deps.append(scanned_dep)
     return scanned_pom_packages, scanned_pom_deps
 
 

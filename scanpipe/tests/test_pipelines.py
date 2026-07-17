@@ -941,6 +941,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(41, project1.codebaseresources.count())
         self.assertEqual(1, project1.discoveredpackages.count())
         self.assertEqual(3, project1.discovereddependencies.count())
+        self.assertEqual(11, project1.codebaserelations.count())
 
         scancode_file = project1.get_latest_output(filename="scancode")
         expected_file = self.data / "jvm" / "args4j-tools-2.0.16-sctk.json"
