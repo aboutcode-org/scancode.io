@@ -136,11 +136,11 @@ def download_pom_file(pom_url):
     except requests.RequestException:
         return {}
     path = str(downloaded_pom.path)
-    pom_file_dict = {}
-    pom_file_dict["pom_file_path"] = path
-    pom_file_dict["output_path"] = path + "-output.json"
-    pom_file_dict["pom_url"] = pom_url
-    return pom_file_dict
+    return {
+        "pom_file_path": path,
+        "output_path": f"{path}-output.json",
+        "pom_url": pom_url,
+    }
 
 
 def scan_pom_file(pom_file_dict):
