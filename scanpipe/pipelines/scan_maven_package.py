@@ -37,8 +37,8 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
     This pipeline takes a Maven PURL as input, fetches the binary and
     source archives (if they exist), and then performs scans for package
     metadata, declared dependencies, licenses, license clarity scores, and
-    copyrights. It also performs a D2D scan if both the source and binary
-    archives are available.
+    copyrights. It also performs a deployment to development relation scan
+    if both the source and binary archives are available.
 
     The output is a summary of the scan results in JSON format.
     """
@@ -76,7 +76,10 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
         self.to_files = [to_file]
 
     def d2d_check(self):
-        """Set D2D enable if both from and to files are present."""
+        """
+        Enable the deployment to development relation scan if both from
+        and to files are present.
+        """
         self.d2d_enabled = False
         if self.from_files and self.to_files:
             self.d2d_enabled = True
@@ -98,7 +101,7 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
             self.extract_inputs_to_codebase_directory()
 
     def maven_d2d_steps(self):
-        """Run D2D steps for Maven projects."""
+        """Run deployment to development relation scan steps for Maven projects."""
         if self.d2d_enabled:
             self.collect_and_create_codebase_resources()
             self.fingerprint_codebase_directories()
@@ -116,11 +119,6 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
             self.d2d_process()
 
     def d2d_ecosystem_config(self):
-        # The following langages will be included:
-        # - Java
-        # - Kotlin
-        # - Scala
-        # - JavaScript
         options = ["Java", "Kotlin", "Scala", "JavaScript"]
         d2d_config.load_ecosystem_config(pipeline=self, options=options)
 
@@ -178,5 +176,8 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
                 )
 
     def update_package_license_from_resource_if_missing(self):
-        """Update PACKAGE license from the license detected in RESOURCES if missing."""
+        """
+        Fill in missing package licenses using licenses detected in
+        their resources.
+        """
         update_package_license_from_resource_if_missing(self.project)

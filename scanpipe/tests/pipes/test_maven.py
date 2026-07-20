@@ -241,56 +241,17 @@ class ScanPipeMavenPipesTest(TestCase):
         )
         self.assertEqual(result, ["Failed to download the POM file."])
 
-    @mock.patch("builtins.open", new_callable=mock.mock_open)
-    @mock.patch("json.load")
-    @mock.patch("json.dump")
-    @mock.patch("scanpipe.pipes.maven.get_pom_url")
-    @mock.patch("scanpipe.pipes.maven.download_pom_file")
-    @mock.patch("scanpipe.pipes.maven.scan_pom_file")
-    @mock.patch("scanpipe.pipes.maven.update_datafile_paths")
-    def test_scanpipe_maven_fetch_and_scan_remote_pom_success(
-        self,
-        mock_update_datafile_paths,
-        mock_scan_pom_file,
-        mock_download_pom_file,
-        mock_get_pom_url,
-        mock_json_dump,
-        mock_json_load,
-        mock_open,
-    ):
-        mock_json_load.return_value = {
-            "files": [],
-            "packages": [{"name": "sample-package"}],
-        }
-        mock_get_pom_url.return_value = "https://example.com/test.pom"
-        mock_download_pom_file.return_value = {
-            "pom_file_path": "/project/path.pom",
-            "output_path": "/project/out.json",
-        }
-        mock_scan_pom_file.return_value = []
+    def test_update_scan_data(self):
+        original_data = {"packages": [{"name": "package1"}], "dependencies": []}
+        new_package = [{"name": "package2"}]
+        new_dependency = [{"name": "dep1"}]
 
-        mock_update_datafile_paths.return_value = (
-            [{"name": "new-package"}],
-            [{"name": "new-dependency"}],
+        result = maven.update_scan_data(original_data, new_package, new_dependency)
+
+        self.assertEqual(
+            result["packages"], [{"name": "package1"}, {"name": "package2"}]
         )
-
-        result = maven.fetch_and_scan_remote_pom(
-            "pkg:maven/org/test@1.0", "/path/to/output.json"
-        )
-        self.assertEqual(result, [])
-
-        expected_saved_data = {
-            "files": [],
-            "packages": [{"name": "sample-package"}, {"name": "new-package"}],
-            "dependencies": [{"name": "new-dependency"}],
-        }
-
-        self.assertTrue(mock_json_dump.called)
-
-        args, _kwargs = mock_json_dump.call_args
-        # Get the data as in the first argument: json.dump(data, file, indent=2)
-        data = args[0]
-        self.assertEqual(data, expected_saved_data)
+        self.assertEqual(result["dependencies"], [{"name": "dep1"}])
 
     @mock.patch("scanpipe.pipes.maven.scancode.run_scan")
     def test_scanpipe_maven_scan_pom_file(self, mock_run_scan):
@@ -298,9 +259,9 @@ class ScanPipeMavenPipesTest(TestCase):
             "pom_file_path": "/main/mock.pom",
             "output_path": "/main/mock.pom-output.json",
         }
-        mock_run_scan.return_value = None
+        mock_run_scan.return_value = {}
         result = maven.scan_pom_file(pom_file_dict)
-        self.assertEqual(result, [])
+        self.assertEqual(result, {})
 
         mock_run_scan.assert_called_once_with(
             location="/main/mock.pom",
