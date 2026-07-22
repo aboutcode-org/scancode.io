@@ -1,4 +1,5 @@
-# Extracted essential patch code analyzer and modified from the original unidiff library:
+# Extracted essential patch code analyzer and modified
+# from the original unidiff library:
 # https://github.com/matiasb/python-unidiff/blob/2771a878f7bc6619e625feb4dbad3427f57f5237/unidiff/patch.py
 
 # -*- coding: utf-8 -*-
@@ -24,12 +25,12 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 # OR OTHER DEALINGS IN THE SOFTWARE.
 
-from __future__ import unicode_literals
 import re
 from io import StringIO
-from typing import Iterable, Optional, Union
+
 
 class UnidiffParseError(Exception): ...
+
 
 open_file = open
 make_str = str
@@ -38,65 +39,77 @@ unicode = str
 basestring = str
 
 RE_SOURCE_FILENAME = re.compile(
-    r'^--- (?P<filename>"?[^\t\n]+"?)(?:\t(?P<timestamp>[^\n]+))?')
+    r'^--- (?P<filename>"?[^\t\n]+"?)(?:\t(?P<timestamp>[^\n]+))?'
+)
 RE_TARGET_FILENAME = re.compile(
-    r'^\+\+\+ (?P<filename>"?[^\t\n]+"?)(?:\t(?P<timestamp>[^\n]+))?')
+    r'^\+\+\+ (?P<filename>"?[^\t\n]+"?)(?:\t(?P<timestamp>[^\n]+))?'
+)
 
 
 # check diff git line for git renamed files support
 RE_DIFF_GIT_HEADER = re.compile(
-    r'^diff --git (?P<source>"?a/[^\t\n]+"?) (?P<target>"?b/[^\t\n]+"?)')
+    r'^diff --git (?P<source>"?a/[^\t\n]+"?) (?P<target>"?b/[^\t\n]+"?)'
+)
 RE_DIFF_GIT_HEADER_URI_LIKE = re.compile(
-    r'^diff --git (?P<source>.*://[^\t\n]+) (?P<target>.*://[^\t\n]+)')
+    r"^diff --git (?P<source>.*://[^\t\n]+) (?P<target>.*://[^\t\n]+)"
+)
 RE_DIFF_GIT_HEADER_NO_PREFIX = re.compile(
-    r'^diff --git (?P<source>[^\t\n]+) (?P<target>[^\t\n]+)')
+    r"^diff --git (?P<source>[^\t\n]+) (?P<target>[^\t\n]+)"
+)
 
 # check diff git new file marker `deleted file mode 100644`
-RE_DIFF_GIT_DELETED_FILE = re.compile(r'^deleted file mode \d+$')
+RE_DIFF_GIT_DELETED_FILE = re.compile(r"^deleted file mode \d+$")
 
 # check diff git new file marker `new file mode 100644`
-RE_DIFF_GIT_NEW_FILE = re.compile(r'^new file mode \d+$')
+RE_DIFF_GIT_NEW_FILE = re.compile(r"^new file mode \d+$")
 
 
 # @@ (source offset, length) (target offset, length) @@ (section header)
-RE_HUNK_HEADER = re.compile(
-    r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))?\ @@[ ]?(.*)")
+RE_HUNK_HEADER = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))?\ @@[ ]?(.*)")
 
 #    kept line (context)
 # \n empty line (treat like context)
 # +  added line
 # -  deleted line
 # \  No newline case
-RE_HUNK_BODY_LINE = re.compile(
-    r'^(?P<line_type>[- \+\\])(?P<value>.*)', re.DOTALL)
+RE_HUNK_BODY_LINE = re.compile(r"^(?P<line_type>[- \+\\])(?P<value>.*)", re.DOTALL)
 RE_HUNK_EMPTY_BODY_LINE = re.compile(
-    r'^(?P<line_type>[- \+\\]?)(?P<value>[\r\n]{1,2})', re.DOTALL)
+    r"^(?P<line_type>[- \+\\]?)(?P<value>[\r\n]{1,2})", re.DOTALL
+)
 
-RE_NO_NEWLINE_MARKER = re.compile(r'^\\ No newline at end of file')
+RE_NO_NEWLINE_MARKER = re.compile(r"^\\ No newline at end of file")
 
 RE_BINARY_DIFF = re.compile(
-    r'^Binary files? '
-    r'(?P<source_filename>[^\t]+?)(?:\t(?P<source_timestamp>[\s0-9:\+-]+))?'
-    r'(?: and (?P<target_filename>[^\t]+?)(?:\t(?P<target_timestamp>[\s0-9:\+-]+))?)? (differ|has changed)')
+    r"^Binary files? "
+    r"(?P<source_filename>[^\t]+?)(?:\t(?P<source_timestamp>[\s0-9:\+-]+))?"
+    r"(?: and (?P<target_filename>[^\t]+?)(?:\t(?P<target_timestamp>[\s0-9:\+-]+))?)? (differ|has changed)"
+)
 
-DEFAULT_ENCODING = 'UTF-8'
+DEFAULT_ENCODING = "UTF-8"
 
-DEV_NULL = '/dev/null'
-LINE_TYPE_ADDED = '+'
-LINE_TYPE_REMOVED = '-'
-LINE_TYPE_CONTEXT = ' '
-LINE_TYPE_EMPTY = ''
-LINE_TYPE_NO_NEWLINE = '\\'
-LINE_VALUE_NO_NEWLINE = ' No newline at end of file'
+DEV_NULL = "/dev/null"
+LINE_TYPE_ADDED = "+"
+LINE_TYPE_REMOVED = "-"
+LINE_TYPE_CONTEXT = " "
+LINE_TYPE_EMPTY = ""
+LINE_TYPE_NO_NEWLINE = "\\"
+LINE_VALUE_NO_NEWLINE = " No newline at end of file"
+
 
 @implements_to_string
-class Line(object):
+class Line:
     """A diff line."""
 
-    def __init__(self, value, line_type,
-                 source_line_no=None, target_line_no=None, diff_line_no=None):
+    def __init__(
+        self,
+        value,
+        line_type,
+        source_line_no=None,
+        target_line_no=None,
+        diff_line_no=None,
+    ):
         # type: (str, str, Optional[int], Optional[int], Optional[int]) -> None
-        super(Line, self).__init__()
+        super().__init__()
         self.source_line_no = source_line_no
         self.target_line_no = target_line_no
         self.diff_line_no = diff_line_no
@@ -113,11 +126,13 @@ class Line(object):
 
     def __eq__(self, other):
         # type: (Line) -> bool
-        return (self.source_line_no == other.source_line_no and
-                self.target_line_no == other.target_line_no and
-                self.diff_line_no == other.diff_line_no and
-                self.line_type == other.line_type and
-                self.value == other.value)
+        return (
+            self.source_line_no == other.source_line_no
+            and self.target_line_no == other.target_line_no
+            and self.diff_line_no == other.diff_line_no
+            and self.line_type == other.line_type
+            and self.value == other.value
+        )
 
     @property
     def is_added(self):
@@ -137,7 +152,8 @@ class Line(object):
 
 @implements_to_string
 class PatchInfo(list):
-    """Lines with extended patch info.
+    """
+    Lines with extended patch info.
 
     Format of this info is not documented and it very much depends on
     patch producer.
@@ -151,17 +167,18 @@ class PatchInfo(list):
 
     def __str__(self):
         # type: () -> str
-        return ''.join(unicode(line) for line in self)
+        return "".join(unicode(line) for line in self)
 
 
 @implements_to_string
 class Hunk(list):
     """Each of the modified blocks of a file."""
 
-    def __init__(self, src_start=0, src_len=0, tgt_start=0, tgt_len=0,
-                 section_header=''):
+    def __init__(
+        self, src_start=0, src_len=0, tgt_start=0, tgt_len=0, section_header=""
+    ):
         # type: (int, int, int, int, str) -> None
-        super(Hunk, self).__init__()
+        super().__init__()
         if src_len is None:
             src_len = 1
         if tgt_len is None:
@@ -176,21 +193,26 @@ class Hunk(list):
 
     def __repr__(self):
         # type: () -> str
-        value = "<Hunk: @@ %d,%d %d,%d @@ %s>" % (self.source_start,
-                                                  self.source_length,
-                                                  self.target_start,
-                                                  self.target_length,
-                                                  self.section_header)
+        value = "<Hunk: @@ %d,%d %d,%d @@ %s>" % (
+            self.source_start,
+            self.source_length,
+            self.target_start,
+            self.target_length,
+            self.section_header,
+        )
         return make_str(value)
 
     def __str__(self):
         # type: () -> str
         # section header is optional and thus we output it only if it's present
         head = "@@ -%d,%d +%d,%d @@%s\n" % (
-            self.source_start, self.source_length,
-            self.target_start, self.target_length,
-            ' ' + self.section_header if self.section_header else '')
-        content = ''.join(unicode(line) for line in self)
+            self.source_start,
+            self.source_length,
+            self.target_start,
+            self.target_length,
+            " " + self.section_header if self.section_header else "",
+        )
+        content = "".join(unicode(line) for line in self)
         return head + content
 
     def append(self, line):
@@ -199,7 +221,7 @@ class Hunk(list):
         # Make sure the line is encoded correctly. This is a no-op except for
         # potentially raising a UnicodeDecodeError.
         str(line)
-        super(Hunk, self).append(line)
+        super().append(line)
 
     @property
     def added(self):
@@ -222,8 +244,10 @@ class Hunk(list):
     def is_valid(self):
         # type: () -> bool
         """Check hunk header data matches entered lines info."""
-        return (len(self.source) == self.source_length and
-                len(self.target) == self.target_length)
+        return (
+            len(self.source) == self.source_length
+            and len(self.target) == self.target_length
+        )
 
     def source_lines(self):
         # type: () -> Iterable[Line]
@@ -249,11 +273,17 @@ class Hunk(list):
 class PatchedFile(list):
     """Patch updated file, it is a list of Hunks."""
 
-    def __init__(self, patch_info=None, source='', target='',
-                 source_timestamp=None, target_timestamp=None,
-                 is_binary_file=False):
+    def __init__(
+        self,
+        patch_info=None,
+        source="",
+        target="",
+        source_timestamp=None,
+        target_timestamp=None,
+        is_binary_file=False,
+    ):
         # type: (Optional[PatchInfo], str, str, Optional[str], Optional[str], bool, bool) -> None
-        super(PatchedFile, self).__init__()
+        super().__init__()
         self.patch_info = patch_info
         self.source_file = source
         self.source_timestamp = source_timestamp
@@ -267,18 +297,20 @@ class PatchedFile(list):
 
     def __str__(self):
         # type: () -> str
-        source = ''
-        target = ''
+        source = ""
+        target = ""
         # patch info is optional
-        info = '' if self.patch_info is None else str(self.patch_info)
+        info = "" if self.patch_info is None else str(self.patch_info)
         if not self.is_binary_file and self:
             source = "--- %s%s\n" % (
                 self.source_file,
-                '\t' + self.source_timestamp if self.source_timestamp else '')
+                "\t" + self.source_timestamp if self.source_timestamp else "",
+            )
             target = "+++ %s%s\n" % (
                 self.target_file,
-                '\t' + self.target_timestamp if self.target_timestamp else '')
-        hunks = ''.join(unicode(hunk) for hunk in self)
+                "\t" + self.target_timestamp if self.target_timestamp else "",
+            )
+        hunks = "".join(unicode(hunk) for hunk in self)
         return info + source + target + hunks
 
     def _parse_hunk(self, header, diff, encoding, metadata_only):
@@ -302,12 +334,13 @@ class PatchedFile(list):
             if metadata_only:
                 # quick line type detection, no regex required
                 line_type = line[0] if line else LINE_TYPE_CONTEXT
-                if line_type not in (LINE_TYPE_ADDED,
-                                     LINE_TYPE_REMOVED,
-                                     LINE_TYPE_CONTEXT,
-                                     LINE_TYPE_NO_NEWLINE):
-                    raise UnidiffParseError(
-                        'Hunk diff line expected: %s' % line)
+                if line_type not in (
+                    LINE_TYPE_ADDED,
+                    LINE_TYPE_REMOVED,
+                    LINE_TYPE_CONTEXT,
+                    LINE_TYPE_NO_NEWLINE,
+                ):
+                    raise UnidiffParseError("Hunk diff line expected: %s" % line)
 
                 if line_type == LINE_TYPE_ADDED:
                     target_line_no += 1
@@ -329,14 +362,13 @@ class PatchedFile(list):
                     valid_line = RE_HUNK_EMPTY_BODY_LINE.match(line)
 
                 if not valid_line:
-                    raise UnidiffParseError(
-                        'Hunk diff line expected: %s' % line)
+                    raise UnidiffParseError("Hunk diff line expected: %s" % line)
 
-                line_type = valid_line.group('line_type')
+                line_type = valid_line.group("line_type")
                 if line_type == LINE_TYPE_EMPTY:
                     line_type = LINE_TYPE_CONTEXT
 
-                value = valid_line.group('value')  # type: str
+                value = valid_line.group("value")  # type: str
                 original_line = Line(value, line_type=line_type)
 
                 if line_type == LINE_TYPE_ADDED:
@@ -356,23 +388,26 @@ class PatchedFile(list):
                     original_line = None
 
             # stop parsing if we got past expected number of lines
-            if (source_line_no > expected_source_end or
-                    target_line_no > expected_target_end):
-                raise UnidiffParseError('Hunk is longer than expected')
+            if (
+                source_line_no > expected_source_end
+                or target_line_no > expected_target_end
+            ):
+                raise UnidiffParseError("Hunk is longer than expected")
 
             if original_line:
                 original_line.diff_line_no = diff_line_no
                 hunk.append(original_line)
 
             # if hunk source/target lengths are ok, hunk is complete
-            if (source_line_no == expected_source_end and
-                    target_line_no == expected_target_end):
+            if (
+                source_line_no == expected_source_end
+                and target_line_no == expected_target_end
+            ):
                 break
 
         # report an error if we haven't got expected number of lines
-        if (source_line_no < expected_source_end or
-                target_line_no < expected_target_end):
-            raise UnidiffParseError('Hunk is shorter than expected')
+        if source_line_no < expected_source_end or target_line_no < expected_target_end:
+            raise UnidiffParseError("Hunk is shorter than expected")
 
         if metadata_only:
             # HACK: set fixed calculated values when metadata_only is enabled
@@ -384,18 +419,18 @@ class PatchedFile(list):
     def _add_no_newline_marker_to_last_hunk(self):
         # type: () -> None
         if not self:
-            raise UnidiffParseError(
-                'Unexpected marker:' + LINE_VALUE_NO_NEWLINE)
+            raise UnidiffParseError("Unexpected marker:" + LINE_VALUE_NO_NEWLINE)
         last_hunk = self[-1]
         last_hunk.append(
-            Line(LINE_VALUE_NO_NEWLINE + '\n', line_type=LINE_TYPE_NO_NEWLINE))
+            Line(LINE_VALUE_NO_NEWLINE + "\n", line_type=LINE_TYPE_NO_NEWLINE)
+        )
 
     def _append_trailing_empty_line(self):
         # type: () -> None
         if not self:
-            raise UnidiffParseError('Unexpected trailing newline character')
+            raise UnidiffParseError("Unexpected trailing newline character")
         last_hunk = self[-1]
-        last_hunk.append(Line('\n', line_type=LINE_TYPE_EMPTY))
+        last_hunk.append(Line("\n", line_type=LINE_TYPE_EMPTY))
 
     @property
     def path(self):
@@ -403,7 +438,8 @@ class PatchedFile(list):
         """Return the file path abstracted from VCS."""
         filepath = self.source_file
         if filepath in (None, DEV_NULL) or (
-                self.is_rename and self.target_file not in (None, DEV_NULL)):
+            self.is_rename and self.target_file not in (None, DEV_NULL)
+        ):
             # if this is a rename, prefer the target filename
             filepath = self.target_file
 
@@ -411,11 +447,11 @@ class PatchedFile(list):
         if quoted:
             filepath = filepath[1:-1]
 
-        if filepath.startswith('a/') or filepath.startswith('b/'):
+        if filepath.startswith("a/") or filepath.startswith("b/"):
             filepath = filepath[2:]
 
         if quoted:
-            filepath = '"{}"'.format(filepath)
+            filepath = f'"{filepath}"'
 
         return filepath
 
@@ -433,9 +469,11 @@ class PatchedFile(list):
 
     @property
     def is_rename(self):
-        return (self.source_file != DEV_NULL
+        return (
+            self.source_file != DEV_NULL
             and self.target_file != DEV_NULL
-            and self.source_file[2:] != self.target_file[2:])
+            and self.source_file[2:] != self.target_file[2:]
+        )
 
     @property
     def is_added_file(self):
@@ -443,8 +481,9 @@ class PatchedFile(list):
         """Return True if this patch adds the file."""
         if self.source_file == DEV_NULL:
             return True
-        return (len(self) == 1 and self[0].source_start == 0 and
-                self[0].source_length == 0)
+        return (
+            len(self) == 1 and self[0].source_start == 0 and self[0].source_length == 0
+        )
 
     @property
     def is_removed_file(self):
@@ -452,8 +491,9 @@ class PatchedFile(list):
         """Return True if this patch removes the file."""
         if self.target_file == DEV_NULL:
             return True
-        return (len(self) == 1 and self[0].target_start == 0 and
-                self[0].target_length == 0)
+        return (
+            len(self) == 1 and self[0].target_start == 0 and self[0].target_length == 0
+        )
 
     @property
     def is_modified_file(self):
@@ -468,7 +508,7 @@ class PatchSet(list):
 
     def __init__(self, f, encoding=None, metadata_only=False):
         # type: (Union[StringIO, str], Optional[str], bool) -> None
-        super(PatchSet, self).__init__()
+        super().__init__()
 
         # convert string inputs to StringIO objects
         if isinstance(f, basestring):
@@ -484,11 +524,11 @@ class PatchSet(list):
 
     def __repr__(self):
         # type: () -> str
-        return make_str('<PatchSet: %s>') % super(PatchSet, self).__repr__()
+        return make_str("<PatchSet: %s>") % super().__repr__()
 
     def __str__(self):
         # type: () -> str
-        return ''.join(unicode(patched_file) for patched_file in self)
+        return "".join(unicode(patched_file) for patched_file in self)
 
     def _parse(self, diff, encoding, metadata_only):
         # type: (StringIO, Optional[str], bool) -> None
@@ -501,15 +541,18 @@ class PatchSet(list):
                 line = line.decode(encoding)
 
             # check for a git file rename
-            is_diff_git_header = RE_DIFF_GIT_HEADER.match(line) or \
-                RE_DIFF_GIT_HEADER_URI_LIKE.match(line) or \
-                RE_DIFF_GIT_HEADER_NO_PREFIX.match(line)
+            is_diff_git_header = (
+                RE_DIFF_GIT_HEADER.match(line)
+                or RE_DIFF_GIT_HEADER_URI_LIKE.match(line)
+                or RE_DIFF_GIT_HEADER_NO_PREFIX.match(line)
+            )
             if is_diff_git_header:
                 patch_info = PatchInfo()
-                source_file = is_diff_git_header.group('source')
-                target_file = is_diff_git_header.group('target')
+                source_file = is_diff_git_header.group("source")
+                target_file = is_diff_git_header.group("target")
                 current_file = PatchedFile(
-                    patch_info, source_file, target_file, None, None)
+                    patch_info, source_file, target_file, None, None
+                )
                 self.append(current_file)
                 patch_info.append(line)
                 continue
@@ -518,7 +561,7 @@ class PatchSet(list):
             is_diff_git_new_file = RE_DIFF_GIT_NEW_FILE.match(line)
             if is_diff_git_new_file:
                 if current_file is None or patch_info is None:
-                    raise UnidiffParseError('Unexpected new file found: %s' % line)
+                    raise UnidiffParseError("Unexpected new file found: %s" % line)
                 current_file.source_file = DEV_NULL
                 patch_info.append(line)
                 continue
@@ -527,7 +570,7 @@ class PatchSet(list):
             is_diff_git_deleted_file = RE_DIFF_GIT_DELETED_FILE.match(line)
             if is_diff_git_deleted_file:
                 if current_file is None or patch_info is None:
-                    raise UnidiffParseError('Unexpected deleted file found: %s' % line)
+                    raise UnidiffParseError("Unexpected deleted file found: %s" % line)
                 current_file.target_file = DEV_NULL
                 patch_info.append(line)
                 continue
@@ -535,12 +578,13 @@ class PatchSet(list):
             # check for source file header
             is_source_filename = RE_SOURCE_FILENAME.match(line)
             if is_source_filename:
-                source_file = is_source_filename.group('filename')
-                source_timestamp = is_source_filename.group('timestamp')
+                source_file = is_source_filename.group("filename")
+                source_timestamp = is_source_filename.group("timestamp")
                 # reset current file, unless we are processing a rename
                 # (in that case, source files should match)
                 if current_file is not None and not (
-                        current_file.source_file == source_file):
+                    current_file.source_file == source_file
+                ):
                     current_file = None
                 elif current_file is not None:
                     current_file.source_timestamp = source_timestamp
@@ -549,15 +593,21 @@ class PatchSet(list):
             # check for target file header
             is_target_filename = RE_TARGET_FILENAME.match(line)
             if is_target_filename:
-                target_file = is_target_filename.group('filename')
-                target_timestamp = is_target_filename.group('timestamp')
-                if current_file is not None and not (current_file.target_file == target_file):
-                    raise UnidiffParseError('Target without source: %s' % line)
+                target_file = is_target_filename.group("filename")
+                target_timestamp = is_target_filename.group("timestamp")
+                if current_file is not None and not (
+                    current_file.target_file == target_file
+                ):
+                    raise UnidiffParseError("Target without source: %s" % line)
                 if current_file is None:
                     # add current file to PatchSet
                     current_file = PatchedFile(
-                        patch_info, source_file, target_file,
-                        source_timestamp, target_timestamp)
+                        patch_info,
+                        source_file,
+                        target_file,
+                        source_timestamp,
+                        target_timestamp,
+                    )
                     self.append(current_file)
                     patch_info = None
                 else:
@@ -569,7 +619,7 @@ class PatchSet(list):
             if is_hunk_header:
                 patch_info = None
                 if current_file is None:
-                    raise UnidiffParseError('Unexpected hunk found: %s' % line)
+                    raise UnidiffParseError("Unexpected hunk found: %s" % line)
                 current_file._parse_hunk(line, diff, encoding, metadata_only)
                 continue
 
@@ -577,12 +627,12 @@ class PatchSet(list):
             is_no_newline = RE_NO_NEWLINE_MARKER.match(line)
             if is_no_newline:
                 if current_file is None:
-                    raise UnidiffParseError('Unexpected marker: %s' % line)
+                    raise UnidiffParseError("Unexpected marker: %s" % line)
                 current_file._add_no_newline_marker_to_last_hunk()
                 continue
 
             # sometimes hunks can be followed by empty lines
-            if line == '\n' and current_file is not None:
+            if line == "\n" and current_file is not None:
                 current_file._append_trailing_empty_line()
                 continue
 
@@ -593,20 +643,21 @@ class PatchSet(list):
 
             is_binary_diff = RE_BINARY_DIFF.match(line)
             if is_binary_diff:
-                source_file = is_binary_diff.group('source_filename')
-                target_file = is_binary_diff.group('target_filename')
+                source_file = is_binary_diff.group("source_filename")
+                target_file = is_binary_diff.group("target_filename")
                 patch_info.append(line)
                 if current_file is not None:
                     current_file.is_binary_file = True
                 else:
                     current_file = PatchedFile(
-                        patch_info, source_file, target_file, is_binary_file=True)
+                        patch_info, source_file, target_file, is_binary_file=True
+                    )
                     self.append(current_file)
                 patch_info = None
                 current_file = None
                 continue
 
-            if line == 'GIT binary patch\n':
+            if line == "GIT binary patch\n":
                 current_file.is_binary_file = True
                 patch_info = None
                 current_file = None
@@ -615,15 +666,19 @@ class PatchSet(list):
             patch_info.append(line)
 
     @classmethod
-    def from_filename(cls, filename, encoding=DEFAULT_ENCODING, errors=None, newline=None):
+    def from_filename(
+        cls, filename, encoding=DEFAULT_ENCODING, errors=None, newline=None
+    ):
         # type: (str, str, Optional[str]) -> PatchSet
         """Return a PatchSet instance given a diff filename."""
-        with open_file(filename, 'r', encoding=encoding, errors=errors, newline=newline) as f:
+        with open_file(
+            filename, "r", encoding=encoding, errors=errors, newline=newline
+        ) as f:
             instance = cls(f)
         return instance
 
     @staticmethod
-    def _convert_string(data, encoding=None, errors='strict'):
+    def _convert_string(data, encoding=None, errors="strict"):
         # type: (Union[str, bytes], str, str) -> StringIO
         if encoding is not None:
             # if encoding is given, assume bytes and decode
@@ -631,7 +686,7 @@ class PatchSet(list):
         return StringIO(data)
 
     @classmethod
-    def from_string(cls, data, encoding=None, errors='strict'):
+    def from_string(cls, data, encoding=None, errors="strict"):
         # type: (str, str, Optional[str]) -> PatchSet
         """Return a PatchSet instance given a diff string."""
         return cls(cls._convert_string(data, encoding, errors))
