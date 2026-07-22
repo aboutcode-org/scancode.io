@@ -353,8 +353,36 @@ class PythonTreeSitterQuery(LanguageQuery):
     syntax_config = {"self_keyword": "self", "separator": ".", "wildcard_symbol": "*"}
 
 
+class JavaTreeSitterQuery(LanguageQuery):
+    language_name = "Java"
+    constants_query = (
+        "(field_declaration declarator: "
+        "(variable_declarator name: (identifier) @name)) @constant"
+    )
+    functions_query = """
+        [(method_declaration name: (identifier) @name)
+         (constructor_declaration name: (identifier) @name)] @function
+    """
+    classes_query = """
+        [(class_declaration name: (identifier) @name)
+         (interface_declaration name: (identifier) @name)
+         (record_declaration name: (identifier) @name)
+         (enum_declaration name: (identifier) @name)] @class
+    """
+    calls_query = """
+        (method_invocation name: (identifier) @callee)
+        (method_invocation object: (_) @receiver name: (identifier) @callee)
+    """
+    imports_query = """
+        (import_declaration (scoped_identifier) @import_name)
+        (import_declaration (scoped_identifier) @module_name (asterisk) @import_name)
+    """
+    syntax_config = {"self_keyword": "this", "separator": ".", "wildcard_symbol": "*"}
+
+
 TS_QUERIES = {
     "Python": PythonTreeSitterQuery,
+    "Java": JavaTreeSitterQuery,
 }
 
 

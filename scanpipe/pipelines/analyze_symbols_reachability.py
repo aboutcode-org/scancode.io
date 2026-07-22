@@ -20,14 +20,14 @@ class SymbolReachability(Pipeline):
 
     @classmethod
     def steps(cls):
-        return (cls.analyze_and_store_symbol_reachability,)
+        return (cls.analyze_symbol_reachability,)
 
-    def analyze_and_store_symbol_reachability(self):
+    def analyze_symbol_reachability(self):
         """
         Perform symbol-level reachability analysis for each patch. This step compares
         the AST of patched/vulnerable files against the codebase resources.
         Results are stored directly in the 'extra_data' of each CodebaseResource.
         """
-        reachability.collect_and_store_symbol_reachability_results(
+        reachability.analyze_and_store_symbol_reachability_results(
             project=self.project, logger=self.log
         )

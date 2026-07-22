@@ -19,6 +19,8 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
+#
+
 import os
 import shutil
 import tempfile
@@ -29,12 +31,12 @@ from typing import Any
 from git import Repo
 from git.diff import NULL_TREE
 from scancode.api import get_file_info
-from unidiff import PatchSet
 
 from scanpipe.pipes.symbols import TS_QUERIES
 from scanpipe.pipes.symbols import SymbolExtractor
 from scanpipe.pipes.symbols import create_sha256_fingerprint
 from scanpipe.pipes.symbols import is_supported_language
+from scanpipe.pipes.unidiff.patch import PatchSet
 
 
 class ReachabilityStatus(str, Enum):
@@ -100,8 +102,6 @@ class GitRepositoryContext:
 
 
 class PatchAnalyzer:
-    EMPTY_TREE_SHA = "4b825dc642cb6eb9a060e54bf8b8e6f9b79b4d2b"
-
     def __init__(self, repo: Repo, commit_hash: str):
         self.repo = repo
         self.commit = repo.commit(commit_hash)
@@ -145,7 +145,8 @@ class PatchAnalyzer:
         return files
 
     def get_commit_diff_text(self):
-        base = self.parent_commit.hexsha if self.parent_commit else self.EMPTY_TREE_SHA
+        """Get the diff text, falling back to an empty tree if no parent exists."""
+        base = self.parent_commit.hexsha if self.parent_commit else NULL_TREE
         return self.repo.git.diff(base, self.commit.hexsha, unified=3)
 
     @classmethod
@@ -379,7 +380,6 @@ def generate_reachability_report(patch, repo, candidate_resources, logger=None):
                     "reachability_status": classify_reachability(vuln_evidence).value,
                 }
             }
-            print(report)
 
             existing = resource.extra_data.get("symbols_reachability")
             reports = existing if isinstance(existing, list) else []
@@ -398,7 +398,7 @@ def generate_reachability_report(patch, repo, candidate_resources, logger=None):
             )
 
 
-def collect_and_store_symbol_reachability_results(project, logger=None):
+def analyze_and_store_symbol_reachability_results(project, logger=None):
     candidate_resources = project.codebaseresources.files().filter(
         is_binary=False, is_archive=False, is_media=False
     )
