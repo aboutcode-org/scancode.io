@@ -31,8 +31,8 @@ from scanpipe.models import Project
 from scanpipe.pipes import collect_and_create_codebase_resources
 from scanpipe.pipes.reachability import PatchAnalyzer
 from scanpipe.pipes.reachability import ReachabilityStatus
-from scanpipe.pipes.reachability import classify_reachability
 from scanpipe.pipes.reachability import analyze_and_store_symbol_reachability_results
+from scanpipe.pipes.reachability import classify_reachability
 from scanpipe.pipes.symbols import TS_QUERIES
 from scanpipe.pipes.symbols import SymbolExtractor
 
