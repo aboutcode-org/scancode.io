@@ -10,4 +10,4 @@ package_url: pkg:pypi/unidiff@0.7.5
 licenses:
   - key: mit
     name: MIT License
-    file: mit.LICENSE
+    file: patch.py.LICENSE
