@@ -223,7 +223,9 @@ class ScanPipeMavenPipesTest(TestCase):
         result = maven.fetch_and_scan_remote_pom(
             "pkg:maven/org/test@1.0", "/path/to/output.json"
         )
-        self.assertEqual(result, [{"pkg:maven/org/test@1.0": ["Failed to resolve POM URL."]}])
+        self.assertEqual(
+            result, [{"pkg:maven/org/test@1.0": ["Failed to resolve POM URL."]}]
+        )
 
     @mock.patch("builtins.open", new_callable=mock.mock_open)
     @mock.patch("json.load")
@@ -239,10 +241,16 @@ class ScanPipeMavenPipesTest(TestCase):
         result = maven.fetch_and_scan_remote_pom(
             "pkg:maven/org/test@1.0", "/path/to/output.json"
         )
-        self.assertEqual(result, [{"https://example.com/test.pom": ["Failed to download the POM file."]}])
+        self.assertEqual(
+            result,
+            [{"https://example.com/test.pom": ["Failed to download the POM file."]}],
+        )
 
     def test_update_scan_data(self):
-        original_data = {"packages": [{"name": "package1"}], "dependencies": [{"name": "dep1"}]}
+        original_data = {
+            "packages": [{"name": "package1"}],
+            "dependencies": [{"name": "dep1"}],
+        }
         new_package = [{"name": "package2"}]
         new_dependency = [{"name": "dep2"}]
 

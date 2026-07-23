@@ -190,11 +190,15 @@ def update_package_license_from_resource_if_missing(project):
     """Populate missing licenses to packages based on resource data."""
     for package in project.discoveredpackages.all():
         if not package.get_declared_license_expression():
-            matching_resources = project.codebaseresources.has_license_expression().filter(
-                discovered_packages=package
+            matching_resources = (
+                project.codebaseresources.has_license_expression().filter(
+                    discovered_packages=package
+                )
             )
             detected_licenses = list(
-                matching_resources.values_list("detected_license_expression", flat=True).distinct()
+                matching_resources.values_list(
+                    "detected_license_expression", flat=True
+                ).distinct()
             )
             if detected_licenses:
                 license_expression = " AND ".join(detected_licenses)

@@ -172,7 +172,9 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
                 self.project.add_error(
                     description="\n".join(errors),
                     model=self.pipeline_name,
-                    details={"resource_path": resource_reference.removeprefix("codebase/")},
+                    details={
+                        "resource_path": resource_reference.removeprefix("codebase/")
+                    },
                 )
 
     def update_package_license_from_resource_if_missing(self):
