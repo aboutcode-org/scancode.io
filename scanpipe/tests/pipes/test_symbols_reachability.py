@@ -19,8 +19,9 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
-
+import sys
 from pathlib import Path
+from unittest import skipIf
 from unittest.mock import MagicMock
 from unittest.mock import PropertyMock
 from unittest.mock import patch
@@ -37,6 +38,7 @@ from scanpipe.pipes.symbols import TS_QUERIES
 from scanpipe.pipes.symbols import SymbolExtractor
 
 
+@skipIf(sys.platform == "darwin", "Not supported on macOS")
 class SymbolReachabilityPipesTest(TestCase):
     data = Path(__file__).parent.parent / "data" / "reachability"
 
