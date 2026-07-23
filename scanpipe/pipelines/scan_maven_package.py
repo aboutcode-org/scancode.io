@@ -72,8 +72,8 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
         # The pipeline will call self.extract_inputs_to_codebase_directory()
         # from deploy_to_develop.py, which expects both self.from_files and
         # self.to_files to be of list type.
-        self.from_files = [from_file]
-        self.to_files = [to_file]
+        self.from_files = [from_file] if from_file else []
+        self.to_files = [to_file] if to_file else []
 
     def d2d_check(self):
         """
@@ -168,11 +168,11 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
             self.purl, self.scan_output_location
         )
         for scanning_error in scanning_errors:
-            for resource_path, errors in scanning_error.items():
+            for resource_reference, errors in scanning_error.items():
                 self.project.add_error(
                     description="\n".join(errors),
                     model=self.pipeline_name,
-                    details={"resource_path": resource_path.removeprefix("codebase/")},
+                    details={"resource_path": resource_reference.removeprefix("codebase/")},
                 )
 
     def update_package_license_from_resource_if_missing(self):

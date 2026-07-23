@@ -41,7 +41,8 @@ def check_input_and_return_purl(project):
     if len(input_sources) != 1:
         error_msg = "Only 1 maven purl is accepted."
         raise ValueError(error_msg)
-    project_input = str(input_sources[0])
+    # Strip the qualifiers as this is not needed.
+    project_input = str(input_sources[0]).split("?")[0]
     input_purl = PackageURL.from_string(project_input)
 
     if input_purl.type != "maven":
@@ -68,12 +69,12 @@ def fetch_inputs(purl):
     return purl_src_path, purl_bin_path
 
 
-def fetch_path(url, package_type):
-    """Fetch the url and return the location of the fetched tarball"""
+def fetch_path(purl, package_type):
+    """Fetch the purl and return the location of the fetched tarball"""
     try:
-        return fetch.fetch_url(url=url).path
-    except Exception as e:
-        logger.info("Failed to fetch %s package: %s", package_type, e)
+        return fetch.fetch_url(url=purl).path
+    except (ValueError, requests.RequestException) as e:
+        logger.warning("Failed to fetch %s package: %s", package_type, e)
         return None
 
 
@@ -88,10 +89,10 @@ def fetch_and_scan_remote_pom(input_purl, scan_output_location):
 
     pom_url = get_pom_url(input_purl)
     if not pom_url:
-        return ["Failed to resolve POM URL."]
+        return [{str(input_purl): ["Failed to resolve POM URL."]}]
     pom_file = download_pom_file(pom_url)
     if not pom_file:
-        return ["Failed to download the POM file."]
+        return [{pom_url: ["Failed to download the POM file."]}]
     scanning_errors = scan_pom_file(pom_file)
 
     scanned_pom_packages, scanned_dependencies = update_datafile_paths(pom_file)
@@ -99,13 +100,15 @@ def fetch_and_scan_remote_pom(input_purl, scan_output_location):
 
     with open(scan_output_location, "w") as file:
         json.dump(updated_data, file, indent=2)
-    return [scanning_errors]
+    if not scanning_errors:
+        return []
+    return [scanning_errors] if isinstance(scanning_errors, dict) else scanning_errors
 
 
 def update_scan_data(data, scanned_packages, scanned_dependencies):
     """Update packages and dependencies data"""
     data["packages"] = data.get("packages", []) + scanned_packages
-    data["dependencies"] = scanned_dependencies
+    data["dependencies"] = data.get("dependencies", []) + scanned_dependencies
     return data
 
 
@@ -187,16 +190,12 @@ def update_package_license_from_resource_if_missing(project):
     """Populate missing licenses to packages based on resource data."""
     for package in project.discoveredpackages.all():
         if not package.get_declared_license_expression():
-            package_uid = package.package_uid
-            detected_licenses = []
-            for resource in project.codebaseresources.has_license_expression():
-                for for_package in resource.for_packages:
-                    if for_package == package_uid:
-                        detected_license_expression = (
-                            resource.detected_license_expression
-                        )
-                        if detected_license_expression not in detected_licenses:
-                            detected_licenses.append(detected_license_expression)
+            matching_resources = project.codebaseresources.has_license_expression().filter(
+                discovered_packages=package
+            )
+            detected_licenses = list(
+                matching_resources.values_list("detected_license_expression", flat=True).distinct()
+            )
             if detected_licenses:
                 license_expression = " AND ".join(detected_licenses)
                 declared_license_expression = str(Licensing().dedup(license_expression))

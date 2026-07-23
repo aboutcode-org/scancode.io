@@ -223,7 +223,7 @@ class ScanPipeMavenPipesTest(TestCase):
         result = maven.fetch_and_scan_remote_pom(
             "pkg:maven/org/test@1.0", "/path/to/output.json"
         )
-        self.assertEqual(result, ["Failed to resolve POM URL."])
+        self.assertEqual(result, [{"pkg:maven/org/test@1.0": ["Failed to resolve POM URL."]}])
 
     @mock.patch("builtins.open", new_callable=mock.mock_open)
     @mock.patch("json.load")
@@ -234,24 +234,24 @@ class ScanPipeMavenPipesTest(TestCase):
     ):
         mock_json_load.return_value = {"files": []}
         mock_get_pom_url.return_value = "https://example.com/test.pom"
-        mock_download_pom_file.return_value = None
+        mock_download_pom_file.return_value = {}
 
         result = maven.fetch_and_scan_remote_pom(
             "pkg:maven/org/test@1.0", "/path/to/output.json"
         )
-        self.assertEqual(result, ["Failed to download the POM file."])
+        self.assertEqual(result, [{"https://example.com/test.pom": ["Failed to download the POM file."]}])
 
     def test_update_scan_data(self):
-        original_data = {"packages": [{"name": "package1"}], "dependencies": []}
+        original_data = {"packages": [{"name": "package1"}], "dependencies": [{"name": "dep1"}]}
         new_package = [{"name": "package2"}]
-        new_dependency = [{"name": "dep1"}]
+        new_dependency = [{"name": "dep2"}]
 
         result = maven.update_scan_data(original_data, new_package, new_dependency)
 
         self.assertEqual(
             result["packages"], [{"name": "package1"}, {"name": "package2"}]
         )
-        self.assertEqual(result["dependencies"], [{"name": "dep1"}])
+        self.assertEqual(result["dependencies"], [{"name": "dep1"}, {"name": "dep2"}])
 
     @mock.patch("scanpipe.pipes.maven.scancode.run_scan")
     def test_scanpipe_maven_scan_pom_file(self, mock_run_scan):
