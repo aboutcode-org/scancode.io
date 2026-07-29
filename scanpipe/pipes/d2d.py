@@ -353,7 +353,7 @@ def map_jar_to_jvm_source(project, jvm_lang: jvm.JvmLanguage, logger=None):
     """Map .jar files to their related source directory."""
     project_files = project.codebaseresources.files()
     # Include the directories to map on the common source
-    from_resources = project.codebaseresources.from_codebase()
+    from_resources = project.codebaseresources.from_codebase().has_no_relation()
     to_resources = project_files.to_codebase()
     to_jars = to_resources.filter(extension=".jar")
 

@@ -170,6 +170,7 @@ publish_to_federatedcode = "scanpipe.pipelines.publish_to_federatedcode:PublishT
 resolve_dependencies = "scanpipe.pipelines.resolve_dependencies:ResolveDependencies"
 scan_codebase = "scanpipe.pipelines.scan_codebase:ScanCodebase"
 scan_for_virus = "scanpipe.pipelines.scan_for_virus:ScanForVirus"
+scan_maven_package = "scanpipe.pipelines.scan_maven_package:ScanMavenPackage"
 scan_single_package = "scanpipe.pipelines.scan_single_package:ScanSinglePackage"
 
 [tool.setuptools.packages.find]
