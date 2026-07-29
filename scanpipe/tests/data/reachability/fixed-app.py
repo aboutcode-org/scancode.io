@@ -1,5 +1,7 @@
 import os
 
+debug = True
+
 
 class ReportGenerator:
     """A dummy class to test AST class method parsing."""

@@ -20,7 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 #
-
+import difflib
 import os
 import shutil
 import tempfile
@@ -36,7 +36,6 @@ from scanpipe.pipes.symbols import TS_QUERIES
 from scanpipe.pipes.symbols import SymbolExtractor
 from scanpipe.pipes.symbols import create_sha256_fingerprint
 from scanpipe.pipes.symbols import is_supported_language
-from scanpipe.pipes.unidiff.patch import PatchSet
 
 
 class ReachabilityStatus(str, Enum):
@@ -150,6 +149,26 @@ class PatchAnalyzer:
         return self.repo.git.diff(base, self.commit.hexsha, unified=3)
 
     @classmethod
+    def compute_changed_lines(cls, vulnerable_text, fixed_text):
+        """Return the removed and added line numbers between two file contents."""
+        matcher = difflib.SequenceMatcher(
+            a=vulnerable_text.splitlines(),
+            b=fixed_text.splitlines(),
+            autojunk=False,  # otherwise difflib ignores lines that repeat often
+        )
+
+        removed_lines = []
+        added_lines = []
+        for tag, vuln_start, vuln_end, fixed_start, fixed_end in matcher.get_opcodes():
+            if tag == "equal":
+                continue
+            # opcodes are 0-based and end-exclusive, line numbers are 1-based
+            removed_lines.extend(range(vuln_start + 1, vuln_end + 1))
+            added_lines.extend(range(fixed_start + 1, fixed_end + 1))
+
+        return removed_lines, added_lines
+
+    @classmethod
     def diff_changed_symbols(cls, vuln_meta, fixed_meta):
         vuln_only = {
             key: metadata
@@ -163,50 +182,16 @@ class PatchAnalyzer:
         }
         return vuln_only, fixed_only
 
-    @classmethod
-    def parse_diff_lines(cls, diff_text):
-        diff_map = {}
-        if not diff_text:
-            return diff_map
-
-        for patched_file in PatchSet.from_string(diff_text):
-            removed = []
-            added = []
-
-            for hunk in patched_file:
-                removed.extend(
-                    line.source_line_no
-                    for line in hunk
-                    if line.is_removed and line.source_line_no
-                )
-                added.extend(
-                    line.target_line_no
-                    for line in hunk
-                    if line.is_added and line.target_line_no
-                )
-
-            candidates = {
-                patched_file.path,
-                (patched_file.source_file or "").removeprefix("a/"),
-                (patched_file.target_file or "").removeprefix("b/"),
-            }
-
-            for candidate in candidates:
-                if candidate:
-                    diff_map[candidate] = (removed, added)
-
-        return diff_map
-
     def collect_patch_symbols(self):
-        diff_text = self.get_commit_diff_text()
-        changed_files = self.get_changed_files()
-        diff_line_map = self.parse_diff_lines(diff_text=diff_text)
-
         by_language = {}
+        changed_files = self.get_changed_files()
+
         for file_path, texts in changed_files.items():
             vulnerable_text = texts["vulnerable_text"]
             fixed_text = texts["fixed_text"]
-            removed_lines, added_lines = diff_line_map.get(file_path, ([], []))
+            removed_lines, added_lines = self.compute_changed_lines(
+                vulnerable_text, fixed_text
+            )
 
             vuln_meta, fixed_meta, language = self.analyze(
                 vulnerable_text=vulnerable_text,
@@ -504,11 +489,9 @@ class ResourceAnalyzer:
             )
 
         for node, _ in lang_query.get_constants(tree.root_node):
-            # Skip constants defined inside functions, classes, or other blocks
-            if node.parent == tree.root_node:
-                self.process_node(
-                    node, extractor, definitions_index, definitions, fingerprints
-                )
+            self.process_node(
+                node, extractor, definitions_index, definitions, fingerprints
+            )
 
         return {
             "definitions": definitions,

@@ -55,16 +55,16 @@ class SymbolReachabilityPipesTest(TestCase):
         mock_collect_symbols,
         mock_git_context,
     ):
-        app_text = (self.data / "app.py").read_text()
+        file_path = "app.py"
+        app_text = (self.data / file_path).read_text()
         vuln_text = (self.data / "vuln-app.py").read_text()
         fixed_text = (self.data / "fixed-app.py").read_text()
-        diff_text = (self.data / "diff-app.patch").read_text()
 
         analyzer = PatchAnalyzer(repo=MagicMock(), commit_hash="dummy")
-        diff_line_map = analyzer.parse_diff_lines(diff_text=diff_text)
-        file_path = "app.py"
-        removed_lines, added_lines = diff_line_map.get(file_path, ([], []))
 
+        removed_lines, added_lines = analyzer.compute_changed_lines(
+            vulnerable_text=vuln_text, fixed_text=fixed_text
+        )
         vuln_meta, fixed_meta, lang = analyzer.analyze(
             vulnerable_text=vuln_text,
             fixed_text=fixed_text,
@@ -90,10 +90,12 @@ class SymbolReachabilityPipesTest(TestCase):
         mock_collect_symbols.return_value = {
             lang: {
                 "vulnerable": {
-                    f"app.py::{key}": metadata for key, metadata in vuln_meta.items()
+                    f"{file_path}::{key}": metadata
+                    for key, metadata in vuln_meta.items()
                 },
                 "fixed": {
-                    f"app.py::{key}": metadata for key, metadata in fixed_meta.items()
+                    f"{file_path}::{key}": metadata
+                    for key, metadata in fixed_meta.items()
                 },
             }
         }
@@ -125,9 +127,9 @@ class SymbolReachabilityPipesTest(TestCase):
                                 "called": False,
                                 "defined": True,
                                 "imported": False,
-                                "fingerprint": "d7675efb263896da2a3c00679511833"
-                                "553907e7e6ea619115a6dfc8625c3457e",
-                                "symbol_name": "serve_report",
+                                "fingerprint": "336908735214468b103dbde"
+                                "11c3ffbd2f76ac9212b8514f831cfa078a67892df",
+                                "symbol_name": "debug",
                                 "reachable_from": [],
                             },
                             {
@@ -139,12 +141,23 @@ class SymbolReachabilityPipesTest(TestCase):
                                 "symbol_name": "serve_report.build_file_path",
                                 "reachable_from": ["serve_report"],
                             },
+                            {
+                                "called": False,
+                                "defined": True,
+                                "imported": False,
+                                "fingerprint": "d7675efb263896da2a3c0067951183"
+                                "3553907e7e6ea619115a6dfc8625c3457e",
+                                "symbol_name": "serve_report",
+                                "reachable_from": [],
+                            },
                         ],
                         "fixed_symbols": [
+                            "debug",
                             "serve_report",
                             "serve_report.build_file_path",
                         ],
                         "vulnerable_symbols": [
+                            "debug",
                             "serve_report",
                             "serve_report.build_file_path",
                         ],
@@ -402,59 +415,68 @@ if True:
     def test_analyze_patched_file(self):
         vuln_text = (self.data / "vuln-app.py").read_text(encoding="utf-8")
         fixed_text = (self.data / "fixed-app.py").read_text(encoding="utf-8")
-        diff_text = (self.data / "diff-app.patch").read_text(encoding="utf-8")
-
-        diff_line_map = PatchAnalyzer.parse_diff_lines(diff_text=diff_text)
         file_path = "app.py"
-        removed_lines, added_lines = diff_line_map.get(file_path, ([], []))
+        removed_lines, added_lines = PatchAnalyzer.compute_changed_lines(
+            vuln_text, fixed_text
+        )
 
         vuln_meta, fixed_meta, lang = PatchAnalyzer.analyze(
             vulnerable_text=vuln_text,
             fixed_text=fixed_text,
             removed_lines=removed_lines,
             added_lines=added_lines,
-            file_path="app.py",
+            file_path=file_path,
         )
 
         self.assertEqual(
             vuln_meta,
             {
-                "serve_report": {
-                    "qualified_name": "serve_report",
-                    "text": "def serve_report(request_payload):\n"
-                    '    """Top-level function handling a request."""\n'
-                    '    generator = ReportGenerator("/var/reports")\n'
-                    '    requested_file = request_payload.get("file")\n\n'
-                    "    # Helper function nested inside serve_report\n"
-                    "    def build_file_path(filename):\n"
-                    "        # VULNERABLE: Direct concatenation allows Path Traversal\n"
-                    "        # An attacker passing "
-                    '"../../etc/passwd" '
-                    "could read system files.\n"
-                    "        return os.path.join(generator.base_dir, filename)\n\n"
-                    "    if not requested_file:\n"
-                    '        return "Error: No file specified"\n\n'
-                    "    target_path = build_file_path(requested_file)\n\n"
-                    "    if os.path.exists(target_path):\n"
-                    '        return f"Serving content of {target_path}"\n\n'
-                    '    return "Error: File not found"',
-                    "fingerprint": "d7675efb263896da2a3c006795118"
-                    "33553907e7e6ea619115a6dfc8625c3457e",
-                    "start_line": 11,
-                    "end_line": 30,
-                    "node_type": "function_definition",
+                "debug": {
+                    "qualified_name": "debug",
+                    "text": "debug = False",
+                    "fingerprint": "336908735214468b103dbde11c3ff"
+                    "bd2f76ac9212b8514f831cfa078a67892df",
+                    "start_line": 3,
+                    "end_line": 3,
+                    "node_type": "assignment",
                 },
                 "serve_report.build_file_path": {
                     "qualified_name": "serve_report.build_file_path",
                     "text": "def build_file_path(filename):\n"
-                    "        # VULNERABLE: Direct concatenation allows Path Traversal\n"
-                    '        # An attacker passing "../../etc/passwd"'
-                    " could read system files.\n"
+                    "        # VULNERABLE: Direct concatenation "
+                    "allows Path Traversal\n "
+                    '       # An attacker passing "../../etc/passwd" '
+                    "could read system files.\n"
                     "        return os.path.join(generator.base_dir, filename)",
-                    "fingerprint": "762e4f7d03b1bf4359c3ca364e5581"
-                    "40239913bfabcc5aa77156460c2eb0a355",
-                    "start_line": 17,
-                    "end_line": 20,
+                    "fingerprint": "762e4f7d03b1bf4359c3ca364e55814"
+                    "0239913bfabcc5aa77156460c2eb0a355",
+                    "start_line": 19,
+                    "end_line": 22,
+                    "node_type": "function_definition",
+                },
+                "serve_report": {
+                    "qualified_name": "serve_report",
+                    "text": "def serve_report(request_payload):\n "
+                    '   """Top-level function handling a request."""\n'
+                    '    generator = ReportGenerator("/var/reports")\n'
+                    '    requested_file = request_payload.get("file")\n\n'
+                    "    # Helper function nested inside serve_report\n"
+                    "    def build_file_path(filename):\n "
+                    "       # VULNERABLE: Direct "
+                    "concatenation allows Path Traversal\n "
+                    "       # An attacker passing "
+                    '"../../etc/passwd" could read system files.\n'
+                    "        return os.path.join(generator.base_dir, filename)\n\n"
+                    "    if not requested_file:\n   "
+                    '     return "Error: No file specified"\n\n  '
+                    "  target_path = build_file_path(requested_file)\n\n  "
+                    "  if os.path.exists(target_path):\n      "
+                    '  return f"Serving content of {target_path}"\n\n  '
+                    '  return "Error: File not found"',
+                    "fingerprint": "d7675efb263896da2a3c006795118"
+                    "33553907e7e6ea619115a6dfc8625c3457e",
+                    "start_line": 13,
+                    "end_line": 32,
                     "node_type": "function_definition",
                 },
             },
@@ -463,50 +485,58 @@ if True:
         self.assertEqual(
             fixed_meta,
             {
-                "serve_report": {
-                    "qualified_name": "serve_report",
-                    "text": "def serve_report(request_payload):\n"
-                    '    """Top-level function handling a request."""\n'
-                    '    generator = ReportGenerator("/var/reports")\n'
-                    '    requested_file = request_payload.get("file")\n\n'
-                    "    # Helper function nested inside serve_report\n"
-                    "    def build_file_path(filename):\n"
-                    "        # FIXED: Validate that the resolved "
-                    "path stays within the base_dir\n"
-                    "        base = os.path.abspath(generator.base_dir)\n"
-                    "        target = os.path.abspath(os.path.join(base, filename))\n"
-                    "        if not target.startswith(base):\n"
-                    '            raise ValueError("Path Traversal Detected")\n'
-                    "        return target\n\n"
-                    "    if not requested_file:\n"
-                    '        return "Error: No file specified"\n\n'
-                    "    try:\n"
-                    "        target_path = build_file_path(requested_file)\n"
-                    "    except ValueError:\n"
-                    '        return "Error: Invalid path"\n\n'
-                    "    if os.path.exists(target_path):\n"
-                    '        return f"Serving content of {target_path}"\n\n'
-                    '    return "Error: File not found"',
-                    "fingerprint": "2deedb21d5f9b1409c59f0b1e5512d"
-                    "73d9afdfc3f469ccf86e8835915d240e76",
-                    "start_line": 11,
-                    "end_line": 36,
-                    "node_type": "function_definition",
+                "debug": {
+                    "qualified_name": "debug",
+                    "text": "debug = True",
+                    "fingerprint": "55d2e2010de610fd32f0c28bc49f535"
+                    "3d6ac60afc70adc5713aa4b675646590e",
+                    "start_line": 3,
+                    "end_line": 3,
+                    "node_type": "assignment",
                 },
                 "serve_report.build_file_path": {
                     "qualified_name": "serve_report.build_file_path",
-                    "text": "def build_file_path(filename):\n"
-                    "        # FIXED: Validate that the resolved path"
-                    " stays within the base_dir\n"
-                    "        base = os.path.abspath(generator.base_dir)\n"
-                    "        target = os.path.abspath(os.path.join(base, filename))\n"
-                    "        if not target.startswith(base):\n"
-                    '            raise ValueError("Path Traversal Detected")\n'
-                    "        return target",
+                    "text": "def build_file_path(filename):\n "
+                    "       # FIXED: Validate that the resolved"
+                    " path stays within the base_dir\n "
+                    "       base = os.path.abspath(generator.base_dir)\n  "
+                    "      target = os.path.abspath(os.path.join(base, filename))\n    "
+                    "    if not target.startswith(base):\n       "
+                    '     raise ValueError("Path Traversal Detected")\n   '
+                    "     return target",
                     "fingerprint": "646743b5d5497f6ea3b96f860bcbe"
                     "b38096ce008ad16d2b9a9c3f77a98faca80",
-                    "start_line": 17,
-                    "end_line": 23,
+                    "start_line": 19,
+                    "end_line": 25,
+                    "node_type": "function_definition",
+                },
+                "serve_report": {
+                    "qualified_name": "serve_report",
+                    "text": "def serve_report(request_payload):\n "
+                    '   """Top-level function handling a request."""\n '
+                    '   generator = ReportGenerator("/var/reports")\n '
+                    '   requested_file = request_payload.get("file")\n\n  '
+                    "  # Helper function nested inside serve_report\n    "
+                    "def build_file_path(filename):\n    "
+                    "    # FIXED: Validate that the"
+                    " resolved path stays within the base_dir\n "
+                    "       base = os.path.abspath(generator.base_dir)\n   "
+                    "     target = os.path.abspath(os.path.join(base, filename))\n"
+                    "        if not target.startswith(base):\n     "
+                    '       raise ValueError("Path Traversal Detected")\n    '
+                    "    return target\n\n   "
+                    " if not requested_file:\n     "
+                    '   return "Error: No file specified"\n\n    try:\n    '
+                    "    target_path = build_file_path(requested_file)\n"
+                    "    except ValueError:\n  "
+                    '      return "Error: Invalid path"\n\n  '
+                    "  if os.path.exists(target_path):\n   "
+                    '     return f"Serving content of {target_path}"\n\n '
+                    '   return "Error: File not found"',
+                    "fingerprint": "2deedb21d5f9b1409c59f0b1e55"
+                    "12d73d9afdfc3f469ccf86e8835915d240e76",
+                    "start_line": 13,
+                    "end_line": 38,
                     "node_type": "function_definition",
                 },
             },
