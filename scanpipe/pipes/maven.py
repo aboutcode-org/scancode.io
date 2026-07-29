@@ -22,6 +22,7 @@
 
 import json
 import logging
+from pathlib import PurePosixPath
 from urllib.parse import urlparse
 
 import requests
@@ -82,9 +83,9 @@ def fetch_and_scan_remote_pom(input_purl, scan_output_location):
     """Fetch the .pom file from from maven.org if not present in codebase."""
     with open(scan_output_location) as file:
         data = json.load(file)
-    # Return and do nothing if data has pom.xml
-    for file in data["files"]:
-        if "pom.xml" in file["path"]:
+    # Skip fetching the remote POM if a pom.xml is already present in the codebase.
+    for file_entry in data["files"]:
+        if PurePosixPath(file_entry["path"]).name == "pom.xml":
             return []
 
     pom_url = get_pom_url(input_purl)
