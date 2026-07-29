@@ -19,7 +19,7 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
-from aboutcode.pipeline import optional_step
+
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import vulnerablecode
 
@@ -34,13 +34,11 @@ class FindVulnerabilities(Pipeline):
     download_inputs = False
     is_addon = True
     results_url = "/project/{slug}/packages/?is_vulnerable=yes"
-    reachability = False
 
     @classmethod
     def steps(cls):
         return (
             cls.check_vulnerablecode_service_availability,
-            cls.enable_reachability_analysis,
             cls.lookup_packages_vulnerabilities,
             cls.lookup_dependencies_vulnerabilities,
         )
@@ -49,12 +47,6 @@ class FindVulnerabilities(Pipeline):
     def get_availability(cls):
         if not vulnerablecode.is_configured():
             return "VulnerableCode is not configured."
-
-    @optional_step("reachability")
-    def enable_reachability_analysis(self):
-        """Enable the reachability flag for vulnerability lookups."""
-        self.reachability = True
-        self.log("Reachability analysis is ENABLED.")
 
     def check_vulnerablecode_service_availability(self):
         """Check if the VulnerableCode service if configured and available."""
@@ -70,7 +62,6 @@ class FindVulnerabilities(Pipeline):
         vulnerablecode.fetch_vulnerabilities(
             packages=packages,
             ignore_set=self.project.ignored_vulnerabilities_set,
-            reachability=self.reachability,
             logger=self.log,
         )
 
@@ -80,6 +71,5 @@ class FindVulnerabilities(Pipeline):
         vulnerablecode.fetch_vulnerabilities(
             packages=dependencies,
             ignore_set=self.project.ignored_vulnerabilities_set,
-            reachability=self.reachability,
             logger=self.log,
         )

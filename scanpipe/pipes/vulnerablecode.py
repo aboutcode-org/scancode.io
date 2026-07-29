@@ -109,7 +109,6 @@ def request_post(
 
 def bulk_search_by_purl(
     purls,
-    reachability=False,
     timeout=None,
     api_url=VULNERABLECODE_API_URL,
 ):
@@ -119,7 +118,7 @@ def bulk_search_by_purl(
     data = {
         "purls": purls,
         "details": True,
-        "reachability": reachability,
+        "reachability": True,
     }
 
     logger.debug(f"VulnerableCode: url={url} purls_count={len(purls)}")
@@ -138,7 +137,7 @@ def filter_vulnerabilities(vulnerabilities, ignore_set):
 
 
 def fetch_vulnerabilities(
-    packages, chunk_size=1000, logger=logger.info, ignore_set=None, reachability=False
+    packages, chunk_size=1000, logger=logger.info, ignore_set=None
 ):
     """
     Fetch and store vulnerabilities for each provided `packages`.
@@ -148,7 +147,7 @@ def fetch_vulnerabilities(
 
     for purls_batch in chunked(get_purls(packages), chunk_size):
         try:
-            response_data = bulk_search_by_purl(purls_batch, reachability=reachability)
+            response_data = bulk_search_by_purl(purls_batch)
         except (requests.RequestException, ValueError, TypeError) as exception:
             logger(f"{label} [Exception] {exception}")
             return
