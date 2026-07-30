@@ -30,7 +30,9 @@ from scanpipe.pipes import flag
 from scanpipe.pipes import rust
 from scanpipe.pipes import utils
 
-# from scanpipe.pipes.maven import update_package_license_from_resource_if_missing
+from scanpipe.pipes.rust import check_input_and_return_purl, fetch_inputs
+
+import shutil
 
 
 class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
@@ -45,17 +47,19 @@ class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
     the license declared in Cargo.toml.
 
     Compare the crate’s source code against all other crates (MatchCode),
-    excluding itself, to detect any borrowed code from third‑party crates.
+    excluding itself, to detect any borrowed code from third-party crates.
     """
+
+    download_inputs = False
 
     @classmethod
     def steps(cls):
         return (
-            cls.get_input,
-            cls.get_package_input,
-            cls.collect_input_information,
-            cls.extract_inputs_to_codebase_directory,
-            cls.extract_archives,
+            cls.check_input_and_return_purl,
+            cls.fetch_inputs,
+            cls.collect_input_info,
+            cls.extract_input_to_codebase_directory,
+            cls.check_docker_command,
             cls.build_crates,
             cls.run_scan,
             cls.load_inventory_from_toolkit_scan,
@@ -66,30 +70,40 @@ class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
             cls.make_summary_from_scan_results,
         )
 
-    def get_input(self):
-        """Get the input file for the Rust package scan pipeline."""
-        from_files = list(self.project.inputs("from*"))
-        from_files.extend([input.path for input in self.project.inputsources.all()])
-        self.from_files = from_files
-        self.to_files = list()
+    def check_input_and_return_purl(self):
+        """Validate the input is a PURL string and return the PURL object."""
+        self.purl = check_input_and_return_purl(self.project)
+
+    def fetch_inputs(self):
+        """Fetch the source of the given PURL."""
+        self.from_files = fetch_inputs(self.purl)
+
+    def collect_input_info(self):
+        """Collect information about the input."""
+        self.input_path = self.from_files
+        self.collect_input_information()
+
+    def check_docker_command(self):
+        self.have_docker = False
+        if shutil.which("docker"):
+            self.have_docker = True
 
     def build_crates(self):
         """
-        Build the Rust crate using Cargo and put the built files under the
+        Build the Rust crate using Docker and put the built files under the
         "to" directory.
         """
-        # Find the Cargo.toml file in the codebase directory
-        codebase_dir = Path(self.project.codebase_path)
-        cargo_toml_path = None
-        for path in codebase_dir.rglob("Cargo.toml"):
-            cargo_toml_path = path
-            break
-        if cargo_toml_path:
-            rust.build_crates(cargo_toml_path, self.project.codebase_path / "to/")
+        self.d2d_enable = False
+        if self.have_docker:
+            if rust.build_crates(self.project.codebase_path):
+                self.d2d_enable = True
+            else:
+                print("Docker command not found. Skipping crate build.")
 
     def add_from_to_tag(self):
         """Update 'from' or 'to' tag to resources based on their path."""
-        d2d.update_from_to_tag(self.project)
+        if self.d2d_enable:
+            d2d.update_from_to_tag(self.project)
 
     def validate_package_license_integrity(self):
         """
@@ -100,8 +114,10 @@ class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
 
     def identify_built_sources(self):
         """Identify the built sources from the '.d' file in the "to" directory."""
-        d2d.map_rust_paths(self.project)
+        if self.d2d_enable:
+            d2d.map_rust_paths(self.project)
 
     def flag_mapped_status(self):
         """Flag the from codebase resources that were mapped."""
-        flag.flag_mapped_resources(self.project)
+        if self.d2d_enable:
+            flag.flag_mapped_resources(self.project)

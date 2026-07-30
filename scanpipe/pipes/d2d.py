@@ -1948,10 +1948,10 @@ def map_go_paths(project, logger=None):
 def get_rust_file_paths(location):
     """Retrieve Rust file paths."""
     file_paths = {}
-    rust_file_paths = parse_d_file(location) or []
+    rust_lib_path, rust_file_paths = parse_d_file(location) or []
     if rust_file_paths:
         file_paths["rust_file_paths"] = rust_file_paths
-    return file_paths
+    return rust_lib_path, file_paths
 
 
 def parse_d_file(path):
@@ -1963,7 +1963,8 @@ def parse_d_file(path):
     if ":" not in cleaned_context:
         return []
 
-    _, dep_paths = cleaned_context.split(":", 1)
+    rust_lib, dep_paths = cleaned_context.split(":", 1)
+    rust_lib_path = rust_lib.strip()
 
     file_paths = []
     for file_path in dep_paths.split():
@@ -1971,23 +1972,48 @@ def parse_d_file(path):
         if file_path:
             file_paths.append(file_path)
 
-    return file_paths
+    return rust_lib_path, file_paths
 
 
 def map_rust_paths(project, logger=None):
     """Map the path listed in the .d file to the source in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
-    to_resources = (
+    # Fetch the .d files to extract data from
+    data_resources = (
         project.codebaseresources.files()
         .to_codebase()
         .exclude(path__contains="/deps/")
         .exclude(path__contains="/build/")
         .filter(path__endswith=".d")
     )
-    for resource in to_resources:
+    target_rlib_ids = []
+    for resource in data_resources:
         try:
-            paths = get_rust_file_paths(resource.location_path)
-            resource.update_extra_data(paths)
+            rlib_path, paths = get_rust_file_paths(resource.location_path)
+            absolute_rlib_path = Path(rlib_path)
+            rlib_resource = None
+            try:
+                # Docker paths start with "/codebase". Host paths start with project.codebase_path.
+                if str(absolute_rlib_path).startswith("/codebase/"):
+                    clean_rlib_path = str(absolute_rlib_path.relative_to("/codebase"))
+                else:
+                    clean_rlib_path = str(absolute_rlib_path.relative_to(project.codebase_path))
+
+                # We can now safely do an exact path match
+                rlib_resource = (
+                    project.codebaseresources.files()
+                    .to_codebase()
+                    .filter(path=clean_rlib_path)
+                    .first()
+                )
+            except ValueError:
+                pass
+
+            if rlib_resource:
+                rlib_resource.update_extra_data(paths)
+                target_rlib_ids.append(rlib_resource.id)
+            elif logger:
+                logger(f"Warning: Could not find rlib file {absolute_rlib_path.name} in database.")
         except Exception as exception:
             project.add_warning(
                 exception=exception,
@@ -1996,6 +2022,8 @@ def map_rust_paths(project, logger=None):
                 model="map_rust_paths",
                 details={"path": resource.path},
             )
+
+    to_resources = project.codebaseresources.filter(id__in=target_rlib_ids)
 
     if logger:
         logger(

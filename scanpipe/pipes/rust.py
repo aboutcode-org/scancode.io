@@ -20,31 +20,117 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import shutil
 import subprocess
+import logging
+import requests
 
+from packageurl import PackageURL
+from pathlib import Path
+from scanpipe.pipes import fetch
 from scanpipe.pipes import run_command_safely
 
 
-def build_crates(cargo_toml_path, build_dir):
-    """
-    Build the Rust crate using Cargo to ensure that the source code compiles correctly.
+logger = logging.getLogger(__name__)
 
-    This step is crucial for validating the integrity of the source code and ensuring
-    that it can be successfully built. It also helps to identify any discrepancies
-    between the source code and the compiled binary, which can be further analyzed
-    in subsequent steps of the pipeline.
+
+def build_crates(codebase_dir):
     """
+    Build the Rust crate from sources in an isolated Docker container.
+
+    Uses the official rust image to safely sandbox the build process and
+    injects RUSTFLAGS to force DWARF debug symbol generation (-C debuginfo=2)
+    required for binary-to-source mapping.
+
+    Return True if build successfully, False otherwise.
+    """
+
+    # Find the Cargo.toml file in the codebase directory
+    codebase_dir = Path(codebase_dir)
+    cargo_toml_path = None
+    for path in codebase_dir.rglob("Cargo.toml"):
+        cargo_toml_path = path
+        break
+    if cargo_toml_path:
+        to_dir = codebase_dir / "to"
+    else:
+        return False
+
+    cargo_toml_path = Path(cargo_toml_path)
+    build_dir = Path(to_dir)
+
+    # Calculate paths relative to the container's mounted /codebase directory
+    rel_cargo_toml = cargo_toml_path.relative_to(codebase_dir).as_posix()
+    rel_build_dir = build_dir.relative_to(codebase_dir).as_posix()
+
+    container_cargo_toml = f"/codebase/{rel_cargo_toml}"
+    container_build_dir = f"/codebase/{rel_build_dir}"
+
     cmd = [
-        "cargo",
-        "build",
+        "docker", "run",
+        "--rm",  # Automatically remove the container when it exits
+        "--volume", f"{codebase_dir}:/codebase",
+        "--workdir", "/codebase",
+        "--env", "RUSTFLAGS=-C debuginfo=2",  # Force DWARF generation in release mode
+        "rust:latest",
+        "cargo", "build",
+        "--release",
         "--locked",
-        "--manifest-path",
-        str(cargo_toml_path),
-        "--target-dir",
-        str(build_dir),
+        "--manifest-path", container_cargo_toml,
+        "--target-dir", container_build_dir,
     ]
 
     try:
         run_command_safely(cmd)
     except subprocess.SubprocessError as error:
-        raise RuntimeError(f"Failed to build the Rust crate: {error}")
+        logger.warning(f"Failed to build the Rust crate in Docker: {error}")
+        return False
+
+    from_dir = codebase_dir / "from"
+    from_dir.mkdir(exist_ok=True)
+    for item in codebase_dir.iterdir():
+        if item != to_dir and item != from_dir:
+            shutil.move(str(item), str(from_dir / item.name))
+    return True
+
+
+def check_input_and_return_purl(project):
+    """Validate the input and return a cargo PURL."""
+    input_sources = project.inputsources.all()
+    if len(input_sources) != 1:
+        error_msg = "Only 1 cargo purl is accepted."
+        raise ValueError(error_msg)
+    # Strip the qualifiers as this is not needed.
+    project_input = str(input_sources[0]).split("?")[0]
+    input_purl = PackageURL.from_string(project_input)
+
+    if input_purl.type != "cargo":
+        error_msg = "Only cargo purl is supported."
+        raise ValueError(error_msg)
+    if not input_purl.version:
+        error_msg = "Version is required."
+        raise ValueError(error_msg)
+
+    return input_purl
+
+
+def fetch_inputs(purl):
+    """Fetch the source for the given input purl"""
+    purl_str = PackageURL.to_string(purl)
+
+    purl_src_path = fetch_path(purl_str)
+
+    if not purl_src_path:
+        err_msg = f"No source could be resolved for {purl}."
+        raise ValueError(err_msg)
+
+    return purl_src_path
+
+
+def fetch_path(purl):
+    """Fetch the purl and return the location of the fetched tarball"""
+    try:
+        return fetch.fetch_url(url=purl).path
+    except (ValueError, requests.RequestException) as e:
+        logger.warning("Failed to fetch package: %s - %s", purl, e)
+        return None
