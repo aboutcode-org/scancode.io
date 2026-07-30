@@ -2500,3 +2500,89 @@ class ScanPipeD2DPipesTest(TestCase):
         d2d.map_python_protobuf_files(self.project1)
         relations = self.project1.codebaserelations.filter(map_type="protobuf_mapping")
         self.assertEqual(0, relations.count())
+
+    def test_scanpipe_pipes_d2d_map_javascript_source_map_all_found(self):
+        """
+        Test .map file with all sources present.
+
+        It creates relations and is flagged MAPPED.
+        """
+        to_dir = self.project1.codebase_path / "to/dist"
+        to_dir.mkdir(parents=True)
+        copy_input(
+            self.data / "d2d-javascript" / "to" / "bundle.js.map",
+            to_dir,
+        )
+
+        from_dir = self.project1.codebase_path / "from/src"
+        from_dir.mkdir(parents=True)
+        copy_inputs(
+            [
+                self.data / "d2d-javascript" / "from" / "queue.ts",
+                self.data / "d2d-javascript" / "from" / "error.ts",
+            ],
+            from_dir,
+        )
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        to_map = self.project1.codebaseresources.get(path="to/dist/bundle.js.map")
+        from_queue = self.project1.codebaseresources.get(path="from/src/queue.ts")
+        from_error = self.project1.codebaseresources.get(path="from/src/error.ts")
+
+        buffer = io.StringIO()
+        d2d.map_javascript_source_map_sources(self.project1, logger=buffer.write)
+
+        self.assertIn(
+            "Mapping 1 .map source-map files by resolving their sources",
+            buffer.getvalue(),
+        )
+        self.assertIn("1 .map source-map files mapped", buffer.getvalue())
+
+        to_map.refresh_from_db()
+        self.assertEqual(flag.MAPPED, to_map.status)
+
+        self.assertEqual(2, self.project1.codebaserelations.count())
+        relation_types = set(
+            self.project1.codebaserelations.values_list("map_type", flat=True)
+        )
+        self.assertEqual({"js_source_map"}, relation_types)
+
+        related_from_ids = set(
+            self.project1.codebaserelations.values_list("from_resource_id", flat=True)
+        )
+        self.assertIn(from_queue.id, related_from_ids)
+        self.assertIn(from_error.id, related_from_ids)
+
+    def test_scanpipe_pipes_d2d_map_javascript_source_map_partial(self):
+        """
+        Test .map file with missing source.
+
+        It is flagged REQUIRES_REVIEW with no relations.
+        """
+        to_dir = self.project1.codebase_path / "to/dist"
+        to_dir.mkdir(parents=True)
+        copy_input(
+            self.data / "d2d-javascript" / "to" / "partial.js.map",
+            to_dir,
+        )
+
+        from_dir = self.project1.codebase_path / "from/src"
+        from_dir.mkdir(parents=True)
+        copy_input(
+            self.data / "d2d-javascript" / "from" / "queue.ts",
+            from_dir,
+        )
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        to_map = self.project1.codebaseresources.get(path="to/dist/partial.js.map")
+
+        buffer = io.StringIO()
+        d2d.map_javascript_source_map_sources(self.project1, logger=buffer.write)
+
+        self.assertIn("0 .map source-map files mapped", buffer.getvalue())
+
+        to_map.refresh_from_db()
+        self.assertEqual(flag.REQUIRES_REVIEW, to_map.status)
+        self.assertEqual(0, self.project1.codebaserelations.count())

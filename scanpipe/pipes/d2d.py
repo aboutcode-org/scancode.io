@@ -1297,6 +1297,79 @@ def _map_javascript_colocation_resource(
     )
 
 
+def _map_javascript_source_map_resource(to_map, from_resources, from_resources_index):
+    """Map a `.map` file by resolving its `sources` against the `from/` codebase."""
+    sources = js.get_map_sources(to_map)
+    if not sources:
+        return 0
+
+    matched_from_resources = []
+    for source_path in sources:
+        match = pathmap.find_paths(source_path, from_resources_index)
+        if not match:
+            to_map.update(status=flag.REQUIRES_REVIEW)
+            return 0
+
+        # Reject ambiguous matches where there are more candidate resources
+        # than the number of path segments actually matched.
+        if len(match.resource_ids) > match.matched_path_length:
+            to_map.update(status=flag.REQUIRES_REVIEW)
+            return 0
+
+        from_resource = from_resources.get(id=match.resource_ids[0])
+        matched_from_resources.append(from_resource)
+
+    # All sources resolved – create relations and mark the .map file as mapped.
+    for from_resource in matched_from_resources:
+        pipes.make_relation(
+            from_resource=from_resource,
+            to_resource=to_map,
+            map_type="js_source_map",
+            extra_data={"source_count": len(sources)},
+        )
+
+    to_map.update(status=flag.MAPPED)
+    return 1
+
+
+def map_javascript_source_map_sources(project, logger=None):
+    """Map .map files by resolving their sources against the from/ codebase."""
+    project_files = project.codebaseresources.files()
+
+    to_resources_dot_map = (
+        project_files.to_codebase()
+        .no_status()
+        .filter(extension=".map")
+        .exclude(name__startswith=".")
+        .exclude(path__contains="/node_modules/")
+    )
+
+    from_resources = project_files.from_codebase().exclude(path__contains="/test/")
+    resource_count = to_resources_dot_map.count()
+
+    if logger:
+        logger(
+            f"Mapping {resource_count:,d} .map source-map files by resolving their "
+            f"sources against the from/ codebase."
+        )
+
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
+    )
+
+    resource_iterator = to_resources_dot_map.iterator(chunk_size=2000)
+    progress = LoopProgress(resource_count, logger)
+    map_count = 0
+
+    for to_map in progress.iter(resource_iterator):
+        map_count += _map_javascript_source_map_resource(
+            to_map, from_resources, from_resources_index
+        )
+
+    if logger:
+        logger(f"{map_count:,d} .map source-map files mapped")
+
+
 def flag_processed_archives(project):
     """
     Flag package archives as processed if they meet the following criteria:

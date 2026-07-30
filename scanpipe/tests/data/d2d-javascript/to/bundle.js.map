@@ -1,0 +1,10 @@
+{
+  "version": 3,
+  "sources": ["src/queue.ts", "src/error.ts"],
+  "sourcesContent": [
+    "export function queue() {}",
+    "export function error() {}"
+  ],
+  "mappings": "AAAA",
+  "file": "bundle.js"
+}

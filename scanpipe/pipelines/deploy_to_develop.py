@@ -109,6 +109,7 @@ class DeployToDevelop(Pipeline):
             cls.map_javascript_post_purldb_match,
             cls.map_javascript_path,
             cls.map_javascript_colocation,
+            cls.map_javascript_source_map_sources,
             cls.map_thirdparty_npm_packages,
             cls.map_path,
             cls.flag_mapped_resources_archives_and_ignored_directories,
@@ -448,6 +449,11 @@ class DeployToDevelop(Pipeline):
     def map_javascript_colocation(self):
         """Map JavaScript files based on neighborhood file mapping."""
         d2d.map_javascript_colocation(project=self.project, logger=self.log)
+
+    @optional_step("JavaScript")
+    def map_javascript_source_map_sources(self):
+        """Map .map files by resolving listed sources against the from/ codebase."""
+        d2d.map_javascript_source_map_sources(project=self.project, logger=self.log)
 
     @optional_step("JavaScript")
     def map_thirdparty_npm_packages(self):
