@@ -20,8 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-import json
 import subprocess
+from datetime import date
 
 from scancodeio.settings import GRIMOIRELAB_BINARY_FILE_PATTERN
 from scancodeio.settings import GRIMOIRELAB_CODE_FILE_PATTERN
@@ -36,98 +36,72 @@ from scancodeio.settings import GRIMOIRELAB_OPENSEARCH_USERNAME
 from scancodeio.settings import GRIMOIRELAB_PASSWORD
 from scancodeio.settings import GRIMOIRELAB_PONY_THRESHOLD
 from scancodeio.settings import GRIMOIRELAB_REPOSITORY_TIMEOUT
-from scancodeio.settings import GRIMOIRELAB_TO_DATE
 from scancodeio.settings import GRIMOIRELAB_URL
 from scancodeio.settings import GRIMOIRELAB_USERNAME
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipelines.metrics_model import npmModel
+from scanpipe.pipes import run_command_safely
 
 
-class ScanGrimoirelab(Pipeline):
+class ScanRepoGrimoirelab(Pipeline):
+    """
+    Run a GrimoireLab scan on a specific Git repository URL to extract its metrics and health score.
+    """
+
     results_url = "/project/{slug}/resources/?extra_data=grimoire_data"
 
     @classmethod
     def steps(cls):
-        return (
-            cls.collect_grimoire_metric,
-            cls.compute_and_store_metric_score,
-        )
+        return (cls.collect_and_store_grimoire_metric,)
 
-    def collect_grimoire_metric(self):
-        metrics_output_path = self.project.get_output_file_path("metrics", "json")
-        repo_url = "https://github.com/aboutcode-org/fetchcode.git"
+    def collect_and_store_grimoire_metric(self):
+        for input_source in self.project.input_sources:
+            repo_url = input_source["download_url"]
+            metrics_output_path = self.project.get_output_file_path("metrics", "json")
+            grimoirelab_to_date = date.today().isoformat()
 
-        cmd = [
-            GRIMOIRELAB_METRICS_EXECUTABLE,
-            repo_url,
-            "--grimoirelab-url",
-            GRIMOIRELAB_URL,
-            "--grimoirelab-user",
-            GRIMOIRELAB_USERNAME,
-            "--grimoirelab-password",
-            GRIMOIRELAB_PASSWORD,
-            "--opensearch-url",
-            GRIMOIRELAB_OPENSEARCH_URL,
-            "--opensearch-index",
-            GRIMOIRELAB_OPENSEARCH_INDEX,
-            "--opensearch-user",
-            GRIMOIRELAB_OPENSEARCH_USERNAME,
-            "--opensearch-password",
-            GRIMOIRELAB_OPENSEARCH_PASSWORD,
-            "--from-date",
-            GRIMOIRELAB_FROM_DATE,
-            "--to-date",
-            GRIMOIRELAB_TO_DATE,
-            "--repository-timeout",
-            GRIMOIRELAB_REPOSITORY_TIMEOUT,
-            "--code-file-pattern",
-            GRIMOIRELAB_CODE_FILE_PATTERN,
-            "--binary-file-pattern",
-            GRIMOIRELAB_BINARY_FILE_PATTERN,
-            "--pony-threshold",
-            GRIMOIRELAB_PONY_THRESHOLD,
-            "--elephant-threshold",
-            GRIMOIRELAB_ELEPHANT_THRESHOLD,
-            "--dev-categories-thresholds",
-            *GRIMOIRELAB_DEVELOPER_CATEGORIES_THRESHOLDS,
-            "--output",
-            str(metrics_output_path),
-        ]
+            command_args = [
+                GRIMOIRELAB_METRICS_EXECUTABLE,
+                repo_url,
+                "--grimoirelab-url",
+                GRIMOIRELAB_URL,
+                "--grimoirelab-user",
+                GRIMOIRELAB_USERNAME,
+                "--grimoirelab-password",
+                GRIMOIRELAB_PASSWORD,
+                "--opensearch-url",
+                GRIMOIRELAB_OPENSEARCH_URL,
+                "--opensearch-index",
+                GRIMOIRELAB_OPENSEARCH_INDEX,
+                "--opensearch-user",
+                GRIMOIRELAB_OPENSEARCH_USERNAME,
+                "--opensearch-password",
+                GRIMOIRELAB_OPENSEARCH_PASSWORD,
+                "--from-date",
+                GRIMOIRELAB_FROM_DATE,
+                "--to-date",
+                grimoirelab_to_date,
+                "--repository-timeout",
+                GRIMOIRELAB_REPOSITORY_TIMEOUT,
+                "--code-file-pattern",
+                GRIMOIRELAB_CODE_FILE_PATTERN,
+                "--binary-file-pattern",
+                GRIMOIRELAB_BINARY_FILE_PATTERN,
+                "--pony-threshold",
+                GRIMOIRELAB_PONY_THRESHOLD,
+                "--elephant-threshold",
+                GRIMOIRELAB_ELEPHANT_THRESHOLD,
+                "--dev-categories-thresholds",
+                *GRIMOIRELAB_DEVELOPER_CATEGORIES_THRESHOLDS,
+                "--output",
+                str(metrics_output_path),
+            ]
 
-        try:
-            subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            self.log(f"Metrics successfully saved to {metrics_output_path}")
-            with open(metrics_output_path) as f:
-                self.metrics = json.load(f)
-
-        except subprocess.CalledProcessError as e:
-            self.log(f"failed with exit code {e.returncode}")
-            raise
-        except FileNotFoundError:
-            self.log(
-                "Error: 'grimoirelab-metrics' command not found. Is it installed and on your PATH?"
-            )
-            raise
-
-    def compute_and_store_metric_score(self):
-        model = npmModel()
-        probability = model.calculate_score(self.metrics)
-        status = "Healthy" if probability >= 0.5 else "Unhealthy"
-
-        self.log(f"Repository Health: {status}, Probability: {probability:.2%}")
-        score_data = {
-            "status": status,
-            "probability": probability,
-            "metrics": self.metrics,
-        }
-
-        score_output_path = self.project.get_output_file_path("results", "json")
-        with open(score_output_path, "w") as f:
-            json.dump(score_data, f, indent=2)
-
-        return score_data
+            try:
+                run_command_safely(command_args=command_args)
+                self.log(f"Metrics successfully saved to {metrics_output_path}")
+            except subprocess.CalledProcessError as e:
+                raise RuntimeError(
+                    f"grimoirelab-metrics pipeline failed {e.returncode} for {repo_url}"
+                )
+            except subprocess.TimeoutExpired:
+                raise RuntimeError("grimoirelab-metrics pipeline timed out")
