@@ -1,0 +1,65 @@
+{
+    "packages": {
+        "SPDXRef-Package-grimoirelab": {
+            "metrics": {
+                "total_commits": 260,
+                "total_contributors": 33,
+                "total_organizations": 16,
+                "pony_factor": 2,
+                "elephant_factor": 1,
+                "recent_organizations": 4,
+                "recent_contributors": 6,
+                "recent_commits": 69,
+                "contributor_growth": 7,
+                "contributor_growth_rate": 0.4666666666666667,
+                "active_branches": 4,
+                "days_since_last_commit": 0,
+                "casual_regular_contributors_rate": 0.65,
+                "returning_contributors": 4,
+                "commits_over_periods_rate": 0.2653846153846154,
+                "coefficient_of_variation": 0.745479473205275,
+                "file_types_code": 143,
+                "file_types_binary": 0,
+                "file_types_other": 2124,
+                "commit_size_added_lines": 38313,
+                "commit_size_removed_lines": 62036,
+                "message_size_total": 35352,
+                "message_size_mean": 135.96923076923076,
+                "message_size_median": 88,
+                "developer_categories_core": 1,
+                "developer_categories_regular": 19,
+                "developer_categories_casual": 13,
+                "commits_per_week": 1.4387351778656126,
+                "commits_per_month": 6.16600790513834,
+                "commits_per_year": 75.0197628458498,
+                "found_file_license": 1,
+                "found_file_adopters": 1
+            },
+            "metadata": {
+                "first_commit": "fc8754a69b50d1bb6a7a30fafc4fe69bda6e3a10",
+                "last_commit": "c51f5deb930371f512394af3d95a1a27383a14c2",
+                "first_commit_date": "2023-01-10T09:54:25+01:00",
+                "last_commit_date": "2026-06-18T09:38:47+02:00"
+            },
+            "repository": "https://github.com/chaoss/grimoirelab.git",
+            "score": 2.361341589536065e-72
+        }
+    },
+    "metadata": {
+        "version": "0.1.0",
+        "started_at": "2026-08-01T02:02:39.612433+00:00",
+        "finished_at": "2026-08-01T02:02:40.794247+00:00",
+        "configuration": {
+            "from_date": "2023-01-01T00:00:00",
+            "to_date": "2026-06-19T00:00:00",
+            "code_file_pattern": "\\.py$|\\.js$",
+            "binary_file_pattern": "\\.exe$|\\.tar$",
+            "pony_threshold": 0.5,
+            "elephant_threshold": 0.5,
+            "dev_categories_thresholds": [
+                0.8,
+                0.95
+            ]
+        }
+    }
+}

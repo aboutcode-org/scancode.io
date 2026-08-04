@@ -19,23 +19,16 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
-
+import json
 import subprocess
-from datetime import date
+import urllib.parse
 
-from scancodeio.settings import GRIMOIRELAB_BINARY_FILE_PATTERN
-from scancodeio.settings import GRIMOIRELAB_CODE_FILE_PATTERN
-from scancodeio.settings import GRIMOIRELAB_DEVELOPER_CATEGORIES_THRESHOLDS
-from scancodeio.settings import GRIMOIRELAB_ELEPHANT_THRESHOLD
-from scancodeio.settings import GRIMOIRELAB_FROM_DATE
 from scancodeio.settings import GRIMOIRELAB_METRICS_EXECUTABLE
 from scancodeio.settings import GRIMOIRELAB_OPENSEARCH_INDEX
 from scancodeio.settings import GRIMOIRELAB_OPENSEARCH_PASSWORD
 from scancodeio.settings import GRIMOIRELAB_OPENSEARCH_URL
 from scancodeio.settings import GRIMOIRELAB_OPENSEARCH_USERNAME
 from scancodeio.settings import GRIMOIRELAB_PASSWORD
-from scancodeio.settings import GRIMOIRELAB_PONY_THRESHOLD
-from scancodeio.settings import GRIMOIRELAB_REPOSITORY_TIMEOUT
 from scancodeio.settings import GRIMOIRELAB_URL
 from scancodeio.settings import GRIMOIRELAB_USERNAME
 from scanpipe.pipelines import Pipeline
@@ -49,57 +42,98 @@ class ScanRepoGrimoirelab(Pipeline):
 
     @classmethod
     def steps(cls):
-        return (cls.collect_and_store_grimoire_metric,)
+        return (
+            cls.collect_and_store_grimoire_metric,
+            cls.format_metrics_output,
+        )
 
     def collect_and_store_grimoire_metric(self):
-        for input_source in self.project.input_sources:
-            repo_url = input_source["download_url"]
-            metrics_output_path = self.project.get_output_file_path("metrics", "json")
-            grimoirelab_to_date = date.today().isoformat()
+        """
+        Run the grimoirelab-metrics command against the input source.
+        Save the generated metrics JSON to the project output directory.
+        """
+        if len(self.project.input_sources) != 1:
+            raise ValueError("Expected exactly one input source")
 
-            command_args = [
-                GRIMOIRELAB_METRICS_EXECUTABLE,
-                repo_url,
-                "--grimoirelab-url",
-                GRIMOIRELAB_URL,
-                "--grimoirelab-user",
-                GRIMOIRELAB_USERNAME,
-                "--grimoirelab-password",
-                GRIMOIRELAB_PASSWORD,
-                "--opensearch-url",
-                GRIMOIRELAB_OPENSEARCH_URL,
-                "--opensearch-index",
-                GRIMOIRELAB_OPENSEARCH_INDEX,
-                "--opensearch-user",
-                GRIMOIRELAB_OPENSEARCH_USERNAME,
-                "--opensearch-password",
-                GRIMOIRELAB_OPENSEARCH_PASSWORD,
-                "--from-date",
-                GRIMOIRELAB_FROM_DATE,
-                "--to-date",
-                grimoirelab_to_date,
-                "--repository-timeout",
-                GRIMOIRELAB_REPOSITORY_TIMEOUT,
-                "--code-file-pattern",
-                GRIMOIRELAB_CODE_FILE_PATTERN,
-                "--binary-file-pattern",
-                GRIMOIRELAB_BINARY_FILE_PATTERN,
-                "--pony-threshold",
-                GRIMOIRELAB_PONY_THRESHOLD,
-                "--elephant-threshold",
-                GRIMOIRELAB_ELEPHANT_THRESHOLD,
-                "--dev-categories-thresholds",
-                *GRIMOIRELAB_DEVELOPER_CATEGORIES_THRESHOLDS,
-                "--output",
-                str(metrics_output_path),
-            ]
+        repo_url = self.project.input_sources[0]["download_url"]
+        if not is_valid_vcs_url(repo_url):
+            raise ValueError(
+                "Invalid input source: the pipeline accepts only a valid repository URL"
+            )
 
-            try:
-                run_command_safely(command_args=command_args)
-                self.log(f"Metrics successfully saved to {metrics_output_path}")
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(
-                    f"grimoirelab-metrics pipeline failed {e.returncode} for {repo_url}"
-                )
-            except subprocess.TimeoutExpired:
-                raise RuntimeError("grimoirelab-metrics pipeline timed out")
+        self.metrics_output_path = self.project.get_output_file_path("metrics", "json")
+        command_args = [
+            GRIMOIRELAB_METRICS_EXECUTABLE,
+            repo_url,
+            "--grimoirelab-url",
+            GRIMOIRELAB_URL,
+            "--grimoirelab-user",
+            GRIMOIRELAB_USERNAME,
+            "--grimoirelab-password",
+            GRIMOIRELAB_PASSWORD,
+            "--opensearch-url",
+            GRIMOIRELAB_OPENSEARCH_URL,
+            "--opensearch-index",
+            GRIMOIRELAB_OPENSEARCH_INDEX,
+            "--opensearch-user",
+            GRIMOIRELAB_OPENSEARCH_USERNAME,
+            "--opensearch-password",
+            GRIMOIRELAB_OPENSEARCH_PASSWORD,
+            "--output",
+            str(self.metrics_output_path),
+        ]
+
+        try:
+            run_command_safely(command_args=command_args)
+            self.log("GrimoireLab metrics pipeline completed successfully")
+        except subprocess.SubprocessError:
+            raise RuntimeError("Grimoirelab-metrics pipeline failed")
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                "Grimoirelab-metrics not found. "
+                "Please ensure grimoirelab-metrics is correctly configured."
+            )
+
+    def format_metrics_output(self):
+        """
+        Format the GrimoireLab metrics output by extracting the repository URL,
+        score, and metrics from the generated JSON and overwriting it with a
+        simplified structure.
+        """
+        with open(self.metrics_output_path) as f:
+            data = json.load(f)
+
+        package = list(data["packages"].values())[0]
+
+        repository = package["repository"]
+        score = package["score"]
+        metrics = package["metrics"]
+
+        result = {
+            "repository": repository,
+            "npm_health_score": score,
+            "metrics": metrics,
+        }
+
+        with open(self.metrics_output_path, "w") as f:
+            json.dump(result, f)
+
+
+def is_valid_vcs_url(url):
+    """Determine whether the URL is a valid VCS repository URL."""
+    if not isinstance(url, str) or not url:
+        return False
+
+    if any(char.isspace() for char in url):
+        return False
+
+    forbidden_chars = ["|", ";", "&", "`", "$(", ">", "<", "&&", "||"]
+    if any(char in forbidden_chars for char in url):
+        return False
+
+    parsed = urllib.parse.urlparse(url)
+    valid_schemes = {"https", "git", "ssh", "git+https", "git+ssh"}
+    if parsed.scheme in valid_schemes and parsed.netloc:
+        return True
+
+    return False
