@@ -16,9 +16,7 @@ class ScanRepoGrimoirelabTest(TestCase):
         self.pipeline.project.input_sources = [
             {"download_url": "https://github.com/example/repo.git"}
         ]
-        self.pipeline.project.get_output_file_path.return_value = (
-            "/tmp/project/metrics.json"
-        )
+        self.pipeline.project.get_output_file_path.return_value = "metrics.json"
         self.pipeline.log = MagicMock()
 
     @patch("scanpipe.pipelines.scan_repo_grimoirelab.run_command_safely")
