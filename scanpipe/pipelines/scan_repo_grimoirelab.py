@@ -43,9 +43,7 @@ from scanpipe.pipes import run_command_safely
 
 
 class ScanRepoGrimoirelab(Pipeline):
-    """
-    Run a GrimoireLab scan on a specific Git repository URL to extract its metrics and health score.
-    """
+    """Run a GrimoireLab scan to extract repository metrics and health score."""
 
     results_url = "/project/{slug}/resources/?extra_data=grimoire_data"
 
