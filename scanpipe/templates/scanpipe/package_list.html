@@ -35,9 +35,9 @@
                   <i class="fa-solid fa-scale-balanced fa-sm has-text-danger" title="License Compliance Error"></i>
                 </a>
               {% endif %}
-              {% if package.extra_data.issue == "License Mismatch" %}
+              {% if package.extra_data.issues %}
                 <a href="{% url 'package_detail' project.slug package.uuid %}#extra_data">
-                  <i class="fa-solid fa-exclamation-triangle fa-sm has-text-danger" title="License Mismatch Error"></i>
+                  <i class="fa-solid fa-exclamation-triangle fa-sm has-text-danger" title="Package Issue"></i>
                 </a>
               {% endif %}
             </td>

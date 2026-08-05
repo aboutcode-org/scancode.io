@@ -20,64 +20,58 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import logging
 import shutil
 import subprocess
-import logging
-import requests
-
-from packageurl import PackageURL
 from pathlib import Path
-from scanpipe.pipes import fetch
-from scanpipe.pipes import run_command_safely
 
+import tomllib
+from packageurl import PackageURL
+
+from scanpipe.pipes import run_command_safely
 
 logger = logging.getLogger(__name__)
 
 
-def build_crates(codebase_dir):
+def build_crates(codebase_dir, cargo_toml_path):
     """
-    Build the Rust crate from sources in an isolated Docker container.
-
-    Uses the official rust image to safely sandbox the build process and
-    injects RUSTFLAGS to force DWARF debug symbol generation (-C debuginfo=2)
-    required for binary-to-source mapping.
-
-    Return True if build successfully, False otherwise.
+    Build the Rust crate from source in an isolated Docker container.
+    Use the official Rust image for the build process.
+    Return True if the build succeeds, False otherwise.
     """
-
-    # Find the Cargo.toml file in the codebase directory
-    codebase_dir = Path(codebase_dir)
-    cargo_toml_path = None
-    for path in codebase_dir.rglob("Cargo.toml"):
-        cargo_toml_path = path
-        break
-    if cargo_toml_path:
-        to_dir = codebase_dir / "to"
-    else:
-        return False
-
+    to_dir = codebase_dir / "to"
     cargo_toml_path = Path(cargo_toml_path)
     build_dir = Path(to_dir)
 
-    # Calculate paths relative to the container's mounted /codebase directory
-    rel_cargo_toml = cargo_toml_path.relative_to(codebase_dir).as_posix()
-    rel_build_dir = build_dir.relative_to(codebase_dir).as_posix()
+    # Get the relative paths
+    relative_cargo_toml = cargo_toml_path.relative_to(codebase_dir).as_posix()
+    relative_build_dir = build_dir.relative_to(codebase_dir).as_posix()
 
-    container_cargo_toml = f"/codebase/{rel_cargo_toml}"
-    container_build_dir = f"/codebase/{rel_build_dir}"
+    container_cargo_toml = f"/codebase/{relative_cargo_toml}"
+    container_build_dir = f"/codebase/{relative_build_dir}"
 
+    # Since we will use the .d file for deployment and development file
+    # mapping, we will not require building with DWARF debug symbols. If we
+    # later decide to include DWARF, we can add the following to the
+    # command:
+    # "--env", "RUSTFLAGS=-C debuginfo=2",
     cmd = [
-        "docker", "run",
-        "--rm",  # Automatically remove the container when it exits
-        "--volume", f"{codebase_dir}:/codebase",
-        "--workdir", "/codebase",
-        "--env", "RUSTFLAGS=-C debuginfo=2",  # Force DWARF generation in release mode
+        "docker",
+        "run",
+        "--rm",
+        "--volume",
+        f"{codebase_dir}:/codebase",
+        "--workdir",
+        "/codebase",
         "rust:latest",
-        "cargo", "build",
+        "cargo",
+        "build",
         "--release",
         "--locked",
-        "--manifest-path", container_cargo_toml,
-        "--target-dir", container_build_dir,
+        "--manifest-path",
+        container_cargo_toml,
+        "--target-dir",
+        container_build_dir,
     ]
 
     try:
@@ -86,6 +80,7 @@ def build_crates(codebase_dir):
         logger.warning(f"Failed to build the Rust crate in Docker: {error}")
         return False
 
+    # Move the development code under the /codebase/from/
     from_dir = codebase_dir / "from"
     from_dir.mkdir(exist_ok=True)
     for item in codebase_dir.iterdir():
@@ -100,7 +95,7 @@ def check_input_and_return_purl(project):
     if len(input_sources) != 1:
         error_msg = "Only 1 cargo purl is accepted."
         raise ValueError(error_msg)
-    # Strip the qualifiers as this is not needed.
+    # Strip the qualifiers if present as this is not needed
     project_input = str(input_sources[0]).split("?")[0]
     input_purl = PackageURL.from_string(project_input)
 
@@ -114,23 +109,23 @@ def check_input_and_return_purl(project):
     return input_purl
 
 
-def fetch_inputs(purl):
-    """Fetch the source for the given input purl"""
-    purl_str = PackageURL.to_string(purl)
+def get_repository_value_from_cargo_toml(cargo_toml_path):
+    """Get the repository value from Cargo.toml."""
+    path = Path(cargo_toml_path)
+    if not path.exists():
+        raise FileNotFoundError(f"{cargo_toml_path} not found")
 
-    purl_src_path = fetch_path(purl_str)
+    with path.open("rb") as f:
+        data = tomllib.load(f)
 
-    if not purl_src_path:
-        err_msg = f"No source could be resolved for {purl}."
-        raise ValueError(err_msg)
-
-    return purl_src_path
+    return data.get("package", {}).get("repository", "")
 
 
-def fetch_path(purl):
-    """Fetch the purl and return the location of the fetched tarball"""
-    try:
-        return fetch.fetch_url(url=purl).path
-    except (ValueError, requests.RequestException) as e:
-        logger.warning("Failed to fetch package: %s - %s", purl, e)
-        return None
+def get_cargo_toml_path(codebase_dir):
+    """Get the Cargo.toml path from the codebase directory."""
+    cargo_toml_path = None
+    # There is only one "Cargo.toml" per published package
+    for path in codebase_dir.rglob("Cargo.toml"):
+        cargo_toml_path = path
+        break
+    return cargo_toml_path

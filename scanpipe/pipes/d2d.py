@@ -1989,17 +1989,15 @@ def map_rust_paths(project, logger=None):
     target_rlib_ids = []
     for resource in data_resources:
         try:
-            rlib_path, paths = get_rust_file_paths(resource.location_path)
-            absolute_rlib_path = Path(rlib_path)
+            rlib_path_str, paths = get_rust_file_paths(resource.location_path)
+            rlib_path = Path(rlib_path_str)
             rlib_resource = None
             try:
-                # Docker paths start with "/codebase". Host paths start with project.codebase_path.
-                if str(absolute_rlib_path).startswith("/codebase/"):
-                    clean_rlib_path = str(absolute_rlib_path.relative_to("/codebase"))
+                if rlib_path_str.startswith("/codebase/"):
+                    clean_rlib_path = str(rlib_path.relative_to("/codebase"))
                 else:
-                    clean_rlib_path = str(absolute_rlib_path.relative_to(project.codebase_path))
+                    clean_rlib_path = str(rlib_path.relative_to(project.codebase_path))
 
-                # We can now safely do an exact path match
                 rlib_resource = (
                     project.codebaseresources.files()
                     .to_codebase()
@@ -2013,7 +2011,9 @@ def map_rust_paths(project, logger=None):
                 rlib_resource.update_extra_data(paths)
                 target_rlib_ids.append(rlib_resource.id)
             elif logger:
-                logger(f"Warning: Could not find rlib file {absolute_rlib_path.name} in database.")
+                logger(
+                    f"Warning: Could not find rlib file {rlib_path_str} in database."
+                )
         except Exception as exception:
             project.add_warning(
                 exception=exception,
