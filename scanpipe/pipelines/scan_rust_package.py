@@ -46,9 +46,6 @@ class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
 
     Scan the source crate and confirm that the detected license aligns with
     the license declared in Cargo.toml.
-
-    Compare the crate’s source code against all other crates (MatchCode),
-    excluding itself, to detect any borrowed code from third-party crates.
     """
 
     download_inputs = False
