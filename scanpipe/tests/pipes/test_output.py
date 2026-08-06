@@ -387,7 +387,7 @@ class ScanPipeOutputPipesTest(TestCase):
         make_dependency(project, for_package=a, resolved_to_package=b)
         make_dependency(project, for_package=b, resolved_to_package=c)
 
-        with self.assertNumQueries(2):
+        with self.assertNumQueries(3):
             output_file = output.to_cyclonedx(project=project)
         results_json = json.loads(output_file.read_text())
 
@@ -632,6 +632,120 @@ class ScanPipeOutputPipesTest(TestCase):
         expected_file = self.data / "asgiref" / "asgiref-3.3.0.package-list.yml"
         self.assertResultsEqual(expected_file, output_file.read_text())
 
+    def test_scanpipe_pipes_outputs_to_spdx_multiple_inputs(self):
+        """Test SPDX generation with multiple input sources."""
+        project = make_project(name="MultiInputProject")
+        
+        # Add two input sources
+        input1 = project.add_input_source(
+            download_url="pkg:npm/package1@1.0.0",
+            filename="package1-1.0.0.tgz",
+        )
+        input2 = project.add_input_source(
+            download_url="pkg:npm/package2@2.0.0",
+            filename="package2-2.0.0.tgz",
+        )
+        
+        # Create resources for each input
+        resource1 = CodebaseResource.objects.create(
+            project=project,
+            path="package1-1.0.0/package.json",
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=project,
+            path="package2-2.0.0/package.json",
+        )
+        
+        # Create packages associated with each input
+        package1 = make_package(project, "pkg:npm/dependency1@1.0.0")
+        package1.codebase_resources.add(resource1)
+        
+        package2 = make_package(project, "pkg:npm/dependency2@2.0.0")
+        package2.codebase_resources.add(resource2)
+        
+        # Generate SPDX output
+        output_file = output.to_spdx(project=project)
+        results_json = json.loads(output_file.read_text())
+        
+        # Verify documentDescribes contains both inputs
+        self.assertEqual(2, len(results_json["documentDescribes"]))
+        self.assertIn(f"SPDXRef-scancodeio-input-{input1.uuid}", results_json["documentDescribes"])
+        self.assertIn(f"SPDXRef-scancodeio-input-{input2.uuid}", results_json["documentDescribes"])
+        
+        # Verify packages include both inputs and discovered packages
+        package_spdx_ids = [pkg["SPDXID"] for pkg in results_json["packages"]]
+        self.assertIn(f"SPDXRef-scancodeio-input-{input1.uuid}", package_spdx_ids)
+        self.assertIn(f"SPDXRef-scancodeio-input-{input2.uuid}", package_spdx_ids)
+        
+        # Verify CONTAINS relationships exist from inputs to their packages
+        contains_relationships = [
+            rel for rel in results_json["relationships"]
+            if rel["relationshipType"] == "CONTAINS"
+        ]
+        self.assertGreater(len(contains_relationships), 0)
+
+    def test_scanpipe_pipes_outputs_to_cyclonedx_multiple_inputs(self):
+        """Test CycloneDX generation with multiple input sources."""
+        project = make_project(name="MultiInputProject")
+        
+        # Add two input sources
+        input1 = project.add_input_source(
+            download_url="pkg:npm/package1@1.0.0",
+            filename="package1-1.0.0.tgz",
+        )
+        input2 = project.add_input_source(
+            download_url="pkg:npm/package2@2.0.0",
+            filename="package2-2.0.0.tgz",
+        )
+        
+        # Create resources for each input
+        resource1 = CodebaseResource.objects.create(
+            project=project,
+            path="package1-1.0.0/package.json",
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=project,
+            path="package2-2.0.0/package.json",
+        )
+        
+        # Create packages associated with each input
+        package1 = make_package(project, "pkg:npm/dependency1@1.0.0")
+        package1.codebase_resources.add(resource1)
+        
+        package2 = make_package(project, "pkg:npm/dependency2@2.0.0")
+        package2.codebase_resources.add(resource2)
+        
+        # Generate CycloneDX output
+        output_file = output.to_cyclonedx(project=project)
+        results_json = json.loads(output_file.read_text())
+        
+        # Verify metadata properties include input source information
+        properties = results_json["metadata"]["properties"]
+        property_names = [prop["name"] for prop in properties]
+        
+        self.assertIn("scancode-io:project-name", property_names)
+        self.assertIn("scancode-io:input-file", property_names)
+        self.assertIn("scancode-io:input-source", property_names)
+        
+        # Count input file properties (should be 2, one for each input)
+        input_file_properties = [
+            prop for prop in properties
+            if prop["name"] == "scancode-io:input-file"
+        ]
+        self.assertEqual(2, len(input_file_properties))
+        
+        # Verify input filenames are in properties
+        input_file_values = [prop["value"] for prop in input_file_properties]
+        self.assertIn("package1-1.0.0.tgz", input_file_values)
+        self.assertIn("package2-2.0.0.tgz", input_file_values)
+        
+        # Verify components include input components
+        components = results_json.get("components", [])
+        component_refs = [comp["bom-ref"] for comp in components]
+        
+        # Check that input components are present
+        self.assertIn(f"input-{input1.uuid}", component_refs)
+        self.assertIn(f"input-{input2.uuid}", component_refs)
     def test_scanpipe_pipes_outputs_to_all_formats(self):
         fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
