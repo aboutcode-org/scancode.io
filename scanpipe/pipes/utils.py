@@ -234,7 +234,8 @@ def download_src_repo(download_url):
 
 def get_download_url(homepage_url, version):
     netloc, namespace, name = get_url_netloc_namespace_and_name(homepage_url)
-    if netloc.endswith("github.io"):
+    hostname = (urlparse(homepage_url).hostname or "").rstrip(".").lower()
+    if hostname == "github.io" or hostname.endswith(".github.io"):
         github_page_url = github_pages_to_repo(homepage_url)
         if github_page_url:
             netloc, namespace, name = get_url_netloc_namespace_and_name(github_page_url)
