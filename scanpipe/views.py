@@ -1761,6 +1761,7 @@ class DiscoveredPackageListView(
                 "compliance_alert",
                 "copyright",
                 "affected_by_vulnerabilities",
+                "extra_data",
             )
             .with_resources_count()
             .order_by_package_url()
