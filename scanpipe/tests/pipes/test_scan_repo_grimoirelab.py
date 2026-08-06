@@ -105,11 +105,7 @@ class ScanRepoGrimoirelabTest(TestCase):
             # Valid URLs
             ("https://github.com/example/repo.git", True),
             ("git://github.com/example/repo.git", True),
-            ("ssh://git@github.com/example/repo.git", True),
-            ("git+https://github.com/example/repo.git", True),
-            ("git+ssh://git@github.com/example/repo.git", True),
             # Invalid URLs
-            ("git@github.com:example/repo.git", False),
             ("user@localhost:path/to/repo.git", False),
             ("hg@bitbucket.org:owner/repo", False),
             ("https://github.com/repo.git; rm -rf /", False),
@@ -118,6 +114,9 @@ class ScanRepoGrimoirelabTest(TestCase):
             ("git@github.com:repo.git\nrm -rf /", False),
             ("https://github.com/ repo.git", False),
             (" https://github.com/repo.git", False),
+            ("https://", False),
+            ("https:///repo.git", False),
+            ("https://?foo=bar", False),
             ("", False),
             (None, False),
         ]

@@ -128,11 +128,11 @@ def is_valid_vcs_url(url):
         return False
 
     forbidden_chars = ["|", ";", "&", "`", "$(", ">", "<", "&&", "||"]
-    if any(char in forbidden_chars for char in url):
+    if any(char in url for char in forbidden_chars):
         return False
 
     parsed = urllib.parse.urlparse(url)
-    valid_schemes = {"https", "git", "ssh", "git+https", "git+ssh"}
+    valid_schemes = {"https", "http", "git"}
     if parsed.scheme in valid_schemes and parsed.netloc:
         return True
 
