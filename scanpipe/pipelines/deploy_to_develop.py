@@ -137,7 +137,8 @@ class DeployToDevelop(Pipeline):
         for input_files, codebase_path in inputs_with_codebase_path_destination:
             for input_file_path in input_files:
                 if input.is_archive(input_file_path):
-                    self.extract_archive(input_file_path, codebase_path)
+                    archive_root = codebase_path / input_file_path.name
+                    self.extract_archive(input_file_path, archive_root)
                 else:
                     input.copy_input(input_file_path, codebase_path)
 
