@@ -39,6 +39,7 @@ class ScanRepoGrimoirelab(Pipeline):
     """Run a GrimoireLab scan to extract repository metrics and health score."""
 
     results_url = "/project/{slug}/resources/?extra_data=grimoire_data"
+    download_inputs = False
 
     @classmethod
     def steps(cls):
@@ -61,6 +62,7 @@ class ScanRepoGrimoirelab(Pipeline):
                 "Invalid input source: the pipeline accepts only a valid repository URL"
             )
 
+        repo_url = repo_url.replace("git://", "https://")
         self.metrics_output_path = self.project.get_output_file_path("metrics", "json")
         command_args = [
             GRIMOIRELAB_METRICS_EXECUTABLE,
