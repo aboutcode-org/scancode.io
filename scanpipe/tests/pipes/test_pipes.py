@@ -448,3 +448,23 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         self.assertEqual("from", from_resource.tag)
         to_resource = p1.codebaseresources.get(path="to/a.txt")
         self.assertEqual("to", to_resource.tag)
+
+    def test_normalize_extension_valid(self):
+        name = "file.py"
+        result = pipes.normalize_extension(name, None)
+        self.assertEqual(".py", result)
+
+    def test_normalize_extension_no_extension(self):
+        name = "file"
+        result = pipes.normalize_extension(name, None)
+        self.assertEqual("", result)
+
+    def test_normalize_extension_rejects_long_invalid(self):
+        name = "file.$VeryVeryVeryLongInvalidExtensionNameThatShouldNotBeAccepted"
+        result = pipes.normalize_extension(name, None)
+        self.assertEqual("", result)
+
+    def test_normalize_extension_ignores_input_extension(self):
+        name = "file.py"
+        result = pipes.normalize_extension(name, ".wrongext")
+        self.assertEqual(".py", result)
