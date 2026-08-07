@@ -260,7 +260,7 @@ class PatchAnalyzer:
         return by_language
 
     @classmethod
-    def build_symbol_metadata(cls, nodes, extractor: SymbolExtractor, index):
+    def build_symbol_metadata(cls, nodes, extractor):
         """
         Build metadata dictionaries for a list of Tree-sitter AST nodes
         representing changed symbols.
@@ -273,8 +273,7 @@ class PatchAnalyzer:
         if not nodes or not extractor:
             return {}
 
-        if index is None:
-            index = extractor.extract_definitions_index()
+        index = extractor.extract_definitions_index()
 
         metadata = {}
         for node in nodes:
@@ -370,7 +369,7 @@ class PatchAnalyzer:
                 changed_lines=added_lines
             )
             fixed_meta_all = cls.build_symbol_metadata(
-                fixed_nodes, extractor=fixed_extractor
+                nodes=fixed_nodes, extractor=fixed_extractor
             )
 
         vuln_meta, fixed_meta = cls.diff_changed_symbols(

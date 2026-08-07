@@ -316,12 +316,11 @@ if True:
         lang_query = TS_QUERIES["Python"]()
         tree, _ = lang_query.parse_code_to_ast(source_code)
         extractor = SymbolExtractor(lang_query=lang_query, root_node=tree.root_node)
-        index = extractor.extract_definitions_index()
         vuln_nodes = extractor.extract_changed_symbols(
             changed_lines=[1, 2, 3, 4, 5, 6, 7, 8, 9]
         )
         metadata = PatchAnalyzer.build_symbol_metadata(
-            nodes=vuln_nodes, extractor=extractor, index=index
+            nodes=vuln_nodes, extractor=extractor
         )
         self.assertEqual(
             metadata,
