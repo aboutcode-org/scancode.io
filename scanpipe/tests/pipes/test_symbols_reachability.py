@@ -55,6 +55,11 @@ class SymbolReachabilityPipesTest(TestCase):
         mock_collect_symbols,
         mock_git_context,
     ):
+        """
+        Test the end-to-end reachability pipeline by analyzing a patch,
+        computing symbol reachability, and storing the results on the
+        corresponding codebase resource.
+        """
         file_path = "app.py"
         app_text = (self.data / file_path).read_text()
         vuln_text = (self.data / "vuln-app.py").read_text()
@@ -168,6 +173,10 @@ class SymbolReachabilityPipesTest(TestCase):
         )
 
     def test_extract_definitions(self):
+        """
+        Test extracting functions, classes, and constant
+        definitions from Python code.
+        """
         source_code = """
 price = 0
 class OrderManager:
@@ -205,6 +214,7 @@ class InventoryItem:
         self.assertEqual(len(constants), 1)
 
     def test_extract_definitions_empty(self):
+        """Test parsing empty or None source code"""
         lang_query = TS_QUERIES["Python"]()
         tree, _ = lang_query.parse_code_to_ast("")
 
@@ -214,6 +224,7 @@ class InventoryItem:
         self.assertIsNone(tree_none)
 
     def test_get_qualified_name_functions(self):
+        """Test building qualified names for nested and top-level functions."""
         source_code = """
 class CoreService:
     class Validator:
@@ -240,6 +251,7 @@ def global_utility():
         self.assertEqual(inner_function_name, "global_utility")
 
     def test_get_qualified_classes(self):
+        """Test building qualified names for nested class definitions."""
         source_code = """
 class FleetManagement:
     class DroneController:
@@ -261,6 +273,10 @@ class FleetManagement:
         self.assertEqual(inner_class_name, "FleetManagement.DroneController")
 
     def test_classify_reachability(self):
+        """
+        Test reachability classification for fingerprint
+        and evidence-based results.
+        """
         self.assertEqual(classify_reachability(None), ReachabilityStatus.NOT_REACHABLE)
         self.assertEqual(classify_reachability({}), ReachabilityStatus.NOT_REACHABLE)
         self.assertEqual(
@@ -285,6 +301,7 @@ class FleetManagement:
         )
 
     def test_build_symbol_metadata_processing(self):
+        """Test building metadata for nested changed symbols with deduplication."""
         source_code = """
 class Controller:
     def process_data(payload):
@@ -347,6 +364,7 @@ if True:
         )
 
     def test_diff_changed_symbols(self):
+        """Test that changed, added, and removed symbols are correctly identified."""
         vuln_meta = {
             "serve_report": {
                 "qualified_name": "app.serve_report",
@@ -413,6 +431,7 @@ if True:
         )
 
     def test_analyze_patched_file(self):
+        """Test analyzing a patched file and extracting changed symbol metadata."""
         vuln_text = (self.data / "vuln-app.py").read_text(encoding="utf-8")
         fixed_text = (self.data / "fixed-app.py").read_text(encoding="utf-8")
         file_path = "app.py"
@@ -543,6 +562,7 @@ if True:
         )
 
     def test_extract_symbols(self):
+        """Test extracting only the nested function containing the changed line."""
         source_code = (
             "def serve_report(request):\n"  # Line 1 (Row 0)
             "    # Some processing here\n"  # Line 2 (Row 1)
@@ -567,6 +587,10 @@ if True:
         self.assertNotIn("def serve_report", node_text)
 
     def test_extract_symbols_deduplication(self):
+        """
+        Test that multiple changed lines within
+        the same function produce only a single enclosing symbol.
+        """
         source_code = (
             "def calculate_total(price, tax):\n"
             "    amount = price * tax\n"  # Line 2 -> Changed
@@ -584,35 +608,11 @@ if True:
         self.assertEqual(len(enclosing_symbols), 1)
         self.assertEqual(enclosing_symbols[0].type, "function_definition")
 
-    def test_collect_imports(self):
-        source_code = """
-from django.db import models
-import os.path
-import numpy as np
-from a.b import c as d
-from . import utils
-from ..core import engine
-from math import *
-        """.strip()
-
-        lang_query = TS_QUERIES["Python"]()
-        tree, _ = lang_query.parse_code_to_ast(code_text=source_code)
-        extractor = SymbolExtractor(lang_query=lang_query, root_node=tree.root_node)
-        result = extractor.extract_imports()
-
-        expected_map = {
-            "models": "django.db.models",
-            "os": "os.path",
-            "np": "numpy",
-            "d": "a.b.c",
-            "utils": ".utils",
-            "engine": "..core.engine",
-            "*": ["math"],
-        }
-
-        self.assertEqual(result, expected_map)
-
     def test_extract_direct(self):
+        """
+        Test that direct function calls are
+        extracted from the syntax tree.
+        """
         source_code = """
 def hello():
     return 10
@@ -632,6 +632,7 @@ def clean_function():
         )
 
     def test_extract_direct_calls(self):
+        """Test extraction of direct function calls."""
         python_source = """
 self.update()
 process_data()
@@ -651,6 +652,10 @@ user.save()
         self.assertEqual(expected_python, python_calls)
 
     def test_extract_imports(self):
+        """
+        Test extraction of imported symbols and their
+        fully qualified module paths.
+        """
         source_code = """
 from django.db import models
 import os.path

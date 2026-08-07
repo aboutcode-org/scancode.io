@@ -26,7 +26,6 @@ import shutil
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import Any
 
 from git import Repo
 from git.diff import NULL_TREE
@@ -45,6 +44,7 @@ class ReachabilityStatus(str, Enum):
 
 
 def normalize_text(content):
+    """Normalize content (bytes) into a UTF-8 decoded string."""
     if content is None:
         return ""
 
@@ -55,6 +55,10 @@ def normalize_text(content):
 
 
 def detect_language_with_scancode(file_path, content):
+    """
+    Detect the programming language of the text
+    content using get_file_info function
+    """
     content = normalize_text(content)
 
     if not content:
@@ -74,12 +78,12 @@ def detect_language_with_scancode(file_path, content):
 
 
 class GitRepositoryContext:
-    def __init__(self, vcs_url: str):
+    def __init__(self, vcs_url):
         self.vcs_url = vcs_url
         self.repo_path = None
         self._repo = None
 
-    def __enter__(self) -> "GitRepositoryContext":
+    def __enter__(self):
         self.repo_path = tempfile.mkdtemp(prefix="symbol-reachability-")
         try:
             self._repo = Repo.clone_from(self.vcs_url, self.repo_path)
@@ -101,12 +105,25 @@ class GitRepositoryContext:
 
 
 class PatchAnalyzer:
-    def __init__(self, repo: Repo, commit_hash: str):
+    def __init__(self, repo: Repo, commit_hash):
         self.repo = repo
         self.commit = repo.commit(commit_hash)
         self.parent_commit = self.commit.parents[0] if self.commit.parents else None
 
     def get_changed_files(self):
+        """
+        Retrieve all files changed by the commit along with their
+        vulnerable and fixed contents.
+
+        For each changed file, a dictionary entry is created with two
+        keys:
+
+        - vulnerable_text: The file content before the commit (empty
+          string for newly added files).
+        - fixed_text: The file content after the commit (empty string
+          for deleted files).
+
+        """
         diffs = (
             self.parent_commit.diff(self.commit, create_patch=False)
             if self.parent_commit
@@ -170,6 +187,15 @@ class PatchAnalyzer:
 
     @classmethod
     def diff_changed_symbols(cls, vuln_meta, fixed_meta):
+        """
+        Compare the vulnerable and fixed symbol metadata and return the
+        symbols that are unique to each side (i.e., whose body text
+        differs between the two versions).
+
+        A symbol key is considered "vulnerable-only" if its body text
+        does not match the corresponding symbol in fixed_meta, and
+        vice versa.
+        """
         vuln_only = {
             key: metadata
             for key, metadata in vuln_meta.items()
@@ -183,6 +209,19 @@ class PatchAnalyzer:
         return vuln_only, fixed_only
 
     def collect_patch_symbols(self):
+        """
+        Collect all changed symbols across every file modified by the
+        commit, grouped by programming language.
+
+        For each changed file, the analyzer:
+        - Retrieves the vulnerable and fixed file contents.
+        - Computes which lines were removed and added.
+        - Extracts symbols that intersect those changed lines using
+           Tree-sitter parsing SymbolExtractor
+        - Diffs the extracted symbols to find those whose body text
+           actually changed.
+        - Buckets the results by programming language.
+        """
         by_language = {}
         changed_files = self.get_changed_files()
 
@@ -221,9 +260,16 @@ class PatchAnalyzer:
         return by_language
 
     @classmethod
-    def build_symbol_metadata(
-        cls, nodes, extractor: SymbolExtractor, index: dict = None
-    ):
+    def build_symbol_metadata(cls, nodes, extractor: SymbolExtractor, index):
+        """
+        Build metadata dictionaries for a list of Tree-sitter AST nodes
+        representing changed symbols.
+
+        For each node, the qualified name, body text, SHA-256 fingerprint,
+        and start/end line numbers are extracted and stored in a
+        dictionary keyed by the qualified name. If duplicate qualified
+        names are encountered, a numeric suffix is appended to disambiguate.
+        """
         if not nodes or not extractor:
             return {}
 
@@ -259,6 +305,23 @@ class PatchAnalyzer:
     def analyze(
         cls, vulnerable_text, fixed_text, removed_lines, added_lines, file_path
     ):
+        """
+        Analyze the vulnerable and fixed versions of a single file to
+        extract changed symbols.
+
+        The method performs the following steps:
+
+        - Detects the programming language of the file (using the
+          fixed version first, falling back to the vulnerable version).
+        - Verifies the language is supported by Tree-sitter queries.
+        - Parses both versions into ASTs using Tree-sitter.
+        - Extracts symbols whose line ranges intersect the removed
+          lines (vulnerable side) or added lines (fixed side).
+        - Builds metadata for each set of changed symbols.
+        - Diffs the two metadata sets to find symbols whose body text
+          actually changed between versions.
+
+        """
         vulnerable_text = normalize_text(vulnerable_text)
         fixed_text = normalize_text(fixed_text)
 
@@ -317,6 +380,23 @@ class PatchAnalyzer:
 
 
 def generate_reachability_report(patch, repo, candidate_resources, logger=None):
+    """
+    Generate and store a symbol reachability report for a single
+    vulnerability patch against a set of candidate codebase resources.
+
+    - Creates a PatchAnalyzer for the given commit.
+    - Collects changed symbols from the patch, grouped by language.
+    - For each candidate resource whose language matches a patch
+       language, builds a ResourceAnalyzer index and uses
+       ResourcePatchMatcher to match vulnerable and fixed
+       symbols.
+    - If matches are found, constructs a report dict containing
+      evidence, matched symbol names, and a ReachabilityStatus.
+    - Appends the report to the resource's extra_data under the
+      symbols_reachability key (avoiding duplicates for the same
+       commit hash).
+
+    """
     vcs_url = patch.get("vcs_url")
     commit_hash = patch.get("commit_hash")
 
@@ -384,6 +464,20 @@ def generate_reachability_report(patch, repo, candidate_resources, logger=None):
 
 
 def analyze_and_store_symbol_reachability_results(project, logger=None):
+    """
+    Analyze all vulnerability patches for a project and store the
+    resulting symbol reachability reports
+
+    The function iterates over all package vulnerabilities associated
+    with the project, groups their patches by repository URL, clones
+    each repository (using :class:`GitRepositoryContext`), checks out
+    each patch's commit, and calls :func:`generate_reachability_report`
+    to determine whether the vulnerable/fixed symbols from the patch
+    are reachable in the project's codebase resources.
+
+    Only non-binary, non-archive, non-media files are considered as
+    candidate resources.
+    """
     candidate_resources = project.codebaseresources.files().filter(
         is_binary=False, is_archive=False, is_media=False
     )
@@ -414,6 +508,10 @@ def analyze_and_store_symbol_reachability_results(project, logger=None):
 
 
 def classify_reachability(evidence):
+    """
+    Classify the reachability status of a vulnerability based on the
+    collected evidence from :class:`ResourcePatchMatcher`.
+    """
     if not evidence:
         return ReachabilityStatus.NOT_REACHABLE
 
@@ -435,14 +533,18 @@ def classify_reachability(evidence):
 
 
 class ResourceAnalyzer:
-    def __init__(self, resource_text: str, language: str):
+    def __init__(self, resource_text, language):
         self.resource_text = normalize_text(resource_text)
         self.language = language
 
     def process_node(
-        self, node, extractor, definitions_index, definitions: set, fingerprints: set
-    ) -> str | None:
-        """Extract the qualified name, update definitions, and fingerprint"""
+        self, node, extractor, definitions_index, definitions, fingerprints
+    ):
+        """
+        Process a single AST node to extract its qualified name, add it
+        to the definitions set, compute its fingerprint, and add the
+        fingerprint to the fingerprints set.
+        """
         qualified_name = extractor._build_qualified_name(node, definitions_index)
         if not qualified_name:
             return None
@@ -456,7 +558,16 @@ class ResourceAnalyzer:
 
         return qualified_name
 
-    def build_index(self) -> dict | None:
+    def build_index(self):
+        """
+        Build the full symbol index for the resource by parsing it
+        with Tree-sitter and extracting all definitions, fingerprints,
+        imports, and the reverse call graph.
+
+        The method iterates over all functions, classes, and constants
+        in the resource's AST. For functions, it also extracts call
+        expressions to populate the callers_of reverse call graph.
+        """
         if not is_supported_language(self.language) or not self.resource_text:
             return None
 
@@ -503,7 +614,7 @@ class ResourceAnalyzer:
 
 
 class ResourcePatchMatcher:
-    def __init__(self, resource_index: dict):
+    def __init__(self, resource_index):
         self.resource_index = resource_index
         self.definitions = resource_index.get("definitions", set())
         self.fingerprints = resource_index.get("fingerprints", set())
@@ -511,7 +622,16 @@ class ResourcePatchMatcher:
         self.callers_of = resource_index.get("callers_of", {})
         self.separator = resource_index.get("separator", ".")
 
-    def match(self, patch_symbols_metadata: dict[str, Any]) -> dict[str, Any]:
+    def match(self, patch_symbols_metadata):
+        """
+        Match a set of patch symbols against the resource index and
+        return evidence for each matched symbol.
+
+        For each symbol in patch_symbols_metadata, the method
+        checks whether it is defined, imported, called, or has an
+        exact fingerprint match in the resource. If at least one of
+        these conditions is true, an evidence entry is created.
+        """
         if not patch_symbols_metadata or not self.resource_index:
             return {}
 
