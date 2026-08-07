@@ -23,16 +23,23 @@ import json
 import subprocess
 import urllib.parse
 
-from scancodeio.settings import GRIMOIRELAB_METRICS_EXECUTABLE
-from scancodeio.settings import GRIMOIRELAB_OPENSEARCH_INDEX
-from scancodeio.settings import GRIMOIRELAB_OPENSEARCH_PASSWORD
-from scancodeio.settings import GRIMOIRELAB_OPENSEARCH_URL
-from scancodeio.settings import GRIMOIRELAB_OPENSEARCH_USERNAME
-from scancodeio.settings import GRIMOIRELAB_PASSWORD
-from scancodeio.settings import GRIMOIRELAB_URL
-from scancodeio.settings import GRIMOIRELAB_USERNAME
+from django.conf import settings
+
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import run_command_safely
+
+GRIMOIRELAB_METRICS_EXECUTABLE = getattr(settings, "GRIMOIRELAB_METRICS_EXECUTABLE", "")
+GRIMOIRELAB_OPENSEARCH_INDEX = getattr(settings, "GRIMOIRELAB_OPENSEARCH_INDEX", "")
+GRIMOIRELAB_OPENSEARCH_PASSWORD = getattr(
+    settings, "GRIMOIRELAB_OPENSEARCH_PASSWORD", ""
+)
+GRIMOIRELAB_OPENSEARCH_URL = getattr(settings, "GRIMOIRELAB_OPENSEARCH_URL", "")
+GRIMOIRELAB_OPENSEARCH_USERNAME = getattr(
+    settings, "GRIMOIRELAB_OPENSEARCH_USERNAME", ""
+)
+GRIMOIRELAB_PASSWORD = getattr(settings, "GRIMOIRELAB_PASSWORD", "")
+GRIMOIRELAB_URL = getattr(settings, "GRIMOIRELAB_URL", "")
+GRIMOIRELAB_USERNAME = getattr(settings, "GRIMOIRELAB_USERNAME", "")
 
 
 class ScanRepoGrimoirelab(Pipeline):
