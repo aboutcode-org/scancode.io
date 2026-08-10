@@ -19,7 +19,9 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 from unittest import skipIf
 from unittest.mock import MagicMock
@@ -46,10 +48,101 @@ class SymbolReachabilityPipesTest(TestCase):
         self.project1 = Project.objects.create(name="Analysis")
         self.project1.codebase_path.mkdir(parents=True, exist_ok=True)
 
+    @patch.object(Project, "package_vulnerabilities", new_callable=PropertyMock)
+    def test_end_to_end_symbol_reachability_pipeline(
+        self, mock_package_vulnerabilities
+    ):
+        """
+        Global end-to-end test for the symbol reachability pipeline.
+        Sets up a local git repository with a vulnerable and fixed commit,
+        then runs the full pipeline against a local codebase resource.
+        """
+        from git import Repo
+
+        vcs_dir = tempfile.mkdtemp(prefix="test-vcs-")
+        try:
+            repo = Repo.init(vcs_dir)
+            with repo.config_writer() as config:
+                config.set_value("user", "email", "test@example.com")
+                config.set_value("user", "name", "test")
+
+            file_path = "app.py"
+            vuln_code = (
+                "def process_data(data):\n"
+                "    # Vulnerable logic\n"
+                "    return eval(data)\n"
+            )
+            fixed_code = (
+                "def process_data(data):\n    # Fixed logic\n    return int(data)\n"
+            )
+
+            vuln_file = Path(vcs_dir) / file_path
+            vuln_file.write_text(vuln_code)
+            repo.index.add([file_path])
+            repo.index.commit("Vulnerable commit")
+
+            vuln_file.write_text(fixed_code)
+            repo.index.add([file_path])
+            fixed_commit = repo.index.commit("Fixed commit")
+
+            resource_file = self.project1.codebase_path / "local_app.py"
+            resource_file.write_text(vuln_code)
+            collect_and_create_codebase_resources(self.project1)
+
+            resource = self.project1.codebaseresources.get(path="local_app.py")
+            resource.programming_language = "Python"
+            resource.save()
+
+            repo_url = Path(vcs_dir).as_uri()
+
+            mock_package_vulnerabilities.return_value = [
+                {
+                    "fixed_in_patches": [
+                        {
+                            "vcs_url": repo_url,
+                            "commit_hash": fixed_commit.hexsha,
+                        }
+                    ]
+                }
+            ]
+
+            analyze_and_store_symbol_reachability_results(self.project1)
+            resource.refresh_from_db()
+            results = resource.extra_data.get("symbols_reachability")
+
+            expected_results = [
+                {
+                    "symbols_reachability": {
+                        "patch": {
+                            "vcs_url": repo_url,
+                            "commit_hash": fixed_commit.hexsha,
+                        },
+                        "evidence": [
+                            {
+                                "called": False,
+                                "defined": True,
+                                "imported": False,
+                                "fingerprint": "e66988810af452f77d43efd302fea4c"
+                                "1d2f246d282c4ea8982b0152c2231ac17",
+                                "symbol_name": "process_data",
+                                "reachable_from": [],
+                            }
+                        ],
+                        "fixed_symbols": ["process_data"],
+                        "vulnerable_symbols": ["process_data"],
+                        "reachability_status": "REACHABLE",
+                    }
+                }
+            ]
+
+            self.assertEqual(results, expected_results)
+        finally:
+            shutil.rmtree(vcs_dir, ignore_errors=True)
+
     @patch("scanpipe.pipes.reachability.GitRepositoryContext")
     @patch("scanpipe.pipes.reachability.PatchAnalyzer.collect_patch_symbols")
     @patch.object(Project, "package_vulnerabilities", new_callable=PropertyMock)
-    def test_get_symbol_reachability_results(
+    def test_python_get_symbol_reachability_results(
         self,
         mock_package_vulnerabilities,
         mock_collect_symbols,
@@ -61,9 +154,9 @@ class SymbolReachabilityPipesTest(TestCase):
         corresponding codebase resource.
         """
         file_path = "app.py"
-        app_text = (self.data / file_path).read_text()
-        vuln_text = (self.data / "vuln-app.py").read_text()
-        fixed_text = (self.data / "fixed-app.py").read_text()
+        app_text = (self.data / "python" / file_path).read_text()
+        vuln_text = (self.data / "python" / "vuln-app.py").read_text()
+        fixed_text = (self.data / "python" / "fixed-app.py").read_text()
 
         analyzer = PatchAnalyzer(repo=MagicMock(), commit_hash="dummy")
 
@@ -165,6 +258,131 @@ class SymbolReachabilityPipesTest(TestCase):
                             "debug",
                             "serve_report",
                             "serve_report.build_file_path",
+                        ],
+                        "reachability_status": "REACHABLE",
+                    }
+                }
+            ],
+        )
+
+    @patch("scanpipe.pipes.reachability.GitRepositoryContext")
+    @patch("scanpipe.pipes.reachability.PatchAnalyzer.collect_patch_symbols")
+    @patch.object(Project, "package_vulnerabilities", new_callable=PropertyMock)
+    def test_java_get_symbol_reachability_results(
+        self,
+        mock_package_vulnerabilities,
+        mock_collect_symbols,
+        mock_git_context,
+    ):
+        """
+        Test the end-to-end reachability pipeline by analyzing a patch,
+        computing symbol reachability, and storing the results on the
+        corresponding codebase resource.
+        """
+        file_path = "app.java"
+        app_text = (self.data / "java" / file_path).read_text()
+        vuln_text = (self.data / "java" / "vuln-app.java").read_text()
+        fixed_text = (self.data / "java" / "fixed-app.java").read_text()
+
+        analyzer = PatchAnalyzer(repo=MagicMock(), commit_hash="dummy")
+
+        removed_lines, added_lines = analyzer.compute_changed_lines(
+            vulnerable_text=vuln_text, fixed_text=fixed_text
+        )
+        vuln_meta, fixed_meta, lang = analyzer.analyze(
+            vulnerable_text=vuln_text,
+            fixed_text=fixed_text,
+            removed_lines=removed_lines,
+            added_lines=added_lines,
+            file_path=file_path,
+        )
+
+        self.assertTrue(lang)
+        self.assertTrue(vuln_meta or fixed_meta)
+        mock_package_vulnerabilities.return_value = [
+            {
+                "fixed_in_patches": [
+                    {
+                        "vcs_url": "https://github.com/aboutcode-org/test",
+                        "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
+                    }
+                ]
+            }
+        ]
+
+        mock_git_context.return_value.__enter__.return_value.repo = MagicMock()
+        mock_collect_symbols.return_value = {
+            lang: {
+                "vulnerable": {
+                    f"{file_path}::{key}": metadata
+                    for key, metadata in vuln_meta.items()
+                },
+                "fixed": {
+                    f"{file_path}::{key}": metadata
+                    for key, metadata in fixed_meta.items()
+                },
+            }
+        }
+
+        resource_file = self.project1.codebase_path / "app.java"
+        resource_file.parent.mkdir(parents=True, exist_ok=True)
+        resource_file.write_text(app_text)
+        collect_and_create_codebase_resources(self.project1)
+
+        resource = self.project1.codebaseresources.get(path="app.java")
+        resource.programming_language = lang
+        resource.save()
+
+        analyze_and_store_symbol_reachability_results(self.project1)
+
+        resource.refresh_from_db()
+        results = resource.extra_data.get("symbols_reachability")
+
+        self.assertEqual(
+            results,
+            [
+                {
+                    "symbols_reachability": {
+                        "patch": {
+                            "vcs_url": "https://github.com/aboutcode-org/test",
+                            "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
+                        },
+                        "evidence": [
+                            {
+                                "called": False,
+                                "defined": True,
+                                "imported": False,
+                                "fingerprint": None,
+                                "symbol_name": "App",
+                                "reachable_from": [],
+                            },
+                            {
+                                "called": False,
+                                "defined": True,
+                                "imported": False,
+                                "fingerprint": "b161e24e9575b655e84c7f249709e5d4d0"
+                                "a1e6f19e2c4baa421a6cc996fda154",
+                                "symbol_name": "App.serveReport",
+                                "reachable_from": [],
+                            },
+                            {
+                                "called": True,
+                                "defined": True,
+                                "imported": False,
+                                "fingerprint": None,
+                                "symbol_name": "App.buildFilePath",
+                                "reachable_from": ["App.serveReport"],
+                            },
+                        ],
+                        "fixed_symbols": [
+                            "App",
+                            "App.buildFilePath",
+                            "App.serveReport",
+                        ],
+                        "vulnerable_symbols": [
+                            "App",
+                            "App.buildFilePath",
+                            "App.serveReport",
                         ],
                         "reachability_status": "REACHABLE",
                     }
@@ -431,9 +649,9 @@ if True:
 
     def test_analyze_patched_file(self):
         """Test analyzing a patched file and extracting changed symbol metadata."""
-        vuln_text = (self.data / "vuln-app.py").read_text(encoding="utf-8")
-        fixed_text = (self.data / "fixed-app.py").read_text(encoding="utf-8")
-        file_path = "app.py"
+        vuln_text = (self.data / "python" / "vuln-app.py").read_text(encoding="utf-8")
+        fixed_text = (self.data / "python" / "fixed-app.py").read_text(encoding="utf-8")
+        file_path = "python/app.py"
         removed_lines, added_lines = PatchAnalyzer.compute_changed_lines(
             vuln_text, fixed_text
         )
