@@ -139,25 +139,18 @@ class SymbolReachabilityPipesTest(TestCase):
         finally:
             shutil.rmtree(vcs_dir, ignore_errors=True)
 
-    @patch("scanpipe.pipes.reachability.GitRepositoryContext")
-    @patch("scanpipe.pipes.reachability.PatchAnalyzer.collect_patch_symbols")
-    @patch.object(Project, "package_vulnerabilities", new_callable=PropertyMock)
-    def test_python_get_symbol_reachability_results(
+    def _run_reachability_pipeline(
         self,
         mock_package_vulnerabilities,
         mock_collect_symbols,
         mock_git_context,
+        file_path,
+        app_text,
+        vuln_text,
+        fixed_text,
+        expected_results,
     ):
-        """
-        Test the end-to-end reachability pipeline by analyzing a patch,
-        computing symbol reachability, and storing the results on the
-        corresponding codebase resource.
-        """
-        file_path = "app.py"
-        app_text = (self.data / "python" / file_path).read_text()
-        vuln_text = (self.data / "python" / "vuln-app.py").read_text()
-        fixed_text = (self.data / "python" / "fixed-app.py").read_text()
-
+        """Shared helper to run the end-to-end reachability pipeline."""
         analyzer = PatchAnalyzer(repo=MagicMock(), commit_hash="dummy")
 
         removed_lines, added_lines = analyzer.compute_changed_lines(
@@ -173,6 +166,7 @@ class SymbolReachabilityPipesTest(TestCase):
 
         self.assertTrue(lang)
         self.assertTrue(vuln_meta or fixed_meta)
+
         mock_package_vulnerabilities.return_value = [
             {
                 "fixed_in_patches": [
@@ -198,11 +192,12 @@ class SymbolReachabilityPipesTest(TestCase):
             }
         }
 
-        resource_file = self.project1.codebase_path / "app.py"
+        resource_file = self.project1.codebase_path / file_path
+        resource_file.parent.mkdir(parents=True, exist_ok=True)
         resource_file.write_text(app_text)
         collect_and_create_codebase_resources(self.project1)
 
-        resource = self.project1.codebaseresources.get(path="app.py")
+        resource = self.project1.codebaseresources.get(path=file_path)
         resource.programming_language = lang
         resource.save()
 
@@ -210,59 +205,83 @@ class SymbolReachabilityPipesTest(TestCase):
 
         resource.refresh_from_db()
         results = resource.extra_data.get("symbols_reachability")
+        self.assertEqual(results, expected_results)
 
-        self.assertEqual(
-            results,
-            [
-                {
-                    "symbols_reachability": {
-                        "patch": {
-                            "vcs_url": "https://github.com/aboutcode-org/test",
-                            "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
+    @patch("scanpipe.pipes.reachability.GitRepositoryContext")
+    @patch("scanpipe.pipes.reachability.PatchAnalyzer.collect_patch_symbols")
+    @patch.object(Project, "package_vulnerabilities", new_callable=PropertyMock)
+    def test_python_get_symbol_reachability_results(
+        self,
+        mock_package_vulnerabilities,
+        mock_collect_symbols,
+        mock_git_context,
+    ):
+        """Test the end-to-end reachability pipeline for Python."""
+        file_path = "app.py"
+        app_text = (self.data / "python" / file_path).read_text()
+        vuln_text = (self.data / "python" / "vuln-app.py").read_text()
+        fixed_text = (self.data / "python" / "fixed-app.py").read_text()
+
+        expected_results = [
+            {
+                "symbols_reachability": {
+                    "patch": {
+                        "vcs_url": "https://github.com/aboutcode-org/test",
+                        "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
+                    },
+                    "evidence": [
+                        {
+                            "called": False,
+                            "defined": True,
+                            "imported": False,
+                            "fingerprint": "336908735214468b103dbde"
+                            "11c3ffbd2f76ac9212b8514f831cfa078a67892df",
+                            "symbol_name": "debug",
+                            "reachable_from": [],
                         },
-                        "evidence": [
-                            {
-                                "called": False,
-                                "defined": True,
-                                "imported": False,
-                                "fingerprint": "336908735214468b103dbde"
-                                "11c3ffbd2f76ac9212b8514f831cfa078a67892df",
-                                "symbol_name": "debug",
-                                "reachable_from": [],
-                            },
-                            {
-                                "called": True,
-                                "defined": True,
-                                "imported": False,
-                                "fingerprint": "762e4f7d03b1bf4359c3ca364"
-                                "e558140239913bfabcc5aa77156460c2eb0a355",
-                                "symbol_name": "serve_report.build_file_path",
-                                "reachable_from": ["serve_report"],
-                            },
-                            {
-                                "called": False,
-                                "defined": True,
-                                "imported": False,
-                                "fingerprint": "d7675efb263896da2a3c0067951183"
-                                "3553907e7e6ea619115a6dfc8625c3457e",
-                                "symbol_name": "serve_report",
-                                "reachable_from": [],
-                            },
-                        ],
-                        "fixed_symbols": [
-                            "debug",
-                            "serve_report",
-                            "serve_report.build_file_path",
-                        ],
-                        "vulnerable_symbols": [
-                            "debug",
-                            "serve_report",
-                            "serve_report.build_file_path",
-                        ],
-                        "reachability_status": "REACHABLE",
-                    }
+                        {
+                            "called": True,
+                            "defined": True,
+                            "imported": False,
+                            "fingerprint": "762e4f7d03b1bf4359c3ca364"
+                            "e558140239913bfabcc5aa77156460c2eb0a355",
+                            "symbol_name": "serve_report.build_file_path",
+                            "reachable_from": ["serve_report"],
+                        },
+                        {
+                            "called": False,
+                            "defined": True,
+                            "imported": False,
+                            "fingerprint": "d7675efb263896da2a3c0067951183"
+                            "3553907e7e6ea619115a6dfc8625c3457e",
+                            "symbol_name": "serve_report",
+                            "reachable_from": [],
+                        },
+                    ],
+                    "fixed_symbols": [
+                        "debug",
+                        "serve_report",
+                        "serve_report.build_file_path",
+                    ],
+                    "vulnerable_symbols": [
+                        "debug",
+                        "serve_report",
+                        "serve_report.build_file_path",
+                    ],
+                    "reachability_status": "REACHABLE",
                 }
-            ],
+            }
+        ]
+
+        self._run_reachability_pipeline(
+            mock_package_vulnerabilities,
+            mock_collect_symbols,
+            mock_git_context,
+            file_path,
+            app_text,
+            vuln_text,
+            fixed_text,
+            expected_results,
         )
 
     @patch("scanpipe.pipes.reachability.GitRepositoryContext")
@@ -274,120 +293,70 @@ class SymbolReachabilityPipesTest(TestCase):
         mock_collect_symbols,
         mock_git_context,
     ):
-        """
-        Test the end-to-end reachability pipeline by analyzing a patch,
-        computing symbol reachability, and storing the results on the
-        corresponding codebase resource.
-        """
+        """Test the end-to-end reachability pipeline for Java."""
         file_path = "app.java"
         app_text = (self.data / "java" / file_path).read_text()
         vuln_text = (self.data / "java" / "vuln-app.java").read_text()
         fixed_text = (self.data / "java" / "fixed-app.java").read_text()
 
-        analyzer = PatchAnalyzer(repo=MagicMock(), commit_hash="dummy")
-
-        removed_lines, added_lines = analyzer.compute_changed_lines(
-            vulnerable_text=vuln_text, fixed_text=fixed_text
-        )
-        vuln_meta, fixed_meta, lang = analyzer.analyze(
-            vulnerable_text=vuln_text,
-            fixed_text=fixed_text,
-            removed_lines=removed_lines,
-            added_lines=added_lines,
-            file_path=file_path,
-        )
-
-        self.assertTrue(lang)
-        self.assertTrue(vuln_meta or fixed_meta)
-        mock_package_vulnerabilities.return_value = [
+        expected_results = [
             {
-                "fixed_in_patches": [
-                    {
+                "symbols_reachability": {
+                    "patch": {
                         "vcs_url": "https://github.com/aboutcode-org/test",
                         "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
-                    }
-                ]
+                    },
+                    "evidence": [
+                        {
+                            "called": False,
+                            "defined": True,
+                            "imported": False,
+                            "fingerprint": None,
+                            "symbol_name": "App",
+                            "reachable_from": [],
+                        },
+                        {
+                            "called": False,
+                            "defined": True,
+                            "imported": False,
+                            "fingerprint": "b161e24e9575b655e84c7f249709e5d4d0"
+                            "a1e6f19e2c4baa421a6cc996fda154",
+                            "symbol_name": "App.serveReport",
+                            "reachable_from": [],
+                        },
+                        {
+                            "called": True,
+                            "defined": True,
+                            "imported": False,
+                            "fingerprint": None,
+                            "symbol_name": "App.buildFilePath",
+                            "reachable_from": ["App.serveReport"],
+                        },
+                    ],
+                    "fixed_symbols": [
+                        "App",
+                        "App.buildFilePath",
+                        "App.serveReport",
+                    ],
+                    "vulnerable_symbols": [
+                        "App",
+                        "App.buildFilePath",
+                        "App.serveReport",
+                    ],
+                    "reachability_status": "REACHABLE",
+                }
             }
         ]
 
-        mock_git_context.return_value.__enter__.return_value.repo = MagicMock()
-        mock_collect_symbols.return_value = {
-            lang: {
-                "vulnerable": {
-                    f"{file_path}::{key}": metadata
-                    for key, metadata in vuln_meta.items()
-                },
-                "fixed": {
-                    f"{file_path}::{key}": metadata
-                    for key, metadata in fixed_meta.items()
-                },
-            }
-        }
-
-        resource_file = self.project1.codebase_path / "app.java"
-        resource_file.parent.mkdir(parents=True, exist_ok=True)
-        resource_file.write_text(app_text)
-        collect_and_create_codebase_resources(self.project1)
-
-        resource = self.project1.codebaseresources.get(path="app.java")
-        resource.programming_language = lang
-        resource.save()
-
-        analyze_and_store_symbol_reachability_results(self.project1)
-
-        resource.refresh_from_db()
-        results = resource.extra_data.get("symbols_reachability")
-
-        self.assertEqual(
-            results,
-            [
-                {
-                    "symbols_reachability": {
-                        "patch": {
-                            "vcs_url": "https://github.com/aboutcode-org/test",
-                            "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
-                        },
-                        "evidence": [
-                            {
-                                "called": False,
-                                "defined": True,
-                                "imported": False,
-                                "fingerprint": None,
-                                "symbol_name": "App",
-                                "reachable_from": [],
-                            },
-                            {
-                                "called": False,
-                                "defined": True,
-                                "imported": False,
-                                "fingerprint": "b161e24e9575b655e84c7f249709e5d4d0"
-                                "a1e6f19e2c4baa421a6cc996fda154",
-                                "symbol_name": "App.serveReport",
-                                "reachable_from": [],
-                            },
-                            {
-                                "called": True,
-                                "defined": True,
-                                "imported": False,
-                                "fingerprint": None,
-                                "symbol_name": "App.buildFilePath",
-                                "reachable_from": ["App.serveReport"],
-                            },
-                        ],
-                        "fixed_symbols": [
-                            "App",
-                            "App.buildFilePath",
-                            "App.serveReport",
-                        ],
-                        "vulnerable_symbols": [
-                            "App",
-                            "App.buildFilePath",
-                            "App.serveReport",
-                        ],
-                        "reachability_status": "REACHABLE",
-                    }
-                }
-            ],
+        self._run_reachability_pipeline(
+            mock_package_vulnerabilities,
+            mock_collect_symbols,
+            mock_git_context,
+            file_path,
+            app_text,
+            vuln_text,
+            fixed_text,
+            expected_results,
         )
 
     def test_extract_definitions(self):
