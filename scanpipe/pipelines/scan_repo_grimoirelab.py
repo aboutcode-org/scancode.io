@@ -47,6 +47,7 @@ class ScanRepoGrimoirelab(Pipeline):
 
     results_url = "/project/{slug}/resources/?extra_data=grimoire_data"
     download_inputs = False
+    is_addon = True
 
     @classmethod
     def steps(cls):
