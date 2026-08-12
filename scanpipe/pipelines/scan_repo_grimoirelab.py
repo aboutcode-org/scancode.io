@@ -52,29 +52,47 @@ class ScanRepoGrimoirelab(Pipeline):
     @classmethod
     def steps(cls):
         return (
+            cls.get_repo_url_input,
             cls.collect_and_store_grimoire_metric,
             cls.format_metrics_output,
         )
+
+    @classmethod
+    def get_availability(cls):
+        if not (
+            GRIMOIRELAB_METRICS_EXECUTABLE
+            and GRIMOIRELAB_OPENSEARCH_INDEX
+            and GRIMOIRELAB_OPENSEARCH_PASSWORD
+            and GRIMOIRELAB_OPENSEARCH_URL
+            and GRIMOIRELAB_OPENSEARCH_USERNAME
+            and GRIMOIRELAB_PASSWORD
+            and GRIMOIRELAB_URL
+            and GRIMOIRELAB_USERNAME
+        ):
+            return "Grimoirelab is not available."
+
+    def get_repo_url_input(self):
+        """Validate and extract the repository URL from the project's input sources"""
+        if len(self.project.input_sources) != 1:
+            raise ValueError("Expected exactly one input source")
+
+        self.repo_url = self.project.input_sources[0]["download_url"]
+        if not is_valid_vcs_url(self.repo_url):
+            raise ValueError(
+                "Invalid input source: the pipeline accepts only a valid repository URL"
+            )
+
+        self.repo_url = self.repo_url.replace("git://", "https://")
 
     def collect_and_store_grimoire_metric(self):
         """
         Run the grimoirelab-metrics command against the input source.
         Save the generated metrics JSON to the project output directory.
         """
-        if len(self.project.input_sources) != 1:
-            raise ValueError("Expected exactly one input source")
-
-        repo_url = self.project.input_sources[0]["download_url"]
-        if not is_valid_vcs_url(repo_url):
-            raise ValueError(
-                "Invalid input source: the pipeline accepts only a valid repository URL"
-            )
-
-        repo_url = repo_url.replace("git://", "https://")
         self.metrics_output_path = self.project.get_output_file_path("metrics", "json")
         command_args = [
             GRIMOIRELAB_METRICS_EXECUTABLE,
-            repo_url,
+            self.repo_url,
             "--grimoirelab-url",
             GRIMOIRELAB_URL,
             "--grimoirelab-user",

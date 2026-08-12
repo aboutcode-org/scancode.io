@@ -57,6 +57,8 @@ class ScanRepoGrimoirelabTest(TestCase):
         )
 
         expected_msg = "Grimoirelab-metrics pipeline failed"
+
+        self.pipeline.get_repo_url_input()
         with self.assertRaisesMessage(RuntimeError, expected_msg):
             self.pipeline.collect_and_store_grimoire_metric()
 
@@ -65,8 +67,8 @@ class ScanRepoGrimoirelabTest(TestCase):
         self.pipeline.project.input_sources = []
 
         expected_msg = "Expected exactly one input source"
-        with self.assertRaisesMessage(Exception, expected_msg):
-            self.pipeline.collect_and_store_grimoire_metric()
+        with self.assertRaisesMessage(ValueError, expected_msg):
+            self.pipeline.get_repo_url_input()
 
         self.pipeline.project.input_sources = [
             {"download_url": "https://github.com/example/repo1.git"},
@@ -74,8 +76,8 @@ class ScanRepoGrimoirelabTest(TestCase):
         ]
 
         expected_msg = "Expected exactly one input source"
-        with self.assertRaisesMessage(Exception, expected_msg):
-            self.pipeline.collect_and_store_grimoire_metric()
+        with self.assertRaisesMessage(ValueError, expected_msg):
+            self.pipeline.get_repo_url_input()
 
     def test_format_metrics_output(self):
         """Test formatting the GrimoireLab metrics output using fixture files."""
