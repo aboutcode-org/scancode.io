@@ -42,12 +42,11 @@ GRIMOIRELAB_URL = getattr(settings, "GRIMOIRELAB_URL", "")
 GRIMOIRELAB_USERNAME = getattr(settings, "GRIMOIRELAB_USERNAME", "")
 
 
-class ScanRepoGrimoirelab(Pipeline):
-    """Run a GrimoireLab scan to extract repository metrics and health score."""
+class ScanRepoHealth(Pipeline):
+    """Run a Repo Health scan to extract repository metrics and health score."""
 
     results_url = "/project/{slug}/resources/?extra_data=grimoire_data"
     download_inputs = False
-    is_addon = True
 
     @classmethod
     def steps(cls):
@@ -83,6 +82,8 @@ class ScanRepoGrimoirelab(Pipeline):
             )
 
         self.repo_url = self.repo_url.replace("git://", "https://")
+        if not self.repo_url.endswith(".git"):
+            self.repo_url += ".git"
 
     def collect_and_store_grimoire_metric(self):
         """
