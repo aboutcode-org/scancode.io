@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,10 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
+
+import json
+import os
 import shutil
 import sys
 import tempfile
@@ -34,7 +37,6 @@ from scanpipe.models import Project
 from scanpipe.pipes import collect_and_create_codebase_resources
 from scanpipe.pipes.reachability import PatchAnalyzer
 from scanpipe.pipes.reachability import ReachabilityStatus
-from scanpipe.pipes.reachability import analyze_and_store_symbol_reachability_results
 from scanpipe.pipes.reachability import classify_reachability
 from scanpipe.pipes.symbols import TS_QUERIES
 from scanpipe.pipes.symbols import SymbolExtractor
@@ -106,32 +108,34 @@ class SymbolReachabilityPipesTest(TestCase):
                 }
             ]
 
-            analyze_and_store_symbol_reachability_results(self.project1)
+            run = self.project1.add_pipeline("analyze_symbols_reachability")
+            pipeline = run.make_pipeline_instance()
+            pipeline.execute()
+
             resource.refresh_from_db()
             results = resource.extra_data.get("symbols_reachability")
 
             expected_results = [
                 {
-                    "symbols_reachability": {
-                        "patch": {
-                            "vcs_url": repo_url,
-                            "commit_hash": fixed_commit.hexsha,
-                        },
-                        "evidence": [
-                            {
-                                "called": False,
-                                "defined": True,
-                                "imported": False,
-                                "fingerprint": "e66988810af452f77d43efd302fea4c"
-                                "1d2f246d282c4ea8982b0152c2231ac17",
-                                "symbol_name": "process_data",
-                                "reachable_from": [],
-                            }
-                        ],
-                        "fixed_symbols": ["process_data"],
-                        "vulnerable_symbols": ["process_data"],
-                        "reachability_status": "REACHABLE",
-                    }
+                    "patch": {
+                        "vcs_url": repo_url,
+                        "commit_hash": fixed_commit.hexsha,
+                    },
+                    "advisory_uids": [],
+                    "evidence": [
+                        {
+                            "called": False,
+                            "defined": True,
+                            "imported": False,
+                            "fingerprint": "e66988810af452f77d43efd302fea4c"
+                            "1d2f246d282c4ea8982b0152c2231ac17",
+                            "symbol_name": "process_data",
+                            "reachable_from": [],
+                        }
+                    ],
+                    "fixed_symbols": ["process_data"],
+                    "vulnerable_symbols": ["process_data"],
+                    "reachability_status": "YES",
                 }
             ]
 
@@ -139,11 +143,173 @@ class SymbolReachabilityPipesTest(TestCase):
         finally:
             shutil.rmtree(vcs_dir, ignore_errors=True)
 
+    def test_generate_advisory_reachability_report(self):
+        """Test the generation of the advisory reachability report"""
+        run = self.project1.add_pipeline("analyze_symbols_reachability")
+        pipeline = run.make_pipeline_instance()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_file = os.path.join(tmpdir, "reachability.json")
+            pipeline.project.get_output_file_path = MagicMock(return_value=output_file)
+
+            res1 = MagicMock()
+            res1.path = "src/file1.py"
+            res1.extra_data = {
+                "symbols_reachability": [
+                    {
+                        "advisory_uids": ["AVID-1", "AVID-2"],
+                        "reachability_status": ReachabilityStatus.REACHABLE.value,
+                        "patch": {
+                            "vcs_url": "https://example.com",
+                            "commit_hash": "abc123",
+                        },
+                        "evidence": [
+                            {
+                                "symbol_name": "vuln_sym1",
+                                "called": True,
+                                "defined": False,
+                                "imported": False,
+                                "fingerprint": "88ad9e67c53aa5f7c4"
+                                "3ec4aa52ed34b7930068c9",
+                                "reachable_from": [],
+                            }
+                        ],
+                        "vulnerable_symbols": ["vuln_sym1"],
+                        "fixed_symbols": ["fixed_sym1"],
+                    }
+                ]
+            }
+
+            res2 = MagicMock()
+            res2.path = "src/file2.py"
+            res2.extra_data = {
+                "symbols_reachability": [
+                    {
+                        "advisory_uids": ["AVID-1"],
+                        "reachability_status": ReachabilityStatus.UNKNOWN.value,
+                        "patch": {
+                            "vcs_url": "https://example.com",
+                            "commit_hash": "def456",
+                        },
+                        "evidence": [],
+                        "vulnerable_symbols": [],
+                        "fixed_symbols": [],
+                    }
+                ]
+            }
+
+            res3 = MagicMock()
+            res3.path = "src/file3.py"
+            res3.extra_data = {
+                "symbols_reachability": [
+                    {
+                        "advisory_uids": ["AVID-2"],
+                        "reachability_status": ReachabilityStatus.NOT_REACHABLE.value,
+                        "patch": {
+                            "vcs_url": "https://example2.com",
+                            "commit_hash": "46a4asf",
+                        },
+                        "evidence": [],
+                        "vulnerable_symbols": [],
+                        "fixed_symbols": [],
+                    }
+                ]
+            }
+
+            res_empty = MagicMock()
+            res_empty.path = "src/empty.py"
+            res_empty.extra_data = {}
+
+            pipeline.candidate_resources = [res2, res3, res_empty, res1]
+            pipeline.generate_advisory_reachability_report()
+
+            with open(output_file) as f:
+                report = json.load(f)
+
+            expected_report = {
+                "AVID-1": {
+                    "reachable": "YES",
+                    "details": [
+                        {
+                            "resource_path": "src/file2.py",
+                            "patch": {
+                                "vcs_url": "https://example.com",
+                                "commit_hash": "def456",
+                            },
+                            "reachability_status": "UNKNOWN",
+                            "evidence": [],
+                            "vulnerable_symbols": [],
+                            "fixed_symbols": [],
+                        },
+                        {
+                            "resource_path": "src/file1.py",
+                            "patch": {
+                                "vcs_url": "https://example.com",
+                                "commit_hash": "abc123",
+                            },
+                            "reachability_status": "YES",
+                            "evidence": [
+                                {
+                                    "symbol_name": "vuln_sym1",
+                                    "called": True,
+                                    "defined": False,
+                                    "imported": False,
+                                    "fingerprint": "88ad9e67c53aa5f7c43e"
+                                    "c4aa52ed34b7930068c9",
+                                    "reachable_from": [],
+                                }
+                            ],
+                            "vulnerable_symbols": ["vuln_sym1"],
+                            "fixed_symbols": ["fixed_sym1"],
+                        },
+                    ],
+                },
+                "AVID-2": {
+                    "reachable": "YES",
+                    "details": [
+                        {
+                            "resource_path": "src/file3.py",
+                            "patch": {
+                                "vcs_url": "https://example2.com",
+                                "commit_hash": "46a4asf",
+                            },
+                            "reachability_status": "NO",
+                            "evidence": [],
+                            "vulnerable_symbols": [],
+                            "fixed_symbols": [],
+                        },
+                        {
+                            "resource_path": "src/file1.py",
+                            "patch": {
+                                "vcs_url": "https://example.com",
+                                "commit_hash": "abc123",
+                            },
+                            "reachability_status": "YES",
+                            "evidence": [
+                                {
+                                    "symbol_name": "vuln_sym1",
+                                    "called": True,
+                                    "defined": False,
+                                    "imported": False,
+                                    "fingerprint": "88ad9e67c53aa5f7c4"
+                                    "3ec4aa52ed34b7930068c9",
+                                    "reachable_from": [],
+                                }
+                            ],
+                            "vulnerable_symbols": ["vuln_sym1"],
+                            "fixed_symbols": ["fixed_sym1"],
+                        },
+                    ],
+                },
+            }
+
+            self.assertEqual(report, expected_report)
+
     def _run_reachability_pipeline(
         self,
         mock_package_vulnerabilities,
         mock_collect_symbols,
-        mock_git_context,
+        mock_repo,
         file_path,
         app_text,
         vuln_text,
@@ -178,7 +344,6 @@ class SymbolReachabilityPipesTest(TestCase):
             }
         ]
 
-        mock_git_context.return_value.__enter__.return_value.repo = MagicMock()
         mock_collect_symbols.return_value = {
             lang: {
                 "vulnerable": {
@@ -201,20 +366,22 @@ class SymbolReachabilityPipesTest(TestCase):
         resource.programming_language = lang
         resource.save()
 
-        analyze_and_store_symbol_reachability_results(self.project1)
+        run = self.project1.add_pipeline("analyze_symbols_reachability")
+        pipeline = run.make_pipeline_instance()
+        pipeline.execute()
 
         resource.refresh_from_db()
         results = resource.extra_data.get("symbols_reachability")
         self.assertEqual(results, expected_results)
 
-    @patch("scanpipe.pipes.reachability.GitRepositoryContext")
+    @patch("scanpipe.pipelines.analyze_symbols_reachability.Repo")
     @patch("scanpipe.pipes.reachability.PatchAnalyzer.collect_patch_symbols")
     @patch.object(Project, "package_vulnerabilities", new_callable=PropertyMock)
     def test_python_get_symbol_reachability_results(
         self,
         mock_package_vulnerabilities,
         mock_collect_symbols,
-        mock_git_context,
+        mock_repo,
     ):
         """Test the end-to-end reachability pipeline for Python."""
         file_path = "app.py"
@@ -224,59 +391,58 @@ class SymbolReachabilityPipesTest(TestCase):
 
         expected_results = [
             {
-                "symbols_reachability": {
-                    "patch": {
-                        "vcs_url": "https://github.com/aboutcode-org/test",
-                        "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
+                "patch": {
+                    "vcs_url": "https://github.com/aboutcode-org/test",
+                    "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
+                },
+                "advisory_uids": [],
+                "evidence": [
+                    {
+                        "called": False,
+                        "defined": True,
+                        "imported": False,
+                        "fingerprint": "336908735214468b103dbde"
+                        "11c3ffbd2f76ac9212b8514f831cfa078a67892df",
+                        "symbol_name": "debug",
+                        "reachable_from": [],
                     },
-                    "evidence": [
-                        {
-                            "called": False,
-                            "defined": True,
-                            "imported": False,
-                            "fingerprint": "336908735214468b103dbde"
-                            "11c3ffbd2f76ac9212b8514f831cfa078a67892df",
-                            "symbol_name": "debug",
-                            "reachable_from": [],
-                        },
-                        {
-                            "called": True,
-                            "defined": True,
-                            "imported": False,
-                            "fingerprint": "762e4f7d03b1bf4359c3ca364"
-                            "e558140239913bfabcc5aa77156460c2eb0a355",
-                            "symbol_name": "serve_report.build_file_path",
-                            "reachable_from": ["serve_report"],
-                        },
-                        {
-                            "called": False,
-                            "defined": True,
-                            "imported": False,
-                            "fingerprint": "d7675efb263896da2a3c0067951183"
-                            "3553907e7e6ea619115a6dfc8625c3457e",
-                            "symbol_name": "serve_report",
-                            "reachable_from": [],
-                        },
-                    ],
-                    "fixed_symbols": [
-                        "debug",
-                        "serve_report",
-                        "serve_report.build_file_path",
-                    ],
-                    "vulnerable_symbols": [
-                        "debug",
-                        "serve_report",
-                        "serve_report.build_file_path",
-                    ],
-                    "reachability_status": "REACHABLE",
-                }
+                    {
+                        "called": True,
+                        "defined": True,
+                        "imported": False,
+                        "fingerprint": "762e4f7d03b1bf4359c3ca364"
+                        "e558140239913bfabcc5aa77156460c2eb0a355",
+                        "symbol_name": "serve_report.build_file_path",
+                        "reachable_from": ["serve_report"],
+                    },
+                    {
+                        "called": False,
+                        "defined": True,
+                        "imported": False,
+                        "fingerprint": "d7675efb263896da2a3c0067951183"
+                        "3553907e7e6ea619115a6dfc8625c3457e",
+                        "symbol_name": "serve_report",
+                        "reachable_from": [],
+                    },
+                ],
+                "fixed_symbols": [
+                    "debug",
+                    "serve_report",
+                    "serve_report.build_file_path",
+                ],
+                "vulnerable_symbols": [
+                    "debug",
+                    "serve_report",
+                    "serve_report.build_file_path",
+                ],
+                "reachability_status": "YES",
             }
         ]
 
         self._run_reachability_pipeline(
             mock_package_vulnerabilities,
             mock_collect_symbols,
-            mock_git_context,
+            mock_repo,
             file_path,
             app_text,
             vuln_text,
@@ -284,14 +450,14 @@ class SymbolReachabilityPipesTest(TestCase):
             expected_results,
         )
 
-    @patch("scanpipe.pipes.reachability.GitRepositoryContext")
+    @patch("scanpipe.pipelines.analyze_symbols_reachability.Repo")
     @patch("scanpipe.pipes.reachability.PatchAnalyzer.collect_patch_symbols")
     @patch.object(Project, "package_vulnerabilities", new_callable=PropertyMock)
     def test_java_get_symbol_reachability_results(
         self,
         mock_package_vulnerabilities,
         mock_collect_symbols,
-        mock_git_context,
+        mock_repo,
     ):
         """Test the end-to-end reachability pipeline for Java."""
         file_path = "app.java"
@@ -301,57 +467,56 @@ class SymbolReachabilityPipesTest(TestCase):
 
         expected_results = [
             {
-                "symbols_reachability": {
-                    "patch": {
-                        "vcs_url": "https://github.com/aboutcode-org/test",
-                        "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
+                "patch": {
+                    "vcs_url": "https://github.com/aboutcode-org/test",
+                    "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
+                },
+                "advisory_uids": [],
+                "evidence": [
+                    {
+                        "called": False,
+                        "defined": True,
+                        "imported": False,
+                        "fingerprint": None,
+                        "symbol_name": "App",
+                        "reachable_from": [],
                     },
-                    "evidence": [
-                        {
-                            "called": False,
-                            "defined": True,
-                            "imported": False,
-                            "fingerprint": None,
-                            "symbol_name": "App",
-                            "reachable_from": [],
-                        },
-                        {
-                            "called": False,
-                            "defined": True,
-                            "imported": False,
-                            "fingerprint": "b161e24e9575b655e84c7f249709e5d4d0"
-                            "a1e6f19e2c4baa421a6cc996fda154",
-                            "symbol_name": "App.serveReport",
-                            "reachable_from": [],
-                        },
-                        {
-                            "called": True,
-                            "defined": True,
-                            "imported": False,
-                            "fingerprint": None,
-                            "symbol_name": "App.buildFilePath",
-                            "reachable_from": ["App.serveReport"],
-                        },
-                    ],
-                    "fixed_symbols": [
-                        "App",
-                        "App.buildFilePath",
-                        "App.serveReport",
-                    ],
-                    "vulnerable_symbols": [
-                        "App",
-                        "App.buildFilePath",
-                        "App.serveReport",
-                    ],
-                    "reachability_status": "REACHABLE",
-                }
+                    {
+                        "called": False,
+                        "defined": True,
+                        "imported": False,
+                        "fingerprint": "b161e24e9575b655e84c7f249709e5d4d0"
+                        "a1e6f19e2c4baa421a6cc996fda154",
+                        "symbol_name": "App.serveReport",
+                        "reachable_from": [],
+                    },
+                    {
+                        "called": True,
+                        "defined": True,
+                        "imported": False,
+                        "fingerprint": None,
+                        "symbol_name": "App.buildFilePath",
+                        "reachable_from": ["App.serveReport"],
+                    },
+                ],
+                "fixed_symbols": [
+                    "App",
+                    "App.buildFilePath",
+                    "App.serveReport",
+                ],
+                "vulnerable_symbols": [
+                    "App",
+                    "App.buildFilePath",
+                    "App.serveReport",
+                ],
+                "reachability_status": "YES",
             }
         ]
 
         self._run_reachability_pipeline(
             mock_package_vulnerabilities,
             mock_collect_symbols,
-            mock_git_context,
+            mock_repo,
             file_path,
             app_text,
             vuln_text,
@@ -467,23 +632,23 @@ class FleetManagement:
         self.assertEqual(classify_reachability(None), ReachabilityStatus.NOT_REACHABLE)
         self.assertEqual(classify_reachability({}), ReachabilityStatus.NOT_REACHABLE)
         self.assertEqual(
-            classify_reachability({"evidence": {}}), ReachabilityStatus.NOT_REACHABLE
+            classify_reachability({"symbol1": {}}), ReachabilityStatus.NOT_REACHABLE
         )
         self.assertEqual(
-            classify_reachability({"evidence": {"fingerprint": "hash123"}}),
+            classify_reachability({"symbol1": {"fingerprint": "hash123"}}),
             ReachabilityStatus.REACHABLE,
         )
 
         self.assertEqual(
-            classify_reachability({"evidence": {"imported": True, "called": True}}),
+            classify_reachability({"symbol1": {"imported": True, "called": True}}),
             ReachabilityStatus.REACHABLE,
         )
         self.assertEqual(
-            classify_reachability({"evidence": {"imported": True, "called": False}}),
-            ReachabilityStatus.POTENTIALLY_REACHABLE,
+            classify_reachability({"symbol1": {"imported": True, "called": False}}),
+            ReachabilityStatus.UNKNOWN,
         )
         self.assertEqual(
-            classify_reachability({"evidence": {"imported": False, "called": False}}),
+            classify_reachability({"symbol1": {"imported": False, "called": False}}),
             ReachabilityStatus.NOT_REACHABLE,
         )
 

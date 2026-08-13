@@ -21,7 +21,6 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 #
 import difflib
-import os
 import shutil
 import tempfile
 from enum import Enum
@@ -38,9 +37,9 @@ from scanpipe.pipes.symbols import is_supported_language
 
 
 class ReachabilityStatus(str, Enum):
-    REACHABLE = "REACHABLE"
-    POTENTIALLY_REACHABLE = "POTENTIALLY_REACHABLE"
-    NOT_REACHABLE = "NOT_REACHABLE"
+    REACHABLE = "YES"
+    UNKNOWN = "UNKNOWN"
+    NOT_REACHABLE = "NO"
 
 
 def normalize_text(content):
@@ -75,33 +74,6 @@ def detect_language_with_scancode(file_path, content):
 
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
-
-
-class GitRepositoryContext:
-    def __init__(self, vcs_url):
-        self.vcs_url = vcs_url
-        self.repo_path = None
-        self._repo = None
-
-    def __enter__(self):
-        self.repo_path = tempfile.mkdtemp(prefix="symbol-reachability-")
-        try:
-            self._repo = Repo.clone_from(self.vcs_url, self.repo_path)
-            return self
-        except Exception as exc:
-            self._cleanup()
-            raise ValueError(f"Failed to clone/checkout {self.vcs_url}") from exc
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._cleanup()
-
-    @property
-    def repo(self) -> Repo:
-        return self._repo
-
-    def _cleanup(self):
-        if self.repo_path and os.path.exists(self.repo_path):
-            shutil.rmtree(self.repo_path, ignore_errors=True)
 
 
 class PatchAnalyzer:
@@ -276,6 +248,7 @@ class PatchAnalyzer:
         index = extractor.extract_definitions_index()
 
         metadata = {}
+        name_counts = {}
         for node in nodes:
             qualified_name = extractor._build_qualified_name(node, index)
             if not qualified_name:
@@ -284,11 +257,8 @@ class PatchAnalyzer:
             body_text = node.text.decode("utf-8", errors="replace")
             fingerprints = create_sha256_fingerprint(body_text)
 
-            key = qualified_name
-            suffix = 1
-            while key in metadata:
-                suffix += 1
-                key = f"{qualified_name}#{suffix}"
+            count = name_counts[qualified_name] = name_counts.get(qualified_name, 0) + 1
+            key = qualified_name if count == 1 else f"{qualified_name}#{count}"
 
             metadata[key] = {
                 "qualified_name": qualified_name,
@@ -378,134 +348,6 @@ class PatchAnalyzer:
         return vuln_meta, fixed_meta, language
 
 
-def generate_reachability_report(patch, repo, candidate_resources, logger=None):
-    """
-    Generate and store a symbol reachability report for a single
-    vulnerability patch against a set of candidate codebase resources.
-
-    - Creates a PatchAnalyzer for the given commit.
-    - Collects changed symbols from the patch, grouped by language.
-    - For each candidate resource whose language matches a patch
-       language, builds a ResourceAnalyzer index and uses
-       ResourcePatchMatcher to match vulnerable and fixed
-       symbols.
-    - If matches are found, constructs a report dict containing
-      evidence, matched symbol names, and a ReachabilityStatus.
-    - Appends the report to the resource's extra_data under the
-      symbols_reachability key (avoiding duplicates for the same
-       commit hash).
-
-    """
-    vcs_url = patch.get("vcs_url")
-    commit_hash = patch.get("commit_hash")
-
-    try:
-        patch_analyzer = PatchAnalyzer(repo=repo, commit_hash=commit_hash)
-        patch_symbols_by_language = patch_analyzer.collect_patch_symbols()
-
-        if not patch_symbols_by_language:
-            return
-
-        for resource in candidate_resources:
-            resource_language = resource.programming_language
-            patch_symbols = patch_symbols_by_language.get(resource_language)
-
-            if not patch_symbols:
-                continue
-
-            file_content = normalize_text(resource.file_content)
-            if not file_content:
-                continue
-
-            resource_analyzer = ResourceAnalyzer(
-                resource_text=file_content, language=resource_language
-            )
-            resource_index = resource_analyzer.build_index()
-
-            if not resource_index:
-                continue
-
-            matcher = ResourcePatchMatcher(resource_index=resource_index)
-            vuln_evidence = matcher.match(patch_symbols["vulnerable"])
-            fixed_evidence = matcher.match(patch_symbols["fixed"])
-
-            if not any([vuln_evidence, fixed_evidence]):
-                continue
-
-            report = {
-                "symbols_reachability": {
-                    "patch": {
-                        "vcs_url": vcs_url,
-                        "commit_hash": commit_hash,
-                    },
-                    "evidence": list(vuln_evidence.values()),
-                    "fixed_symbols": sorted(fixed_evidence.keys()),
-                    "vulnerable_symbols": sorted(vuln_evidence.keys()),
-                    "reachability_status": classify_reachability(vuln_evidence).value,
-                }
-            }
-
-            existing = resource.extra_data.get("symbols_reachability")
-            reports = existing if isinstance(existing, list) else []
-
-            if not any(
-                r.get("patch", {}).get("commit_hash") == commit_hash for r in reports
-            ):
-                reports.append(report)
-                resource.update_extra_data({"symbols_reachability": reports})
-
-    except Exception as e:
-        if logger:
-            logger(
-                f"Failed to collect symbol reachability for "
-                f"{vcs_url}@{commit_hash}: {e}"
-            )
-
-
-def analyze_and_store_symbol_reachability_results(project, logger=None):
-    """
-    Analyze all vulnerability patches for a project and store the
-    resulting symbol reachability reports
-
-    The function iterates over all package vulnerabilities associated
-    with the project, groups their patches by repository URL, clones
-    each repository (using :class:`GitRepositoryContext`), checks out
-    each patch's commit, and calls :func:`generate_reachability_report`
-    to determine whether the vulnerable/fixed symbols from the patch
-    are reachable in the project's codebase resources.
-
-    Only non-binary, non-archive, non-media files are considered as
-    candidate resources.
-    """
-    candidate_resources = project.codebaseresources.files().filter(
-        is_binary=False, is_archive=False, is_media=False
-    )
-
-    for vulnerability in project.package_vulnerabilities:
-        patches_by_repo = {}
-        for patch in vulnerability.get("fixed_in_patches", []):
-            vcs_url = patch.get("vcs_url")
-            commit_hash = patch.get("commit_hash")
-            if vcs_url and commit_hash:
-                patches_by_repo.setdefault(vcs_url, []).append(patch)
-
-        for vcs_url, patches in patches_by_repo.items():
-            try:
-                with GitRepositoryContext(vcs_url) as git_context:
-                    for patch in patches:
-                        commit_hash = patch.get("commit_hash")
-                        git_context.repo.git.checkout(commit_hash)
-                        generate_reachability_report(
-                            patch, git_context.repo, candidate_resources, logger
-                        )
-            except Exception as e:
-                if logger:
-                    logger(
-                        f"Failed to process repository {vcs_url} "
-                        f"for symbol reachability: {e}"
-                    )
-
-
 def classify_reachability(evidence):
     """
     Classify the reachability status of a vulnerability based on the
@@ -526,7 +368,7 @@ def classify_reachability(evidence):
             return ReachabilityStatus.REACHABLE
 
         if (is_imported or is_defined) and not is_exact:
-            status = ReachabilityStatus.POTENTIALLY_REACHABLE
+            status = ReachabilityStatus.UNKNOWN
 
     return status
 
@@ -685,3 +527,33 @@ class ResourcePatchMatcher:
                 entry["fingerprint"] = fingerprint
 
         return matched
+
+
+def add_reachability_report(resource, commit_hash, vcs_url, new_report):
+    """
+    Add a reachability report for commit_hash and vcs_url.
+    If duplicates exist, replace the old report with the new one.
+    """
+    cleaned_reports = []
+    replaced = False
+
+    old_reports = resource.extra_data.get("symbols_reachability", [])
+    for old_report in old_reports:
+        actual_report = old_report.get("symbols_reachability", old_report)
+
+        patch_info = actual_report.get("patch", {})
+        old_commit_hash = patch_info.get("commit_hash")
+        old_vcs_url = patch_info.get("vcs_url")
+
+        if old_commit_hash == commit_hash and old_vcs_url == vcs_url:
+            if not replaced:
+                cleaned_reports.append(new_report)
+                replaced = True
+            # Skip old duplicate
+        else:
+            cleaned_reports.append(actual_report)
+
+    if not replaced:
+        cleaned_reports.append(new_report)
+
+    resource.update_extra_data({"symbols_reachability": cleaned_reports})
