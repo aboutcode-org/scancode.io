@@ -228,7 +228,7 @@ class LanguageQuery(ABC):
                 Query(self.ts_language, source) if source else None
             )
 
-    def parse_code_to_ast(self, code_text: str):
+    def parse_code_to_ast(self, code_text):
         from source_inspector import symbols_tree_sitter
         from tree_sitter import Parser
 
@@ -239,7 +239,7 @@ class LanguageQuery(ABC):
             code_text.encode("utf-8")
         ), symbols_tree_sitter.TS_LANGUAGE_WHEELS[self.language_name]
 
-    def run_query(self, kind: str, root_node):
+    def run_query(self, kind, root_node):
         query = self._compiled_queries.get(kind)
         return query.matches(root_node) if query else []
 
