@@ -49,9 +49,12 @@ class SymbolReachability(Pipeline):
 
     The analysis checks if vulnerable symbols are defined, imported, called, or
     exactly match a fingerprint within the project files. The results, including
-    evidence and a reachability status (REACHABLE, POTENTIALLY_REACHABLE, or
+    evidence and a reachability status (REACHABLE, UNKNOWN, or
     NOT_REACHABLE), are stored in the `extra_data` of the matching resources
     under the `symbols_reachability` key.
+
+    Finally, a summary report is generated for each vulnerability
+    advisory and saved as a JSON output file.
     """
 
     download_inputs = False

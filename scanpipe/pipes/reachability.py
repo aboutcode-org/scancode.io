@@ -538,9 +538,7 @@ def add_reachability_report(resource, commit_hash, vcs_url, new_report):
 
     old_reports = resource.extra_data.get("symbols_reachability", [])
     for old_report in old_reports:
-        actual_report = old_report.get("symbols_reachability", old_report)
-
-        patch_info = actual_report.get("patch", {})
+        patch_info = old_report.get("patch", {})
         old_commit_hash = patch_info.get("commit_hash")
         old_vcs_url = patch_info.get("vcs_url")
 
@@ -550,7 +548,7 @@ def add_reachability_report(resource, commit_hash, vcs_url, new_report):
                 replaced = True
             # Skip old duplicate
         else:
-            cleaned_reports.append(actual_report)
+            cleaned_reports.append(old_report)
 
     if not replaced:
         cleaned_reports.append(new_report)
