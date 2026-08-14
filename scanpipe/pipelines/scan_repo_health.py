@@ -129,14 +129,37 @@ class ScanRepoHealth(Pipeline):
         score, and metrics from the generated JSON and overwriting it with a
         simplified structure.
         """
+        if not self.metrics_output_path.exists():
+            raise FileNotFoundError(
+                "Grimoirelab-metrics pipeline doesn't return a valid metrics JSON file"
+            )
+
         with open(self.metrics_output_path) as f:
             data = json.load(f)
 
-        package = list(data["packages"].values())[0]
+        if not isinstance(data, dict):
+            raise ValueError("Invalid metrics JSON: Expected a JSON object.")
 
-        repository = package["repository"]
-        score = package["score"]
-        metrics = package["metrics"]
+        package_data = data.get("packages")
+        if not package_data or not isinstance(package_data, dict):
+            raise ValueError(
+                "Invalid metrics JSON: Missing or malformed 'packages' section."
+            )
+
+        packages = list(package_data.values())
+        if not packages:
+            raise ValueError("Invalid metrics JSON: 'packages' contains no data.")
+
+        target_package = packages[0]
+        repository = target_package.get("repository")
+        score = target_package.get("npm_health_score")
+        metrics = target_package.get("metrics")
+
+        if repository is None or score is None or metrics is None:
+            raise ValueError(
+                f"Invalid metrics JSON. missing or null field(s): "
+                f"repository: {repository}, score: {score}, metrics: {metrics}"
+            )
 
         result = {
             "repository": repository,
