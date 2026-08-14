@@ -179,7 +179,7 @@ def _collect_and_store_tree_sitter_symbols_and_strings(resource):
 
 
 @cache
-def load_language(language: str):
+def load_language(language):
     from source_inspector import symbols_tree_sitter
 
     if language not in symbols_tree_sitter.TS_LANGUAGE_WHEELS:
@@ -392,7 +392,7 @@ class SymbolExtractor:
         self.root_node = root_node
         self.syntax_config = lang_query.syntax_config
 
-    def _build_qualified_name(self, node, index: dict) -> str:
+    def _build_qualified_name(self, node, index):
         """
         Build fully qualified names internally
         (e.g., ClassName.function_name or ClassName::function_name).
@@ -410,7 +410,7 @@ class SymbolExtractor:
 
     def extract_definitions_index(self):
         """Build the index of definitions with fully qualified names."""
-        index: dict[int, dict] = {}
+        index = {}
 
         for node, name in self.lang_query.get_functions(self.root_node):
             index[node.id] = {"node": node, "name": name, "kind": "functions"}
@@ -428,7 +428,7 @@ class SymbolExtractor:
 
         return index
 
-    def extract_changed_symbols(self, changed_lines: list[int]):
+    def extract_changed_symbols(self, changed_lines):
         """Map changed line numbers to their enclosing symbol nodes."""
         if self.root_node is None or not changed_lines:
             return []
@@ -474,8 +474,8 @@ class SymbolExtractor:
         separator = self.syntax_config.get("separator", ".")
         wildcard_sym = self.syntax_config.get("wildcard_symbol")
 
-        import_map: dict[str, str | list[str]] = {}
-        wildcard_modules: list[str] = []
+        import_map = {}
+        wildcard_modules = []
 
         for module_name, pairs in self.lang_query.get_imports(self.root_node):
             for imp_name, alias in pairs:
