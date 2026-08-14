@@ -27,7 +27,6 @@ import tempfile
 from enum import Enum
 from pathlib import Path
 
-from git import Repo
 from git.diff import NULL_TREE
 from typecode import get_type
 
