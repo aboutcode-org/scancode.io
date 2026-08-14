@@ -109,7 +109,7 @@ class SymbolReachability(Pipeline):
                 repo = Repo.clone_from(vcs_url, repo_path)
                 self.cloned_git_obj_repos[vcs_url] = repo
             except Exception as e:
-                self.log(f"Failed to clone repository {vcs_url}: {e}")
+                self.log(f"Failed to clone repository {vcs_url}: {e!r}")
 
     def collect_resource_index(self):
         """Collect resources symbols for each resource exactly once."""
@@ -148,7 +148,8 @@ class SymbolReachability(Pipeline):
                 self.patch_symbols[commit_hash] = patch_analyzer.collect_patch_symbols()
             except Exception as e:
                 self.log(
-                    f"Failed to collect patch symbols for {vcs_url}@{commit_hash}: {e}"
+                    f"Failed to collect patch "
+                    f"symbols for {vcs_url}@{commit_hash}: {e!r}"
                 )
                 self.patch_symbols[commit_hash] = {}
 
