@@ -26,7 +26,6 @@ import tempfile
 from enum import Enum
 from pathlib import Path
 
-from git import Repo
 from git.diff import NULL_TREE
 from scancode.api import get_file_info
 
@@ -77,7 +76,7 @@ def detect_language_with_scancode(file_path, content):
 
 
 class PatchAnalyzer:
-    def __init__(self, repo: Repo, commit_hash):
+    def __init__(self, repo, commit_hash):
         self.repo = repo
         self.commit = repo.commit(commit_hash)
         self.parent_commit = self.commit.parents[0] if self.commit.parents else None
