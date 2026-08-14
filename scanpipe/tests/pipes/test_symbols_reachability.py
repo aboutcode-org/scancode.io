@@ -135,7 +135,7 @@ class SymbolReachabilityPipesTest(TestCase):
                     ],
                     "fixed_symbols": ["process_data"],
                     "vulnerable_symbols": ["process_data"],
-                    "reachability_status": "YES",
+                    "reachability_status": ReachabilityStatus.REACHABLE.value,
                 }
             ]
 
@@ -228,7 +228,7 @@ class SymbolReachabilityPipesTest(TestCase):
 
             expected_report = {
                 "AVID-1": {
-                    "reachable": "YES",
+                    "reachable": ReachabilityStatus.REACHABLE.value,
                     "details": [
                         {
                             "resource_path": "src/file2.py",
@@ -247,7 +247,7 @@ class SymbolReachabilityPipesTest(TestCase):
                                 "vcs_url": "https://example.com",
                                 "commit_hash": "abc123",
                             },
-                            "reachability_status": "YES",
+                            "reachability_status": ReachabilityStatus.REACHABLE.value,
                             "evidence": [
                                 {
                                     "symbol_name": "vuln_sym1",
@@ -265,7 +265,7 @@ class SymbolReachabilityPipesTest(TestCase):
                     ],
                 },
                 "AVID-2": {
-                    "reachable": "YES",
+                    "reachable": ReachabilityStatus.REACHABLE.value,
                     "details": [
                         {
                             "resource_path": "src/file3.py",
@@ -284,7 +284,7 @@ class SymbolReachabilityPipesTest(TestCase):
                                 "vcs_url": "https://example.com",
                                 "commit_hash": "abc123",
                             },
-                            "reachability_status": "YES",
+                            "reachability_status": ReachabilityStatus.REACHABLE.value,
                             "evidence": [
                                 {
                                     "symbol_name": "vuln_sym1",
@@ -435,7 +435,7 @@ class SymbolReachabilityPipesTest(TestCase):
                     "serve_report",
                     "serve_report.build_file_path",
                 ],
-                "reachability_status": "YES",
+                "reachability_status": ReachabilityStatus.REACHABLE.value,
             }
         ]
 
@@ -509,7 +509,7 @@ class SymbolReachabilityPipesTest(TestCase):
                     "App.buildFilePath",
                     "App.serveReport",
                 ],
-                "reachability_status": "YES",
+                "reachability_status": ReachabilityStatus.REACHABLE.value,
             }
         ]
 
@@ -632,19 +632,19 @@ class FleetManagement:
         self.assertEqual(classify_reachability(None), ReachabilityStatus.NOT_REACHABLE)
         self.assertEqual(classify_reachability({}), ReachabilityStatus.NOT_REACHABLE)
         self.assertEqual(
-            classify_reachability({"symbol1": {}}), ReachabilityStatus.NOT_REACHABLE
+            classify_reachability({"evidence": {}}), ReachabilityStatus.NOT_REACHABLE
         )
         self.assertEqual(
-            classify_reachability({"symbol1": {"fingerprint": "hash123"}}),
+            classify_reachability({"evidence": {"fingerprint": "hash123"}}),
             ReachabilityStatus.REACHABLE,
         )
 
         self.assertEqual(
-            classify_reachability({"symbol1": {"imported": True, "called": True}}),
+            classify_reachability({"evidence": {"imported": True, "called": True}}),
             ReachabilityStatus.REACHABLE,
         )
         self.assertEqual(
-            classify_reachability({"symbol1": {"imported": True, "called": False}}),
+            classify_reachability({"evidence": {"imported": True, "called": False}}),
             ReachabilityStatus.UNKNOWN,
         )
         self.assertEqual(
