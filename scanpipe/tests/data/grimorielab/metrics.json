@@ -42,7 +42,7 @@
                 "last_commit_date": "2026-06-18T09:38:47+02:00"
             },
             "repository": "https://github.com/chaoss/grimoirelab.git",
-            "score": 2.361341589536065e-72
+            "npm_health_score": 2.361341589536065e-72
         }
     },
     "metadata": {
