@@ -759,8 +759,8 @@ Optional arguments:
 
 .. _cli_run:
 
-`$ run PIPELINE_NAME [PIPELINE_NAME ...] input_location`
---------------------------------------------------------
+`$ run PIPELINE_NAME [PIPELINE_NAME ...] [input_location]`
+----------------------------------------------------------
 
 A ``run`` command is available for executing pipelines and printing the results
 without providing any configuration. This can be useful for running a pipeline to get
@@ -769,6 +769,9 @@ review the results.
 
 .. tip:: You can run multiple pipelines by providing their names, space-separated,
   such as `pipeline1 pipeline2`.
+
+The ``input_location`` is optional, so pipelines that do not take any input can be
+run without it.
 
 Optional arguments:
 
