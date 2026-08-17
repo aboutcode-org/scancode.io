@@ -130,3 +130,11 @@ def normalize_repository_url(repository):
 def get_repository_url(metadata):
     """Return a normalized repository URL from npm metadata."""
     return normalize_repository_url(metadata.get("repository"))
+
+
+
+def get_tarball_url(metadata):
+    """Return the npm distribution tarball URL."""
+    dist = metadata.get("dist") or {}
+    value = dist.get("tarball")
+    return value if isinstance(value, str) else ""
