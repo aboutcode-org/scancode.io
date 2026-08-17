@@ -92,3 +92,20 @@ class NpmHealth(Pipeline):
             metrics=self.metrics,
             score=self.score,
         )
+
+
+    def persist_results(self):
+        """Persist fresh results to extra_data and a portable JSON output."""
+        if self.cached_snapshot:
+            return
+
+        npm_health.cache_snapshot(self.project, self.snapshot)
+        output = npm_health.write_snapshot(self.project, self.snapshot)
+        self.project.add_info(
+            model="npm_health",
+            description=(
+                f"npm-health score: {self.snapshot['score']} "
+                f"({self.snapshot['classification']})"
+            ),
+            details={"output": output.name},
+        )
