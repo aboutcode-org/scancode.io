@@ -429,3 +429,14 @@ def cache_snapshot(project, snapshot):
     """Persist one npm-health snapshot in Project.extra_data."""
     project.update_extra_data({NPM_HEALTH_EXTRA_DATA_KEY: snapshot})
     return snapshot
+
+
+
+def write_snapshot(project, snapshot):
+    """Write one npm-health JSON result into the project output directory."""
+    output = project.get_output_file_path("npm-health", "json")
+    output.write_text(
+        json.dumps(snapshot, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return output
