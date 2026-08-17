@@ -154,3 +154,10 @@ class NpmHealthPipesTest(SimpleTestCase):
             {"activity": 1.0, "security": 1.0},
         )
         self.assertEqual(75.0, score)
+
+
+    def test_classify_health_score(self):
+        self.assertEqual("excellent", npm_health.classify_health_score(90))
+        self.assertEqual("good", npm_health.classify_health_score(70))
+        self.assertEqual("needs-attention", npm_health.classify_health_score(50))
+        self.assertEqual("high-risk", npm_health.classify_health_score(20))
