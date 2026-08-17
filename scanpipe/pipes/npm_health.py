@@ -274,3 +274,15 @@ def compute_health_score(metrics, weights=None):
         return 0.0
     numerator = sum(value * weight for value, weight in weighted)
     return round((numerator / denominator) * 100, 2)
+
+
+
+def classify_health_score(score):
+    """Return a qualitative classification for a numeric health score."""
+    if score >= 80:
+        return "excellent"
+    if score >= 60:
+        return "good"
+    if score >= 40:
+        return "needs-attention"
+    return "high-risk"
