@@ -72,3 +72,14 @@ class NpmHealthPipesTest(SimpleTestCase):
             "https://github.com/a/b",
             npm_health.normalize_repository_url(repository),
         )
+
+
+    def test_normalize_repository_url_git_transports(self):
+        self.assertEqual(
+            "https://github.com/a/b",
+            npm_health.normalize_repository_url("git://github.com/a/b.git"),
+        )
+        self.assertEqual(
+            "https://github.com/a/b",
+            npm_health.normalize_repository_url("git@github.com:a/b.git"),
+        )
