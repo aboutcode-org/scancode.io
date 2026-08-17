@@ -170,3 +170,18 @@ def get_dependency_count(metadata):
     """Return the number of runtime dependencies in npm metadata."""
     dependencies = metadata.get("dependencies") or {}
     return len(dependencies) if isinstance(dependencies, dict) else 0
+
+
+
+def fetch_registry_metadata(
+    package,
+    session=requests,
+    timeout=DEFAULT_REQUEST_TIMEOUT,
+):
+    """Fetch and return npm registry metadata for ``package``."""
+    response = session.get(get_registry_metadata_url(package), timeout=timeout)
+    response.raise_for_status()
+    data = response.json()
+    if not isinstance(data, dict):
+        raise NpmHealthPayloadError("The npm registry returned a non-object payload.")
+    return data
