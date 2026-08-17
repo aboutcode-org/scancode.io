@@ -131,3 +131,11 @@ class NpmHealthPipesTest(SimpleTestCase):
         self.assertEqual(1.0, metrics["metadata_completeness"])
         self.assertEqual(1.0, metrics["maintainer_presence"])
         self.assertGreater(metrics["dependency_simplicity"], 0.9)
+
+
+    def test_merge_metrics_external_values_override_baseline(self):
+        merged = npm_health.merge_metrics(
+            {"activity": 0.2, "security": 0.5},
+            {"activity": 90},
+        )
+        self.assertEqual({"activity": 0.9, "security": 0.5}, merged)
