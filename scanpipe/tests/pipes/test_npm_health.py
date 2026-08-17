@@ -146,3 +146,11 @@ class NpmHealthPipesTest(SimpleTestCase):
             {"activity": 2.0},
             npm_health.normalize_weights({"activity": 2, "security": 0}),
         )
+
+
+    def test_compute_health_score(self):
+        score = npm_health.compute_health_score(
+            {"activity": 1.0, "security": 0.5},
+            {"activity": 1.0, "security": 1.0},
+        )
+        self.assertEqual(75.0, score)
