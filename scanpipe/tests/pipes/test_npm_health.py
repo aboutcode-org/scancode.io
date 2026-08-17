@@ -37,3 +37,8 @@ class NpmHealthPipesTest(SimpleTestCase):
     def test_parse_package_url_rejects_empty_value(self):
         with self.assertRaises(npm_health.NpmHealthPayloadError):
             npm_health.parse_package_url("")
+
+
+    def test_validate_npm_package_url_rejects_other_types(self):
+        with self.assertRaises(npm_health.NpmHealthPayloadError):
+            npm_health.validate_npm_package_url("pkg:pypi/django@5.2")
