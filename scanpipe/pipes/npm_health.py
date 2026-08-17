@@ -257,3 +257,20 @@ def normalize_weights(weights=None):
         for name, value in weights.items()
         if isinstance(name, str) and isinstance(value, int | float) and value > 0
     }
+
+
+
+def compute_health_score(metrics, weights=None):
+    """Return a weighted package health score from 0 to 100."""
+    metrics = normalize_metrics(metrics)
+    weights = normalize_weights(weights)
+    weighted = [
+        (value, weights[name])
+        for name, value in metrics.items()
+        if name in weights
+    ]
+    denominator = sum(weight for _, weight in weighted)
+    if not denominator:
+        return 0.0
+    numerator = sum(value * weight for value, weight in weighted)
+    return round((numerator / denominator) * 100, 2)
