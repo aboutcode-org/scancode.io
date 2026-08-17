@@ -83,3 +83,19 @@ class NpmHealthPipesTest(SimpleTestCase):
             "https://github.com/a/b",
             npm_health.normalize_repository_url("git@github.com:a/b.git"),
         )
+
+
+    def test_build_collection_targets(self):
+        metadata = {
+            "repository": {"url": "https://github.com/a/b.git"},
+            "homepage": "https://example.com",
+            "dist": {"tarball": "https://registry.example/a.tgz"},
+        }
+        self.assertEqual(
+            {
+                "repository_url": "https://github.com/a/b",
+                "tarball_url": "https://registry.example/a.tgz",
+                "homepage_url": "https://example.com",
+            },
+            npm_health.build_collection_targets(metadata),
+        )
