@@ -414,3 +414,11 @@ def build_snapshot(purl, metadata, metrics, score, collected_at=None):
         "metrics": normalize_metrics(metrics),
         "sources": build_collection_targets(metadata),
     }
+
+
+
+def get_cached_snapshot(project):
+    """Return the cached npm-health snapshot from project.extra_data."""
+    data = project.extra_data or {}
+    snapshot = data.get(NPM_HEALTH_EXTRA_DATA_KEY)
+    return snapshot if isinstance(snapshot, dict) else None
