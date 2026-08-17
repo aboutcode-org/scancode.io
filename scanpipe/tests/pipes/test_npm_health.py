@@ -42,3 +42,8 @@ class NpmHealthPipesTest(SimpleTestCase):
     def test_validate_npm_package_url_rejects_other_types(self):
         with self.assertRaises(npm_health.NpmHealthPayloadError):
             npm_health.validate_npm_package_url("pkg:pypi/django@5.2")
+
+
+    def test_validate_npm_package_url_requires_version(self):
+        with self.assertRaises(npm_health.NpmHealthPayloadError):
+            npm_health.validate_npm_package_url("pkg:npm/lodash")
