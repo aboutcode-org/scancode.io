@@ -72,3 +72,11 @@ class NpmHealth(Pipeline):
                 cwd=self.project.tmp_path,
             )
         self.metrics = npm_health.merge_metrics(baseline, external)
+
+
+    def compute_package_health_score(self):
+        """Compute the normalized package health score."""
+        if self.cached_snapshot:
+            return
+        weights = self.env.get("npm_health_metric_weights")
+        self.score = npm_health.compute_health_score(self.metrics, weights=weights)
