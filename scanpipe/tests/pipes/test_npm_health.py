@@ -32,3 +32,8 @@ class NpmHealthPipesTest(SimpleTestCase):
         self.assertEqual("npm", package.type)
         self.assertEqual("lodash", package.name)
         self.assertEqual("4.17.21", package.version)
+
+
+    def test_parse_package_url_rejects_empty_value(self):
+        with self.assertRaises(npm_health.NpmHealthPayloadError):
+            npm_health.parse_package_url("")
