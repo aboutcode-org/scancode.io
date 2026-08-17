@@ -64,3 +64,11 @@ class NpmHealthPipesTest(SimpleTestCase):
             "https://registry.npmjs.org/@babel%2Fcore/7.28.0",
             npm_health.get_registry_metadata_url(package),
         )
+
+
+    def test_normalize_repository_url_dict(self):
+        repository = {"type": "git", "url": "git+https://github.com/a/b.git"}
+        self.assertEqual(
+            "https://github.com/a/b",
+            npm_health.normalize_repository_url(repository),
+        )
