@@ -156,3 +156,10 @@ def get_license(metadata):
     if isinstance(value, dict) and isinstance(value.get("type"), str):
         return value["type"]
     return ""
+
+
+
+def get_maintainer_count(metadata):
+    """Return the number of maintainers declared by npm."""
+    maintainers = metadata.get("maintainers") or []
+    return len(maintainers) if isinstance(maintainers, list) else 0
