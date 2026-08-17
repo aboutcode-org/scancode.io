@@ -117,3 +117,17 @@ class NpmHealthPipesTest(SimpleTestCase):
                 {"metrics": {"activity": 80, "security": True}}
             ),
         )
+
+
+    def test_collect_registry_metrics(self):
+        metadata = {
+            "repository": {"url": "https://github.com/a/b.git"},
+            "homepage": "https://example.com",
+            "license": "MIT",
+            "maintainers": [{"name": "a"}, {"name": "b"}, {"name": "c"}],
+            "dependencies": {"one": "1", "two": "2"},
+        }
+        metrics = npm_health.collect_registry_metrics(metadata)
+        self.assertEqual(1.0, metrics["metadata_completeness"])
+        self.assertEqual(1.0, metrics["maintainer_presence"])
+        self.assertGreater(metrics["dependency_simplicity"], 0.9)
