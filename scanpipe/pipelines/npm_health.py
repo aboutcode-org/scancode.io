@@ -80,3 +80,15 @@ class NpmHealth(Pipeline):
             return
         weights = self.env.get("npm_health_metric_weights")
         self.score = npm_health.compute_health_score(self.metrics, weights=weights)
+
+
+    def build_result_snapshot(self):
+        """Build the reusable snapshot stored on the project."""
+        if self.cached_snapshot:
+            return
+        self.snapshot = npm_health.build_snapshot(
+            purl=self.project.purl,
+            metadata=self.metadata,
+            metrics=self.metrics,
+            score=self.score,
+        )
