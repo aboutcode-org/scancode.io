@@ -56,3 +56,14 @@ class NpmHealthPayloadError(NpmHealthError):
 
 class NpmHealthCommandError(NpmHealthError):
     """External metrics collector failure."""
+
+
+
+def parse_package_url(value):
+    """Return a PackageURL parsed from ``value``."""
+    if not value or not isinstance(value, str):
+        raise NpmHealthPayloadError("A project PURL is required.")
+    try:
+        return PackageURL.from_string(value)
+    except ValueError as error:
+        raise NpmHealthPayloadError(f"Invalid package URL: {value}") from error
