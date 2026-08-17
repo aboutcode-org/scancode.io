@@ -139,3 +139,10 @@ class NpmHealthPipesTest(SimpleTestCase):
             {"activity": 90},
         )
         self.assertEqual({"activity": 0.9, "security": 0.5}, merged)
+
+
+    def test_normalize_weights_ignores_non_positive_values(self):
+        self.assertEqual(
+            {"activity": 2.0},
+            npm_health.normalize_weights({"activity": 2, "security": 0}),
+        )
