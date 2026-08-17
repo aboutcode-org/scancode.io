@@ -124,3 +124,9 @@ def normalize_repository_url(repository):
         return ""
     path = parsed.path.removesuffix(".git").rstrip("/")
     return urlunparse((parsed.scheme, parsed.netloc, path, "", "", ""))
+
+
+
+def get_repository_url(metadata):
+    """Return a normalized repository URL from npm metadata."""
+    return normalize_repository_url(metadata.get("repository"))
