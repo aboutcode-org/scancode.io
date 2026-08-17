@@ -191,3 +191,16 @@ def fetch_registry_metadata(
 def clamp(value, minimum=0.0, maximum=1.0):
     """Clamp a numeric value to an inclusive range."""
     return max(minimum, min(maximum, value))
+
+
+
+def normalize_metric_value(value):
+    """Normalize bool, 0..1, or percentage metric values to 0..1."""
+    if isinstance(value, bool):
+        return float(value)
+    if not isinstance(value, int | float):
+        raise NpmHealthPayloadError(f"Unsupported metric value: {value!r}")
+    normalized = float(value)
+    if normalized > 1.0:
+        normalized /= 100.0
+    return clamp(normalized)
