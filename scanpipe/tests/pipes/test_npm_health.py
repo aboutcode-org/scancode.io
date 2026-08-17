@@ -47,3 +47,10 @@ class NpmHealthPipesTest(SimpleTestCase):
     def test_validate_npm_package_url_requires_version(self):
         with self.assertRaises(npm_health.NpmHealthPayloadError):
             npm_health.validate_npm_package_url("pkg:npm/lodash")
+
+
+    def test_get_package_name_supports_scopes(self):
+        package = npm_health.validate_npm_package_url(
+            "pkg:npm/%40babel/core@7.28.0"
+        )
+        self.assertEqual("@babel/core", npm_health.get_package_name(package))
