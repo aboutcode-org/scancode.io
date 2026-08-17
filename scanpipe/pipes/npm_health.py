@@ -286,3 +286,17 @@ def classify_health_score(score):
     if score >= 40:
         return "needs-attention"
     return "high-risk"
+
+
+
+def parse_timestamp(value):
+    """Return an aware UTC datetime parsed from an ISO timestamp."""
+    if not value or not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
