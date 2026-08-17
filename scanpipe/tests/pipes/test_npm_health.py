@@ -196,3 +196,11 @@ class NpmHealthPipesTest(SimpleTestCase):
             ],
             args,
         )
+
+
+    def test_load_metrics_json_rejects_invalid_json(self):
+        with TemporaryDirectory() as temp_dir:
+            location = Path(temp_dir) / "metrics.json"
+            location.write_text("{", encoding="utf-8")
+            with self.assertRaises(npm_health.NpmHealthPayloadError):
+                npm_health.load_metrics_json(location)
