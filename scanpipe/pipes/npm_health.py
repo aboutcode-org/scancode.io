@@ -401,3 +401,16 @@ def collect_external_metrics(
     args = render_metrics_command(command_template, context)
     run_metrics_command(args=args, cwd=cwd)
     return load_metrics_json(output)
+
+
+
+def build_snapshot(purl, metadata, metrics, score, collected_at=None):
+    """Return the persisted npm-health result structure."""
+    return {
+        "purl": purl,
+        "collected_at": collected_at or datetime.now(UTC).isoformat(),
+        "score": score,
+        "classification": classify_health_score(score),
+        "metrics": normalize_metrics(metrics),
+        "sources": build_collection_targets(metadata),
+    }
