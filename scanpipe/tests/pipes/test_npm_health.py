@@ -54,3 +54,13 @@ class NpmHealthPipesTest(SimpleTestCase):
             "pkg:npm/%40babel/core@7.28.0"
         )
         self.assertEqual("@babel/core", npm_health.get_package_name(package))
+
+
+    def test_get_registry_metadata_url_for_scoped_package(self):
+        package = npm_health.validate_npm_package_url(
+            "pkg:npm/%40babel/core@7.28.0"
+        )
+        self.assertEqual(
+            "https://registry.npmjs.org/@babel%2Fcore/7.28.0",
+            npm_health.get_registry_metadata_url(package),
+        )
