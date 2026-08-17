@@ -99,3 +99,7 @@ class NpmHealthPipesTest(SimpleTestCase):
             },
             npm_health.build_collection_targets(metadata),
         )
+
+
+    def test_normalize_metric_value_fraction(self):
+        self.assertEqual(0.75, npm_health.normalize_metric_value(0.75))
