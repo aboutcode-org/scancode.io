@@ -101,3 +101,26 @@ def get_registry_metadata_url(package):
     name = quote(get_package_name(package), safe="@")
     version = quote(package.version, safe="")
     return f"https://registry.npmjs.org/{name}/{version}"
+
+
+
+def normalize_repository_url(repository):
+    """Return a normalized HTTP(S) repository URL."""
+    if isinstance(repository, dict):
+        repository = repository.get("url")
+    if not repository or not isinstance(repository, str):
+        return ""
+
+    value = repository.strip()
+    if value.startswith("git+"):
+        value = value[4:]
+    if value.startswith("git@github.com:"):
+        value = "https://github.com/" + value.removeprefix("git@github.com:")
+    if value.startswith("git://github.com/"):
+        value = "https://github.com/" + value.removeprefix("git://github.com/")
+
+    parsed = urlparse(value)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return ""
+    path = parsed.path.removesuffix(".git").rstrip("/")
+    return urlunparse((parsed.scheme, parsed.netloc, path, "", "", ""))
