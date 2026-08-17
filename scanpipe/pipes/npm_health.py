@@ -300,3 +300,15 @@ def parse_timestamp(value):
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=UTC)
     return parsed.astimezone(UTC)
+
+
+
+def is_stale(snapshot, max_age_days=DEFAULT_CACHE_MAX_AGE_DAYS, now=None):
+    """Return True when a cached npm-health snapshot is missing or too old."""
+    if not isinstance(snapshot, dict):
+        return True
+    collected_at = parse_timestamp(snapshot.get("collected_at"))
+    if not collected_at:
+        return True
+    now = now or datetime.now(UTC)
+    return now - collected_at > timedelta(days=max_age_days)
