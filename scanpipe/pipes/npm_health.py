@@ -145,3 +145,14 @@ def get_homepage_url(metadata):
     """Return the package homepage URL when available."""
     value = metadata.get("homepage")
     return value if isinstance(value, str) else ""
+
+
+
+def get_license(metadata):
+    """Return a compact license value from npm metadata."""
+    value = metadata.get("license")
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict) and isinstance(value.get("type"), str):
+        return value["type"]
+    return ""
