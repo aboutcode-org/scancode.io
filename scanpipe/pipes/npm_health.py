@@ -44,3 +44,15 @@ DEFAULT_METRIC_WEIGHTS = {
     "maintainer_presence": 0.5,
     "dependency_simplicity": 0.25,
 }
+
+
+class NpmHealthError(Exception):
+    """Base npm-health error."""
+
+
+class NpmHealthPayloadError(NpmHealthError):
+    """Invalid PURL, registry data, or metrics payload."""
+
+
+class NpmHealthCommandError(NpmHealthError):
+    """External metrics collector failure."""
