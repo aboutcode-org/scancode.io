@@ -29,3 +29,19 @@ class NpmHealth(Pipeline):
     def validate_project_purl(self):
         """Validate and parse the project's versioned npm PURL."""
         self.package = npm_health.validate_npm_package_url(self.project.purl)
+
+
+    def load_cached_snapshot(self):
+        """Reuse a fresh project snapshot when one is already available."""
+        self.cached_snapshot = None
+        snapshot = npm_health.get_cached_snapshot(self.project)
+        max_age = int(
+            self.env.get(
+                "npm_health_cache_max_age_days",
+                npm_health.DEFAULT_CACHE_MAX_AGE_DAYS,
+            )
+        )
+        if snapshot and not npm_health.is_stale(snapshot, max_age_days=max_age):
+            self.cached_snapshot = snapshot
+            self.snapshot = snapshot
+            self.log("Using fresh cached npm-health analysis.")
