@@ -204,3 +204,8 @@ class NpmHealthPipesTest(SimpleTestCase):
             location.write_text("{", encoding="utf-8")
             with self.assertRaises(npm_health.NpmHealthPayloadError):
                 npm_health.load_metrics_json(location)
+
+
+    def test_get_cached_snapshot(self):
+        project = mock.Mock(extra_data={"npm_health": {"score": 88}})
+        self.assertEqual({"score": 88}, npm_health.get_cached_snapshot(project))
