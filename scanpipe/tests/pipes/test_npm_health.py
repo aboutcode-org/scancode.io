@@ -173,3 +173,26 @@ class NpmHealthPipesTest(SimpleTestCase):
         now = datetime(2026, 8, 17, tzinfo=UTC)
         snapshot = {"collected_at": "2026-01-01T00:00:00+00:00"}
         self.assertTrue(npm_health.is_stale(snapshot, max_age_days=90, now=now))
+
+
+    def test_render_metrics_command(self):
+        context = {
+            "purl": "pkg:npm/lodash@4.17.21",
+            "repository_url": "https://github.com/lodash/lodash",
+            "tarball_url": "https://example.com/lodash.tgz",
+            "output": "/tmp/result.json",
+        }
+        args = npm_health.render_metrics_command(
+            "collector --repo {repository_url} --output {output}",
+            context,
+        )
+        self.assertEqual(
+            [
+                "collector",
+                "--repo",
+                "https://github.com/lodash/lodash",
+                "--output",
+                "/tmp/result.json",
+            ],
+            args,
+        )
