@@ -163,3 +163,10 @@ def get_maintainer_count(metadata):
     """Return the number of maintainers declared by npm."""
     maintainers = metadata.get("maintainers") or []
     return len(maintainers) if isinstance(maintainers, list) else 0
+
+
+
+def get_dependency_count(metadata):
+    """Return the number of runtime dependencies in npm metadata."""
+    dependencies = metadata.get("dependencies") or {}
+    return len(dependencies) if isinstance(dependencies, dict) else 0
