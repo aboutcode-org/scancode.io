@@ -93,3 +93,11 @@ def get_package_name(package):
     if not namespace.startswith("@"):
         namespace = f"@{namespace}"
     return f"{namespace}/{package.name}"
+
+
+
+def get_registry_metadata_url(package):
+    """Return the npm registry URL for one exact package version."""
+    name = quote(get_package_name(package), safe="@")
+    version = quote(package.version, safe="")
+    return f"https://registry.npmjs.org/{name}/{version}"
