@@ -158,6 +158,7 @@ collect_symbols_pygments = "scanpipe.pipelines.collect_symbols_pygments:CollectS
 collect_symbols_tree_sitter = "scanpipe.pipelines.collect_symbols_tree_sitter:CollectSymbolsTreeSitter"
 enrich_with_purldb = "scanpipe.pipelines.enrich_with_purldb:EnrichWithPurlDB"
 fetch_scores = "scanpipe.pipelines.fetch_scores:FetchScores"
+npm_health = "scanpipe.pipelines.npm_health:NpmHealth"
 find_vulnerabilities = "scanpipe.pipelines.find_vulnerabilities:FindVulnerabilities"
 inspect_elf_binaries = "scanpipe.pipelines.inspect_elf_binaries:InspectELFBinaries"
 inspect_packages = "scanpipe.pipelines.inspect_packages:InspectPackages"
