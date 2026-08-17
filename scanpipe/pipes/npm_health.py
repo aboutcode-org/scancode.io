@@ -219,3 +219,20 @@ def normalize_metrics(payload):
         for name, value in values.items()
         if isinstance(name, str)
     }
+
+
+
+def collect_registry_metrics(metadata):
+    """Return baseline health signals available from npm registry metadata."""
+    completeness = sum(
+        (
+            bool(get_repository_url(metadata)),
+            bool(get_homepage_url(metadata)),
+            bool(get_license(metadata)),
+        )
+    ) / 3
+    return {
+        "metadata_completeness": completeness,
+        "maintainer_presence": clamp(get_maintainer_count(metadata) / 3),
+        "dependency_simplicity": 1.0 - clamp(get_dependency_count(metadata) / 50),
+    }
