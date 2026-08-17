@@ -161,3 +161,9 @@ class NpmHealthPipesTest(SimpleTestCase):
         self.assertEqual("good", npm_health.classify_health_score(70))
         self.assertEqual("needs-attention", npm_health.classify_health_score(50))
         self.assertEqual("high-risk", npm_health.classify_health_score(20))
+
+
+    def test_is_stale_keeps_fresh_snapshot(self):
+        now = datetime(2026, 8, 17, tzinfo=UTC)
+        snapshot = {"collected_at": "2026-08-16T00:00:00+00:00"}
+        self.assertFalse(npm_health.is_stale(snapshot, max_age_days=90, now=now))
