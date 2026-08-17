@@ -282,3 +282,18 @@ Fetch Scores (addon)
 .. autoclass:: scanpipe.pipelines.fetch_scores.FetchScores()
     :members:
     :member-order: bysource
+
+
+.. _pipeline_npm_health:
+
+NPM Health (addon)
+------------------
+
+The ``npm_health`` pipeline analyzes one exact versioned npm ``Project.purl``.
+It retrieves npm registry metadata, records repository and package tarball
+locations, normalizes health signals, computes a weighted score from 0 to 100,
+and stores a reusable snapshot in ``Project.extra_data["npm_health"]``.
+
+.. autoclass:: scanpipe.pipelines.npm_health.NpmHealth()
+    :members:
+    :member-order: bysource
