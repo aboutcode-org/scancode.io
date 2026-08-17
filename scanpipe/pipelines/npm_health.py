@@ -45,3 +45,10 @@ class NpmHealth(Pipeline):
             self.cached_snapshot = snapshot
             self.snapshot = snapshot
             self.log("Using fresh cached npm-health analysis.")
+
+
+    def fetch_package_metadata(self):
+        """Fetch exact npm registry metadata unless a fresh cache is used."""
+        if self.cached_snapshot:
+            return
+        self.metadata = npm_health.fetch_registry_metadata(self.package)
