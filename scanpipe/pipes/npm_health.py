@@ -312,3 +312,13 @@ def is_stale(snapshot, max_age_days=DEFAULT_CACHE_MAX_AGE_DAYS, now=None):
         return True
     now = now or datetime.now(UTC)
     return now - collected_at > timedelta(days=max_age_days)
+
+
+
+def build_collection_targets(metadata):
+    """Return source locations useful to external health collectors."""
+    return {
+        "repository_url": get_repository_url(metadata),
+        "tarball_url": get_tarball_url(metadata),
+        "homepage_url": get_homepage_url(metadata),
+    }
