@@ -103,3 +103,8 @@ class NpmHealthPipesTest(SimpleTestCase):
 
     def test_normalize_metric_value_fraction(self):
         self.assertEqual(0.75, npm_health.normalize_metric_value(0.75))
+
+
+    def test_normalize_metric_value_percentage(self):
+        self.assertEqual(0.75, npm_health.normalize_metric_value(75))
+        self.assertEqual(1.0, npm_health.normalize_metric_value(150))
