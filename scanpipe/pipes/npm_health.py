@@ -386,3 +386,18 @@ def load_metrics_json(location):
         message = "External metrics output is invalid JSON."
         raise NpmHealthPayloadError(message) from error
     return normalize_metrics(payload)
+
+
+
+def collect_external_metrics(
+    command_template,
+    purl,
+    metadata,
+    output,
+    cwd=None,
+):
+    """Run a configured external collector and return normalized metrics."""
+    context = build_command_context(purl, metadata, output)
+    args = render_metrics_command(command_template, context)
+    run_metrics_command(args=args, cwd=cwd)
+    return load_metrics_json(output)
