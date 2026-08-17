@@ -67,3 +67,18 @@ def parse_package_url(value):
         return PackageURL.from_string(value)
     except ValueError as error:
         raise NpmHealthPayloadError(f"Invalid package URL: {value}") from error
+
+
+
+def validate_npm_package_url(value):
+    """Return a versioned npm PackageURL or raise a descriptive error."""
+    package = parse_package_url(value)
+    if package.type != "npm":
+        raise NpmHealthPayloadError(
+            f"npm-health requires an npm PURL, not {package.type!r}."
+        )
+    if not package.name:
+        raise NpmHealthPayloadError("npm-health requires a package name.")
+    if not package.version:
+        raise NpmHealthPayloadError("npm-health requires a package version.")
+    return package
