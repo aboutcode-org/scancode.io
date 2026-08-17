@@ -82,3 +82,14 @@ def validate_npm_package_url(value):
     if not package.version:
         raise NpmHealthPayloadError("npm-health requires a package version.")
     return package
+
+
+
+def get_package_name(package):
+    """Return the npm registry name for a PackageURL."""
+    if not package.namespace:
+        return package.name
+    namespace = package.namespace
+    if not namespace.startswith("@"):
+        namespace = f"@{namespace}"
+    return f"{namespace}/{package.name}"
