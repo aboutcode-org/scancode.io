@@ -185,3 +185,9 @@ def fetch_registry_metadata(
     if not isinstance(data, dict):
         raise NpmHealthPayloadError("The npm registry returned a non-object payload.")
     return data
+
+
+
+def clamp(value, minimum=0.0, maximum=1.0):
+    """Clamp a numeric value to an inclusive range."""
+    return max(minimum, min(maximum, value))
