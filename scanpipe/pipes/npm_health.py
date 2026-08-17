@@ -322,3 +322,15 @@ def build_collection_targets(metadata):
         "tarball_url": get_tarball_url(metadata),
         "homepage_url": get_homepage_url(metadata),
     }
+
+
+
+def build_command_context(purl, metadata, output):
+    """Return safe substitutions for an external collector command."""
+    targets = build_collection_targets(metadata)
+    return {
+        "purl": purl,
+        "repository_url": targets["repository_url"],
+        "tarball_url": targets["tarball_url"],
+        "output": str(output),
+    }
