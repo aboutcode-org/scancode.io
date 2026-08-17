@@ -167,3 +167,9 @@ class NpmHealthPipesTest(SimpleTestCase):
         now = datetime(2026, 8, 17, tzinfo=UTC)
         snapshot = {"collected_at": "2026-08-16T00:00:00+00:00"}
         self.assertFalse(npm_health.is_stale(snapshot, max_age_days=90, now=now))
+
+
+    def test_is_stale_expires_old_snapshot(self):
+        now = datetime(2026, 8, 17, tzinfo=UTC)
+        snapshot = {"collected_at": "2026-01-01T00:00:00+00:00"}
+        self.assertTrue(npm_health.is_stale(snapshot, max_age_days=90, now=now))
