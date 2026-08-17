@@ -370,3 +370,19 @@ def run_metrics_command(args, cwd=None, timeout=DEFAULT_COMMAND_TIMEOUT):
             f"External metrics collector failed ({completed.returncode}): {details}"
         )
     return completed
+
+
+
+def load_metrics_json(location):
+    """Load and normalize metrics from a JSON output file."""
+    location = Path(location)
+    if not location.is_file():
+        raise NpmHealthCommandError(
+            f"External metrics output was not created: {location}"
+        )
+    try:
+        payload = json.loads(location.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        message = "External metrics output is invalid JSON."
+        raise NpmHealthPayloadError(message) from error
+    return normalize_metrics(payload)
