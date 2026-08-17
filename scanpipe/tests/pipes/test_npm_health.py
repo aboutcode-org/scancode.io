@@ -108,3 +108,12 @@ class NpmHealthPipesTest(SimpleTestCase):
     def test_normalize_metric_value_percentage(self):
         self.assertEqual(0.75, npm_health.normalize_metric_value(75))
         self.assertEqual(1.0, npm_health.normalize_metric_value(150))
+
+
+    def test_normalize_metrics_nested_payload(self):
+        self.assertEqual(
+            {"activity": 0.8, "security": 1.0},
+            npm_health.normalize_metrics(
+                {"metrics": {"activity": 80, "security": True}}
+            ),
+        )
