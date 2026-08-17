@@ -334,3 +334,20 @@ def build_command_context(purl, metadata, output):
         "tarball_url": targets["tarball_url"],
         "output": str(output),
     }
+
+
+
+def render_metrics_command(command_template, context):
+    """Render a command template to an argument list without a shell."""
+    if not command_template or not isinstance(command_template, str):
+        raise NpmHealthCommandError("npm_health_metrics_command is not configured.")
+    try:
+        rendered = command_template.format_map(context)
+    except KeyError as error:
+        raise NpmHealthCommandError(
+            f"Unknown npm-health command placeholder: {error.args[0]}"
+        ) from error
+    args = shlex.split(rendered)
+    if not args:
+        raise NpmHealthCommandError("The rendered metrics command is empty.")
+    return args
