@@ -24,3 +24,8 @@ class NpmHealth(Pipeline):
     download_inputs = False
     is_addon = True
     results_url = "/project/{slug}/"
+
+
+    def validate_project_purl(self):
+        """Validate and parse the project's versioned npm PURL."""
+        self.package = npm_health.validate_npm_package_url(self.project.purl)
