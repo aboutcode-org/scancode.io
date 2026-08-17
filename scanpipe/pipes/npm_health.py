@@ -246,3 +246,14 @@ def merge_metrics(*metric_sets):
         if metrics:
             merged.update(normalize_metrics(metrics))
     return merged
+
+
+
+def normalize_weights(weights=None):
+    """Return positive numeric scoring weights."""
+    weights = weights or DEFAULT_METRIC_WEIGHTS
+    return {
+        name: float(value)
+        for name, value in weights.items()
+        if isinstance(name, str) and isinstance(value, int | float) and value > 0
+    }
