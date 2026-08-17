@@ -138,3 +138,10 @@ def get_tarball_url(metadata):
     dist = metadata.get("dist") or {}
     value = dist.get("tarball")
     return value if isinstance(value, str) else ""
+
+
+
+def get_homepage_url(metadata):
+    """Return the package homepage URL when available."""
+    value = metadata.get("homepage")
+    return value if isinstance(value, str) else ""
