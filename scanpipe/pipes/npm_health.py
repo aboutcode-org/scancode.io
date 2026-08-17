@@ -204,3 +204,18 @@ def normalize_metric_value(value):
     if normalized > 1.0:
         normalized /= 100.0
     return clamp(normalized)
+
+
+
+def normalize_metrics(payload):
+    """Return normalized metrics from a direct or nested collector payload."""
+    if not isinstance(payload, dict):
+        raise NpmHealthPayloadError("Metrics payload must be a JSON object.")
+    values = payload.get("metrics", payload)
+    if not isinstance(values, dict):
+        raise NpmHealthPayloadError("Metrics must be a JSON object.")
+    return {
+        name: normalize_metric_value(value)
+        for name, value in values.items()
+        if isinstance(name, str)
+    }
