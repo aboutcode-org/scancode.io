@@ -236,3 +236,13 @@ def collect_registry_metrics(metadata):
         "maintainer_presence": clamp(get_maintainer_count(metadata) / 3),
         "dependency_simplicity": 1.0 - clamp(get_dependency_count(metadata) / 50),
     }
+
+
+
+def merge_metrics(*metric_sets):
+    """Merge normalized metric mappings from left to right."""
+    merged = {}
+    for metrics in metric_sets:
+        if metrics:
+            merged.update(normalize_metrics(metrics))
+    return merged
