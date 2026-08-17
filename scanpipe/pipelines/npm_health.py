@@ -52,3 +52,23 @@ class NpmHealth(Pipeline):
         if self.cached_snapshot:
             return
         self.metadata = npm_health.fetch_registry_metadata(self.package)
+
+
+    def collect_package_metrics(self):
+        """Collect built-in registry signals and optional external metrics."""
+        if self.cached_snapshot:
+            return
+
+        baseline = npm_health.collect_registry_metrics(self.metadata)
+        external = {}
+        command_template = self.env.get("npm_health_metrics_command")
+        if command_template:
+            output = self.project.tmp_path / "npm-health-external-metrics.json"
+            external = npm_health.collect_external_metrics(
+                command_template=command_template,
+                purl=self.project.purl,
+                metadata=self.metadata,
+                output=output,
+                cwd=self.project.tmp_path,
+            )
+        self.metrics = npm_health.merge_metrics(baseline, external)
