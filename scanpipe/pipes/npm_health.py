@@ -422,3 +422,10 @@ def get_cached_snapshot(project):
     data = project.extra_data or {}
     snapshot = data.get(NPM_HEALTH_EXTRA_DATA_KEY)
     return snapshot if isinstance(snapshot, dict) else None
+
+
+
+def cache_snapshot(project, snapshot):
+    """Persist one npm-health snapshot in Project.extra_data."""
+    project.update_extra_data({NPM_HEALTH_EXTRA_DATA_KEY: snapshot})
+    return snapshot
