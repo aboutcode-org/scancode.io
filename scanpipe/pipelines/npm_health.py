@@ -109,3 +109,16 @@ class NpmHealth(Pipeline):
             ),
             details={"output": output.name},
         )
+
+
+    @classmethod
+    def steps(cls):
+        return (
+            cls.validate_project_purl,
+            cls.load_cached_snapshot,
+            cls.fetch_package_metadata,
+            cls.collect_package_metrics,
+            cls.compute_package_health_score,
+            cls.build_result_snapshot,
+            cls.persist_results,
+        )
