@@ -209,3 +209,12 @@ class NpmHealthPipesTest(SimpleTestCase):
     def test_get_cached_snapshot(self):
         project = mock.Mock(extra_data={"npm_health": {"score": 88}})
         self.assertEqual({"score": 88}, npm_health.get_cached_snapshot(project))
+
+
+    def test_cache_snapshot(self):
+        project = mock.Mock()
+        snapshot = {"purl": "pkg:npm/lodash@4.17.21", "score": 88}
+        self.assertEqual(snapshot, npm_health.cache_snapshot(project, snapshot))
+        project.update_extra_data.assert_called_once_with(
+            {npm_health.NPM_HEALTH_EXTRA_DATA_KEY: snapshot}
+        )
