@@ -351,3 +351,22 @@ def render_metrics_command(command_template, context):
     if not args:
         raise NpmHealthCommandError("The rendered metrics command is empty.")
     return args
+
+
+
+def run_metrics_command(args, cwd=None, timeout=DEFAULT_COMMAND_TIMEOUT):
+    """Run an external metrics collector and return its completed process."""
+    completed = subprocess.run(  # noqa: S603
+        args,
+        cwd=cwd,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+    if completed.returncode:
+        details = (completed.stderr or completed.stdout or "").strip()
+        raise NpmHealthCommandError(
+            f"External metrics collector failed ({completed.returncode}): {details}"
+        )
+    return completed
