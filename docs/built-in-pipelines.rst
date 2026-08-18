@@ -273,6 +273,12 @@ Scan Maven Package
     :members:
     :member-order: bysource
 
+Scan Rust Package
+-------------------
+.. autoclass:: scanpipe.pipelines.scan_rust_package.ScanRustPackage()
+    :members:
+    :member-order: bysource
+
 Fetch Scores (addon)
 --------------------
 .. warning::

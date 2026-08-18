@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-import shutil
 import tempfile
 from pathlib import Path
 
@@ -87,9 +86,11 @@ class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         self.collect_input_information()
 
     def check_docker_command(self):
-        """Check if the Docker command is available."""
         self.have_docker = False
-        if shutil.which("docker"):
+        """Check if the Docker command is available."""
+        if not utils.check_docker_command():
+            raise Exception("Docker is required and its daemon must be running.")
+        else:
             self.have_docker = True
 
     def get_cargo_toml(self):

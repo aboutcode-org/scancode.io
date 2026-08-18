@@ -23,11 +23,14 @@
 import hashlib
 import logging
 import os
+import requests
+import shutil
+import subprocess
+
 from fnmatch import fnmatch
 from pathlib import Path
 from urllib.parse import urlparse
 
-import requests
 from license_expression import Licensing
 from packageurl import PackageURL
 from packageurl.contrib.purl2url import get_repo_download_url_by_package_type
@@ -519,3 +522,15 @@ def fetch_path(purl):
     except (ValueError, requests.RequestException) as e:
         logger.warning("Failed to fetch package: %s - %s", purl, e)
         return None
+
+def check_docker_command():
+    """Check if the Docker command is available and the daemon is running."""
+    docker_path = shutil.which("docker")
+    if not docker_path:
+        return False
+
+    try:
+        subprocess.run([docker_path, "info"], capture_output=True, check=True)  # noqa: S603
+        return True
+    except (subprocess.SubprocessError, FileNotFoundError):
+        return False
