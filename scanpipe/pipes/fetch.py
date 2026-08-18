@@ -84,7 +84,7 @@ def get_request_session(uri):
     session = requests.Session()
 
     # Set a default User-Agent to avoid 403 Forbidden errors on strict
-    # registries like crates.io that block default python-requests headers.
+    # registries that block default python-requests headers.
     session.headers.update(
         {"User-Agent": "ScanCode.io (https://github.com/aboutcode-org/scancode.io)"}
     )

@@ -20,8 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-import shutil
-
 from scanpipe.pipelines.deploy_to_develop import DeployToDevelop
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipelines.scan_single_package import ScanSinglePackage
@@ -69,10 +67,9 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
 
     def check_docker_command(self):
         """Check if the Docker command is available."""
-        if shutil.which("docker"):
-            nix.ensure_multiarch_emulation()
-        else:
-            raise Exception("'Docker' is required.")
+        if not utils.check_docker_command():
+            raise Exception("Docker is required and its daemon must be running.")
+        nix.ensure_multiarch_emulation()
 
     def fetch_inputs(self):
         """Fetch the binary and source of the given PURL."""
