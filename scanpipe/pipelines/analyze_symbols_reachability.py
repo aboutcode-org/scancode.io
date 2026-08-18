@@ -21,8 +21,6 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
-import os
-import shutil
 import tempfile
 
 from git import Repo
@@ -65,12 +63,10 @@ class SymbolReachability(Pipeline):
     def steps(cls):
         return (
             cls.get_vulnerabilities_patches,
-            cls.clone_target_repos,
             cls.collect_resource_index,
             cls.collect_patch_symbols,
             cls.collect_and_match_resources,
             cls.generate_advisory_reachability_report,
-            cls.clean_up,
         )
 
     def get_vulnerabilities_patches(self):
@@ -95,22 +91,6 @@ class SymbolReachability(Pipeline):
 
         self.patches = list(patches.values())
 
-    def clone_target_repos(self):
-        """Clone target repos, save the git object"""
-        self.cloned_git_obj_repos = {}
-        self.repo_paths = []
-        self.patch_symbols = {}
-
-        unique_vcs_urls = {patch["vcs_url"] for patch in self.patches}
-        for vcs_url in unique_vcs_urls:
-            try:
-                repo_path = tempfile.mkdtemp(prefix="symbol-reachability-")
-                self.repo_paths.append(repo_path)
-                repo = Repo.clone_from(vcs_url, repo_path)
-                self.cloned_git_obj_repos[vcs_url] = repo
-            except Exception as e:
-                self.log(f"Failed to clone repository {vcs_url}: {e!r}")
-
     def collect_resource_index(self):
         """Collect resources symbols for each resource exactly once."""
         self.candidate_resources = self.project.codebaseresources.files().filter(
@@ -133,25 +113,39 @@ class SymbolReachability(Pipeline):
                 self.resource_indexes[resource.path] = resource_index
 
     def collect_patch_symbols(self):
-        """Collect patch symbols for each patch exactly once."""
+        """
+        For each unique repo: clone it once, collect patch symbols for all
+        related commits, then remove the local clone before moving on
+        """
+        self.patch_symbols = {}
+        patches_by_repo = {}
         for patch in self.patches:
             vcs_url = patch.get("vcs_url")
-            commit_hash = patch.get("commit_hash")
+            patches_by_repo.setdefault(vcs_url, []).append(patch)
 
-            repo = self.cloned_git_obj_repos.get(vcs_url)
-            if not repo:
-                self.patch_symbols[commit_hash] = {}
-                continue
+        for vcs_url, repo_patches in patches_by_repo.items():
+            with tempfile.TemporaryDirectory(
+                prefix="symbol-reachability-"
+            ) as repo_path:
+                try:
+                    repo = Repo.clone_from(vcs_url, repo_path)
+                except Exception as e:
+                    raise Exception(f"Failed to clone repository {vcs_url}: {e!r}")
 
-            try:
-                patch_analyzer = PatchAnalyzer(repo=repo, commit_hash=commit_hash)
-                self.patch_symbols[commit_hash] = patch_analyzer.collect_patch_symbols()
-            except Exception as e:
-                self.log(
-                    f"Failed to collect patch "
-                    f"symbols for {vcs_url}@{commit_hash}: {e!r}"
-                )
-                self.patch_symbols[commit_hash] = {}
+                try:
+                    for patch in repo_patches:
+                        commit_hash = patch.get("commit_hash")
+                        patch_analyzer = PatchAnalyzer(
+                            repo=repo, commit_hash=commit_hash
+                        )
+                        self.patch_symbols[commit_hash] = (
+                            patch_analyzer.collect_patch_symbols()
+                        )
+                except Exception as e:
+                    raise Exception(
+                        f"Failed to collect patch symbols "
+                        f"for {vcs_url}, patch: {repo_patches}: {e!r}"
+                    )
 
     def collect_and_match_resources(self):
         """Match resource symbols against patch symbols."""
@@ -266,10 +260,4 @@ class SymbolReachability(Pipeline):
         )
 
         with open(reachability_output_path, "w") as f:
-            json.dump(advisory_reachability_report, f)
-
-    def clean_up(self):
-        """Clean up cloned repositories"""
-        for repo_path in self.repo_paths:
-            if repo_path and os.path.exists(repo_path):
-                shutil.rmtree(repo_path, ignore_errors=True)
+            json.dump(advisory_reachability_report, f, indent=2)
