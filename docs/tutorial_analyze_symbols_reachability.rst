@@ -39,12 +39,14 @@ Run the ``analyze_symbols_reachability`` pipeline
   reachability analysis.
 - Once the pipeline run completes successfully, you can reach the **Resources** list view
   by clicking the count number under the **"RESOURCES"** header.
-- Click on one of the affected code files and navigate to the **Extra** tab to view the ``symbols_reachability``.
+- Click on one of the affected code files and navigate to
+  the **Extra** tab to view the ``symbols_reachability``.
 
 .. image:: images/tutorial-web-ui-analyze-symbol-reachability.png
 
-- The pipeline output also includes a JSON file containing the reachability status for each advisory and resource,
-  including the overall reachability status (e.g., ``reachability-2026-08-18-15-12-51.json``).
+- The pipeline output also includes a JSON file containing the reachability
+  status for each advisory and resource, including the overall reachability
+  status (e.g., ``reachability-2026-08-18-15-12-51.json``).
 
 .. code-block:: json
     :emphasize-lines: 2
