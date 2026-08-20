@@ -479,13 +479,6 @@ class ResourcePatchMatcher:
         for metadata in patch_symbols_metadata.values():
             qualified_name = metadata["qualified_name"]
             fingerprint = metadata["fingerprint"]
-
-            short_name = (
-                qualified_name.rsplit(self.separator, 1)[-1]
-                if self.separator in qualified_name
-                else qualified_name
-            )
-
             defined = qualified_name in self.definitions
             fingerprint_hit = bool(fingerprint and fingerprint in self.fingerprints)
 
@@ -494,9 +487,7 @@ class ResourcePatchMatcher:
                 or qualified_name in self.imports.values()
             )
 
-            callers = set()
-            callers.update(self.callers_of.get(short_name, set()))
-            callers.update(self.callers_of.get(qualified_name, set()))
+            callers = set(self.callers_of.get(qualified_name, set()))
             called = bool(callers)
 
             if not (defined or fingerprint_hit or called or imported):

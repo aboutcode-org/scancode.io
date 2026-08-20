@@ -38,6 +38,10 @@ def serve_report(request_payload):
     return "Error: File not found"
 
 
+def handle_request(req):
+    return serve_report(req)
+
+
 def unrelated_top_level_function():
     """Test AST node boundaries."""
     return "I am just here to add AST complexity."

@@ -407,22 +407,22 @@ class SymbolReachabilityPipesTest(TestCase):
                         "reachable_from": [],
                     },
                     {
-                        "called": True,
+                        "called": False,
                         "defined": True,
                         "imported": False,
                         "fingerprint": "762e4f7d03b1bf4359c3ca364"
                         "e558140239913bfabcc5aa77156460c2eb0a355",
                         "symbol_name": "serve_report.build_file_path",
-                        "reachable_from": ["serve_report"],
+                        "reachable_from": [],
                     },
                     {
-                        "called": False,
+                        "called": True,
                         "defined": True,
                         "imported": False,
                         "fingerprint": "d7675efb263896da2a3c0067951183"
                         "3553907e7e6ea619115a6dfc8625c3457e",
                         "symbol_name": "serve_report",
-                        "reachable_from": [],
+                        "reachable_from": ["handle_request"],
                     },
                 ],
                 "fixed_symbols": [
@@ -474,40 +474,39 @@ class SymbolReachabilityPipesTest(TestCase):
                 "advisory_uids": [],
                 "evidence": [
                     {
-                        "called": False,
-                        "defined": True,
-                        "imported": False,
-                        "fingerprint": None,
                         "symbol_name": "App",
-                        "reachable_from": [],
-                    },
-                    {
                         "called": False,
                         "defined": True,
                         "imported": False,
-                        "fingerprint": "b161e24e9575b655e84c7f249709e5d4d0"
-                        "a1e6f19e2c4baa421a6cc996fda154",
-                        "symbol_name": "App.serveReport",
+                        "fingerprint": None,
                         "reachable_from": [],
                     },
                     {
-                        "called": True,
+                        "symbol_name": "App.serveReport",
+                        "called": False,
+                        "defined": True,
+                        "imported": False,
+                        "fingerprint": "b161e24e9575b655e84c7f249709e5d4d0a1e6f19e2c4baa421a6cc996fda154",
+                        "reachable_from": []
+                    },
+                    {
+                        "symbol_name": "App.buildFilePath",
+                        "called": False,
                         "defined": True,
                         "imported": False,
                         "fingerprint": None,
-                        "symbol_name": "App.buildFilePath",
-                        "reachable_from": ["App.serveReport"],
-                    },
+                        "reachable_from": []
+                    }
                 ],
                 "fixed_symbols": [
                     "App",
                     "App.buildFilePath",
-                    "App.serveReport",
+                    "App.serveReport"
                 ],
                 "vulnerable_symbols": [
                     "App",
                     "App.buildFilePath",
-                    "App.serveReport",
+                    "App.serveReport"
                 ],
                 "reachability_status": ReachabilityStatus.REACHABLE.value,
             }

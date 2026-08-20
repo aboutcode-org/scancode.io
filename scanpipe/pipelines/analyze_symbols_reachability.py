@@ -72,7 +72,10 @@ class SymbolReachability(Pipeline):
     def get_vulnerabilities_patches(self):
         """Get unique patch for all vulnerabilities."""
         patches = {}
-        for vulnerability in self.project.package_vulnerabilities:
+        for vulnerability in (
+            self.project.package_vulnerabilities
+            + self.project.dependency_vulnerabilities
+        ):
             advisory_uid = vulnerability.get("advisory_uid")
             for patch in vulnerability.get("fixed_in_patches", []):
                 vcs_url = patch.get("vcs_url")
