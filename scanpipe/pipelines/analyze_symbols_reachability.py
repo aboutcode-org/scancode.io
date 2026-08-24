@@ -229,6 +229,17 @@ class SymbolReachability(Pipeline):
         }
 
         advisory_map = {}
+        for patch in self.patches:
+            for adv_uid in patch.get("advisory_uids", []):
+                if adv_uid not in advisory_map:
+                    adv_data = {
+                        "advisory_uid": adv_uid,
+                        "is_reachable": ReachabilityStatus.NOT_REACHABLE.value,
+                        "details": [],
+                    }
+                    advisory_map[adv_uid] = adv_data
+                    advisory_reachability_report["advisories"].append(adv_data)
+
         for resource in self.candidate_resources:
             for report in resource.extra_data.get("symbols_reachability", []):
                 advisory_uids = report.get("advisory_uids", [])

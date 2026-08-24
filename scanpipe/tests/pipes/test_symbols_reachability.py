@@ -149,6 +149,12 @@ class SymbolReachabilityPipesTest(TestCase):
         run = self.project1.add_pipeline("analyze_symbols_reachability")
         pipeline = run.make_pipeline_instance()
 
+        pipeline.patches = [
+            {"advisory_uids": ["AVID-1"]},
+            {"advisory_uids": ["AVID-2"]},
+        ]
+        pipeline.project.purl = "pkg:pypi/test"
+
         with tempfile.TemporaryDirectory() as tmpdir:
             output_file = os.path.join(tmpdir, "reachability.json")
             pipeline.project.get_output_file_path = MagicMock(return_value=output_file)
@@ -219,7 +225,6 @@ class SymbolReachabilityPipesTest(TestCase):
 
             res_empty = MagicMock()
             res_empty.path = "src/empty.py"
-            res_empty.purl = "pkg:pypi/test"
             res_empty.extra_data = {}
 
             pipeline.candidate_resources = [res2, res3, res_empty, res1]
@@ -229,7 +234,7 @@ class SymbolReachabilityPipesTest(TestCase):
                 report = json.load(f)
 
             expected_report = {
-                "purl": "",
+                "purl": "pkg:pypi/test",
                 "advisories": [
                     {
                         "advisory_uid": "AVID-1",
@@ -1031,14 +1036,23 @@ def aliased_func():
 def wildcard_func():
     return eval("3")
 
+def multiline_func():
+    return eval("6")
+
+def deep_func():
+    return eval("7")
+
+def relative_func():
+    return eval("8")
+
 class MyClass:
     def class_method(self):
         return eval("4")
 
-    class InnerClass:
-        def deep_method(self):
-            return eval("5")
-""".strip()
+class InnerClass:
+    def deep_method(self):
+        return eval("5")
+    """.strip()
 
         fixed_text = """
 def direct_func():
@@ -1050,6 +1064,15 @@ def aliased_func():
 def wildcard_func():
     return int("3")
 
+def multiline_func():
+    return int("6")
+
+def deep_func():
+    return int("7")
+
+def relative_func():
+    return int("8")
+
 class MyClass:
     def class_method(self):
         return int("4")
@@ -1057,7 +1080,7 @@ class MyClass:
     class InnerClass:
         def deep_method(self):
             return int("5")
-""".strip()
+        """.strip()
 
         app_text = """
 from my_module import direct_func
@@ -1065,11 +1088,19 @@ from my_module import aliased_func as af
 from my_module import MyClass as C
 from my_module import wildcard_func
 from my_module import *
+from a.b import deep_func
+from .relative_module import relative_func
+from my_module import (
+    multiline_func,
+)
 
 def execute():
     direct_func()
     af()
     wildcard_func()
+    multiline_func()
+    deep_func()
+    relative_func()
 
     c = C()
     c.class_method()
@@ -1142,6 +1173,21 @@ def execute():
         self.assertEqual(
             matched["MyClass.InnerClass.deep_method"]["reachable_from"], ["execute"]
         )
+
+        self.assertIn("multiline_func", matched)
+        self.assertTrue(matched["multiline_func"]["is_imported"])
+        self.assertTrue(matched["multiline_func"]["is_called"])
+        self.assertEqual(matched["multiline_func"]["reachable_from"], ["execute"])
+
+        self.assertIn("deep_func", matched)
+        self.assertTrue(matched["deep_func"]["is_imported"])
+        self.assertTrue(matched["deep_func"]["is_called"])
+        self.assertEqual(matched["deep_func"]["reachable_from"], ["execute"])
+
+        self.assertIn("relative_func", matched)
+        self.assertTrue(matched["relative_func"]["is_imported"])
+        self.assertTrue(matched["relative_func"]["is_called"])
+        self.assertEqual(matched["relative_func"]["reachable_from"], ["execute"])
 
     def test_resource_patch_matcher_java(self):
         """
