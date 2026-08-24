@@ -377,7 +377,12 @@ class JavaTreeSitterQuery(LanguageQuery):
         (import_declaration (scoped_identifier) @import_name)
         (import_declaration (scoped_identifier) @module_name (asterisk) @import_name)
     """
-    syntax_config = {"self_keyword": "this", "separator": ".", "wildcard_symbol": "*"}
+    syntax_config = {
+        "self_keyword": "this",
+        "separator": ".",
+        "wildcard_symbol": "*",
+        "import_local_name": "last",
+    }
 
 
 TS_QUERIES = {
@@ -469,9 +474,29 @@ class SymbolExtractor:
 
         return calls
 
+    def resolve_local_name(self, imp_name, alias):
+        """Resolve the local name for an imported symbol."""
+        separator = self.syntax_config.get("separator", ".")
+        local_name = alias or imp_name
+
+        if not alias and separator in imp_name:
+            if self.syntax_config.get("import_local_name") == "last":
+                return imp_name.split(separator)[-1]
+            return imp_name.split(separator)[0]
+
+        return local_name
+
+    def resolve_absolute_path(self, module_name, imp_name):
+        """Resolve the absolute path for an imported symbol."""
+        separator = self.syntax_config.get("separator", ".")
+        if module_name:
+            if module_name == separator:
+                return f"{separator}{imp_name}"
+            return f"{module_name}{separator}{imp_name}"
+        return imp_name
+
     def extract_imports(self):
         """Map every local alias to its absolute imported path."""
-        separator = self.syntax_config.get("separator", ".")
         wildcard_sym = self.syntax_config.get("wildcard_symbol")
 
         import_map = {}
@@ -487,17 +512,8 @@ class SymbolExtractor:
                         wildcard_modules.append(module_name)
                     continue
 
-                local_name = alias or imp_name
-                if not alias and separator in imp_name:
-                    local_name = imp_name.split(separator)[0]
-
-                if module_name:
-                    if module_name == separator:
-                        absolute_path = f"{separator}{imp_name}"
-                    else:
-                        absolute_path = f"{module_name}{separator}{imp_name}"
-                else:
-                    absolute_path = imp_name
+                local_name = self.resolve_local_name(imp_name, alias)
+                absolute_path = self.resolve_absolute_path(module_name, imp_name)
 
                 import_map[local_name] = absolute_path
 

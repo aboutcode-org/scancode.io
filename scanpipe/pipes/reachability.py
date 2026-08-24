@@ -36,9 +36,9 @@ from scanpipe.pipes.symbols import is_supported_language
 
 
 class ReachabilityStatus(str, Enum):
-    REACHABLE = "YES"
-    UNKNOWN = "UNKNOWN"
-    NOT_REACHABLE = "NO"
+    REACHABLE = "yes"
+    UNKNOWN = "unknown"
+    NOT_REACHABLE = "no"
 
 
 def normalize_text(content):
@@ -347,21 +347,21 @@ class PatchAnalyzer:
         return vuln_meta, fixed_meta, language
 
 
-def classify_reachability(evidence):
+def classify_reachability(tool_details):
     """
     Classify the reachability status of a vulnerability based on the
-    collected evidence from :class:`ResourcePatchMatcher`.
+    collected tool_details from ResourcePatchMatcher.
     """
-    if not evidence:
+    if not tool_details:
         return ReachabilityStatus.NOT_REACHABLE
 
     status = ReachabilityStatus.NOT_REACHABLE
-    for item in evidence.values():
-        is_called = bool(item.get("called"))
+    for item in tool_details.values():
+        is_called = bool(item.get("is_called"))
         has_path = bool(item.get("reachable_from"))
-        is_defined = bool(item.get("defined"))
-        is_imported = bool(item.get("imported"))
-        is_exact = bool(item.get("fingerprint"))
+        is_defined = bool(item.get("is_defined"))
+        is_imported = bool(item.get("is_imported"))
+        is_exact = bool(item.get("is_exact"))
 
         if is_exact or (is_imported and (is_called or has_path)):
             return ReachabilityStatus.REACHABLE
@@ -461,16 +461,68 @@ class ResourcePatchMatcher:
         self.imports = resource_index.get("imports", {})
         self.callers_of = resource_index.get("callers_of", {})
         self.separator = resource_index.get("separator", ".")
+        self.wildcard_modules = self.imports.get("*", [])
+
+    def _matches_first_component(
+        self, qualified_name, abs_path, local_name, import_call_names
+    ):
+        """
+        Check if the first component of qualified_name
+        matches the end of abs_path.
+        """
+        first_component = qualified_name.split(self.separator, 1)[0]
+        if first_component != qualified_name and (
+            abs_path.endswith(self.separator + first_component)
+            or abs_path == first_component
+        ):
+            remaining = qualified_name[len(first_component) :]
+            import_call_names.add(f"{local_name}{remaining}")
+            return True
+        return False
+
+    def _matches_wildcard(self, qualified_name):
+        """Check if the qualified_name is covered by a wildcard import."""
+        return any(
+            qualified_name == mod or qualified_name.startswith(mod + self.separator)
+            for mod in self.wildcard_modules
+        )
+
+    def _get_import_info(self, qualified_name):
+        """Check if qualified_name is imported and return possible call names."""
+        import_call_names = set()
+        imported = False
+
+        for local_name, abs_path in self.imports.items():
+            if local_name == "*":
+                continue
+
+            if qualified_name in (local_name, abs_path):
+                imported = True
+                import_call_names.add(local_name)
+            elif qualified_name.startswith(local_name + self.separator):
+                imported = True
+                import_call_names.add(qualified_name)
+            elif qualified_name.startswith(abs_path + self.separator):
+                imported = True
+                remaining = qualified_name[len(abs_path) :]
+                import_call_names.add(f"{local_name}{remaining}")
+            elif abs_path.endswith(self.separator + qualified_name):
+                imported = True
+                import_call_names.add(local_name)
+            elif self._matches_first_component(
+                qualified_name, abs_path, local_name, import_call_names
+            ):
+                imported = True
+
+        if not imported and self._matches_wildcard(qualified_name):
+            return True, import_call_names
+
+        return imported, import_call_names
 
     def match(self, patch_symbols_metadata):
         """
         Match a set of patch symbols against the resource index and
-        return evidence for each matched symbol.
-
-        For each symbol in patch_symbols_metadata, the method
-        checks whether it is defined, imported, called, or has an
-        exact fingerprint match in the resource. If at least one of
-        these conditions is true, an evidence entry is created.
+        return tool_details for each matched symbol.
         """
         if not patch_symbols_metadata or not self.resource_index:
             return {}
@@ -480,41 +532,55 @@ class ResourcePatchMatcher:
             qualified_name = metadata["qualified_name"]
             fingerprint = metadata["fingerprint"]
             defined = qualified_name in self.definitions
-            fingerprint_hit = bool(fingerprint and fingerprint in self.fingerprints)
-
-            imported = (
-                qualified_name in self.imports
-                or qualified_name in self.imports.values()
+            is_exact = bool(
+                fingerprint
+                and fingerprint in self.fingerprints
+                and qualified_name in self.definitions
+            )
+            short_name = (
+                qualified_name.rsplit(self.separator, 1)[-1]
+                if self.separator in qualified_name
+                else qualified_name
             )
 
-            callers = set(self.callers_of.get(qualified_name, set()))
-            called = bool(callers)
+            imported, import_call_names = self._get_import_info(qualified_name)
 
-            if not (defined or fingerprint_hit or called or imported):
+            possible_call_names = {qualified_name}
+            if imported or defined:
+                possible_call_names.add(short_name)
+            possible_call_names.update(import_call_names)
+
+            callers = set()
+            for call_name in possible_call_names:
+                callers.update(self.callers_of.get(call_name, set()))
+
+            called = bool(callers) and (
+                imported or defined or bool(self.wildcard_modules)
+            )
+            if called and not imported and not defined and self.wildcard_modules:
+                imported = True
+
+            if not (defined or is_exact or called or imported):
                 continue
 
             entry = matched.setdefault(
                 qualified_name,
                 {
                     "symbol_name": qualified_name,
-                    "called": False,
-                    "defined": False,
-                    "imported": False,
-                    "fingerprint": None,
+                    "is_called": False,
+                    "is_defined": False,
+                    "is_imported": False,
+                    "is_exact": False,
                     "reachable_from": [],
                 },
             )
 
-            if defined:
-                entry["defined"] = True
-            if imported:
-                entry["imported"] = True
+            entry["is_defined"] = entry["is_defined"] or defined
+            entry["is_imported"] = entry["is_imported"] or imported
+            entry["is_exact"] = entry["is_exact"] or is_exact
+            entry["is_called"] = entry["is_called"] or called
             if called:
-                entry["called"] = True
                 entry["reachable_from"] = sorted(callers)
-
-            if fingerprint_hit:
-                entry["fingerprint"] = fingerprint
 
         return matched
 

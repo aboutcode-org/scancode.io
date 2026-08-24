@@ -37,6 +37,8 @@ from scanpipe.models import Project
 from scanpipe.pipes import collect_and_create_codebase_resources
 from scanpipe.pipes.reachability import PatchAnalyzer
 from scanpipe.pipes.reachability import ReachabilityStatus
+from scanpipe.pipes.reachability import ResourceAnalyzer
+from scanpipe.pipes.reachability import ResourcePatchMatcher
 from scanpipe.pipes.reachability import classify_reachability
 from scanpipe.pipes.symbols import TS_QUERIES
 from scanpipe.pipes.symbols import SymbolExtractor
@@ -121,21 +123,20 @@ class SymbolReachabilityPipesTest(TestCase):
                         "vcs_url": repo_url,
                         "commit_hash": fixed_commit.hexsha,
                     },
-                    "advisory_uids": [],
-                    "evidence": [
+                    "is_reachable": ReachabilityStatus.REACHABLE.value,
+                    "tool_details": [
                         {
-                            "called": False,
-                            "defined": True,
-                            "imported": False,
-                            "fingerprint": "e66988810af452f77d43efd302fea4c"
-                            "1d2f246d282c4ea8982b0152c2231ac17",
+                            "is_exact": True,
+                            "is_called": False,
+                            "is_defined": True,
+                            "is_imported": False,
                             "symbol_name": "process_data",
                             "reachable_from": [],
                         }
                     ],
+                    "advisory_uids": [],
                     "fixed_symbols": ["process_data"],
                     "vulnerable_symbols": ["process_data"],
-                    "reachability_status": ReachabilityStatus.REACHABLE.value,
                 }
             ]
 
@@ -218,6 +219,7 @@ class SymbolReachabilityPipesTest(TestCase):
 
             res_empty = MagicMock()
             res_empty.path = "src/empty.py"
+            res_empty.purl = "pkg:pypi/test"
             res_empty.extra_data = {}
 
             pipeline.candidate_resources = [res2, res3, res_empty, res1]
@@ -227,80 +229,65 @@ class SymbolReachabilityPipesTest(TestCase):
                 report = json.load(f)
 
             expected_report = {
-                "AVID-1": {
-                    "reachable": ReachabilityStatus.REACHABLE.value,
-                    "details": [
-                        {
-                            "resource_path": "src/file2.py",
-                            "patch": {
-                                "vcs_url": "https://example.com",
-                                "commit_hash": "def456",
+                "purl": "",
+                "advisories": [
+                    {
+                        "advisory_uid": "AVID-1",
+                        "is_reachable": ReachabilityStatus.NOT_REACHABLE.value,
+                        "details": [
+                            {
+                                "resource_path": "src/file2.py",
+                                "patch": {
+                                    "vcs_url": "https://example.com",
+                                    "commit_hash": "def456",
+                                },
+                                "is_reachable": None,
+                                "tool_details": [],
+                                "vulnerable_symbols": [],
+                                "fixed_symbols": [],
                             },
-                            "reachability_status": "UNKNOWN",
-                            "evidence": [],
-                            "vulnerable_symbols": [],
-                            "fixed_symbols": [],
-                        },
-                        {
-                            "resource_path": "src/file1.py",
-                            "patch": {
-                                "vcs_url": "https://example.com",
-                                "commit_hash": "abc123",
+                            {
+                                "resource_path": "src/file1.py",
+                                "patch": {
+                                    "vcs_url": "https://example.com",
+                                    "commit_hash": "abc123",
+                                },
+                                "is_reachable": None,
+                                "tool_details": [],
+                                "vulnerable_symbols": ["vuln_sym1"],
+                                "fixed_symbols": ["fixed_sym1"],
                             },
-                            "reachability_status": ReachabilityStatus.REACHABLE.value,
-                            "evidence": [
-                                {
-                                    "symbol_name": "vuln_sym1",
-                                    "called": True,
-                                    "defined": False,
-                                    "imported": False,
-                                    "fingerprint": "88ad9e67c53aa5f7c43e"
-                                    "c4aa52ed34b7930068c9",
-                                    "reachable_from": [],
-                                }
-                            ],
-                            "vulnerable_symbols": ["vuln_sym1"],
-                            "fixed_symbols": ["fixed_sym1"],
-                        },
-                    ],
-                },
-                "AVID-2": {
-                    "reachable": ReachabilityStatus.REACHABLE.value,
-                    "details": [
-                        {
-                            "resource_path": "src/file3.py",
-                            "patch": {
-                                "vcs_url": "https://example2.com",
-                                "commit_hash": "46a4asf",
+                        ],
+                    },
+                    {
+                        "advisory_uid": "AVID-2",
+                        "is_reachable": "no",
+                        "details": [
+                            {
+                                "resource_path": "src/file3.py",
+                                "patch": {
+                                    "vcs_url": "https://example2.com",
+                                    "commit_hash": "46a4asf",
+                                },
+                                "is_reachable": None,
+                                "tool_details": [],
+                                "vulnerable_symbols": [],
+                                "fixed_symbols": [],
                             },
-                            "reachability_status": "NO",
-                            "evidence": [],
-                            "vulnerable_symbols": [],
-                            "fixed_symbols": [],
-                        },
-                        {
-                            "resource_path": "src/file1.py",
-                            "patch": {
-                                "vcs_url": "https://example.com",
-                                "commit_hash": "abc123",
+                            {
+                                "resource_path": "src/file1.py",
+                                "patch": {
+                                    "vcs_url": "https://example.com",
+                                    "commit_hash": "abc123",
+                                },
+                                "is_reachable": None,
+                                "tool_details": [],
+                                "vulnerable_symbols": ["vuln_sym1"],
+                                "fixed_symbols": ["fixed_sym1"],
                             },
-                            "reachability_status": ReachabilityStatus.REACHABLE.value,
-                            "evidence": [
-                                {
-                                    "symbol_name": "vuln_sym1",
-                                    "called": True,
-                                    "defined": False,
-                                    "imported": False,
-                                    "fingerprint": "88ad9e67c53aa5f7c4"
-                                    "3ec4aa52ed34b7930068c9",
-                                    "reachable_from": [],
-                                }
-                            ],
-                            "vulnerable_symbols": ["vuln_sym1"],
-                            "fixed_symbols": ["fixed_sym1"],
-                        },
-                    ],
-                },
+                        ],
+                    },
+                ],
             }
 
             self.assertEqual(report, expected_report)
@@ -395,36 +382,34 @@ class SymbolReachabilityPipesTest(TestCase):
                     "vcs_url": "https://github.com/aboutcode-org/test",
                     "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
                 },
-                "advisory_uids": [],
-                "evidence": [
+                "is_reachable": "yes",
+                "tool_details": [
                     {
-                        "called": False,
-                        "defined": True,
-                        "imported": False,
-                        "fingerprint": "336908735214468b103dbde"
-                        "11c3ffbd2f76ac9212b8514f831cfa078a67892df",
+                        "is_exact": True,
+                        "is_called": False,
+                        "is_defined": True,
+                        "is_imported": False,
                         "symbol_name": "debug",
                         "reachable_from": [],
                     },
                     {
-                        "called": False,
-                        "defined": True,
-                        "imported": False,
-                        "fingerprint": "762e4f7d03b1bf4359c3ca364"
-                        "e558140239913bfabcc5aa77156460c2eb0a355",
+                        "is_exact": True,
+                        "is_called": True,
+                        "is_defined": True,
+                        "is_imported": False,
                         "symbol_name": "serve_report.build_file_path",
-                        "reachable_from": [],
+                        "reachable_from": ["serve_report"],
                     },
                     {
-                        "called": True,
-                        "defined": True,
-                        "imported": False,
-                        "fingerprint": "d7675efb263896da2a3c0067951183"
-                        "3553907e7e6ea619115a6dfc8625c3457e",
+                        "is_exact": True,
+                        "is_called": True,
+                        "is_defined": True,
+                        "is_imported": False,
                         "symbol_name": "serve_report",
                         "reachable_from": ["handle_request"],
                     },
                 ],
+                "advisory_uids": [],
                 "fixed_symbols": [
                     "debug",
                     "serve_report",
@@ -435,7 +420,6 @@ class SymbolReachabilityPipesTest(TestCase):
                     "serve_report",
                     "serve_report.build_file_path",
                 ],
-                "reachability_status": ReachabilityStatus.REACHABLE.value,
             }
         ]
 
@@ -471,44 +455,36 @@ class SymbolReachabilityPipesTest(TestCase):
                     "vcs_url": "https://github.com/aboutcode-org/test",
                     "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
                 },
-                "advisory_uids": [],
-                "evidence": [
+                "is_reachable": "yes",
+                "tool_details": [
                     {
+                        "is_exact": False,
+                        "is_called": False,
+                        "is_defined": True,
+                        "is_imported": False,
                         "symbol_name": "App",
-                        "called": False,
-                        "defined": True,
-                        "imported": False,
-                        "fingerprint": None,
                         "reachable_from": [],
                     },
                     {
+                        "is_exact": True,
+                        "is_called": False,
+                        "is_defined": True,
+                        "is_imported": False,
                         "symbol_name": "App.serveReport",
-                        "called": False,
-                        "defined": True,
-                        "imported": False,
-                        "fingerprint": "b161e24e9575b655e84c7f249709e5d4d0a1e6f19e2c4baa421a6cc996fda154",
-                        "reachable_from": []
+                        "reachable_from": [],
                     },
                     {
+                        "is_exact": False,
+                        "is_called": True,
+                        "is_defined": True,
+                        "is_imported": False,
                         "symbol_name": "App.buildFilePath",
-                        "called": False,
-                        "defined": True,
-                        "imported": False,
-                        "fingerprint": None,
-                        "reachable_from": []
-                    }
+                        "reachable_from": ["App.serveReport"],
+                    },
                 ],
-                "fixed_symbols": [
-                    "App",
-                    "App.buildFilePath",
-                    "App.serveReport"
-                ],
-                "vulnerable_symbols": [
-                    "App",
-                    "App.buildFilePath",
-                    "App.serveReport"
-                ],
-                "reachability_status": ReachabilityStatus.REACHABLE.value,
+                "advisory_uids": [],
+                "fixed_symbols": ["App", "App.buildFilePath", "App.serveReport"],
+                "vulnerable_symbols": ["App", "App.buildFilePath", "App.serveReport"],
             }
         ]
 
@@ -631,23 +607,30 @@ class FleetManagement:
         self.assertEqual(classify_reachability(None), ReachabilityStatus.NOT_REACHABLE)
         self.assertEqual(classify_reachability({}), ReachabilityStatus.NOT_REACHABLE)
         self.assertEqual(
-            classify_reachability({"evidence": {}}), ReachabilityStatus.NOT_REACHABLE
+            classify_reachability({"tool_details": {}}),
+            ReachabilityStatus.NOT_REACHABLE,
         )
         self.assertEqual(
-            classify_reachability({"evidence": {"fingerprint": "hash123"}}),
+            classify_reachability({"tool_details": {"is_exact": True}}),
             ReachabilityStatus.REACHABLE,
         )
 
         self.assertEqual(
-            classify_reachability({"evidence": {"imported": True, "called": True}}),
+            classify_reachability(
+                {"tool_details": {"is_imported": True, "is_called": True}}
+            ),
             ReachabilityStatus.REACHABLE,
         )
         self.assertEqual(
-            classify_reachability({"evidence": {"imported": True, "called": False}}),
+            classify_reachability(
+                {"tool_details": {"is_imported": True, "is_called": False}}
+            ),
             ReachabilityStatus.UNKNOWN,
         )
         self.assertEqual(
-            classify_reachability({"symbol1": {"imported": False, "called": False}}),
+            classify_reachability(
+                {"tool_details": {"is_imported": False, "is_called": False}}
+            ),
             ReachabilityStatus.NOT_REACHABLE,
         )
 
@@ -1032,3 +1015,231 @@ from math import *
         }
 
         self.assertEqual(result, expected_map)
+
+    def test_resource_patch_matcher_python(self):
+        """
+        Test matching
+        Python patch symbols against imports and calls.
+        """
+        vuln_text = """
+def direct_func():
+    return eval("1")
+
+def aliased_func():
+    return eval("2")
+
+def wildcard_func():
+    return eval("3")
+
+class MyClass:
+    def class_method(self):
+        return eval("4")
+
+    class InnerClass:
+        def deep_method(self):
+            return eval("5")
+""".strip()
+
+        fixed_text = """
+def direct_func():
+    return int("1")
+
+def aliased_func():
+    return int("2")
+
+def wildcard_func():
+    return int("3")
+
+class MyClass:
+    def class_method(self):
+        return int("4")
+
+    class InnerClass:
+        def deep_method(self):
+            return int("5")
+""".strip()
+
+        app_text = """
+from my_module import direct_func
+from my_module import aliased_func as af
+from my_module import MyClass as C
+from my_module import wildcard_func
+from my_module import *
+
+def execute():
+    direct_func()
+    af()
+    wildcard_func()
+
+    c = C()
+    c.class_method()
+
+    inner = C.InnerClass()
+    inner.deep_method()
+""".strip()
+
+        file_path = "my_module.py"
+        analyzer = PatchAnalyzer(repo=MagicMock(), commit_hash="dummy")
+        removed_lines, added_lines = analyzer.compute_changed_lines(
+            vuln_text, fixed_text
+        )
+
+        vuln_meta, fixed_meta, lang = analyzer.analyze(
+            vulnerable_text=vuln_text,
+            fixed_text=fixed_text,
+            removed_lines=removed_lines,
+            added_lines=added_lines,
+            file_path=file_path,
+        )
+
+        patch_symbols_by_language = {
+            lang: {
+                "vulnerable": {
+                    f"{file_path}::{key}": metadata
+                    for key, metadata in vuln_meta.items()
+                },
+                "fixed": {
+                    f"{file_path}::{key}": metadata
+                    for key, metadata in fixed_meta.items()
+                },
+            }
+        }
+
+        resource_analyzer = ResourceAnalyzer(resource_text=app_text, language=lang)
+        resource_index = resource_analyzer.build_index()
+        matcher = ResourcePatchMatcher(resource_index)
+
+        vulnerable_symbols = patch_symbols_by_language[lang]["vulnerable"]
+        fixed_symbols = patch_symbols_by_language[lang]["fixed"]
+
+        vuln_details = matcher.match(vulnerable_symbols)
+        fixed_details = matcher.match(fixed_symbols)
+
+        matched = {**vuln_details, **fixed_details}
+        self.assertIn("direct_func", matched)
+        self.assertTrue(matched["direct_func"]["is_imported"])
+        self.assertTrue(matched["direct_func"]["is_called"])
+        self.assertEqual(matched["direct_func"]["reachable_from"], ["execute"])
+
+        self.assertIn("aliased_func", matched)
+        self.assertTrue(matched["aliased_func"]["is_imported"])
+        self.assertTrue(matched["aliased_func"]["is_called"])
+        self.assertEqual(matched["aliased_func"]["reachable_from"], ["execute"])
+
+        self.assertIn("wildcard_func", matched)
+        self.assertTrue(matched["wildcard_func"]["is_imported"])
+        self.assertTrue(matched["wildcard_func"]["is_called"])
+        self.assertEqual(matched["wildcard_func"]["reachable_from"], ["execute"])
+
+        self.assertIn("MyClass.class_method", matched)
+        self.assertTrue(matched["MyClass.class_method"]["is_imported"])
+        self.assertTrue(matched["MyClass.class_method"]["is_called"])
+        self.assertEqual(matched["MyClass.class_method"]["reachable_from"], ["execute"])
+
+        self.assertIn("MyClass.InnerClass.deep_method", matched)
+        self.assertTrue(matched["MyClass.InnerClass.deep_method"]["is_imported"])
+        self.assertTrue(matched["MyClass.InnerClass.deep_method"]["is_called"])
+        self.assertEqual(
+            matched["MyClass.InnerClass.deep_method"]["reachable_from"], ["execute"]
+        )
+
+    def test_resource_patch_matcher_java(self):
+        """
+        Test matching
+        Java patch symbols against imports and calls.
+        """
+        vuln_text = """
+package com.example;
+
+public class Service {
+    public void processRequest(String input) {
+        Runtime.getRuntime().exec(input);
+    }
+
+    public void utilityMethod() {
+        Runtime.getRuntime().exec("cmd");
+    }
+}
+    """.strip()
+
+        fixed_text = """
+package com.example;
+
+public class Service {
+    public void processRequest(String input) {
+        System.out.println(input);
+    }
+
+    public void utilityMethod() {
+        System.out.println("cmd");
+    }
+}
+    """.strip()
+
+        app_text = """
+package com.test;
+
+import com.example.Service;
+import com.example.*;
+
+public class Main {
+    public void execute(String data) {
+        Service service = new Service();
+        service.processRequest(data);
+
+        service.utilityMethod();
+    }
+}
+    """.strip()
+
+        file_path = "Service.java"
+        analyzer = PatchAnalyzer(repo=MagicMock(), commit_hash="dummy")
+        removed_lines, added_lines = analyzer.compute_changed_lines(
+            vuln_text, fixed_text
+        )
+
+        vuln_meta, fixed_meta, lang = analyzer.analyze(
+            vulnerable_text=vuln_text,
+            fixed_text=fixed_text,
+            removed_lines=removed_lines,
+            added_lines=added_lines,
+            file_path=file_path,
+        )
+
+        patch_symbols_by_language = {
+            lang: {
+                "vulnerable": {
+                    f"{file_path}::{key}": metadata
+                    for key, metadata in vuln_meta.items()
+                },
+                "fixed": {
+                    f"{file_path}::{key}": metadata
+                    for key, metadata in fixed_meta.items()
+                },
+            }
+        }
+
+        resource_analyzer = ResourceAnalyzer(resource_text=app_text, language=lang)
+        resource_index = resource_analyzer.build_index()
+        matcher = ResourcePatchMatcher(resource_index)
+
+        vulnerable_symbols = patch_symbols_by_language[lang]["vulnerable"]
+        fixed_symbols = patch_symbols_by_language[lang]["fixed"]
+
+        vuln_details = matcher.match(vulnerable_symbols)
+        fixed_details = matcher.match(fixed_symbols)
+
+        matched = {**vuln_details, **fixed_details}
+        self.assertIn("Service.processRequest", matched)
+        self.assertTrue(matched["Service.processRequest"]["is_imported"])
+        self.assertTrue(matched["Service.processRequest"]["is_called"])
+        self.assertEqual(
+            matched["Service.processRequest"]["reachable_from"], ["Main.execute"]
+        )
+
+        self.assertIn("Service.utilityMethod", matched)
+        self.assertTrue(matched["Service.utilityMethod"]["is_imported"])
+        self.assertTrue(matched["Service.utilityMethod"]["is_called"])
+        self.assertEqual(
+            matched["Service.utilityMethod"]["reachable_from"], ["Main.execute"]
+        )

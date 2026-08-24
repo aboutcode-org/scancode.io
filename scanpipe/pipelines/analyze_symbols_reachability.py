@@ -47,7 +47,7 @@ class SymbolReachability(Pipeline):
 
     The analysis checks if vulnerable symbols are defined, imported, called, or
     exactly match a fingerprint within the project files. The results, including
-    evidence and a reachability status (REACHABLE, UNKNOWN, or
+    tool_details and a reachability status (REACHABLE, UNKNOWN, or
     NOT_REACHABLE), are stored in the `extra_data` of the matching resources
     under the `symbols_reachability` key.
 
@@ -176,10 +176,10 @@ class SymbolReachability(Pipeline):
                 fixed_symbols = patch_symbols.get("fixed", {})
 
                 matcher = ResourcePatchMatcher(resource_index=resource_index)
-                vuln_evidence = matcher.match(vulnerable_symbols)
-                fixed_evidence = matcher.match(fixed_symbols)
+                vuln_details = matcher.match(vulnerable_symbols)
+                fixed_details = matcher.match(fixed_symbols)
 
-                if not any([vuln_evidence, fixed_evidence]):
+                if not any([vuln_details, fixed_details]):
                     continue
 
                 report = {
@@ -188,10 +188,10 @@ class SymbolReachability(Pipeline):
                         "commit_hash": commit_hash,
                     },
                     "advisory_uids": advisory_uids,
-                    "evidence": list(vuln_evidence.values()),
-                    "fixed_symbols": sorted(fixed_evidence.keys()),
-                    "vulnerable_symbols": sorted(vuln_evidence.keys()),
-                    "reachability_status": classify_reachability(vuln_evidence).value,
+                    "tool_details": list(vuln_details.values()),
+                    "fixed_symbols": sorted(fixed_details.keys()),
+                    "vulnerable_symbols": sorted(vuln_details.keys()),
+                    "is_reachable": classify_reachability(vuln_details).value,
                 }
 
                 add_reachability_report(
@@ -223,40 +223,44 @@ class SymbolReachability(Pipeline):
             ReachabilityStatus.NOT_REACHABLE.value: 1,
         }
 
-        advisory_reachability_report = {}
+        advisory_reachability_report = {
+            "purl": self.project.purl,
+            "advisories": [],
+        }
+
+        advisory_map = {}
         for resource in self.candidate_resources:
             for report in resource.extra_data.get("symbols_reachability", []):
                 advisory_uids = report.get("advisory_uids", [])
-                reachability_status = report.get("reachability_status")
+                is_reachable = report.get("is_reachable")
                 patch = report.get("patch", {})
 
                 for adv_uid in advisory_uids:
-                    if adv_uid not in advisory_reachability_report:
-                        advisory_reachability_report[adv_uid] = {
-                            "reachable": ReachabilityStatus.NOT_REACHABLE.value,
+                    if adv_uid not in advisory_map:
+                        adv_data = {
+                            "advisory_uid": adv_uid,
+                            "is_reachable": ReachabilityStatus.NOT_REACHABLE.value,
                             "details": [],
                         }
+                        advisory_map[adv_uid] = adv_data
+                        advisory_reachability_report["advisories"].append(adv_data)
 
                     tool_details = {
                         "resource_path": resource.path,
                         "patch": patch,
-                        "reachability_status": reachability_status,
-                        "evidence": report.get("evidence", []),
+                        "is_reachable": is_reachable,
+                        "tool_details": report.get("tool_details", []),
                         "vulnerable_symbols": report.get("vulnerable_symbols", []),
                         "fixed_symbols": report.get("fixed_symbols", []),
                     }
 
-                    advisory_reachability_report[adv_uid]["details"].append(
-                        tool_details
-                    )
+                    advisory_map[adv_uid]["details"].append(tool_details)
 
-                    current_status = advisory_reachability_report[adv_uid]["reachable"]
-                    if status_priority.get(
-                        reachability_status, 0
-                    ) > status_priority.get(current_status, 0):
-                        advisory_reachability_report[adv_uid]["reachable"] = (
-                            reachability_status
-                        )
+                    current_status = advisory_map[adv_uid]["is_reachable"]
+                    if status_priority.get(is_reachable, 0) > status_priority.get(
+                        current_status, 0
+                    ):
+                        advisory_map[adv_uid]["is_reachable"] = is_reachable
 
         reachability_output_path = self.project.get_output_file_path(
             "reachability", "json"
