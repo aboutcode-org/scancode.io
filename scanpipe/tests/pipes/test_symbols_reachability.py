@@ -366,7 +366,7 @@ class SymbolReachabilityPipesTest(TestCase):
         results = resource.extra_data.get("symbols_reachability")
         self.assertEqual(results, expected_results)
 
-    @patch("scanpipe.pipelines.analyze_symbols_reachability.Repo")
+    @patch("scanpipe.pipes.reachability.Repo")
     @patch("scanpipe.pipes.reachability.PatchAnalyzer.collect_patch_symbols")
     @patch.object(Project, "package_vulnerabilities", new_callable=PropertyMock)
     def test_python_get_symbol_reachability_results(
@@ -439,7 +439,7 @@ class SymbolReachabilityPipesTest(TestCase):
             expected_results,
         )
 
-    @patch("scanpipe.pipelines.analyze_symbols_reachability.Repo")
+    @patch("scanpipe.pipes.reachability.Repo")
     @patch("scanpipe.pipes.reachability.PatchAnalyzer.collect_patch_symbols")
     @patch.object(Project, "package_vulnerabilities", new_callable=PropertyMock)
     def test_java_get_symbol_reachability_results(

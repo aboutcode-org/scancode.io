@@ -21,11 +21,13 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import difflib
+import json
 import shutil
 import tempfile
 from enum import Enum
 from pathlib import Path
 
+from git import Repo
 from git.diff import NULL_TREE
 from scancode.api import get_file_info
 
@@ -585,9 +587,9 @@ class ResourcePatchMatcher:
         return matched
 
 
-def add_reachability_report(resource, commit_hash, vcs_url, new_report):
+def save_resource_reachability_report(resource, commit_hash, vcs_url, new_report):
     """
-    Add a reachability report for commit_hash and vcs_url.
+    Save a reachability report for commit_hash and vcs_url.
     If duplicates exist, replace the old report with the new one.
     """
     cleaned_reports = []
@@ -611,3 +613,209 @@ def add_reachability_report(resource, commit_hash, vcs_url, new_report):
         cleaned_reports.append(new_report)
 
     resource.update_extra_data({"symbols_reachability": cleaned_reports})
+
+
+def get_vulnerabilities_patches(package_vulnerabilities, dependency_vulnerabilities):
+    """Get unique patch for all vulnerabilities."""
+    patches = {}
+    for vulnerability in package_vulnerabilities + dependency_vulnerabilities:
+        advisory_uid = vulnerability.get("advisory_uid")
+        for patch in vulnerability.get("fixed_in_patches", []):
+            vcs_url = patch.get("vcs_url")
+            commit_hash = patch.get("commit_hash")
+
+            p_key = (vcs_url, commit_hash)
+            if p_key not in patches:
+                patches[p_key] = {
+                    "vcs_url": vcs_url,
+                    "commit_hash": commit_hash,
+                    "advisory_uids": [],
+                }
+
+            if advisory_uid and advisory_uid not in patches[p_key]["advisory_uids"]:
+                patches[p_key]["advisory_uids"].append(advisory_uid)
+
+    return list(patches.values())
+
+
+def collect_resource_index(candidate_resources):
+    """Collect resources symbols for each resource exactly once."""
+    resource_indexes = {}
+    for resource in candidate_resources:
+        resource_language = resource.programming_language
+
+        file_content = normalize_text(resource.file_content)
+        if not file_content:
+            continue
+
+        resource_analyzer = ResourceAnalyzer(
+            resource_text=file_content, language=resource_language
+        )
+
+        resource_index = resource_analyzer.build_index()
+        if resource_index:
+            resource_indexes[resource.path] = resource_index
+
+    return resource_indexes
+
+
+def collect_patch_symbols(patches):
+    """
+    For each unique repo: clone it once, collect patch symbols for all
+    related commits, then remove the local clone before moving on
+    """
+    patch_symbols = {}
+    patches_by_repo = {}
+    for patch in patches:
+        vcs_url = patch.get("vcs_url")
+        patches_by_repo.setdefault(vcs_url, []).append(patch)
+
+    for vcs_url, repo_patches in patches_by_repo.items():
+        with tempfile.TemporaryDirectory(prefix="symbol-reachability-") as repo_path:
+            try:
+                repo = Repo.clone_from(vcs_url, repo_path)
+            except Exception as e:
+                raise Exception(f"Failed to clone repository {vcs_url}: {e!r}")
+
+            try:
+                for patch in repo_patches:
+                    commit_hash = patch.get("commit_hash")
+                    patch_analyzer = PatchAnalyzer(repo=repo, commit_hash=commit_hash)
+                    patch_symbols[commit_hash] = patch_analyzer.collect_patch_symbols()
+            except Exception as e:
+                raise Exception(
+                    f"Failed to collect patch symbols "
+                    f"for {vcs_url}, patch: {repo_patches}: {e!r}"
+                )
+
+    return patch_symbols
+
+
+def collect_and_match_resources(
+    patches, patch_symbols, candidate_resources, resource_indexes
+):
+    """Match resource symbols against patch symbols."""
+    for patch in patches:
+        vcs_url = patch.get("vcs_url")
+        commit_hash = patch.get("commit_hash")
+        advisory_uids = patch.get("advisory_uids", [])
+
+        patch_symbols_by_language = patch_symbols.get(commit_hash, {})
+        if not patch_symbols_by_language:
+            continue
+
+        for resource in candidate_resources:
+            resource_index = resource_indexes.get(resource.path)
+            if not resource_index:
+                continue
+
+            patch_symbols = patch_symbols_by_language.get(resource.programming_language)
+            if not patch_symbols:
+                continue
+
+            vulnerable_symbols = patch_symbols.get("vulnerable", {})
+            fixed_symbols = patch_symbols.get("fixed", {})
+
+            matcher = ResourcePatchMatcher(resource_index=resource_index)
+            vuln_details = matcher.match(vulnerable_symbols)
+            fixed_details = matcher.match(fixed_symbols)
+
+            if not any([vuln_details, fixed_details]):
+                continue
+
+            report = {
+                "patch": {
+                    "vcs_url": vcs_url,
+                    "commit_hash": commit_hash,
+                },
+                "advisory_uids": advisory_uids,
+                "tool_details": list(vuln_details.values()),
+                "fixed_symbols": sorted(fixed_details.keys()),
+                "vulnerable_symbols": sorted(vuln_details.keys()),
+                "is_reachable": classify_reachability(vuln_details).value,
+            }
+
+            save_resource_reachability_report(
+                resource=resource,
+                commit_hash=commit_hash,
+                vcs_url=vcs_url,
+                new_report=report,
+            )
+
+
+def generate_advisory_reachability_report(project, patches, candidate_resources):
+    """
+    Generate reachability report keyed by advisory_uid.
+
+    Each advisory contains its overall reachability status
+    and the reachability results collected from all resources
+    and associated patches.
+
+    The overall reachability status is determined using the following
+    priority order: REACHABLE > UNKNOWN > NOT_REACHABLE
+
+    This means that an advisory is considered reachable if it is reachable
+    through at least one resource or patch. If no reachable result exists,
+    but at least one result is unknown, the advisory status is UNKNOWN.
+    Otherwise, it is NOT_REACHABLE.
+    """
+    status_priority = {
+        ReachabilityStatus.REACHABLE.value: 3,
+        ReachabilityStatus.UNKNOWN.value: 2,
+        ReachabilityStatus.NOT_REACHABLE.value: 1,
+    }
+
+    advisory_reachability_report = {
+        "purl": project.purl,
+        "advisories": [],
+    }
+
+    advisory_map = {}
+    for patch in patches:
+        for adv_uid in patch.get("advisory_uids", []):
+            if adv_uid not in advisory_map:
+                adv_data = {
+                    "advisory_uid": adv_uid,
+                    "is_reachable": ReachabilityStatus.NOT_REACHABLE.value,
+                    "details": [],
+                }
+                advisory_map[adv_uid] = adv_data
+                advisory_reachability_report["advisories"].append(adv_data)
+
+    for resource in candidate_resources:
+        for report in resource.extra_data.get("symbols_reachability", []):
+            advisory_uids = report.get("advisory_uids", [])
+            is_reachable = report.get("is_reachable")
+            patch = report.get("patch", {})
+
+            for adv_uid in advisory_uids:
+                if adv_uid not in advisory_map:
+                    adv_data = {
+                        "advisory_uid": adv_uid,
+                        "is_reachable": ReachabilityStatus.NOT_REACHABLE.value,
+                        "details": [],
+                    }
+                    advisory_map[adv_uid] = adv_data
+                    advisory_reachability_report["advisories"].append(adv_data)
+
+                tool_details = {
+                    "resource_path": resource.path,
+                    "patch": patch,
+                    "is_reachable": is_reachable,
+                    "tool_details": report.get("tool_details", []),
+                    "vulnerable_symbols": report.get("vulnerable_symbols", []),
+                    "fixed_symbols": report.get("fixed_symbols", []),
+                }
+
+                advisory_map[adv_uid]["details"].append(tool_details)
+
+                current_status = advisory_map[adv_uid]["is_reachable"]
+                if status_priority.get(is_reachable, 0) > status_priority.get(
+                    current_status, 0
+                ):
+                    advisory_map[adv_uid]["is_reachable"] = is_reachable
+
+    reachability_output_path = project.get_output_file_path("reachability", "json")
+
+    with open(reachability_output_path, "w") as f:
+        json.dump(advisory_reachability_report, f, indent=2)
