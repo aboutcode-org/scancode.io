@@ -867,34 +867,27 @@ def apply_reachability_to_packages_and_dependencies(project, advisory_report):
     Update DiscoveredPackage and DiscoveredDependency records by injecting the
     computed reachability data into their affected_by_vulnerabilities JSON field.
     """
-    advisories_list = advisory_report.get("advisories", [])
-    if not advisories_list:
+    advisories = advisory_report.get("advisories", [])
+    if not advisories:
         return
 
-    advisory_map = {adv["advisory_uid"]: adv for adv in advisories_list}
+    advisory_map = {adv["advisory_uid"]: adv for adv in advisories}
+    targets = (
+        (project.discoveredpackages.all(), DiscoveredPackage),
+        (project.discovereddependencies.all(), DiscoveredDependency),
+    )
 
-    unsaved_packages = []
-    for package in project.discoveredpackages.all():
-        vulns = package.affected_by_vulnerabilities or []
-        if inject_reachability_data(vulns, advisory_map):
-            unsaved_packages.append(package)
-
-    if unsaved_packages:
-        DiscoveredPackage.objects.bulk_update(
-            objs=unsaved_packages,
-            fields=["affected_by_vulnerabilities"],
-            batch_size=10,
-        )
-
-    unsaved_deps = []
-    for dep in project.discovereddependencies.all():
-        vulns = dep.affected_by_vulnerabilities or []
-        if inject_reachability_data(vulns, advisory_map):
-            unsaved_deps.append(dep)
-
-    if unsaved_deps:
-        DiscoveredDependency.objects.bulk_update(
-            objs=unsaved_deps,
-            fields=["affected_by_vulnerabilities"],
-            batch_size=10,
-        )
+    for queryset, model in targets:
+        unsaved = [
+            item
+            for item in queryset
+            if inject_reachability_data(
+                item.affected_by_vulnerabilities or [], advisory_map
+            )
+        ]
+        if unsaved:
+            model.objects.bulk_update(
+                objs=unsaved,
+                fields=["affected_by_vulnerabilities"],
+                batch_size=10,
+            )
