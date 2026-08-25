@@ -1,5 +1,5 @@
 {
-  "metrics": {
+  "health_metrics": {
     "total_commits": 260,
     "total_contributors": 33,
     "total_organizations": 16,
