@@ -785,7 +785,9 @@ def generate_advisory_reachability_report(project, patches, candidate_resources)
     for resource in candidate_resources:
         for report in resource.extra_data.get("symbols_reachability", []):
             advisory_uids = report.get("advisory_uids", [])
-            is_reachable = report.get("is_reachable")
+            is_reachable = (
+                report.get("is_reachable") or ReachabilityStatus.NOT_REACHABLE.value
+            )
             patch = report.get("patch", {})
 
             for adv_uid in advisory_uids:
