@@ -21,11 +21,11 @@ Reachability Status
 
 The reachability status can have one of the following values:
 
-- ``REACHABLE``: "Yes"
+- ``REACHABLE``: "yes"
   (We found evidence that the vulnerable symbol is reachable and the vulnerable code exists.)
-- ``UNKNOWN``: "UNKNOWN"
+- ``UNKNOWN``: "unknown"
   (We cannot determine reachability with confidence.)
-- ``NOT_REACHABLE``: "No"
+- ``NOT_REACHABLE``: "no"
   (We found evidence that the vulnerable symbol is not reachable.)
 
 
@@ -51,46 +51,49 @@ Run the ``analyze_symbols_reachability`` pipeline
 .. code-block:: json
     :emphasize-lines: 2
 
+{
+  "purl": "pkg:pypi/b2sdk@1.14.0",
+  "advisories": [
     {
-      "pypa/b2sdk/PYSEC-2022-33": {
-        "reachable": "YES",
-        "details": [
-          {
-            "resource_path": "b2sdk-1.14.0/b2sdk/account_info/sqlite_account_info.py",
-            "patch": {
-              "vcs_url": "https://github.com/backblaze/b2-sdk-python",
-              "commit_hash": "62476638986e5b6d7459aca5ef8ce220760226e0"
-            },
-            "reachability_status": "YES",
-            "evidence": [
-              {
-                "symbol_name": "SqliteAccountInfo._create_database",
-                "called": true,
-                "defined": true,
-                "imported": false,
-                "fingerprint": "43b2cc475fd9704759ab9c05a4e96e2b24859f9c63873773db7c35fc4ff09991",
-                "reachable_from": [
-                  "SqliteAccountInfo._validate_database"
-                ]
-              },
-              {
-                "symbol_name": "SqliteAccountInfo",
-                "called": false,
-                "defined": true,
-                "imported": false,
-                "fingerprint": "8878c1a51c52f9f13f4e877c072a045ef5104ae4eeebadec92ba28f19a792e9f",
-                "reachable_from": []
-              }
-            ],
-            "vulnerable_symbols": [
-              "SqliteAccountInfo",
-              "SqliteAccountInfo._create_database"
-            ],
-            "fixed_symbols": [
-              "SqliteAccountInfo",
-              "SqliteAccountInfo._create_database"
-            ]
+      "advisory_uid": "pypa/b2sdk/PYSEC-2022-33",
+      "is_reachable": "yes",
+      "details": [
+        {
+          "resource_path": "b2sdk-1.14.0/b2sdk/account_info/sqlite_account_info.py",
+          "patch": {
+            "vcs_url": "https://github.com/backblaze/b2-sdk-python",
+            "commit_hash": "62476638986e5b6d7459aca5ef8ce220760226e0"
           },
+          "is_reachable": "yes",
+          "tool_details": [
+            {
+              "symbol_name": "SqliteAccountInfo._create_database",
+              "is_called": true,
+              "is_defined": true,
+              "is_imported": false,
+              "is_exact": true,
+              "reachable_from": [
+                "SqliteAccountInfo._validate_database"
+              ]
+            },
+            {
+              "symbol_name": "SqliteAccountInfo",
+              "is_called": false,
+              "is_defined": true,
+              "is_imported": false,
+              "is_exact": true,
+              "reachable_from": []
+            }
+          ],
+          "vulnerable_symbols": [
+            "SqliteAccountInfo",
+            "SqliteAccountInfo._create_database"
+          ],
+          "fixed_symbols": [
+            "SqliteAccountInfo",
+            "SqliteAccountInfo._create_database"
+          ]
+        },
           // ... more details
         ]
       }
