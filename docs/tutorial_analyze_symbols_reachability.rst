@@ -51,53 +51,53 @@ Run the ``analyze_symbols_reachability`` pipeline
 .. code-block:: json
     :emphasize-lines: 2
 
-{
-  "purl": "pkg:pypi/b2sdk@1.14.0",
-  "advisories": [
     {
-      "advisory_uid": "pypa/b2sdk/PYSEC-2022-33",
-      "is_reachable": "yes",
-      "details": [
+      "purl": "pkg:pypi/b2sdk@1.14.0",
+      "advisories": [
         {
-          "resource_path": "b2sdk-1.14.0/b2sdk/account_info/sqlite_account_info.py",
-          "patch": {
-            "vcs_url": "https://github.com/backblaze/b2-sdk-python",
-            "commit_hash": "62476638986e5b6d7459aca5ef8ce220760226e0"
-          },
+          "advisory_uid": "pypa/b2sdk/PYSEC-2022-33",
           "is_reachable": "yes",
-          "tool_details": [
+          "details": [
             {
-              "symbol_name": "SqliteAccountInfo._create_database",
-              "is_called": true,
-              "is_defined": true,
-              "is_imported": false,
-              "is_exact": true,
-              "reachable_from": [
-                "SqliteAccountInfo._validate_database"
+              "resource_path": "b2sdk-1.14.0/b2sdk/account_info/sqlite_account_info.py",
+              "patch": {
+                "vcs_url": "https://github.com/backblaze/b2-sdk-python",
+                "commit_hash": "62476638986e5b6d7459aca5ef8ce220760226e0"
+              },
+              "is_reachable": "yes",
+              "tool_details": [
+                {
+                  "symbol_name": "SqliteAccountInfo._create_database",
+                  "is_called": true,
+                  "is_defined": true,
+                  "is_imported": false,
+                  "is_exact": true,
+                  "reachable_from": [
+                    "SqliteAccountInfo._validate_database"
+                  ]
+                },
+                {
+                  "symbol_name": "SqliteAccountInfo",
+                  "is_called": false,
+                  "is_defined": true,
+                  "is_imported": false,
+                  "is_exact": true,
+                  "reachable_from": []
+                }
+              ],
+              "vulnerable_symbols": [
+                "SqliteAccountInfo",
+                "SqliteAccountInfo._create_database"
+              ],
+              "fixed_symbols": [
+                "SqliteAccountInfo",
+                "SqliteAccountInfo._create_database"
               ]
             },
-            {
-              "symbol_name": "SqliteAccountInfo",
-              "is_called": false,
-              "is_defined": true,
-              "is_imported": false,
-              "is_exact": true,
-              "reachable_from": []
-            }
-          ],
-          "vulnerable_symbols": [
-            "SqliteAccountInfo",
-            "SqliteAccountInfo._create_database"
-          ],
-          "fixed_symbols": [
-            "SqliteAccountInfo",
-            "SqliteAccountInfo._create_database"
-          ]
-        },
-          // ... more details
-        ]
-      }
-    }
+              // ... more details
+            ]
+          }
+        }
 
 .. note::
     An advisory is considered ``REACHABLE`` if it is reachable through at least
