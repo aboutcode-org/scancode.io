@@ -1532,7 +1532,11 @@ def download_project_file(request, slug, filename, path_type):
     if not file_path.exists():
         raise Http404(f"{file_path} not found")
 
-    return FileResponse(file_path.open("rb"), as_attachment=True)
+    # JSON and plain text render safely in browsers: serve those inline so
+    # that e.g. JSON results open directly in the browser instead of always
+    # forcing a download.
+    as_attachment = file_path.suffix not in (".json", ".txt")
+    return FileResponse(file_path.open("rb"), as_attachment=as_attachment)
 
 
 @conditional_login_required

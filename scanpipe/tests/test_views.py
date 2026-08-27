@@ -386,6 +386,18 @@ class ScanPipeViewsTest(TestCase):
             response.headers["Content-Disposition"],
         )
 
+    def test_scanpipe_views_project_details_download_output_view_json_inline(self):
+        # https://github.com/aboutcode-org/scancode.io/issues/2210
+        json_file = self.project1.output_path / "results.json"
+        json_file.write_text('{"headers": []}')
+        url = reverse("project_download_output", args=[self.project1.slug, "results.json"])
+        response = self.client.get(url)
+        self.assertEqual("application/json", response.headers["Content-Type"])
+        self.assertEqual(
+            'inline; filename="results.json"',
+            response.headers["Content-Disposition"],
+        )
+
     def test_scanpipe_views_project_details_delete_input_view(self):
         random_uuid = str(uuid.uuid4())
         url = reverse("project_delete_input", args=[self.project1.slug, random_uuid])
