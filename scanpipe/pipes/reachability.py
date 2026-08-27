@@ -429,12 +429,9 @@ class ResourceAnalyzer:
         callers_of = {}  # callee_name -> set of caller_qualified_names
 
         for node, _ in lang_query.get_functions(tree.root_node):
-            qualified_name = self.process_node(
+            self.process_node(
                 node, extractor, definitions_index, definitions, fingerprints
             )
-            if qualified_name:
-                for _, callee_name in extractor.extract_calls(node):
-                    callers_of.setdefault(callee_name, set()).add(qualified_name)
 
         for node, _ in lang_query.get_classes(tree.root_node):
             self.process_node(
@@ -445,6 +442,22 @@ class ResourceAnalyzer:
             self.process_node(
                 node, extractor, definitions_index, definitions, fingerprints
             )
+
+        for receiver_node, callee_node in lang_query.get_calls(tree.root_node):
+            callee_name = callee_node.text.decode("utf-8", errors="replace")
+            if not callee_name:
+                continue
+
+            caller_name = None
+            curr = callee_node
+            while curr is not None:
+                def_info = definitions_index.get(curr.id)
+                if def_info and def_info.get("qualified_name"):
+                    caller_name = def_info["qualified_name"]
+                    break
+                curr = curr.parent
+
+            callers_of.setdefault(callee_name, set()).add(caller_name)
 
         return {
             "definitions": definitions,
@@ -582,7 +595,7 @@ class ResourcePatchMatcher:
             entry["is_exact"] = entry["is_exact"] or is_exact
             entry["is_called"] = entry["is_called"] or called
             if called:
-                entry["reachable_from"] = sorted(callers)
+                entry["reachable_from"] = sorted([c for c in callers if c is not None])
 
         return matched
 
@@ -709,12 +722,14 @@ def collect_and_match_resources(
             if not resource_index:
                 continue
 
-            patch_symbols = patch_symbols_by_language.get(resource.programming_language)
-            if not patch_symbols:
+            lang_patch_symbols = patch_symbols_by_language.get(
+                resource.programming_language
+            )
+            if not lang_patch_symbols:
                 continue
 
-            vulnerable_symbols = patch_symbols.get("vulnerable", {})
-            fixed_symbols = patch_symbols.get("fixed", {})
+            vulnerable_symbols = lang_patch_symbols.get("vulnerable", {})
+            fixed_symbols = lang_patch_symbols.get("fixed", {})
 
             matcher = ResourcePatchMatcher(resource_index=resource_index)
             vuln_details = matcher.match(vulnerable_symbols)

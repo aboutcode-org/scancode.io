@@ -403,7 +403,7 @@ class SymbolReachabilityPipesTest(TestCase):
                         "is_defined": True,
                         "is_imported": False,
                         "symbol_name": "serve_report.build_file_path",
-                        "reachable_from": ["serve_report"],
+                        "reachable_from": ["serve_report.target_path"],
                     },
                     {
                         "is_exact": True,
@@ -425,6 +425,72 @@ class SymbolReachabilityPipesTest(TestCase):
                     "serve_report",
                     "serve_report.build_file_path",
                 ],
+            }
+        ]
+
+        self._run_reachability_pipeline(
+            mock_package_vulnerabilities,
+            mock_collect_symbols,
+            mock_repo,
+            file_path,
+            app_text,
+            vuln_text,
+            fixed_text,
+            expected_results,
+        )
+
+    @patch("scanpipe.pipes.reachability.Repo")
+    @patch("scanpipe.pipes.reachability.PatchAnalyzer.collect_patch_symbols")
+    @patch.object(Project, "package_vulnerabilities", new_callable=PropertyMock)
+    def test_dependency_simple_reachability(
+        self,
+        mock_package_vulnerabilities,
+        mock_collect_symbols,
+        mock_repo,
+    ):
+        """
+        Test the reachability pipeline
+        for a vulnerability dependency.
+        """
+        file_path = "app.py"
+
+        app_text = (
+            "from aiohttp.http_parser import HttpRequestParser\n\n"
+            "HttpRequestParser.parse_message()\n"
+        )
+
+        vuln_text = (
+            "class HttpRequestParser:\n"
+            "    def parse_message(self):\n"
+            "        return eval('1')\n"
+        )
+
+        fixed_text = (
+            "class HttpRequestParser:\n"
+            "    def parse_message(self):\n"
+            "        return int('1')\n"
+        )
+
+        expected_results = [
+            {
+                "patch": {
+                    "vcs_url": "https://github.com/aboutcode-org/test",
+                    "commit_hash": "07ec0de1964b14bf085a1c9a27ece2b61ab6105c",
+                },
+                "is_reachable": "yes",
+                "tool_details": [
+                    {
+                        "is_exact": False,
+                        "is_called": True,
+                        "is_defined": False,
+                        "is_imported": True,
+                        "symbol_name": "HttpRequestParser.parse_message",
+                        "reachable_from": [],
+                    }
+                ],
+                "advisory_uids": [],
+                "fixed_symbols": ["HttpRequestParser.parse_message"],
+                "vulnerable_symbols": ["HttpRequestParser.parse_message"],
             }
         ]
 
@@ -1045,9 +1111,18 @@ def deep_func():
 def relative_func():
     return eval("8")
 
+def module_func():
+    return eval("9")
+
+def unused_func():
+    return eval("10")
+
 class MyClass:
     def class_method(self):
         return eval("4")
+
+    def target_method(self):
+        return eval("11")
 
 class InnerClass:
     def deep_method(self):
@@ -1073,9 +1148,18 @@ def deep_func():
 def relative_func():
     return int("8")
 
+def module_func():
+    return int("9")
+
+def unused_func():
+    return int("10")
+
 class MyClass:
     def class_method(self):
         return int("4")
+
+    def target_method(self):
+        return int("11")
 
     class InnerClass:
         def deep_method(self):
@@ -1093,6 +1177,11 @@ from .relative_module import relative_func
 from my_module import (
     multiline_func,
 )
+from my_module import module_func as mf
+from my_module import unused_func
+
+# 1. Module-level call via alias
+mf()
 
 def execute():
     direct_func()
@@ -1104,9 +1193,22 @@ def execute():
 
     c = C()
     c.class_method()
+    c.target_method()
 
     inner = C.InnerClass()
     inner.deep_method()
+
+def execute_nested():
+    def inner_helper():
+        # 2. Call inside a nested function via alias
+        mf()
+    inner_helper()
+
+def wildcard_caller():
+    # 3. Call via wildcard import
+    module_func()
+
+# unused_func is imported but never called
 """.strip()
 
         file_path = "my_module.py"
@@ -1188,6 +1290,26 @@ def execute():
         self.assertTrue(matched["relative_func"]["is_imported"])
         self.assertTrue(matched["relative_func"]["is_called"])
         self.assertEqual(matched["relative_func"]["reachable_from"], ["execute"])
+
+        self.assertIn("MyClass.target_method", matched)
+        self.assertTrue(matched["MyClass.target_method"]["is_imported"])
+        self.assertTrue(matched["MyClass.target_method"]["is_called"])
+        self.assertEqual(
+            matched["MyClass.target_method"]["reachable_from"], ["execute"]
+        )
+
+        self.assertIn("module_func", matched)
+        self.assertTrue(matched["module_func"]["is_imported"])
+        self.assertTrue(matched["module_func"]["is_called"])
+        self.assertEqual(
+            matched["module_func"]["reachable_from"],
+            ["execute_nested.inner_helper", "wildcard_caller"],
+        )
+
+        self.assertIn("unused_func", matched)
+        self.assertTrue(matched["unused_func"]["is_imported"])
+        self.assertFalse(matched["unused_func"]["is_called"])
+        self.assertEqual(matched["unused_func"]["reachable_from"], [])
 
     def test_resource_patch_matcher_java(self):
         """
