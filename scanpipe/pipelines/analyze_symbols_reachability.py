@@ -69,8 +69,10 @@ class SymbolReachability(Pipeline):
     def collect_resource_index(self):
         """Collect resources symbols for each resource"""
         self.candidate_resources = self.project.codebaseresources.files().filter(
-            is_binary=False, is_archive=False, is_media=False,
-            programming_language__in=TS_QUERIES.keys()
+            is_binary=False,
+            is_archive=False,
+            is_media=False,
+            programming_language__in=TS_QUERIES.keys(),
         )
         self.resource_indexes = reachability.collect_resource_index(
             candidate_resources=self.candidate_resources
