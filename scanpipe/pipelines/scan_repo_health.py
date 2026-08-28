@@ -127,7 +127,7 @@ class ScanRepoHealth(Pipeline):
         """
         Format the GrimoireLab metrics output by extracting the repository URL,
         score, and metrics from the generated JSON and overwriting it with a
-        simplified structure.
+        simplified structure, and updating the project's extra data.
         """
         if not self.metrics_output_path.exists():
             raise FileNotFoundError(
