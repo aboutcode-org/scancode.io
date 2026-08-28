@@ -29,7 +29,7 @@ from pathlib import Path
 
 from git import Repo
 from git.diff import NULL_TREE
-from scancode.api import get_file_info
+from typecode import get_type
 
 from scanpipe.pipes.symbols import TS_QUERIES
 from scanpipe.pipes.symbols import SymbolExtractor
@@ -55,10 +55,7 @@ def normalize_text(content):
 
 
 def detect_language_with_scancode(file_path, content):
-    """
-    Detect the programming language of the text
-    content using get_file_info function
-    """
+    """Detect the programming language of the text"""
     content = normalize_text(content)
 
     if not content:
@@ -67,11 +64,11 @@ def detect_language_with_scancode(file_path, content):
     tmp_dir = tempfile.mkdtemp(prefix="patch-lang-")
 
     try:
-        target = Path(tmp_dir) / Path(file_path).name
-        target.write_text(content, encoding="utf-8", errors="replace")
+        location = Path(tmp_dir) / Path(file_path).name
+        location.write_text(content, encoding="utf-8", errors="replace")
 
-        info = get_file_info(location=str(target)) or {}
-        return info.get("programming_language") or None
+        info = get_type(location)
+        return info.programming_language or None
 
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -652,7 +649,7 @@ def get_vulnerabilities_patches(package_vulnerabilities, dependency_vulnerabilit
 
 
 def collect_resource_index(candidate_resources):
-    """Collect resources symbols for each resource exactly once."""
+    """Collect resources symbols for each resource"""
     resource_indexes = {}
     for resource in candidate_resources:
         resource_language = resource.programming_language
@@ -674,8 +671,8 @@ def collect_resource_index(candidate_resources):
 
 def collect_patch_symbols(patches):
     """
-    For each unique repo: clone it once, collect patch symbols for all
-    related commits, then remove the local clone before moving on
+    For each unique repo clone it once,
+    collect patch symbols for all related commits
     """
     patch_symbols = {}
     patches_by_repo = {}
@@ -704,7 +701,7 @@ def collect_patch_symbols(patches):
     return patch_symbols
 
 
-def collect_and_match_resources(
+def match_patches_to_resources(
     patches, patch_symbols, candidate_resources, resource_indexes
 ):
     """Match resource symbols against patch symbols."""
@@ -760,18 +757,18 @@ def collect_and_match_resources(
 
 def generate_advisory_reachability_report(project, patches, candidate_resources):
     """
-    Generate reachability report keyed by advisory_uid.
+    Generate a reachability report summarizing status by advisory.
 
     Each advisory contains its overall reachability status
     and the reachability results collected from all resources
     and associated patches.
 
     The overall reachability status is determined using the following
-    priority order: REACHABLE > UNKNOWN > NOT_REACHABLE
+    priority order: REACHABLE: "yes" > UNKNOWN: "unknown" > NOT_REACHABLE: "no"
 
     This means that an advisory is considered reachable if it is reachable
     through at least one resource or patch. If no reachable result exists,
-    but at least one result is unknown, the advisory status is UNKNOWN.
+    but at least one result is UNKNOWN, the advisory status is UNKNOWN.
     Otherwise, it is NOT_REACHABLE.
     """
     status_priority = {

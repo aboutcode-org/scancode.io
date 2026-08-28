@@ -22,23 +22,24 @@
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import reachability
+from scanpipe.pipes.symbols import TS_QUERIES
 
 
 class SymbolReachability(Pipeline):
     """
-    Patch reachability analysis for given vulnerability patches.
+    Determine the reachability of vulnerabilities identified in the project.
 
-    For every patch we clone the git repository and extract
-    the vulnerable and fixed symbols from the patch commit.
+    Note: You must run `find_vulnerabilities` pipeline before running this pipeline.
 
-    These symbols are then matched against the project's codebase resources to
-    determine if the vulnerable code is actually present and reachable.
+    For every patch the git repository is cloned and extract the vulnerable and fixed
+    symbols from the patch commit. These symbols are then matched against
+    the project's codebase resources to determine if the vulnerable code
+    is actually present and reachable.
 
-    The analysis checks if vulnerable symbols are defined, imported, called, or
-    exactly match a fingerprint within the project files. The results, including
-    tool_details and a reachability status (REACHABLE, UNKNOWN, or
-    NOT_REACHABLE), are stored in the `extra_data` of the matching resources
-    under the `symbols_reachability` key.
+    The analysis checks if vulnerable symbols are defined, imported, called,
+    or exactly match a code within the project files. The results, including
+    tool_details and a reachability status (yes, unknown, or no), are stored
+    in the `extra_data` of the matching resources under the `symbols_reachability` key.
 
     Finally, a summary report is generated for each vulnerability
     advisory and saved as a JSON output file.
@@ -66,24 +67,22 @@ class SymbolReachability(Pipeline):
         )
 
     def collect_resource_index(self):
-        """Collect resources symbols for each resource exactly once."""
+        """Collect resources symbols for each resource"""
         self.candidate_resources = self.project.codebaseresources.files().filter(
-            is_binary=False, is_archive=False, is_media=False
+            is_binary=False, is_archive=False, is_media=False,
+            programming_language__in=TS_QUERIES.keys()
         )
         self.resource_indexes = reachability.collect_resource_index(
             candidate_resources=self.candidate_resources
         )
 
     def collect_patch_symbols(self):
-        """
-        Collect patch symbols for all related commits,
-        then remove the local clone before moving on
-        """
+        """Collect patch symbols for all related commits."""
         self.patch_symbols = reachability.collect_patch_symbols(patches=self.patches)
 
     def collect_and_match_resources(self):
         """Match resource symbols against patch symbols."""
-        reachability.collect_and_match_resources(
+        reachability.match_patches_to_resources(
             patches=self.patches,
             patch_symbols=self.patch_symbols,
             resource_indexes=self.resource_indexes,
