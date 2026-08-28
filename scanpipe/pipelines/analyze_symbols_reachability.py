@@ -90,7 +90,7 @@ class SymbolReachability(Pipeline):
         )
 
     def generate_advisory_reachability_report(self):
-        """Generate reachability report keyed by advisory_uid."""
+        """Generate a reachability report summarizing status by advisory."""
         reachability.generate_advisory_reachability_report(
             project=self.project,
             patches=self.patches,
