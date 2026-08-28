@@ -97,10 +97,12 @@ class SymbolReachability(Pipeline):
 
     def generate_advisory_reachability_report(self):
         """Generate a reachability report summarizing status by advisory."""
-        reachability.generate_advisory_reachability_report(
-            project=self.project,
-            patches=self.patches,
-            candidate_resources=self.candidate_resources,
+        self.advisories_reachability_report = (
+            reachability.generate_advisory_reachability_report(
+                project=self.project,
+                patches=self.patches,
+                candidate_resources=self.candidate_resources,
+            )
         )
 
     def apply_reachability_to_packages_and_dependencies(self):
@@ -110,5 +112,5 @@ class SymbolReachability(Pipeline):
         in their affected_by_vulnerabilities JSON field.
         """
         reachability.apply_reachability_to_packages_and_dependencies(
-            project=self.project, advisory_report=self.advisory_map
+            project=self.project, advisory_report=self.advisories_reachability_report
         )
