@@ -75,12 +75,14 @@ class SymbolReachability(Pipeline):
             programming_language__in=TS_QUERIES.keys(),
         )
         self.resource_indexes = reachability.collect_resource_index(
-            candidate_resources=self.candidate_resources
+            candidate_resources=self.candidate_resources, logger=self.log
         )
 
     def collect_patch_symbols(self):
         """Collect patch symbols for all related commits."""
-        self.patch_symbols = reachability.collect_patch_symbols(patches=self.patches)
+        self.patch_symbols = reachability.collect_patch_symbols(
+            patches=self.patches, logger=self.log
+        )
 
     def collect_and_match_resources(self):
         """Match resource symbols against patch symbols."""
@@ -89,6 +91,7 @@ class SymbolReachability(Pipeline):
             patch_symbols=self.patch_symbols,
             resource_indexes=self.resource_indexes,
             candidate_resources=self.candidate_resources,
+            logger=self.log,
         )
 
     def generate_advisory_reachability_report(self):

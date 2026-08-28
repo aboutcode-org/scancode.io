@@ -31,6 +31,7 @@ from git import Repo
 from git.diff import NULL_TREE
 from typecode import get_type
 
+from aboutcode.pipeline import LoopProgress
 from scanpipe.pipes.symbols import TS_QUERIES
 from scanpipe.pipes.symbols import SymbolExtractor
 from scanpipe.pipes.symbols import create_sha256_fingerprint
@@ -648,10 +649,12 @@ def get_vulnerabilities_patches(package_vulnerabilities, dependency_vulnerabilit
     return list(patches.values())
 
 
-def collect_resource_index(candidate_resources):
+def collect_resource_index(candidate_resources, logger=None):
     """Collect resources symbols for each resource"""
     resource_indexes = {}
-    for resource in candidate_resources:
+    resources_count = len(candidate_resources)
+    progress = LoopProgress(resources_count, logger)
+    for resource in progress.iter(candidate_resources):
         resource_language = resource.programming_language
 
         file_content = normalize_text(resource.file_content)
@@ -669,7 +672,7 @@ def collect_resource_index(candidate_resources):
     return resource_indexes
 
 
-def collect_patch_symbols(patches):
+def collect_patch_symbols(patches, logger=None):
     """
     For each unique repo clone it once,
     collect patch symbols for all related commits
@@ -680,7 +683,9 @@ def collect_patch_symbols(patches):
         vcs_url = patch.get("vcs_url")
         patches_by_repo.setdefault(vcs_url, []).append(patch)
 
-    for vcs_url, repo_patches in patches_by_repo.items():
+    repo_count = len(patches_by_repo)
+    repo_progress = LoopProgress(repo_count, logger)
+    for vcs_url, repo_patches in repo_progress.iter(patches_by_repo.items()):
         with tempfile.TemporaryDirectory(prefix="symbol-reachability-") as repo_path:
             try:
                 repo = Repo.clone_from(vcs_url, repo_path)
@@ -702,10 +707,12 @@ def collect_patch_symbols(patches):
 
 
 def match_patches_to_resources(
-    patches, patch_symbols, candidate_resources, resource_indexes
+    patches, patch_symbols, candidate_resources, resource_indexes, logger=None
 ):
     """Match resource symbols against patch symbols."""
-    for patch in patches:
+    patches_count = len(patches)
+    patch_progress = LoopProgress(patches_count, logger=logger)
+    for patch in patch_progress.iter(patches):
         vcs_url = patch.get("vcs_url")
         commit_hash = patch.get("commit_hash")
         advisory_uids = patch.get("advisory_uids", [])
