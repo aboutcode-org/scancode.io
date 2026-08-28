@@ -170,6 +170,8 @@ class ScanRepoHealth(Pipeline):
         with open(self.metrics_output_path, "w") as f:
             json.dump(result, f)
 
+        self.project.update_extra_data(result)
+
 
 def is_valid_vcs_url(url):
     """Determine whether the URL is a valid VCS repository URL."""
