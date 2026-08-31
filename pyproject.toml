@@ -115,6 +115,7 @@ dependencies = [
   "croniter==6.2.4",
   "lief==0.17.6",
   "symbolic==13.8.0",
+  "Pygments==2.20.0",
   "cffi==2.1.1",
   "stevedore==5.9.0",
   "sqlparse==0.6.0",
