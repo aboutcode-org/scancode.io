@@ -41,8 +41,8 @@ dependencies = [
   "django-environ==0.14.0",
   "django-crispy-forms==2.7",
   "crispy-bootstrap3==2024.1",
-  "django-filter==25.2",
-  "djangorestframework==3.17.1",
+  "django-filter==26.1",
+  "djangorestframework==3.18.0",
   "django-htmx==1.29.0",
   "django-debug-toolbar==7.1.1",
   # Database
@@ -74,7 +74,7 @@ dependencies = [
   "rust-inspector==0.2.2",
   "binary-inspector==0.2.1",
   "python-inspector==0.15.2",
-  "source-inspector==0.7.1; sys_platform != 'darwin' and platform_machine != 'arm64'",
+  "source-inspector==0.7.2; sys_platform != 'darwin' and platform_machine != 'arm64'",
   "aboutcode-toolkit==11.1.1",
   # Utilities
   "XlsxWriter==3.2.9",

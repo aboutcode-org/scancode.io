@@ -36,6 +36,10 @@ start:
 	@echo "-> Start the Docker compose services in background"
 	${COMPOSE} up -d
 
+stop:
+	@echo "-> Stop the Docker compose services"
+	${COMPOSE} stop
+
 bash:
 	# Open a bash session in the running web container
 	${COMPOSE} exec web bash
