@@ -3,7 +3,7 @@ revision = 3
 requires-python = ">=3.12, <3.15"
 
 [options]
-exclude-newer = "2026-08-24T13:37:41.60636Z"
+exclude-newer = "2026-08-24T14:24:36.050759Z"
 exclude-newer-span = "P7D"
 
 [[package]]
@@ -3113,7 +3113,7 @@ requires-dist = [
     { name = "scancode-toolkit", extras = ["packages"], specifier = "==32.5.0" },
     { name = "scorecode", specifier = "==0.0.4" },
     { name = "setuptools", specifier = "==84.0.0" },
-    { name = "source-inspector", marker = "platform_machine != 'arm64' and sys_platform != 'darwin'", specifier = "==0.7.2" },
+    { name = "source-inspector", marker = "platform_machine != 'arm64' and sys_platform != 'darwin'", specifier = "==0.7.1" },
     { name = "sphinx", marker = "extra == 'dev'", specifier = "==8.1.3" },
     { name = "sphinx-rtd-dark-mode", marker = "extra == 'dev'", specifier = "==1.3.0" },
     { name = "sphinx-rtd-theme", marker = "extra == 'dev'", specifier = "==3.1.0" },
@@ -3217,7 +3217,7 @@ wheels = [
 
 [[package]]
 name = "source-inspector"
-version = "0.7.2"
+version = "0.7.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "commoncode" },
@@ -3238,9 +3238,9 @@ dependencies = [
     { name = "tree-sitter-swift" },
     { name = "typecode" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f4/dd/49e665cd0da6ae5f57cb05ad25075f4a3a933f1b859575b4290a37889251/source_inspector-0.7.2.tar.gz", hash = "sha256:549273fd9ead43a2483de0cb77c5f3b42e0e5902a784bdd530d19d8bcc484ba4", size = 73210, upload-time = "2026-07-16T11:24:55.96Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ee/4e/1f786bf2e1106cdcc3dc06f3debd2f6327db8cf3f91f2cdf295cc9b3ebaf/source_inspector-0.7.1.tar.gz", hash = "sha256:88f2fdb405edd09bc1a2d41bfe2853054c816967f913f261817b605476504e99", size = 72922, upload-time = "2026-01-20T13:02:04.272Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/12/62460ea3485b809ceb56967f72eee34fc6db83dd6494a4a7ccd2815484d2/source_inspector-0.7.2-py3-none-any.whl", hash = "sha256:bab4c53c9873930546ceadd24bbcf327df6eb19c01b45556c441ca5998b71181", size = 19793, upload-time = "2026-07-16T11:24:54.547Z" },
+    { url = "https://files.pythonhosted.org/packages/35/f6/84bf5d2059fc301a04758564f4e43e23f1811e2d0c20bf1db7714351b7bc/source_inspector-0.7.1-py3-none-any.whl", hash = "sha256:adf7373c8b4ebe6d080142d089b460591809183ee6217a5214f0403d67c43baa", size = 19769, upload-time = "2026-01-20T13:02:03.032Z" },
 ]
 
 [[package]]
