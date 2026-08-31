@@ -4,7 +4,7 @@ Analyze Symbol Reachability
 ===========================
 
 In this tutorial, we will introduce the add-on pipeline that can be used to
-analyze symbols from codebase resources.
+analyze symbols reachability from codebase resources.
 
 Requirements
 ------------
@@ -12,8 +12,8 @@ Requirements
 To successfully complete this tutorial, you first need to:
 
 - Install **ScanCode.io** locally :ref:`installation`.
-- Have an existing project resource that is directly affected by a
-  vulnerability advisory and has at least one fix commit.
+- Have an existing project resource affected
+  by a vulnerability advisory that has a corresponding fix commit.
 - Run the ``find_vulnerabilities`` pipeline :ref:`tutorial_vulnerablecode_integration`.
 
 Reachability Status
