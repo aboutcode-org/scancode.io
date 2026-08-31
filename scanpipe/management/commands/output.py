@@ -35,6 +35,8 @@ SUPPORTED_FORMATS = [
     "ort-package-list",
 ]
 
+JSON_SECTIONS = ["packages", "dependencies", "files", "relations"]
+
 
 class Command(ProjectCommand):
     help = "Output project results as JSON, XLSX, Attribution, SPDX, and CycloneDX."
@@ -58,11 +60,20 @@ class Command(ProjectCommand):
             action="store_true",
             help="Print the output to stdout.",
         )
+        parser.add_argument(
+            "--sections",
+            nargs="+",
+            choices=JSON_SECTIONS,
+            metavar=f"{{{','.join(JSON_SECTIONS)}}}",
+            help="Restrict the json output to the given sections. Only "
+            "supported for the json format, and defaults to all sections.",
+        )
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
         self.print_to_stdout = options["print"]
         formats = options["format"]
+        sections = options["sections"]
 
         if self.print_to_stdout and len(formats) > 1:
             raise CommandError(
@@ -72,10 +83,13 @@ class Command(ProjectCommand):
         if self.print_to_stdout and ("xlsx" in formats or "csv" in formats):
             raise CommandError("--print is not compatible with xlsx and csv formats.")
 
-        for output_format in formats:
-            self.handle_output(output_format)
+        if sections and formats != ["json"]:
+            raise CommandError("--sections is only supported for the json format.")
 
-    def handle_output(self, output_format):
+        for output_format in formats:
+            self.handle_output(output_format, sections=sections)
+
+    def handle_output(self, output_format, sections=None):
         output_kwargs = {}
         if ":" in output_format:
             output_format, version = output_format.split(":", maxsplit=1)
@@ -84,6 +98,9 @@ class Command(ProjectCommand):
                     'The ":" version syntax is only supported for the cyclonedx format.'
                 )
             output_kwargs["version"] = version
+
+        if output_format == "json" and sections:
+            output_kwargs["sections"] = sections
 
         output_function = {
             "json": output.to_json,

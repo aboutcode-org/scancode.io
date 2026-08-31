@@ -194,18 +194,39 @@ class JSONResultsGenerator:
     issues.
     """
 
-    def __init__(self, project):
+    def __init__(self, project, sections=None):
+        """
+        `sections` is an optional iterable restricting which of the
+        packages/dependencies/files/relations arrays are included.
+        Defaults to including all of them.
+        """
         self.project = project
+        self.sections = sections
 
     def __iter__(self):
         yield "{\n"
-        yield from self.serialize(label="headers", generator=self.get_headers)
-        yield from self.serialize(label="packages", generator=self.get_packages)
-        yield from self.serialize(label="dependencies", generator=self.get_dependencies)
-        yield from self.serialize(label="files", generator=self.get_files)
+
+        sections = [
+            ("packages", self.get_packages),
+            ("dependencies", self.get_dependencies),
+            ("files", self.get_files),
+            ("relations", self.get_relations),
+        ]
+        if self.sections is not None:
+            sections = [
+                (label, generator)
+                for label, generator in sections
+                if label in self.sections
+            ]
+
         yield from self.serialize(
-            label="relations", generator=self.get_relations, latest=True
+            label="headers", generator=self.get_headers, latest=not sections
         )
+        for index, (label, generator) in enumerate(sections):
+            yield from self.serialize(
+                label=label, generator=generator, latest=index == len(sections) - 1
+            )
+
         yield "}"
 
     def serialize(self, label, generator, latest=False):
@@ -257,7 +278,9 @@ class JSONResultsGenerator:
 
     def encode_queryset(self, project, model_name, serializer):
         queryset = get_queryset(project, model_name)
-        for obj in queryset.iterator(chunk_size=2000):
+        # A larger chunk_size reduces how often prefetch_related() re-runs its
+        # queries, since iterator() re-executes prefetching once per chunk.
+        for obj in queryset.iterator(chunk_size=10000):
             yield self.encode(serializer(obj).data)
 
     def get_packages(self, project):
@@ -289,13 +312,15 @@ class JSONResultsGenerator:
         )
 
 
-def to_json(project):
+def to_json(project, sections=None):
     """
     Generate output for the provided `project` in JSON format.
     The output file is created in the `project` output/ directory.
     Return the path of the generated output file.
+    `sections` is an optional iterable restricting which of the
+    packages/dependencies/files/relations arrays are included.
     """
-    results_generator = JSONResultsGenerator(project)
+    results_generator = JSONResultsGenerator(project, sections=sections)
     output_file = project.get_output_file_path("results", "json")
 
     with output_file.open("w") as file:

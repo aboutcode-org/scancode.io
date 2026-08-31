@@ -1,0 +1,48 @@
+<div class="modal" id="modal-json-download">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Download JSON results</p>
+      <button class="delete" aria-label="close"></button>
+    </header>
+    <form action="" method="get">
+      <section class="modal-card-body">
+        <p class="mb-3">Select the sections to include in the JSON output:</p>
+        <div class="field">
+          <label class="checkbox">
+            <input type="checkbox" name="sections" value="packages" checked>
+            Packages (<span data-label="packageCount">0</span>)
+          </label>
+        </div>
+        <div class="field">
+          <label class="checkbox">
+            <input type="checkbox" name="sections" value="dependencies" checked>
+            Dependencies (<span data-label="dependencyCount">0</span>)
+          </label>
+        </div>
+        <div class="field">
+          <label class="checkbox">
+            <input type="checkbox" name="sections" value="files" checked>
+            Resources (<span data-label="resourceCount">0</span>)
+          </label>
+        </div>
+        <div class="field">
+          <label class="checkbox">
+            <input type="checkbox" name="sections" value="relations" checked>
+            Relations (<span data-label="relationCount">0</span>)
+          </label>
+        </div>
+      </section>
+      <input type="hidden" name="filtered" value="1">
+      <footer class="modal-card-foot is-justify-content-flex-end">
+        <div class="buttons">
+          <button class="button has-text-weight-semibold" type="reset">Cancel</button>
+          <button class="button is-success" type="submit">
+            <span class="icon mr-1"><i class="fa-solid fa-download"></i></span>
+            Download
+          </button>
+        </div>
+      </footer>
+    </form>
+  </div>
+</div>

@@ -1,8 +1,15 @@
+{% load humanize %}
 <article class="message is-success">
   <div class="message-body p-3">
     <span class="icon"><i class="fa-solid fa-download"></i></span>
     Download results:
-    <a class="tag is-success is-medium ml-2" href="{% url 'project_results' project.slug 'json' %}">
+    <a href="#" class="tag is-success is-medium ml-2 modal-button" data-target="modal-json-download"
+       data-url="{% url 'project_results' project.slug 'json' %}"
+       data-package-count="{{ project.package_count|intcomma }}"
+       data-dependency-count="{{ project.dependency_count|intcomma }}"
+       data-resource-count="{{ project.resource_count|intcomma }}"
+       data-relation-count="{{ project.relation_count|intcomma }}"
+       aria-haspopup="true">
       JSON
     </a>
     <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'xlsx' %}">
