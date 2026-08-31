@@ -20,6 +20,11 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import hashlib
+import importlib
+from abc import ABC
+from functools import cache
+
 from django.db.models import Q
 
 from aboutcode.pipeline import LoopProgress
@@ -171,3 +176,353 @@ def _collect_and_store_tree_sitter_symbols_and_strings(resource):
             "source_strings": result.get("source_strings"),
         }
     )
+
+
+@cache
+def load_language(language):
+    from source_inspector import symbols_tree_sitter
+
+    if language not in symbols_tree_sitter.TS_LANGUAGE_WHEELS:
+        raise ValueError(f"Unsupported language: {language}")
+
+    wheel = symbols_tree_sitter.TS_LANGUAGE_WHEELS[language]["wheel"]
+    try:
+        grammar = importlib.import_module(wheel)
+    except ModuleNotFoundError as exc:
+        raise symbols_tree_sitter.TreeSitterWheelNotInstalled(
+            f"Grammar wheel '{wheel}' is not installed."
+        ) from exc
+    return symbols_tree_sitter.Language(grammar.language())
+
+
+def create_sha256_fingerprint(text):
+    if not text:
+        return None
+
+    text = text.encode("utf-8", errors="replace")
+    return hashlib.sha256(text).hexdigest()
+
+
+class LanguageQuery(ABC):
+    language_name: str = ""
+    constants_query: str = ""
+    functions_query: str = ""
+    classes_query: str = ""
+    calls_query: str = ""
+    imports_query: str = ""
+    syntax_config: dict = {
+        "self_keyword": None,
+        "separator": ".",
+        "wildcard_symbol": None,
+    }
+
+    def __init__(self):
+        from tree_sitter import Query
+
+        self.ts_language = load_language(self.language_name)
+        self._compiled_queries = {}
+
+        for kind in ("constants", "functions", "classes", "calls", "imports"):
+            source = getattr(self, f"{kind}_query", "").strip()
+            self._compiled_queries[kind] = (
+                Query(self.ts_language, source) if source else None
+            )
+
+    def parse_code_to_ast(self, code_text):
+        from source_inspector import symbols_tree_sitter
+        from tree_sitter import Parser
+
+        if not code_text:
+            return None, None
+        parser = Parser(language=self.ts_language)
+        return parser.parse(
+            code_text.encode("utf-8")
+        ), symbols_tree_sitter.TS_LANGUAGE_WHEELS[self.language_name]
+
+    def run_query(self, kind, root_node):
+        query = self._compiled_queries.get(kind)
+        return query.matches(root_node) if query else []
+
+    def get_functions(self, root_node):
+        for _, captures in self.run_query("functions", root_node):
+            def_nodes = captures.get("function")
+            if not def_nodes:
+                continue
+            name_nodes = captures.get("name")
+            name = (
+                name_nodes[0].text.decode("utf-8", errors="replace")
+                if name_nodes
+                else None
+            )
+            yield def_nodes[0], name
+
+    def get_classes(self, root_node):
+        for _, captures in self.run_query("classes", root_node):
+            def_nodes = captures.get("class")
+            if not def_nodes:
+                continue
+            name_nodes = captures.get("name")
+            name = (
+                name_nodes[0].text.decode("utf-8", errors="replace")
+                if name_nodes
+                else None
+            )
+            yield def_nodes[0], name
+
+    def get_calls(self, node):
+        """Yield raw (receiver_node, callee_node)."""
+        seen_callees = set()
+        for _, captures in self.run_query("calls", node):
+            for callee_node in captures.get("callee", []):
+                if callee_node.id in seen_callees:
+                    continue
+                seen_callees.add(callee_node.id)
+
+                receiver_nodes = captures.get("receiver")
+                receiver_node = receiver_nodes[0] if receiver_nodes else None
+                yield receiver_node, callee_node
+
+    def get_imports(self, root_node):
+        """Yield raw (module_name, [(import_name, alias), ...])."""
+        for _, captures in self.run_query("imports", root_node):
+            flat_captures = []
+            for tag, nodes in captures.items():
+                for node in nodes:
+                    text = node.text.decode("utf-8", errors="replace").strip("'\"")
+                    flat_captures.append((node.start_byte, tag, text))
+
+            module_name, current_import = None, None
+            pairs = []
+            for _, tag, text in flat_captures:
+                if tag == "module_name":
+                    module_name = text
+                elif tag == "import_name":
+                    if current_import is not None:
+                        pairs.append((current_import, None))
+                    current_import = text
+                elif tag == "alias":
+                    pairs.append((current_import, text))
+                    current_import = None
+
+            if current_import is not None:
+                pairs.append((current_import, None))
+
+            yield module_name, pairs
+
+    def get_constants(self, root_node):
+        """Yield raw (constant_node, name)."""
+        for _, captures in self.run_query("constants", root_node):
+            def_nodes = captures.get("constant")
+            if not def_nodes:
+                continue
+            name_nodes = captures.get("name")
+            name = (
+                name_nodes[0].text.decode("utf-8", errors="replace")
+                if name_nodes
+                else None
+            )
+            yield def_nodes[0], name
+
+
+class PythonTreeSitterQuery(LanguageQuery):
+    language_name = "Python"
+    constants_query = "(assignment left: (identifier) @name) @constant"
+    functions_query = "(function_definition name: (identifier) @name) @function"
+    classes_query = "(class_definition name: (identifier) @name) @class"
+    calls_query = """
+        (call function: (identifier) @callee)
+        (call function: (attribute object: (_) @receiver
+                                   attribute: (identifier) @callee))
+    """
+    imports_query = """
+    (import_statement name: (dotted_name) @import_name)
+    (import_statement name: (aliased_import
+        name: (dotted_name) @import_name
+        alias: (identifier) @alias))
+    (import_from_statement
+        module_name: [(dotted_name) (relative_import)] @module_name
+        name: [
+            (dotted_name) @import_name
+            (aliased_import name: (dotted_name) @import_name
+                            alias: (identifier) @alias)
+        ])
+    (import_from_statement
+        module_name: [(dotted_name) (relative_import)] @module_name
+        (wildcard_import) @import_name)
+    """
+    syntax_config = {"self_keyword": "self", "separator": ".", "wildcard_symbol": "*"}
+
+
+class JavaTreeSitterQuery(LanguageQuery):
+    language_name = "Java"
+    constants_query = (
+        "(field_declaration declarator: "
+        "(variable_declarator name: (identifier) @name)) @constant"
+    )
+    functions_query = """
+        [(method_declaration name: (identifier) @name)
+         (constructor_declaration name: (identifier) @name)] @function
+    """
+    classes_query = """
+        [(class_declaration name: (identifier) @name)
+         (interface_declaration name: (identifier) @name)
+         (record_declaration name: (identifier) @name)
+         (enum_declaration name: (identifier) @name)] @class
+    """
+    calls_query = """
+        (method_invocation name: (identifier) @callee)
+        (method_invocation object: (_) @receiver name: (identifier) @callee)
+    """
+    imports_query = """
+        (import_declaration (scoped_identifier) @import_name)
+        (import_declaration (scoped_identifier) @module_name (asterisk) @import_name)
+    """
+    syntax_config = {
+        "self_keyword": "this",
+        "separator": ".",
+        "wildcard_symbol": "*",
+        "import_local_name": "last",
+    }
+
+
+TS_QUERIES = {
+    "Python": PythonTreeSitterQuery,
+    "Java": JavaTreeSitterQuery,
+}
+
+
+class SymbolExtractor:
+    def __init__(self, lang_query: LanguageQuery, root_node):
+        self.lang_query = lang_query
+        self.root_node = root_node
+        self.syntax_config = lang_query.syntax_config
+
+    def _build_qualified_name(self, node, index):
+        """
+        Build fully qualified names internally
+        (e.g., ClassName.function_name or ClassName::function_name).
+        """
+        parts = []
+        curr = node
+        while curr is not None:
+            definition = index.get(curr.id)
+            if definition is not None and definition["name"]:
+                parts.append(definition["name"])
+            curr = curr.parent
+
+        separator = self.syntax_config.get("separator", ".")
+        return separator.join(reversed(parts))
+
+    def extract_definitions_index(self):
+        """Build the index of definitions with fully qualified names."""
+        index = {}
+
+        for node, name in self.lang_query.get_functions(self.root_node):
+            index[node.id] = {"node": node, "name": name, "kind": "functions"}
+
+        for node, name in self.lang_query.get_classes(self.root_node):
+            index[node.id] = {"node": node, "name": name, "kind": "classes"}
+
+        for node, name in self.lang_query.get_constants(self.root_node):
+            index[node.id] = {"node": node, "name": name, "kind": "constants"}
+
+        for def_info in index.values():
+            def_info["qualified_name"] = self._build_qualified_name(
+                def_info["node"], index
+            )
+
+        return index
+
+    def extract_changed_symbols(self, changed_lines):
+        """Map changed line numbers to their enclosing symbol nodes."""
+        if self.root_node is None or not changed_lines:
+            return []
+
+        definition_ids = set(self.extract_definitions_index().keys())
+        if not definition_ids:
+            return []
+
+        seen = set()
+        enclosing = []
+
+        for line in changed_lines:
+            row = max(0, line - 1)
+            node = self.root_node.descendant_for_point_range((row, 0), (row, 0))
+
+            while node is not None:
+                if node.id in definition_ids and node.id not in seen:
+                    seen.add(node.id)
+                    enclosing.append(node)
+                    break
+                node = node.parent
+
+        return enclosing
+
+    def extract_calls(self, node):
+        """Extract direct calls into (receiver_name, callee_name) text format."""
+        calls = []
+        for receiver_node, callee_node in self.lang_query.get_calls(node):
+            receiver_name = (
+                receiver_node.text.decode("utf-8", errors="replace")
+                if receiver_node
+                else None
+            )
+            callee_name = callee_node.text.decode("utf-8", errors="replace")
+
+            if callee_name:
+                calls.append((receiver_name, callee_name))
+
+        return calls
+
+    def resolve_local_name(self, imp_name, alias):
+        """Resolve the local name for an imported symbol."""
+        separator = self.syntax_config.get("separator", ".")
+        local_name = alias or imp_name
+
+        if not alias and separator in imp_name:
+            if self.syntax_config.get("import_local_name") == "last":
+                return imp_name.split(separator)[-1]
+            return imp_name.split(separator)[0]
+
+        return local_name
+
+    def resolve_absolute_path(self, module_name, imp_name):
+        """Resolve the absolute path for an imported symbol."""
+        separator = self.syntax_config.get("separator", ".")
+        if module_name:
+            if module_name == separator:
+                return f"{separator}{imp_name}"
+            return f"{module_name}{separator}{imp_name}"
+        return imp_name
+
+    def extract_imports(self):
+        """Map every local alias to its absolute imported path."""
+        wildcard_sym = self.syntax_config.get("wildcard_symbol")
+
+        import_map = {}
+        wildcard_modules = []
+
+        for module_name, pairs in self.lang_query.get_imports(self.root_node):
+            for imp_name, alias in pairs:
+                if not imp_name:
+                    continue
+
+                if wildcard_sym is not None and imp_name == wildcard_sym:
+                    if module_name:
+                        wildcard_modules.append(module_name)
+                    continue
+
+                local_name = self.resolve_local_name(imp_name, alias)
+                absolute_path = self.resolve_absolute_path(module_name, imp_name)
+
+                import_map[local_name] = absolute_path
+
+        if wildcard_modules:
+            import_map["*"] = wildcard_modules
+
+        return import_map
+
+
+def is_supported_language(language):
+    """Return True if the language is supported by tree-sitter queries."""
+    return bool(language) and language in TS_QUERIES
