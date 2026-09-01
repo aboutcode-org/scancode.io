@@ -1554,6 +1554,11 @@ def delete_label_view(request, slug, label_name):
     return JsonResponse({})
 
 
+def get_project_results_sections(request):
+    """Return the requested JSON `sections` filter from the request, or None."""
+    return request.GET.getlist("sections") or None
+
+
 def project_results_json_response(project, as_attachment=False, sections=None):
     """
     Return the results as JSON compatible with ScanCode data format.
@@ -1590,9 +1595,7 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
             output_kwargs["version"] = version
 
         if format == "json":
-            sections = None
-            if "filtered" in request.GET:
-                sections = request.GET.getlist("sections")
+            sections = get_project_results_sections(request)
             return project_results_json_response(
                 project, as_attachment=True, sections=sections
             )
