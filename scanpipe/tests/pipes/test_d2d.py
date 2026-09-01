@@ -2500,3 +2500,94 @@ class ScanPipeD2DPipesTest(TestCase):
         d2d.map_python_protobuf_files(self.project1)
         relations = self.project1.codebaserelations.filter(map_type="protobuf_mapping")
         self.assertEqual(0, relations.count())
+
+    def test_scanpipe_pipes_d2d_is_generated_code_markers(self):
+        """Test individual bytecode markers for generated code detection."""
+        test_cases = [
+            (
+                b"some bytes Ljavax/annotation/Generated; other bytes",
+                "@Generated annotation detected",
+            ),
+            (
+                b"bytes Lcom/google/protobuf/GeneratedMessageV3; bytes",
+                "Google Protocol Buffers",
+            ),
+            (b"bytes Lorg/apache/thrift/TBase; bytes", "Apache Thrift IDL compiler"),
+            (
+                b"bytes Lorg/apache/avro/specific/SpecificRecordBase; bytes",
+                "Apache Avro schema compiler",
+            ),
+            (
+                b"bytes Ljavax/xml/bind/annotation/XmlRegistry; bytes",
+                "JAXB XmlRegistry",
+            ),
+            (b"bytes Ljavax/xml/ws/WebServiceClient; bytes", "JAX-WS client stub"),
+            (
+                b"bytes Lio/grpc/stub/annotations/GrpcGenerated; bytes",
+                "gRPC compiler stub",
+            ),
+            (b"bytes Lorg/immutables/value/Generated; bytes", "Immutables Generated"),
+            (b"random un-matched bytecode", None),
+        ]
+        for class_bytes, expected_reason in test_cases:
+            with self.subTest(class_bytes=class_bytes):
+                self.assertEqual(expected_reason, d2d.is_generated_code(class_bytes))
+
+    def test_scanpipe_pipes_d2d_is_generated_code_clusters(self):
+        """Test JAXB cluster heuristic bytecode detection."""
+        javax_cluster = (
+            b"bytes Ljavax/xml/bind/annotation/XmlAccessorType; "
+            b"and Ljavax/xml/bind/annotation/XmlType; bytes"
+        )
+        jakarta_cluster = (
+            b"bytes Ljakarta/xml/bind/annotation/XmlAccessorType; "
+            b"and Ljakarta/xml/bind/annotation/XmlType; bytes"
+        )
+
+        self.assertEqual(
+            "JAXB schema compiler cluster (@XmlAccessorType + @XmlType)",
+            d2d.is_generated_code(javax_cluster),
+        )
+        self.assertEqual(
+            "Jakarta JAXB schema compiler cluster (@XmlAccessorType + @XmlType)",
+            d2d.is_generated_code(jakarta_cluster),
+        )
+
+    def test_scanpipe_pipes_d2d_flag_generated_file_by_path(self):
+        """
+        Test flag_generated_file identifying files by path pattern
+        containing '/generated/'.
+        """
+        resource = make_resource_file(
+            self.project1,
+            path="to/target/generated-sources/annotations/com/test.class",
+        )
+
+        d2d.flag_generated_file(self.project1)
+
+        resource.refresh_from_db()
+        self.assertEqual(flag.GENERATED, resource.status)
+        self.assertEqual(
+            "Path pattern matches generated directory convention",
+            resource.extra_data.get("Generated code"),
+        )
+
+    @mock.patch("scanpipe.pipes.d2d.Path.read_bytes")
+    def test_scanpipe_pipes_d2d_flag_generated_file_by_bytecode(self, mock_read_bytes):
+        """Test flag_generated_file identifying files by reading bytecode."""
+        mock_read_bytes.return_value = (
+            b"some header bytes Lcom/google/protobuf/GeneratedMessageV3; tail bytes"
+        )
+        resource = make_resource_file(
+            self.project1,
+            path="to/com/test.class",
+        )
+
+        d2d.flag_generated_file(self.project1)
+
+        resource.refresh_from_db()
+        self.assertEqual(flag.GENERATED, resource.status)
+        self.assertEqual(
+            "Google Protocol Buffers",
+            resource.extra_data.get("Generated code"),
+        )

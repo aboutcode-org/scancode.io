@@ -1297,6 +1297,36 @@ def _map_javascript_colocation_resource(
     )
 
 
+def flag_generated_file(project):
+    """Flag generated files based on path patterns or bytecode markers."""
+    to_resources = (
+        project.codebaseresources.all()
+        .to_codebase()
+        .no_status()
+        .has_no_relation()
+        .path_pattern("*.class")
+    )
+    for resource in to_resources:
+        reason = None
+        path_segments = resource.location.split("/")
+        if any(
+            seg.lower() == "generated"
+            or seg.lower().startswith("generated-")
+            or seg.lower().startswith("generated_")
+            for seg in path_segments
+        ):
+            reason = "Path pattern matches generated directory convention"
+        else:
+            try:
+                data = Path(resource.location).read_bytes()
+                reason = is_generated_code(data)
+            except Exception as e:
+                print(f"Could not process {resource}: {e}")
+        if reason:
+            resource.update(status=flag.GENERATED)
+            resource.update_extra_data({"Generated code": reason})
+
+
 def flag_processed_archives(project):
     """
     Flag package archives as processed if they meet the following criteria:
@@ -1827,6 +1857,71 @@ def is_invalid_match(match, matched_path_length):
     of resource IDs.
     """
     return matched_path_length == 1 and len(match.resource_ids) != 1
+
+
+def is_generated_code(class_bytes):
+    """
+    Return a reason indicating why the file was identified as generated.
+    None otherwise.
+    """
+    generated_code_markers = {
+        #  @Generated annotations
+        # https://docs.oracle.com/javase/8/docs/api/javax/annotation/Generated.html
+        # https://docs.oracle.com/en/java/javase/11/docs/api/java.compiler/javax/annotation/processing/Generated.html
+        # https://jakarta.ee/specifications/annotations/2.1/apidocs/jakarta.annotation/jakarta/annotation/generated
+        b"Ljavax/annotation/Generated;": "@Generated annotation detected",
+        b"Ljavax/annotation/processing/Generated;": "@Generated annotation detected",
+        b"Ljakarta/annotation/Generated;": "@Generated annotation detected",
+        b"Ljakarta/annotation/processing/Generated;": "@Generated annotation detected",
+        # Protobuf
+        # https://protobuf.dev/reference/java/api-docs/com/google/protobuf/GeneratedMessage.html
+        b"Lcom/google/protobuf/GeneratedMessageV3;": "Google Protocol Buffers",
+        b"Lcom/google/protobuf/GeneratedMessage;": "Google Protocol Buffers",
+        # Apache Thrift
+        # https://javadoc.io/doc/org.apache.thrift/libthrift/latest/org/apache/thrift/TBase.html
+        b"Lorg/apache/thrift/TBase;": "Apache Thrift IDL compiler",
+        # Apache Avro
+        # https://avro.apache.org/docs/current/api/java/org/apache/avro/specific/SpecificRecord.html
+        # https://avro.apache.org/docs/current/api/java/org/apache/avro/specific/SpecificRecordBase.html
+        b"Lorg/apache/avro/specific/SpecificRecordBase;": "Apache Avro schema compiler",
+        # JAXB (ObjectFactory)
+        # https://docs.oracle.com/javase/8/docs/api/javax/xml/bind/annotation/XmlRegistry.html
+        b"Ljavax/xml/bind/annotation/XmlRegistry;": "JAXB XmlRegistry",
+        b"Ljakarta/xml/bind/annotation/XmlRegistry;": "JAXB XmlRegistry",
+        # JAX-WS Stubs
+        # https://docs.oracle.com/javase/8/docs/api/javax/xml/ws/WebServiceClient.html
+        b"Ljavax/xml/ws/WebServiceClient;": "JAX-WS client stub",
+        b"Ljakarta/xml/ws/WebServiceClient;": "JAX-WS client stub",
+        # gRPC Stubs
+        # https://grpc.github.io/grpc-java/javadoc/io/grpc/stub/annotations/GrpcGenerated.html
+        b"Lio/grpc/stub/annotations/GrpcGenerated;": "gRPC compiler stub",
+        # Others
+        # Immutables - https://github.com/immutables/immutables/issues/756
+        b"Lorg/immutables/value/Generated;": "Immutables Generated",
+    }
+
+    for marker, reason in generated_code_markers.items():
+        if marker in class_bytes:
+            return reason
+
+    # The JAXB compiler (xjc) mechanically applies both @XmlType and
+    # @XmlAccessorType together on every generated class
+    javax_jaxb_cluster = [
+        b"Ljavax/xml/bind/annotation/XmlAccessorType;",
+        b"Ljavax/xml/bind/annotation/XmlType;",
+    ]
+    jakarta_jaxb_cluster = [
+        b"Ljakarta/xml/bind/annotation/XmlAccessorType;",
+        b"Ljakarta/xml/bind/annotation/XmlType;",
+    ]
+
+    if all(marker in class_bytes for marker in javax_jaxb_cluster):
+        return "JAXB schema compiler cluster (@XmlAccessorType + @XmlType)"
+
+    if all(marker in class_bytes for marker in jakarta_jaxb_cluster):
+        return "Jakarta JAXB schema compiler cluster (@XmlAccessorType + @XmlType)"
+
+    return None
 
 
 def map_elfs_with_dwarf_paths(project, logger=None):
