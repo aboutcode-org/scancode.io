@@ -1,4 +1,3 @@
-{% load humanize %}
 <div class="dropdown is-hoverable is-right">
   <div class="dropdown-trigger">
     <a aria-haspopup="true" aria-controls="dropdown-download-{{ project.slug }}">
@@ -10,12 +9,7 @@
       <span class="dropdown-item">
         Download results as:
       </span>
-      <a href="#" class="dropdown-item modal-button" data-target="modal-json-download"
-         data-url="{% url 'project_results' project.slug 'json' %}"
-         data-package-count="{{ project.package_count|intcomma }}"
-         data-dependency-count="{{ project.dependency_count|intcomma }}"
-         data-resource-count="{{ project.resource_count|intcomma }}"
-         data-relation-count="{{ project.relation_count|intcomma }}">
+      <a href="#" class="dropdown-item modal-button" data-target="modal-json-download-{{ project.slug }}">
         <strong>JSON</strong>
       </a>
       <a href="{% url 'project_results' project.slug 'xlsx' %}" class="dropdown-item">
@@ -53,3 +47,4 @@
     </div>
   </div>
 </div>
+{% include "scanpipe/modals/project_json_download_modal.html" with project=project only %}

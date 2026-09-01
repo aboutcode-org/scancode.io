@@ -1,37 +1,45 @@
-<div class="modal" id="modal-json-download">
+{% load humanize %}
+<div class="modal" id="modal-json-download-{{ project.slug }}">
   <div class="modal-background"></div>
   <div class="modal-card">
     <header class="modal-card-head">
-      <p class="modal-card-title">Download JSON results</p>
+      <p class="modal-card-title">
+        <span class="icon-text">
+          <span class="icon has-text-success"><i class="fa-solid fa-download"></i></span>
+          <span>Download JSON results</span>
+        </span>
+      </p>
       <button class="delete" aria-label="close"></button>
     </header>
-    <form action="" method="get">
+    <form action="{% url 'project_results' project.slug 'json' %}" method="get">
       <section class="modal-card-body">
-        <p class="mb-3">Select the sections to include in the JSON output:</p>
-        <div class="field">
-          <label class="checkbox">
-            <input type="checkbox" name="sections" value="packages" checked>
-            Packages (<span data-label="packageCount">0</span>)
+        <p class="has-text-grey mb-4">Select the sections to include in the JSON output.</p>
+        <label class="json-section-option box has-border-radius p-3 mb-2 is-flex is-align-items-center">
+          <span class="icon has-text-success is-size-4 mr-3"><i class="fa-solid fa-box"></i></span>
+          <span class="has-text-weight-semibold is-flex-grow-1">Packages</span>
+          <span class="tag is-light has-text-weight-bold mr-2">{{ project.package_count|intcomma }}</span>
+          <input type="checkbox" class="width-1 height-1" name="sections" value="packages" checked>
+        </label>
+        <label class="json-section-option box has-border-radius p-3 mb-2 is-flex is-align-items-center">
+          <span class="icon has-text-success is-size-4 mr-3"><i class="fa-solid fa-layer-group"></i></span>
+          <span class="has-text-weight-semibold is-flex-grow-1">Dependencies</span>
+          <span class="tag is-light has-text-weight-bold mr-2">{{ project.dependency_count|intcomma }}</span>
+          <input type="checkbox" class="width-1 height-1" name="sections" value="dependencies" checked>
+        </label>
+        <label class="json-section-option box has-border-radius p-3 mb-2 is-flex is-align-items-center">
+          <span class="icon has-text-success is-size-4 mr-3"><i class="fa-solid fa-folder-open"></i></span>
+          <span class="has-text-weight-semibold is-flex-grow-1">Resources</span>
+          <span class="tag is-light has-text-weight-bold mr-2">{{ project.resource_count|intcomma }}</span>
+          <input type="checkbox" class="width-1 height-1" name="sections" value="files" checked>
+        </label>
+        {% if project.relation_count %}
+          <label class="json-section-option box has-border-radius p-3 mb-0 is-flex is-align-items-center">
+            <span class="icon has-text-success is-size-4 mr-3"><i class="fa-solid fa-link"></i></span>
+            <span class="has-text-weight-semibold is-flex-grow-1">Relations</span>
+            <span class="tag is-light has-text-weight-bold mr-2">{{ project.relation_count|intcomma }}</span>
+            <input type="checkbox" class="width-1 height-1" name="sections" value="relations" checked>
           </label>
-        </div>
-        <div class="field">
-          <label class="checkbox">
-            <input type="checkbox" name="sections" value="dependencies" checked>
-            Dependencies (<span data-label="dependencyCount">0</span>)
-          </label>
-        </div>
-        <div class="field">
-          <label class="checkbox">
-            <input type="checkbox" name="sections" value="files" checked>
-            Resources (<span data-label="resourceCount">0</span>)
-          </label>
-        </div>
-        <div class="field">
-          <label class="checkbox">
-            <input type="checkbox" name="sections" value="relations" checked>
-            Relations (<span data-label="relationCount">0</span>)
-          </label>
-        </div>
+        {% endif %}
       </section>
       <input type="hidden" name="filtered" value="1">
       <footer class="modal-card-foot is-justify-content-flex-end">
