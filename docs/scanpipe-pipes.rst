@@ -134,3 +134,8 @@ Windows
 -------
 .. automodule:: scanpipe.pipes.windows
     :members:
+
+Reachability
+-------------
+.. automodule:: scanpipe.pipes.reachability
+    :members:
