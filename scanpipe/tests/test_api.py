@@ -644,6 +644,15 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(1, len(results["files"]))
         self.assertEqual(1, len(results["packages"]))
 
+    def test_scanpipe_api_project_action_results_with_sections(self):
+        url = reverse("project-results", args=[self.project1.uuid])
+        data = {"sections": ["packages", "dependencies"]}
+        response = self.csrf_client.get(url, data=data)
+        results = json.loads(response.getvalue())
+        self.assertEqual(
+            ["dependencies", "headers", "packages"], sorted(results.keys())
+        )
+
     def test_scanpipe_api_project_action_results_download(self):
         url = reverse("project-results-download", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
@@ -656,6 +665,13 @@ class ScanPipeAPITest(TransactionTestCase):
         results = json.loads(response_value)
         expected = ["dependencies", "files", "headers", "packages", "relations"]
         self.assertEqual(expected, sorted(results.keys()))
+
+    def test_scanpipe_api_project_action_results_download_with_sections(self):
+        url = reverse("project-results-download", args=[self.project1.uuid])
+        data = {"output_format": "json", "sections": "files"}
+        response = self.csrf_client.get(url, data=data)
+        results = json.loads(response.getvalue())
+        self.assertEqual(["files", "headers"], sorted(results.keys()))
 
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_api_project_action_results_download_output_formats(self):
