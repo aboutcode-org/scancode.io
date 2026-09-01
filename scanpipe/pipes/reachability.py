@@ -32,6 +32,8 @@ from git.diff import NULL_TREE
 from typecode import get_type
 
 from aboutcode.pipeline import LoopProgress
+from scanpipe.models import DiscoveredDependency
+from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes.symbols import TS_QUERIES
 from scanpipe.pipes.symbols import SymbolExtractor
 from scanpipe.pipes.symbols import create_sha256_fingerprint
@@ -784,7 +786,7 @@ def generate_advisory_reachability_report(project, patches, candidate_resources)
         ReachabilityStatus.NOT_REACHABLE.value: 1,
     }
 
-    advisory_reachability_report = {
+    advisories_reachability_report = {
         "purl": project.purl,
         "advisories": [],
     }
@@ -799,7 +801,7 @@ def generate_advisory_reachability_report(project, patches, candidate_resources)
                     "details": [],
                 }
                 advisory_map[adv_uid] = adv_data
-                advisory_reachability_report["advisories"].append(adv_data)
+                advisories_reachability_report["advisories"].append(adv_data)
 
     for resource in candidate_resources:
         for report in resource.extra_data.get("symbols_reachability", []):
@@ -817,7 +819,7 @@ def generate_advisory_reachability_report(project, patches, candidate_resources)
                         "details": [],
                     }
                     advisory_map[adv_uid] = adv_data
-                    advisory_reachability_report["advisories"].append(adv_data)
+                    advisories_reachability_report["advisories"].append(adv_data)
 
                 tool_details = {
                     "resource_path": resource.path,
@@ -839,4 +841,54 @@ def generate_advisory_reachability_report(project, patches, candidate_resources)
     reachability_output_path = project.get_output_file_path("reachability", "json")
 
     with open(reachability_output_path, "w") as f:
-        json.dump(advisory_reachability_report, f, indent=2)
+        json.dump(advisories_reachability_report, f, indent=2)
+
+    return advisories_reachability_report
+
+
+def inject_reachability_data(vulns, advisory_map):
+    """
+    Inject reachability data into a list of vulnerabilities.
+    Returns True if any vulnerability was updated, False otherwise.
+    """
+    updated = False
+    for vuln in vulns:
+        adv_uid = vuln.get("advisory_uid")
+        if adv_uid in advisory_map:
+            adv_data = advisory_map[adv_uid]
+            vuln["is_reachable"] = adv_data.get("is_reachable", "unknown")
+            vuln["reachability_analysis"] = adv_data.get("details", [])
+            updated = True
+
+    return updated
+
+
+def apply_reachability_to_packages_and_dependencies(project, advisory_report):
+    """
+    Update DiscoveredPackage and DiscoveredDependency records by injecting the
+    computed reachability data into their affected_by_vulnerabilities JSON field.
+    """
+    advisories = advisory_report.get("advisories", [])
+    if not advisories:
+        return
+
+    advisory_map = {adv["advisory_uid"]: adv for adv in advisories}
+    targets = (
+        (project.discoveredpackages.all(), DiscoveredPackage),
+        (project.discovereddependencies.all(), DiscoveredDependency),
+    )
+
+    for queryset, model in targets:
+        unsaved = [
+            item
+            for item in queryset
+            if inject_reachability_data(
+                item.affected_by_vulnerabilities or [], advisory_map
+            )
+        ]
+        if unsaved:
+            model.objects.bulk_update(
+                objs=unsaved,
+                fields=["affected_by_vulnerabilities"],
+                batch_size=10,
+            )

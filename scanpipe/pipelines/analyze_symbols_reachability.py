@@ -57,6 +57,7 @@ class SymbolReachability(Pipeline):
             cls.collect_patch_symbols,
             cls.collect_and_match_resources,
             cls.generate_advisory_reachability_report,
+            cls.apply_reachability_to_packages_and_dependencies,
         )
 
     def get_vulnerabilities_patches(self):
@@ -96,8 +97,20 @@ class SymbolReachability(Pipeline):
 
     def generate_advisory_reachability_report(self):
         """Generate a reachability report summarizing status by advisory."""
-        reachability.generate_advisory_reachability_report(
-            project=self.project,
-            patches=self.patches,
-            candidate_resources=self.candidate_resources,
+        self.advisories_reachability_report = (
+            reachability.generate_advisory_reachability_report(
+                project=self.project,
+                patches=self.patches,
+                candidate_resources=self.candidate_resources,
+            )
+        )
+
+    def apply_reachability_to_packages_and_dependencies(self):
+        """
+        Save reachability results by updating DiscoveredPackage and
+        DiscoveredDependency records with the computed reachability data
+        in their affected_by_vulnerabilities JSON field.
+        """
+        reachability.apply_reachability_to_packages_and_dependencies(
+            project=self.project, advisory_report=self.advisories_reachability_report
         )

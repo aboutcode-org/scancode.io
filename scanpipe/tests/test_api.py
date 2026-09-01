@@ -56,6 +56,7 @@ from scanpipe.models import Run
 from scanpipe.models import WebhookSubscription
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.output import JSONResultsGenerator
+from scanpipe.pipes.reachability import apply_reachability_to_packages_and_dependencies
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import filter_warnings
 from scanpipe.tests import make_message
@@ -1374,3 +1375,85 @@ class ScanPipeAPITest(TransactionTestCase):
 
         with self.assertRaises(LookupError):
             get_serializer_fields(None)
+
+    def test_scanpipe_api_project_action_package_with_reachability(self):
+        self.discovered_package1.affected_by_vulnerabilities = [
+            {
+                "advisory_id": "PYSEC-2026-1",
+                "advisory_uid": "pypa/scancode/PYSEC-2026-1",
+                "summary": "summary 1",
+                "risk_score": 1,
+            },
+            {
+                "advisory_id": "PYSEC-2026-2",
+                "advisory_uid": "pypa/scancode/PYSEC-2026-2",
+                "summary": "summary 2",
+                "risk_score": 2,
+            },
+            {
+                "advisory_id": "PYSEC-2026-3",
+                "advisory_uid": "pypa/scancode/PYSEC-2026-3",
+                "summary": "summary 3",
+                "risk_score": 3,
+            },
+        ]
+        self.discovered_package1.save()
+        advisory_map = {
+            "purl": "pkg:pypi/daglib@0.3.2",
+            "advisories": [
+                {
+                    "advisory_uid": "pypa/scancode/PYSEC-2026-1",
+                    "is_reachable": "unknown",
+                    "details": [
+                        {
+                            "resource_path": "scancode/session.py",
+                            "is_reachable": "unknown",
+                            "vulnerable_symbols": ["SqliteAccountInfo"],
+                        }
+                    ],
+                },
+                {
+                    "advisory_uid": "pypa/scancode/PYSEC-2026-2",
+                    "is_reachable": "yes",
+                    "details": [
+                        {
+                            "resource_path": "b2sdk/session.py",
+                            "is_reachable": "yes",
+                            "vulnerable_symbols": ["SqliteAccountInfo"],
+                        }
+                    ],
+                },
+            ],
+        }
+
+        apply_reachability_to_packages_and_dependencies(self.project1, advisory_map)
+        url = reverse("project-packages", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(1, response.data["count"])
+
+        pkg_response = response.data["results"][0]
+        vulns = pkg_response["affected_by_vulnerabilities"]
+
+        self.assertEqual(3, len(vulns))
+
+        self.assertEqual("pypa/scancode/PYSEC-2026-1", vulns[0]["advisory_uid"])
+        self.assertEqual("unknown", vulns[0]["is_reachable"])
+        self.assertIn("reachability_analysis", vulns[0])
+        self.assertEqual(1, len(vulns[0]["reachability_analysis"]))
+        self.assertEqual(
+            "scancode/session.py", vulns[0]["reachability_analysis"][0]["resource_path"]
+        )
+
+        self.assertEqual("pypa/scancode/PYSEC-2026-2", vulns[1]["advisory_uid"])
+        self.assertEqual("yes", vulns[1]["is_reachable"])
+        self.assertIn("reachability_analysis", vulns[1])
+        self.assertEqual(1, len(vulns[1]["reachability_analysis"]))
+        self.assertEqual(
+            "b2sdk/session.py", vulns[1]["reachability_analysis"][0]["resource_path"]
+        )
+
+        self.assertEqual("pypa/scancode/PYSEC-2026-3", vulns[2]["advisory_uid"])
+        self.assertNotIn("is_reachable", vulns[2])
+        self.assertNotIn("reachability_analysis", vulns[2])
