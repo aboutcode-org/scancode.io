@@ -1532,7 +1532,8 @@ def download_project_file(request, slug, filename, path_type):
     if not file_path.exists():
         raise Http404(f"{file_path} not found")
 
-    return FileResponse(file_path.open("rb"), as_attachment=True)
+    is_too_large = file_path.stat().st_size > scanpipe_settings.INLINE_DOWNLOAD_MAX_SIZE
+    return FileResponse(file_path.open("rb"), as_attachment=is_too_large)
 
 
 @conditional_login_required

@@ -365,6 +365,13 @@ class ScanPipeViewsTest(TestCase):
         self.assertTrue(response.getvalue().startswith(b"# SPDX-License-Identifier"))
         self.assertEqual("application/octet-stream", response.headers["Content-Type"])
         self.assertEqual(
+            'inline; filename="notice.NOTICE"',
+            response.headers["Content-Disposition"],
+        )
+
+        with override_settings(SCANPIPE={"INLINE_DOWNLOAD_MAX_SIZE": 0}):
+            response = self.client.get(url)
+        self.assertEqual(
             'attachment; filename="notice.NOTICE"',
             response.headers["Content-Disposition"],
         )
@@ -381,6 +388,13 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertTrue(response.getvalue().startswith(b"# SPDX-License-Identifier"))
         self.assertEqual("application/octet-stream", response.headers["Content-Type"])
+        self.assertEqual(
+            'inline; filename="notice.NOTICE"',
+            response.headers["Content-Disposition"],
+        )
+
+        with override_settings(SCANPIPE={"INLINE_DOWNLOAD_MAX_SIZE": 0}):
+            response = self.client.get(url)
         self.assertEqual(
             'attachment; filename="notice.NOTICE"',
             response.headers["Content-Disposition"],
