@@ -111,6 +111,7 @@ class DeployToDevelop(Pipeline):
             cls.map_javascript_colocation,
             cls.map_thirdparty_npm_packages,
             cls.map_path,
+            cls.flag_generated_code,
             cls.flag_mapped_resources_archives_and_ignored_directories,
             cls.perform_house_keeping_tasks,
             cls.match_purldb_resources_post_process,
@@ -457,6 +458,13 @@ class DeployToDevelop(Pipeline):
     def map_path(self):
         """Map using path similarities."""
         d2d.map_path(project=self.project, logger=self.log)
+
+    def flag_generated_code(self):
+        """
+        Flag deployed files that have corresponding sources that are
+        potential generated.
+        """
+        d2d.flag_generated_file(self.project)
 
     def flag_mapped_resources_archives_and_ignored_directories(self):
         """Flag all codebase resources that were mapped during the pipeline."""
