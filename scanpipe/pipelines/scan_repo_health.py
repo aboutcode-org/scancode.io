@@ -22,24 +22,19 @@
 import json
 import subprocess
 import urllib.parse
-
-from django.conf import settings
+from os import environ
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import run_command_safely
 
-GRIMOIRELAB_METRICS_EXECUTABLE = getattr(settings, "GRIMOIRELAB_METRICS_EXECUTABLE", "")
-GRIMOIRELAB_OPENSEARCH_INDEX = getattr(settings, "GRIMOIRELAB_OPENSEARCH_INDEX", "")
-GRIMOIRELAB_OPENSEARCH_PASSWORD = getattr(
-    settings, "GRIMOIRELAB_OPENSEARCH_PASSWORD", ""
-)
-GRIMOIRELAB_OPENSEARCH_URL = getattr(settings, "GRIMOIRELAB_OPENSEARCH_URL", "")
-GRIMOIRELAB_OPENSEARCH_USERNAME = getattr(
-    settings, "GRIMOIRELAB_OPENSEARCH_USERNAME", ""
-)
-GRIMOIRELAB_PASSWORD = getattr(settings, "GRIMOIRELAB_PASSWORD", "")
-GRIMOIRELAB_URL = getattr(settings, "GRIMOIRELAB_URL", "")
-GRIMOIRELAB_USERNAME = getattr(settings, "GRIMOIRELAB_USERNAME", "")
+GRIMOIRELAB_METRICS_EXECUTABLE = environ.get("GRIMOIRELAB_METRICS_EXECUTABLE", "")
+GRIMOIRELAB_OPENSEARCH_INDEX = environ.get("GRIMOIRELAB_OPENSEARCH_INDEX", "")
+GRIMOIRELAB_OPENSEARCH_PASSWORD = environ.get("GRIMOIRELAB_OPENSEARCH_PASSWORD", "")
+GRIMOIRELAB_OPENSEARCH_URL = environ.get("GRIMOIRELAB_OPENSEARCH_URL", "")
+GRIMOIRELAB_OPENSEARCH_USERNAME = environ.get("GRIMOIRELAB_OPENSEARCH_USERNAME", "")
+GRIMOIRELAB_PASSWORD = environ.get("GRIMOIRELAB_PASSWORD", "")
+GRIMOIRELAB_URL = environ.get("GRIMOIRELAB_URL", "")
+GRIMOIRELAB_USERNAME = environ.get("GRIMOIRELAB_USERNAME", "")
 
 
 class ScanRepoHealth(Pipeline):
@@ -68,7 +63,7 @@ class ScanRepoHealth(Pipeline):
             and GRIMOIRELAB_URL
             and GRIMOIRELAB_USERNAME
         ):
-            return "Grimoirelab is not available."
+            return "Grimoirelab is not configured."
 
     def get_repo_url_input(self):
         """Validate and extract the repository URL from the project's input sources"""
