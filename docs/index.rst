@@ -47,6 +47,7 @@ Learn via practical step-by-step guides.
 - :ref:`tutorial_vulnerablecode_integration`
 - :ref:`tutorial_web_ui_symbol_and_string_collection`
 - :ref:`tutorial_cli_end_to_end_scanning_to_dejacode`
+- :ref:`tutorial_analyze_symbols_reachability`
 
 .. rst-class:: column column2 bottom-left
 
@@ -116,6 +117,7 @@ Indices and tables
     tutorial_vulnerablecode_integration
     tutorial_web_ui_symbol_and_string_collection
     tutorial_cli_end_to_end_scanning_to_dejacode
+    tutorial_analyze_symbols_reachability
     scanpipe-concepts
     built-in-pipelines
     custom-pipelines
