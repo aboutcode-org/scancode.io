@@ -540,11 +540,13 @@ class ExportJSONMixin:
         serializer = serializer_class(queryset, many=True)
         serialized_data = json.dumps(serializer.data, indent=2, cls=DjangoJSONEncoder)
 
-        output_file = io.BytesIO(serialized_data.encode("utf-8"))
+        encoded_data = serialized_data.encode("utf-8")
+        output_file = io.BytesIO(encoded_data)
+        is_too_large = len(encoded_data) > scanpipe_settings.INLINE_DOWNLOAD_MAX_SIZE
 
         return FileResponse(
             output_file,
-            as_attachment=True,
+            as_attachment=is_too_large,
             filename=self.get_export_json_filename(),
             content_type="application/json",
         )
@@ -1532,7 +1534,8 @@ def download_project_file(request, slug, filename, path_type):
     if not file_path.exists():
         raise Http404(f"{file_path} not found")
 
-    return FileResponse(file_path.open("rb"), as_attachment=True)
+    is_too_large = file_path.stat().st_size > scanpipe_settings.INLINE_DOWNLOAD_MAX_SIZE
+    return FileResponse(file_path.open("rb"), as_attachment=is_too_large)
 
 
 @conditional_login_required
