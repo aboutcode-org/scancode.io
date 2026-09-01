@@ -122,6 +122,25 @@
 .modal.is-medium-size .modal-card {
   width: 800px;
 }
+.json-section-option {
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+.json-section-option:hover {
+  border-color: var(--bulma-success);
+}
+.json-section-option:has(input:checked) {
+  border-color: var(--bulma-success);
+  background-color: hsla(
+    var(--bulma-success-h),
+    var(--bulma-success-s),
+    var(--bulma-success-l),
+    0.08
+  );
+}
 .modal.is-desktop-size .modal-card {
   width: 960px;
 }

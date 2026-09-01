@@ -2,7 +2,7 @@
 
 Define and run pipelines.
 
-### Install
+## Install
 
 ```bash
 pip install aboutcode.pipeline
@@ -13,6 +13,7 @@ pip install aboutcode.pipeline
 ```python
 from aboutcode.pipeline import BasePipeline
 
+
 class PrintMessages(BasePipeline):
     @classmethod
     def steps(cls):
@@ -20,6 +21,7 @@ class PrintMessages(BasePipeline):
 
     def step1(self):
         print("Message from step1")
+
 
 PrintMessages().execute()
 ```

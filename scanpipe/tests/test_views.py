@@ -386,6 +386,20 @@ class ScanPipeViewsTest(TestCase):
             response.headers["Content-Disposition"],
         )
 
+    def test_scanpipe_views_project_results_json_view(self):
+        make_package(self.project1, package_url="pkg:generic/name@1.0")
+
+        url = reverse("project_results", args=[self.project1.slug, "json"])
+        response = self.client.get(url)
+        results = json.loads(response.getvalue())
+        expected = ["dependencies", "files", "headers", "packages", "relations"]
+        self.assertEqual(expected, sorted(results.keys()))
+        self.assertEqual(1, len(results["packages"]))
+
+        response = self.client.get(url, data={"sections": "packages"})
+        results = json.loads(response.getvalue())
+        self.assertEqual(["headers", "packages"], sorted(results.keys()))
+
     def test_scanpipe_views_project_details_delete_input_view(self):
         random_uuid = str(uuid.uuid4())
         url = reverse("project_delete_input", args=[self.project1.slug, random_uuid])

@@ -1554,14 +1554,21 @@ def delete_label_view(request, slug, label_name):
     return JsonResponse({})
 
 
-def project_results_json_response(project, as_attachment=False):
+def get_project_results_sections(request):
+    """Return the requested JSON `sections` filter from the request, or None."""
+    return request.GET.getlist("sections") or None
+
+
+def project_results_json_response(project, as_attachment=False, sections=None):
     """
     Return the results as JSON compatible with ScanCode data format.
     The content is returned as a stream of JSON content using the JSONResultsGenerator
     class.
     If `as_attachment` is True, the response will force the download of the file.
+    `sections` is an optional iterable restricting which of the
+    packages/dependencies/files/relations arrays are included.
     """
-    results_generator = output.JSONResultsGenerator(project)
+    results_generator = output.JSONResultsGenerator(project, sections=sections)
     response = FileResponse(
         streaming_content=results_generator,
         content_type="application/json",
@@ -1588,7 +1595,10 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
             output_kwargs["version"] = version
 
         if format == "json":
-            return project_results_json_response(project, as_attachment=True)
+            sections = get_project_results_sections(request)
+            return project_results_json_response(
+                project, as_attachment=True, sections=sections
+            )
         elif format == "xlsx":
             output_file = output.to_xlsx(project)
         elif format == "spdx":
