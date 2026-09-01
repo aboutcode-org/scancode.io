@@ -282,3 +282,36 @@ Fetch Scores (addon)
 .. autoclass:: scanpipe.pipelines.fetch_scores.FetchScores()
     :members:
     :member-order: bysource
+
+
+.. _pipeline_npm_health:
+
+NPM Health (addon)
+------------------
+
+The ``npm_health`` pipeline analyzes one exact versioned npm ``Project.purl``.
+It retrieves npm registry metadata, records repository and package tarball
+locations, normalizes health signals, computes a weighted score from 0 to 100,
+and stores a reusable snapshot in ``Project.extra_data["npm_health"]``.
+
+.. autoclass:: scanpipe.pipelines.npm_health.NpmHealth()
+    :members:
+    :member-order: bysource
+
+
+NPM Health configuration
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Fresh snapshots are reused for 90 days by default. Override the age with
+``npm_health_cache_max_age_days`` in project pipeline settings.
+
+Optional GrimoireLab or other project-health metrics can be connected through
+``npm_health_metrics_command``. The command is parsed to an argument list and
+executed without a shell. It may use ``{purl}``, ``{repository_url}``,
+``{tarball_url}``, and ``{output}`` placeholders. The collector must write JSON
+metrics to ``{output}``, either directly or under a top-level ``metrics`` key.
+Metric values may be fractions from 0 to 1 or percentages from 0 to 100.
+
+The optional ``npm_health_metric_weights`` mapping customizes scoring weights.
+Only metrics present in the current analysis participate in the denominator.
+The pipeline also writes a timestamped ``npm-health-*.json`` project output.
