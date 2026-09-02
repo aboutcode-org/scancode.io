@@ -2548,12 +2548,18 @@ class DiscoveredLicenseDetailsView(
         matches_by_file = self.get_matches_by_file(self.object.matches)
         file_match_groups = []
 
+        null_from_file_matches = matches_by_file.pop("", [])
+
         for file_region in self.object.file_regions:
             path = file_region.get("path") or ""
+            matches = matches_by_file.pop(path, [])
+            if not matches and null_from_file_matches:
+                matches = null_from_file_matches
+
             file_match_groups.append(
                 {
                     "file_region": file_region,
-                    "matches": matches_by_file.pop(path, []),
+                    "matches": matches,
                 }
             )
 
@@ -2562,6 +2568,14 @@ class DiscoveredLicenseDetailsView(
                 {
                     "file_region": {"path": path},
                     "matches": matches,
+                }
+            )
+
+        if not file_match_groups and null_from_file_matches:
+            file_match_groups.append(
+                {
+                    "file_region": {},
+                    "matches": null_from_file_matches,
                 }
             )
 
