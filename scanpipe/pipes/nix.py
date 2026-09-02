@@ -21,6 +21,7 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import atexit
+import concurrent.futures
 import logging
 import shutil
 import subprocess
@@ -85,20 +86,37 @@ def fetch_inputs(purl, output_dir):
     )
 
     nix_bin_download_url = get_nix_download_url(path) if path else ""
+    concluded_commit_hash = release_commit_hash or commit_hash
 
     src_path = ""
-    concluded_commit_hash = release_commit_hash or commit_hash
-    if concluded_commit_hash:
-        src_path = get_patched_source_with_docker(
-            name, output_dir, system, concluded_commit_hash
-        )
-
     bin_path = ""
-    if nix_bin_download_url:
-        bin_path = utils.fetch_path(nix_bin_download_url)
-        logger.info(f"Downloaded binary for {purl} to {bin_path}")
-    else:
-        logger.info(f"Unable to download the binary for {purl}")
+
+    # Run the Docker source patching and the Binary download concurrently
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        futures = {}
+        if concluded_commit_hash:
+            futures["source"] = executor.submit(
+                get_patched_source_with_docker, name, output_dir, system, concluded_commit_hash
+            )
+        if nix_bin_download_url:
+            futures["binary"] = executor.submit(utils.fetch_path, nix_bin_download_url)
+
+        for key, future in futures.items():
+            try:
+                result = future.result(timeout=600)
+                if key == "source":
+                    src_path = result
+                else:
+                    bin_path = result
+                    if bin_path:
+                        logger.info(f"Downloaded binary for {purl} to {bin_path}")
+                    else:
+                        logger.info(f"Unable to download the binary for {purl}")
+
+            except concurrent.futures.TimeoutError:
+                logger.error(f"Timeout waiting for {key} to fetch (exceeded 600s).")
+            except Exception as e:
+                logger.error(f"Failed to fetch {key}: {e}")
 
     return src_path, bin_path, output_format
 
@@ -300,6 +318,8 @@ def extract_nar_archive(archive_path, output_dir, output):
         "run",
         "--rm",
         "-v",
+        "nix-eval-cache:/nix",
+        "-v",
         f"{archive_dir}:/input:ro",
         "-v",
         f"{output_dir}:/output",
@@ -396,6 +416,8 @@ def get_patched_source_with_docker(name, output_dir, system, commit_hash):
         "docker",
         "run",
         "--rm",
+        "-v",
+        "nix-eval-cache:/nix",
         "-v",
         f"{absolute_out_dir}:/build_output",
         "nixos/nix",
