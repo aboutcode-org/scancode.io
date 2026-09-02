@@ -20,6 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import shutil
+from pathlib import Path
+
 from scanpipe.pipelines.deploy_to_develop import DeployToDevelop
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipelines.scan_single_package import ScanSinglePackage
@@ -51,6 +54,7 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
             cls.fetch_inputs,
             cls.collect_input_info,
             cls.extract_input_to_codebase_directory,
+            cls.collect_and_create_codebase_resources,
             cls.run_scan,
             cls.load_inventory_from_toolkit_scan,
             cls.add_from_to_tag,
@@ -95,17 +99,26 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
     def extract_input_to_codebase_directory(self):
         """Extract input to project codebase/ directory."""
         if self.input_path:
-            nix.extract_nar_archive(
+            extracted_path = nix.extract_nar_archive(
                 self.input_path, self.project.codebase_path, self.output_format
             )
 
-            # Reload the project env post-extraction as the scancode-config.yml file
-            # may be located in one of the extracted archives.
+            to_dir = Path(self.project.codebase_path) / "to"
+            # If the extraction failed (returned "") or we found it was empty
+            if not extracted_path or (to_dir.exists() and not list(to_dir.rglob("*"))):
+                if to_dir.exists():
+                    shutil.rmtree(to_dir)
+                self.d2d_enable = False
+                self.project.add_error(
+                    "Failed to extract NAR archive, D2D scan disabled."
+                )
+
             self.env = self.project.get_env()
 
     def add_from_to_tag(self):
         """Update 'from' and 'to' tag to resources based on their path."""
-        d2d.update_from_to_tag(self.project)
+        if self.d2d_enable:
+            d2d.update_from_to_tag(self.project)
 
     def d2d_steps(self):
         """
