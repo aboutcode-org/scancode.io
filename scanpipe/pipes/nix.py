@@ -199,7 +199,7 @@ def get_nix_store_path_with_nix(name, system, output, commit_hash):
         f"{{ {system_config} {config_str} }}; "
         f"  target = pkgs.{name}; "
         f'  hasIt = builtins.isAttrs target && builtins.hasAttr "{output}" target; '
-        'in if hasIt then target.{output}.outPath else ""'
+        f'in if hasIt then target.{output}.outPath else ""'
     )
 
     cmd = [
