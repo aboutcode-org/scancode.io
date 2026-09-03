@@ -55,13 +55,13 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
             cls.collect_input_info,
             cls.extract_input_to_codebase_directory,
             cls.collect_and_create_codebase_resources,
-            cls.run_scan,
-            cls.load_inventory_from_toolkit_scan,
+            cls.scan_for_application_packages,
+            cls.scan_for_files,
+            cls.collect_and_create_license_detections,
             cls.add_from_to_tag,
             cls.d2d_steps,
             cls.validate_package_license_integrity,
             cls.flag_mapped_status,
-            cls.make_summary_from_scan_results,
             cls.cleanup_docker_volumes,
         )
 
@@ -210,7 +210,6 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         self.scan_ignored_to_files()
         self.scan_unmapped_to_files()
         self.scan_mapped_from_for_files()
-        self.collect_and_create_license_detections()
         self.flag_deployed_from_resources_with_missing_license()
         self.create_local_files_packages()
 
