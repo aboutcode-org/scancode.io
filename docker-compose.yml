@@ -102,7 +102,9 @@ services:
   healthycode:
     profiles:
       - healthycode
-    image: healthycode:latest
+    build:
+      context: ../healthycode
+      dockerfile: Dockerfile
     volumes:
       - healthycode_venv:/opt/healthycode
     restart: "no"
