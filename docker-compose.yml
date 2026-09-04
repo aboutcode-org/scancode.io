@@ -47,6 +47,7 @@ services:
       - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
       - static:/var/scancodeio/static/
+      - healthycode_venv:/opt/healthycode
     restart: always
     depends_on:
       db:
@@ -67,6 +68,7 @@ services:
       - .env:/opt/scancodeio/.env
       - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
+      - healthycode_venv:/opt/healthycode
     restart: always
     depends_on:
       db:
@@ -97,6 +99,16 @@ services:
       - workspace:/var/scancodeio/workspace/
     restart: always
 
+  healthycode:
+    profiles:
+      - healthycode
+    build:
+      context: ../healthycode
+      dockerfile: Dockerfile
+    volumes:
+      - healthycode_venv:/opt/healthycode
+    restart: "no"
+
 volumes:
   db_data:
   redis_data:
@@ -104,3 +116,4 @@ volumes:
   static:
   workspace:
   webroot:
+  healthycode_venv:
