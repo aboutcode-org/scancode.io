@@ -96,7 +96,11 @@ def fetch_inputs(purl, output_dir):
         futures = {}
         if concluded_commit_hash:
             futures["source"] = executor.submit(
-                get_patched_source_with_docker, name, output_dir, system, concluded_commit_hash
+                get_patched_source_with_docker,
+                name,
+                output_dir,
+                system,
+                concluded_commit_hash,
             )
         if nix_bin_download_url:
             futures["binary"] = executor.submit(utils.fetch_path, nix_bin_download_url)
