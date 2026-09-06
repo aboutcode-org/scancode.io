@@ -11,16 +11,8 @@ assignees: ''
 A clear and concise description of what the bug is.
 
 **System configuration**
-- Which version of ScanCode.io are you running?
-- Are you running the app using Docker?
-- On which OS?
-- What inputs are you using?
-- Which pipeline are you running?
-
-**To Reproduce**
-Steps to reproduce the behavior:
-1. on to '...'
-2. double  on '....'
+- Which version of ScanCode.io are you run
+to it   on '....'
 3. Scroll down to '....'
 4. See error
 
