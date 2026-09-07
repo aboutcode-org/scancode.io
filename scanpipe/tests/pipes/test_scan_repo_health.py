@@ -56,7 +56,7 @@ class ScanRepoGrimoirelabTest(TestCase):
             returncode=1, cmd=["grimoirelab-metrics"]
         )
 
-        expected_msg = "Grimoirelab-metrics pipeline failed"
+        expected_msg = "Grimoirelab-metrics client failure"
 
         self.pipeline.get_repo_url_input()
         with self.assertRaisesMessage(RuntimeError, expected_msg):

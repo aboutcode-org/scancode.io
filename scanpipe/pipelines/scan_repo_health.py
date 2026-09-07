@@ -111,7 +111,7 @@ class ScanRepoHealth(Pipeline):
             run_command_safely(command_args=command_args)
             self.log("GrimoireLab metrics pipeline completed successfully")
         except subprocess.SubprocessError:
-            raise RuntimeError("Grimoirelab-metrics pipeline failed")
+            raise RuntimeError("Grimoirelab-metrics client failure")
         except FileNotFoundError:
             raise FileNotFoundError(
                 "Grimoirelab-metrics not found. "
@@ -126,7 +126,7 @@ class ScanRepoHealth(Pipeline):
         """
         if not self.metrics_output_path.exists():
             raise FileNotFoundError(
-                "Grimoirelab-metrics pipeline doesn't return a valid metrics JSON file"
+                "GrimoireLab client did not return a valid metrics JSON file"
             )
 
         with open(self.metrics_output_path) as f:
@@ -169,7 +169,7 @@ class ScanRepoHealth(Pipeline):
 
 
 def is_valid_vcs_url(url):
-    """Determine whether the URL is a valid VCS repository URL."""
+    """Determine whether the URL string has the expected syntax of a VCS repository."""
     if not isinstance(url, str) or not url:
         return False
 
