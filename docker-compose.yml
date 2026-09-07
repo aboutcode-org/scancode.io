@@ -31,6 +31,16 @@ services:
       timeout: 5s
       retries: 5
 
+  # Add the Docker-in-Docker daemon
+  dind:
+    image: docker.io/library/docker:dind
+    privileged: true
+    environment:
+      - DOCKER_TLS_CERTDIR=
+    volumes:
+      - dind_data:/var/lib/docker
+      - workspace:/var/scancodeio/workspace/
+
   web:
     build: .
     command: sh -c "
@@ -38,6 +48,8 @@ services:
         ./manage.py collectstatic --no-input --verbosity 0 --clear &&
         gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 \
           --workers ${GUNICORN_WORKERS:-8} --worker-tmp-dir /dev/shm"
+    environment:
+      - DOCKER_HOST=tcp://dind:2375  # Point to the DinD container
     env_file:
       - docker.env
     expose:
@@ -61,6 +73,8 @@ services:
         ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker
                              --queue-class scancodeio.worker.ScanCodeIOQueue
                              --verbosity 1"
+    environment:
+      - DOCKER_HOST=tcp://dind:2375  # Point to the DinD container
     env_file:
       - docker.env
     volumes:
@@ -74,6 +88,8 @@ services:
       redis:
         condition: service_healthy
       web:
+        condition: service_started
+      dind:
         condition: service_started
 
   nginx:
@@ -104,3 +120,4 @@ volumes:
   static:
   workspace:
   webroot:
+  dind_data:
