@@ -141,8 +141,15 @@ def _map_checksum_resource(to_resource, from_resources, checksum_field):
 
 def map_checksum(project, checksum_field, logger=None):
     """Map using checksum."""
-    from_resources = project.codebaseresources.files().from_codebase().has_value(checksum_field)
-    to_resources = project.codebaseresources.files().to_codebase().has_value(checksum_field).has_no_relation()
+    from_resources = (
+        project.codebaseresources.files().from_codebase().has_value(checksum_field)
+    )
+    to_resources = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .has_value(checksum_field)
+        .has_no_relation()
+    )
     resource_count = to_resources.count()
 
     if logger:
