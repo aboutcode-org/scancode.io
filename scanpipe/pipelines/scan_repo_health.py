@@ -35,6 +35,8 @@ GRIMOIRELAB_OPENSEARCH_USERNAME = environ.get("GRIMOIRELAB_OPENSEARCH_USERNAME",
 GRIMOIRELAB_PASSWORD = environ.get("GRIMOIRELAB_PASSWORD", "")
 GRIMOIRELAB_URL = environ.get("GRIMOIRELAB_URL", "")
 GRIMOIRELAB_USERNAME = environ.get("GRIMOIRELAB_USERNAME", "")
+GRIMOIRELAB_ECOSYSTEM = environ.get("GRIMOIRELAB_ECOSYSTEM", "")
+GRIMOIRELAB_PROJECT = environ.get("GRIMOIRELAB_PROJECT", "")
 
 
 class ScanRepoHealth(Pipeline):
@@ -62,6 +64,8 @@ class ScanRepoHealth(Pipeline):
             and GRIMOIRELAB_PASSWORD
             and GRIMOIRELAB_URL
             and GRIMOIRELAB_USERNAME
+            and GRIMOIRELAB_ECOSYSTEM
+            and GRIMOIRELAB_PROJECT
         ):
             return "Grimoirelab is not configured."
 
@@ -95,6 +99,10 @@ class ScanRepoHealth(Pipeline):
             GRIMOIRELAB_USERNAME,
             "--grimoirelab-password",
             GRIMOIRELAB_PASSWORD,
+            "--grimoirelab-ecosystem",
+            GRIMOIRELAB_ECOSYSTEM,
+            "--grimoirelab-project",
+            GRIMOIRELAB_PROJECT,
             "--opensearch-url",
             GRIMOIRELAB_OPENSEARCH_URL,
             "--opensearch-index",
@@ -147,7 +155,7 @@ class ScanRepoHealth(Pipeline):
 
         target_package = packages[0]
         repository = target_package.get("repository")
-        score = target_package.get("npm_health_score")
+        score = target_package.get("score")
         metrics = target_package.get("metrics")
 
         if repository is None or score is None or metrics is None:
