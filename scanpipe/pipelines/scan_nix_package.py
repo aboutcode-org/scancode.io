@@ -57,11 +57,11 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
             cls.collect_and_create_codebase_resources,
             cls.scan_for_application_packages,
             cls.scan_for_files,
+            cls.clear_to_codebase_status,
             cls.collect_and_create_license_detections,
             cls.add_from_to_tag,
             cls.d2d_steps,
             cls.validate_package_license_integrity,
-            cls.flag_mapped_status,
             cls.cleanup_docker_volumes,
         )
 
@@ -119,6 +119,13 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
                 )
 
             self.env = self.project.get_env()
+
+    def clear_to_codebase_status(self):
+        """
+        Clear the status of the to codebase resources in the project as
+        having status will prevent D2D from running.
+        """
+        flag.clear_status(self.project.codebaseresources.to_codebase())
 
     def add_from_to_tag(self):
         """Update 'from' and 'to' tag to resources based on their path."""
@@ -212,9 +219,6 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         self.perform_house_keeping_tasks()
         self.match_purldb_resources_post_process()
         self.remove_packages_without_resources()
-        self.scan_ignored_to_files()
-        self.scan_unmapped_to_files()
-        self.scan_mapped_from_for_files()
         self.flag_deployed_from_resources_with_missing_license()
         self.create_local_files_packages()
 

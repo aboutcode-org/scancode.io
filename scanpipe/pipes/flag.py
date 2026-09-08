@@ -139,3 +139,8 @@ def flag_mapped_resources(project):
     """Flag all codebase resources that were mapped during the d2d pipeline."""
     resources = project.codebaseresources.has_relation().no_status()
     return resources.update(status=MAPPED)
+
+
+def clear_status(resource_qs):
+    """Clear the status of given codebase resources."""
+    return resource_qs.update(status="")
