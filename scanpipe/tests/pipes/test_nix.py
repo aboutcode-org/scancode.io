@@ -351,5 +351,5 @@ class ScanPipeNixPipesTest(TestCase):
                 archive_path=str(archive_path), output_dir=temp_dir, output="debug"
             )
 
-            expected_extracted_path = str(Path(temp_dir) / "to" / "debug")
+            expected_extracted_path = str(Path(temp_dir).resolve() / "to" / "debug")
             self.assertEqual(result, expected_extracted_path)
