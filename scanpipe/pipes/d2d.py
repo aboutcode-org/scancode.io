@@ -1566,10 +1566,9 @@ def scan_ignored_to_files(project, logger=None):
     scancode.scan_for_files(project, scan_files, progress_logger=logger)
 
     # Revert to the original status value
-    project.codebaseresources.filter(
-        id__in=scan_file_ids,
-        status=flag.SCANNED
-    ).update(status=flag.IGNORED_FROM_CONFIG)
+    project.codebaseresources.filter(id__in=scan_file_ids, status=flag.SCANNED).update(
+        status=flag.IGNORED_FROM_CONFIG
+    )
 
 
 def scan_unmapped_to_files(project, logger=None):
@@ -1592,10 +1591,9 @@ def scan_unmapped_to_files(project, logger=None):
     scancode.scan_for_files(project, scan_files, progress_logger=logger)
 
     # Revert to the original status value
-    project.codebaseresources.filter(
-        id__in=scan_file_ids,
-        status=flag.SCANNED
-    ).update(status=flag.REQUIRES_REVIEW)
+    project.codebaseresources.filter(id__in=scan_file_ids, status=flag.SCANNED).update(
+        status=flag.REQUIRES_REVIEW
+    )
 
 
 def flag_deployed_from_resources_with_missing_license(project, doc_extensions=None):
