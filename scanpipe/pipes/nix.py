@@ -21,7 +21,6 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import atexit
-import concurrent.futures
 import logging
 import shutil
 import subprocess
@@ -71,7 +70,8 @@ def fetch_inputs(purl, output_dir):
     """
     Fetch the system specific binary and the exact source tree with the
     patches and configurations applied for the given input purl. Return a
-    tuple of (source_path, binary_path, output_format).
+    tuple of (source_path, binary_path, output_format, error_message,
+    warning_message).
     """
     data = get_package_data(purl)
     name = purl.name
@@ -80,49 +80,140 @@ def fetch_inputs(purl, output_dir):
     commit_hash = purl.qualifiers.get("commit", "")
     system = purl.qualifiers.get("system", "")
     user_output = purl.qualifiers.get("output", "")
+    error_message = ""
+    warning_message = ""
 
     output_format, path, release_commit_hash = get_nix_store_path(
         data, name, version, system, commit_hash, user_output
     )
 
-    nix_bin_download_url = get_nix_download_url(path) if path else ""
     concluded_commit_hash = release_commit_hash or commit_hash
 
-    src_path = ""
     bin_path = ""
+    nix_bin_download_url = get_nix_download_url(path) if path else ""
+    # Try to download from cache first
+    if nix_bin_download_url:
+        bin_path = utils.fetch_path(nix_bin_download_url)
 
-    # Run the Docker source patching and the Binary download concurrently
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        futures = {}
+    if bin_path:
+        logger.info(f"Downloaded binary for {purl} to {bin_path}")
+    else:
         if concluded_commit_hash:
-            futures["source"] = executor.submit(
-                get_patched_source_with_docker,
-                name,
-                output_dir,
-                system,
-                concluded_commit_hash,
+            logger.info(
+                f"Binary not found in cache for {purl}. Attempting local Nix build..."
             )
-        if nix_bin_download_url:
-            futures["binary"] = executor.submit(utils.fetch_path, nix_bin_download_url)
+            bin_path = build_binary_with_docker(
+                name, output_dir, system, concluded_commit_hash, output_format
+            )
+        if bin_path:
+            logger.info(f"Successfully built binary for {purl} to {bin_path}")
+            warning_message = (
+                f"Binary not found in cache for {purl}. Built locally using "
+                f"commit {concluded_commit_hash} with a Linux-based Nix "
+                f"Docker container."
+            )
+            logger.warning(warning_message)
+        else:
+            error_message = f"Failed to fetch or build the binary for {purl}"
+            logger.error(error_message)
 
-        for key, future in futures.items():
-            try:
-                result = future.result(timeout=600)
-                if key == "source":
-                    src_path = result
-                else:
-                    bin_path = result
-                    if bin_path:
-                        logger.info(f"Downloaded binary for {purl} to {bin_path}")
-                    else:
-                        logger.info(f"Unable to download the binary for {purl}")
+    src_path = ""
+    if concluded_commit_hash:
+        src_path = get_patched_source_with_docker(
+            name, output_dir, system, concluded_commit_hash
+        )
 
-            except concurrent.futures.TimeoutError:
-                logger.error(f"Timeout waiting for {key} to fetch (exceeded 600s).")
-            except Exception as e:
-                logger.error(f"Failed to fetch {key}: {e}")
+    return src_path, bin_path, output_format, error_message, warning_message
 
-    return src_path, bin_path, output_format
+
+def build_binary_with_docker(name, output_dir, system, commit_hash, output_format):
+    """
+    Fetch a Nix package and build its binary from source using Docker.
+    Exports the resulting store path as a .nar file for standard extraction.
+    """
+    nar_filename = f"{name}-bin.nar"
+    extracted_path = Path(output_dir) / nar_filename
+    absolute_out_dir = str(Path(output_dir).resolve())
+
+    # Handle architecture and system incompatibilities
+    target_os = system.split("-")[-1] if "-" in system else system
+    if target_os and target_os != "linux":
+        logger.warning(
+            f"SYSTEM BARRIER DETECTED: Target system '{system}' requires "
+            f"OS-specific SDKs that cannot be evaluated inside the "
+            f"Linux-based Nix Docker container. Defaulting the build to "
+            f"the container's native Linux architecture."
+        )
+        system_config = ""
+    else:
+        system_config = (
+            f'localSystem = builtins.currentSystem; crossSystem = "{system}";'
+        )
+
+    config_str = (
+        "config = { "
+        "allowBroken = true; "
+        "allowUnfree = true; "
+        "allowUnsupportedSystem = true; "
+        "};"
+    )
+
+    nixpkgs_import = (
+        f'import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/'
+        f'{commit_hash}.tar.gz") {{ {system_config} {config_str} }}'
+    )
+
+    # Defaulting to 'debug' if none is specified.
+    effective_output = output_format or "debug"
+
+    # Fall back to the default target if the effective_output is not
+    # defined in the recipe for this package.
+    nix_expression = (
+        f"let "
+        f"  pkgs = {nixpkgs_import}; "
+        f"  target = pkgs.{name}; "
+        f"  hasIt = builtins.isAttrs target && "
+        f'builtins.hasAttr "{effective_output}" target; '
+        f"in if hasIt then target.{effective_output} else target"
+    )
+
+    # Build the Nix package, verify it succeeded, and export the output as
+    # a .nar file.
+    container_script = f"""
+    OUT_PATH=$(nix-build --no-out-link -E '{nix_expression}')
+    if [ -z "$OUT_PATH" ] || [ ! -e "$OUT_PATH" ]; then
+        echo "Error: nix-build failed to return a valid store path." >&2
+        exit 1
+    fi
+    nix-store --dump "$OUT_PATH" > /build_output/{nar_filename}
+    """
+
+    cmd = [
+        "docker",
+        "run",
+        "--rm",
+        "-v",
+        "nix-eval-cache:/nix",
+        "-v",
+        f"{absolute_out_dir}:/build_output",
+        "nixos/nix",
+        "/bin/sh",
+        "-c",
+        container_script,
+    ]
+
+    task_description = f"Building ({name} for {system})"
+
+    try:
+        subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=1800)  # noqa: S603
+        if extracted_path.exists():
+            return str(extracted_path)
+        return ""
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed: {task_description} with error: {e.stderr.strip()}")
+    except subprocess.TimeoutExpired:
+        logger.error(f"Failed: {task_description} with error: Process timed out")
+    return ""
 
 
 def get_nix_store_path(data, name, version, system, commit_hash, user_output):
@@ -150,9 +241,9 @@ def get_nix_store_path(data, name, version, system, commit_hash, user_output):
         if not commit_hash:
             raise Exception(
                 "Please provide a 'commit' qualifier in the PURL "
-                "for Nix to determine the download URL."
+                "for Nix to determine the download URL or build it locally."
             )
-        raise Exception(f"Unable to determine the download URL for {name}")
+        output_format = user_output or "debug"
 
     return output_format, path, release_commit_hash
 
@@ -328,7 +419,7 @@ def extract_nar_archive(archive_path, output_dir, output):
         "-v",
         f"{output_dir}:/output",
         "nixos/nix",
-        "sh",
+        "/bin/sh",
         "-c",
         container_script,
     ]
@@ -425,7 +516,7 @@ def get_patched_source_with_docker(name, output_dir, system, commit_hash):
         "-v",
         f"{absolute_out_dir}:/build_output",
         "nixos/nix",
-        "sh",
+        "/bin/sh",
         "-c",
         container_script,
     ]

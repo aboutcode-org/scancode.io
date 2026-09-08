@@ -80,8 +80,8 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         from_file = ""
         to_file = ""
         output_format = ""
-        from_file, to_file, output_format = fetch_inputs(
-            self.purl, self.project.codebase_path
+        from_file, to_file, output_format, error_messages, warning_messages = (
+            fetch_inputs(self.purl, self.project.codebase_path)
         )
         self.from_file = from_file
         self.to_file = to_file
@@ -89,11 +89,16 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
 
         self.d2d_enable = bool(self.from_file and self.to_file)
 
+        if error_messages:
+            self.project.add_error(error_messages)
+        if warning_messages:
+            self.project.add_warning(warning_messages)
+
     def collect_input_info(self):
         """Collect information about the input."""
         self.input_path = ""
         if self.to_file:
-            self.input_path = self.to_file
+            self.input_path = Path(self.to_file)
             self.collect_input_information()
 
     def extract_input_to_codebase_directory(self):

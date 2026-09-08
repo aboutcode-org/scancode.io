@@ -216,7 +216,7 @@ class ScanPipeNixPipesTest(TestCase):
         self.assertEqual(url_path, "nar/123.nar.xz")
 
     @mock.patch("scanpipe.pipes.nix.get_package_data")
-    @mock.patch("scanpipe.pipes.nix.get_commit_hash_nix_store_path")
+    @mock.patch("scanpipe.pipes.nix.get_nix_store_path_with_nix")
     @mock.patch("scanpipe.pipes.nix.get_nix_download_url")
     @mock.patch("scanpipe.pipes.nix.get_patched_source_with_docker")
     @mock.patch("scanpipe.pipes.utils.fetch_path")
@@ -225,11 +225,12 @@ class ScanPipeNixPipesTest(TestCase):
         mock_fetch_path,
         mock_get_patched_source,
         mock_get_download_url,
-        mock_get_store_path,
+        mock_get_store_path_with_nix,
         mock_get_package_data,
     ):
-        mock_get_package_data.return_value = {"releases": []}
-        mock_get_store_path.return_value = ("1234abcd", "/nix/store/aaaaaaaaaa")
+        mock_get_package_data.return_value = None
+        mock_get_store_path_with_nix.return_value = "/nix/store/aaaaaaaaaa"
+
         mock_get_download_url.return_value = "https://cache.nixos.org/nar/hello.nar.xz"
         mock_get_patched_source.return_value = "/path/extracted/from"
         mock_fetch_path.return_value = "/path/debug/to"
@@ -239,15 +240,71 @@ class ScanPipeNixPipesTest(TestCase):
         )
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            src_path, bin_path, output_fmt = nix.fetch_inputs(purl, temp_dir)
+            src_path, bin_path, output_fmt, error_msg, warning_msg = nix.fetch_inputs(
+                purl, temp_dir
+            )
 
             self.assertEqual(src_path, "/path/extracted/from")
             self.assertEqual(bin_path, "/path/debug/to")
             self.assertEqual(output_fmt, "debug")
+            self.assertEqual(error_msg, "")
+            self.assertEqual(warning_msg, "")
+
+            mock_get_store_path_with_nix.assert_called_once()
+
+    @mock.patch("scanpipe.pipes.nix.get_package_data")
+    @mock.patch("scanpipe.pipes.nix.get_nix_store_path_with_nix")
+    @mock.patch("scanpipe.pipes.nix.get_nix_download_url")
+    @mock.patch("scanpipe.pipes.nix.get_patched_source_with_docker")
+    @mock.patch("scanpipe.pipes.nix.build_binary_with_docker")
+    @mock.patch("scanpipe.pipes.utils.fetch_path")
+    def test_scanpipe_nix_fetch_inputs_fallback_build(
+        self,
+        mock_fetch_path,
+        mock_build_binary,
+        mock_get_patched_source,
+        mock_get_download_url,
+        mock_get_store_path_with_nix,
+        mock_get_package_data,
+    ):
+        """Test that fetch_inputs falls back to local build if download fails."""
+        mock_get_package_data.return_value = None
+        mock_get_store_path_with_nix.return_value = "/nix/store/aaaaaaaaaa"
+
+        # Simulate a missing/failed cache download
+        mock_get_download_url.return_value = ""
+        mock_fetch_path.return_value = ""
+
+        # Simulate a successful local build and source extraction
+        mock_build_binary.return_value = "/path/built/locally/to"
+        mock_get_patched_source.return_value = "/path/extracted/from"
+
+        purl = PackageURL.from_string(
+            "pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux&commit=1234abcd"
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            src_path, bin_path, output_fmt, error_msg, warning_msg = nix.fetch_inputs(
+                purl, temp_dir
+            )
+
+            self.assertEqual(src_path, "/path/extracted/from")
+            self.assertEqual(bin_path, "/path/built/locally/to")
+            self.assertEqual(output_fmt, "debug")
+            self.assertEqual(error_msg, "")
+            self.assertTrue("Built locally using commit" in warning_msg)
+
+            mock_build_binary.assert_called_once()
+            mock_get_store_path_with_nix.assert_called_once()
 
     @mock.patch("scanpipe.pipes.nix.get_commit_hash_nix_store_path")
-    def test_scanpipe_nix_get_nix_store_path_success(self, mock_get_store_path):
-        mock_get_store_path.return_value = ("1234abcd", "/nix/store/hello-path")
+    def test_scanpipe_nix_get_nix_store_path_success(
+        self, mock_get_commit_hash_nix_store_path
+    ):
+        mock_get_commit_hash_nix_store_path.return_value = (
+            "1234abcd",
+            "/nix/store/hello-path",
+        )
 
         output_fmt, path, commit = nix.get_nix_store_path(
             data={"releases": []},
@@ -261,3 +318,38 @@ class ScanPipeNixPipesTest(TestCase):
         self.assertEqual(output_fmt, "debug")
         self.assertEqual(path, "/nix/store/hello-path")
         self.assertEqual(commit, "1234abcd")
+
+    @mock.patch("scanpipe.pipes.nix.subprocess.run")
+    def test_scanpipe_nix_get_patched_source_with_docker_success(
+        self, mock_subprocess_run
+    ):
+        """Test successful fetching and patching of source using Docker."""
+        mock_subprocess_run.return_value = mock.Mock(returncode=0)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = nix.get_patched_source_with_docker(
+                name="hello",
+                output_dir=temp_dir,
+                system="x86_64-linux",
+                commit_hash="1234abcd",
+            )
+
+            expected_path = str(Path(temp_dir) / "from")
+            self.assertEqual(result, expected_path)
+            mock_subprocess_run.assert_called_once()
+
+    @mock.patch("scanpipe.pipes.nix.subprocess.run")
+    def test_scanpipe_nix_extract_nar_archive_success(self, mock_subprocess_run):
+        """Test extracting a .nar archive via Docker."""
+        mock_subprocess_run.return_value = mock.Mock(returncode=0)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # We don't actually need the file to exist for the mocked test
+            archive_path = Path(temp_dir) / "hello-bin.nar.xz"
+
+            result = nix.extract_nar_archive(
+                archive_path=str(archive_path), output_dir=temp_dir, output="debug"
+            )
+
+            expected_extracted_path = str(Path(temp_dir) / "to" / "debug")
+            self.assertEqual(result, expected_extracted_path)
