@@ -442,8 +442,8 @@ To configure your local environment, set the following in your ``.env`` file::
     GRIMOIRELAB_OPENSEARCH_INDEX="events"
     GRIMOIRELAB_OPENSEARCH_USERNAME="opensearch_username"
     GRIMOIRELAB_OPENSEARCH_PASSWORD="opensearch_password"
-    GRIMOIRELAB_ECOSYSTEM="npm-training-set"
-    GRIMOIRELAB_PROJECT="npm-popular-components"
+    GRIMOIRELAB_ECOSYSTEM="npm"
+    GRIMOIRELAB_PROJECT="health"
 
 The following variables configure the connection to the GrimoireLab instance:
 
