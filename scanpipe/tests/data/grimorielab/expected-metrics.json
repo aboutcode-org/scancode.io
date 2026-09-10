@@ -1,6 +1,6 @@
 {
   "repository": "https://github.com/baidu/san.git",
-  "npm_health_score": {
+  "score": {
     "value": 0.027432660614030716,
     "metadata": {
       "ecosystem": "npm",
@@ -8,7 +8,7 @@
       "version": "0.1"
     }
   },
-  "health_metrics": {
+  "metrics": {
     "total_commits": 21,
     "total_contributors": 5,
     "total_organizations": 4,

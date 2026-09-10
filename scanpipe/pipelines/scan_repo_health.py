@@ -166,8 +166,8 @@ class ScanRepoHealth(Pipeline):
 
         result = {
             "repository": repository,
-            "npm_health_score": score,
-            "health_metrics": metrics,
+            "score": score,
+            "metrics": metrics,
         }
 
         with open(self.metrics_output_path, "w") as f:
