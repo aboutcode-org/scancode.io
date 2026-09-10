@@ -319,12 +319,14 @@ class ScanPipeNixPipesTest(TestCase):
         self.assertEqual(path, "/nix/store/hello-path")
         self.assertEqual(commit, "1234abcd")
 
+    @mock.patch("scanpipe.pipes.nix.Path.iterdir")
     @mock.patch("scanpipe.pipes.nix.subprocess.run")
     def test_scanpipe_nix_get_patched_source_with_docker_success(
-        self, mock_subprocess_run
+        self, mock_subprocess_run, mock_iterdir
     ):
         """Test successful fetching and patching of source using Docker."""
         mock_subprocess_run.return_value = mock.Mock(returncode=0)
+        mock_iterdir.return_value = [mock.Mock()]
 
         with tempfile.TemporaryDirectory() as temp_dir:
             result = nix.get_patched_source_with_docker(
@@ -337,6 +339,7 @@ class ScanPipeNixPipesTest(TestCase):
             expected_path = str(Path(temp_dir) / "from")
             self.assertEqual(result, expected_path)
             mock_subprocess_run.assert_called_once()
+            mock_iterdir.assert_called_once()
 
     @mock.patch("scanpipe.pipes.nix.subprocess.run")
     def test_scanpipe_nix_extract_nar_archive_success(self, mock_subprocess_run):
@@ -353,3 +356,98 @@ class ScanPipeNixPipesTest(TestCase):
 
             expected_extracted_path = str(Path(temp_dir).resolve() / "to" / "debug")
             self.assertEqual(result, expected_extracted_path)
+
+    @mock.patch("scanpipe.pipes.nix.shutil.copy2")
+    @mock.patch("scanpipe.pipes.nix.subprocess.run")
+    def test_scanpipe_nix_extract_nar_archive_stages_from_tmp(
+        self, mock_subprocess_run, mock_copy2
+    ):
+        """Archive outside output_dir is staged into it before docker run."""
+        mock_subprocess_run.return_value = mock.Mock(returncode=0)
+
+        with (
+            tempfile.TemporaryDirectory() as source_dir,
+            tempfile.TemporaryDirectory() as output_dir,
+        ):
+            archive_path = Path(source_dir) / "hello-bin.nar.xz"
+
+            result = nix.extract_nar_archive(
+                archive_path=str(archive_path), output_dir=output_dir, output="debug"
+            )
+
+            expected_extracted_path = str(Path(output_dir).resolve() / "to" / "debug")
+            self.assertEqual(result, expected_extracted_path)
+
+            # Staging must have happened exactly once
+            mock_copy2.assert_called_once()
+            src, dst = mock_copy2.call_args[0]
+            self.assertEqual(Path(src), Path(source_dir).resolve() / "hello-bin.nar.xz")
+            self.assertEqual(Path(dst), Path(output_dir).resolve() / "hello-bin.nar.xz")
+
+            # The docker mount source must be output_dir, not the /tmp source
+            cmd = mock_subprocess_run.call_args[0][0]
+            volume_mounts = [cmd[i + 1] for i, a in enumerate(cmd) if a == "-v"]
+            self.assertTrue(
+                any(str(Path(output_dir).resolve()) in v for v in volume_mounts),
+                f"expected staged mount in {volume_mounts}",
+            )
+            self.assertFalse(
+                any(str(Path(source_dir).resolve()) in v for v in volume_mounts),
+                f"unexpected source mount in {volume_mounts}",
+            )
+
+    def test_scanpipe_nix_get_decompress_cmd(self):
+        cases = [
+            ("foo.nar.xz", "xz", "xzcat /input/foo.nar.xz"),
+            ("foo.nar.zst", "zstd", "zstdcat /input/foo.nar.zst"),
+            ("foo.nar.bz2", "bzip2", "bzcat /input/foo.nar.bz2"),
+            ("foo.nar.gz", "gzip", "zcat /input/foo.nar.gz"),
+            ("foo.nar", None, "cat /input/foo.nar"),
+        ]
+        for name, expected_type, expected_cmd in cases:
+            compression_type, cmd = nix._get_decompress_cmd(name)
+            self.assertEqual(compression_type, expected_type)
+            self.assertEqual(cmd, expected_cmd)
+
+    def test_scanpipe_nix_stage_archive_already_in_output_dir(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir).resolve()
+            archive_path = output_dir / "hello-bin.nar.xz"
+
+            with mock.patch("scanpipe.pipes.nix.shutil.copy2") as mock_copy2:
+                result = nix._stage_archive(archive_path, output_dir)
+
+            self.assertEqual(result, archive_path)
+            mock_copy2.assert_not_called()
+
+    @mock.patch("scanpipe.pipes.nix.shutil.copy2")
+    def test_scanpipe_nix_stage_archive_from_elsewhere(self, mock_copy2):
+        with (
+            tempfile.TemporaryDirectory() as source_dir,
+            tempfile.TemporaryDirectory() as output_dir,
+        ):
+            archive_path = Path(source_dir).resolve() / "hello-bin.nar.xz"
+            output_path = Path(output_dir).resolve()
+
+            result = nix._stage_archive(archive_path, output_path)
+
+            self.assertEqual(result, output_path / "hello-bin.nar.xz")
+            mock_copy2.assert_called_once_with(
+                archive_path, output_path / "hello-bin.nar.xz"
+            )
+
+    @mock.patch("scanpipe.pipes.nix.shutil.copy2")
+    def test_scanpipe_nix_stage_archive_skips_copy_when_sizes_match(self, mock_copy2):
+        with (
+            tempfile.TemporaryDirectory() as source_dir,
+            tempfile.TemporaryDirectory() as output_dir,
+        ):
+            archive_path = Path(source_dir).resolve() / "hello-bin.nar.xz"
+            archive_path.write_bytes(b"payload")
+            target = Path(output_dir).resolve() / "hello-bin.nar.xz"
+            target.write_bytes(b"payload")  # same size
+
+            result = nix._stage_archive(archive_path, Path(output_dir).resolve())
+
+            self.assertEqual(result, target)
+            mock_copy2.assert_not_called()

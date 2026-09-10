@@ -54,6 +54,7 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
             cls.fetch_inputs,
             cls.collect_input_info,
             cls.extract_input_to_codebase_directory,
+            cls.extract_codebase_archives,
             cls.collect_and_create_codebase_resources,
             cls.scan_for_application_packages,
             cls.scan_for_files,
@@ -119,6 +120,10 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
                 )
 
             self.env = self.project.get_env()
+
+    def extract_codebase_archives(self):
+        """Perform extraction of the codebase resources"""
+        self.extract_archives(recurse=True)
 
     def clear_to_codebase_status(self):
         """

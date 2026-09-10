@@ -22,6 +22,7 @@
 
 import atexit
 import logging
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -369,32 +370,52 @@ def cleanup_docker_volumes():
 atexit.register(cleanup_docker_volumes)
 
 
+def _get_decompress_cmd(archive_name):
+    """Return (compression_type, decompress_cmd) for the archive name."""
+    if archive_name.endswith(".xz"):
+        return "xz", f"xzcat /input/{archive_name}"
+    if archive_name.endswith(".zst"):
+        return "zstd", f"zstdcat /input/{archive_name}"
+    if archive_name.endswith(".bz2"):
+        return "bzip2", f"bzcat /input/{archive_name}"
+    if archive_name.endswith(".gz"):
+        return "gzip", f"zcat /input/{archive_name}"
+    return None, f"cat /input/{archive_name}"
+
+
+def _stage_archive(archive_path, output_dir):
+    """
+    Ensure the archive lives inside output_dir so it is visible to the Docker
+    daemon that resolves the `-v` mount source. Return the staged path.
+    """
+    target = output_dir / archive_path.name
+    if archive_path == target:
+        return target
+
+    is_present = (
+        target.exists() and target.stat().st_size == archive_path.stat().st_size
+    )
+    if not is_present:
+        shutil.copy2(archive_path, target)
+    return target
+
+
 def extract_nar_archive(archive_path, output_dir, output):
     """Extract a compressed Nix NAR archive."""
     archive_path = Path(archive_path).resolve()
     output_dir = Path(output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Docker mounts are resolved by the daemon, not the client. To make the
+    # archive visible to the daemon that runs the container, it must live
+    # in `output_dir` — the one path this project shares with that daemon.
+    archive_path = _stage_archive(archive_path, output_dir)
+
     archive_dir = str(archive_path.parent)
     archive_name = archive_path.name
-
     extracted_path = output_dir / "to" / output
 
-    if archive_name.endswith(".xz"):
-        compression_type = "xz"
-        decompress_cmd = f"xzcat /input/{archive_name}"
-    elif archive_name.endswith(".zst"):
-        compression_type = "zstd"
-        decompress_cmd = f"zstdcat /input/{archive_name}"
-    elif archive_name.endswith(".bz2"):
-        compression_type = "bzip2"
-        decompress_cmd = f"bzcat /input/{archive_name}"
-    elif archive_name.endswith(".gz"):
-        compression_type = "gzip"
-        decompress_cmd = f"zcat /input/{archive_name}"
-    else:
-        compression_type = None
-        decompress_cmd = f"cat /input/{archive_name}"
+    compression_type, decompress_cmd = _get_decompress_cmd(archive_name)
 
     if compression_type:
         restore_pipeline = (
@@ -404,8 +425,19 @@ def extract_nar_archive(archive_path, output_dir, output):
     else:
         restore_pipeline = f"{decompress_cmd} | nix-store --restore /output/to/{output}"
 
+    # nix-store --restore runs as root inside the container and preserves the
+    # NAR's ownership metadata, so the extracted tree ends up owned by root.
+    # Chown it back to the calling user so ScanCode can extract nested archives,
+    # read the files, and clean up afterwards.
+    host_uid = os.getuid()
+    host_gid = os.getgid()
+
     container_script = (
-        f"rm -rf /output/to/{output} && mkdir -p /output/to && {restore_pipeline}"
+        f"rm -rf /output/to/{output} "
+        f"&& mkdir -p /output/to "
+        f"&& {restore_pipeline} "
+        f"&& chown -R {host_uid}:{host_gid} /output/to "
+        f"&& chmod -R u+w /output/to"
     )
 
     cmd = [
@@ -429,17 +461,28 @@ def extract_nar_archive(archive_path, output_dir, output):
         return str(extracted_path)
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to extract {archive_name} with error: {e.stderr.strip()}")
-        return ""
     except subprocess.TimeoutExpired:
         logger.error(f"Failed to extract {archive_name}: Process timed out")
-        return ""
+    finally:
+        if archive_path.parent == output_dir:
+            try:
+                archive_path.unlink(missing_ok=True)
+            except OSError as e:
+                logger.debug(f"Could not remove staged archive {archive_path}: {e}")
+    return ""
 
 
 def get_patched_source_with_docker(name, output_dir, system, commit_hash):
-    """Fetch a Nix package source and apply its official patches."""
+    """
+    Fetch a Nix package source and apply its official patches, falling back
+    to raw archives if package source cannot be built.
+    """
     extracted_path = Path(output_dir) / "from"
     extracted_path.mkdir(parents=True, exist_ok=True)
     absolute_out_dir = str(extracted_path.resolve())
+
+    host_uid = os.getuid()
+    host_gid = os.getgid()
 
     # Get the OS part from the system string (e.g. 'aarch64-darwin' to 'darwin')
     target_os = system.split("-")[-1] if "-" in system else system
@@ -482,35 +525,107 @@ def get_patched_source_with_docker(name, output_dir, system, commit_hash):
         f'{commit_hash}.tar.gz") {{ {system_config} {config_str} }}'
     )
 
-    nix_expression = (
-        f"let "
-        f"  pkgs = {nixpkgs_import}; "
-        f"  pkg = pkgs.{name}; "
-        f"in "
-        f"pkg.overrideAttrs (old: {{ "
-        f'  name = (old.name or "{name}") + "-patched-src"; '
-        f'  phases = [ "unpackPhase" "patchPhase" "installPhase" ]; '
-        f'  installPhase = "mkdir -p $out && cp -a . $out/"; '
-        f'  outputs = [ "out" ]; '
-        f"  separateDebugInfo = false; "
-        f"  doCheck = false; "
-        f"  doInstallCheck = false; "
-        f"}})"
-    )
+    # Build patched source, but first `cd` into the actual source root
+    # (`$sourceRoot`) so we copy only its contents, not the wrapper
+    # directory that Nix creates during unpacking. This prevents
+    # duplicate paths like `from/<hash>-source/src/...`.
+    nix_expression = f"""
+    let
+        pkgs = {nixpkgs_import};
+        pkg = pkgs.{name};
+    in
+    pkg.overrideAttrs (old: {{
+        name = (old.name or "{name}") + "-patched-src";
+        phases = [ "unpackPhase" "patchPhase" "installPhase" ];
+        installPhase = ''
+            mkdir -p $out
+            rm -f env-vars
 
-    container_script = f"""
-    OUT_PATH=$(nix-build --no-out-link -E '{nix_expression}')
-    if [ -z "$OUT_PATH" ] || [ ! -d "$OUT_PATH" ]; then
-        echo "Error: nix-build failed to return a valid store path." >&2
-        exit 1
-    fi
-    cp -a "$OUT_PATH/." /build_output/
+            if [ -n "$sourceRoot" ] && [ -d "$sourceRoot" ]; then
+                cd "$sourceRoot"
+            fi
+
+            cp -a . $out/
+        '';
+        outputs = [ "out" ];
+        separateDebugInfo = false;
+        doCheck = false;
+        doInstallCheck = false;
+    }})"""
+
+    # Use the raw source archive if the standard patched build fails or
+    # yields no files
+    fallback_expression = f"""
+    let
+        pkgs = {nixpkgs_import};
+        pkg = pkgs.{name};
+    in
+        if pkg ? gemFile then pkg.gemFile
+        else if pkg ? src then pkg.src
+        else pkg
     """
+
+    # This bash script must NOT be indented in Python.
+    # If EOF has spaces before it, bash will fail to parse it.
+    # The following script first attempts a standard patched build; if that
+    # fails (or yields no files), it falls back to fetching the raw source
+    # archive. The result is copied to the mounted `from/` directory with
+    # correct ownership so the host can extract and process it.
+    container_script = f"""
+set -e
+
+cat << 'EOF' > /build_output/expr.nix
+{nix_expression}
+EOF
+
+cat << 'EOF' > /build_output/fallback.nix
+{fallback_expression}
+EOF
+
+# Try standard patched build
+OUT_PATH=$(nix-build --no-out-link /build_output/expr.nix || true)
+
+# Check if output is empty or only contains env-vars which is generated by Nix
+VALID_FILES=0
+if [ -n "$OUT_PATH" ] && [ -d "$OUT_PATH" ]; then
+    VALID_FILES=$(ls -A1 "$OUT_PATH" 2>/dev/null | grep -v "^env-vars$" | wc -l)
+fi
+
+# Use raw archive if standard build failed or was empty
+if [ -z "$OUT_PATH" ] || [ "$VALID_FILES" -eq 0 ]; then
+    OUT_PATH=$(nix-build --no-out-link /build_output/fallback.nix || true)
+fi
+
+# If both completely failed, clean up and exit
+if [ -z "$OUT_PATH" ] || [ ! -e "$OUT_PATH" ]; then
+    echo "Error: nix-build failed to return a valid store path." >&2
+    rm -f /build_output/expr.nix /build_output/fallback.nix
+    exit 1
+fi
+
+# Copy contents (if directory) or the single file (if archive)
+if [ -d "$OUT_PATH" ]; then
+    cp -a "$OUT_PATH/." /build_output/
+else
+    cp -L "$OUT_PATH" /build_output/
+fi
+
+# Set ownership to the host user so Python can extract it
+chown -R $HOST_UID:$HOST_GID /build_output/
+chmod -R u+w /build_output/
+
+# Cleanup the temp nix files
+rm -f /build_output/expr.nix /build_output/fallback.nix
+"""
 
     cmd = [
         "docker",
         "run",
         "--rm",
+        "-e",
+        f"HOST_UID={host_uid}",
+        "-e",
+        f"HOST_GID={host_gid}",
         "-v",
         "nix-eval-cache:/nix",
         "-v",
@@ -521,17 +636,17 @@ def get_patched_source_with_docker(name, output_dir, system, commit_hash):
         container_script,
     ]
 
-    task_description = f"Nix Build & Patch ({name} for {system})"
-
     try:
         subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=600)  # noqa: S603
-        return str(extracted_path)
+        if any(extracted_path.iterdir()):
+            return str(extracted_path)
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed: {task_description} with error: {e.stderr.strip()}")
-        return ""
+        logger.error(f"Failed: {e.stderr.strip()}")
     except subprocess.TimeoutExpired:
-        logger.error(f"==> Failed: {task_description} with error: Process timed out")
-        return ""
+        logger.error("Process timed out")
+
+    shutil.rmtree(extracted_path, ignore_errors=True)
+    return ""
 
 
 def ensure_multiarch_emulation():

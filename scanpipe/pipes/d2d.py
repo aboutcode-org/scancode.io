@@ -275,7 +275,7 @@ def find_jvm_packages(project, jvm_lang: jvm.JvmLanguage, logger=None):
 
     Note: we use the same API as the ScanCode scans by design
     """
-    resources = project.codebaseresources.files().no_status().from_codebase()
+    resources = project.codebaseresources.files().from_codebase()
 
     from_jvm_resources = resources.filter(extension__in=jvm_lang.source_extensions)
 
@@ -417,9 +417,8 @@ def _map_path_resource(
 
 def map_path(project, logger=None):
     """Map using path suffix similarities."""
-    project_files = project.codebaseresources.files().no_status()
-    from_resources = project_files.from_codebase()
-    to_resources = project_files.to_codebase().has_no_relation()
+    from_resources = project.codebaseresources.files().from_codebase()
+    to_resources = project.codebaseresources.files().to_codebase().has_no_relation()
     resource_count = to_resources.count()
 
     if logger:
