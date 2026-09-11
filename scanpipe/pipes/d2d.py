@@ -141,10 +141,14 @@ def _map_checksum_resource(to_resource, from_resources, checksum_field):
 
 def map_checksum(project, checksum_field, logger=None):
     """Map using checksum."""
-    project_files = project.codebaseresources.files().no_status()
-    from_resources = project_files.from_codebase().has_value(checksum_field)
+    from_resources = (
+        project.codebaseresources.files().from_codebase().has_value(checksum_field)
+    )
     to_resources = (
-        project_files.to_codebase().has_value(checksum_field).has_no_relation()
+        project.codebaseresources.files()
+        .to_codebase()
+        .has_value(checksum_field)
+        .has_no_relation()
     )
     resource_count = to_resources.count()
 
@@ -271,7 +275,7 @@ def find_jvm_packages(project, jvm_lang: jvm.JvmLanguage, logger=None):
 
     Note: we use the same API as the ScanCode scans by design
     """
-    resources = project.codebaseresources.files().no_status().from_codebase()
+    resources = project.codebaseresources.files().from_codebase()
 
     from_jvm_resources = resources.filter(extension__in=jvm_lang.source_extensions)
 
@@ -413,9 +417,8 @@ def _map_path_resource(
 
 def map_path(project, logger=None):
     """Map using path suffix similarities."""
-    project_files = project.codebaseresources.files().no_status()
-    from_resources = project_files.from_codebase()
-    to_resources = project_files.to_codebase().has_no_relation()
+    from_resources = project.codebaseresources.files().from_codebase()
+    to_resources = project.codebaseresources.files().to_codebase().has_no_relation()
     resource_count = to_resources.count()
 
     if logger:
@@ -1347,6 +1350,16 @@ def flag_processed_archives(project):
 
     for archive_resource in to_resources.archives():
         extract_path = archive_resource.path + EXTRACT_SUFFIX
+
+        # Skip archives that were not actually extracted to prevent getting
+        # flagged as "processed" (archives that's not supported by
+        # extractcode).
+        extracted_exists = project.codebaseresources.filter(
+            path__startswith=extract_path
+        ).exists()
+        if not extracted_exists:
+            continue
+
         archive_unmapped_resources = to_resources.filter(path__startswith=extract_path)
         # Check if all resources in the archive "-extract" directory have been mapped.
         # Flag the archive resource as processed only when all resources are mapped.
@@ -1767,20 +1780,25 @@ def map_paths_resource(
                     relations_to_create[rel_key] = relation
         if paths_not_mapped:
             to_resource.status = flag.REQUIRES_REVIEW
-            logger(
-                f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT mapped for: "
-                f"{to_resource.path!r}"
-            )
+            if logger:
+                logger(
+                    f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT "
+                    f" mapped for: {to_resource.path!r}"
+                )
         to_resource.save()
 
     if relations_to_create:
         rels = CodebaseRelation.objects.bulk_create(relations_to_create.values())
-        logger(
-            f"Created {len(rels)} mappings using "
-            f"{', '.join(map_types)} for: {to_resource.path!r}"
-        )
+        if logger:
+            logger(
+                f"Created {len(rels)} mappings using "
+                f"{', '.join(map_types)} for: {to_resource.path!r}"
+            )
     else:
-        logger(f"No mappings using {', '.join(map_types)} for: {to_resource.path!r}")
+        if logger:
+            logger(
+                f"No mappings using {', '.join(map_types)} for: {to_resource.path!r}"
+            )
 
 
 def process_paths_in_binary(
@@ -1944,9 +1962,17 @@ def map_elfs_with_dwarf_paths(project, logger=None):
             f"with {from_resources.count():,d} from/ resources."
         )
 
-    from_resources_index = pathmap.build_index(
-        from_resources.values_list("id", "path"), with_subpaths=True
-    )
+    # Build the path index, adding virtual aliases for .in template files
+    from_paths = []
+    for res_id, path in from_resources.values_list("id", "path"):
+        from_paths.append((res_id, path))
+        # If the source file is a template ending in '.in', also index its
+        # target name
+        if path.endswith(".in"):
+            target_path = path[:-3]  # Removes the trailing '.in'
+            from_paths.append((res_id, target_path))
+
+    from_resources_index = pathmap.build_index(from_paths, with_subpaths=True)
 
     if logger:
         logger("Done building from/ resources index.")
@@ -2033,6 +2059,15 @@ def map_go_paths(project, logger=None):
             map_types=["go_file_paths"],
             logger=logger,
         )
+
+
+def update_from_to_tag(project):
+    """Update 'from' or 'to' tag to resources based on their path."""
+    for resource in project.codebaseresources.files():
+        if resource.path.startswith("from/"):
+            resource.update(tag="from")
+        elif resource.path.startswith("to/"):
+            resource.update(tag="to")
 
 
 RUST_BINARY_OPTIONS = ["Rust"]

@@ -2591,3 +2591,13 @@ class ScanPipeD2DPipesTest(TestCase):
             "Google Protocol Buffers",
             resource.extra_data.get("Generated code"),
         )
+
+    def test_scanpipe_pipes_d2d_flag_processed_archives_never_extracted(self):
+        to_archive = make_resource_file(
+            self.project1, path="to/archive.rds", is_archive=True
+        )
+
+        d2d.flag_processed_archives(self.project1)
+
+        to_archive.refresh_from_db()
+        self.assertEqual("", to_archive.status)

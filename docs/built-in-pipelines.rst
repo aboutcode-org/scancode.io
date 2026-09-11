@@ -281,6 +281,12 @@ Scan Maven Package
     :members:
     :member-order: bysource
 
+Scan Nix Package
+-------------------
+.. autoclass:: scanpipe.pipelines.scan_nix_package.ScanNixPackage()
+    :members:
+    :member-order: bysource
+
 Fetch Scores (addon)
 --------------------
 .. warning::
