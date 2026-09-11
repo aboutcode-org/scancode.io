@@ -31,7 +31,7 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from scanpipe.pipelines.scan_repo_health import ScanRepoHealth
-from scanpipe.pipelines.scan_repo_health import is_valid_vcs_url
+from scanpipe.pipes.repo_health import is_valid_vcs_url
 
 
 class ScanRepoGrimoirelabTest(TestCase):
@@ -47,7 +47,7 @@ class ScanRepoGrimoirelabTest(TestCase):
         self.pipeline.project.get_output_file_path.return_value = "metrics.json"
         self.pipeline.log = MagicMock()
 
-    @patch("scanpipe.pipelines.scan_repo_health.run_command_safely")
+    @patch("scanpipe.pipes.repo_health.run_command_safely")
     def test_collect_and_store_grimoire_metric_called_process_error(
         self, mock_run_command
     ):

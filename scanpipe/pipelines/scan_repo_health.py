@@ -19,24 +19,19 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
-import json
-import subprocess
-import urllib.parse
-from os import environ
 
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipes import run_command_safely
-
-GRIMOIRELAB_METRICS_EXECUTABLE = environ.get("GRIMOIRELAB_METRICS_EXECUTABLE", "")
-GRIMOIRELAB_OPENSEARCH_INDEX = environ.get("GRIMOIRELAB_OPENSEARCH_INDEX", "")
-GRIMOIRELAB_OPENSEARCH_PASSWORD = environ.get("GRIMOIRELAB_OPENSEARCH_PASSWORD", "")
-GRIMOIRELAB_OPENSEARCH_URL = environ.get("GRIMOIRELAB_OPENSEARCH_URL", "")
-GRIMOIRELAB_OPENSEARCH_USERNAME = environ.get("GRIMOIRELAB_OPENSEARCH_USERNAME", "")
-GRIMOIRELAB_PASSWORD = environ.get("GRIMOIRELAB_PASSWORD", "")
-GRIMOIRELAB_URL = environ.get("GRIMOIRELAB_URL", "")
-GRIMOIRELAB_USERNAME = environ.get("GRIMOIRELAB_USERNAME", "")
-GRIMOIRELAB_ECOSYSTEM = environ.get("GRIMOIRELAB_ECOSYSTEM", "")
-GRIMOIRELAB_PROJECT = environ.get("GRIMOIRELAB_PROJECT", "")
+from scanpipe.pipes import repo_health
+from scanpipe.pipes.repo_health import GRIMOIRELAB_ECOSYSTEM
+from scanpipe.pipes.repo_health import GRIMOIRELAB_METRICS_EXECUTABLE
+from scanpipe.pipes.repo_health import GRIMOIRELAB_OPENSEARCH_INDEX
+from scanpipe.pipes.repo_health import GRIMOIRELAB_OPENSEARCH_PASSWORD
+from scanpipe.pipes.repo_health import GRIMOIRELAB_OPENSEARCH_URL
+from scanpipe.pipes.repo_health import GRIMOIRELAB_OPENSEARCH_USERNAME
+from scanpipe.pipes.repo_health import GRIMOIRELAB_PASSWORD
+from scanpipe.pipes.repo_health import GRIMOIRELAB_PROJECT
+from scanpipe.pipes.repo_health import GRIMOIRELAB_URL
+from scanpipe.pipes.repo_health import GRIMOIRELAB_USERNAME
 
 
 class ScanRepoHealth(Pipeline):
@@ -71,60 +66,16 @@ class ScanRepoHealth(Pipeline):
 
     def get_repo_url_input(self):
         """Validate and extract the repository URL from the project's input sources"""
-        if len(self.project.input_sources) != 1:
-            raise ValueError("Expected exactly one input source")
-
-        self.repo_url = self.project.input_sources[0]["download_url"]
-        if not is_valid_vcs_url(self.repo_url):
-            raise ValueError(
-                "Invalid input source: the pipeline accepts only a valid repository URL"
-            )
-
-        self.repo_url = self.repo_url.replace("git://", "https://")
-        if not self.repo_url.endswith(".git"):
-            self.repo_url += ".git"
+        self.repo_url = repo_health.get_repo_url_input(project=self.project)
 
     def collect_and_store_grimoire_metric(self):
         """
         Run the grimoirelab-metrics command against the input source.
         Save the generated metrics JSON to the project output directory.
         """
-        self.metrics_output_path = self.project.get_output_file_path("metrics", "json")
-        command_args = [
-            GRIMOIRELAB_METRICS_EXECUTABLE,
-            self.repo_url,
-            "--grimoirelab-url",
-            GRIMOIRELAB_URL,
-            "--grimoirelab-user",
-            GRIMOIRELAB_USERNAME,
-            "--grimoirelab-password",
-            GRIMOIRELAB_PASSWORD,
-            "--grimoirelab-ecosystem",
-            GRIMOIRELAB_ECOSYSTEM,
-            "--grimoirelab-project",
-            GRIMOIRELAB_PROJECT,
-            "--opensearch-url",
-            GRIMOIRELAB_OPENSEARCH_URL,
-            "--opensearch-index",
-            GRIMOIRELAB_OPENSEARCH_INDEX,
-            "--opensearch-user",
-            GRIMOIRELAB_OPENSEARCH_USERNAME,
-            "--opensearch-password",
-            GRIMOIRELAB_OPENSEARCH_PASSWORD,
-            "--output",
-            str(self.metrics_output_path),
-        ]
-
-        try:
-            run_command_safely(command_args=command_args)
-            self.log("GrimoireLab metrics pipeline completed successfully")
-        except subprocess.SubprocessError:
-            raise RuntimeError("Grimoirelab-metrics client failure")
-        except FileNotFoundError:
-            raise FileNotFoundError(
-                "Grimoirelab-metrics not found. "
-                "Please ensure grimoirelab-metrics is correctly configured."
-            )
+        self.metrics_output_path = repo_health.collect_and_store_grimoire_metric(
+            project=self.project, repo_url=self.repo_url, logger=self.log
+        )
 
     def format_metrics_output(self):
         """
@@ -132,65 +83,6 @@ class ScanRepoHealth(Pipeline):
         score, and metrics from the generated JSON and overwriting it with a
         simplified structure, and updating the project's extra data.
         """
-        if not self.metrics_output_path.exists():
-            raise FileNotFoundError(
-                "GrimoireLab client did not return a valid metrics JSON file"
-            )
-
-        with open(self.metrics_output_path) as f:
-            data = json.load(f)
-
-        if not isinstance(data, dict):
-            raise ValueError("Invalid metrics JSON: Expected a JSON object.")
-
-        package_data = data.get("packages")
-        if not package_data or not isinstance(package_data, dict):
-            raise ValueError(
-                "Invalid metrics JSON: Missing or malformed 'packages' section."
-            )
-
-        packages = list(package_data.values())
-        if not packages:
-            raise ValueError("Invalid metrics JSON: 'packages' contains no data.")
-
-        target_package = packages[0]
-        repository = target_package.get("repository")
-        score = target_package.get("score")
-        metrics = target_package.get("metrics")
-
-        if repository is None or score is None or metrics is None:
-            raise ValueError(
-                f"Invalid metrics JSON. missing or null field(s): "
-                f"repository: {repository}, score: {score}, metrics: {metrics}"
-            )
-
-        result = {
-            "repository": repository,
-            "score": score,
-            "metrics": metrics,
-        }
-
-        with open(self.metrics_output_path, "w") as f:
-            json.dump(result, f)
-
-        self.project.update_extra_data(result)
-
-
-def is_valid_vcs_url(url):
-    """Determine whether the URL string has the expected syntax of a VCS repository."""
-    if not isinstance(url, str) or not url:
-        return False
-
-    if any(char.isspace() for char in url):
-        return False
-
-    forbidden_chars = ["|", ";", "&", "`", "$(", ">", "<", "&&", "||"]
-    if any(char in url for char in forbidden_chars):
-        return False
-
-    parsed = urllib.parse.urlparse(url)
-    valid_schemes = {"https", "http", "git"}
-    if parsed.scheme in valid_schemes and parsed.netloc:
-        return True
-
-    return False
+        repo_health.format_metrics_output(
+            project=self.project, metrics_output_path=self.metrics_output_path
+        )
