@@ -25,6 +25,7 @@ import logging
 import os
 import shutil
 import subprocess
+from collections import namedtuple
 from pathlib import Path
 
 import requests
@@ -34,6 +35,18 @@ from packageurl import PackageURL
 from scanpipe.pipes import utils
 
 logger = logging.getLogger(__name__)
+
+
+# Result of `get_patched_source_with_docker`:
+# - `path`: extracted source tree, or "" when nothing could be produced
+# - `used_fallback`: True when the patched-source build failed and we fell
+#   back to the raw upstream `pkg.src` (unpatched)
+# - `fallback_reason`: reason for the fallback, or ""
+PatchedSourceResult = namedtuple(
+    "PatchedSourceResult", ["path", "used_fallback", "fallback_reason"]
+)
+
+FALLBACK_REASON_PREFIX = "PATCHED_SOURCE_FALLBACK_REASON="
 
 
 def check_input_and_return_purl(project):
@@ -92,7 +105,6 @@ def fetch_inputs(purl, output_dir):
 
     bin_path = ""
     nix_bin_download_url = get_nix_download_url(path) if path else ""
-    # Try to download from cache first
     if nix_bin_download_url:
         bin_path = utils.fetch_path(nix_bin_download_url)
 
@@ -118,19 +130,46 @@ def fetch_inputs(purl, output_dir):
             error_message = f"Failed to fetch or build the binary for {purl}"
             logger.error(error_message)
 
-    src_path = ""
+    source_result = PatchedSourceResult("", False, "")
     if concluded_commit_hash:
-        src_path = get_patched_source_with_docker(
+        source_result = get_patched_source_with_docker(
             name, output_dir, system, concluded_commit_hash
         )
 
-    return src_path, bin_path, output_format, error_message, warning_message
+    if source_result.used_fallback:
+        detail = (
+            f" Reason: {source_result.fallback_reason}."
+            if source_result.fallback_reason
+            else ""
+        )
+        fallback_warning = (
+            f"The patched source build for {name} failed; D2D will run "
+            f"against the raw upstream source (pkg.src) without nixpkgs "
+            f"patches.{detail} Mismatches between the source and binary "
+            f"trees may include files that were only added or modified by "
+            f"patches."
+        )
+        if warning_message:
+            warning_message = f"{warning_message}\n{fallback_warning}"
+        else:
+            warning_message = fallback_warning
+        logger.warning(fallback_warning)
+
+    return (
+        source_result.path,
+        bin_path,
+        output_format,
+        error_message,
+        warning_message,
+    )
 
 
 def build_binary_with_docker(name, output_dir, system, commit_hash, output_format):
     """
     Fetch a Nix package and build its binary from source using Docker.
     Exports the resulting store path as a .nar file for standard extraction.
+
+    Return an empty string if build fails.
     """
     nar_filename = f"{name}-bin.nar"
     extracted_path = Path(output_dir) / nar_filename
@@ -487,9 +526,6 @@ def get_patched_source_with_docker(name, output_dir, system, commit_hash):
     # Get the OS part from the system string (e.g. 'aarch64-darwin' to 'darwin')
     target_os = system.split("-")[-1] if "-" in system else system
 
-    # Check for OS incompatibility
-    # Since the Docker container uses 'nixos/nix' which is linux-based, it
-    # cannot build the patched sources for other systems
     if target_os and target_os != "linux":
         logger.warning(
             f"SYSTEM BARRIER DETECTED: Target system '{system}' requires "
@@ -504,10 +540,8 @@ def get_patched_source_with_docker(name, output_dir, system, commit_hash):
             f"be minimal: you may observe a small number of unmapped files "
             f"due to missing OS-specific structural patches."
         )
-        # Empty string forces Nix to use the container's native architecture
         system_config = ""
     else:
-        # Use crossSystem for compatible cross-architectures
         system_config = (
             f'localSystem = builtins.currentSystem; crossSystem = "{system}";'
         )
@@ -553,8 +587,6 @@ def get_patched_source_with_docker(name, output_dir, system, commit_hash):
         doInstallCheck = false;
     }})"""
 
-    # Use the raw source archive if the standard patched build fails or
-    # yields no files
     fallback_expression = f"""
     let
         pkgs = {nixpkgs_import};
@@ -591,8 +623,17 @@ if [ -n "$OUT_PATH" ] && [ -d "$OUT_PATH" ]; then
     VALID_FILES=$(ls -A1 "$OUT_PATH" 2>/dev/null | grep -v "^env-vars$" | wc -l)
 fi
 
+if [ -z "$OUT_PATH" ]; then
+    FALLBACK_REASON="primary nix-build returned no store path"
+elif [ ! -d "$OUT_PATH" ]; then
+    FALLBACK_REASON="primary store path is not a directory"
+elif [ "$VALID_FILES" -eq 0 ]; then
+    FALLBACK_REASON="primary output contained only env-vars"
+fi
+
 # Use raw archive if standard build failed or was empty
-if [ -z "$OUT_PATH" ] || [ "$VALID_FILES" -eq 0 ]; then
+if [ -n "$FALLBACK_REASON" ]; then
+    echo "PATCHED_SOURCE_FALLBACK_REASON=$FALLBACK_REASON" >&2
     OUT_PATH=$(nix-build --no-out-link /build_output/fallback.nix || true)
 fi
 
@@ -637,16 +678,33 @@ rm -f /build_output/expr.nix /build_output/fallback.nix
     ]
 
     try:
-        subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=600)  # noqa: S603
+        result = subprocess.run(  # noqa: S603
+            cmd, capture_output=True, text=True, check=True, timeout=600
+        )
         if any(extracted_path.iterdir()):
-            return str(extracted_path)
+            used_fallback = False
+            fallback_reason = ""
+            for line in result.stderr.splitlines():
+                if line.startswith(FALLBACK_REASON_PREFIX):
+                    used_fallback = True
+                    fallback_reason = line[len(FALLBACK_REASON_PREFIX) :].strip()
+                    break
+            if used_fallback:
+                logger.warning(
+                    f"Primary patched-source build failed for {name}: {fallback_reason}"
+                )
+            return PatchedSourceResult(
+                path=str(extracted_path),
+                used_fallback=used_fallback,
+                fallback_reason=fallback_reason,
+            )
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed: {e.stderr.strip()}")
     except subprocess.TimeoutExpired:
         logger.error("Process timed out")
 
     shutil.rmtree(extracted_path, ignore_errors=True)
-    return ""
+    return PatchedSourceResult(path="", used_fallback=False, fallback_reason="")
 
 
 def ensure_multiarch_emulation():

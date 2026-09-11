@@ -232,7 +232,11 @@ class ScanPipeNixPipesTest(TestCase):
         mock_get_store_path_with_nix.return_value = "/nix/store/aaaaaaaaaa"
 
         mock_get_download_url.return_value = "https://cache.nixos.org/nar/hello.nar.xz"
-        mock_get_patched_source.return_value = "/path/extracted/from"
+        mock_get_patched_source.return_value = nix.PatchedSourceResult(
+            path="/path/extracted/from",
+            used_fallback=False,
+            fallback_reason="",
+        )
         mock_fetch_path.return_value = "/path/debug/to"
 
         purl = PackageURL.from_string(
@@ -277,7 +281,11 @@ class ScanPipeNixPipesTest(TestCase):
 
         # Simulate a successful local build and source extraction
         mock_build_binary.return_value = "/path/built/locally/to"
-        mock_get_patched_source.return_value = "/path/extracted/from"
+        mock_get_patched_source.return_value = nix.PatchedSourceResult(
+            path="/path/extracted/from",
+            used_fallback=False,
+            fallback_reason="",
+        )
 
         purl = PackageURL.from_string(
             "pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux&commit=1234abcd"
@@ -319,16 +327,18 @@ class ScanPipeNixPipesTest(TestCase):
         self.assertEqual(path, "/nix/store/hello-path")
         self.assertEqual(commit, "1234abcd")
 
-    @mock.patch("scanpipe.pipes.nix.Path.iterdir")
     @mock.patch("scanpipe.pipes.nix.subprocess.run")
     def test_scanpipe_nix_get_patched_source_with_docker_success(
-        self, mock_subprocess_run, mock_iterdir
+        self, mock_subprocess_run
     ):
         """Test successful fetching and patching of source using Docker."""
-        mock_subprocess_run.return_value = mock.Mock(returncode=0)
-        mock_iterdir.return_value = [mock.Mock()]
+        mock_subprocess_run.return_value = mock.Mock(stderr="", returncode=0)
 
         with tempfile.TemporaryDirectory() as temp_dir:
+            from_dir = Path(temp_dir) / "from"
+            from_dir.mkdir()
+            (from_dir / "somefile").touch()
+
             result = nix.get_patched_source_with_docker(
                 name="hello",
                 output_dir=temp_dir,
@@ -336,10 +346,42 @@ class ScanPipeNixPipesTest(TestCase):
                 commit_hash="1234abcd",
             )
 
-            expected_path = str(Path(temp_dir) / "from")
-            self.assertEqual(result, expected_path)
+            self.assertEqual(result.path, str(from_dir))
+            self.assertFalse(result.used_fallback)
+            self.assertEqual(result.fallback_reason, "")
             mock_subprocess_run.assert_called_once()
-            mock_iterdir.assert_called_once()
+
+    @mock.patch("scanpipe.pipes.nix.subprocess.run")
+    def test_scanpipe_nix_get_patched_source_with_docker_fallback(
+        self, mock_subprocess_run
+    ):
+        """The fallback line on stderr flips used_fallback and carries the reason."""
+        mock_subprocess_run.return_value = mock.Mock(
+            stderr=(
+                "some nix output\n"
+                "PATCHED_SOURCE_FALLBACK_REASON="
+                "primary output contained only env-vars\n"
+            ),
+            returncode=0,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            from_dir = Path(temp_dir) / "from"
+            from_dir.mkdir()
+            (from_dir / "somefile").touch()
+
+            result = nix.get_patched_source_with_docker(
+                name="hello",
+                output_dir=temp_dir,
+                system="x86_64-linux",
+                commit_hash="1234abcd",
+            )
+
+            self.assertEqual(result.path, str(from_dir))
+            self.assertTrue(result.used_fallback)
+            self.assertEqual(
+                result.fallback_reason, "primary output contained only env-vars"
+            )
 
     @mock.patch("scanpipe.pipes.nix.subprocess.run")
     def test_scanpipe_nix_extract_nar_archive_success(self, mock_subprocess_run):
