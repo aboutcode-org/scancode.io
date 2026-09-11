@@ -177,6 +177,7 @@ scan_for_virus = "scanpipe.pipelines.scan_for_virus:ScanForVirus"
 scan_maven_package = "scanpipe.pipelines.scan_maven_package:ScanMavenPackage"
 scan_nix_package = "scanpipe.pipelines.scan_nix_package:ScanNixPackage"
 scan_single_package = "scanpipe.pipelines.scan_single_package:ScanSinglePackage"
+scan_repo_health = "scanpipe.pipelines.scan_repo_health:ScanRepoHealth"
 
 [tool.setuptools.packages.find]
 where = ["."]
