@@ -1350,6 +1350,16 @@ def flag_processed_archives(project):
 
     for archive_resource in to_resources.archives():
         extract_path = archive_resource.path + EXTRACT_SUFFIX
+
+        # Skip archives that were not actually extracted to prevent getting
+        # flagged as "processed" (archives that's not supported by
+        # extractcode).
+        extracted_exists = project.codebaseresources.filter(
+            path__startswith=extract_path
+        ).exists()
+        if not extracted_exists:
+            continue
+
         archive_unmapped_resources = to_resources.filter(path__startswith=extract_path)
         # Check if all resources in the archive "-extract" directory have been mapped.
         # Flag the archive resource as processed only when all resources are mapped.
