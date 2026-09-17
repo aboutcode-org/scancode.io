@@ -102,7 +102,7 @@ services:
   healthycode:
     profiles:
       - healthycode
-    image: ghcr.io/aboutcode-org/healthycode:v1.0.0
+    image: ghcr.io/aboutcode-org/healthycode:0.1.2
     volumes:
       - healthycode_venv:/opt/healthycode
     restart: "no"
