@@ -57,6 +57,7 @@ from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
+from scanpipe.pipes import haskell
 from scanpipe.pipes import js
 from scanpipe.pipes import jvm
 from scanpipe.pipes import pathmap
@@ -370,6 +371,116 @@ def map_jar_to_jvm_source(project, jvm_lang: jvm.JvmLanguage, logger=None):
     for jar_resource in progress.iter(resource_iterator):
         _map_jar_to_jvm_source_resource(
             jar_resource, to_resources, from_resources, jvm_lang=jvm_lang
+        )
+
+
+def _map_haskell_to_object_resource(
+    to_resource,
+    from_resources,
+    from_index,
+    module_path,
+    is_path_artifact,
+):
+    """Map a compiled Haskell artifact to its corresponding source."""
+    match = pathmap.find_paths(module_path, from_index)
+    if not match:
+        return
+
+    # Require at least one directory segment for mapping.
+    if is_path_artifact and "/" not in module_path.removeprefix(TO):
+        return
+
+    # Accept only one match. If multiple matches exist, we cannot tell
+    # which source the artifact was compiled from.
+    if len(match.resource_ids) != 1:
+        return
+
+    from_resource = from_resources.get(id=match.resource_ids[0])
+
+    extra_data = {
+        "match_type": "module_path" if is_path_artifact else "basename",
+    }
+    if is_path_artifact:
+        extra_data["module_path"] = module_path
+    else:
+        extra_data["artifact_name"] = module_path
+
+    pipes.make_relation(
+        from_resource=from_resource,
+        to_resource=to_resource,
+        map_type=haskell.binary_map_type,
+        extra_data=extra_data,
+    )
+
+
+def map_haskell_to_object(project, logger=None):
+    """
+    Map to/ compiled Haskell artifacts to their from/ sources.
+
+    Interface artifacts (`.hi`, `.p_hi`, `.hie` and similar) preserve
+    the source module layout, so they are matched on the full module path.
+    Object files (`.o` and similar) live inside `.a` archives whose
+    structure is flattened, so they are matched on the base filename and
+    only when unambiguous.
+    """
+    project_files = project.codebaseresources.files()
+    from_resources = project_files.from_codebase().filter(
+        extension__in=haskell.SOURCE_EXTENSIONS
+    )
+    from_count = from_resources.count()
+    if not from_count:
+        if logger:
+            logger("No Haskell source files in from/ to map against.")
+        return
+
+    to_resources = project_files.to_codebase().no_status().has_no_relation()
+    to_path_mapping = to_resources.filter(extension__in=haskell.PATH_MAPPING_EXTENSIONS)
+    to_basename_mapping = to_resources.filter(
+        extension__in=haskell.BASENAME_MAPPING_EXTENSIONS
+    )
+
+    path_mapping_count = to_path_mapping.count()
+    basename_mapping_count = to_basename_mapping.count()
+
+    if not (path_mapping_count or basename_mapping_count):
+        if logger:
+            logger("No compiled Haskell artifacts to map.")
+        return
+
+    if logger:
+        logger(
+            f"Mapping {path_mapping_count:,d} Haskell interface artifacts and "
+            f"{basename_mapping_count:,d} object files against "
+            f"{from_count:,d} from/ Haskell sources."
+        )
+
+    indexables = haskell.get_indexable_module_paths(
+        from_resources.values_list("id", "path")
+    )
+    from_resources_index = pathmap.build_index(indexables, with_subpaths=True)
+
+    path_progress = LoopProgress(path_mapping_count, logger)
+    path_iterator = to_path_mapping.iterator(chunk_size=2000)
+    for artifact in path_progress.iter(path_iterator):
+        module_path = haskell.get_module_path_from_path_artifact(artifact.path)
+        _map_haskell_to_object_resource(
+            artifact,
+            from_resources,
+            from_resources_index,
+            module_path,
+            is_path_artifact=True,
+        )
+
+    basename_progress = LoopProgress(basename_mapping_count, logger)
+    basename_iterator = to_basename_mapping.iterator(chunk_size=2000)
+    for artifact in basename_progress.iter(basename_iterator):
+        module_path = haskell.get_basename_from_basename_artifact(artifact.path)
+        _map_haskell_to_object_resource(
+            artifact,
+            from_resources,
+            from_resources_index,
+            module_path,
+            is_path_artifact=False,
         )
 
 
