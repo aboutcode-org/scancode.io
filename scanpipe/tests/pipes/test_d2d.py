@@ -2388,6 +2388,114 @@ class ScanPipeD2DPipesTest(TestCase):
             ).count(),
         )
 
+    def test_scanpipe_pipes_d2d_map_haskell_to_object_by_module_path(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/Database/TxtSushi/CommandLineArgument.hs",
+        )
+        to_hi = make_resource_file(
+            self.project1,
+            path=("to/out/Database/TxtSushi/CommandLineArgument.hi"),
+        )
+        to_hie = make_resource_file(
+            self.project1,
+            path=("to/out/hie/Database/TxtSushi/CommandLineArgument.hie"),
+        )
+
+        buffer = io.StringIO()
+        d2d.map_haskell_to_object(self.project1, logger=buffer.write)
+
+        self.assertIn("2 Haskell interface artifacts", buffer.getvalue())
+        self.assertEqual(2, self.project1.codebaserelations.count())
+
+        for to_resource in (to_hi, to_hie):
+            relation = self.project1.codebaserelations.get(to_resource=to_resource)
+            self.assertEqual(from1, relation.from_resource)
+            self.assertEqual("haskell_to_object", relation.map_type)
+            self.assertEqual("module_path", relation.extra_data["match_type"])
+
+    def test_scanpipe_pipes_d2d_map_haskell_to_object_by_basename(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/Database/TxtSushi/CommandLineArgument.hs",
+        )
+        to_o = make_resource_file(
+            self.project1,
+            path=("to/out/libHStxt-sushi-0.6.0.a-extract/CommandLineArgument.o"),
+        )
+
+        d2d.map_haskell_to_object(self.project1)
+
+        relation = self.project1.codebaserelations.get(to_resource=to_o)
+        self.assertEqual(from1, relation.from_resource)
+        self.assertEqual("basename", relation.extra_data["match_type"])
+
+    def test_scanpipe_pipes_d2d_map_haskell_to_object_all_basename_variants(self):
+        from1 = make_resource_file(self.project1, path="from/Foo.hs")
+        artifacts = [
+            make_resource_file(self.project1, path=f"to/libHSfoo.a-extract/Foo{ext}")
+            for ext in (".o", ".p_o", ".dyn_o", ".debug_o", ".t_o", ".o-boot")
+        ]
+
+        d2d.map_haskell_to_object(self.project1)
+
+        self.assertEqual(len(artifacts), self.project1.codebaserelations.count())
+        for artifact in artifacts:
+            relation = self.project1.codebaserelations.get(to_resource=artifact)
+            self.assertEqual(from1, relation.from_resource)
+
+    def test_scanpipe_pipes_d2d_map_haskell_to_object_lhs_source(self):
+        from1 = make_resource_file(self.project1, path="from/Foo/Bar.lhs")
+        to1 = make_resource_file(self.project1, path="to/Foo/Bar.hi")
+
+        d2d.map_haskell_to_object(self.project1)
+
+        relation = self.project1.codebaserelations.get(to_resource=to1)
+        self.assertEqual(from1, relation.from_resource)
+
+    def test_scanpipe_pipes_d2d_map_haskell_to_object_multi_name(self):
+        make_resource_file(self.project1, path="from/pkg1/Foo.hs")
+        make_resource_file(self.project1, path="from/pkg2/Foo.hs")
+        to1 = make_resource_file(self.project1, path="to/libHSfoo.a-extract/Foo.o")
+
+        d2d.map_haskell_to_object(self.project1)
+
+        self.assertFalse(
+            self.project1.codebaserelations.filter(to_resource=to1).exists()
+        )
+
+    def test_scanpipe_pipes_d2d_map_haskell_to_object_multi_path(self):
+        make_resource_file(self.project1, path="from/pkg1/Foo/Bar.hs")
+        make_resource_file(self.project1, path="from/pkg2/Foo/Bar.hs")
+        to1 = make_resource_file(self.project1, path="to/Foo/Bar.hi")
+
+        d2d.map_haskell_to_object(self.project1)
+
+        self.assertFalse(
+            self.project1.codebaserelations.filter(to_resource=to1).exists()
+        )
+
+    def test_scanpipe_pipes_d2d_map_haskell_to_object_single_segment_skipped(self):
+        make_resource_file(self.project1, path="from/pkg1/Foo.hs")
+        # Creating a false match - The desire match should have path:
+        # "to/pkg1/Foo.hi"
+        to1 = make_resource_file(self.project1, path="to/Foo.hi")
+
+        d2d.map_haskell_to_object(self.project1)
+
+        self.assertFalse(
+            self.project1.codebaserelations.filter(to_resource=to1).exists()
+        )
+
+    def test_scanpipe_pipes_d2d_map_haskell_to_object_no_sources(self):
+        make_resource_file(self.project1, path="to/Foo.hi")
+
+        buffer = io.StringIO()
+        d2d.map_haskell_to_object(self.project1, logger=buffer.write)
+
+        self.assertIn("No Haskell source files", buffer.getvalue())
+        self.assertEqual(0, self.project1.codebaserelations.count())
+
     def test_scanpipe_d2d_load_ecosystem_config(self):
         pipeline_name = "map_deploy_to_develop"
         selected_groups = ["Ruby", "Java", "JavaScript"]
