@@ -184,6 +184,9 @@ ECOSYSTEM_CONFIGS = {
         source_symbol_extensions=[".pyx", ".pxd", ".py", ".pyi"],
         matchable_resource_extensions=[".py", ".pyi"],
     ),
+    "Haskell": EcosystemConfig(
+        ecosystem_option="Haskell",
+    ),
 }
 
 

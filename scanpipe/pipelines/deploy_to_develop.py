@@ -97,6 +97,7 @@ class DeployToDevelop(Pipeline):
             cls.map_javascript,
             cls.map_javascript_symbols,
             cls.map_javascript_strings,
+            cls.map_haskell,
             cls.get_symbols_from_binaries,
             cls.map_elf,
             cls.map_macho,
@@ -366,6 +367,11 @@ class DeployToDevelop(Pipeline):
     def map_javascript_strings(self):
         """Map deployed JavaScript, TypeScript to its sources using string literals."""
         d2d.map_javascript_strings(project=self.project, logger=self.log)
+
+    @optional_step("Haskell")
+    def map_haskell(self):
+        """Map compiled Haskell artifacts to its sources."""
+        d2d.map_haskell_to_object(project=self.project, logger=self.log)
 
     def get_symbols_from_binaries(self):
         """Extract symbols from Elf, Mach0 and windows binaries for mapping."""
