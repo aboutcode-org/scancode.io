@@ -27,6 +27,7 @@ from scanpipe.pipelines.deploy_to_develop import DeployToDevelop
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipelines.scan_single_package import ScanSinglePackage
 from scanpipe.pipes import d2d
+from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import utils
 from scanpipe.pipes.rust import build_crates
@@ -64,7 +65,9 @@ class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
             cls.add_from_to_tag,
             cls.validate_package_license_integrity,
             cls.identify_built_sources,
+            cls.load_ecosystem_config,
             cls.flag_mapped_status,
+            cls.run_house_keeping_tasks,
             cls.get_src_repo_download_url,
             cls.download_src_repo,
             cls.compare_src_repo_with_from_codebase,
@@ -138,10 +141,20 @@ class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         if self.d2d_enable:
             d2d.map_rust_paths(self.project)
 
+    def load_ecosystem_config(self):
+        """Load the Rust ecosystem configuration for D2D steps."""
+        d2d_config.load_ecosystem_config(pipeline=self, options=["Rust"])
+
     def flag_mapped_status(self):
         """Flag the from codebase resources that were mapped."""
         if self.d2d_enable:
             flag.flag_mapped_resources(self.project)
+
+    def run_house_keeping_tasks(self):
+        """Run D2D housekeeping tasks, only when D2D is enabled."""
+        if not self.d2d_enable:
+            return
+        self.perform_house_keeping_tasks()
 
     def get_src_repo_download_url(self):
         """
