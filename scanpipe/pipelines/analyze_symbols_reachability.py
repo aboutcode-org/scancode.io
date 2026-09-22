@@ -20,12 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import reachability
+from scanpipe.pipes.reachability_tools import ReachabilityPipeline
 from scanpipe.pipes.symbols import TS_QUERIES
 
 
-class SymbolReachability(Pipeline):
+class SymbolReachability(ReachabilityPipeline):
     """
     Determine the reachability of vulnerabilities identified in the project.
 
@@ -45,44 +45,19 @@ class SymbolReachability(Pipeline):
     advisory and saved as a JSON output file.
     """
 
-    download_inputs = False
-    is_addon = True
-    results_url = "/project/{slug}/resources/?extra_data=symbol_reachability"
-
-    @classmethod
-    def steps(cls):
-        return (
-            cls.get_vulnerabilities_patches,
-            cls.collect_resource_index,
-            cls.collect_patch_symbols,
-            cls.collect_and_match_resources,
-            cls.generate_advisory_reachability_report,
-            cls.apply_reachability_to_packages_and_dependencies,
-        )
-
-    def get_vulnerabilities_patches(self):
-        """Get unique patch for all vulnerabilities."""
-        self.patches = reachability.get_vulnerabilities_patches(
-            package_vulnerabilities=self.project.package_vulnerabilities,
-            dependency_vulnerabilities=self.project.dependency_vulnerabilities,
-        )
-
-    def collect_resource_index(self):
-        """Collect resources symbols for each resource"""
+    def get_candidate_resources(self):
+        """Collect candidate resources your pipeline needs."""
         self.candidate_resources = self.project.codebaseresources.files().filter(
             is_binary=False,
             is_archive=False,
             is_media=False,
             programming_language__in=TS_QUERIES.keys(),
         )
+
+    def collect_resource_index(self):
+        """Collect resources symbols for each resource"""
         self.resource_indexes = reachability.collect_resource_index(
             candidate_resources=self.candidate_resources, logger=self.log
-        )
-
-    def collect_patch_symbols(self):
-        """Collect patch symbols for all related commits."""
-        self.patch_symbols = reachability.collect_patch_symbols(
-            patches=self.patches, logger=self.log
         )
 
     def collect_and_match_resources(self):
@@ -93,24 +68,4 @@ class SymbolReachability(Pipeline):
             resource_indexes=self.resource_indexes,
             candidate_resources=self.candidate_resources,
             logger=self.log,
-        )
-
-    def generate_advisory_reachability_report(self):
-        """Generate a reachability report summarizing status by advisory."""
-        self.advisories_reachability_report = (
-            reachability.generate_advisory_reachability_report(
-                project=self.project,
-                patches=self.patches,
-                candidate_resources=self.candidate_resources,
-            )
-        )
-
-    def apply_reachability_to_packages_and_dependencies(self):
-        """
-        Save reachability results by updating DiscoveredPackage and
-        DiscoveredDependency records with the computed reachability data
-        in their affected_by_vulnerabilities JSON field.
-        """
-        reachability.apply_reachability_to_packages_and_dependencies(
-            project=self.project, advisory_report=self.advisories_reachability_report
         )
