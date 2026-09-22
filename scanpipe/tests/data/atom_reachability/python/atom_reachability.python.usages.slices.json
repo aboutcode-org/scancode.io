@@ -1,0 +1,1355 @@
+{
+  "objectSlices": [
+    {
+      "code": "",
+      "fullName": "app.py:<module>",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 1,
+      "columnNumber": 1,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "<module>",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>",
+            "isExternal": false,
+            "lineNumber": 1,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "<module>",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>",
+            "isExternal": false,
+            "lineNumber": 1,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "<operator>.assignment",
+            "typeFullName": "ANY",
+            "resolvedMethod": "<operator>.assignment",
+            "isExternal": true,
+            "lineNumber": 39,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "<operator>.assignment",
+            "typeFullName": "ANY",
+            "resolvedMethod": "<operator>.assignment",
+            "isExternal": true,
+            "lineNumber": 39,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "",
+            "typeFullName": "ANY",
+            "resolvedMethod": "def <body>",
+            "isExternal": true,
+            "lineNumber": 6,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "",
+            "typeFullName": "ANY",
+            "resolvedMethod": "def <body>",
+            "isExternal": true,
+            "lineNumber": 6,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>.ReportGenerator.<body>",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 6,
+      "columnNumber": 1,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "<body>",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.ReportGenerator.<body>",
+            "isExternal": false,
+            "lineNumber": 6,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "<body>",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.ReportGenerator.<body>",
+            "isExternal": false,
+            "lineNumber": 6,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>.ReportGenerator.<fakeNew>",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 9,
+      "columnNumber": 18,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "base_dir",
+            "typeFullName": "ANY",
+            "position": 1,
+            "lineNumber": 9,
+            "columnNumber": 24,
+            "label": "PARAM"
+          },
+          "definedBy": {
+            "name": "base_dir",
+            "typeFullName": "ANY",
+            "position": 1,
+            "lineNumber": 9,
+            "columnNumber": 24,
+            "label": "PARAM"
+          },
+          "invokedCalls": [
+            {
+              "callName": "__init__",
+              "resolvedMethod": "app.py:<module>.ReportGenerator.__init__",
+              "paramTypes": [
+                "ANY",
+                "ANY"
+              ],
+              "returnType": "ANY",
+              "isExternal": false,
+              "lineNumber": 9,
+              "columnNumber": 18
+            }
+          ],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "cls",
+            "typeFullName": "app.py:<module>.ReportGenerator",
+            "position": 0,
+            "lineNumber": 9,
+            "columnNumber": 18,
+            "label": "PARAM"
+          },
+          "definedBy": {
+            "name": "cls",
+            "typeFullName": "app.py:<module>.ReportGenerator",
+            "position": 0,
+            "lineNumber": 9,
+            "columnNumber": 18,
+            "label": "PARAM"
+          },
+          "invokedCalls": [],
+          "argToCalls": [
+            {
+              "callName": "__init__",
+              "resolvedMethod": "app.py:<module>.ReportGenerator.__init__",
+              "paramTypes": [
+                "ANY",
+                "ANY"
+              ],
+              "returnType": "ANY",
+              "position": 0,
+              "isExternal": false,
+              "lineNumber": 9,
+              "columnNumber": 18
+            }
+          ]
+        },
+        {
+          "targetObj": {
+            "name": "<operator>.alloc",
+            "typeFullName": "ANY",
+            "resolvedMethod": "<operator>.alloc",
+            "isExternal": true,
+            "lineNumber": 9,
+            "columnNumber": 18,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "<operator>.alloc",
+            "typeFullName": "ANY",
+            "resolvedMethod": "<operator>.alloc",
+            "isExternal": true,
+            "lineNumber": 9,
+            "columnNumber": 18,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "__newInstance",
+            "typeFullName": "ANY",
+            "lineNumber": 9,
+            "columnNumber": 18,
+            "label": "LOCAL"
+          },
+          "definedBy": {
+            "name": "",
+            "typeFullName": "ANY",
+            "resolvedMethod": "<operator>.alloc",
+            "isExternal": null,
+            "lineNumber": 9,
+            "columnNumber": 18,
+            "label": "CALL"
+          },
+          "invokedCalls": [
+            {
+              "callName": "__newInstance = ",
+              "resolvedMethod": null,
+              "paramTypes": [],
+              "returnType": "ANY",
+              "isExternal": true,
+              "lineNumber": 9,
+              "columnNumber": 18
+            },
+            {
+              "callName": "__init__",
+              "resolvedMethod": "app.py:<module>.ReportGenerator.__init__",
+              "paramTypes": [
+                "ANY",
+                "ANY"
+              ],
+              "returnType": "ANY",
+              "isExternal": false,
+              "lineNumber": 9,
+              "columnNumber": 18
+            }
+          ],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "<fakeNew>",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.ReportGenerator.<fakeNew>",
+            "isExternal": false,
+            "lineNumber": 9,
+            "columnNumber": 18,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "<fakeNew>",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.ReportGenerator.<fakeNew>",
+            "isExternal": false,
+            "lineNumber": 9,
+            "columnNumber": 18,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>.ReportGenerator.<metaClassCallHandler>",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 9,
+      "columnNumber": 18,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "<metaClassCallHandler>",
+            "typeFullName": "app.py:<module>.ReportGenerator",
+            "resolvedMethod": "app.py:<module>.ReportGenerator.<metaClassCallHandler>",
+            "isExternal": false,
+            "lineNumber": 9,
+            "columnNumber": 18,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "<metaClassCallHandler>",
+            "typeFullName": "app.py:<module>.ReportGenerator",
+            "resolvedMethod": "app.py:<module>.ReportGenerator.<metaClassCallHandler>",
+            "isExternal": false,
+            "lineNumber": 9,
+            "columnNumber": 18,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "base_dir",
+            "typeFullName": "ANY",
+            "position": 1,
+            "lineNumber": 9,
+            "columnNumber": 24,
+            "label": "PARAM"
+          },
+          "definedBy": {
+            "name": "base_dir",
+            "typeFullName": "ANY",
+            "position": 1,
+            "lineNumber": 9,
+            "columnNumber": 24,
+            "label": "PARAM"
+          },
+          "invokedCalls": [
+            {
+              "callName": "",
+              "resolvedMethod": "class ReportGenerator<meta>",
+              "paramTypes": [
+                "ANY"
+              ],
+              "returnType": "ANY",
+              "isExternal": true,
+              "lineNumber": 9,
+              "columnNumber": 18
+            }
+          ],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "",
+            "typeFullName": "ANY",
+            "resolvedMethod": "class ReportGenerator<meta>",
+            "isExternal": true,
+            "lineNumber": 9,
+            "columnNumber": 18,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "",
+            "typeFullName": "ANY",
+            "resolvedMethod": "class ReportGenerator<meta>",
+            "isExternal": true,
+            "lineNumber": 9,
+            "columnNumber": 18,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>.ReportGenerator.__init__",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 9,
+      "columnNumber": 5,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "ReportGenerator",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.ReportGenerator.__init__",
+            "isExternal": false,
+            "lineNumber": 15,
+            "columnNumber": 17,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "ReportGenerator",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.ReportGenerator.__init__",
+            "isExternal": false,
+            "lineNumber": 15,
+            "columnNumber": 17,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "<operator>.fieldAccess",
+            "typeFullName": "ANY",
+            "resolvedMethod": "<operator>.fieldAccess",
+            "isExternal": true,
+            "lineNumber": 29,
+            "columnNumber": 8,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "<operator>.fieldAccess",
+            "typeFullName": "ANY",
+            "resolvedMethod": "<operator>.fieldAccess",
+            "isExternal": true,
+            "lineNumber": 29,
+            "columnNumber": 8,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>.ReportGenerator.__init__<metaClassAdapter>",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 9,
+      "columnNumber": 5,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "__init__<metaClassAdapter>",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.ReportGenerator.__init__<metaClassAdapter>",
+            "isExternal": false,
+            "lineNumber": 9,
+            "columnNumber": 5,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "__init__<metaClassAdapter>",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.ReportGenerator.__init__<metaClassAdapter>",
+            "isExternal": false,
+            "lineNumber": 9,
+            "columnNumber": 5,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "base_dir",
+            "typeFullName": "ANY",
+            "position": 2,
+            "lineNumber": 9,
+            "columnNumber": 24,
+            "label": "PARAM"
+          },
+          "definedBy": {
+            "name": "base_dir",
+            "typeFullName": "ANY",
+            "position": 2,
+            "lineNumber": 9,
+            "columnNumber": 24,
+            "label": "PARAM"
+          },
+          "invokedCalls": [
+            {
+              "callName": "app.py:<module>.ReportGenerator.__init__",
+              "resolvedMethod": "app.py:<module>.ReportGenerator.__init__",
+              "paramTypes": [
+                "ANY"
+              ],
+              "returnType": "ANY",
+              "isExternal": false,
+              "lineNumber": 9,
+              "columnNumber": 5
+            }
+          ],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>.handle_request",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 35,
+      "columnNumber": 1,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "handle_request",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.handle_request",
+            "isExternal": false,
+            "lineNumber": 35,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "handle_request",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.handle_request",
+            "isExternal": false,
+            "lineNumber": 35,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "req",
+            "typeFullName": "ANY",
+            "position": 1,
+            "lineNumber": 35,
+            "columnNumber": 20,
+            "label": "PARAM"
+          },
+          "definedBy": {
+            "name": "req",
+            "typeFullName": "ANY",
+            "position": 1,
+            "lineNumber": 35,
+            "columnNumber": 20,
+            "label": "PARAM"
+          },
+          "invokedCalls": [
+            {
+              "callName": "serve_report",
+              "resolvedMethod": "app.py:<module>.serve_report",
+              "paramTypes": [
+                "ANY"
+              ],
+              "returnType": "ANY",
+              "isExternal": false,
+              "lineNumber": 36,
+              "columnNumber": 12
+            }
+          ],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>.serve_report",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 13,
+      "columnNumber": 1,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "requested_file",
+            "typeFullName": "ANY",
+            "lineNumber": 16,
+            "columnNumber": 5,
+            "label": "LOCAL"
+          },
+          "definedBy": {
+            "name": "request_payload.get",
+            "typeFullName": "ANY",
+            "resolvedMethod": "request_payload.get",
+            "isExternal": null,
+            "lineNumber": 16,
+            "columnNumber": 22,
+            "label": "CALL"
+          },
+          "invokedCalls": [
+            {
+              "callName": "build_file_path",
+              "resolvedMethod": "app.py:<module>.serve_report.build_file_path",
+              "paramTypes": [
+                "ANY"
+              ],
+              "returnType": "ANY",
+              "isExternal": false,
+              "lineNumber": 27,
+              "columnNumber": 19
+            }
+          ],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "<operator>.logicalNot",
+            "typeFullName": "ANY",
+            "resolvedMethod": "<operator>.logicalNot",
+            "isExternal": true,
+            "lineNumber": 24,
+            "columnNumber": 8,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "<operator>.logicalNot",
+            "typeFullName": "ANY",
+            "resolvedMethod": "<operator>.logicalNot",
+            "isExternal": true,
+            "lineNumber": 24,
+            "columnNumber": 8,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "target_path",
+            "typeFullName": "ANY",
+            "lineNumber": 27,
+            "columnNumber": 5,
+            "label": "LOCAL"
+          },
+          "definedBy": {
+            "name": "build_file_path",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.serve_report.build_file_path",
+            "isExternal": null,
+            "lineNumber": 27,
+            "columnNumber": 19,
+            "label": "CALL"
+          },
+          "invokedCalls": [
+            {
+              "callName": "exists",
+              "resolvedMethod": null,
+              "paramTypes": [
+                "ANY"
+              ],
+              "returnType": "ANY",
+              "isExternal": null,
+              "lineNumber": 29,
+              "columnNumber": 8
+            }
+          ],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "<operator>.formatString",
+            "typeFullName": "ANY",
+            "resolvedMethod": "<operator>.formatString",
+            "isExternal": true,
+            "lineNumber": 30,
+            "columnNumber": 16,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "<operator>.formatString",
+            "typeFullName": "ANY",
+            "resolvedMethod": "<operator>.formatString",
+            "isExternal": true,
+            "lineNumber": 30,
+            "columnNumber": 16,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "<operator>.formattedValue",
+            "typeFullName": "ANY",
+            "resolvedMethod": "<operator>.formattedValue",
+            "isExternal": true,
+            "lineNumber": 30,
+            "columnNumber": 37,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "<operator>.formattedValue",
+            "typeFullName": "ANY",
+            "resolvedMethod": "<operator>.formattedValue",
+            "isExternal": true,
+            "lineNumber": 30,
+            "columnNumber": 37,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "tmp1",
+            "typeFullName": "path",
+            "lineNumber": 29,
+            "columnNumber": 8,
+            "label": "LOCAL"
+          },
+          "definedBy": {
+            "name": "os.path",
+            "typeFullName": "ANY",
+            "resolvedMethod": "<operator>.fieldAccess",
+            "isExternal": null,
+            "lineNumber": 29,
+            "columnNumber": 8,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": [
+            {
+              "callName": "exists",
+              "resolvedMethod": null,
+              "paramTypes": [
+                "ANY"
+              ],
+              "returnType": "ANY",
+              "position": 0,
+              "isExternal": null,
+              "lineNumber": 29,
+              "columnNumber": 8
+            }
+          ]
+        },
+        {
+          "targetObj": {
+            "name": "request_payload",
+            "typeFullName": "ANY",
+            "position": 1,
+            "lineNumber": 13,
+            "columnNumber": 18,
+            "label": "PARAM"
+          },
+          "definedBy": {
+            "name": "request_payload",
+            "typeFullName": "ANY",
+            "position": 1,
+            "lineNumber": 13,
+            "columnNumber": 18,
+            "label": "PARAM"
+          },
+          "invokedCalls": [],
+          "argToCalls": [
+            {
+              "callName": "get",
+              "resolvedMethod": "request_payload.get",
+              "paramTypes": [
+                "ANY"
+              ],
+              "returnType": "ANY",
+              "position": 0,
+              "isExternal": true,
+              "lineNumber": 16,
+              "columnNumber": 22
+            }
+          ]
+        },
+        {
+          "targetObj": {
+            "name": "serve_report",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.serve_report",
+            "isExternal": false,
+            "lineNumber": 36,
+            "columnNumber": 12,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "serve_report",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.serve_report",
+            "isExternal": false,
+            "lineNumber": 36,
+            "columnNumber": 12,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "get",
+            "typeFullName": "ANY",
+            "resolvedMethod": "request_payload.get",
+            "isExternal": true,
+            "lineNumber": 16,
+            "columnNumber": 22,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "get",
+            "typeFullName": "ANY",
+            "resolvedMethod": "request_payload.get",
+            "isExternal": true,
+            "lineNumber": 16,
+            "columnNumber": 22,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>.serve_report.build_file_path",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 19,
+      "columnNumber": 5,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "build_file_path",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.serve_report.build_file_path",
+            "isExternal": false,
+            "lineNumber": 27,
+            "columnNumber": 19,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "build_file_path",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.serve_report.build_file_path",
+            "isExternal": false,
+            "lineNumber": 27,
+            "columnNumber": 19,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        },
+        {
+          "targetObj": {
+            "name": "tmp0",
+            "typeFullName": "path",
+            "lineNumber": 22,
+            "columnNumber": 16,
+            "label": "LOCAL"
+          },
+          "definedBy": {
+            "name": "os.path",
+            "typeFullName": "ANY",
+            "resolvedMethod": "<operator>.fieldAccess",
+            "isExternal": null,
+            "lineNumber": 22,
+            "columnNumber": 16,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": [
+            {
+              "callName": "join",
+              "resolvedMethod": null,
+              "paramTypes": [
+                "ANY",
+                "ANY"
+              ],
+              "returnType": "ANY",
+              "position": 0,
+              "isExternal": null,
+              "lineNumber": 22,
+              "columnNumber": 16
+            }
+          ]
+        },
+        {
+          "targetObj": {
+            "name": "filename",
+            "typeFullName": "ANY",
+            "position": 1,
+            "lineNumber": 19,
+            "columnNumber": 25,
+            "label": "PARAM"
+          },
+          "definedBy": {
+            "name": "filename",
+            "typeFullName": "ANY",
+            "position": 1,
+            "lineNumber": 19,
+            "columnNumber": 25,
+            "label": "PARAM"
+          },
+          "invokedCalls": [
+            {
+              "callName": "join",
+              "resolvedMethod": null,
+              "paramTypes": [
+                "ANY",
+                "ANY"
+              ],
+              "returnType": "ANY",
+              "isExternal": null,
+              "lineNumber": 22,
+              "columnNumber": 16
+            }
+          ],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>.unrelated_top_level_function",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 39,
+      "columnNumber": 1,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "unrelated_top_level_function",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.unrelated_top_level_function",
+            "isExternal": false,
+            "lineNumber": 39,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "unrelated_top_level_function",
+            "typeFullName": "ANY",
+            "resolvedMethod": "app.py:<module>.unrelated_top_level_function",
+            "isExternal": false,
+            "lineNumber": 39,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "invokedCalls": [],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>.ReportGenerator.<metaClassCallHandler>",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 9,
+      "columnNumber": 18,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "class ReportGenerator<meta>",
+            "typeFullName": "",
+            "resolvedMethod": "class ReportGenerator<meta>",
+            "isExternal": true,
+            "lineNumber": 9,
+            "columnNumber": 18,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "class ReportGenerator<meta>",
+            "typeFullName": "",
+            "resolvedMethod": "class ReportGenerator<meta>",
+            "isExternal": true,
+            "lineNumber": 9,
+            "columnNumber": 18,
+            "label": "CALL"
+          },
+          "invokedCalls": [
+            {
+              "callName": "",
+              "resolvedMethod": "class ReportGenerator<meta>",
+              "paramTypes": [],
+              "returnType": "",
+              "isExternal": true,
+              "lineNumber": 9,
+              "columnNumber": 18
+            }
+          ],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>.ReportGenerator.<fakeNew>",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 9,
+      "columnNumber": 18,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "__init__",
+            "typeFullName": "",
+            "resolvedMethod": "app.py:<module>.ReportGenerator.__init__",
+            "isExternal": true,
+            "lineNumber": 9,
+            "columnNumber": 18,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "__init__",
+            "typeFullName": "",
+            "resolvedMethod": "app.py:<module>.ReportGenerator.__init__",
+            "isExternal": true,
+            "lineNumber": 9,
+            "columnNumber": 18,
+            "label": "CALL"
+          },
+          "invokedCalls": [
+            {
+              "callName": "__init__",
+              "resolvedMethod": "app.py:<module>.ReportGenerator.__init__",
+              "paramTypes": [],
+              "returnType": "",
+              "isExternal": true,
+              "lineNumber": 9,
+              "columnNumber": 18
+            }
+          ],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>.ReportGenerator.__init__<metaClassAdapter>",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 9,
+      "columnNumber": 5,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "__init__",
+            "typeFullName": "",
+            "resolvedMethod": "app.py:<module>.ReportGenerator.__init__",
+            "isExternal": true,
+            "lineNumber": 9,
+            "columnNumber": 5,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "__init__",
+            "typeFullName": "",
+            "resolvedMethod": "app.py:<module>.ReportGenerator.__init__",
+            "isExternal": true,
+            "lineNumber": 9,
+            "columnNumber": 5,
+            "label": "CALL"
+          },
+          "invokedCalls": [
+            {
+              "callName": "app.py:<module>.ReportGenerator.__init__",
+              "resolvedMethod": "app.py:<module>.ReportGenerator.__init__",
+              "paramTypes": [],
+              "returnType": "",
+              "isExternal": true,
+              "lineNumber": 9,
+              "columnNumber": 5
+            }
+          ],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 1,
+      "columnNumber": 1,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "def <body>",
+            "typeFullName": "",
+            "resolvedMethod": "def <body>",
+            "isExternal": true,
+            "lineNumber": 1,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "def <body>",
+            "typeFullName": "",
+            "resolvedMethod": "def <body>",
+            "isExternal": true,
+            "lineNumber": 1,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "invokedCalls": [
+            {
+              "callName": "",
+              "resolvedMethod": "def <body>",
+              "paramTypes": [],
+              "returnType": "",
+              "isExternal": true,
+              "lineNumber": 6,
+              "columnNumber": 1
+            }
+          ],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>.serve_report",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 13,
+      "columnNumber": 1,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "__init__",
+            "typeFullName": "",
+            "resolvedMethod": "app.py:<module>.ReportGenerator.__init__",
+            "isExternal": true,
+            "lineNumber": 13,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "__init__",
+            "typeFullName": "",
+            "resolvedMethod": "app.py:<module>.ReportGenerator.__init__",
+            "isExternal": true,
+            "lineNumber": 13,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "invokedCalls": [
+            {
+              "callName": "ReportGenerator",
+              "resolvedMethod": "app.py:<module>.ReportGenerator.__init__",
+              "paramTypes": [],
+              "returnType": "",
+              "isExternal": true,
+              "lineNumber": 15,
+              "columnNumber": 17
+            }
+          ],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>.serve_report",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 13,
+      "columnNumber": 1,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "get",
+            "typeFullName": "",
+            "resolvedMethod": "request_payload.get",
+            "isExternal": true,
+            "lineNumber": 13,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "get",
+            "typeFullName": "",
+            "resolvedMethod": "request_payload.get",
+            "isExternal": true,
+            "lineNumber": 13,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "invokedCalls": [
+            {
+              "callName": "get",
+              "resolvedMethod": "request_payload.get",
+              "paramTypes": [],
+              "returnType": "",
+              "isExternal": true,
+              "lineNumber": 16,
+              "columnNumber": 22
+            }
+          ],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>.serve_report",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 13,
+      "columnNumber": 1,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "build_file_path",
+            "typeFullName": "",
+            "resolvedMethod": "app.py:<module>.serve_report.build_file_path",
+            "isExternal": true,
+            "lineNumber": 13,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "build_file_path",
+            "typeFullName": "",
+            "resolvedMethod": "app.py:<module>.serve_report.build_file_path",
+            "isExternal": true,
+            "lineNumber": 13,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "invokedCalls": [
+            {
+              "callName": "build_file_path",
+              "resolvedMethod": "app.py:<module>.serve_report.build_file_path",
+              "paramTypes": [],
+              "returnType": "",
+              "isExternal": true,
+              "lineNumber": 27,
+              "columnNumber": 19
+            }
+          ],
+          "argToCalls": []
+        }
+      ]
+    },
+    {
+      "code": "",
+      "fullName": "app.py:<module>.handle_request",
+      "signature": "",
+      "fileName": "app.py",
+      "lineNumber": 35,
+      "columnNumber": 1,
+      "usages": [
+        {
+          "targetObj": {
+            "name": "serve_report",
+            "typeFullName": "",
+            "resolvedMethod": "app.py:<module>.serve_report",
+            "isExternal": true,
+            "lineNumber": 35,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "definedBy": {
+            "name": "serve_report",
+            "typeFullName": "",
+            "resolvedMethod": "app.py:<module>.serve_report",
+            "isExternal": true,
+            "lineNumber": 35,
+            "columnNumber": 1,
+            "label": "CALL"
+          },
+          "invokedCalls": [
+            {
+              "callName": "serve_report",
+              "resolvedMethod": "app.py:<module>.serve_report",
+              "paramTypes": [],
+              "returnType": "",
+              "isExternal": true,
+              "lineNumber": 36,
+              "columnNumber": 12
+            }
+          ],
+          "argToCalls": []
+        }
+      ]
+    }
+  ],
+  "userDefinedTypes": [
+    {
+      "name": "app.py:<module>.ReportGenerator<meta>",
+      "fields": [
+        {
+          "name": "<fakeNew>",
+          "typeFullName": "app.py:<module>.ReportGenerator.<fakeNew>",
+          "lineNumber": null,
+          "columnNumber": null,
+          "label": "LOCAL"
+        },
+        {
+          "name": "__init__",
+          "typeFullName": "app.py:<module>.ReportGenerator.__init__<metaClassAdapter>",
+          "lineNumber": 9,
+          "columnNumber": 5,
+          "label": "LOCAL"
+        }
+      ],
+      "procedures": [
+        {
+          "callName": "<metaClassCallHandler>",
+          "resolvedMethod": "app.py:<module>.ReportGenerator.<metaClassCallHandler>",
+          "paramTypes": [
+            "ANY"
+          ],
+          "returnType": "app.py:<module>.ReportGenerator",
+          "isExternal": false,
+          "lineNumber": 9,
+          "columnNumber": 18
+        },
+        {
+          "callName": "<fakeNew>",
+          "resolvedMethod": "app.py:<module>.ReportGenerator.<fakeNew>",
+          "paramTypes": [
+            "app.py:<module>.ReportGenerator",
+            "ANY"
+          ],
+          "returnType": "ANY",
+          "isExternal": false,
+          "lineNumber": 9,
+          "columnNumber": 18
+        },
+        {
+          "callName": "__init__<metaClassAdapter>",
+          "resolvedMethod": "app.py:<module>.ReportGenerator.__init__<metaClassAdapter>",
+          "paramTypes": [
+            "app.py:<module>.ReportGenerator<meta>",
+            "ANY",
+            "ANY"
+          ],
+          "returnType": "ANY",
+          "isExternal": false,
+          "lineNumber": 9,
+          "columnNumber": 5
+        }
+      ],
+      "fileName": "app.py",
+      "lineNumber": 6,
+      "columnNumber": 1
+    },
+    {
+      "name": "app.py:<module>.ReportGenerator",
+      "fields": [
+        {
+          "name": "base_dir",
+          "typeFullName": "ANY",
+          "lineNumber": 10,
+          "columnNumber": 9,
+          "label": "LOCAL"
+        },
+        {
+          "name": "__init__",
+          "typeFullName": "app.py:<module>.ReportGenerator.__init__",
+          "lineNumber": 9,
+          "columnNumber": 5,
+          "label": "LOCAL"
+        }
+      ],
+      "procedures": [
+        {
+          "callName": "<body>",
+          "resolvedMethod": "app.py:<module>.ReportGenerator.<body>",
+          "paramTypes": [],
+          "returnType": "ANY",
+          "isExternal": false,
+          "lineNumber": 6,
+          "columnNumber": 1
+        }
+      ],
+      "fileName": "app.py",
+      "lineNumber": 6,
+      "columnNumber": 1
+    }
+  ]
+}
