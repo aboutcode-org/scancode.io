@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 
 import tempfile
@@ -37,12 +37,19 @@ class ScanPipeUtilsTest(TestCase):
     def setUp(self):
         self.licensing = Licensing()
 
+    @mock.patch("scanpipe.pipes.utils.match_is_license_text")
     @mock.patch("scanpipe.models.CodebaseResource")
     @mock.patch("scanpipe.models.DiscoveredPackage")
     @mock.patch("scanpipe.models.Project")
     def test_validate_package_license_integrity_mismatch(
-        self, mock_project_class, mock_package_class, mock_resource_class
+        self,
+        mock_project_class,
+        mock_package_class,
+        mock_resource_class,
+        mock_match_is_license_text,
     ):
+        mock_match_is_license_text.return_value = False
+
         mock_project = mock_project_class()
         mock_package = mock_package_class()
 
@@ -57,11 +64,20 @@ class ScanPipeUtilsTest(TestCase):
         mock_resource = mock_resource_class()
         mock_resource.path = "src/main.py"
         mock_resource.for_packages = ["pkg:pypi/test@1.0"]
-        mock_resource.detected_license_expression = "gpl-3.0"
-
-        mock_project.codebaseresources.has_license_expression.return_value = [
-            mock_resource
+        mock_resource.license_detections = [
+            {
+                "license_expression": "gpl-3.0",
+                "matches": [
+                    {
+                        "license_expression": "gpl-3.0",
+                        "rule_identifier": "test",
+                    }
+                ],
+            }
         ]
+
+        from_codebase_qs = mock_project.codebaseresources.from_codebase.return_value
+        from_codebase_qs.has_license_expression.return_value = [mock_resource]
 
         mock_data_path = mock_resource_class()
         mock_data_path.extra_data = {}
@@ -106,21 +122,54 @@ class ScanPipeUtilsTest(TestCase):
         exp4 = self.licensing.parse("unknown-spdx OR free-unknown")
         self.assertIsNone(utils.filter_ignored_licenses(exp4, self.licensing))
 
-    def test_collect_detected_licenses(self):
+    @mock.patch("scanpipe.pipes.utils.match_is_license_text")
+    def test_collect_detected_licenses(self, mock_match_is_license_text):
+        mock_match_is_license_text.return_value = False
+
         mock_resource1 = mock.Mock()
         mock_resource1.path = "src/main.py"
         mock_resource1.for_packages = ["pkg:pypi/test@1.0"]
-        mock_resource1.detected_license_expression = "mit AND unknown"
+        mock_resource1.license_detections = [
+            {
+                "license_expression": "mit",
+                "matches": [
+                    {
+                        "license_expression": "mit",
+                        "rule_identifier": "test",
+                    }
+                ],
+            }
+        ]
 
         mock_resource2 = mock.Mock()
         mock_resource2.path = "test/test_main.py"
         mock_resource2.for_packages = ["pkg:pypi/test@1.0"]
-        mock_resource2.detected_license_expression = "gpl-3.0"
+        mock_resource2.license_detections = [
+            {
+                "license_expression": "gpl-3.0",
+                "matches": [
+                    {
+                        "license_expression": "gpl-3.0",
+                        "rule_identifier": "test",
+                    }
+                ],
+            }
+        ]
 
         mock_resource3 = mock.Mock()
         mock_resource3.path = "src/other.py"
         mock_resource3.for_packages = ["pkg:pypi/test@2.0"]
-        mock_resource3.detected_license_expression = "apache-2.0"
+        mock_resource3.license_detections = [
+            {
+                "license_expression": "apache-2.0",
+                "matches": [
+                    {
+                        "license_expression": "apache-2.0",
+                        "rule_identifier": "test",
+                    }
+                ],
+            }
+        ]
 
         resources = [mock_resource1, mock_resource2, mock_resource3]
         ignore_patterns = ["*test*"]
@@ -129,7 +178,267 @@ class ScanPipeUtilsTest(TestCase):
             resources, ignore_patterns, package_uid="pkg:pypi/test@1.0"
         )
 
-        self.assertEqual(result, ["(mit)"])
+        self.assertEqual(str(result), "mit")
+
+    @mock.patch("scanpipe.pipes.utils.match_is_license_text")
+    def test_collect_detected_licenses_text_or_group(self, mock_match_is_license_text):
+        mock_match_is_license_text.return_value = True
+
+        resource1 = mock.Mock()
+        resource1.path = "COPYING"
+        resource1.for_packages = []
+        resource1.license_detections = [
+            {
+                "license_expression": "apache-2.0",
+                "matches": [
+                    {
+                        "license_expression": "apache-2.0",
+                        "rule_identifier": "a",
+                    }
+                ],
+            }
+        ]
+
+        resource2 = mock.Mock()
+        resource2.path = "COPYING.LESSER"
+        resource2.for_packages = []
+        resource2.license_detections = [
+            {
+                "license_expression": "lgpl-2.1",
+                "matches": [
+                    {
+                        "license_expression": "lgpl-2.1",
+                        "rule_identifier": "b",
+                    }
+                ],
+            }
+        ]
+
+        result = utils.collect_detected_licenses([resource1, resource2], [])
+
+        self.assertTrue(self.licensing.is_equivalent(result, "apache-2.0 OR lgpl-2.1"))
+
+    @mock.patch("scanpipe.pipes.utils.match_is_license_text")
+    def test_collect_detected_licenses_text_and_other_groups(
+        self, mock_match_is_license_text
+    ):
+        text_by_rule = {
+            "apache-2.0.LICENSE": True,
+            "mit.LICENSE": True,
+            "mit_or_apache-2.0_18.RULE": False,
+        }
+
+        def is_license_text(match):
+            return text_by_rule[match["rule_identifier"]]
+
+        mock_match_is_license_text.side_effect = is_license_text
+
+        resource1 = mock.Mock()
+        resource1.path = "LICENSE-APACHE"
+        resource1.for_packages = []
+        resource1.license_detections = [
+            {
+                "license_expression": "apache-2.0",
+                "matches": [
+                    {
+                        "license_expression": "apache-2.0",
+                        "rule_identifier": "apache-2.0.LICENSE",
+                    }
+                ],
+            }
+        ]
+
+        resource2 = mock.Mock()
+        resource2.path = "LICENSE-MIT"
+        resource2.for_packages = []
+        resource2.license_detections = [
+            {
+                "license_expression": "mit",
+                "matches": [
+                    {
+                        "license_expression": "mit",
+                        "rule_identifier": "mit.LICENSE",
+                    }
+                ],
+            }
+        ]
+
+        resource3 = mock.Mock()
+        resource3.path = "README.md"
+        resource3.for_packages = []
+        resource3.license_detections = [
+            {
+                "license_expression": "bsd-new",
+                "matches": [
+                    {
+                        "license_expression": "bsd-new",
+                        "rule_identifier": "mit_or_apache-2.0_18.RULE",
+                    }
+                ],
+            }
+        ]
+
+        result = utils.collect_detected_licenses([resource1, resource2, resource3], [])
+
+        self.assertTrue(
+            self.licensing.is_equivalent(result, "(apache-2.0 OR mit) AND bsd-new")
+        )
+
+    @mock.patch("scanpipe.pipes.utils.match_is_license_text")
+    def test_collect_detected_licenses_ignored_expression(
+        self, mock_match_is_license_text
+    ):
+        mock_match_is_license_text.return_value = False
+
+        resource = mock.Mock()
+        resource.path = "src/main.py"
+        resource.for_packages = []
+        resource.license_detections = [
+            {
+                "license_expression": "unknown",
+                "matches": [
+                    {
+                        "license_expression": "unknown",
+                        "rule_identifier": "a",
+                    }
+                ],
+            }
+        ]
+
+        result = utils.collect_detected_licenses([resource], [])
+
+        self.assertIsNone(result)
+
+    @mock.patch("scanpipe.pipes.utils.get_index")
+    def test_match_is_license_text(self, mock_get_index):
+        mock_rule_text = mock.Mock()
+        mock_rule_text.is_license_text = True
+
+        mock_rule_notice = mock.Mock()
+        mock_rule_notice.is_license_text = False
+
+        mock_index = mock.Mock()
+        mock_index.rules_by_id = {
+            "apache-2.0.LICENSE": mock_rule_text,
+            "some-notice.RULE": mock_rule_notice,
+        }
+        mock_get_index.return_value = mock_index
+
+        self.assertTrue(
+            utils.match_is_license_text({"rule_identifier": "apache-2.0.LICENSE"})
+        )
+        self.assertFalse(
+            utils.match_is_license_text({"rule_identifier": "some-notice.RULE"})
+        )
+        self.assertFalse(
+            utils.match_is_license_text({"rule_identifier": "unknown.RULE"})
+        )
+        self.assertFalse(utils.match_is_license_text({}))
+
+    @mock.patch("scanpipe.pipes.utils.match_is_license_text")
+    def test_collect_match_expressions(self, mock_match_is_license_text):
+        mock_match_is_license_text.return_value = False
+
+        resource = mock.Mock()
+        resource.path = "src/main.py"
+        resource.license_detections = [
+            {
+                "matches": [
+                    {
+                        "license_expression": "mit",
+                        "rule_identifier": "a",
+                    },
+                    {
+                        "license_expression": "unknown",
+                        "rule_identifier": "b",
+                    },
+                ],
+            },
+        ]
+
+        results = list(utils.collect_match_expressions(resource, self.licensing))
+
+        self.assertEqual(len(results), 1)
+        is_text, expression = results[0]
+        self.assertFalse(is_text)
+        self.assertEqual(str(expression), "mit")
+
+    @mock.patch("scanpipe.pipes.utils.match_is_license_text")
+    def test_collect_match_expressions_mixed_detection(
+        self, mock_match_is_license_text
+    ):
+        text_by_rule = {
+            "mit.LICENSE": True,
+            "some-notice.RULE": False,
+        }
+
+        def is_license_text(match):
+            return text_by_rule[match["rule_identifier"]]
+
+        mock_match_is_license_text.side_effect = is_license_text
+
+        resource = mock.Mock()
+        resource.path = "src/main.rs"
+        resource.license_detections = [
+            {
+                "license_expression": "mit AND apache-2.0",
+                "matches": [
+                    {
+                        "license_expression": "mit",
+                        "rule_identifier": "mit.LICENSE",
+                    },
+                    {
+                        "license_expression": "apache-2.0",
+                        "rule_identifier": "some-notice.RULE",
+                    },
+                ],
+            }
+        ]
+
+        results = list(utils.collect_match_expressions(resource, self.licensing))
+
+        self.assertEqual(len(results), 2)
+        self.assertEqual(results[0], (True, self.licensing.parse("mit")))
+        self.assertEqual(results[1], (False, self.licensing.parse("apache-2.0")))
+
+    def test_combine_license_groups_text_and_other(self):
+        text_licenses = [
+            self.licensing.parse("mit"),
+            self.licensing.parse("apache-2.0"),
+        ]
+        other_licenses = [self.licensing.parse("bsd-new")]
+
+        result = utils.combine_license_groups(
+            text_licenses, other_licenses, self.licensing
+        )
+
+        self.assertTrue(
+            self.licensing.is_equivalent(result, "(mit OR apache-2.0) AND bsd-new")
+        )
+
+    def test_combine_license_groups_only_text(self):
+        text_licenses = [
+            self.licensing.parse("mit"),
+            self.licensing.parse("apache-2.0"),
+        ]
+
+        result = utils.combine_license_groups(text_licenses, [], self.licensing)
+
+        self.assertTrue(self.licensing.is_equivalent(result, "mit OR apache-2.0"))
+
+    def test_combine_license_groups_only_other(self):
+        other_licenses = [
+            self.licensing.parse("bsd-new"),
+            self.licensing.parse("mit"),
+        ]
+
+        result = utils.combine_license_groups([], other_licenses, self.licensing)
+
+        self.assertEqual(str(result), "bsd-new AND mit")
+
+    def test_combine_license_groups_empty(self):
+        result = utils.combine_license_groups([], [], self.licensing)
+        self.assertIsNone(result)
 
     def test_get_url_netloc_namespace_and_name(self):
         url = "https://github.com/aboutcode-org/scancode.io/"
