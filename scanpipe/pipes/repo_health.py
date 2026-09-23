@@ -133,30 +133,22 @@ def format_metrics_output(project, metrics_output_path):
     if not vcs_url:
         raise ValueError("Invalid vcs_url: value cannot be empty")
 
-    score_data = target_package.get("score")
-    score_meta = score_data.get("metadata") or {}
-    score = score_data.get("value") or 0.0
+    score_data = target_package.get("score") or {}
+    if not isinstance(score_data, dict):
+        raise ValueError("Invalid metrics JSON: Missing or malformed 'score' section.")
 
-    if 0 >= score <= 1:
-        raise ValueError(
-            f"Invalid score value it should be between 0 and 1, score: {score}"
-        )
-
-    score = round(score, 2)
-    score = 1.0 - score
-
-    score_ecosystem = score_meta.get("ecosystem") or ""
-    score_model = score_meta.get("model") or ""
-    score_version = score_meta.get("version") or ""
-
-    scoring_model = f"{score_ecosystem}-{score_model}-{score_version}"
+    score, scoring_model = normalize_score_and_model(score_data=score_data)
     metrics = target_package.get("metrics")
+    if not isinstance(metrics, dict) or not metrics:
+        raise ValueError("Invalid metrics JSON: Missing or empty 'metrics' section.")
 
-    commit_range = target_package.get("metadata")
+    commit_range = target_package.get("metadata") or {}
+    if not isinstance(commit_range, dict):
+        commit_range = {}
     commit_range = dict(sorted(commit_range.items()))
 
     metrics = dict(sorted(metrics.items()))
-    metadata = data.get("metadata")
+    metadata = data.get("metadata") or {}
     run_start_date = metadata.get("started_at")
     run_end_date = metadata.get("finished_at")
 
@@ -174,6 +166,36 @@ def format_metrics_output(project, metrics_output_path):
         json.dump(result, f, indent=2)
 
     project.update_extra_data(result)
+
+
+def normalize_score_and_model(score_data):
+    """
+    Invert score (1.0 = healthy, 0.0 = unhealthy)
+    and format the scoring_model string.
+    """
+    score_meta = score_data.get("metadata") or {}
+    if not score_meta:
+        raise ValueError(f"Invalid score metadata: {score_data}")
+
+    try:
+        score = float(score_data.get("value"))
+    except (TypeError, ValueError):
+        score = 0.0
+
+    if not (0 <= score <= 1):
+        raise ValueError(
+            f"Invalid score value it should be between 0 and 1, score: {score}"
+        )
+
+    score = round(score, 2)
+    score = 1.0 - score
+
+    score_ecosystem = score_meta.get("ecosystem") or ""
+    score_model = score_meta.get("model") or ""
+    score_version = score_meta.get("version") or ""
+
+    scoring_model = f"{score_ecosystem}-{score_model}-{score_version}"
+    return score, scoring_model
 
 
 def is_valid_vcs_url(url):
