@@ -355,7 +355,10 @@ def update_or_create_license_detection(
     license_detection = project.discoveredlicenses.get_or_none(
         identifier=detection_identifier,
     )
-    detection_data = _clean_license_detection_data(detection_data)
+    detection_data = _clean_license_detection_data(
+        detection_data=detection_data,
+        path=resource_path,
+    )
 
     if license_detection:
         license_detection.update_from_data(detection_data)
@@ -390,8 +393,11 @@ def update_or_create_license_detection(
     return license_detection
 
 
-def _clean_license_detection_data(detection_data):
+def _clean_license_detection_data(detection_data, path):
     detection_data = detection_data.copy()
+    if "from_package" in detection_data:
+        detection_data.pop("from_package")
+
     if "reference_matches" in detection_data:
         matches = detection_data.pop("reference_matches")
         detection_data["matches"] = matches
@@ -401,6 +407,8 @@ def _clean_license_detection_data(detection_data):
         from_file_path = match_data["from_file"]
         if from_file_path:
             match_data["from_file"] = from_file_path.removeprefix("codebase/")
+        elif path:
+            match_data["from_file"] = path
 
         updated_matches.append(match_data)
 
