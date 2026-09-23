@@ -129,24 +129,49 @@ def format_metrics_output(project, metrics_output_path):
         raise ValueError("Invalid metrics JSON: 'packages' contains no data.")
 
     target_package = packages[0]
-    repository = target_package.get("repository")
-    score = target_package.get("score")
-    metrics = target_package.get("metrics")
+    vcs_url = target_package.get("repository")
+    if not vcs_url:
+        raise ValueError("Invalid vcs_url: value cannot be empty")
 
-    if repository is None or score is None or metrics is None:
+    score_data = target_package.get("score")
+    score_meta = score_data.get("metadata") or {}
+    score = score_data.get("value") or 0.0
+
+    if 0 >= score <= 1:
         raise ValueError(
-            f"Invalid metrics JSON. missing or null field(s): "
-            f"repository: {repository}, score: {score}, metrics: {metrics}"
+            f"Invalid score value it should be between 0 and 1, score: {score}"
         )
 
+    score = round(score, 2)
+    score = 1.0 - score
+
+    score_ecosystem = score_meta.get("ecosystem") or ""
+    score_model = score_meta.get("model") or ""
+    score_version = score_meta.get("version") or ""
+
+    scoring_model = f"{score_ecosystem}-{score_model}-{score_version}"
+    metrics = target_package.get("metrics")
+
+    commit_range = target_package.get("metadata")
+    commit_range = dict(sorted(commit_range.items()))
+
+    metrics = dict(sorted(metrics.items()))
+    metadata = data.get("metadata")
+    run_start_date = metadata.get("started_at")
+    run_end_date = metadata.get("finished_at")
+
     result = {
-        "repository": repository,
+        "vcs_url": vcs_url,
+        "scoring_model": scoring_model,
         "score": score,
+        "commit_range": commit_range,
+        "run_start_date": run_start_date,
+        "run_end_date": run_end_date,
         "metrics": metrics,
     }
 
     with open(metrics_output_path, "w") as f:
-        json.dump(result, f)
+        json.dump(result, f, indent=2)
 
     project.update_extra_data(result)
 
