@@ -92,8 +92,8 @@ def collect_and_store_grimoire_metric(project, repo_url, logger=None):
         run_command_safely(command_args=command_args)
         logger("GrimoireLab metrics pipeline completed successfully")
         return metrics_output_path
-    except subprocess.SubprocessError:
-        raise RuntimeError("Grimoirelab-metrics client failure")
+    except subprocess.SubprocessError as e:
+        raise RuntimeError(f"Grimoirelab-metrics client failure: {e}") from e
     except FileNotFoundError:
         raise FileNotFoundError(
             "Grimoirelab-metrics not found. "
@@ -133,11 +133,17 @@ def format_metrics_output(project, metrics_output_path):
     if not vcs_url:
         raise ValueError("Invalid vcs_url: value cannot be empty")
 
-    score_data = target_package.get("score")
-    score_meta = score_data.get("metadata") or {}
-    score = score_data.get("value") or 0.0
+    score_data = target_package.get("score") or {}
+    if not isinstance(score_data, dict):
+        raise ValueError("Invalid metrics JSON: Missing or malformed 'score' section.")
 
-    if 0 >= score <= 1:
+    score_meta = score_data.get("metadata") or {}
+    try:
+        score = float(score_data.get("value"))
+    except (TypeError, ValueError):
+        score = 0.0
+
+    if not (0 <= score <= 1):
         raise ValueError(
             f"Invalid score value it should be between 0 and 1, score: {score}"
         )
@@ -151,12 +157,16 @@ def format_metrics_output(project, metrics_output_path):
 
     scoring_model = f"{score_ecosystem}-{score_model}-{score_version}"
     metrics = target_package.get("metrics")
+    if not isinstance(metrics, dict) or not metrics:
+        raise ValueError("Invalid metrics JSON: Missing or empty 'metrics' section.")
 
-    commit_range = target_package.get("metadata")
+    commit_range = target_package.get("metadata") or {}
+    if not isinstance(commit_range, dict):
+        commit_range = {}
     commit_range = dict(sorted(commit_range.items()))
 
     metrics = dict(sorted(metrics.items()))
-    metadata = data.get("metadata")
+    metadata = data.get("metadata") or {}
     run_start_date = metadata.get("started_at")
     run_end_date = metadata.get("finished_at")
 
