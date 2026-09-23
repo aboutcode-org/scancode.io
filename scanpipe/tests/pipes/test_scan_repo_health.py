@@ -32,6 +32,7 @@ from django.test import TestCase
 
 from scanpipe.pipelines.scan_repo_health import ScanRepoHealth
 from scanpipe.pipes.repo_health import is_valid_vcs_url
+from scanpipe.pipes.repo_health import normalize_score_and_model
 
 
 class ScanRepoGrimoirelabTest(TestCase):
@@ -126,3 +127,27 @@ class ScanRepoGrimoirelabTest(TestCase):
         for url, expected in test_cases:
             with self.subTest(url=url):
                 self.assertEqual(is_valid_vcs_url(url), expected)
+
+    def test_normalize_score_and_model(self):
+        """Test score inversion and scoring_model formatting."""
+        metadata = {"ecosystem": "npm", "model": "health", "version": "0.1"}
+        expected_model = "npm-health-0.1"
+
+        for value, expected_score in [(0.0, 1.0), (1.0, 0.0), (0.5, 0.5)]:
+            score_data = {"value": value, "metadata": metadata}
+            with self.subTest(value=value):
+                self.assertEqual(
+                    normalize_score_and_model(score_data=score_data),
+                    (expected_score, expected_model),
+                )
+
+        invalid_cases = [
+            {},
+            {"value": 1.0, "metadata": {}},
+            {"value": -1.0, "metadata": metadata},
+            {"value": 5, "metadata": metadata},
+        ]
+        for score_data in invalid_cases:
+            with self.subTest(score_data=score_data):
+                with self.assertRaises(ValueError):
+                    normalize_score_and_model(score_data=score_data)

@@ -92,8 +92,8 @@ def collect_and_store_grimoire_metric(project, repo_url, logger=None):
         run_command_safely(command_args=command_args)
         logger("GrimoireLab metrics pipeline completed successfully")
         return metrics_output_path
-    except subprocess.SubprocessError as e:
-        raise RuntimeError(f"Grimoirelab-metrics client failure: {e}") from e
+    except subprocess.SubprocessError:
+        raise RuntimeError("Grimoirelab-metrics client failure")
     except FileNotFoundError:
         raise FileNotFoundError(
             "Grimoirelab-metrics not found. "
@@ -137,25 +137,7 @@ def format_metrics_output(project, metrics_output_path):
     if not isinstance(score_data, dict):
         raise ValueError("Invalid metrics JSON: Missing or malformed 'score' section.")
 
-    score_meta = score_data.get("metadata") or {}
-    try:
-        score = float(score_data.get("value"))
-    except (TypeError, ValueError):
-        score = 0.0
-
-    if not (0 <= score <= 1):
-        raise ValueError(
-            f"Invalid score value it should be between 0 and 1, score: {score}"
-        )
-
-    score = round(score, 2)
-    score = 1.0 - score
-
-    score_ecosystem = score_meta.get("ecosystem") or ""
-    score_model = score_meta.get("model") or ""
-    score_version = score_meta.get("version") or ""
-
-    scoring_model = f"{score_ecosystem}-{score_model}-{score_version}"
+    score, scoring_model = normalize_score_and_model(score_data=score_data)
     metrics = target_package.get("metrics")
     if not isinstance(metrics, dict) or not metrics:
         raise ValueError("Invalid metrics JSON: Missing or empty 'metrics' section.")
@@ -184,6 +166,36 @@ def format_metrics_output(project, metrics_output_path):
         json.dump(result, f, indent=2)
 
     project.update_extra_data(result)
+
+
+def normalize_score_and_model(score_data):
+    """
+    Invert score (1.0 = healthy, 0.0 = unhealthy)
+    and format the scoring_model string.
+    """
+    score_meta = score_data.get("metadata") or {}
+    if not score_meta:
+        raise ValueError(f"Invalid score metadata: {score_data}")
+
+    try:
+        score = float(score_data.get("value"))
+    except (TypeError, ValueError):
+        score = 0.0
+
+    if not (0 <= score <= 1):
+        raise ValueError(
+            f"Invalid score value it should be between 0 and 1, score: {score}"
+        )
+
+    score = round(score, 2)
+    score = 1.0 - score
+
+    score_ecosystem = score_meta.get("ecosystem") or ""
+    score_model = score_meta.get("model") or ""
+    score_version = score_meta.get("version") or ""
+
+    scoring_model = f"{score_ecosystem}-{score_model}-{score_version}"
+    return score, scoring_model
 
 
 def is_valid_vcs_url(url):
