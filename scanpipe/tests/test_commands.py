@@ -1030,9 +1030,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertTrue(user.is_superuser)
 
     def test_scanpipe_management_command_run(self):
-        expected = (
-            "Error: the following arguments are required: PIPELINE_NAME, input_location"
-        )
+        expected = "Error: the following arguments are required: PIPELINE_NAME"
         with self.assertRaisesMessage(CommandError, expected):
             call_command("run")
 
@@ -1069,6 +1067,29 @@ class ScanPipeManagementCommandTest(TestCase):
 
         self.assertEqual("do_nothing", runs[1]["pipeline_name"])
         self.assertEqual(["Group1", "Group2"], runs[1]["selected_groups"])
+
+    def test_scanpipe_management_command_run_without_input_location(self):
+        out = StringIO()
+        with redirect_stdout(out):
+            call_command("run", "do_nothing")
+
+        json_data = json.loads(out.getvalue())
+        self.assertEqual([], json_data["files"])
+        runs = json_data["headers"][0]["runs"]
+        self.assertEqual(1, len(runs))
+        self.assertEqual("do_nothing", runs[0]["pipeline_name"])
+        self.assertEqual("success", runs[0]["status"])
+
+        # A trailing pipeline name is not mistaken for an input location
+        out = StringIO()
+        with redirect_stdout(out):
+            call_command("run", "do_nothing", "profile_step")
+
+        json_data = json.loads(out.getvalue())
+        runs = json_data["headers"][0]["runs"]
+        self.assertEqual(2, len(runs))
+        self.assertEqual("do_nothing", runs[0]["pipeline_name"])
+        self.assertEqual("profile_step", runs[1]["pipeline_name"])
 
     @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("scanpipe.pipes.fetch.check_url")
