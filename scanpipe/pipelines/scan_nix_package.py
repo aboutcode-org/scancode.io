@@ -159,6 +159,7 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
             self.d2d_clojure()
             self.d2d_xtend()
             self.d2d_javascript()
+            self.d2d_haskell()
             self.d2d_process()
 
     def d2d_java(self):
@@ -204,6 +205,9 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         self.map_javascript()
         self.map_javascript_symbols()
         self.map_javascript_strings()
+
+    def d2d_haskell(self):
+        self.map_haskell()
 
     def d2d_process(self):
         self.get_symbols_from_binaries()
