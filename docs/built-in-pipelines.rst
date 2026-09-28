@@ -48,6 +48,14 @@ Analyze Docker Windows Image
 
 .. _pipeline_benchmark_purls:
 
+Analyze Symbol Reachability
+----------------------------
+.. autoclass:: scanpipe.pipelines.analyze_symbols_reachability.SymbolReachability()
+    :members:
+    :member-order: bysource
+
+.. _analyze_symbols_reachability:
+
 Benchmark PURLs (addon)
 -----------------------
 

@@ -65,6 +65,10 @@ DEFAULTS = {
     # Syntax in .env: SCANCODEIO_GLOBAL_WEBHOOK=target_url=https://webhook.url,
     # trigger_on_each_run=False,include_summary=True,include_results=False
     "GLOBAL_WEBHOOK": {},
+    # Maximum file size, in bytes, served inline in the browser rather than
+    # forced as an attachment download. Above this size, the browser tab
+    # rendering the file (e.g. a large JSON) risks hanging.
+    "INLINE_DOWNLOAD_MAX_SIZE": 10_000_000,
     # Default limit for "most common" entries in QuerySets.
     "MOST_COMMON_LIMIT": 7,
     # Syntax in .env: SCANCODEIO_NETRC_LOCATION="~/.netrc"

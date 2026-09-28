@@ -365,6 +365,13 @@ class ScanPipeViewsTest(TestCase):
         self.assertTrue(response.getvalue().startswith(b"# SPDX-License-Identifier"))
         self.assertEqual("application/octet-stream", response.headers["Content-Type"])
         self.assertEqual(
+            'inline; filename="notice.NOTICE"',
+            response.headers["Content-Disposition"],
+        )
+
+        with override_settings(SCANPIPE={"INLINE_DOWNLOAD_MAX_SIZE": 0}):
+            response = self.client.get(url)
+        self.assertEqual(
             'attachment; filename="notice.NOTICE"',
             response.headers["Content-Disposition"],
         )
@@ -382,9 +389,30 @@ class ScanPipeViewsTest(TestCase):
         self.assertTrue(response.getvalue().startswith(b"# SPDX-License-Identifier"))
         self.assertEqual("application/octet-stream", response.headers["Content-Type"])
         self.assertEqual(
+            'inline; filename="notice.NOTICE"',
+            response.headers["Content-Disposition"],
+        )
+
+        with override_settings(SCANPIPE={"INLINE_DOWNLOAD_MAX_SIZE": 0}):
+            response = self.client.get(url)
+        self.assertEqual(
             'attachment; filename="notice.NOTICE"',
             response.headers["Content-Disposition"],
         )
+
+    def test_scanpipe_views_project_results_json_view(self):
+        make_package(self.project1, package_url="pkg:generic/name@1.0")
+
+        url = reverse("project_results", args=[self.project1.slug, "json"])
+        response = self.client.get(url)
+        results = json.loads(response.getvalue())
+        expected = ["dependencies", "files", "headers", "packages", "relations"]
+        self.assertEqual(expected, sorted(results.keys()))
+        self.assertEqual(1, len(results["packages"]))
+
+        response = self.client.get(url, data={"sections": "packages"})
+        results = json.loads(response.getvalue())
+        self.assertEqual(["headers", "packages"], sorted(results.keys()))
 
     def test_scanpipe_views_project_details_delete_input_view(self):
         random_uuid = str(uuid.uuid4())
@@ -1477,6 +1505,10 @@ class ScanPipeViewsTest(TestCase):
 
         self.assertIsInstance(response, FileResponse)
         self.assertEqual(response.get("Content-Type"), "application/json")
+        self.assertTrue(response.get("Content-Disposition").startswith("inline"))
+
+        with override_settings(SCANPIPE={"INLINE_DOWNLOAD_MAX_SIZE": 0}):
+            response = self.client.get(url + "?export_json=True")
         self.assertTrue(response.get("Content-Disposition").startswith("attachment"))
 
         file_content = b"".join(response.streaming_content).decode("utf-8")
@@ -1542,7 +1574,7 @@ class ScanPipeViewsTest(TestCase):
 
         self.assertIsInstance(response, FileResponse)
         self.assertEqual(response.get("Content-Type"), "application/json")
-        self.assertTrue(response.get("Content-Disposition").startswith("attachment"))
+        self.assertTrue(response.get("Content-Disposition").startswith("inline"))
 
         file_content = b"".join(response.streaming_content).decode("utf-8")
         json_data = json.loads(file_content)
@@ -1578,7 +1610,7 @@ class ScanPipeViewsTest(TestCase):
 
         self.assertIsInstance(response, FileResponse)
         self.assertEqual(response.get("Content-Type"), "application/json")
-        self.assertTrue(response.get("Content-Disposition").startswith("attachment"))
+        self.assertTrue(response.get("Content-Disposition").startswith("inline"))
 
         file_content = b"".join(response.streaming_content).decode("utf-8")
         json_data = json.loads(file_content)
@@ -1602,7 +1634,7 @@ class ScanPipeViewsTest(TestCase):
 
         self.assertIsInstance(response, FileResponse)
         self.assertEqual(response.get("Content-Type"), "application/json")
-        self.assertTrue(response.get("Content-Disposition").startswith("attachment"))
+        self.assertTrue(response.get("Content-Disposition").startswith("inline"))
 
         file_content = b"".join(response.streaming_content).decode("utf-8")
         json_data = json.loads(file_content)
@@ -1628,7 +1660,7 @@ class ScanPipeViewsTest(TestCase):
 
         self.assertIsInstance(response, FileResponse)
         self.assertEqual(response.get("Content-Type"), "application/json")
-        self.assertTrue(response.get("Content-Disposition").startswith("attachment"))
+        self.assertTrue(response.get("Content-Disposition").startswith("inline"))
 
         file_content = b"".join(response.streaming_content).decode("utf-8")
         json_data = json.loads(file_content)

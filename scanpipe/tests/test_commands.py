@@ -788,6 +788,29 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn('"bomFormat": "CycloneDX"', out_value)
         self.assertIn('"specVersion": "1.5",', out_value)
 
+    def test_scanpipe_management_command_output_with_sections(self):
+        project = make_project(name="my_project")
+        make_package(project, package_url="pkg:generic/name@1.0")
+
+        out = StringIO()
+        options = ["--project", project.name, "--no-color"]
+        options.extend(["--format", "json", "--print", "--sections", "packages"])
+        call_command("output", *options, stdout=out)
+        results = json.loads(out.getvalue().strip())
+        self.assertEqual(["headers", "packages"], sorted(results.keys()))
+
+        options = ["--project", project.name, "--no-color"]
+        options.extend(["--format", "xlsx", "--sections", "packages"])
+        message = "--sections is only supported for the json format."
+        with self.assertRaisesMessage(CommandError, message):
+            call_command("output", *options)
+
+        options = ["--project", project.name, "--no-color"]
+        options.extend(["--format", "json", "--sections", "bogus"])
+        message = "Error: argument --sections: invalid choice: 'bogus'"
+        with self.assertRaisesMessage(CommandError, message):
+            call_command("output", *options)
+
     def test_scanpipe_management_command_delete_project(self):
         project = make_project(name="my_project")
         work_path = project.work_path

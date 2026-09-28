@@ -161,8 +161,12 @@ class ProjectViewSet(
         Return the results compatible with ScanCode data format.
         The content is returned as a stream of JSON content using the
         JSONResultsGenerator class.
+        Optionally restrict the packages/dependencies/files/relations arrays
+        included using one or more `?sections=` query parameters, e.g.
+        `?sections=packages&sections=dependencies`. Defaults to all sections.
         """
-        return project_results_json_response(self.get_object())
+        sections = request.query_params.getlist("sections") or None
+        return project_results_json_response(self.get_object(), sections=sections)
 
     @action(detail=True, name="Results (download)")
     def results_download(self, request, *args, **kwargs):
@@ -176,7 +180,10 @@ class ProjectViewSet(
             output_kwargs["version"] = version
 
         if format == "json":
-            return project_results_json_response(project, as_attachment=True)
+            sections = request.query_params.getlist("sections") or None
+            return project_results_json_response(
+                project, as_attachment=True, sections=sections
+            )
         elif format == "xlsx":
             output_file = output.to_xlsx(project)
         elif format == "spdx":

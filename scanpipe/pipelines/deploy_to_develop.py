@@ -97,6 +97,7 @@ class DeployToDevelop(Pipeline):
             cls.map_javascript,
             cls.map_javascript_symbols,
             cls.map_javascript_strings,
+            cls.map_haskell,
             cls.get_symbols_from_binaries,
             cls.map_elf,
             cls.map_macho,
@@ -111,6 +112,7 @@ class DeployToDevelop(Pipeline):
             cls.map_javascript_colocation,
             cls.map_thirdparty_npm_packages,
             cls.map_path,
+            cls.flag_generated_code,
             cls.flag_mapped_resources_archives_and_ignored_directories,
             cls.perform_house_keeping_tasks,
             cls.match_purldb_resources_post_process,
@@ -366,6 +368,11 @@ class DeployToDevelop(Pipeline):
         """Map deployed JavaScript, TypeScript to its sources using string literals."""
         d2d.map_javascript_strings(project=self.project, logger=self.log)
 
+    @optional_step("Haskell")
+    def map_haskell(self):
+        """Map compiled Haskell artifacts to its sources."""
+        d2d.map_haskell_to_object(project=self.project, logger=self.log)
+
     def get_symbols_from_binaries(self):
         """Extract symbols from Elf, Mach0 and windows binaries for mapping."""
         d2d.extract_binary_symbols(
@@ -457,6 +464,13 @@ class DeployToDevelop(Pipeline):
     def map_path(self):
         """Map using path similarities."""
         d2d.map_path(project=self.project, logger=self.log)
+
+    def flag_generated_code(self):
+        """
+        Flag deployed files that have corresponding sources that are
+        potential generated.
+        """
+        d2d.flag_generated_file(self.project)
 
     def flag_mapped_resources_archives_and_ignored_directories(self):
         """Flag all codebase resources that were mapped during the pipeline."""

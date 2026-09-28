@@ -1530,14 +1530,18 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         foo_java.update(status=flag.IGNORED_FROM_CONFIG)
 
+        # Create another file that is already scanned but should not be
+        # reverted
+        other_scanned = make_resource_file(
+            self.project1, "to/other_scanned.txt", status=flag.SCANNED
+        )
+
         d2d.scan_ignored_to_files(self.project1)
         foo_java.refresh_from_db()
+        other_scanned.refresh_from_db()
 
-        expected = self.project1.codebaseresources.filter(
-            status=flag.IGNORED_FROM_CONFIG
-        ).count()
-
-        self.assertEqual(1, expected)
+        self.assertEqual(flag.IGNORED_FROM_CONFIG, foo_java.status)
+        self.assertEqual(flag.SCANNED, other_scanned.status)
 
     def test_scan_unmapped_to_files(self):
         to_dir = (
@@ -1558,14 +1562,18 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         foo_java.update(status=flag.REQUIRES_REVIEW)
 
+        # Create another file that is already scanned but should not be
+        # reverted
+        other_scanned = make_resource_file(
+            self.project1, "to/other_scanned.txt", status=flag.SCANNED
+        )
+
         d2d.scan_unmapped_to_files(self.project1)
         foo_java.refresh_from_db()
+        other_scanned.refresh_from_db()
 
-        expected = self.project1.codebaseresources.filter(
-            status=flag.REQUIRES_REVIEW
-        ).count()
-
-        self.assertEqual(1, expected)
+        self.assertEqual(flag.REQUIRES_REVIEW, foo_java.status)
+        self.assertEqual(flag.SCANNED, other_scanned.status)
 
     def test_flag_deployed_from_resources_with_missing_license(self):
         from_dir = (
@@ -2388,6 +2396,114 @@ class ScanPipeD2DPipesTest(TestCase):
             ).count(),
         )
 
+    def test_scanpipe_pipes_d2d_map_haskell_to_object_by_module_path(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/Database/TxtSushi/CommandLineArgument.hs",
+        )
+        to_hi = make_resource_file(
+            self.project1,
+            path=("to/out/Database/TxtSushi/CommandLineArgument.hi"),
+        )
+        to_hie = make_resource_file(
+            self.project1,
+            path=("to/out/hie/Database/TxtSushi/CommandLineArgument.hie"),
+        )
+
+        buffer = io.StringIO()
+        d2d.map_haskell_to_object(self.project1, logger=buffer.write)
+
+        self.assertIn("2 Haskell interface artifacts", buffer.getvalue())
+        self.assertEqual(2, self.project1.codebaserelations.count())
+
+        for to_resource in (to_hi, to_hie):
+            relation = self.project1.codebaserelations.get(to_resource=to_resource)
+            self.assertEqual(from1, relation.from_resource)
+            self.assertEqual("haskell_to_object", relation.map_type)
+            self.assertEqual("module_path", relation.extra_data["match_type"])
+
+    def test_scanpipe_pipes_d2d_map_haskell_to_object_by_basename(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/Database/TxtSushi/CommandLineArgument.hs",
+        )
+        to_o = make_resource_file(
+            self.project1,
+            path=("to/out/libHStxt-sushi-0.6.0.a-extract/CommandLineArgument.o"),
+        )
+
+        d2d.map_haskell_to_object(self.project1)
+
+        relation = self.project1.codebaserelations.get(to_resource=to_o)
+        self.assertEqual(from1, relation.from_resource)
+        self.assertEqual("basename", relation.extra_data["match_type"])
+
+    def test_scanpipe_pipes_d2d_map_haskell_to_object_all_basename_variants(self):
+        from1 = make_resource_file(self.project1, path="from/Foo.hs")
+        artifacts = [
+            make_resource_file(self.project1, path=f"to/libHSfoo.a-extract/Foo{ext}")
+            for ext in (".o", ".p_o", ".dyn_o", ".debug_o", ".t_o", ".o-boot")
+        ]
+
+        d2d.map_haskell_to_object(self.project1)
+
+        self.assertEqual(len(artifacts), self.project1.codebaserelations.count())
+        for artifact in artifacts:
+            relation = self.project1.codebaserelations.get(to_resource=artifact)
+            self.assertEqual(from1, relation.from_resource)
+
+    def test_scanpipe_pipes_d2d_map_haskell_to_object_lhs_source(self):
+        from1 = make_resource_file(self.project1, path="from/Foo/Bar.lhs")
+        to1 = make_resource_file(self.project1, path="to/Foo/Bar.hi")
+
+        d2d.map_haskell_to_object(self.project1)
+
+        relation = self.project1.codebaserelations.get(to_resource=to1)
+        self.assertEqual(from1, relation.from_resource)
+
+    def test_scanpipe_pipes_d2d_map_haskell_to_object_multi_name(self):
+        make_resource_file(self.project1, path="from/pkg1/Foo.hs")
+        make_resource_file(self.project1, path="from/pkg2/Foo.hs")
+        to1 = make_resource_file(self.project1, path="to/libHSfoo.a-extract/Foo.o")
+
+        d2d.map_haskell_to_object(self.project1)
+
+        self.assertFalse(
+            self.project1.codebaserelations.filter(to_resource=to1).exists()
+        )
+
+    def test_scanpipe_pipes_d2d_map_haskell_to_object_multi_path(self):
+        make_resource_file(self.project1, path="from/pkg1/Foo/Bar.hs")
+        make_resource_file(self.project1, path="from/pkg2/Foo/Bar.hs")
+        to1 = make_resource_file(self.project1, path="to/Foo/Bar.hi")
+
+        d2d.map_haskell_to_object(self.project1)
+
+        self.assertFalse(
+            self.project1.codebaserelations.filter(to_resource=to1).exists()
+        )
+
+    def test_scanpipe_pipes_d2d_map_haskell_to_object_single_segment_skipped(self):
+        make_resource_file(self.project1, path="from/pkg1/Foo.hs")
+        # Creating a false match - The desire match should have path:
+        # "to/pkg1/Foo.hi"
+        to1 = make_resource_file(self.project1, path="to/Foo.hi")
+
+        d2d.map_haskell_to_object(self.project1)
+
+        self.assertFalse(
+            self.project1.codebaserelations.filter(to_resource=to1).exists()
+        )
+
+    def test_scanpipe_pipes_d2d_map_haskell_to_object_no_sources(self):
+        make_resource_file(self.project1, path="to/Foo.hi")
+
+        buffer = io.StringIO()
+        d2d.map_haskell_to_object(self.project1, logger=buffer.write)
+
+        self.assertIn("No Haskell source files", buffer.getvalue())
+        self.assertEqual(0, self.project1.codebaserelations.count())
+
     def test_scanpipe_d2d_load_ecosystem_config(self):
         pipeline_name = "map_deploy_to_develop"
         selected_groups = ["Ruby", "Java", "JavaScript"]
@@ -2500,3 +2616,104 @@ class ScanPipeD2DPipesTest(TestCase):
         d2d.map_python_protobuf_files(self.project1)
         relations = self.project1.codebaserelations.filter(map_type="protobuf_mapping")
         self.assertEqual(0, relations.count())
+
+    def test_scanpipe_pipes_d2d_is_generated_code_markers(self):
+        """Test individual bytecode markers for generated code detection."""
+        test_cases = [
+            (
+                b"some bytes Ljavax/annotation/Generated; other bytes",
+                "@Generated annotation detected",
+            ),
+            (
+                b"bytes Lcom/google/protobuf/GeneratedMessageV3; bytes",
+                "Google Protocol Buffers",
+            ),
+            (b"bytes Lorg/apache/thrift/TBase; bytes", "Apache Thrift IDL compiler"),
+            (
+                b"bytes Lorg/apache/avro/specific/SpecificRecordBase; bytes",
+                "Apache Avro schema compiler",
+            ),
+            (
+                b"bytes Ljavax/xml/bind/annotation/XmlRegistry; bytes",
+                "JAXB XmlRegistry",
+            ),
+            (b"bytes Ljavax/xml/ws/WebServiceClient; bytes", "JAX-WS client stub"),
+            (
+                b"bytes Lio/grpc/stub/annotations/GrpcGenerated; bytes",
+                "gRPC compiler stub",
+            ),
+            (b"bytes Lorg/immutables/value/Generated; bytes", "Immutables Generated"),
+            (b"random un-matched bytecode", None),
+        ]
+        for class_bytes, expected_reason in test_cases:
+            with self.subTest(class_bytes=class_bytes):
+                self.assertEqual(expected_reason, d2d.is_generated_code(class_bytes))
+
+    def test_scanpipe_pipes_d2d_is_generated_code_clusters(self):
+        """Test JAXB cluster heuristic bytecode detection."""
+        javax_cluster = (
+            b"bytes Ljavax/xml/bind/annotation/XmlAccessorType; "
+            b"and Ljavax/xml/bind/annotation/XmlType; bytes"
+        )
+        jakarta_cluster = (
+            b"bytes Ljakarta/xml/bind/annotation/XmlAccessorType; "
+            b"and Ljakarta/xml/bind/annotation/XmlType; bytes"
+        )
+
+        self.assertEqual(
+            "JAXB schema compiler cluster (@XmlAccessorType + @XmlType)",
+            d2d.is_generated_code(javax_cluster),
+        )
+        self.assertEqual(
+            "Jakarta JAXB schema compiler cluster (@XmlAccessorType + @XmlType)",
+            d2d.is_generated_code(jakarta_cluster),
+        )
+
+    def test_scanpipe_pipes_d2d_flag_generated_file_by_path(self):
+        """
+        Test flag_generated_file identifying files by path pattern
+        containing '/generated/'.
+        """
+        resource = make_resource_file(
+            self.project1,
+            path="to/target/generated-sources/annotations/com/test.class",
+        )
+
+        d2d.flag_generated_file(self.project1)
+
+        resource.refresh_from_db()
+        self.assertEqual(flag.GENERATED, resource.status)
+        self.assertEqual(
+            "Path pattern matches generated directory convention",
+            resource.extra_data.get("Generated code"),
+        )
+
+    @mock.patch("scanpipe.pipes.d2d.Path.read_bytes")
+    def test_scanpipe_pipes_d2d_flag_generated_file_by_bytecode(self, mock_read_bytes):
+        """Test flag_generated_file identifying files by reading bytecode."""
+        mock_read_bytes.return_value = (
+            b"some header bytes Lcom/google/protobuf/GeneratedMessageV3; tail bytes"
+        )
+        resource = make_resource_file(
+            self.project1,
+            path="to/com/test.class",
+        )
+
+        d2d.flag_generated_file(self.project1)
+
+        resource.refresh_from_db()
+        self.assertEqual(flag.GENERATED, resource.status)
+        self.assertEqual(
+            "Google Protocol Buffers",
+            resource.extra_data.get("Generated code"),
+        )
+
+    def test_scanpipe_pipes_d2d_flag_processed_archives_never_extracted(self):
+        to_archive = make_resource_file(
+            self.project1, path="to/archive.rds", is_archive=True
+        )
+
+        d2d.flag_processed_archives(self.project1)
+
+        to_archive.refresh_from_db()
+        self.assertEqual("", to_archive.status)

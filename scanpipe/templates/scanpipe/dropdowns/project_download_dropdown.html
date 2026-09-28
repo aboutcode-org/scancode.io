@@ -9,7 +9,7 @@
       <span class="dropdown-item">
         Download results as:
       </span>
-      <a href="{% url 'project_results' project.slug 'json' %}" class="dropdown-item">
+      <a href="#" class="dropdown-item modal-button" data-target="modal-json-download-{{ project.slug }}">
         <strong>JSON</strong>
       </a>
       <a href="{% url 'project_results' project.slug 'xlsx' %}" class="dropdown-item">
@@ -47,3 +47,4 @@
     </div>
   </div>
 </div>
+{% include "scanpipe/modals/project_json_download_modal.html" with project=project only %}

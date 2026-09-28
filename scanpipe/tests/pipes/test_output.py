@@ -208,6 +208,22 @@ class ScanPipeOutputPipesTest(TestCase):
             output_file = output.to_json(project=project)
         self.assertIn(output_file.name, project.output_root)
 
+    def test_scanpipe_pipes_outputs_to_json_with_sections(self):
+        fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+        project = Project.objects.get(name="asgiref")
+
+        output_file = output.to_json(project=project, sections=["packages"])
+        with output_file.open() as f:
+            results = json.loads(f.read())
+        self.assertEqual(["headers", "packages"], sorted(results.keys()))
+        self.assertEqual(2, len(results["packages"]))
+
+        output_file = output.to_json(project=project, sections=[])
+        with output_file.open() as f:
+            results = json.loads(f.read())
+        self.assertEqual(["headers"], sorted(results.keys()))
+
     def test_scanpipe_pipes_outputs_to_xlsx(self):
         fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})

@@ -57,6 +57,7 @@ from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
+from scanpipe.pipes import haskell
 from scanpipe.pipes import js
 from scanpipe.pipes import jvm
 from scanpipe.pipes import pathmap
@@ -370,6 +371,116 @@ def map_jar_to_jvm_source(project, jvm_lang: jvm.JvmLanguage, logger=None):
     for jar_resource in progress.iter(resource_iterator):
         _map_jar_to_jvm_source_resource(
             jar_resource, to_resources, from_resources, jvm_lang=jvm_lang
+        )
+
+
+def _map_haskell_to_object_resource(
+    to_resource,
+    from_resources,
+    from_index,
+    module_path,
+    is_path_artifact,
+):
+    """Map a compiled Haskell artifact to its corresponding source."""
+    match = pathmap.find_paths(module_path, from_index)
+    if not match:
+        return
+
+    # Require at least one directory segment for mapping.
+    if is_path_artifact and "/" not in module_path.removeprefix(TO):
+        return
+
+    # Accept only one match. If multiple matches exist, we cannot tell
+    # which source the artifact was compiled from.
+    if len(match.resource_ids) != 1:
+        return
+
+    from_resource = from_resources.get(id=match.resource_ids[0])
+
+    extra_data = {
+        "match_type": "module_path" if is_path_artifact else "basename",
+    }
+    if is_path_artifact:
+        extra_data["module_path"] = module_path
+    else:
+        extra_data["artifact_name"] = module_path
+
+    pipes.make_relation(
+        from_resource=from_resource,
+        to_resource=to_resource,
+        map_type=haskell.binary_map_type,
+        extra_data=extra_data,
+    )
+
+
+def map_haskell_to_object(project, logger=None):
+    """
+    Map to/ compiled Haskell artifacts to their from/ sources.
+
+    Interface artifacts (`.hi`, `.p_hi`, `.hie` and similar) preserve
+    the source module layout, so they are matched on the full module path.
+    Object files (`.o` and similar) live inside `.a` archives whose
+    structure is flattened, so they are matched on the base filename and
+    only when unambiguous.
+    """
+    project_files = project.codebaseresources.files()
+    from_resources = project_files.from_codebase().filter(
+        extension__in=haskell.SOURCE_EXTENSIONS
+    )
+    from_count = from_resources.count()
+    if not from_count:
+        if logger:
+            logger("No Haskell source files in from/ to map against.")
+        return
+
+    to_resources = project_files.to_codebase().no_status().has_no_relation()
+    to_path_mapping = to_resources.filter(extension__in=haskell.PATH_MAPPING_EXTENSIONS)
+    to_basename_mapping = to_resources.filter(
+        extension__in=haskell.BASENAME_MAPPING_EXTENSIONS
+    )
+
+    path_mapping_count = to_path_mapping.count()
+    basename_mapping_count = to_basename_mapping.count()
+
+    if not (path_mapping_count or basename_mapping_count):
+        if logger:
+            logger("No compiled Haskell artifacts to map.")
+        return
+
+    if logger:
+        logger(
+            f"Mapping {path_mapping_count:,d} Haskell interface artifacts and "
+            f"{basename_mapping_count:,d} object files against "
+            f"{from_count:,d} from/ Haskell sources."
+        )
+
+    indexables = haskell.get_indexable_module_paths(
+        from_resources.values_list("id", "path")
+    )
+    from_resources_index = pathmap.build_index(indexables, with_subpaths=True)
+
+    path_progress = LoopProgress(path_mapping_count, logger)
+    path_iterator = to_path_mapping.iterator(chunk_size=2000)
+    for artifact in path_progress.iter(path_iterator):
+        module_path = haskell.get_module_path_from_path_artifact(artifact.path)
+        _map_haskell_to_object_resource(
+            artifact,
+            from_resources,
+            from_resources_index,
+            module_path,
+            is_path_artifact=True,
+        )
+
+    basename_progress = LoopProgress(basename_mapping_count, logger)
+    basename_iterator = to_basename_mapping.iterator(chunk_size=2000)
+    for artifact in basename_progress.iter(basename_iterator):
+        module_path = haskell.get_basename_from_basename_artifact(artifact.path)
+        _map_haskell_to_object_resource(
+            artifact,
+            from_resources,
+            from_resources_index,
+            module_path,
+            is_path_artifact=False,
         )
 
 
@@ -1297,6 +1408,36 @@ def _map_javascript_colocation_resource(
     )
 
 
+def flag_generated_file(project):
+    """Flag generated files based on path patterns or bytecode markers."""
+    to_resources = (
+        project.codebaseresources.all()
+        .to_codebase()
+        .no_status()
+        .has_no_relation()
+        .path_pattern("*.class")
+    )
+    for resource in to_resources:
+        reason = None
+        path_segments = resource.location.split("/")
+        if any(
+            seg.lower() == "generated"
+            or seg.lower().startswith("generated-")
+            or seg.lower().startswith("generated_")
+            for seg in path_segments
+        ):
+            reason = "Path pattern matches generated directory convention"
+        else:
+            try:
+                data = Path(resource.location).read_bytes()
+                reason = is_generated_code(data)
+            except Exception as e:
+                print(f"Could not process {resource}: {e}")
+        if reason:
+            resource.update(status=flag.GENERATED)
+            resource.update_extra_data({"Generated code": reason})
+
+
 def flag_processed_archives(project):
     """
     Flag package archives as processed if they meet the following criteria:
@@ -1317,6 +1458,16 @@ def flag_processed_archives(project):
 
     for archive_resource in to_resources.archives():
         extract_path = archive_resource.path + EXTRACT_SUFFIX
+
+        # Skip archives that were not actually extracted to prevent getting
+        # flagged as "processed" (archives that's not supported by
+        # extractcode).
+        extracted_exists = project.codebaseresources.filter(
+            path__startswith=extract_path
+        ).exists()
+        if not extracted_exists:
+            continue
+
         archive_unmapped_resources = to_resources.filter(path__startswith=extract_path)
         # Check if all resources in the archive "-extract" directory have been mapped.
         # Flag the archive resource as processed only when all resources are mapped.
@@ -1526,9 +1677,13 @@ def scan_ignored_to_files(project, logger=None):
         .to_codebase()
         .filter(status=flag.IGNORED_FROM_CONFIG)
     )
-    scancode.scan_for_files(project, scan_files, progress_logger=logger)
+    scan_file_ids = list(scan_files.values_list("id", flat=True))
 
-    project.codebaseresources.files().to_codebase().filter(status=flag.SCANNED).update(
+    if not scan_file_ids:
+        return
+
+    scancode.scan_for_files(project, scan_files, progress_logger=logger)
+    project.codebaseresources.filter(id__in=scan_file_ids, status=flag.SCANNED).update(
         status=flag.IGNORED_FROM_CONFIG
     )
 
@@ -1543,9 +1698,13 @@ def scan_unmapped_to_files(project, logger=None):
         .to_codebase()
         .filter(status=flag.REQUIRES_REVIEW)
     )
-    scancode.scan_for_files(project, scan_files, progress_logger=logger)
+    scan_file_ids = list(scan_files.values_list("id", flat=True))
 
-    project.codebaseresources.files().to_codebase().filter(status=flag.SCANNED).update(
+    if not scan_file_ids:
+        return
+
+    scancode.scan_for_files(project, scan_files, progress_logger=logger)
+    project.codebaseresources.filter(id__in=scan_file_ids, status=flag.SCANNED).update(
         status=flag.REQUIRES_REVIEW
     )
 
@@ -1827,6 +1986,71 @@ def is_invalid_match(match, matched_path_length):
     of resource IDs.
     """
     return matched_path_length == 1 and len(match.resource_ids) != 1
+
+
+def is_generated_code(class_bytes):
+    """
+    Return a reason indicating why the file was identified as generated.
+    None otherwise.
+    """
+    generated_code_markers = {
+        #  @Generated annotations
+        # https://docs.oracle.com/javase/8/docs/api/javax/annotation/Generated.html
+        # https://docs.oracle.com/en/java/javase/11/docs/api/java.compiler/javax/annotation/processing/Generated.html
+        # https://jakarta.ee/specifications/annotations/2.1/apidocs/jakarta.annotation/jakarta/annotation/generated
+        b"Ljavax/annotation/Generated;": "@Generated annotation detected",
+        b"Ljavax/annotation/processing/Generated;": "@Generated annotation detected",
+        b"Ljakarta/annotation/Generated;": "@Generated annotation detected",
+        b"Ljakarta/annotation/processing/Generated;": "@Generated annotation detected",
+        # Protobuf
+        # https://protobuf.dev/reference/java/api-docs/com/google/protobuf/GeneratedMessage.html
+        b"Lcom/google/protobuf/GeneratedMessageV3;": "Google Protocol Buffers",
+        b"Lcom/google/protobuf/GeneratedMessage;": "Google Protocol Buffers",
+        # Apache Thrift
+        # https://javadoc.io/doc/org.apache.thrift/libthrift/latest/org/apache/thrift/TBase.html
+        b"Lorg/apache/thrift/TBase;": "Apache Thrift IDL compiler",
+        # Apache Avro
+        # https://avro.apache.org/docs/current/api/java/org/apache/avro/specific/SpecificRecord.html
+        # https://avro.apache.org/docs/current/api/java/org/apache/avro/specific/SpecificRecordBase.html
+        b"Lorg/apache/avro/specific/SpecificRecordBase;": "Apache Avro schema compiler",
+        # JAXB (ObjectFactory)
+        # https://docs.oracle.com/javase/8/docs/api/javax/xml/bind/annotation/XmlRegistry.html
+        b"Ljavax/xml/bind/annotation/XmlRegistry;": "JAXB XmlRegistry",
+        b"Ljakarta/xml/bind/annotation/XmlRegistry;": "JAXB XmlRegistry",
+        # JAX-WS Stubs
+        # https://docs.oracle.com/javase/8/docs/api/javax/xml/ws/WebServiceClient.html
+        b"Ljavax/xml/ws/WebServiceClient;": "JAX-WS client stub",
+        b"Ljakarta/xml/ws/WebServiceClient;": "JAX-WS client stub",
+        # gRPC Stubs
+        # https://grpc.github.io/grpc-java/javadoc/io/grpc/stub/annotations/GrpcGenerated.html
+        b"Lio/grpc/stub/annotations/GrpcGenerated;": "gRPC compiler stub",
+        # Others
+        # Immutables - https://github.com/immutables/immutables/issues/756
+        b"Lorg/immutables/value/Generated;": "Immutables Generated",
+    }
+
+    for marker, reason in generated_code_markers.items():
+        if marker in class_bytes:
+            return reason
+
+    # The JAXB compiler (xjc) mechanically applies both @XmlType and
+    # @XmlAccessorType together on every generated class
+    javax_jaxb_cluster = [
+        b"Ljavax/xml/bind/annotation/XmlAccessorType;",
+        b"Ljavax/xml/bind/annotation/XmlType;",
+    ]
+    jakarta_jaxb_cluster = [
+        b"Ljakarta/xml/bind/annotation/XmlAccessorType;",
+        b"Ljakarta/xml/bind/annotation/XmlType;",
+    ]
+
+    if all(marker in class_bytes for marker in javax_jaxb_cluster):
+        return "JAXB schema compiler cluster (@XmlAccessorType + @XmlType)"
+
+    if all(marker in class_bytes for marker in jakarta_jaxb_cluster):
+        return "Jakarta JAXB schema compiler cluster (@XmlAccessorType + @XmlType)"
+
+    return None
 
 
 def map_elfs_with_dwarf_paths(project, logger=None):

@@ -67,6 +67,7 @@ REQUIRES_REVIEW = "requires-review"
 REVIEW_DANGLING_LEGAL_FILE = "review-dangling-legal-file"
 NOT_DEPLOYED = "not-deployed"
 LICENSE_ISSUE = "license-mismatch-declared-vs-detected"
+GENERATED = "generated-file"
 
 
 # Target files that should be ignored during processing as those are related to the app

@@ -36,6 +36,10 @@ start:
 	@echo "-> Start the Docker compose services in background"
 	${COMPOSE} up -d
 
+stop:
+	@echo "-> Stop the Docker compose services"
+	${COMPOSE} stop
+
 bash:
 	# Open a bash session in the running web container
 	${COMPOSE} exec web bash
@@ -89,11 +93,13 @@ fix:
 outdated:
 	@echo "-> Check for outdated packages (with 7 days cooldown)"
 	uv tree --outdated --exclude-newer "7 days"
+	# Run `make start` first following any pyproject.toml changes
+	${COMPOSE} exec web uv pip list --outdated --exclude-newer "7 days"
 	@echo "-> Audit the project's dependencies for known vulnerabilities"
 	uv audit
 
 lock:
-	@echo "-> Regenerate uv.lock from local wheels"
+	@echo "-> Regenerate uv.lock from pyproject.toml"
 	uv lock
 
 ########################################################################################

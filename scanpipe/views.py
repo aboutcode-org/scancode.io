@@ -540,11 +540,13 @@ class ExportJSONMixin:
         serializer = serializer_class(queryset, many=True)
         serialized_data = json.dumps(serializer.data, indent=2, cls=DjangoJSONEncoder)
 
-        output_file = io.BytesIO(serialized_data.encode("utf-8"))
+        encoded_data = serialized_data.encode("utf-8")
+        output_file = io.BytesIO(encoded_data)
+        is_too_large = len(encoded_data) > scanpipe_settings.INLINE_DOWNLOAD_MAX_SIZE
 
         return FileResponse(
             output_file,
-            as_attachment=True,
+            as_attachment=is_too_large,
             filename=self.get_export_json_filename(),
             content_type="application/json",
         )
@@ -1532,7 +1534,8 @@ def download_project_file(request, slug, filename, path_type):
     if not file_path.exists():
         raise Http404(f"{file_path} not found")
 
-    return FileResponse(file_path.open("rb"), as_attachment=True)
+    is_too_large = file_path.stat().st_size > scanpipe_settings.INLINE_DOWNLOAD_MAX_SIZE
+    return FileResponse(file_path.open("rb"), as_attachment=is_too_large)
 
 
 @conditional_login_required
@@ -1554,14 +1557,21 @@ def delete_label_view(request, slug, label_name):
     return JsonResponse({})
 
 
-def project_results_json_response(project, as_attachment=False):
+def get_project_results_sections(request):
+    """Return the requested JSON `sections` filter from the request, or None."""
+    return request.GET.getlist("sections") or None
+
+
+def project_results_json_response(project, as_attachment=False, sections=None):
     """
     Return the results as JSON compatible with ScanCode data format.
     The content is returned as a stream of JSON content using the JSONResultsGenerator
     class.
     If `as_attachment` is True, the response will force the download of the file.
+    `sections` is an optional iterable restricting which of the
+    packages/dependencies/files/relations arrays are included.
     """
-    results_generator = output.JSONResultsGenerator(project)
+    results_generator = output.JSONResultsGenerator(project, sections=sections)
     response = FileResponse(
         streaming_content=results_generator,
         content_type="application/json",
@@ -1588,7 +1598,10 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
             output_kwargs["version"] = version
 
         if format == "json":
-            return project_results_json_response(project, as_attachment=True)
+            sections = get_project_results_sections(request)
+            return project_results_json_response(
+                project, as_attachment=True, sections=sections
+            )
         elif format == "xlsx":
             output_file = output.to_xlsx(project)
         elif format == "spdx":
