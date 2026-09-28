@@ -3,8 +3,8 @@ revision = 3
 requires-python = ">=3.12, <3.15"
 
 [options]
-exclude-newer = "2026-08-24T14:24:36.050759Z"
-exclude-newer-span = "P7D"
+exclude-newer = "2026-09-25T14:51:39.643034Z"
+exclude-newer-span = "P3D"
 
 [[package]]
 name = "aboutcode-api-auth"
@@ -1098,7 +1098,7 @@ wheels = [
 
 [[package]]
 name = "fetchcode"
-version = "0.8.2"
+version = "0.8.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -1109,9 +1109,9 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6e/e2/e8855b0665685cd43ad2da8912ba4c1f8fd77739ce2da451dbb5b89411cd/fetchcode-0.8.2.tar.gz", hash = "sha256:53ff257905235fb264fe7c151c1eb37c35112dd41464ab1f346e9a5caf0f01c8", size = 2839054, upload-time = "2026-03-18T13:05:25.201Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/25/16/666293b94d859a125f46d3a18ef937397c8721fe523bbe203f256529c98e/fetchcode-0.8.5.tar.gz", hash = "sha256:17be9307f2834c4881025fa8da520c8e4f25bab4dbfd698f1c7f8ac3a42ca782", size = 2847943, upload-time = "2026-09-23T11:01:30.643Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a6/02/f6beaa6505cf91d667178adb21ce6d8923ead47243f58300e01dbce155bd/fetchcode-0.8.2-py3-none-any.whl", hash = "sha256:bc2d97d6b6f1e49a05137b9e772c40a758031db3cae547559a14cc9857109e7e", size = 1930896, upload-time = "2026-03-18T13:05:22.971Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/2a/52e4819bc722e90a9e6d3c52ae86c8ad9ef5c9f39f8e4607658f68c4a944/fetchcode-0.8.5-py3-none-any.whl", hash = "sha256:99b3da733a1a6596fc534b8f1fa0874e473e8b5a0f1dd2927b6956a562adaac9", size = 1931232, upload-time = "2026-09-23T11:01:28.868Z" },
 ]
 
 [[package]]
@@ -2962,7 +2962,7 @@ packages = [
 
 [[package]]
 name = "scancodeio"
-version = "38.0.0"
+version = "38.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "aboutcode-api-auth" },
@@ -3084,7 +3084,7 @@ requires-dist = [
     { name = "doc8", marker = "extra == 'dev'", specifier = "==2.0.0" },
     { name = "elf-inspector", specifier = "==0.0.3" },
     { name = "extractcode", extras = ["full"], specifier = "==31.1.0" },
-    { name = "fetchcode", specifier = "==0.8.2" },
+    { name = "fetchcode", specifier = "==0.8.5" },
     { name = "fetchcode-container", marker = "sys_platform == 'linux'", specifier = "==1.2.3.210512" },
     { name = "gitpython", specifier = "==3.1.59" },
     { name = "go-inspector", specifier = "==0.5.0" },
