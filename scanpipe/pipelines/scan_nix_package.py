@@ -31,7 +31,6 @@ from scanpipe.pipes import flag
 from scanpipe.pipes import nix
 from scanpipe.pipes import utils
 from scanpipe.pipes.nix import check_input_and_return_purl
-from scanpipe.pipes.nix import cleanup_docker_volumes
 from scanpipe.pipes.nix import fetch_inputs
 
 
@@ -63,7 +62,7 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
             cls.add_from_to_tag,
             cls.d2d_steps,
             cls.validate_package_license_integrity,
-            cls.cleanup_docker_volumes,
+            cls.flag_mapped_status,
         )
 
     def check_input_and_return_purl(self):
@@ -71,19 +70,27 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         self.purl = check_input_and_return_purl(self.project)
 
     def check_docker_command(self):
-        """Check if the Docker command is available."""
+        """Check if the Docker command is available and multiarch is ready."""
         if not utils.check_docker_command():
-            raise Exception("Docker is required and its daemon must be running.")
-        nix.ensure_multiarch_emulation()
+            raise RuntimeError("Docker is required and its daemon must be running.")
+        if not nix.ensure_multiarch_emulation():
+            raise RuntimeError(
+                "Could not install binfmt multi-arch emulators. "
+                "Cross-architecture Nix builds will not work."
+            )
+        nix.prepare_nix_environment()
 
     def fetch_inputs(self):
         """Fetch the binary and source of the given PURL."""
         from_file = ""
         to_file = ""
         output_format = ""
-        from_file, to_file, output_format, error_messages, warning_messages = (
-            fetch_inputs(self.purl, self.project.codebase_path)
-        )
+        try:
+            from_file, to_file, output_format, error_messages, warning_messages = (
+                fetch_inputs(self.purl, self.project.codebase_path)
+            )
+        finally:
+            nix.cleanup_nixpkgs_worktrees()
         self.from_file = from_file
         self.to_file = to_file
         self.output_format = output_format
@@ -91,9 +98,11 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         self.d2d_enable = bool(self.from_file and self.to_file)
 
         if error_messages:
-            self.project.add_error(error_messages)
+            for error_message in error_messages:
+                self.project.add_error(error_message)
         if warning_messages:
-            self.project.add_warning(warning_messages)
+            for warning_message in warning_messages:
+                self.project.add_warning(warning_message)
 
     def collect_input_info(self):
         """Collect information about the input."""
@@ -122,7 +131,7 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
             self.env = self.project.get_env()
 
     def extract_codebase_archives(self):
-        """Perform extraction of the codebase resources"""
+        """Perform extraction of the codebase resources."""
         self.extract_archives(recurse=True)
 
     def clear_to_codebase_status(self):
@@ -233,7 +242,7 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
 
     def validate_package_license_integrity(self):
         """
-        Validate the correctness of the package license compare with the
+        Validate the correctness of the package license compared with the
         detected license from the codebase.
         """
         utils.validate_package_license_integrity(self.project)
@@ -242,7 +251,3 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         """Flag the from codebase resources that were mapped."""
         if self.d2d_enable:
             flag.flag_mapped_resources(self.project)
-
-    def cleanup_docker_volumes(self):
-        """Cleanup the Docker volumes used for Nix."""
-        cleanup_docker_volumes()

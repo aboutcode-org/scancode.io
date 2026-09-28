@@ -20,7 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-
+import subprocess
 from unittest import mock
 
 from django.test import TestCase
@@ -172,3 +172,126 @@ class ScanPipeUtilsTest(TestCase):
         mock_shutil_which.return_value = None
 
         self.assertFalse(utils.check_docker_command())
+
+    @mock.patch("scanpipe.pipes.utils.subprocess.run")
+    def test_docker_image_exists(self, mock_subprocess_run):
+        mock_subprocess_run.return_value = mock.Mock(returncode=0)
+        self.assertTrue(utils.docker_image_exists("scancode:test"))
+
+        mock_subprocess_run.return_value = mock.Mock(returncode=1)
+        self.assertFalse(utils.docker_image_exists("scancode:test"))
+
+    @mock.patch("scanpipe.pipes.utils.subprocess.run")
+    def test_container_state(self, mock_subprocess_run):
+        mock_subprocess_run.return_value = mock.Mock(stdout="running\n")
+        self.assertEqual(utils.container_state("test-container"), "running")
+
+        mock_subprocess_run.side_effect = subprocess.CalledProcessError(1, [])
+        self.assertEqual(utils.container_state("test-container"), "")
+
+    def test_rename_container(self):
+        cmd = ["docker", "run", "--name", "old-name", "image"]
+        result = utils.rename_container(cmd, "new-name")
+        self.assertEqual(result, ["docker", "run", "--name", "new-name", "image"])
+
+    def test_is_startup_race(self):
+        self.assertTrue(utils.is_startup_race(125, "some error mounting things"))
+        self.assertTrue(utils.is_startup_race(1, "log [FATAL tini log"))
+
+        self.assertFalse(utils.is_startup_race(1, "regular failure"))
+        self.assertFalse(utils.is_startup_race(125, "different error"))
+        self.assertFalse(utils.is_startup_race(1, ""))
+
+    @mock.patch("scanpipe.pipes.utils.subprocess.Popen")
+    def test_run_docker_container_success(self, mock_popen):
+        mock_proc = mock.Mock()
+        mock_proc.communicate.return_value = ("stdout_data", "stderr_data")
+        mock_proc.returncode = 0
+        mock_popen.return_value = mock_proc
+
+        result = utils.run_docker_container(
+            ["docker", "run", "img"], "test-container", 100, "Testing container"
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "stdout_data")
+
+    @mock.patch("scanpipe.pipes.utils.docker_rm_force")
+    @mock.patch("scanpipe.pipes.utils.subprocess.Popen")
+    def test_run_docker_container_failure(self, mock_popen, mock_docker_rm):
+        mock_proc = mock.Mock()
+        mock_proc.communicate.return_value = ("", "standard error message")
+        mock_proc.returncode = 1
+        mock_popen.return_value = mock_proc
+
+        with self.assertRaises(subprocess.CalledProcessError) as cm:
+            utils.run_docker_container(
+                ["docker", "run", "img"],
+                "test-container",
+                100,
+                "Testing container",
+                retries=0,
+            )
+
+        self.assertEqual(cm.exception.stderr, "standard error message")
+        mock_docker_rm.assert_called_once_with("test-container")
+
+    @mock.patch("scanpipe.pipes.utils.container_state")
+    @mock.patch("scanpipe.pipes.utils.docker_rm_force")
+    @mock.patch("scanpipe.pipes.utils.subprocess.Popen")
+    def test_run_docker_container_timeout_stuck_in_created(
+        self, mock_popen, mock_docker_rm, mock_container_state
+    ):
+        mock_proc = mock.Mock()
+        # Raise TimeoutExpired on the first call, return empty strings on
+        # the cleanup call
+        mock_proc.communicate.side_effect = [
+            subprocess.TimeoutExpired("cmd", 15),
+            ("", ""),
+        ]
+        mock_popen.return_value = mock_proc
+        mock_container_state.return_value = "created"
+
+        with self.assertRaises(subprocess.CalledProcessError) as cm:
+            utils.run_docker_container(
+                ["docker", "run", "img"],
+                "test-container",
+                100,
+                "Testing container",
+                retries=0,
+            )
+
+        self.assertIn("stuck in 'Created' state after 15s", cm.exception.stderr)
+        mock_proc.kill.assert_called_once()
+        mock_docker_rm.assert_called_once_with("test-container")
+
+    @mock.patch("scanpipe.pipes.utils.time.sleep")
+    @mock.patch("scanpipe.pipes.utils.docker_rm_force")
+    @mock.patch("scanpipe.pipes.utils.subprocess.Popen")
+    def test_run_docker_container_startup_race_retry(
+        self, mock_popen, mock_docker_rm, mock_sleep
+    ):
+        # First attempt: simulated race condition
+        mock_proc_fail = mock.Mock()
+        mock_proc_fail.communicate.return_value = ("", "error mounting")
+        mock_proc_fail.returncode = 125
+
+        # Second attempt: success
+        mock_proc_success = mock.Mock()
+        mock_proc_success.communicate.return_value = ("success_data", "")
+        mock_proc_success.returncode = 0
+
+        mock_popen.side_effect = [mock_proc_fail, mock_proc_success]
+
+        result = utils.run_docker_container(
+            ["docker", "run", "--name", "test-container", "img"],
+            "test-container",
+            100,
+            "Testing container",
+            retries=1,
+        )
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "success_data")
+        mock_sleep.assert_called_once_with(5)
+        mock_docker_rm.assert_called_once_with("test-container")
+        self.assertEqual(mock_popen.call_count, 2)

@@ -73,7 +73,7 @@ class ScanPipeNixPipesTest(TestCase):
             "pkg:nix/namespace/hello@2.12.1?system=x86_64-linux"
         ]
         with self.assertRaisesMessage(
-            Exception, "Only official nixpkgs repository is supported"
+            ValueError, "Only official nixpkgs repository is supported"
         ):
             nix.check_input_and_return_purl(project)
 
@@ -83,7 +83,7 @@ class ScanPipeNixPipesTest(TestCase):
             "pkg:nix/nixpkgs/hello?system=x86_64-linux"
         ]
         with self.assertRaisesMessage(
-            Exception, "Version or a 'commit' qualifier is required."
+            ValueError, "Version or a 'commit' qualifier is required."
         ):
             nix.check_input_and_return_purl(project)
 
@@ -91,7 +91,7 @@ class ScanPipeNixPipesTest(TestCase):
         project = mock.Mock()
         project.inputsources.all.return_value = ["pkg:nix/nixpkgs/hello@2.12.1"]
         with self.assertRaisesMessage(
-            Exception,
+            ValueError,
             "The 'system' qualifier is required to resolve system-specific binaries.",
         ):
             nix.check_input_and_return_purl(project)
@@ -187,11 +187,18 @@ class ScanPipeNixPipesTest(TestCase):
         self.assertEqual(commit, "1234abcd")
         self.assertEqual(store_path, "/nix/store/aaaaaaa-hello-2.12.1")
 
-    @mock.patch("scanpipe.pipes.nix.subprocess.run")
-    def test_scanpipe_nix_get_nix_store_path_with_nix(self, mock_subprocess_run):
+    @mock.patch("scanpipe.pipes.nix._ensure_nix_image")
+    @mock.patch("scanpipe.pipes.nix._get_nixpkgs_worktree")
+    @mock.patch("scanpipe.pipes.utils.run_docker_container")
+    def test_scanpipe_nix_get_nix_store_path_with_nix(
+        self, mock_run_container, mock_get_worktree, mock_ensure_image
+    ):
+        mock_ensure_image.return_value = "nixos/nix:test"
+        mock_get_worktree.return_value = ""
+
         mock_result = mock.Mock()
         mock_result.stdout = "/nix/store/evaluated-path-out"
-        mock_subprocess_run.return_value = mock_result
+        mock_run_container.return_value = mock_result
 
         path = nix.get_nix_store_path_with_nix(
             "hello", "x86_64-linux", "out", "1234abcd"
@@ -209,6 +216,7 @@ class ScanPipeNixPipesTest(TestCase):
     @mock.patch("scanpipe.pipes.nix.requests.get")
     def test_scanpipe_nix_get_narinfo_url(self, mock_requests_get):
         mock_response = mock.Mock()
+        mock_response.status_code = 200
         mock_response.text = "StorePath: /nix/store/xyz\nURL: nar/123.nar.xz"
         mock_requests_get.return_value = mock_response
 
@@ -236,6 +244,7 @@ class ScanPipeNixPipesTest(TestCase):
             path="/path/extracted/from",
             used_fallback=False,
             fallback_reason="",
+            failure_detail="",
         )
         mock_fetch_path.return_value = "/path/debug/to"
 
@@ -244,15 +253,15 @@ class ScanPipeNixPipesTest(TestCase):
         )
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            src_path, bin_path, output_fmt, error_msg, warning_msg = nix.fetch_inputs(
+            src_path, bin_path, output_fmt, error_msgs, warning_msgs = nix.fetch_inputs(
                 purl, temp_dir
             )
 
             self.assertEqual(src_path, "/path/extracted/from")
             self.assertEqual(bin_path, "/path/debug/to")
             self.assertEqual(output_fmt, "debug")
-            self.assertEqual(error_msg, "")
-            self.assertEqual(warning_msg, "")
+            self.assertEqual(error_msgs, [])
+            self.assertEqual(warning_msgs, [])
 
             mock_get_store_path_with_nix.assert_called_once()
 
@@ -280,11 +289,12 @@ class ScanPipeNixPipesTest(TestCase):
         mock_fetch_path.return_value = ""
 
         # Simulate a successful local build and source extraction
-        mock_build_binary.return_value = "/path/built/locally/to"
+        mock_build_binary.return_value = ("/path/built/locally/to", "")
         mock_get_patched_source.return_value = nix.PatchedSourceResult(
             path="/path/extracted/from",
             used_fallback=False,
             fallback_reason="",
+            failure_detail="",
         )
 
         purl = PackageURL.from_string(
@@ -292,15 +302,17 @@ class ScanPipeNixPipesTest(TestCase):
         )
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            src_path, bin_path, output_fmt, error_msg, warning_msg = nix.fetch_inputs(
+            src_path, bin_path, output_fmt, error_msgs, warning_msgs = nix.fetch_inputs(
                 purl, temp_dir
             )
 
             self.assertEqual(src_path, "/path/extracted/from")
             self.assertEqual(bin_path, "/path/built/locally/to")
             self.assertEqual(output_fmt, "debug")
-            self.assertEqual(error_msg, "")
-            self.assertTrue("Built locally using commit" in warning_msg)
+            self.assertEqual(error_msgs, [])
+            self.assertTrue(
+                any("Built locally using commit" in msg for msg in warning_msgs)
+            )
 
             mock_build_binary.assert_called_once()
             mock_get_store_path_with_nix.assert_called_once()
@@ -327,12 +339,16 @@ class ScanPipeNixPipesTest(TestCase):
         self.assertEqual(path, "/nix/store/hello-path")
         self.assertEqual(commit, "1234abcd")
 
-    @mock.patch("scanpipe.pipes.nix.subprocess.run")
+    @mock.patch("scanpipe.pipes.nix._ensure_nix_image")
+    @mock.patch("scanpipe.pipes.nix._get_nixpkgs_worktree")
+    @mock.patch("scanpipe.pipes.utils.run_docker_container")
     def test_scanpipe_nix_get_patched_source_with_docker_success(
-        self, mock_subprocess_run
+        self, mock_run_container, mock_get_worktree, mock_ensure_image
     ):
         """Test successful fetching and patching of source using Docker."""
-        mock_subprocess_run.return_value = mock.Mock(stderr="", returncode=0)
+        mock_ensure_image.return_value = "nixos/nix:test"
+        mock_get_worktree.return_value = ""
+        mock_run_container.return_value = mock.Mock(stderr="", returncode=0)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             from_dir = Path(temp_dir) / "from"
@@ -349,14 +365,18 @@ class ScanPipeNixPipesTest(TestCase):
             self.assertEqual(result.path, str(from_dir))
             self.assertFalse(result.used_fallback)
             self.assertEqual(result.fallback_reason, "")
-            mock_subprocess_run.assert_called_once()
+            mock_run_container.assert_called_once()
 
-    @mock.patch("scanpipe.pipes.nix.subprocess.run")
+    @mock.patch("scanpipe.pipes.nix._ensure_nix_image")
+    @mock.patch("scanpipe.pipes.nix._get_nixpkgs_worktree")
+    @mock.patch("scanpipe.pipes.utils.run_docker_container")
     def test_scanpipe_nix_get_patched_source_with_docker_fallback(
-        self, mock_subprocess_run
+        self, mock_run_container, mock_get_worktree, mock_ensure_image
     ):
         """The fallback line on stderr flips used_fallback and carries the reason."""
-        mock_subprocess_run.return_value = mock.Mock(
+        mock_ensure_image.return_value = "nixos/nix:test"
+        mock_get_worktree.return_value = ""
+        mock_run_container.return_value = mock.Mock(
             stderr=(
                 "some nix output\n"
                 "PATCHED_SOURCE_FALLBACK_REASON="
@@ -383,10 +403,14 @@ class ScanPipeNixPipesTest(TestCase):
                 result.fallback_reason, "primary output contained only env-vars"
             )
 
-    @mock.patch("scanpipe.pipes.nix.subprocess.run")
-    def test_scanpipe_nix_extract_nar_archive_success(self, mock_subprocess_run):
+    @mock.patch("scanpipe.pipes.nix._ensure_nix_image")
+    @mock.patch("scanpipe.pipes.utils.run_docker_container")
+    def test_scanpipe_nix_extract_nar_archive_success(
+        self, mock_run_container, mock_ensure_image
+    ):
         """Test extracting a .nar archive via Docker."""
-        mock_subprocess_run.return_value = mock.Mock(returncode=0)
+        mock_ensure_image.return_value = "nixos/nix:test"
+        mock_run_container.return_value = mock.Mock(returncode=0)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # We don't actually need the file to exist for the mocked test
@@ -399,13 +423,15 @@ class ScanPipeNixPipesTest(TestCase):
             expected_extracted_path = str(Path(temp_dir).resolve() / "to" / "debug")
             self.assertEqual(result, expected_extracted_path)
 
+    @mock.patch("scanpipe.pipes.nix._ensure_nix_image")
     @mock.patch("scanpipe.pipes.nix.shutil.copy2")
-    @mock.patch("scanpipe.pipes.nix.subprocess.run")
+    @mock.patch("scanpipe.pipes.utils.run_docker_container")
     def test_scanpipe_nix_extract_nar_archive_stages_from_tmp(
-        self, mock_subprocess_run, mock_copy2
+        self, mock_run_container, mock_copy2, mock_ensure_image
     ):
         """Archive outside output_dir is staged into it before docker run."""
-        mock_subprocess_run.return_value = mock.Mock(returncode=0)
+        mock_ensure_image.return_value = "nixos/nix:test"
+        mock_run_container.return_value = mock.Mock(returncode=0)
 
         with (
             tempfile.TemporaryDirectory() as source_dir,
@@ -427,7 +453,7 @@ class ScanPipeNixPipesTest(TestCase):
             self.assertEqual(Path(dst), Path(output_dir).resolve() / "hello-bin.nar.xz")
 
             # The docker mount source must be output_dir, not the /tmp source
-            cmd = mock_subprocess_run.call_args[0][0]
+            cmd = mock_run_container.call_args[0][0]
             volume_mounts = [cmd[i + 1] for i, a in enumerate(cmd) if a == "-v"]
             self.assertTrue(
                 any(str(Path(output_dir).resolve()) in v for v in volume_mounts),
@@ -438,17 +464,16 @@ class ScanPipeNixPipesTest(TestCase):
                 f"unexpected source mount in {volume_mounts}",
             )
 
-    def test_scanpipe_nix_get_decompress_cmd(self):
+    def test_scanpipe_nix_decompress_pipeline_for(self):
         cases = [
-            ("foo.nar.xz", "xz", "xzcat /input/foo.nar.xz"),
-            ("foo.nar.zst", "zstd", "zstdcat /input/foo.nar.zst"),
-            ("foo.nar.bz2", "bzip2", "bzcat /input/foo.nar.bz2"),
-            ("foo.nar.gz", "gzip", "zcat /input/foo.nar.gz"),
-            ("foo.nar", None, "cat /input/foo.nar"),
+            ("foo.nar.xz", "xzcat /input/foo.nar.xz"),
+            ("foo.nar.zst", "zstdcat /input/foo.nar.zst"),
+            ("foo.nar.bz2", "bzcat /input/foo.nar.bz2"),
+            ("foo.nar.gz", "zcat /input/foo.nar.gz"),
+            ("foo.nar", "cat /input/foo.nar"),
         ]
-        for name, expected_type, expected_cmd in cases:
-            compression_type, cmd = nix._get_decompress_cmd(name)
-            self.assertEqual(compression_type, expected_type)
+        for name, expected_cmd in cases:
+            cmd = nix._decompress_pipeline_for(name)
             self.assertEqual(cmd, expected_cmd)
 
     def test_scanpipe_nix_stage_archive_already_in_output_dir(self):
@@ -457,9 +482,10 @@ class ScanPipeNixPipesTest(TestCase):
             archive_path = output_dir / "hello-bin.nar.xz"
 
             with mock.patch("scanpipe.pipes.nix.shutil.copy2") as mock_copy2:
-                result = nix._stage_archive(archive_path, output_dir)
+                result, staged = nix._stage_archive(archive_path, output_dir)
 
             self.assertEqual(result, archive_path)
+            self.assertFalse(staged)
             mock_copy2.assert_not_called()
 
     @mock.patch("scanpipe.pipes.nix.shutil.copy2")
@@ -471,9 +497,10 @@ class ScanPipeNixPipesTest(TestCase):
             archive_path = Path(source_dir).resolve() / "hello-bin.nar.xz"
             output_path = Path(output_dir).resolve()
 
-            result = nix._stage_archive(archive_path, output_path)
+            result, staged = nix._stage_archive(archive_path, output_path)
 
             self.assertEqual(result, output_path / "hello-bin.nar.xz")
+            self.assertTrue(staged)
             mock_copy2.assert_called_once_with(
                 archive_path, output_path / "hello-bin.nar.xz"
             )
@@ -489,7 +516,10 @@ class ScanPipeNixPipesTest(TestCase):
             target = Path(output_dir).resolve() / "hello-bin.nar.xz"
             target.write_bytes(b"payload")  # same size
 
-            result = nix._stage_archive(archive_path, Path(output_dir).resolve())
+            result, staged = nix._stage_archive(
+                archive_path, Path(output_dir).resolve()
+            )
 
             self.assertEqual(result, target)
+            self.assertFalse(staged)
             mock_copy2.assert_not_called()

@@ -50,6 +50,7 @@ services:
           --workers ${GUNICORN_WORKERS:-8} --worker-tmp-dir /dev/shm"
     environment:
       - DOCKER_HOST=tcp://dind:2375  # Point to the DinD container
+      - SCANCODE_NIXPKGS_CACHE_DIR=/var/scancodeio/workspace/.scancode-nix
     env_file:
       - docker.env
     expose:
@@ -76,6 +77,7 @@ services:
                              --verbosity 1"
     environment:
       - DOCKER_HOST=tcp://dind:2375  # Point to the DinD container
+      - SCANCODE_NIXPKGS_CACHE_DIR=/var/scancodeio/workspace/.scancode-nix
     env_file:
       - docker.env
     volumes:

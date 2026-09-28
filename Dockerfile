@@ -104,6 +104,7 @@ RUN apt-get update \
        libgpgme11 \
        libdevmapper1.02.1 \
        libmagic1 \
+       docker.io \
        git \
        wait-for-it \
        universal-ctags \
@@ -145,7 +146,6 @@ RUN apt-get update \
        libguestfs-tools \
        linux-image-amd64 \
        openjdk-17-jre-headless \
-       docker.io \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

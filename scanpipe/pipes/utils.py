@@ -20,9 +20,13 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import fcntl
 import logging
 import shutil
 import subprocess
+import time
+import uuid
+from contextlib import contextmanager
 from fnmatch import fnmatch
 
 import requests
@@ -32,6 +36,8 @@ from scanpipe.pipes import fetch
 from scanpipe.pipes import flag
 
 logger = logging.getLogger(__name__)
+
+_GENERIC_FAILURE = 1
 
 
 def validate_package_license_integrity(project):
@@ -215,3 +221,181 @@ def check_docker_command():
         return True
     except (subprocess.SubprocessError, FileNotFoundError):
         return False
+
+
+@contextmanager
+def file_lock(lock_path):
+    """
+    Exclusive cross-process lock backed by `fcntl.flock`.
+
+    Blocks until the lock is free. Released when the `with` block exits or
+    the process dies.
+    """
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    # "a" mode avoids truncating the lock file on every acquisition.
+    with open(lock_path, "a") as lock_file:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
+
+def docker_image_exists(image):
+    """Return True if the "image" is present in the local Docker image store."""
+    cmd = ["docker", "image", "inspect", image]
+    result = subprocess.run(cmd, capture_output=True, check=False)  # noqa: S603
+    return result.returncode == 0
+
+
+def docker_rm_force(container_name):
+    """Remove a container left behind after a timeout."""
+    cmd = ["docker", "rm", "-f", container_name]
+    subprocess.run(  # noqa: S603
+        cmd,
+        capture_output=True,
+        check=False,
+    )
+
+
+def container_state(container_name):
+    """Return the container's state string, e.g. "created", or "" if unknown."""
+    cmd = ["docker", "inspect", "--format", "{{.State.Status}}", container_name]
+    try:
+        result = subprocess.run(  # noqa: S603
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=True,
+        )
+        return result.stdout.strip()
+    except (
+        subprocess.CalledProcessError,
+        subprocess.TimeoutExpired,
+        FileNotFoundError,
+    ):
+        return ""
+
+
+def rename_container(cmd, new_name):
+    """Return a copy of a `docker run` command with its `--name` value replaced."""
+    cmd = list(cmd)
+    try:
+        idx = cmd.index("--name")
+    except ValueError:
+        return cmd
+    if idx + 1 < len(cmd):
+        cmd[idx + 1] = new_name
+    return cmd
+
+
+def is_startup_race(returncode, stderr):
+    """
+    Return True if `docker run` failed with a startup race unique to
+    Docker Desktop.
+
+    A startup race is when two things happen at once and the wrong one
+    wins. Docker Desktop exposes host directories to its container VM
+    through a bridge that can lag a few milliseconds behind the host, so
+    the daemon sometimes tries to use a path or rootfs before it has
+    propagated. The failure is transient; a retry usually succeeds.
+
+    Two scenarios:
+
+    - Exit code 125 with `error mounting`: the bind-mount source was
+      not visible yet.
+    - `[FATAL tini`: the container started before the rootfs was fully
+      mounted, so `/bin/sh` could not be resolved.
+
+    Native Linux has no bridge, so neither occurs there.
+    """
+    if not stderr:
+        return False
+    if returncode == 125 and "error mounting" in stderr:
+        return True
+    if "[FATAL tini" in stderr:
+        return True
+    return False
+
+
+def run_docker_container(cmd, container_name, timeout, task_description, retries=1):
+    """
+    Run `docker run` with a timeout and grace window, retrying automatically
+    if a transient Docker Desktop startup race occurs or the daemon wedges.
+
+    Return a CompletedProcess on success. Raise CalledProcessError on a
+    real failure, or TimeoutExpired on a genuine timeout.
+    """
+    grace = 15
+
+    for attempt in range(retries + 1):
+        if attempt:
+            logger.warning(f"{task_description}: retrying container in 5s")
+            time.sleep(5)
+            prefix = container_name.rsplit("-", 1)[0]
+            container_name = f"{prefix}-{uuid.uuid4().hex[:12]}"
+            cmd = rename_container(cmd, container_name)
+
+        # Popen (not run) so we can inspect the daemon state after the grace
+        # window, while the container may still be running.
+        proc = subprocess.Popen(  # noqa: S603
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+        try:
+            # Wait up to `grace` seconds for docker run to finish,
+            # capturing its stdout and stderr. The timeout is what lets us
+            # detect a wedged daemon instead of blocking forever.
+            stdout, stderr = proc.communicate(timeout=grace)
+        except subprocess.TimeoutExpired:
+            # Still running past the grace window. If the daemon never
+            # actually started it, the state will be 'created' and no
+            # amount of waiting will help.
+            if container_state(container_name) == "created":
+                proc.kill()
+                proc.communicate()
+                docker_rm_force(container_name)
+                if attempt >= retries:
+                    raise subprocess.CalledProcessError(
+                        _GENERIC_FAILURE,
+                        cmd,
+                        stderr=(
+                            f"container {container_name} stuck in "
+                            f"'Created' state after {grace}s"
+                        ),
+                    )
+                continue
+
+            # The container is actually running. Wait out the rest of
+            # the timeout.
+            try:
+                stdout, stderr = proc.communicate(timeout=max(1, timeout - grace))
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.communicate()
+                state = container_state(container_name)
+                logger.error(
+                    f"{task_description}: timeout after {timeout}s; "
+                    f"container state={state!r}"
+                )
+                docker_rm_force(container_name)
+                raise
+
+        if proc.returncode == 0:
+            return subprocess.CompletedProcess(cmd, 0, stdout, stderr)
+
+        if attempt < retries and is_startup_race(proc.returncode, stderr):
+            logger.warning(
+                f"{task_description}: startup race for {container_name}; retrying in 5s"
+            )
+            docker_rm_force(container_name)
+            continue
+
+        docker_rm_force(container_name)
+        raise subprocess.CalledProcessError(
+            proc.returncode, cmd, output=stdout, stderr=stderr
+        )
