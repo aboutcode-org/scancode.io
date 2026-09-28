@@ -5,6 +5,27 @@ Changelog
 
 * Migrate VulnerableCode integration to API v3
 
+v38.1.0 (2026-09-28)
+--------------------
+
+* feat: add pipeline specialized in Maven package scan by @chinyeungli in https://github.com/aboutcode-org/scancode.io/pull/1953
+* chore: upgrade Docker images and dependencies to latest version by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2221
+* Create pipeline for symbol reachability by @ziadhany in https://github.com/aboutcode-org/scancode.io/pull/2151
+* Enhance D2D pipeline to identify generated code #1900 by @chinyeungli in https://github.com/aboutcode-org/scancode.io/pull/2216
+* cravex2-reachability: Expose reachability in API  by @ziadhany in https://github.com/aboutcode-org/scancode.io/pull/2213
+* Create documentation for reachability analysis by @ziadhany in https://github.com/aboutcode-org/scancode.io/pull/2211
+* feat: add ability to configure content of the JSON output by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2222
+* fix: serve files as_attachment only when too large by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2223
+* Create a ScanCode.io pipeline to integrate Grimoire by @ziadhany in https://github.com/aboutcode-org/scancode.io/pull/2202
+* Update healthcode docker image by @ziadhany in https://github.com/aboutcode-org/scancode.io/pull/2234
+* Add Haskell D2D Mapping support #2233 by @chinyeungli in https://github.com/aboutcode-org/scancode.io/pull/2235
+* Skip ARCHIVE_PROCESSED flag for archives that were not extracted #2231 by @chinyeungli in https://github.com/aboutcode-org/scancode.io/pull/2236
+* Ensure the status was not updated after scanned #2228 by @chinyeungli in https://github.com/aboutcode-org/scancode.io/pull/2229
+* Invert healthycode repo score and update scan_repo_health output by @ziadhany in https://github.com/aboutcode-org/scancode.io/pull/2238
+* Bump fetchcode to 0.8.5 by @ziadhany in https://github.com/aboutcode-org/scancode.io/pull/2239
+* Fix scan_repo_health pipeline by @TG1999 in https://github.com/aboutcode-org/scancode.io/pull/2241
+* Bump healthycode image to version 0.2.0 by @ziadhany in https://github.com/aboutcode-org/scancode.io/pull/2242
+
 v38.0.0 (2026-07-10)
 --------------------
 
