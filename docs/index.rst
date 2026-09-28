@@ -44,6 +44,7 @@ Learn via practical step-by-step guides.
 - :ref:`tutorial_cli_analyze_docker_image`
 - :ref:`tutorial_api_analyze_package_archive`
 - :ref:`tutorial_license_policies`
+- :ref:`tutorial_custom_attribution`
 - :ref:`tutorial_vulnerablecode_integration`
 - :ref:`tutorial_web_ui_symbol_and_string_collection`
 - :ref:`tutorial_cli_end_to_end_scanning_to_dejacode`
@@ -115,6 +116,7 @@ Indices and tables
     tutorial_cli_analyze_codebase
     tutorial_api_analyze_package_archive
     tutorial_license_policies
+    tutorial_custom_attribution
     tutorial_vulnerablecode_integration
     tutorial_web_ui_symbol_and_string_collection
     tutorial_cli_end_to_end_scanning_to_dejacode
