@@ -34,6 +34,11 @@
                   <i class="fa-solid fa-scale-balanced fa-sm has-text-danger" title="License Compliance Error"></i>
                 </a>
               {% endif %}
+              {% if package.extra_data.issues %}
+                <a href="{% url 'package_detail' project.slug package.uuid %}#extra_data">
+                  <i class="fa-solid fa-exclamation-triangle fa-sm has-text-danger" title="Package Issue"></i>
+                </a>
+              {% endif %}
             </td>
             <td style="min-width: 300px; max-width: 400px;">
               <a href="?declared_license_expression={{ package.declared_license_expression }}" class="is-black-link">
