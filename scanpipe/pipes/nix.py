@@ -60,6 +60,41 @@ _DOCKER_IO_TIMEOUT = 600
 _DOCKER_EVAL_TIMEOUT = 300
 
 
+# Markers to identify meaningful failure lines in `nix-build` stderr.
+_NIX_ERROR_MARKERS = (
+    "Encountered missing or private dependencies:",
+    "error: Cannot build",
+    "error: builder failed",
+)
+
+
+def _summarize_nix_build_error(stderr, max_lines=10):
+    """
+    Extract the meaningful failure from `nix-build` stderr.
+
+    nix-build writes hundreds of lines of progress output ("copying
+    path...", phase names) around the one or two lines that explain
+    why the build failed. Return a short excerpt so the project's error
+    message is actionable.
+    """
+    if not stderr:
+        return ""
+
+    lines = stderr.strip().splitlines()
+    for i, line in enumerate(lines):
+        if any(marker in line for marker in _NIX_ERROR_MARKERS):
+            summary = "\n".join(lines[i : i + max_lines])
+            if "Encountered missing or private dependencies:" in line:
+                summary += (
+                    "\n\nHint: this Haskell package targets an older compiler than "
+                    "the one in this nixpkgs commit. Try an older commit, or a "
+                    "Haskell package set that uses a matching compiler."
+                )
+            return summary
+
+    return lines[-1] if lines else ""
+
+
 # Each scan runs in its own RQ worker process, so several scans can run at
 # once. They all share three things on the host:
 #
@@ -770,7 +805,8 @@ def build_binary_with_docker(name, output_dir, system, commit_hash, output_forma
         error_msg = f"Failed: {task_description} did not produce {nar_filename}"
         logger.error(error_msg)
     except subprocess.CalledProcessError as e:
-        error_msg = f"Failed: {task_description} with error: {e.stderr.strip()}"
+        summary = _summarize_nix_build_error(e.stderr)
+        error_msg = f"Failed: {task_description}: {summary}"
         logger.error(error_msg)
     except subprocess.TimeoutExpired:
         error_msg = f"Failed: {task_description} with error: Process timed out"
@@ -1244,7 +1280,7 @@ rm -f /tmp/expr.nix /tmp/fallback.nix
             f"(system={system}, commit={commit_hash})."
         )
     except subprocess.CalledProcessError as e:
-        failure_detail = e.stderr.strip() or "docker run failed"
+        failure_detail = _summarize_nix_build_error(e.stderr) or "docker run failed"
         logger.error(f"Failed: {failure_detail}")
     except subprocess.TimeoutExpired:
         failure_detail = "Container timed out"
