@@ -38,6 +38,8 @@ from scanpipe.pipes.rust import get_repository_value_from_cargo_toml
 
 class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
     """
+    Fetch, build and compare crate source/binary, verify repo match, validate license.
+
     Download the crate’s source, build it, and run a d2d comparison between
     the compiled binary and the source crate to detect any discrepancies.
 
