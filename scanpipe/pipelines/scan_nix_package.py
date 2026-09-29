@@ -36,7 +36,7 @@ from scanpipe.pipes.nix import fetch_inputs
 
 class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
     """
-    Scan a Nix package source and binary to detect discrepancies and validate licenses.
+    Fetch and build a Nix package to detect discrepancies and validate licenses.
 
     Download the nix source and binary, and run a deployment to development
     scan between the binary and the source to detect any discrepancies.
