@@ -31,6 +31,7 @@ from datetime import datetime
 from itertools import islice
 from pathlib import Path
 
+from django.db import IntegrityError
 from django.db.models import Count
 
 from scanpipe.models import AbstractTaskFieldsModel
@@ -139,12 +140,17 @@ def collect_and_create_codebase_resources(project, batch_size=5000):
     """
     model_class = CodebaseResource
     objs = yield_resources_from_codebase(project)
-
-    while True:
-        batch = list(islice(objs, batch_size))
-        if not batch:
-            break
-        model_class.objects.bulk_create(batch, batch_size)
+    try:
+        while True:
+            batch = list(islice(objs, batch_size))
+            if not batch:
+                break
+            model_class.objects.bulk_create(batch, batch_size)
+    except IntegrityError as e:
+        raise IntegrityError(
+            "Codebase resources already exist for this project. "
+            "Reset the project before re-running."
+        ) from e
 
 
 def update_or_create_resource(project, resource_data):

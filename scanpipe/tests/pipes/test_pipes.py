@@ -25,6 +25,7 @@ import io
 from pathlib import Path
 from unittest import mock
 
+from django.db import IntegrityError
 from django.test import TestCase
 from django.test import TransactionTestCase
 
@@ -448,3 +449,20 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         self.assertEqual("from", from_resource.tag)
         to_resource = p1.codebaseresources.get(path="to/a.txt")
         self.assertEqual("to", to_resource.tag)
+
+    def test_scanpipe_pipes_collect_and_create_codebase_resources_duplicate_run(self):
+        p1 = Project.objects.create(name="Analysis")
+        input_location = self.data / "codebase" / "a.txt"
+        to_dir = p1.codebase_path / "to"
+        to_dir.mkdir()
+        from_dir = p1.codebase_path / "from"
+        from_dir.mkdir()
+        copy_input(input_location, to_dir)
+        copy_input(input_location, from_dir)
+
+        pipes.collect_and_create_codebase_resources(p1)
+        self.assertEqual(4, p1.codebaseresources.count())
+
+        with self.assertRaises(IntegrityError) as ctx:
+            pipes.collect_and_create_codebase_resources(p1)
+        self.assertIn("Reset", str(ctx.exception))
