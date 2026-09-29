@@ -31,8 +31,7 @@ from scanpipe.pipes.maven import update_package_license_from_resource_if_missing
 
 class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
     """
-    Scan a single Maven package and perform a deployment to development
-    relation scan.
+    Scan a single Maven package and perform a deployment to development relation scan.
 
     This pipeline takes a Maven PURL as input, fetches the binary and
     source archives (if they exist), and then performs scans for package
