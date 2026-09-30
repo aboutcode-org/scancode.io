@@ -66,6 +66,7 @@ NPM_PACKAGE_LOOKUP = "npm-package-lookup"
 REQUIRES_REVIEW = "requires-review"
 REVIEW_DANGLING_LEGAL_FILE = "review-dangling-legal-file"
 NOT_DEPLOYED = "not-deployed"
+LICENSE_ISSUE = "license-mismatch-declared-vs-detected"
 GENERATED = "generated-file"
 
 
@@ -138,3 +139,8 @@ def flag_mapped_resources(project):
     """Flag all codebase resources that were mapped during the d2d pipeline."""
     resources = project.codebaseresources.has_relation().no_status()
     return resources.update(status=MAPPED)
+
+
+def clear_status(resource_qs):
+    """Clear the status of given codebase resources."""
+    return resource_qs.update(status="")
