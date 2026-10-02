@@ -19,30 +19,77 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
+import json
+import subprocess
+from os import environ
 
-from scanpipe.pipelines.analyze_symbols_reachability import SymbolReachability
 from scanpipe.pipes import cpg
-from scanpipe.pipes.cpg import CPG_NEO4J_EXECUTABLE
-from scanpipe.pipes.symbols import TS_QUERIES
+from scanpipe.pipes import run_command_safely
+from scanpipe.pipes.reachability_tools import ReachabilityPipeline
+from scanpipe.pipes.reachability_tools import ReachabilityTool
+
+CPG_NEO4J_EXECUTABLE = environ.get("CPG_NEO4J_EXECUTABLE")
 
 
-class CPGSymbolReachability(SymbolReachability):
-    """ """
+class CPGTool(ReachabilityTool):
+    """Reachability analysis based on a Code Property Graph (CPG) tool."""
 
-    download_inputs = False
-    is_addon = True
-    results_url = "/project/{slug}/resources/?extra_data=symbols_reachability"
+    tool_name = "cpg_tool"
+    executable = CPG_NEO4J_EXECUTABLE
+    supported_language = ("Python",)
 
     @classmethod
-    def steps(cls):
-        return (
-            cls.get_vulnerabilities_patches,
-            cls.collect_resource_index,
-            cls.collect_patch_symbols,
-            cls.collect_and_match_resources,
-            cls.generate_advisory_reachability_report,
-            cls.apply_reachability_to_packages_and_dependencies,
-        )
+    def get_availability(cls):
+        if not cls.executable:
+            return "CPG is not configured."
+
+    @classmethod
+    def run_command(self, project, logger=None):
+        """Run the CPG client on the codebase and return the exported JSON Path."""
+        target_path = project.codebase_path
+        if not target_path:
+            resources = project.codebaseresources.all()
+            if not resources:
+                raise ValueError("No codebase resources found for this project.")
+            target_path = resources[0].location_path
+
+        export_json_path = project.get_output_file_path("cpg_reachability", "json")
+        command_args = [
+            CPG_NEO4J_EXECUTABLE,
+            "--no-neo4j",
+            "--top-level",
+            str(target_path),
+            "--export-json",
+            str(export_json_path),
+            str(target_path),
+        ]
+
+        logger(f"Generating CPG JSON for {target_path} ...")
+        try:
+            run_command_safely(command_args=command_args)
+            logger("CPG resource_index pipeline completed successfully")
+            return target_path
+        except subprocess.SubprocessError as error:
+            raise RuntimeError(f"CPG client failure: {error!r}")
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                "CPG not found. Please ensure CPG is correctly configured."
+            )
+
+    @classmethod
+    def parsed_output(self, target_path):
+        """Load and return the json CPG graph"""
+        with open(target_path) as f:
+            data = json.load(f)
+        return data
+
+
+class CPGReachability(ReachabilityPipeline):
+    """
+    Code Property Graph
+    """
+
+    reachability_tool = CPGTool
 
     @classmethod
     def get_availability(cls):
@@ -55,14 +102,20 @@ class CPGSymbolReachability(SymbolReachability):
             is_binary=False,
             is_archive=False,
             is_media=False,
-            programming_language__in=TS_QUERIES.keys(),
+            programming_language__in=self.reachability_tool.supported_language,
         )
-        self.resource_indexes = cpg.collect_resource_index(
+        self.resource_indexes_path = self.reachability_tool.run_command(
             project=self.project, logger=self.log
         )
 
+        self.resource_indexes = self.reachability_tool.parsed_output(
+            target_path=self.resource_indexes_path
+        )
+
     def collect_and_match_resources(self):
+        """Match resource symbols against patch symbols."""
         cpg.match_patches_to_resources(
+            tool_name=self.reachability_tool.tool_name,
             patches=self.patches,
             patch_symbols=self.patch_symbols,
             resource_indexes=self.resource_indexes,

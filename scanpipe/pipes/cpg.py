@@ -1,86 +1,39 @@
-# scanpipe/pipes/cpg.py
-
 # SPDX-License-Identifier: Apache-2.0
 #
 # http://nexb.com and https://github.com/aboutcode-org/scancode.io
+# The ScanCode.io software is licensed under the Apache License version 2.0.
+# Data generated with ScanCode.io is provided as-is without warranties.
+# ScanCode is a trademark of nexB Inc.
+#
+# You may not use this software except in compliance with the License.
+# You may obtain a copy of the License at: http://apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+# CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+#
+# Data Generated with ScanCode.io is provided on an "AS IS" BASIS, WITHOUT WARRANTIES
+# OR CONDITIONS OF ANY KIND, either express or implied. No content created from
+# ScanCode.io should be considered or used as legal advice. Consult an Attorney
+# for any legal advice.
+#
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-import json
-import subprocess
 from collections import deque
-from os import environ
 
 from aboutcode.pipeline import LoopProgress
-from scanpipe.pipes import run_command_safely
 from scanpipe.pipes.reachability import ReachabilityStatus
 from scanpipe.pipes.reachability import save_resource_reachability_report
-
-CPG_NEO4J_EXECUTABLE = environ.get("CPG_NEO4J_EXECUTABLE")
 
 
 def clean_symbol_name(name):
     """
     Normalize a CPG symbol name: strip a trailing signature, e.g.
-    ``app.serve_report.build_file_path()`` ->
-    ``app.serve_report.build_file_path``.
+    app.serve_report.build_file_path() ->
+    app.serve_report.build_file_path.
     """
-    name = str(name or "")
-    if not name.endswith(")"):
-        return name
-    depth = 0
-    for index in range(len(name) - 1, -1, -1):
-        char = name[index]
-        if char == ")":
-            depth += 1
-        elif char == "(":
-            depth -= 1
-            if depth == 0:
-                return name[:index].rstrip()
-    return name
-
-
-def collect_resource_index(project, logger=None):
-    """
-    Execute the cpg-neo4j binary to generate a CPG JSON export for the
-    project codebase and return the parsed project-wide graph.
-    """
-    if not CPG_NEO4J_EXECUTABLE:
-        raise ValueError("CPG_NEO4J_EXECUTABLE is not set or found.")
-
-    target_path = getattr(project, "codebase_path", None)
-    if not target_path:
-        resources = project.codebaseresources.all()
-        if not resources:
-            raise ValueError("No codebase resources found for this project.")
-        target_path = resources[0].location_path
-
-    export_json_path = project.get_output_file_path("cpg_reachability", "json")
-    command_args = [
-        CPG_NEO4J_EXECUTABLE,
-        "--no-neo4j",
-        "--top-level",
-        str(target_path),
-        "--export-json",
-        str(export_json_path),
-        str(target_path),
-    ]
-
-    if logger:
-        logger(f"Generating CPG JSON for {target_path} ...")
-    try:
-        run_command_safely(command_args=command_args)
-        if logger:
-            logger("CPG resource_index pipeline completed successfully")
-    except subprocess.SubprocessError as error:
-        raise RuntimeError(f"CPG client failure: {error!r}")
-    except FileNotFoundError:
-        raise FileNotFoundError(
-            "CPG not found. Please ensure CPG is correctly configured."
-        )
-
-    with open(export_json_path) as f:
-        return json.load(f)
+    return name.replace("()", "")
 
 
 class Node:
@@ -114,10 +67,7 @@ class Node:
 class Graph:
     """
     A CPG property-graph dump with the lookups needed for symbol
-    matching and EOG traversal. Supports both the old
-    (``FunctionDeclaration``/``FileNode``) and the 2023+ (``Function``/
-    ``File``) label schemas, and both naming conventions (bare and
-    module-prefixed names, with or without a trailing signature).
+    matching and EOG traversal.
     """
 
     DECLARATION_LABELS = (
@@ -126,21 +76,21 @@ class Graph:
         "ConstructorDeclaration",
         "RecordDeclaration",
         "ClassDeclaration",
-        "EnumDeclaration",  # old
+        "EnumDeclaration",
         "Function",
         "Method",
         "Constructor",
         "Record",
         "Enum",
-        "Interface",  # new
+        "Interface",
     )
     RECORD_LABELS = (
         "RecordDeclaration",
         "ClassDeclaration",
-        "EnumDeclaration",  # old
+        "EnumDeclaration",
         "Record",
         "Enum",
-        "Interface",  # new
+        "Interface",
     )
     METHOD_LABELS = (
         "FunctionDeclaration",
@@ -218,7 +168,7 @@ class Graph:
         return self.nodes.get(parent_id) if parent_id is not None else None
 
     def is_inside(self, node, ancestor):
-        """True if ``node`` is ``ancestor`` or lies in its subtree."""
+        """True if node is ancestor or lies in its subtree."""
         while node is not None:
             if node is ancestor:
                 return True
@@ -261,7 +211,7 @@ class Graph:
         return self._descendants[node.id]
 
     def file_of(self, node):
-        """The File node containing ``node``, or ``None``."""
+        """The File node containing node, or None."""
         if node.id not in self._file_of:
             current = self.parent(node)
             while current is not None and not current.is_a(*self.FILE_LABELS):
@@ -349,7 +299,7 @@ class Graph:
     def entry_declarations(self):
         """
         Traversal roots of the codebase: public declarations never
-        invoked anywhere in the graph (dunders such as ``__init__`` count
+        invoked anywhere in the graph (dunders such as __init__ count
         as public). Falls back to module-level EOG roots when every
         declaration is invoked.
         """
@@ -431,16 +381,7 @@ class Graph:
 def follow_eog_edges_until_hit(graph, start, predicate, max_steps=1_000_000):
     """
     Follow EOG edges forward from ``start`` (a node or an iterable of nodes)
-    until a node satisfies ``predicate``. Simplified
-    ``Node.followEOGEdgesUntilHit``:
-
-    - ``Forward(GraphToFollow.EOG)``: walk EOG successors;
-    - ``Interprocedural()``: at call expressions, follow INVOKES edges into
-      the callee and continue from its body;
-    - ``FilterUnreachableEOG``: only nodes reachable from ``start`` are
-      visited, so dead code is never entered;
-    - ``findAllPossiblePaths = false``: return the first (shortest) path.
-
+    until a node satisfies ``predicate``.
     Returns the path of nodes leading to the hit, or ``None``.
     """
     starts = [start] if isinstance(start, Node) else list(start or [])
@@ -487,10 +428,10 @@ class ResourcePatchMatcher:
 
     def match(self, patch_symbols_metadata, file_path=None):
         """
-        Return ``{symbol_key: result}`` for each patch symbol that
-        belongs to ``file_path`` (or to the file part of its key) and is
+        Return {symbol_key: result} for each patch symbol that
+        belongs to file_path (or to the file part of its key) and is
         defined in the graph. Results are keyed by the original symbol
-        key (``file::name``), preserving the report format.
+        key (file::name), preserving the report format.
         """
         results = {}
         for symbol_key, metadata in (patch_symbols_metadata or {}).items():
@@ -574,26 +515,28 @@ def classify_reachability(matched_symbols):
     """Classify reachability from the simple matcher results."""
     if not matched_symbols:
         return ReachabilityStatus.NOT_REACHABLE
-    if any(m.get("is_reachable") for m in matched_symbols.values()):
+    if any(
+        matched_symbol.get("is_reachable")
+        for matched_symbol in matched_symbols.values()
+    ):
         return ReachabilityStatus.REACHABLE
-    if any(m.get("is_defined") for m in matched_symbols.values()):
+    if any(
+        matched_symbol.get("is_defined") for matched_symbol in matched_symbols.values()
+    ):
         return ReachabilityStatus.UNKNOWN
     return ReachabilityStatus.NOT_REACHABLE
 
 
 def match_patches_to_resources(
-    patches, patch_symbols, candidate_resources, resource_indexes, logger=None
+    tool_name,
+    patches,
+    patch_symbols,
+    candidate_resources,
+    resource_indexes,
+    logger=None,
 ):
-    """
-    Match resource symbols against patch symbols.
-    """
-    project_matcher = None
-    legacy_indexes = None
-    if isinstance(resource_indexes, Graph) or "nodes" in (resource_indexes or {}):
-        project_matcher = ResourcePatchMatcher(resource_indexes)
-    elif resource_indexes:
-        legacy_indexes = resource_indexes
-
+    """Match resource symbols against patch symbols."""
+    project_matcher = ResourcePatchMatcher(resource_indexes)
     patches_count = len(patches)
     patch_progress = LoopProgress(patches_count, logger=logger)
     for patch in patch_progress.iter(patches):
@@ -617,22 +560,17 @@ def match_patches_to_resources(
             if not (vulnerable_symbols or fixed_symbols):
                 continue
 
-            matcher = project_matcher
-            if matcher is None:
-                resource_graph = (
-                    legacy_indexes.get(resource.path) if legacy_indexes else None
-                )
-                if not resource_graph:
-                    continue
-                matcher = ResourcePatchMatcher(resource_graph)
-
-            vuln_details = matcher.match(vulnerable_symbols, file_path=resource.path)
-            fixed_details = matcher.match(fixed_symbols, file_path=resource.path)
-
+            vuln_details = project_matcher.match(
+                vulnerable_symbols, file_path=resource.path
+            )
+            fixed_details = project_matcher.match(
+                fixed_symbols, file_path=resource.path
+            )
             if not any([vuln_details, fixed_details]):
                 continue
 
             report = {
+                "tool_name": tool_name,
                 "patch": {
                     "vcs_url": vcs_url,
                     "commit_hash": commit_hash,
