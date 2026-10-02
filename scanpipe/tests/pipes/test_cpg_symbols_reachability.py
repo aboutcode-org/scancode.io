@@ -49,7 +49,9 @@ class CPGQueryReachabilityPipesTest(TestCase):
         )
 
     @patch("scanpipe.pipelines.cpg_symbols_reachability.run_command_safely")
-    @patch("scanpipe.pipelines.cpg_symbols_reachability.CPG_NEO4J_EXECUTABLE", "cpg-neo4j")
+    @patch(
+        "scanpipe.pipelines.cpg_symbols_reachability.CPG_NEO4J_EXECUTABLE", "cpg-neo4j"
+    )
     @patch("scanpipe.pipes.reachability.Repo")
     @patch("scanpipe.pipes.reachability.PatchAnalyzer.collect_patch_symbols")
     @patch.object(Project, "package_vulnerabilities", new_callable=PropertyMock)
@@ -106,8 +108,13 @@ class CPGQueryReachabilityPipesTest(TestCase):
         )
 
     @patch("scanpipe.pipelines.cpg_symbols_reachability.run_command_safely")
-    @patch("scanpipe.pipelines.cpg_symbols_reachability.CPG_NEO4J_EXECUTABLE", "cpg-neo4j")
-    @patch("scanpipe.pipelines.cpg_symbols_reachability.CPGTool.supported_language", ("Python", "Java"))
+    @patch(
+        "scanpipe.pipelines.cpg_symbols_reachability.CPG_NEO4J_EXECUTABLE", "cpg-neo4j"
+    )
+    @patch(
+        "scanpipe.pipelines.cpg_symbols_reachability.CPGTool.supported_language",
+        ("Python", "Java"),
+    )
     @patch("scanpipe.pipes.reachability.Repo")
     @patch("scanpipe.pipes.reachability.PatchAnalyzer.collect_patch_symbols")
     @patch.object(Project, "package_vulnerabilities", new_callable=PropertyMock)
@@ -133,7 +140,10 @@ class CPGQueryReachabilityPipesTest(TestCase):
                         {
                             "id": 1,
                             "labels": ["FileNode"],
-                            "properties": {"name": "app.java", "path": "java/main/app.java"},
+                            "properties": {
+                                "name": "app.java",
+                                "path": "java/main/app.java",
+                            },
                         },
                         {
                             "id": 2,
@@ -143,12 +153,18 @@ class CPGQueryReachabilityPipesTest(TestCase):
                         {
                             "id": 3,
                             "labels": ["MethodDeclaration"],
-                            "properties": {"name": "serveReport", "fullName": "App.serveReport"},
+                            "properties": {
+                                "name": "serveReport",
+                                "fullName": "App.serveReport",
+                            },
                         },
                         {
                             "id": 4,
                             "labels": ["MethodDeclaration"],
-                            "properties": {"name": "buildFilePath", "fullName": "App.buildFilePath"},
+                            "properties": {
+                                "name": "buildFilePath",
+                                "fullName": "App.buildFilePath",
+                            },
                         },
                     ],
                     "edges": [

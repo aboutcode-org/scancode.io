@@ -56,7 +56,7 @@ class Node:
         return self.properties.get("fullName") or ""
 
     def describe(self):
-        """Identifier used in the reported ``eog_path``."""
+        """Return the identifier used in the reported ``eog_path``."""
         return (
             clean_symbol_name(self.full_name)
             or clean_symbol_name(self.name)
@@ -157,7 +157,7 @@ class Graph:
         return [self.nodes[i] for i in ids if i in self.nodes]
 
     def invokes(self, node):
-        """Declarations invoked by a call-expression-like node."""
+        """Return declarations invoked by a call-expression-like node."""
         callees = []
         for edge_type in self._call_edge_types:
             callees.extend(self.successors(node, edge_type))
@@ -168,7 +168,7 @@ class Graph:
         return self.nodes.get(parent_id) if parent_id is not None else None
 
     def is_inside(self, node, ancestor):
-        """True if node is ancestor or lies in its subtree."""
+        """Check whether node is an ancestor or lies in its subtree."""
         while node is not None:
             if node is ancestor:
                 return True
@@ -211,7 +211,7 @@ class Graph:
         return self._descendants[node.id]
 
     def file_of(self, node):
-        """The File node containing node, or None."""
+        """Return the File node containing node, or None."""
         if node.id not in self._file_of:
             current = self.parent(node)
             while current is not None and not current.is_a(*self.FILE_LABELS):
@@ -222,7 +222,7 @@ class Graph:
     @staticmethod
     def paths_match(a, b):
         """
-        True when two file paths denote the same file, allowing one to
+        Check whether two file paths denote the same file, allowing one to
         be longer than the other (resource path vs CPG file path).
         """
 
@@ -236,7 +236,7 @@ class Graph:
 
     def in_file(self, node, file_path):
         """
-        True if ``node`` is declared in the file matching ``file_path``.
+        Check whether ``node`` is declared in the file matching ``file_path``.
 
         When the node's file cannot be resolved from the export, the node
         is not excluded: dropping it would silently lose symbols on
@@ -258,7 +258,7 @@ class Graph:
 
     def find_symbols(self, qualified_name, file_path=None):
         """
-        Declaration nodes matching a patch symbol name, scoped to
+        Find declaration nodes matching a patch symbol name, scoped to
         ``file_path`` when given. Matches the qualified name exactly or as
         a suffix (the CPG prefixes module/component names, e.g.
         ``app.serve_report.build_file_path``), falling back to a
@@ -296,16 +296,11 @@ class Graph:
                 return scoped
         return []
 
-    def entry_declarations(self):
+    def uninvoked_public_declarations(self):
         """
-        Traversal roots of the codebase: public declarations never
-        invoked anywhere in the graph (dunders such as __init__ count
-        as public). Falls back to module-level EOG roots when every
-        declaration is invoked.
+        Method-like declarations that are public and never invoked
+        anywhere in the graph.
         """
-        if self._entries is not None:
-            return self._entries
-
         invoked = set(self.invokers_of)
         entries = []
         for node in self.declarations(self.METHOD_LABELS):
@@ -321,23 +316,42 @@ class Graph:
             )
             if not is_private:
                 entries.append(node)
+        return entries
 
+    def module_level_eog_roots(self):
+        """
+        EOG roots outside of any declaration, i.e. the first statements
+        executed at module level.
+        """
+        declaration_ids = {n.id for n in self.declarations()}
+        entries = []
+        for node in self.nodes.values():
+            if node.is_a(*self.DECLARATION_LABELS):
+                continue
+            current = self.parent(node)
+            inside_declaration = False
+            while current is not None:
+                if current.id in declaration_ids:
+                    inside_declaration = True
+                    break
+                current = self.parent(current)
+            if not inside_declaration and not self.predecessors(node, "EOG"):
+                entries.append(node)
+        return entries
+
+    def entry_declarations(self):
+        """
+        Traversal roots of the codebase: public declarations never
+        invoked anywhere in the graph (dunders such as __init__ count
+        as public). Falls back to module-level EOG roots when every
+        declaration is invoked.
+        """
+        if self._entries is not None:
+            return self._entries
+
+        entries = self.uninvoked_public_declarations()
         if not entries:
-            # Fallback: EOG roots outside of any declaration, i.e. the
-            # first statements executed at module level.
-            declaration_ids = {n.id for n in self.declarations()}
-            for node in self.nodes.values():
-                if node.is_a(*self.DECLARATION_LABELS):
-                    continue
-                current = self.parent(node)
-                inside_declaration = False
-                while current is not None:
-                    if current.id in declaration_ids:
-                        inside_declaration = True
-                        break
-                    current = self.parent(current)
-                if not inside_declaration and not self.predecessors(node, "EOG"):
-                    entries.append(node)
+            entries = self.module_level_eog_roots()
 
         self._entries = entries
         return entries
