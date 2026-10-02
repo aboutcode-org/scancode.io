@@ -24,6 +24,7 @@ from abc import ABC
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import reachability
+from scanpipe.pipes.symbols import TS_QUERIES
 
 
 class ReachabilityTool(ABC):
@@ -86,8 +87,13 @@ class ReachabilityPipeline(Pipeline):
         )
 
     def collect_resource_index(self):
-        """Collect resources symbols for each resource"""
-        raise NotImplementedError
+        """Collect the tool-specific resource index of the codebase."""
+        self.candidate_resources = self.get_candidate_resources()
+        self.resource_indexes = self.reachability_tool.collect_resource_index(
+            project=self.project,
+            candidate_resources=self.candidate_resources,
+            logger=self.log,
+        )
 
     def collect_patch_symbols(self):
         """Collect patch symbols for all related commits."""
@@ -97,16 +103,29 @@ class ReachabilityPipeline(Pipeline):
 
     def collect_and_match_resources(self):
         """Match resource symbols against patch symbols."""
-        raise NotImplementedError
+        self.reachability_tool.match_patches_to_resources(
+            patches=self.patches,
+            patch_symbols=self.patch_symbols,
+            candidate_resources=self.candidate_resources,
+            resource_indexes=self.resource_indexes,
+            logger=self.log,
+        )
 
     def generate_advisory_reachability_report(self):
         """Generate a reachability report summarizing status by advisory."""
-        candidate_resources = self.project.codebaseresources.files().filter(
-            is_binary=False,
-            is_archive=False,
-            is_media=False,
-            programming_language__in=self.reachability_tool.supported_language,
-        )
+        candidate_resources = self.candidate_resources
+        if candidate_resources is None:
+            supported_languages = (
+                self.reachability_tool.supported_language
+                if self.reachability_tool is not None
+                else tuple(TS_QUERIES.keys())
+            )
+            candidate_resources = self.project.codebaseresources.files().filter(
+                is_binary=False,
+                is_archive=False,
+                is_media=False,
+                programming_language__in=supported_languages,
+            )
 
         self.advisories_reachability_report = (
             reachability.generate_advisory_reachability_report(

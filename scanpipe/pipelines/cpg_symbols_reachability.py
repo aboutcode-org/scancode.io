@@ -68,7 +68,7 @@ class CPGTool(ReachabilityTool):
         try:
             run_command_safely(command_args=command_args)
             logger("CPG resource_index pipeline completed successfully")
-            return target_path
+            return export_json_path
         except subprocess.SubprocessError as error:
             raise RuntimeError(f"CPG client failure: {error!r}")
         except FileNotFoundError:
@@ -86,7 +86,19 @@ class CPGTool(ReachabilityTool):
 
 class CPGReachability(ReachabilityPipeline):
     """
-    Code Property Graph
+    Determine the reachability of vulnerabilities using a Code Property
+    Graph (CPG) tool.
+
+    Note: You must run the ``find_vulnerabilities`` pipeline before running
+    this pipeline.
+
+    The project codebase is exported once as a CPG JSON graph. The vulnerable
+    and fixed symbols of each patch are matched against that graph, and a
+    symbol is reachable when it can be reached from a codebase entry point
+    following the evaluation order (EOG) of the graph. Results are stored in
+    the ``extra_data`` of the matching resources under the
+    ``symbols_reachability`` key, and a summary report is generated for each
+    vulnerability advisory.
     """
 
     reachability_tool = CPGTool
