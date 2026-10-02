@@ -68,6 +68,8 @@ REVIEW_DANGLING_LEGAL_FILE = "review-dangling-legal-file"
 NOT_DEPLOYED = "not-deployed"
 GENERATED = "generated-file"
 
+SHADED_CLASS = "shaded-class"
+
 
 # Target files that should be ignored during processing as those are related to the app
 # configuration.
