@@ -233,26 +233,109 @@ And visit the web UI at: http://localhost/project/
 Local development
 -----------------
 
+**ScanCode.io** local development now uses Docker Compose for a simplified, containerized workflow.
+This approach eliminates the need to install PostgreSQL, Redis, and other dependencies locally.
+
+Quick Start
+^^^^^^^^^^^
+
+**Clone the repository and get started in 3 steps**::
+
+    git clone https://github.com/aboutcode-org/scancode.io.git && cd scancode.io
+    make envfile
+    make run
+
+The app will be running at http://localhost:8001 with **hot reload on code changes**.
+
+What's Included
+^^^^^^^^^^^^^^^
+
+The Docker-based development stack includes:
+
+* **PostgreSQL 17** - Database
+* **Redis** - Cache and job queue
+* **Django Runserver** - Development web server with auto-reload
+* **RQ Worker** - Background job processing
+* **Volume mounts** - Live code synchronization (changes detected automatically)
+
+All services run in containers, so no local installation of PostgreSQL, Redis, or system
+dependencies is required.
+
+Common Development Tasks
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Run the development server** (with hot reload)::
+
+    make run
+
+**Open a bash shell in the web container**::
+
+    make bash
+
+**Run the test suite**::
+
+    make test
+
+**Run tests excluding slow/integration tests**::
+
+    make fasttest
+
+**Create new database migrations**::
+
+    make migrations
+
+**Apply database migrations**::
+
+    make migrate
+
+**Restart the worker service**::
+
+    make restart-worker
+
+**Access Django management commands**::
+
+    docker compose -f docker-compose.yml -f docker-compose.dev.yml exec web ./manage.py COMMAND
+
 Supported Platforms
 ^^^^^^^^^^^^^^^^^^^
 
-**ScanCode.io** has been tested and is supported on the following operating systems:
+The Docker-based development workflow is supported on:
 
-    #. **Debian-based** Linux distributions
-    #. **macOS** 10.14 and up
+    #. **Linux** - All distributions (Debian, Ubuntu, Fedora, etc.)
+    #. **macOS** - 10.14 and later (Intel and Apple Silicon)
+    #. **Windows** - via Docker Desktop or WSL2
 
-.. warning::
-    On **Windows** ScanCode.io can **only** be :ref:`run_with_docker`.
-    Alternatively, you can run a local checkout with the Docker compose stack using the
-    dedicated command::
-
-        make run-docker-dev
-
+.. tip::
+    On **Windows**, ensure Docker Desktop is running with WSL2 backend enabled.
+    Docker Compose will handle all dependencies automatically.
 
 Pre-installation Checklist
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Before you install ScanCode.io, make sure you have the following prerequisites:
+For Docker-based development, you only need:
+
+ * **Docker**: Download from https://www.docker.com/products/docker-desktop/
+ * **Docker Compose**: Usually bundled with Docker Desktop (v2.0 or later)
+ * **Git**: Most recent release from https://git-scm.com/
+
+.. warning::
+    On **Windows**, ensure that git ``autocrlf`` configuration is set to
+    ``false`` before cloning the repository::
+
+        git config --global core.autocrlf false
+
+.. note::
+    You do **NOT** need to install Python, PostgreSQL, Redis, or system dependencies
+    when using the Docker-based workflow. All services run in containers.
+
+Legacy: Local Development with Virtualenv
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. warning::
+    The virtualenv-based local development setup is no longer the recommended approach.
+    Please use the Docker-based workflow above.
+
+If you need to set up a local virtualenv-based environment (not recommended), you will need:
 
  * **Python: versions 3.12 to 3.14** found at https://www.python.org/downloads/
  * **Git**: most recent release available at https://git-scm.com/
@@ -261,14 +344,14 @@ Before you install ScanCode.io, make sure you have the following prerequisites:
 
 .. _system_dependencies:
 
-System Dependencies
-^^^^^^^^^^^^^^^^^^^
+System Dependencies (Virtualenv setup only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In addition to the above pre-installation checklist, there might be some OS-specific
-system packages that need to be installed before installing ScanCode.io.
+If you choose to use the legacy virtualenv-based setup, several OS-specific
+system packages may be needed before installing ScanCode.io.
 
 On **Linux**, several **system packages are required** by the ScanCode toolkit.
-Make sure those are installed before attempting the ScanCode.io installation::
+Make sure those are installed before attempting the installation::
 
     sudo apt-get install \
         build-essential python3-dev libssl-dev libpq-dev \
@@ -312,8 +395,8 @@ For the Android deploy to develop pipeline, `jadx <https://github.com/skylot/jad
 
         brew install jadx
 
-Clone and Configure
-^^^^^^^^^^^^^^^^^^^
+Clone and Configure (Virtualenv setup only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
  * Clone the `ScanCode.io GitHub repository <https://github.com/aboutcode-org/scancode.io>`_::
 
@@ -350,8 +433,8 @@ Clone and Configure
     source .venv/bin/activate
     pip install android-inspector
 
-Database
-^^^^^^^^
+Database (Virtualenv setup only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **PostgreSQL** is the preferred database backend and should always be used on
 production servers.
@@ -387,26 +470,26 @@ production servers.
     <https://docs.djangoproject.com/en/dev/ref/databases/#sqlite-notes>`_
     for more details.
 
-Tests
-^^^^^
+Tests (Virtualenv setup only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can validate your ScanCode.io installation by running the tests suite::
 
     make test
 
-Web Application
-^^^^^^^^^^^^^^^
+Web Application (Virtualenv setup only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A web application is available to create and manage your projects from a browser;
 you can start the local webserver and access the app with::
 
-    make run
+    make runserver
 
 Then open your web browser and visit: http://localhost:8001/ to access the web
 application.
 
 .. warning::
-    ``make run`` is provided as a simplified way to run the application with one
+    ``make runserver`` is provided as a simplified way to run the application with one
     **major caveat**: pipeline runs will be **executed synchronously** on HTTP requests
     and will leave your browser connection or API calls opened during the pipeline
     execution. See also the :ref:`scancodeio_settings_async` setting.
