@@ -70,6 +70,7 @@ class ScanCodebase(Pipeline):
     def collect_and_create_license_detections(self):
         """
         Collect and create unique license detections from resources and
-        package data.
+        package data. Also look for license issues and try to resolve them.
         """
         scancode.collect_and_create_license_detections(project=self.project)
+        scancode.follow_and_resolve_referenced_licenses(project=self.project)
