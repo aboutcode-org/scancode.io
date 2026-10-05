@@ -34,7 +34,7 @@ def get_resource_fields(resource, fields):
     return {field: getattr(resource, field) for field in fields}
 
 
-def get_resource_tree(resource, fields, codebase=None, seen_resources=set()):
+def get_resource_tree(resource, fields, codebase=None, seen_resources=None):
     """
     Return a tree as a dictionary structure starting from the provided `resource`.
 
@@ -51,6 +51,8 @@ def get_resource_tree(resource, fields, codebase=None, seen_resources=set()):
     get_codebase_tree(). We keep track of child Resources we visit in
     `seen_resources`, so we don't visit them again in get_codebase_tree().
     """
+    if seen_resources is None:
+        seen_resources = set()
     resource_dict = get_resource_fields(resource, fields)
 
     if resource.is_dir:
