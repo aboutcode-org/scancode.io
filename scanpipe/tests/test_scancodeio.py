@@ -22,6 +22,9 @@
 
 from django.test import TestCase
 
+import yaml
+
+from scancodeio import ROOT_DIR
 from scancodeio import extract_short_commit
 
 
@@ -32,3 +35,13 @@ class ScanCodeIOTest(TestCase):
         self.assertEqual(extract_short_commit("v1.0.0-1-g123456"), "123456")
         self.assertEqual(extract_short_commit("v2.0.0-5-abcdefg"), "abcdefg")
         self.assertEqual(extract_short_commit("v1.5.0-2-ghijkl"), "hijkl")
+
+    def test_scancodeio_docker_compose_web_service_has_healthcheck(self):
+        # Without a healthcheck, `docker compose up --wait` only waits for the
+        # "web" container to be running, not for its migrate/collectstatic
+        # steps to complete. This lets a `docker compose run web scanpipe ...`
+        # command race ahead of the database migrations.
+        # See https://github.com/aboutcode-org/scancode.io/issues/1842
+        compose_file = ROOT_DIR.joinpath("docker-compose.yml")
+        compose_data = yaml.safe_load(compose_file.read_text())
+        self.assertIn("healthcheck", compose_data["services"]["web"])
