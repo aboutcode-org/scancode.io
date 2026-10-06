@@ -27,7 +27,11 @@ from scanpipe.pipes import reachability
 
 
 class ReachabilityTool(ABC):
-    """Base class for the analysis tools used by ReachabilityPipeline."""
+    """
+    Base class for the analysis tools used by ReachabilityPipeline.
+    Uses:
+      Subclasses must implement ``get_availability``, ``run``, and ``parsed_output``.
+    """
 
     tool_name = ""
     executable = None
@@ -35,10 +39,12 @@ class ReachabilityTool(ABC):
 
     @classmethod
     def get_availability(cls):
+        """Return None if this tool is available, or a reason string if not."""
         return NotImplementedError
 
     @classmethod
     def run(cls, project, logger=None):
+        """Run the analysis tool."""
         raise NotImplementedError
 
     @classmethod
@@ -47,11 +53,18 @@ class ReachabilityTool(ABC):
         export_output_path,
         logger=None,
     ):
+        """Parse and return the tool results from the output file."""
         raise NotImplementedError
 
 
 class ReachabilityPipeline(Pipeline):
-    """Base pipeline for the vulnerability reachability analysis"""
+    """
+    Base pipeline for the vulnerability reachability analysis
+    Uses:
+       Subclasses must implement ``collect_resource_index``
+       and ``collect_and_match_resources`` and define
+       the ``reachability_tool`` attribute.
+    """
 
     download_inputs = False
     is_addon = True
@@ -72,6 +85,7 @@ class ReachabilityPipeline(Pipeline):
 
     @classmethod
     def get_availability(cls):
+        """Return None if this pipeline is available, or a reason string if not."""
         if cls.reachability_tool:
             return cls.reachability_tool.get_availability()
         return None
