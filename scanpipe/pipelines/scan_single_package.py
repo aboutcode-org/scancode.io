@@ -69,7 +69,6 @@ class ScanSinglePackage(Pipeline):
         "classify": True,
         "summary": True,
         "todo": True,
-        "only_findings": False,
     }
 
     def get_package_input(self):
