@@ -50,6 +50,7 @@ from scanpipe.pipelines import scan_single_package
 from scanpipe.pipelines.find_vulnerabilities import FindVulnerabilities
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
+from scanpipe.pipes import maven
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
@@ -946,6 +947,90 @@ class PipelinesIntegrationTest(TestCase):
         scancode_file = project1.get_latest_output(filename="scancode")
         expected_file = self.data / "jvm" / "args4j-tools-2.0.16-sctk.json"
         self.assertPipelineResultEqual(expected_file, scancode_file)
+
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
+    def test_scanpipe_scan_maven_package_d2d_shaded_classes(self):
+        pipeline_name = "scan_maven_package"
+        project1 = make_project(name="Analysis")
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        download_url = "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        project1.add_input_source(download_url=download_url)
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+        self.assertTrue(
+            pipeline.d2d_enabled,
+            "D2D is enabled for a package with both source and binary",
+        )
+
+        shaded_classes = project1.codebaseresources.filter(status=flag.SHADED_CLASS)
+        self.assertTrue(
+            shaded_classes.exists(),
+            "Expected at least one .class resource with status shaded-class",
+        )
+
+        for resource in shaded_classes:
+            extra_data = resource.extra_data
+            self.assertIn("shaded_from_package", extra_data)
+            self.assertGreaterEqual(extra_data["match_score"], maven.MIN_MATCH_SCORE)
+
+        commons_class = shaded_classes.get(
+            path__endswith=("org/apache/htrace/commons/logging/impl/AvalonLogger.class")
+        )
+        self.assertEqual(
+            {
+                "shaded_from_package": (
+                    "pkg:maven/commons-logging/commons-logging@1.1.1"
+                ),
+                "original_fqn": "org.apache.commons.logging.impl.AvalonLogger",
+                "match_score": 6,
+                "match_signals": ["artifact", "group"],
+            },
+            commons_class.extra_data,
+        )
+        self.assertEqual(
+            ["pkg:maven/commons-logging/commons-logging@1.1.1"],
+            [
+                package.package_url
+                for package in commons_class.discovered_packages.all()
+            ],
+        )
+
+        jackson_class = shaded_classes.get(
+            path__endswith=(
+                "org/apache/htrace/fasterxml/jackson/annotation/JsonTypeId.class"
+            )
+        )
+        self.assertEqual(
+            {
+                "shaded_from_package": (
+                    "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0"
+                ),
+                "original_fqn": "com.fasterxml.jackson.annotation.JsonTypeId",
+                "match_score": 8,
+                "match_signals": ["artifact", "fuzzy", "group"],
+            },
+            jackson_class.extra_data,
+        )
+        self.assertEqual(
+            ["pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0"],
+            [
+                package.package_url
+                for package in jackson_class.discovered_packages.all()
+            ],
+        )
+
+        self.assertFalse(
+            shaded_classes.filter(
+                extra_data__shaded_from_package__startswith=(
+                    "pkg:maven/org.apache.htrace/htrace-core@"
+                )
+            ).exists(),
+            "Shaded classes must not be attributed to the main htrace-core package",
+        )
 
     def test_scanpipe_scan_codebase_pipeline_integration(self):
         pipeline_name = "scan_codebase"
