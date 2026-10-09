@@ -13,6 +13,7 @@ services:
       - .env:/opt/scancodeio/.env
       - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
+      - sctk_cache:/opt/scancodeio/.cache/scancode-tk/
     depends_on:
       - db
       - web

@@ -29,6 +29,7 @@ services:
       - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
       - static:/var/scancodeio/static/
+      - sctk_cache:/opt/scancodeio/.cache/scancode-tk/
     depends_on:
       - db
 
@@ -44,6 +45,7 @@ services:
     volumes:
       - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
+      - sctk_cache:/opt/scancodeio/.cache/scancode-tk/
     depends_on:
       - redis
       - db
@@ -73,3 +75,4 @@ volumes:
   clamav_data:
   static:
   workspace:
+  sctk_cache:

@@ -48,6 +48,7 @@ services:
       - workspace:/var/scancodeio/workspace/
       - static:/var/scancodeio/static/
       - healthycode_venv:/opt/healthycode
+      - sctk_cache:/opt/scancodeio/.cache/scancode-tk/
     restart: always
     depends_on:
       db:
@@ -69,6 +70,7 @@ services:
       - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
       - healthycode_venv:/opt/healthycode
+      - sctk_cache:/opt/scancodeio/.cache/scancode-tk/
     restart: always
     depends_on:
       db:
@@ -115,3 +117,4 @@ volumes:
   workspace:
   webroot:
   healthycode_venv:
+  sctk_cache:
