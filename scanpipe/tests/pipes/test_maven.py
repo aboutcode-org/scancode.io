@@ -177,26 +177,14 @@ class ScanPipeMavenPipesTest(TestCase):
         with self.assertRaisesMessage(ValueError, "Version is required."):
             maven.check_input_and_return_purl(project)
 
-    @mock.patch("scanpipe.pipes.maven.fetch_path")
+    @mock.patch("scanpipe.pipes.maven.fetch.fetch_path")
     def test_scanpipe_maven_fetch_inputs(self, mock_fetch_path):
         purl = PackageURL.from_string("pkg:maven/a/test@1.0")
-
         mock_fetch_path.side_effect = ["/path/to/binary.jar", "/path/to/source.jar"]
 
         src_path, bin_path = maven.fetch_inputs(purl)
         self.assertEqual(bin_path, "/path/to/binary.jar")
         self.assertEqual(src_path, "/path/to/source.jar")
-
-    @mock.patch("scanpipe.pipes.maven.fetch.fetch_url")
-    def test_scanpipe_maven_fetch_path(self, mock_fetch_url):
-        url = "https://example.com/package.jar"
-
-        mock_response = mock.Mock()
-        mock_response.path = "/downloaded/package.jar"
-        mock_fetch_url.return_value = mock_response
-
-        result = maven.fetch_path(url, "binary")
-        self.assertEqual(result, "/downloaded/package.jar")
 
     @mock.patch("builtins.open", new_callable=mock.mock_open)
     @mock.patch("json.load")

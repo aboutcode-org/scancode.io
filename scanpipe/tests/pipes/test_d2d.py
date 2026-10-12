@@ -2717,3 +2717,122 @@ class ScanPipeD2DPipesTest(TestCase):
 
         to_archive.refresh_from_db()
         self.assertEqual("", to_archive.status)
+
+    def test_scanpipe_pipes_d2d_map_rust_paths(self):
+        from_lib = make_resource_file(
+            self.project1,
+            path="from/rand-0.7.2/src/lib.rs",
+        )
+        from_cargo = make_resource_file(
+            self.project1,
+            path="from/rand-0.7.2/Cargo.toml",
+        )
+
+        to_release_dir = self.project1.codebase_path / "to" / "release"
+        to_release_dir.mkdir(parents=True, exist_ok=True)
+
+        (to_release_dir / "librand.rlib").touch()
+        (to_release_dir / "librand.d").write_text(
+            "/codebase/to/release/librand.rlib: "
+            "/codebase/from/rand-0.7.2/src/lib.rs "
+            "/codebase/from/rand-0.7.2/Cargo.toml"
+        )
+
+        to_rlib = make_resource_file(
+            self.project1,
+            path="to/release/librand.rlib",
+        )
+        make_resource_file(
+            self.project1,
+            path="to/release/librand.d",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_rust_paths(self.project1, logger=buffer.write)
+
+        to_rlib.refresh_from_db()
+        self.assertIn("rust_file_paths", to_rlib.extra_data)
+        self.assertEqual(
+            sorted(to_rlib.extra_data["rust_file_paths"]),
+            sorted(
+                [
+                    "/codebase/from/rand-0.7.2/src/lib.rs",
+                    "/codebase/from/rand-0.7.2/Cargo.toml",
+                ]
+            ),
+        )
+
+        relations = self.project1.codebaserelations.filter(map_type="rust_file_paths")
+        self.assertEqual(2, relations.count())
+
+        related_from_paths = set(
+            relations.values_list("from_resource__path", flat=True)
+        )
+        self.assertEqual(
+            related_from_paths,
+            {from_lib.path, from_cargo.path},
+        )
+
+        # The rlib should NOT be flagged as requiring review since all
+        # the listed paths were mapped.
+        to_rlib.refresh_from_db()
+        self.assertNotEqual("requires-review", to_rlib.status)
+
+    def test_scanpipe_pipes_d2d_map_rust_paths_ignores_deps_and_build(self):
+        codebase = self.project1.codebase_path
+        release = codebase / "to" / "release"
+        release.mkdir(parents=True, exist_ok=True)
+        (release / "librand.rlib").touch()
+
+        valid_content = (
+            "/codebase/to/release/librand.rlib: /codebase/from/rand-0.7.2/src/lib.rs"
+        )
+        for rel in [
+            "to/release/deps/librand-abc123.d",
+            "to/release/build/rand-xyz/build.d",
+            "to/release/librand.d",
+        ]:
+            target = codebase / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(valid_content)
+            make_resource_file(self.project1, path=rel)
+
+        make_resource_file(self.project1, path="to/release/librand.rlib")
+        make_resource_file(self.project1, path="from/rand-0.7.2/src/lib.rs")
+
+        d2d.map_rust_paths(self.project1)
+
+        # Only the top-level .d file should have contributed a relation.
+        self.assertEqual(1, self.project1.codebaserelations.count())
+
+    def test_scanpipe_pipes_d2d_map_rust_paths_missing_rlib(self):
+        to_release_dir = self.project1.codebase_path / "to" / "release"
+        to_release_dir.mkdir(parents=True, exist_ok=True)
+
+        (to_release_dir / "librand.d").write_text(
+            "/codebase/to/release/librand-not-in-db.rlib: "
+            "/codebase/from/rand-0.7.2/src/lib.rs"
+        )
+
+        make_resource_file(
+            self.project1,
+            path="to/release/librand.d",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_rust_paths(self.project1, logger=buffer.write)
+
+        # No relations as the .rlib file was not found in the database.
+        self.assertEqual(0, self.project1.codebaserelations.count())
+        self.assertIn("Could not find rlib file", buffer.getvalue())
+
+    def test_scanpipe_pipes_d2d_update_from_to_tag(self):
+        from_file = make_resource_file(self.project1, "from/foo.rs")
+        to_file = make_resource_file(self.project1, "to/foo.rlib")
+        d2d.update_from_to_tag(self.project1)
+
+        from_file.refresh_from_db()
+        to_file.refresh_from_db()
+
+        self.assertEqual("from", from_file.tag)
+        self.assertEqual("to", to_file.tag)

@@ -63,6 +63,7 @@ from scanpipe.pipes import jvm
 from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
 from scanpipe.pipes import resolve
+from scanpipe.pipes import rust
 from scanpipe.pipes import scancode
 from scanpipe.pipes import stringmap
 from scanpipe.pipes import symbolmap
@@ -1896,20 +1897,25 @@ def map_paths_resource(
                     relations_to_create[rel_key] = relation
         if paths_not_mapped:
             to_resource.status = flag.REQUIRES_REVIEW
-            logger(
-                f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT mapped for: "
-                f"{to_resource.path!r}"
-            )
+            if logger:
+                logger(
+                    f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT "
+                    f"mapped for: {to_resource.path!r}"
+                )
         to_resource.save()
 
     if relations_to_create:
         rels = CodebaseRelation.objects.bulk_create(relations_to_create.values())
-        logger(
-            f"Created {len(rels)} mappings using "
-            f"{', '.join(map_types)} for: {to_resource.path!r}"
-        )
+        if logger:
+            logger(
+                f"Created {len(rels)} mappings using "
+                f"{', '.join(map_types)} for: {to_resource.path!r}"
+            )
     else:
-        logger(f"No mappings using {', '.join(map_types)} for: {to_resource.path!r}")
+        if logger:
+            logger(
+                f"No mappings using {', '.join(map_types)} for: {to_resource.path!r}"
+            )
 
 
 def process_paths_in_binary(
@@ -2162,6 +2168,88 @@ def map_go_paths(project, logger=None):
             map_types=["go_file_paths"],
             logger=logger,
         )
+
+
+def map_rust_paths(project, logger=None):
+    """Map the path listed in the .d file to the source in ``project``."""
+    from_resources = project.codebaseresources.files().from_codebase()
+    # Fetch the .d files to extract data from
+    data_resources = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .exclude(path__contains="/deps/")
+        .exclude(path__contains="/build/")
+        .filter(path__endswith=".d")
+    )
+    target_rlib_ids = []
+    for resource in data_resources:
+        try:
+            rlib_path_str, paths = rust.get_rust_file_paths(resource.location_path)
+            rlib_path = Path(rlib_path_str)
+            rlib_resource = None
+            try:
+                if rlib_path_str.startswith("/codebase/"):
+                    clean_rlib_path = str(rlib_path.relative_to("/codebase"))
+                else:
+                    clean_rlib_path = str(rlib_path.relative_to(project.codebase_path))
+
+                rlib_resource = (
+                    project.codebaseresources.files()
+                    .to_codebase()
+                    .filter(path=clean_rlib_path)
+                    .first()
+                )
+            except ValueError:
+                pass
+
+            if rlib_resource:
+                rlib_resource.update_extra_data(paths)
+                target_rlib_ids.append(rlib_resource.id)
+            elif logger:
+                logger(
+                    f"Warning: Could not find rlib file {rlib_path_str} in database."
+                )
+        except Exception as exception:
+            project.add_warning(
+                exception=exception,
+                object_instance=resource,
+                description=f"Cannot parse file at {resource.path}",
+                model="map_rust_paths",
+                details={"path": resource.path},
+            )
+
+    to_resources = project.codebaseresources.filter(id__in=target_rlib_ids)
+
+    if logger:
+        logger(
+            f"Mapping {to_resources.count():,d} to/ resources using paths "
+            f"with {from_resources.count():,d} from/ resources."
+        )
+
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
+    )
+
+    if logger:
+        logger("Done building from/ resources index.")
+
+    resource_iterator = to_resources.iterator(chunk_size=2000)
+    progress = LoopProgress(to_resources.count(), logger)
+    for to_resource in progress.iter(resource_iterator):
+        map_paths_resource(
+            to_resource,
+            from_resources,
+            from_resources_index,
+            map_types=["rust_file_paths"],
+            logger=logger,
+        )
+
+
+def update_from_to_tag(project):
+    """Update 'from' or 'to' tag to resources based on their path."""
+    resources = project.codebaseresources.files()
+    resources.filter(path__startswith=FROM).update(tag="from")
+    resources.filter(path__startswith=TO).update(tag="to")
 
 
 RUST_BINARY_OPTIONS = ["Rust"]

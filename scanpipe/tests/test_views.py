@@ -1305,6 +1305,23 @@ class ScanPipeViewsTest(TestCase):
             self.assertContains(response, "2.0.3")
             self.assertContains(response, "JavaScript")
 
+    def test_scanpipe_views_discovered_package_list_license_issue_badge(self):
+        package_with_issue = make_package(
+            self.project1, package_url="pkg:generic/with-issue@1.0"
+        )
+        package_with_issue.update(has_license_issue=True)
+
+        package_without_issue = make_package(
+            self.project1, package_url="pkg:generic/without-issue@1.0"
+        )
+
+        url = reverse("project_packages", args=[self.project1.slug])
+        response = self.client.get(url)
+
+        self.assertContains(response, package_with_issue.package_url)
+        self.assertContains(response, package_without_issue.package_url)
+        self.assertContains(response, 'title="Package Issue"', count=1)
+
     def test_scanpipe_views_discovered_dependency_views(self):
         DiscoveredPackage.create_from_data(self.project1, package_data1)
         make_resource_file(

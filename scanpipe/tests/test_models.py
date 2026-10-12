@@ -2794,6 +2794,7 @@ class ScanPipeModelsTest(TestCase):
             "discovered_packages_score",
             "notes",
             "scores",
+            "has_license_issue",
         ]
 
         package_data_only_field = ["datasource_id", "dependencies"]

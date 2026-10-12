@@ -82,6 +82,13 @@ UNSAFE_URL_CHARS_RE = re.compile(r"[\x00-\x20\x7f\\]")
 def get_request_session(uri):
     """Return a Requests session setup with authentication and headers."""
     session = requests.Session()
+
+    # Set a default User-Agent to avoid 403 Forbidden errors on strict
+    # registries like crates.io that block default python-requests headers.
+    session.headers.update(
+        {"User-Agent": "ScanCode.io (https://github.com/aboutcode-org/scancode.io)"}
+    )
+
     netloc = urlparse(uri).netloc
 
     if credentials := scanpipe_settings.FETCH_BASIC_AUTH.get(netloc):
@@ -519,3 +526,12 @@ def set_project_purl_from_input_url(project, input_urls):
     if not project.purl and input_urls and len(input_urls) == 1:
         if purl := url2purl.get_purl(input_urls[0]):
             project.update(purl=str(purl))
+
+
+def fetch_path(purl):
+    """Fetch the purl and return the location of the fetched tarball."""
+    try:
+        return fetch_url(url=purl).path
+    except (ValueError, requests.RequestException) as e:
+        logger.warning("Failed to fetch package: %s - %s", purl, e)
+        return None

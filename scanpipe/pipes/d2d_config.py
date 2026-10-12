@@ -147,6 +147,32 @@ ECOSYSTEM_CONFIGS = {
         ecosystem_option="Rust",
         matchable_resource_extensions=[".rs"],
         source_symbol_extensions=[".rs"],
+        deployed_resource_path_exclusions=[
+            # Dependency and per-hash artifacts.
+            "*/deps/*",
+            "*/deps",
+            # Build scripts for dependencies. Never copied into the
+            # deployed artifact.
+            "*/build/*",
+            "*/build",
+            # Cargo bookkeeping and incremental state.
+            "*/.fingerprint/*",
+            "*/.fingerprint",
+            "*/incremental/*",
+            "*/incremental",
+            "*/examples/*",
+            "*/examples",
+            "*/native/*",
+            "*/native",
+            # Cargo markers and lock files.
+            "*/.cargo-*-lock",
+            "*/.rustc_info.json",
+            "*/CACHEDIR.TAG",
+            # Compiler metadata.
+            "*.rmeta",
+            # Dep-info file.
+            "*.d",
+        ],
     ),
     "Ruby": EcosystemConfig(
         ecosystem_option="Ruby",
