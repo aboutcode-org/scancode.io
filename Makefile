@@ -91,16 +91,36 @@ fix:
 	uvx ruff check --fix
 
 outdated:
-	@echo "-> Check for outdated packages (with 7 days cooldown)"
-	uv tree --outdated --exclude-newer "7 days"
+	@echo "-> Check for outdated packages (with 3 days cooldown)"
+	uv tree --outdated --exclude-newer "3 days"
 	# Run `make start` first following any pyproject.toml changes
-	${COMPOSE} exec web uv pip list --outdated --exclude-newer "7 days"
+	${COMPOSE} exec web uv pip list --outdated --exclude-newer "3 days"
 	@echo "-> Audit the project's dependencies for known vulnerabilities"
 	uv audit
 
 lock:
 	@echo "-> Regenerate uv.lock from pyproject.toml"
 	uv lock
+
+upgrade:
+	@if [ -z "$(PACKAGE)" ]; then \
+		echo "Usage: make upgrade PACKAGE=\"django==x.x.x idna==x.x\""; \
+		exit 1; \
+	fi
+	@echo "-> Pin $(PACKAGE) in pyproject.toml"
+	@for requirement in $(PACKAGE); do \
+		NAME_PATTERN=$$(echo "$${requirement%%==*}" | sed 's/[-_.]/[-_.]/g') \
+		VERSION=$${requirement##*==} \
+		perl -pi -e 's/"($$ENV{NAME_PATTERN}(\[[^]]*\])?)==[^"]*"/"$$1==$$ENV{VERSION}"/i' pyproject.toml; \
+	done
+	@echo "-> Lock $(PACKAGE) in the uv image"
+	docker run --rm \
+		--user "$$(id -u):$$(id -g)" \
+		--env UV_CACHE_DIR=/tmp/uv-cache \
+		--volume "$(CURDIR)":/opt/scancodeio \
+		--workdir /opt/scancodeio \
+		ghcr.io/astral-sh/uv:0.12.23-python3.13-trixie-slim \
+		uv lock $(addprefix --upgrade-package=,$(PACKAGE))
 
 ########################################################################################
 # Local venv commands (legacy)
@@ -229,4 +249,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate lock makemigrations restart-worker postgresdb sqlitedb backupdb run test fasttest regen-fixtures fix docs build build-core build-full bash start shell docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate lock upgrade makemigrations restart-worker postgresdb sqlitedb backupdb run test fasttest regen-fixtures fix docs build build-core build-full bash start shell docker-images offline-package
