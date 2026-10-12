@@ -104,6 +104,7 @@ RUN apt-get update \
        libgpgme11 \
        libdevmapper1.02.1 \
        libmagic1 \
+       docker.io \
        git \
        wait-for-it \
        universal-ctags \
