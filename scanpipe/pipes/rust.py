@@ -28,16 +28,22 @@ from pathlib import Path
 import tomllib
 from packageurl import PackageURL
 
+from scanpipe.pipes import fetch
 from scanpipe.pipes import run_command_safely
 
 logger = logging.getLogger(__name__)
+
+# Pinned Rust toolchain image to make builds reproducible across releases.
+RUST_DOCKER_IMAGE = "rust:1.99"
 
 
 def build_crates(codebase_dir, cargo_toml_path):
     """
     Build the Rust crate from source in an isolated Docker container.
     Use the official Rust image for the build process.
-    Return True if the build succeeds, False otherwise.
+    The image version is defined in RUST_DOCKER_IMAGE.
+
+    Return a 3-tuple ``(success, cargo_toml_path, devel_codebase_dir)``.
     """
     to_dir = codebase_dir / "to"
     cargo_toml_path = Path(cargo_toml_path)
@@ -63,22 +69,28 @@ def build_crates(codebase_dir, cargo_toml_path):
         f"{codebase_dir}:/codebase",
         "--workdir",
         "/codebase",
-        "rust:latest",
+        RUST_DOCKER_IMAGE,
         "cargo",
         "build",
         "--release",
-        "--locked",
         "--manifest-path",
         container_cargo_toml,
         "--target-dir",
         container_build_dir,
     ]
 
+    # Conditionally add --locked if Cargo.lock exists alongside Cargo.toml
+    # Many published crates don't ship a Cargo.lock. Having `--locked`
+    # makes cargo fail if the lock file is missing or stale.
+    cargo_lock_path = cargo_toml_path.with_name("Cargo.lock")
+    if cargo_lock_path.exists():
+        cmd.append("--locked")
+
     try:
         run_command_safely(cmd)
     except subprocess.SubprocessError as error:
         logger.warning(f"Failed to build the Rust crate in Docker: {error}")
-        return False
+        return False, cargo_toml_path, codebase_dir
 
     # Move the development code under the /codebase/from/
     from_dir = codebase_dir / "from"
@@ -86,7 +98,9 @@ def build_crates(codebase_dir, cargo_toml_path):
     for item in codebase_dir.iterdir():
         if item != to_dir and item != from_dir:
             shutil.move(str(item), str(from_dir / item.name))
-    return True
+
+    new_cargo_toml_path = from_dir / cargo_toml_path.relative_to(codebase_dir)
+    return True, new_cargo_toml_path, from_dir
 
 
 def check_input_and_return_purl(project):
@@ -121,11 +135,86 @@ def get_repository_value_from_cargo_toml(cargo_toml_path):
     return data.get("package", {}).get("repository", "")
 
 
-def get_cargo_toml_path(codebase_dir):
-    """Get the Cargo.toml path from the codebase directory."""
-    cargo_toml_path = None
-    # There is only one "Cargo.toml" per published package
-    for path in codebase_dir.rglob("Cargo.toml"):
-        cargo_toml_path = path
-        break
-    return cargo_toml_path
+def fetch_inputs(purl):
+    """Fetch the source for the given input purl."""
+    purl_str = PackageURL.to_string(purl)
+    purl_src_path = fetch.fetch_path(purl_str)
+    if not purl_src_path:
+        err_msg = f"No source could be resolved for {purl}."
+        raise ValueError(err_msg)
+    return Path(purl_src_path)
+
+
+def get_cargo_toml_path(codebase_dir, purl):
+    """Return the root Cargo.toml path of the extracted ``purl`` crate."""
+    path = Path(codebase_dir) / f"{purl.name}-{purl.version}" / "Cargo.toml"
+    if path.exists():
+        return path
+    return None
+
+
+def get_rust_file_paths(location):
+    """Retrieve Rust file paths from a ``.d`` dep-info file."""
+    file_paths = {}
+    rust_lib_path, rust_file_paths = parse_d_file(location)
+    if rust_file_paths:
+        file_paths["rust_file_paths"] = rust_file_paths
+    return rust_lib_path, file_paths
+
+
+def parse_d_file(path):
+    """Parse the .d file from rust package."""
+    try:
+        context = Path(path).read_text()
+    except OSError:
+        return "", []
+
+    cleaned_context = context.replace("\\\n", " ")
+
+    # Invalid .d file
+    if ":" not in cleaned_context:
+        return "", []
+
+    rust_lib, dep_paths = cleaned_context.split(":", 1)
+    rust_lib_path = rust_lib.strip()
+
+    file_paths = []
+    for file_path in dep_paths.split():
+        file_path = file_path.strip()
+        if file_path:
+            file_paths.append(file_path)
+
+    return rust_lib_path, file_paths
+
+
+def find_crate_subdirectory(source_repo_path, purl):
+    """
+    Return the path to the crate subdirectory within a monorepo archive,
+    or None if the crate lives at the archive root.
+
+    The search looks for a ``Cargo.toml`` whose parent directory is named
+    after the crate or the crate-version pair.
+    """
+    source_repo_path = Path(source_repo_path)
+
+    # Archives usually have a single top-level directory named after the
+    # repo and version, e.g. ``uselesskey-0.2.0/``. Use it as the new
+    # search root when present.
+    top_level_dirs = [entry for entry in source_repo_path.iterdir() if entry.is_dir()]
+    if len(top_level_dirs) == 1:
+        source_repo_path = top_level_dirs[0]
+
+    # Look for a directory named after the crate, either with just the
+    # crate name (``uselesskey-hmac``) or with the version added
+    # (``uselesskey-hmac-0.2.0``).
+    expected_crate_dir_names = {
+        purl.name,
+        f"{purl.name}-{purl.version}",
+    }
+
+    for cargo_toml in source_repo_path.rglob("Cargo.toml"):
+        candidate_crate_dir = cargo_toml.parent
+        if candidate_crate_dir.name in expected_crate_dir_names:
+            return candidate_crate_dir
+
+    return None

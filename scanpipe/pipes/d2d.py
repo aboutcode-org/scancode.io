@@ -63,6 +63,7 @@ from scanpipe.pipes import jvm
 from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
 from scanpipe.pipes import resolve
+from scanpipe.pipes import rust
 from scanpipe.pipes import scancode
 from scanpipe.pipes import stringmap
 from scanpipe.pipes import symbolmap
@@ -1899,7 +1900,7 @@ def map_paths_resource(
             if logger:
                 logger(
                     f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT "
-                    f" mapped for: {to_resource.path!r}"
+                    f"mapped for: {to_resource.path!r}"
                 )
         to_resource.save()
 
@@ -2169,36 +2170,6 @@ def map_go_paths(project, logger=None):
         )
 
 
-def get_rust_file_paths(location):
-    """Retrieve Rust file paths."""
-    file_paths = {}
-    rust_lib_path, rust_file_paths = parse_d_file(location) or []
-    if rust_file_paths:
-        file_paths["rust_file_paths"] = rust_file_paths
-    return rust_lib_path, file_paths
-
-
-def parse_d_file(path):
-    """Parse the .d file from rust package."""
-    context = Path(path).read_text()
-    cleaned_context = context.replace("\\\n", " ")
-
-    # Invalid .d file
-    if ":" not in cleaned_context:
-        return []
-
-    rust_lib, dep_paths = cleaned_context.split(":", 1)
-    rust_lib_path = rust_lib.strip()
-
-    file_paths = []
-    for file_path in dep_paths.split():
-        file_path = file_path.strip()
-        if file_path:
-            file_paths.append(file_path)
-
-    return rust_lib_path, file_paths
-
-
 def map_rust_paths(project, logger=None):
     """Map the path listed in the .d file to the source in ``project``."""
     from_resources = project.codebaseresources.files().from_codebase()
@@ -2213,7 +2184,7 @@ def map_rust_paths(project, logger=None):
     target_rlib_ids = []
     for resource in data_resources:
         try:
-            rlib_path_str, paths = get_rust_file_paths(resource.location_path)
+            rlib_path_str, paths = rust.get_rust_file_paths(resource.location_path)
             rlib_path = Path(rlib_path_str)
             rlib_resource = None
             try:
@@ -2276,11 +2247,9 @@ def map_rust_paths(project, logger=None):
 
 def update_from_to_tag(project):
     """Update 'from' or 'to' tag to resources based on their path."""
-    for resource in project.codebaseresources.files():
-        if resource.path.startswith("from/"):
-            resource.update(tag="from")
-        elif resource.path.startswith("to/"):
-            resource.update(tag="to")
+    resources = project.codebaseresources.files()
+    resources.filter(path__startswith=FROM).update(tag="from")
+    resources.filter(path__startswith=TO).update(tag="to")
 
 
 RUST_BINARY_OPTIONS = ["Rust"]

@@ -572,3 +572,18 @@ class ScanPipeFetchPipesTest(TestCase):
         fetch.set_project_purl_from_input_url(project3, ["not-a-url"])
         project3.refresh_from_db()
         self.assertEqual("", project3.purl)
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_path_success(self, mock_get, mock_is_safe_url):
+        url = "https://example.com/filename.zip"
+        mock_get.return_value = make_mock_response(url=url)
+
+        path = fetch.fetch_path(url)
+        self.assertIsNotNone(path)
+        self.assertTrue(str(path).endswith("filename.zip"))
+
+    @mock.patch("scanpipe.pipes.fetch.fetch_url")
+    def test_scanpipe_pipes_fetch_path_returns_none_on_failure(self, mock_fetch_url):
+        mock_fetch_url.side_effect = ValueError("Invalid URL")
+        self.assertIsNone(fetch.fetch_path("bad-url"))

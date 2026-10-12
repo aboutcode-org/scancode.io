@@ -501,6 +501,7 @@ MAP_TYPE_CHOICES = (
     ("macho_symbols", "Mach0 Symbols"),
     ("winpe_symbols", "WinPE Symbols"),
     ("rust_symbols", "Rust Symbols"),
+    ("rust_file_paths", "rust_file_paths"),
 )
 
 
@@ -694,6 +695,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "is_vulnerable",
         "compliance_alert",
+        "has_license_issue",
     ]
 
     search = DiscoveredPackageSearchFilter(
@@ -721,6 +723,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     )
     purl = PackageURLFilter(label="Package URL")
     is_vulnerable = IsVulnerable(field_name="affected_by_vulnerabilities")
+    has_license_issue = StrictBooleanFilter()
     compliance_alert = django_filters.ChoiceFilter(
         choices=[(EMPTY_VAR, "None")] + CodebaseResource.Compliance.choices,
     )
@@ -762,6 +765,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "extracted_license_statement",
             "copyright",
             "is_vulnerable",
+            "has_license_issue",
             "compliance_alert",
             "tag",
             "is_private",

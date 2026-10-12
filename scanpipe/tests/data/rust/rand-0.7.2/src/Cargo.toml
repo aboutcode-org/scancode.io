@@ -1,0 +1,5 @@
+[package]
+name = "rand"
+version = "0.7.2"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/rust-random/rand"

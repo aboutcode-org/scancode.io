@@ -526,3 +526,12 @@ def set_project_purl_from_input_url(project, input_urls):
     if not project.purl and input_urls and len(input_urls) == 1:
         if purl := url2purl.get_purl(input_urls[0]):
             project.update(purl=str(purl))
+
+
+def fetch_path(purl):
+    """Fetch the purl and return the location of the fetched tarball."""
+    try:
+        return fetch_url(url=purl).path
+    except (ValueError, requests.RequestException) as e:
+        logger.warning("Failed to fetch package: %s - %s", purl, e)
+        return None

@@ -57,26 +57,17 @@ def check_input_and_return_purl(project):
 
 
 def fetch_inputs(purl):
-    """Fetch the binary and source for the given input purl"""
+    """Fetch the binary and source for the given input purl."""
     purl_str = PackageURL.to_string(purl)
 
-    purl_bin_path = fetch_path(purl_str, "binary")
-    purl_src_path = fetch_path(f"{purl_str}?classifier=sources", "source")
+    purl_bin_path = fetch.fetch_path(purl_str)
+    purl_src_path = fetch.fetch_path(f"{purl_str}?classifier=sources")
 
     if not purl_bin_path and not purl_src_path:
         err_msg = f"No source or binary could be resolved for {purl}."
         raise ValueError(err_msg)
 
     return purl_src_path, purl_bin_path
-
-
-def fetch_path(purl, package_type):
-    """Fetch the purl and return the location of the fetched tarball"""
-    try:
-        return fetch.fetch_url(url=purl).path
-    except (ValueError, requests.RequestException) as e:
-        logger.warning("Failed to fetch %s package: %s", package_type, e)
-        return None
 
 
 def fetch_and_scan_remote_pom(input_purl, scan_output_location):

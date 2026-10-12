@@ -29,11 +29,10 @@ from scanpipe.pipelines.scan_single_package import ScanSinglePackage
 from scanpipe.pipes import d2d
 from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
+from scanpipe.pipes import license_validation
+from scanpipe.pipes import rust
+from scanpipe.pipes import source_repo
 from scanpipe.pipes import utils
-from scanpipe.pipes.rust import build_crates
-from scanpipe.pipes.rust import check_input_and_return_purl
-from scanpipe.pipes.rust import get_cargo_toml_path
-from scanpipe.pipes.rust import get_repository_value_from_cargo_toml
 
 
 class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
@@ -48,9 +47,26 @@ class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
 
     Scan the source crate and confirm that the detected license aligns with
     the license declared in Cargo.toml.
+
+    Deployment notes:
+        The pipeline runs ``docker run`` from the worker container. This
+        requires two things:
+
+        - The Docker CLI is installed in the worker image.
+        - The Docker daemon (``DOCKER_HOST``) can see the same ``workspace``
+          volume as the worker.
+
+        The default Compose stack provides both through the ``dind`` service,
+        see ``docker-compose.yml``.
     """
 
     download_inputs = False
+
+    @classmethod
+    def get_availability(cls):
+        if not utils.check_docker_command():
+            return "Docker is required and its daemon must be running."
+        return None
 
     @classmethod
     def steps(cls):
@@ -59,7 +75,6 @@ class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
             cls.fetch_inputs,
             cls.collect_input_info,
             cls.extract_input_to_codebase_directory,
-            cls.check_docker_command,
             cls.get_cargo_toml,
             cls.build_crates,
             cls.run_scan,
@@ -79,33 +94,25 @@ class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
 
     def check_input_and_return_purl(self):
         """Validate the input is a PURL string and return the PURL object."""
-        self.purl = check_input_and_return_purl(self.project)
+        self.purl = rust.check_input_and_return_purl(self.project)
 
     def fetch_inputs(self):
         """Fetch the source of the given PURL."""
-        self.from_files = utils.fetch_inputs(self.purl)
+        self.from_files = rust.fetch_inputs(self.purl)
 
     def collect_input_info(self):
         """Collect information about the input."""
         self.input_path = self.from_files
         self.collect_input_information()
 
-    def check_docker_command(self):
-        self.have_docker = False
-        """Check if the Docker command is available."""
-        if not utils.check_docker_command():
-            raise Exception("Docker is required and its daemon must be running.")
-        else:
-            self.have_docker = True
-
     def get_cargo_toml(self):
-        """Get the Cargo.toml path from the codebase directory."""
-        self.cargo_toml_path = None
-        self.devel_codebase_dir = None
-        if self.have_docker:
-            codebase_dir = Path(self.project.codebase_path)
-            self.devel_codebase_dir = codebase_dir
-            self.cargo_toml_path = get_cargo_toml_path(codebase_dir)
+        """Locate the root Cargo.toml of the extracted crate."""
+        self.devel_codebase_dir = Path(self.project.codebase_path)
+        self.cargo_toml_path = rust.get_cargo_toml_path(
+            self.devel_codebase_dir, self.purl
+        )
+        if not self.cargo_toml_path:
+            self.log("Cargo.toml not found in the extracted crate.")
 
     def build_crates(self):
         """
@@ -113,18 +120,18 @@ class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         "to" directory.
         """
         self.d2d_enable = False
-        if self.cargo_toml_path:
-            codebase_dir = self.devel_codebase_dir
-            cargo_toml_path = self.cargo_toml_path
-            if build_crates(codebase_dir, cargo_toml_path):
-                self.d2d_enable = True
-                updated_path = cargo_toml_path.relative_to(codebase_dir)
-                self.cargo_toml_path = codebase_dir / "from" / updated_path
-                self.devel_codebase_dir = codebase_dir / "from"
-            else:
-                print("Docker command not found. Skipping crate build.")
-        else:
-            print("Cargo.toml is not found.")
+        if not self.cargo_toml_path:
+            self.log("Skipping crate build: Cargo.toml not found.")
+            return
+
+        (
+            self.d2d_enable,
+            self.cargo_toml_path,
+            self.devel_codebase_dir,
+        ) = rust.build_crates(self.devel_codebase_dir, self.cargo_toml_path)
+
+        if not self.d2d_enable:
+            self.log("Failed to build the Rust crate. Skipping D2D steps.")
 
     def add_from_to_tag(self):
         """Update 'from' and 'to' tag to resources based on their path."""
@@ -136,12 +143,12 @@ class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         Validate the correctness of the package license compare with the
         detected license from the codebase.
         """
-        utils.validate_package_license_integrity(self.project)
+        license_validation.validate_package_license_integrity(self.project)
 
     def identify_built_sources(self):
         """Identify the built sources from the '.d' file in the "to" directory."""
         if self.d2d_enable:
-            d2d.map_rust_paths(self.project)
+            d2d.map_rust_paths(self.project, logger=self.log)
 
     def load_ecosystem_config(self):
         """Load the Rust ecosystem configuration for D2D steps."""
@@ -164,60 +171,76 @@ class ScanRustPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         download url.
         """
         self.src_download_url = None
-        repository_url = get_repository_value_from_cargo_toml(self.cargo_toml_path)
-        if not repository_url:
-            self.project.add_warning(
-                description="No source repository URL found in Cargo.toml."
-            )
-        else:
-            self.src_download_url = utils.get_download_url(
-                repository_url, self.purl.version
-            )
-            if not self.src_download_url:
-                self.project.add_warning(
-                    description=(
-                        "Not able to determine the source repository download URL from "
-                        "Cargo.toml."
-                    )
-                )
+        if not self.cargo_toml_path:
+            return
+
+        repository_url = rust.get_repository_value_from_cargo_toml(self.cargo_toml_path)
+        self.src_download_url, warning = source_repo.get_src_repo_download_url(
+            repository_url=repository_url,
+            version=self.purl.version,
+        )
+        if warning:
+            self.project.add_warning(description=warning)
 
     def download_src_repo(self):
         """Download the source from the source repo."""
         self.src_repo_path = None
-        if self.src_download_url:
-            self.src_repo_path = utils.download_src_repo(self.src_download_url)
-            if not self.src_repo_path:
-                self.project.add_warning(
-                    description=(
-                        f"The source repository URL "
-                        f"{self.src_download_url} "
-                        f"could not be downloaded. Skipping the source "
-                        f"crate and source repository comparison."
-                    )
+        if not self.src_download_url:
+            return
+
+        self.src_repo_path = source_repo.download_src_repo(self.src_download_url)
+        if not self.src_repo_path:
+            self.project.add_warning(
+                description=(
+                    f"The source repository URL "
+                    f"{self.src_download_url} "
+                    f"could not be downloaded. Skipping the source "
+                    f"crate and source repository comparison."
                 )
+            )
 
     def compare_src_repo_with_from_codebase(self):
         """Compare the downloaded source repo with the from codebase."""
         self.matched_count = 0
-        self.mismatches = []
-        if self.src_repo_path:
-            with tempfile.TemporaryDirectory() as source_repo_path:
-                self.extract_archive(self.src_repo_path, source_repo_path)
+        self.mismatches = {}
+        if not self.src_repo_path:
+            return
 
-                self.matched_count, self.mismatches = utils.compare_directories(
-                    self.devel_codebase_dir, source_repo_path
-                )
+        from_resources = (
+            self.project.codebaseresources.files().from_codebase().has_value("sha1")
+        )
+        input_files = utils.get_all_files_from_resources(
+            from_resources, base_path_prefix="from/"
+        )
+
+        with tempfile.TemporaryDirectory() as source_repo_path:
+            self.extract_archive(self.src_repo_path, source_repo_path)
+
+            # If the crate lives in a subdirectory of the repository
+            # (monorepo layout), narrow the comparison to that subdirectory.
+            crate_subdir = rust.find_crate_subdirectory(
+                source_repo_path=source_repo_path,
+                purl=self.purl,
+            )
+            if crate_subdir:
+                source_repo_path = crate_subdir
+
+            self.matched_count, self.mismatches = utils.compare_directories(
+                input_files, source_repo_path
+            )
 
     def update_comparison_summary(self):
         """Update the comparison summary in the discovered package."""
-        if self.src_repo_path:
-            utils.update_comparison_summary(
-                self.project,
-                self.purl,
-                self.devel_codebase_dir,
-                self.src_download_url,
-                self.purl.name,
-                self.purl.version,
-                self.matched_count,
-                self.mismatches,
-            )
+        if not self.src_repo_path:
+            return
+
+        source_repo.update_comparison_summary(
+            project=self.project,
+            purl=self.purl,
+            devel_codebase_dir=self.devel_codebase_dir,
+            src_repo_url=self.src_download_url,
+            package_name=self.purl.name,
+            package_version=self.purl.version,
+            matched_count=self.matched_count,
+            mismatches=self.mismatches,
+        )

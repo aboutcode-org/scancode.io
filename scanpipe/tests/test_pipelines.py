@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -46,6 +46,7 @@ from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import analyze_root_filesystem
 from scanpipe.pipelines import deploy_to_develop
 from scanpipe.pipelines import is_pipeline
+from scanpipe.pipelines import scan_rust_package
 from scanpipe.pipelines import scan_single_package
 from scanpipe.pipelines.find_vulnerabilities import FindVulnerabilities
 from scanpipe.pipes import d2d
@@ -946,6 +947,65 @@ class PipelinesIntegrationTest(TestCase):
         scancode_file = project1.get_latest_output(filename="scancode")
         expected_file = self.data / "jvm" / "args4j-tools-2.0.16-sctk.json"
         self.assertPipelineResultEqual(expected_file, scancode_file)
+
+    @mock.patch("scanpipe.pipes.source_repo.get_src_repo_download_url")
+    @mock.patch("scanpipe.pipes.rust.build_crates")
+    @mock.patch("scanpipe.pipes.rust.fetch_inputs")
+    def test_scanpipe_scan_rust_package_pipeline_integration(
+        self,
+        mock_rust_fetch_inputs,
+        mock_build_crates,
+        mock_get_src_repo_download_url,
+    ):
+        pipeline_name = "scan_rust_package"
+        project1 = make_project()
+
+        project1.add_input_source(download_url="pkg:cargo/rand@0.7.2")
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        crate_source = self.data / "rust" / "rand-0.7.2"
+        mock_rust_fetch_inputs.return_value = crate_source
+
+        def mock_make_built_crate(codebase_dir, cargo_toml_path):
+            from_dir = Path(codebase_dir) / "from"
+            to_dir = Path(codebase_dir) / "to"
+            to_dir.mkdir(exist_ok=True)
+            built_crate_dir = from_dir / "rand-0.7.2"
+            built_crate_dir.mkdir(parents=True, exist_ok=True)
+            copy_input(crate_source / "Cargo.toml", built_crate_dir)
+            return True, built_crate_dir / "Cargo.toml", from_dir
+
+        mock_build_crates.side_effect = mock_make_built_crate
+
+        mock_get_src_repo_download_url.return_value = (
+            None,
+            "No source repository URL found in Cargo.toml.",
+        )
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        package = project1.discoveredpackages.get()
+        self.assertEqual("pkg:cargo/rand@0.7.2", package.purl)
+
+    @mock.patch("scanpipe.pipes.utils.check_docker_command")
+    def test_scanpipe_scan_rust_package_availability_no_docker(self, mock_check_docker):
+        mock_check_docker.return_value = False
+
+        reason = scan_rust_package.ScanRustPackage.get_availability()
+        self.assertEqual("Docker is required and its daemon must be running.", reason)
+
+    @mock.patch("scanpipe.pipes.utils.check_docker_command")
+    def test_scanpipe_scan_rust_package_availability_with_docker(
+        self, mock_check_docker
+    ):
+        mock_check_docker.return_value = True
+
+        reason = scan_rust_package.ScanRustPackage.get_availability()
+        self.assertIsNone(reason)
 
     def test_scanpipe_scan_codebase_pipeline_integration(self):
         pipeline_name = "scan_codebase"
