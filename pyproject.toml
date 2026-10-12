@@ -33,7 +33,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "uv==0.12.23",
+  "uv==0.12.24",
   "importlib-metadata==9.0.0",
   "setuptools==84.0.0",
   # Django related
@@ -46,15 +46,15 @@ dependencies = [
   "django-htmx==1.29.0",
   "django-debug-toolbar==7.1.1",
   # Database
-  "psycopg[binary]==3.3.4",
+  "psycopg[binary]==3.3.6",
   # wait_for_database Django management command
   "django-probes==1.9.0",
   # Task queue
-  "rq==2.10.0",
+  "rq==2.12.0",
   "django-rq==4.1.1",
   "redis==8.1.0",
   # WSGI server
-  "gunicorn==26.1.0",
+  "gunicorn==26.2.0",
   "packaging==26.2",
   # Docker
   "container-inspector==33.1.0",
@@ -115,7 +115,7 @@ dependencies = [
   "croniter==6.2.4",
   "lief==0.17.6",
   "symbolic==13.8.0",
-  "Pygments==2.20.0",
+  "Pygments==2.21.0",
   "cffi==2.1.1",
   "stevedore==5.9.0",
   "sqlparse==0.6.0",

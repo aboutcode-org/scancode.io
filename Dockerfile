@@ -24,7 +24,7 @@
 # Stage 1: Build stage
 # ===================================================================
 
-FROM ghcr.io/astral-sh/uv:0.12.23-python3.13-trixie-slim AS builder
+FROM ghcr.io/astral-sh/uv:0.12.24-python3.13-trixie-slim AS builder
 
 # Compile bytecode for faster startup
 ENV UV_COMPILE_BYTECODE=1
