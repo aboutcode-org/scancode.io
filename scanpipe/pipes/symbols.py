@@ -240,8 +240,10 @@ class LanguageQuery(ABC):
         ), symbols_tree_sitter.TS_LANGUAGE_WHEELS[self.language_name]
 
     def run_query(self, kind, root_node):
+        from tree_sitter import QueryCursor
+
         query = self._compiled_queries.get(kind)
-        return query.matches(root_node) if query else []
+        return QueryCursor(query).matches(root_node) if query else []
 
     def get_functions(self, root_node):
         for _, captures in self.run_query("functions", root_node):

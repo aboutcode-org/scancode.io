@@ -26,6 +26,7 @@ import logging
 import os
 import sys
 import warnings
+from importlib import metadata as importlib_metadata
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
@@ -38,15 +39,9 @@ from django.utils.translation import gettext_lazy as _
 
 from licensedcode.models import load_licenses
 
+from scanpipe.pipelines import is_pipeline
 from scanpipe.policies import load_policies_file
 from scanpipe.settings import scanpipe_settings
-
-try:
-    from importlib import metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
-
-from scanpipe.pipelines import is_pipeline
 
 logger = logging.getLogger(__name__)
 style = color_style()
