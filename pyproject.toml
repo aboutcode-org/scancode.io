@@ -34,7 +34,6 @@ classifiers = [
 
 dependencies = [
   "uv==0.12.24",
-  "importlib-metadata==9.0.1",
   "setuptools==84.0.0",
   # Django related
   "django==6.1.2",
@@ -48,6 +47,7 @@ dependencies = [
   # Database
   "psycopg[binary]==3.3.6",
   # wait_for_database Django management command
+  # Not used in this repo: keep for external Kubernetes/OpenShift deployments
   "django-probes==1.9.0",
   # Task queue
   "rq==2.12.0",

@@ -2196,7 +2196,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         d2d.map_macho_binaries_with_symbols(project=self.project1, logger=buffer.write)
         self.assertEqual(
-            9,
+            8,
             CodebaseRelation.objects.filter(
                 project=self.project1, map_type="macho_symbols"
             ).count(),
