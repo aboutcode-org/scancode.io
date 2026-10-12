@@ -37,21 +37,21 @@ dependencies = [
   "importlib-metadata==9.0.0",
   "setuptools==84.0.0",
   # Django related
-  "django==6.0.8",
+  "django==6.1.2",
   "django-environ==0.14.0",
   "django-crispy-forms==2.7",
   "crispy-bootstrap3==2024.1",
-  "django-filter==26.1",
-  "djangorestframework==3.18.1",
+  "django-filter==26.2",
+  "djangorestframework==3.18.3",
   "django-htmx==1.29.0",
-  "django-debug-toolbar==7.1.1",
+  "django-debug-toolbar==8.0.0",
   # Database
   "psycopg[binary]==3.3.6",
   # wait_for_database Django management command
   "django-probes==1.9.0",
   # Task queue
   "rq==2.12.0",
-  "django-rq==4.1.1",
+  "django-rq==4.2.0",
   "redis==8.1.0",
   # WSGI server
   "gunicorn==26.2.0",
@@ -80,7 +80,7 @@ dependencies = [
   "XlsxWriter==3.2.9",
   "openpyxl==3.1.5",
   "requests==2.34.2",
-  "charset-normalizer==3.5.1",
+  "charset-normalizer==3.5.2",
   "chardet==7.6.0",
   "urllib3==2.8.0",
   "idna==3.20",
@@ -110,7 +110,7 @@ dependencies = [
   "scorecode==0.0.4",
   # Transitive dependencies
   "cryptography==50.0.0",
-  "aiohttp==3.14.3",
+  "aiohttp==3.14.4",
   "pydantic-settings==2.14.2",
   "croniter==6.2.4",
   "lief==0.17.6",
