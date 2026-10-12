@@ -23,6 +23,7 @@
 from collections import defaultdict
 from pathlib import Path
 
+from django.apps import apps
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
@@ -30,6 +31,8 @@ from django.utils.crypto import get_random_string
 
 from scanpipe.management.commands import extract_tag_from_input_file
 from scanpipe.pipes.fetch import SCHEME_TO_FETCHER_MAPPING
+
+scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class Command(BaseCommand):
@@ -50,9 +53,11 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "input_location",
+            nargs="?",
             help=(
                 "Input location: file, directory, and URL supported."
-                'Multiple values can be provided using the "input1,input2" syntax.'
+                'Multiple values can be provided using the "input1,input2" syntax. '
+                "Optional, as some pipelines do not require any input."
             ),
         )
         parser.add_argument("--project", required=False, help="Project name.")
@@ -64,8 +69,14 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        # The ``input_location`` positional is declared for the command usage, but
+        # argparse collects every positional value in ``pipelines``. The trailing
+        # value is the input location unless it is an available pipeline name.
         pipelines = options["pipelines"]
-        input_location = options["input_location"]
+        input_location = None
+        if len(pipelines) > 1 and not self.is_pipeline_name(pipelines[-1]):
+            input_location = pipelines.pop()
+
         output_format = options["format"]
         # Generate a random name for the project if not provided
         project_name = options["project"] or get_random_string(10)
@@ -74,8 +85,9 @@ class Command(BaseCommand):
             "pipeline": pipelines,
             "execute": True,
             "verbosity": 0,
-            **self.get_input_options(input_location),
         }
+        if input_location:
+            create_project_options.update(self.get_input_options(input_location))
 
         # Run the database migrations in case the database is not created or outdated.
         call_command("migrate", verbosity=0, interactive=False)
@@ -83,6 +95,13 @@ class Command(BaseCommand):
         call_command("create-project", project_name, **create_project_options)
         # Print the results for the specified format on stdout
         call_command("output", project=project_name, format=[output_format], print=True)
+
+    @staticmethod
+    def is_pipeline_name(value):
+        """Return True when the provided ``value`` is an available pipeline name."""
+        pipeline_name, _ = scanpipe_app.extract_group_from_pipeline(value)
+        pipeline_name = scanpipe_app.get_new_pipeline_name(pipeline_name)
+        return pipeline_name in scanpipe_app.pipelines
 
     @staticmethod
     def get_input_options(input_location):
