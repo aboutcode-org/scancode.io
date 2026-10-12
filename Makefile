@@ -111,7 +111,7 @@ upgrade:
 	@for requirement in $(PACKAGE); do \
 		NAME_PATTERN=$$(echo "$${requirement%%==*}" | sed 's/[-_.]/[-_.]/g') \
 		VERSION=$${requirement##*==} \
-		perl -pi -e 's/"($$ENV{NAME_PATTERN}(\[[^]]*\])?)==[^"]*"/"$$1==$$ENV{VERSION}"/i' pyproject.toml; \
+		perl -pi -e 's/"($$ENV{NAME_PATTERN}(\[[^]]*\])?)==[^";]*/"$$1==$$ENV{VERSION}/i' pyproject.toml; \
 	done
 	@echo "-> Lock $(PACKAGE) in the uv image"
 	docker run --rm \

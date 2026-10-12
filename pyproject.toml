@@ -34,7 +34,7 @@ classifiers = [
 
 dependencies = [
   "uv==0.12.24",
-  "importlib-metadata==9.0.0",
+  "importlib-metadata==9.0.1",
   "setuptools==84.0.0",
   # Django related
   "django==6.1.2",
@@ -55,13 +55,13 @@ dependencies = [
   "redis==8.1.0",
   # WSGI server
   "gunicorn==26.2.0",
-  "packaging==26.2",
+  "packaging==26.3",
   # Docker
   "container-inspector==33.1.0",
   # ScanCode-toolkit
   "scancode-toolkit[packages]==32.5.0",
   "extractcode[full]==31.1.0",
-  "commoncode==32.5.2",
+  "commoncode==33.0.0",
   "beautifulsoup4[chardet]==4.15.0",
   "click==8.4.2",
   "packageurl-python==0.17.6",
@@ -74,7 +74,7 @@ dependencies = [
   "rust-inspector==0.2.2",
   "binary-inspector==0.2.1",
   "python-inspector==0.15.2",
-  "source-inspector==0.7.1; sys_platform != 'darwin' and platform_machine != 'arm64'",
+  "source-inspector==0.7.2; sys_platform != 'darwin' and platform_machine != 'arm64'",
   "aboutcode-toolkit==11.1.1",
   # Utilities
   "XlsxWriter==3.2.9",
@@ -109,15 +109,15 @@ dependencies = [
   # ScoreCode
   "scorecode==0.0.4",
   # Transitive dependencies
-  "cryptography==50.0.0",
+  "cryptography==50.0.2",
   "aiohttp==3.14.4",
-  "pydantic-settings==2.14.2",
+  "pydantic-settings==2.15.0",
   "croniter==6.2.4",
-  "lief==0.17.6",
-  "symbolic==13.8.0",
+  "lief==1.0.0",
+  "symbolic==13.9.0",
   "Pygments==2.21.0",
   "cffi==2.1.1",
-  "stevedore==5.9.0",
+  "stevedore==5.9.1",
   "sqlparse==0.6.0",
 ]
 
