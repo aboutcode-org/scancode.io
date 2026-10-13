@@ -5,6 +5,18 @@ Changelog
 
 * Migrate VulnerableCode integration to API v3
 
+v38.2.0 (unreleased)
+--------------------
+
+* ``docker-compose.yml`` now runs the published ``ghcr.io/aboutcode-org/scancode.io``
+  image instead of building it locally: use ``docker compose pull`` to install and
+  upgrade. If you run local code changes, add
+  ``COMPOSE_FILE=docker-compose.yml:docker-compose.build.yml`` to your ``.env`` file
+  to keep building the image from your checkout, otherwise your changes are not used.
+* Fix the offline installation: ``make offline-package`` now packages the published
+  images with the main ``docker-compose.yml``. ``docker-compose-offline.yml`` is
+  removed.
+
 v38.1.0 (2026-09-28)
 --------------------
 

@@ -29,11 +29,11 @@ The first step is to download and **install Docker on your platform**.
 Refer to Docker documentation and choose the best installation
 path for your system: `Get Docker <https://docs.docker.com/get-docker/>`_.
 
-Build the Image
-^^^^^^^^^^^^^^^
+Get the Image
+^^^^^^^^^^^^^
 
-ScanCode.io is distributed with ``Dockerfile`` and ``docker-compose.yml`` files
-required for the creation of the Docker image.
+ScanCode.io is distributed as Docker images published on the GitHub Container
+Registry, with a ``docker-compose.yml`` file to run all the required services.
 
 .. note::
     On **Windows**, ensure to use the **wsl** (Windows Subsystem for Linux) for
@@ -45,20 +45,15 @@ required for the creation of the Docker image.
     git config --global core.autocrlf false
 
 **Clone the git** `ScanCode.io repo <https://github.com/aboutcode-org/scancode.io>`_,
-create an **environment file**, and **build the Docker image**::
+create an **environment file**, and **pull the Docker images**::
 
     git clone https://github.com/aboutcode-org/scancode.io.git && cd scancode.io
     make envfile
-    docker compose build
+    docker compose pull
 
 .. note::
-    To use the Android analysis pipeline, use the ``full`` Docker image which
-    includes OpenJDK, jadx, and android-inspector. The production
-    ``docker-compose.yml`` builds the ``full`` image by default.
-
-    For local development, build the full image explicitly::
-
-        make build-full
+    ``docker-compose.yml`` uses the ``full`` image of the ScanCode.io release, which
+    includes OpenJDK, jadx, and android-inspector for the Android analysis pipeline.
 
 Run the App
 ^^^^^^^^^^^
@@ -118,16 +113,20 @@ Upgrade the App
 ^^^^^^^^^^^^^^^
 
 **Update your local** `ScanCode.io repo <https://github.com/aboutcode-org/scancode.io>`_,
-and **build the Docker image**::
+**pull the Docker images** of the new release, and restart the services::
 
     cd scancode.io
     git pull
-    docker compose build
+    docker compose pull
+    docker compose up -d
+
+The ``docker-compose.yml`` file references the image of a given ScanCode.io release:
+``git pull`` updates it to the latest release.
 
 .. warning::
     The Docker image has been updated to run as a non-root user.
     If you encounter "permissions" issues while running the ScanCode.io Docker images
-    following the ``docker compose build``, you will need to update the permissions
+    after an upgrade, you will need to update the permissions
     of the ``/var/scancodeio/`` directory of the Docker volumes using::
 
         docker compose run -u 0:0 web chown -R app:app /var/scancodeio/
@@ -135,8 +134,33 @@ and **build the Docker image**::
     See also https://github.com/aboutcode-org/scancode.io/issues/399
 
 .. note::
-    You need to rebuild the image whenever ScanCode.io's source code has been
-    modified or updated.
+    If you run local code changes, see :ref:`build_image_from_source` instead.
+
+.. _build_image_from_source:
+
+Run local code changes
+^^^^^^^^^^^^^^^^^^^^^^
+
+By default, ``docker-compose.yml`` runs the published image. To build the ``full``
+image from your local checkout and run it, add the ``docker-compose.build.yml`` file
+to the command::
+
+    docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+
+Run this command again after each code change or ``git pull`` to rebuild the image.
+
+.. tip::
+    A ``docker compose up`` without the ``-f`` options switches back to the published
+    image. To use ``docker-compose.build.yml`` in all your ``docker compose`` commands,
+    add this line to your ``.env`` file::
+
+        COMPOSE_FILE=docker-compose.yml:docker-compose.build.yml
+
+    To go back to the published image, remove this line, then run
+    ``docker compose pull`` and ``docker compose up -d``.
+
+.. note::
+    For development with hot reload, see :ref:`local_development_installation`.
 
 Execute a Command
 ^^^^^^^^^^^^^^^^^
@@ -169,64 +193,93 @@ Offline installation with Docker
 ScanCode.io can be installed and operated on a server that is not connected to the
 internet, such as an "airgapped" or isolated server.
 
-To achieve this, Docker images are initially built on a machine with internet access
-and subsequently transferred to the "offline" server for isolated installation.
+The published Docker images are pulled on a machine with internet access, saved in an
+offline installation package, and loaded on the offline server. The package uses the
+same ``docker-compose.yml`` file as the online installation: both run the same
+services and image versions.
 
 .. note::
-    ``docker`` and ``docker compose`` are required on both the local machine
-    and the server.
+    ``docker`` and ``docker compose`` are required on both machines.
+    The package contains ``linux/amd64`` images: the offline server must be an
+    ``x86_64`` machine.
 
 Build the offline installation package
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Build and save the offline installation package with docker images, configuration
-and scripts on your local machine::
+On the machine with internet access, from a clone of the ScanCode.io repository::
 
     make offline-package
 
-A tarball ``scancodeio-offline-package-VERSION.tar`` will be
-created in the :guilabel:`dist/` directory.
+This pulls the Docker images and creates the ``scancodeio-offline-package-VERSION.tar``
+tarball in the :guilabel:`dist/` directory.
+The tarball contains a :guilabel:`build/` directory with:
 
-.. note::
-    The offline package includes all necessary Docker images: postgres, redis,
-    scancodeio-web, scancodeio-worker, nginx, and clamav/clamav.
+- ``scancodeio-images.tar.gz``: all the Docker images used by ``docker-compose.yml``
+- ``docker-compose.yml``, ``docker.env``, and the :guilabel:`etc/` configuration directory
 
-Install on an offline server
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Install on the offline server
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Copy the tarball to the server then extract it replacing ``VERSION`` with
-the actual version value::
+Copy the tarball to the server, extract it replacing ``VERSION`` with the actual
+version value, and change to the extracted :guilabel:`build/` directory::
 
     tar -xf scancodeio-offline-package-VERSION.tar
-
-Change to the extracted ``build/`` directory::
-
     cd build
 
-Load the docker Images::
+Load the Docker images::
 
     docker load --input scancodeio-images.tar.gz
 
-Run on an offline server
-^^^^^^^^^^^^^^^^^^^^^^^^
+Create the ``.env`` file with a generated secret key::
 
-Run the App by starting the ScanCode.io services::
+    echo "SECRET_KEY=\"$(head -c50 /dev/urandom | base64 | head -c50)\"" > .env
 
-    docker compose --file docker-compose-offline.yml up
+.. warning::
+    Keep this ``.env`` file when you upgrade: it holds the secret key of your
+    installation.
+
+Run on the offline server
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Start the ScanCode.io services::
+
+    docker compose up -d
 
 And visit the web UI at: http://localhost/project/
 
+The images are already loaded: ``docker compose`` does not download anything.
+
 .. note::
-    The nginx service (webserver) requires the port 80 to be available on the host.
-    In case the port 80 is already in used, you will encounter the following error::
+    To use other ports than 80 and 443, add ``NGINX_PUBLISHED_HTTP_PORT`` and
+    ``NGINX_PUBLISHED_HTTPS_PORT`` to the ``.env`` file, as described in the
+    "Use alternative HTTP ports" section above.
 
-        ERROR: for build_nginx_1 Cannot start service nginx: driver failed programming ...
+Upgrade on the offline server
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    You can attempt to stop potential running services blocking the port 80 with the
-    following commands on the host before starting ScanCode.io services::
+Build a new package on the machine with internet access. On the server, extract it at
+the same location, so the :guilabel:`build/` directory keeps your ``.env`` file, then load
+the new images and restart the services::
 
-         sudo systemctl stop nginx
-         sudo systemctl stop apache2
+    tar -xf scancodeio-offline-package-VERSION.tar
+    cd build
+    docker load --input scancodeio-images.tar.gz
+    docker compose up -d
+
+Your data is stored in Docker volumes and is kept across upgrades.
+
+Features not available offline
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The features that need internet access do not work on an offline server:
+
+- Fetching project inputs from a URL, a Git repository, or a Docker image reference.
+- The integrations with external services, such as PurlDB, MatchCode.io,
+  VulnerableCode, and FederatedCode.
+- The :ref:`pipeline_scan_for_virus` pipeline: ClamAV cannot download its virus
+  database. To not start the ``clamav`` service at all, use::
+
+    docker compose up -d --scale clamav=0
 
 .. _local_development_installation:
 
@@ -529,9 +582,9 @@ Installation
 Run the App
 ^^^^^^^^^^^
 
-* Build and run the app container::
+* Pull and run the app containers::
 
-    docker compose build
+    docker compose pull
     docker compose up
 
 At this stage, the ScanCode.io app is up and running.

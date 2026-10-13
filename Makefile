@@ -234,18 +234,16 @@ docs:
 	@${ACTIVATE} sphinx-build docs/ docs/_build/
 
 docker-images:
-	@echo "-> Build Docker services"
-	docker compose build
 	@echo "-> Pull service images"
-	docker compose pull
+	DOCKER_DEFAULT_PLATFORM=linux/amd64 docker compose pull
 	@echo "-> Save the service images to a tar archive in the build/ directory"
 	@rm -rf build/
 	@mkdir -p build/
-	@docker save postgres redis scancodeio-worker scancodeio-web nginx clamav/clamav | gzip > build/scancodeio-images.tar.gz
+	@docker save --platform linux/amd64 $$(docker compose config --images) | gzip > build/scancodeio-images.tar.gz
 
 offline-package: docker-images
 	@echo "-> Build package for offline installation in dist/"
-	@cp -r etc docker-compose-offline.yml docker.env build/
+	@cp -r etc docker-compose.yml docker.env build/
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
