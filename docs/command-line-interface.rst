@@ -41,9 +41,8 @@ Additionally, you can start a new Docker container and execute multiple
             web scanpipe create-project my_project --input-file="/sources/image.tar"
 
 .. note::
-    In a local development installation, the ``scanpipe`` command is directly
-    available as an entry point in your virtualenv and is located at
-    ``<scancode.io_root_dir>/bin/scanpipe``.
+    In a :ref:`local_development_installation` setup, open a shell in the ``web``
+    container with ``make bash``, then run the ``scanpipe`` command.
 
 `$ scanpipe --help`
 -------------------

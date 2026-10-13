@@ -122,24 +122,13 @@ SCANCODEIO_ASYNC
 When enabled, pipeline runs are **executed asynchronously**, meaning that users can
 continue using the app while the pipeline are run in the background.
 
-The ASYNC mode is **enabled by default in a "Run with Docker" configuration** but
-**disabled in a "Local development" setup**.
+The ASYNC mode is **enabled by default** in the Docker setups: pipeline runs are sent
+to a task queue and executed by the ``worker`` service.
 
-It is possible to enable ASYNC mode in a "local development" setup with the following
-setting::
+To execute the pipeline runs synchronously in the web server process instead, add
+the following setting to your ``.env`` file::
 
-    SCANCODEIO_ASYNC=True
-
-Once enabled, pipeline runs will be sent to a task queue instead of being executed
-synchronously in the web server process.
-
-.. warning::
-    The ASYNC mode required a **Redis server** and running a **tasks worker** using
-    ``$ make worker``.
-
-    On macOS, the ASYNC mode requires the following line in your environment::
-
-        export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+    SCANCODEIO_ASYNC=False
 
 SCANCODEIO_TASK_TIMEOUT
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -260,13 +249,7 @@ Or, in the context of running a :ref:`scanpipe command <command_line_interface>`
 
 .. code-block:: console
 
-    $ SCANCODEIO_LOG_LEVEL=DEBUG bin/scanpipe [command]
-
-The web server can be started in DEBUG mode with:
-
-.. code-block:: console
-
-    $ SCANCODEIO_LOG_LEVEL=DEBUG make run
+    $ docker compose exec -e SCANCODEIO_LOG_LEVEL=DEBUG web scanpipe [command]
 
 .. _scancodeio_settings_site_url:
 

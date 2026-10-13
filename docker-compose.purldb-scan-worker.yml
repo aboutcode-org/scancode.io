@@ -4,7 +4,9 @@ include:
 name: scancodeio
 services:
   purldb_scan_worker:
-    build: .
+    extends:
+      file: docker-compose.yml
+      service: worker
     command: wait-for-it --strict --timeout=120 web:8000 -- sh -c "
         ./manage.py purldb-scan-worker --async --sleep 3"
     env_file:

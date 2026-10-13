@@ -1,0 +1,12 @@
+name: scancodeio
+
+x-description: "Build override: builds the image from the local checkout instead of using the published image"
+
+services:
+  web:
+    build: .
+    image: scancodeio:full
+
+  worker:
+    build: .
+    image: scancodeio:full

@@ -27,6 +27,22 @@
 IMAGE_NAME=scancodeio
 COMPOSE=docker compose -f docker-compose.yml -f docker-compose.dev.yml
 MANAGE=${COMPOSE} exec web ./manage.py
+UV_DOCKER=docker run --rm \
+	--user "$$(id -u):$$(id -g)" \
+	--env UV_CACHE_DIR=/tmp/uv-cache \
+	--volume "$(CURDIR)":/opt/scancodeio \
+	--workdir /opt/scancodeio \
+	ghcr.io/astral-sh/uv:0.13.0-python3.14-trixie-slim
+# Do not depend on Python to generate the SECRET_KEY
+GET_SECRET_KEY=`head -c50 /dev/urandom | base64 | head -c50`
+# Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
+ENV_FILE=.env
+
+envfile:
+	@echo "-> Create the .env file and generate a secret key"
+	@if test -f ${ENV_FILE}; then echo ".env file exists already"; exit 1; fi
+	@mkdir -p $(shell dirname ${ENV_FILE}) && touch ${ENV_FILE}
+	@echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
 
 run:
 	@echo "-> Run the Docker compose services in dev mode (hot reload on code changes)"
@@ -84,12 +100,6 @@ regen-fixtures:
 	@echo "-> Regenerate test fixtures from the running Docker stack"
 	${COMPOSE} exec -e SCANCODEIO_TEST_FIXTURES_REGEN=1 web ./manage.py test
 
-fix:
-	@echo "-> Run Ruff format"
-	uvx ruff format
-	@echo "-> Run Ruff linter"
-	uvx ruff check --fix
-
 outdated:
 	@echo "-> Check for outdated packages (with 3 days cooldown)"
 	uv tree --outdated --exclude-newer "3 days"
@@ -99,8 +109,8 @@ outdated:
 	uv audit
 
 lock:
-	@echo "-> Regenerate uv.lock from pyproject.toml"
-	uv lock
+	@echo "-> Regenerate uv.lock from pyproject.toml in the uv image"
+	${UV_DOCKER} uv lock
 
 upgrade:
 	@if [ -z "$(PACKAGE)" ]; then \
@@ -114,13 +124,57 @@ upgrade:
 		perl -pi -e 's/"($$ENV{NAME_PATTERN}(\[[^]]*\])?)==[^";]*/"$$1==$$ENV{VERSION}/i' pyproject.toml; \
 	done
 	@echo "-> Lock $(PACKAGE) in the uv image"
-	docker run --rm \
-		--user "$$(id -u):$$(id -g)" \
-		--env UV_CACHE_DIR=/tmp/uv-cache \
-		--volume "$(CURDIR)":/opt/scancodeio \
-		--workdir /opt/scancodeio \
-		ghcr.io/astral-sh/uv:0.13.0-python3.14-trixie-slim \
-		uv lock $(addprefix --upgrade-package=,$(PACKAGE))
+	${UV_DOCKER} uv lock $(addprefix --upgrade-package=,$(PACKAGE))
+
+docker-images:
+	@echo "-> Pull service images"
+	DOCKER_DEFAULT_PLATFORM=linux/amd64 docker compose pull
+	@echo "-> Save the service images to a tar archive in the build/ directory"
+	@rm -rf build/
+	@mkdir -p build/
+	@docker save --platform linux/amd64 $$(docker compose config --images) | gzip > build/scancodeio-images.tar.gz
+
+offline-package: docker-images
+	@echo "-> Build package for offline installation in dist/"
+	@cp -r etc docker-compose.yml docker.env build/
+	@mkdir -p dist/
+	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
+
+########################################################################################
+# Linters / docs
+########################################################################################
+
+doc8:
+	@echo "-> Run doc8 validation"
+	uvx doc8==2.0.0 --max-line-length 100 --ignore-path docs/_build/ --quiet docs/
+
+fix:
+	@echo "-> Run Ruff format"
+	uvx ruff format
+	@echo "-> Run Ruff linter"
+	uvx ruff check --fix
+
+valid: fix
+
+check:
+	@echo "-> Run Ruff linter validation (pycodestyle, bandit, isort, and more)"
+	uvx ruff check
+	@echo "-> Run Ruff format validation"
+	uvx ruff format --check
+	@$(MAKE) doc8
+	@echo "-> Run ABOUT files validation"
+	uvx --from aboutcode-toolkit --with setuptools about check --exclude .venv/ --exclude scanpipe/tests/ .
+
+docs:
+	rm -rf docs/_build/
+	${COMPOSE} run --rm --no-deps --volume ./docs:/opt/scancodeio/docs \
+		--volume ./CHANGELOG.rst:/opt/scancodeio/CHANGELOG.rst:ro web \
+		sh -c "uv sync --frozen --extra dev --inexact && sphinx-build docs/ docs/_build/"
+
+clean:
+	@echo "-> Clean the Python env"
+	rm -rf .venv/ .*cache/ *.egg-info/ build/ dist/
+	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
 
 ########################################################################################
 # Local venv commands (legacy)
@@ -133,10 +187,6 @@ ACTIVATE?=. ${VENV_LOCATION}/bin/activate;
 VENV_MANAGE=${VENV_LOCATION}/bin/python manage.py
 VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
 PIP_ARGS=--find-links=./etc/thirdparty/dummy_dist
-# Do not depend on Python to generate the SECRET_KEY
-GET_SECRET_KEY=`head -c50 /dev/urandom | base64 | head -c50`
-# Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
-ENV_FILE=.env
 # Customize with `$ make postgresdb SCANCODEIO_DB_PASSWORD=YOUR_PASSWORD`
 SCANCODEIO_DB_NAME=scancodeio
 SCANCODEIO_DB_USER=scancodeio
@@ -169,42 +219,12 @@ dev-mining: virtualenv
 	@$(MAKE) dev
 	@${ACTIVATE} pip install ${PIP_ARGS} --editable .[mining]
 
-envfile:
-	@echo "-> Create the .env file and generate a secret key"
-	@if test -f ${ENV_FILE}; then echo ".env file exists already"; exit 1; fi
-	@mkdir -p $(shell dirname ${ENV_FILE}) && touch ${ENV_FILE}
-	@echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
-
 runserver:
 	DJANGO_RUNSERVER_HIDE_WARNING=true ${VENV_MANAGE} runserver 8001 --insecure
 
 check-deploy:
 	@echo "-> Check Django deployment settings"
 	${VENV_MANAGE} check --deploy
-
-doc8:
-	@echo "-> Run doc8 validation"
-	@${ACTIVATE} doc8 --max-line-length 100 --ignore-path docs/_build/ --quiet docs/
-
-valid:
-	@echo "-> Run Ruff format"
-	@${ACTIVATE} ruff format
-	@echo "-> Run Ruff linter"
-	@${ACTIVATE} ruff check --fix
-
-check:
-	@echo "-> Run Ruff linter validation (pycodestyle, bandit, isort, and more)"
-	@${ACTIVATE} ruff check
-	@echo "-> Run Ruff format validation"
-	@${ACTIVATE} ruff format --check
-	@$(MAKE) doc8
-	@echo "-> Run ABOUT files validation"
-	@${ACTIVATE} about check --exclude .venv/ --exclude scanpipe/tests/ .
-
-clean:
-	@echo "-> Clean the Python env"
-	rm -rf .venv/ .*cache/ *.egg-info/ build/ dist/
-	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
 
 postgresdb:
 	@echo "-> Configure PostgreSQL database"
@@ -226,27 +246,4 @@ sqlitedb:
 	@echo SCANCODEIO_DB_NAME=\"sqlite3.db\" >> ${ENV_FILE}
 	@$(MAKE) migrate
 
-worker:
-	${MANAGE} rqworker --worker-class scancodeio.worker.ScanCodeIOWorker --queue-class scancodeio.worker.ScanCodeIOQueue --verbosity 2
-
-docs:
-	rm -rf docs/_build/
-	@${ACTIVATE} sphinx-build docs/ docs/_build/
-
-docker-images:
-	@echo "-> Build Docker services"
-	docker compose build
-	@echo "-> Pull service images"
-	docker compose pull
-	@echo "-> Save the service images to a tar archive in the build/ directory"
-	@rm -rf build/
-	@mkdir -p build/
-	@docker save postgres redis scancodeio-worker scancodeio-web nginx clamav/clamav | gzip > build/scancodeio-images.tar.gz
-
-offline-package: docker-images
-	@echo "-> Build package for offline installation in dist/"
-	@cp -r etc docker-compose-offline.yml docker.env build/
-	@mkdir -p dist/
-	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
-
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate lock upgrade makemigrations restart-worker postgresdb sqlitedb backupdb run test fasttest regen-fixtures fix docs build build-core build-full bash start shell docker-images offline-package
+.PHONY: envfile run start stop bash shell test fasttest migrations migrate restart-worker build build-core build-full regen-fixtures outdated lock upgrade docker-images offline-package doc8 fix valid check docs virtualenv conf dev dev-mining runserver check-deploy clean postgresdb backupdb sqlitedb
