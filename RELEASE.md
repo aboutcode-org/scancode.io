@@ -8,7 +8,7 @@
   - `scancodeio/__init__.py`
   - `docker-compose.yml` (the `vx.x.x-full` image tag of the `web` and `worker` services)
   - `CHANGELOG.rst` (set date)
-- Run `$ uv lock` to update the version in the `uv.lock` file
+- Run `$ make lock` to update the version in the `uv.lock` file
 - Commit and push this branch: "chore: bump version to vx.x.x for release"
 - Create a PR and merge once approved
 - Tag and push that tag. This will trigger the `pypi-release.yml` GitHub workflow that

@@ -81,9 +81,6 @@ migrate:
 	@echo "-> Apply database migrations"
 	${MANAGE} migrate
 
-worker:
-	${MANAGE} rqworker --worker-class scancodeio.worker.ScanCodeIOWorker --queue-class scancodeio.worker.ScanCodeIOQueue --verbosity 2
-
 restart-worker:
 	${COMPOSE} restart worker
 
@@ -249,4 +246,4 @@ sqlitedb:
 	@echo SCANCODEIO_DB_NAME=\"sqlite3.db\" >> ${ENV_FILE}
 	@$(MAKE) migrate
 
-.PHONY: envfile run start stop bash shell test fasttest migrations migrate worker restart-worker build build-core build-full regen-fixtures outdated lock upgrade docker-images offline-package doc8 fix valid check docs virtualenv conf dev dev-mining runserver check-deploy clean postgresdb backupdb sqlitedb
+.PHONY: envfile run start stop bash shell test fasttest migrations migrate restart-worker build build-core build-full regen-fixtures outdated lock upgrade docker-images offline-package doc8 fix valid check docs virtualenv conf dev dev-mining runserver check-deploy clean postgresdb backupdb sqlitedb
