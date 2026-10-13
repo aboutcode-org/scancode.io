@@ -260,13 +260,7 @@ Or, in the context of running a :ref:`scanpipe command <command_line_interface>`
 
 .. code-block:: console
 
-    $ SCANCODEIO_LOG_LEVEL=DEBUG bin/scanpipe [command]
-
-The web server can be started in DEBUG mode with:
-
-.. code-block:: console
-
-    $ SCANCODEIO_LOG_LEVEL=DEBUG make run
+    $ docker compose exec -e SCANCODEIO_LOG_LEVEL=DEBUG web scanpipe [command]
 
 .. _scancodeio_settings_site_url:
 

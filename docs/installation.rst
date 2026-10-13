@@ -3,19 +3,13 @@
 Installation
 ============
 
-Welcome to **ScanCode.io** installation guide! This guide describes how to install
-ScanCode.io on various platforms.
-Please read and follow the instructions carefully to ensure your installation is
-functional and smooth.
+There are three ways to run ScanCode.io:
 
-The **preferred ScanCode.io installation** is to :ref:`run_with_docker` as this is
-the simplest to setup and get started.
-Running ScanCode.io with Docker **guarantee the availability of all features** with the
-**minimum configuration** required.
-This installation **works across all Operating Systems**.
-
-Alternatively, you can install ScanCode.io locally as a development server with some
-limitations and caveats. Refer to the :ref:`local_development_installation` section.
+- :ref:`run_with_docker`: **recommended**, uses the Docker images published on the
+  GitHub Container Registry, with all the features available, on all operating systems.
+- :ref:`offline_installation`: the same Docker setup, on a server without internet
+  access.
+- :ref:`local_development_installation`: Docker-based setup for contributors.
 
 .. _run_with_docker:
 
@@ -29,8 +23,8 @@ The first step is to download and **install Docker on your platform**.
 Refer to Docker documentation and choose the best installation
 path for your system: `Get Docker <https://docs.docker.com/get-docker/>`_.
 
-Get the Image
-^^^^^^^^^^^^^
+Install and Run the App
+^^^^^^^^^^^^^^^^^^^^^^^
 
 ScanCode.io is distributed as Docker images published on the GitHub Container
 Registry, with a ``docker-compose.yml`` file to run all the required services.
@@ -45,25 +39,18 @@ Registry, with a ``docker-compose.yml`` file to run all the required services.
     git config --global core.autocrlf false
 
 **Clone the git** `ScanCode.io repo <https://github.com/aboutcode-org/scancode.io>`_,
-create an **environment file**, and **pull the Docker images**::
+create an **environment file**, **pull the Docker images**, and **start the services**::
 
     git clone https://github.com/aboutcode-org/scancode.io.git && cd scancode.io
     make envfile
     docker compose pull
+    docker compose up -d
+
+Go to http://localhost/ on a web browser to **access the web UI**.
 
 .. note::
     ``docker-compose.yml`` uses the ``full`` image of the ScanCode.io release, which
     includes OpenJDK, jadx, and android-inspector for the Android analysis pipeline.
-
-Run the App
-^^^^^^^^^^^
-
-**Run your image** as a container::
-
-    docker compose up
-
-At this point, the ScanCode.io app should be running at port 80 on your Docker host.
-Go to http://localhost/ on a web browser to **access the web UI**.
 
 An overview of the web application usage is available at :ref:`user_interface`.
 
@@ -87,7 +74,7 @@ An overview of the web application usage is available at :ref:`user_interface`.
     executed at a time. If you wish to start more workers, use the following command,
     replacing the number 2 with the desired number of workers::
 
-        docker compose up --scale worker=2
+        docker compose up -d --scale worker=2
 
 .. warning::
     To access a dockerized ScanCode.io app from a remote location, the ``ALLOWED_HOSTS``
@@ -286,201 +273,63 @@ The features that need internet access do not work on an offline server:
 Local development
 -----------------
 
-Supported Platforms
-^^^^^^^^^^^^^^^^^^^
-
-**ScanCode.io** has been tested and is supported on the following operating systems:
-
-    #. **Debian-based** Linux distributions
-    #. **macOS** 10.14 and up
-
-.. warning::
-    On **Windows** ScanCode.io can **only** be :ref:`run_with_docker`.
-    Alternatively, you can run a local checkout with the Docker compose stack using the
-    dedicated command::
-
-        make run-docker-dev
-
-
-Pre-installation Checklist
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Before you install ScanCode.io, make sure you have the following prerequisites:
-
- * **Python: versions 3.12 to 3.14** found at https://www.python.org/downloads/
- * **Git**: most recent release available at https://git-scm.com/
- * **PostgreSQL**: release 17 or later found at https://www.postgresql.org/ or
-   https://postgresapp.com/ on macOS
-
-.. _system_dependencies:
-
-System Dependencies
-^^^^^^^^^^^^^^^^^^^
-
-In addition to the above pre-installation checklist, there might be some OS-specific
-system packages that need to be installed before installing ScanCode.io.
-
-On **Linux**, several **system packages are required** by the ScanCode toolkit.
-Make sure those are installed before attempting the ScanCode.io installation::
-
-    sudo apt-get install \
-        build-essential python3-dev libssl-dev libpq-dev \
-        bzip2 xz-utils zlib1g libxml2-dev libxslt1-dev libpopt0 \
-        libgpgme11 libdevmapper1.02.1 libguestfs-tools
-
-See also `ScanCode-toolkit Prerequisites <https://scancode-toolkit.readthedocs.io/en/
-latest/getting-started/install.html#prerequisites>`_ for more details.
-
-For the :ref:`pipeline_collect_symbols_ctags` pipeline, `Universal Ctags <https://github.com/universal-ctags/ctags>`_ is needed.
-
-    * On **Linux** install it using::
-
-        sudo apt-get install universal-ctags
-
-    * On **MacOS** install Universal Ctags using Homebrew::
-
-        brew install universal-ctags
-
-For the :ref:`pipeline_collect_strings_gettext` pipeline, `gettext <https://www.gnu.org/software/gettext/>`_ is needed.
-
-    * On **Linux** install it using::
-
-        sudo apt-get install gettext
-
-    * On **MacOS** install gettext using Homebrew::
-
-        brew install gettext
-
-For the Android deploy to develop pipeline, `jadx <https://github.com/skylot/jadx>` and `Java <https://openjdk.org/index.html>`_ are needed.
-
-    * On **Linux** install it using::
-
-        # Ensure that you are in the scancode.io directory
-        sudo apt-get install openjdk-21-jre # Install Java 21
-        wget https://github.com/skylot/jadx/releases/download/v1.5.6/jadx-1.5.6.zip # Download jadx v1.5.6
-        unzip -qd jadx-1.5.6 jadx-1.5.6.zip # Extract jadx-1.5.6.zip
-        export PATH=$PATH:`pwd`/jadx-1.5.6/bin # add the jadx-1.5.6 binaries to your path
-
-    * On **MacOS** install it using Homebrew::
-
-        brew install jadx
+.. note::
+    This section is for contributors to ScanCode.io. The development environment
+    runs entirely in Docker: no local Python or PostgreSQL installation required.
+    Refer to :ref:`contributing` for instructions on submitting changes.
 
 Clone and Configure
 ^^^^^^^^^^^^^^^^^^^
 
- * Clone the `ScanCode.io GitHub repository <https://github.com/aboutcode-org/scancode.io>`_::
+#. Clone the `ScanCode.io repository <https://github.com/aboutcode-org/scancode.io>`_::
 
     git clone https://github.com/aboutcode-org/scancode.io.git && cd scancode.io
 
- * Inside the :guilabel:`scancode.io/` directory, install the required dependencies::
-
-    make dev
-
- .. note::
-    You can specify the Python version during the ``make dev`` step using the following
-    command::
-
-        make dev PYTHON_EXE=python3.14
-
-    When ``PYTHON_EXE`` is not specified, by default, the ``python3`` executable is
-    used.
-
- * Create an environment file::
+#. Create an environment file::
 
     make envfile
 
- * If you intend to run an Android deploy to develop project, install the pipeline::
+Run the App
+^^^^^^^^^^^
 
-    source .venv/bin/activate
-    pip install android-inspector
+Build the development image and start all services::
 
-Database
-^^^^^^^^
+    make run
 
-**PostgreSQL** is the preferred database backend and should always be used on
-production servers.
+The application is available at http://localhost:8001/.
+Source code changes are reflected immediately in the web application.
+Restart the worker to apply them to pipeline runs::
 
-* Create the PostgreSQL user, database, and table with::
-
-    make postgresdb
-
-.. warning::
-    The ``make postgres`` command is assuming that your PostgreSQL database template is
-    using the ``en_US.UTF-8`` collation.
-    If you encounter database creation errors while running this command, it is
-    generally related to an incompatible database template.
-
-    You can either `update your template <https://stackoverflow.com/a/60396581/8254946>`_
-    to fit the ScanCode.io default, or provide custom values collation using the
-    ``POSTGRES_INITDB_ARGS`` variable such as::
-
-        make postgresdb POSTGRES_INITDB_ARGS=\
-            --encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
+    make restart-worker
 
 .. note::
-    You can also use a **SQLite** database for local development as a single user
-    with::
+    ``make run`` is a shortcut for
+    ``docker compose -f docker-compose.yml -f docker-compose.dev.yml up``.
+    The development image is the ``core`` image: the VM image extraction and the
+    Android analysis features of the ``full`` image are not available.
 
-        make sqlitedb
+Rebuild the development image after a dependency change with::
 
-.. warning::
-    SQLite is not recommended as a database backend. Certain built-in pipelines
-    depend on PostgreSQL-specific features and will fail when using SQLite.
-    For full functionality and reliability, PostgreSQL should be used.
-    Check this `link
-    <https://docs.djangoproject.com/en/dev/ref/databases/#sqlite-notes>`_
-    for more details.
+    make build
 
 Tests
 ^^^^^
 
-You can validate your ScanCode.io installation by running the tests suite::
+Run the test suite with::
 
     make test
 
-Web Application
-^^^^^^^^^^^^^^^
-
-A web application is available to create and manage your projects from a browser;
-you can start the local webserver and access the app with::
-
-    make run
-
-Then open your web browser and visit: http://localhost:8001/ to access the web
-application.
-
 .. warning::
-    ``make run`` is provided as a simplified way to run the application with one
-    **major caveat**: pipeline runs will be **executed synchronously** on HTTP requests
-    and will leave your browser connection or API calls opened during the pipeline
-    execution. See also the :ref:`scancodeio_settings_async` setting.
-
-.. warning::
-    This setup is **not suitable for deployments** and **only supported for local
+    This setup is **not suitable for deployments** and is **only supported for local
     development**.
-    It is highly recommended to use the :ref:`run_with_docker` setup to ensure the
-    availability of all the features and the benefits from asynchronous workers
-    for pipeline executions.
-
-An overview of the web application usage is available at :ref:`user_interface`.
-
-Upgrading
-^^^^^^^^^
-
-If you already have the ScanCode.io repo cloned, you can upgrade to the latest version
-with::
-
-    cd scancode.io
-    git pull
-    make dev
-    make migrate
 
 Helm Chart [Beta]
 -----------------
 
 .. warning::
-    The Helm Chart support for ScanCode.io is a community contribution effort.
-    It is only tested on a few configurations and still under development.
+    The Helm Chart is a **community contribution** and is **not tested** by the
+    ScanCode.io maintainers. It was last tested with minikube v1.25.1 and helm v3.8.1,
+    and may not work with the current ScanCode.io release.
     We welcome improvement suggestions and issue reports at
     `ScanCode.io GitHub repo <https://github.com/aboutcode-org/scancode.io/issues>`_.
 
@@ -560,7 +409,9 @@ Gitpod
 ------
 
 .. warning::
-    The Gitpod support for ScanCode.io is a community contribution effort.
+    The Gitpod support is a **community contribution** and is **not tested** by the
+    ScanCode.io maintainers. It may not work with the current Gitpod platform or
+    ScanCode.io release.
     We welcome improvement suggestions and issue reports at
     `ScanCode.io GitHub repo <https://github.com/aboutcode-org/scancode.io/issues>`_.
 
