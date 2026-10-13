@@ -43,8 +43,8 @@ class ScanCodebase(Pipeline):
             cls.collect_and_create_codebase_resources,
             cls.flag_empty_files,
             cls.flag_ignored_resources,
-            cls.scan_for_application_packages,
             cls.scan_for_files,
+            cls.scan_for_application_packages,
             cls.collect_and_create_license_detections,
         )
 
@@ -59,13 +59,13 @@ class ScanCodebase(Pipeline):
         """Collect and create codebase resources."""
         pipes.collect_and_create_codebase_resources(self.project)
 
-    def scan_for_application_packages(self):
-        """Scan unknown resources for packages information."""
-        scancode.scan_for_application_packages(self.project, progress_logger=self.log)
-
     def scan_for_files(self):
         """Scan unknown resources for copyrights, licenses, emails, and urls."""
         scancode.scan_for_files(self.project, progress_logger=self.log)
+
+    def scan_for_application_packages(self):
+        """Scan unknown resources for packages information."""
+        scancode.scan_for_application_packages(self.project, progress_logger=self.log)
 
     def collect_and_create_license_detections(self):
         """
@@ -73,4 +73,9 @@ class ScanCodebase(Pipeline):
         package data. Also look for license issues and try to resolve them.
         """
         scancode.collect_and_create_license_detections(project=self.project)
-        scancode.follow_and_resolve_referenced_licenses(project=self.project)
+        scancode.follow_and_resolve_referenced_licenses_in_resources(
+            project=self.project
+        )
+        scancode.follow_and_resolve_referenced_licenses_in_packages(
+            project=self.project
+        )

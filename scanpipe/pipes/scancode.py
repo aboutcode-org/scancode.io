@@ -52,6 +52,7 @@ from licensedcode.detection import has_resolved_referenced_file
 from licensedcode.detection import update_detection_from_referenced_files
 from packagedcode import get_package_handler
 from packagedcode import models as packagedcode_models
+from packagedcode.licensing import get_license_detections_from_sibling_file
 from scancode import Scanner
 from scancode import api as scancode_api
 from scancode import cli as scancode_cli
@@ -442,7 +443,10 @@ def scan_for_application_packages(
     controlled through the SCANCODEIO_PROCESSES setting.
     """
     if not resource_qs:
-        resource_qs = project.codebaseresources.no_status()
+        resource_qs = (
+            project.codebaseresources.no_status()
+            | project.codebaseresources.filter(status=flag.SCANNED)
+        )
 
     scan_func_kwargs = {
         "package_only": package_only,
@@ -1064,6 +1068,11 @@ def create_discovered_licenses(project, scanned_codebase):
 
 
 def load_todo_issues(project, scanned_codebase):
+    """
+    While loading a codebase from a full scancode result file,
+    load detection issues from the codebase, and mark them as
+    needs review.
+    """
     if hasattr(scanned_codebase.attributes, "todo"):
         for todo_issue in scanned_codebase.attributes.todo:
             pipes.update_license_detection_with_issue(project, todo_issue)
@@ -1078,6 +1087,10 @@ def load_todo_issues(project, scanned_codebase):
 
 
 def check_license_detection_for_issues(discovered_license):
+    """
+    If a DiscoveredLicense instance has detection issues in it,
+    mark them as needs review.
+    """
     file_regions = [
         FileRegion(
             path=file_region.get("path"),
@@ -1111,13 +1124,49 @@ def check_license_detection_for_issues(discovered_license):
         )
 
 
-def follow_and_resolve_referenced_licenses(project):
+def follow_and_resolve_referenced_licenses_in_packages(project):
+
+    for discovered_package in project.discoveredpackages.has_no_license_detections():
+        for datafile_path in discovered_package.datafile_paths:
+            datafile_resource = project.codebaseresources.get_or_none(
+                path=datafile_path
+            )
+            if datafile_resource and datafile_resource.license_detections:
+                discovered_package.license_detections.extend(
+                    datafile_resource.license_detections
+                )
+
+        discovered_package.update_license_expressions()
+        if discovered_package.declared_license_expression:
+            continue
+
+        sibling_detections_by_id = {}
+        for datafile_path in discovered_package.datafile_paths:
+            datafile_resource = project.codebaseresources.get_or_none(
+                path=datafile_path
+            )
+            if not datafile_resource:
+                continue
+
+            detections, _le = get_license_detections_from_sibling_file(
+                resource=datafile_resource,
+                codebase=project,
+            )
+            for detection in detections:
+                sibling_detections_by_id[detection.get("identifier")] = detection
+
+        discovered_package.license_detections = list(sibling_detections_by_id.values())
+        discovered_package.update_license_expressions()
+
+
+def follow_and_resolve_referenced_licenses_in_resources(project):
     """
     In case of a referenced license from a file/package like `See license in LICENSE.md`
     try to find and resolve from the referenced resource the license detection.
     """
     for discovered_license in project.discoveredlicenses.all():
         example_path = discovered_license.file_regions[0].get("path")
+        old_license_id = discovered_license.identifier
         license_detection_mapping = model_to_dict(discovered_license)
         license_detection = LicenseDetectionFromResult.from_license_detection_mapping(
             license_detection_mapping=license_detection_mapping,
@@ -1129,7 +1178,10 @@ def follow_and_resolve_referenced_licenses(project):
         ):
             continue
 
-        resource = project.codebaseresources.get(path=example_path)
+        resource = project.codebaseresources.get_or_none(path=example_path)
+        if not resource:
+            continue
+
         is_modified = update_detection_from_referenced_files(
             referenced_filenames=referenced_filenames,
             license_detection_mapping=license_detection_mapping,
@@ -1150,28 +1202,87 @@ def follow_and_resolve_referenced_licenses(project):
                 update_file_license_detections(
                     project=project,
                     discovered_license=discovered_license,
+                    old_license_id=old_license_id,
+                )
+                update_package_license_detections(
+                    project=project,
+                    discovered_license=discovered_license,
+                    old_license_id=old_license_id,
                 )
 
 
+detection_fields = [field.name for field in AbstractLicenseDetection._meta.fields]
+
+
 def mark_discovered_license_as_correct_detection(discovered_license):
+    """
+    Mark a DiscoveredLicense instance as it doesn't need review.
+    Can be called after a detection issue is resolved, like by
+    following references.
+    """
     discovered_license.needs_review = False
     discovered_license.review_comments = []
     discovered_license.save()
 
 
-def update_file_license_detections(project, discovered_license):
-    detection_fields = [field.name for field in AbstractLicenseDetection._meta.fields]
-
+def update_file_license_detections(project, discovered_license, old_license_id):
+    """
+    Post updating license detections, also update license detections and expressions
+    for related CodebaseResource objects.
+    """
     for file_region in discovered_license.file_regions:
         resource = project.codebaseresources.get(path=file_region.get("path"))
-        resource.detected_license_expression = discovered_license.license_expression
-        resource.detected_license_expression_spdx = (
-            discovered_license.license_expression_spdx
+        update_instance_with_new_detection(
+            instance=resource,
+            discovered_license=discovered_license,
+            old_license_id=old_license_id,
         )
-        resource.license_detections = [
-            model_to_dict(instance=discovered_license, fields=detection_fields)
-        ]
-        resource.save()
+
+
+def update_package_license_detections(project, discovered_license, old_license_id):
+    """
+    Post updating license detections, also update license detections and expressions
+    for related DiscoveredPackage objects.
+    """
+    for file_region in discovered_license.file_regions:
+        resource = project.codebaseresources.get(path=file_region.get("path"))
+        for discovered_package in resource.discovered_packages.all():
+            update_instance_with_new_detection(
+                instance=discovered_package,
+                discovered_license=discovered_license,
+                old_license_id=old_license_id,
+            )
+
+
+def update_instance_with_new_detection(instance, discovered_license, old_license_id):
+    """
+    Update and save the license fields for a DiscoveredPackage or CodebaseResource
+    instances from a new and resolved DiscoveredLicense instance, replacing an
+    old license detection with `old_license_id`.
+    """
+    if not instance.license_detections:
+        return
+
+    license_ids = [
+        detection.get("identifier") for detection in instance.license_detections
+    ]
+    if old_license_id not in license_ids:
+        return
+
+    new_detections = []
+    for detection in instance.license_detections:
+        if detection.get("identifier") == old_license_id:
+            new_detections.append(
+                model_to_dict(instance=discovered_license, fields=detection_fields)
+            )
+        else:
+            new_detections.append(detection)
+
+    if not new_detections:
+        return
+
+    instance.license_detections = new_detections
+    instance.update_license_expressions()
 
 
 def find_referenced_resource_in_codebase(
@@ -1181,25 +1292,33 @@ def find_referenced_resource_in_codebase(
     Try to find and return a referenced resource using database calls instead of a
     codebase walk first and fall back only if a resource is not found.
     """
-    if not resource:
-        return
-
-    if not resource.parent_path:
+    if not (resource and resource.parent_path):
         return
 
     # this can be a path or a plain name
     referenced_filename = clean_path(referenced_filename)
-    path = posixpath.join(resource.parent_path, referenced_filename)
-    referenced_resource = codebase.get_resource(path=path)
+    referenced_path = posixpath.join(resource.parent_path, referenced_filename)
+    referenced_resource = codebase.get_resource(path=referenced_path)
     if referenced_resource:
         return referenced_resource
 
-    # Also look at codebase root for referenced file
-    root_path = codebase.root.path
-    path = posixpath.join(root_path, referenced_filename)
-    referenced_resource = codebase.get_resource(path=path)
-    if referenced_resource:
-        return referenced_resource
+    for package in resource.discovered_packages.all():
+        datafile_roots = []
+        for datafile_path in package.datafile_paths:
+            datafile_resource = codebase.get_resource(path=datafile_path)
+            if not (datafile_resource and datafile_resource.has_parent()):
+                continue
+
+            if datafile_resource.parent_path in datafile_roots:
+                continue
+
+            datafile_roots.append(datafile_resource.parent_path)
+            referenced_path = posixpath.join(
+                datafile_resource.parent_path, referenced_filename
+            )
+            referenced_resource = codebase.get_resource(path=referenced_path)
+            if referenced_resource:
+                return referenced_resource
 
 
 def set_codebase_resource_for_package(codebase_resource, discovered_package):

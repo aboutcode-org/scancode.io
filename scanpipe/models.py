@@ -70,6 +70,7 @@ import requests
 import saneyaml
 from aboutcode.api_auth import AbstractAPIToken
 from commoncode.fileutils import parent_directory
+from commoncode.fileutils import splitext_name
 from cyclonedx import model as cyclonedx_model
 from cyclonedx.model import component as cyclonedx_component
 from cyclonedx.model import contact as cyclonedx_contact
@@ -79,6 +80,7 @@ from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licensing
 from matchcode_toolkit.fingerprinting import IGNORED_DIRECTORY_FINGERPRINTS
 from packagedcode.models import build_package_uid
+from packagedcode.utils import combine_expressions
 from packagedcode.utils import get_base_purl
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
@@ -2987,6 +2989,11 @@ class CodebaseResource(
         """Return True, if the resource is a symlink."""
         return self.type == self.Type.SYMLINK
 
+    @property
+    def base_name(self):
+        base_name, _extension = splitext_name(self.name, is_file=self.is_file)
+        return base_name
+
     def get_path_segments_with_subpath(self):
         """
         Return a list of path segment name along its subpath for this resource.
@@ -3256,6 +3263,29 @@ class CodebaseResource(
             contributors=list(set(holders + authors)),
             types=self.get_spdx_types(),
         )
+
+    def update_license_expressions(self):
+        """
+        Update the license expressions for a discovered package from it's license
+        detections.
+        """
+        if not self.license_detections:
+            return
+
+        license_expressions = [
+            detection.get("license_expression") for detection in self.license_detections
+        ]
+        self.detected_license_expression = combine_expressions(
+            expressions=license_expressions,
+            relation="AND",
+            unique=True,
+        )
+        self.detected_license_expression_spdx = str(
+            build_spdx_license_expression(
+                license_expression=self.detected_license_expression
+            )
+        )
+        self.save()
 
 
 class CodebaseRelation(
@@ -3893,8 +3923,31 @@ class DiscoveredPackage(
         if self.declared_license_expression_spdx:
             return self.declared_license_expression_spdx
         elif self.declared_license_expression:
-            return build_spdx_license_expression(self.declared_license_expression)
+            return str(build_spdx_license_expression(self.declared_license_expression))
         return ""
+
+    def update_license_expressions(self):
+        """
+        Update the license expressions for a discovered package from it's license
+        detections.
+        """
+        if not self.license_detections:
+            return
+
+        license_expressions = [
+            detection.get("license_expression") for detection in self.license_detections
+        ]
+        self.declared_license_expression = combine_expressions(
+            expressions=license_expressions,
+            relation="AND",
+            unique=True,
+        )
+        self.declared_license_expression_spdx = str(
+            build_spdx_license_expression(
+                license_expression=self.declared_license_expression
+            )
+        )
+        self.save()
 
     def as_spdx(self):
         """Return this DiscoveredPackage as an SPDX Package entry."""
