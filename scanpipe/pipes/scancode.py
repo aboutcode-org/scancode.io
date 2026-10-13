@@ -211,6 +211,7 @@ def _scan_resource(
     scanners,
     with_threading=True,
     timeout=scanpipe_settings.SCAN_FILE_TIMEOUT,
+    use_cached_results=False,
 ):
     """
     Wrap the scancode-toolkit `scan_resource` method to support timeout on direct
@@ -225,6 +226,7 @@ def _scan_resource(
         scanners,
         timeout=timeout,
         with_threading=with_threading,
+        use_cached_results=use_cached_results,
     )
     return results, errors
 
@@ -871,7 +873,9 @@ def get_pretty_params(args):
     return {f"--{key.replace('_', '-')}": value for key, value in args.items()}
 
 
-def run_scan(location, output_file, run_scan_args, processes=None):
+def run_scan(
+    location, output_file, run_scan_args, processes=None, use_cached_results=False
+):
     """Scan the `location` content and write the results into an `output_file`."""
     if not processes:
         processes = get_max_workers(keep_available=1)
@@ -884,6 +888,7 @@ def run_scan(location, output_file, run_scan_args, processes=None):
         echo_func=None,
         pretty_params=get_pretty_params(run_scan_args),
         timeout=scanpipe_settings.SCAN_FILE_TIMEOUT,
+        use_cached_results=use_cached_results,
         **run_scan_args,
     )
 
