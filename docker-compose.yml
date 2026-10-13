@@ -84,7 +84,7 @@ services:
     restart: "no"
 
   web:
-    build: .
+    image: ghcr.io/aboutcode-org/scancode.io:v38.1.0-full
     command: sh -c "
         ./manage.py migrate &&
         ./manage.py collectstatic --no-input --verbosity 0 --clear &&
@@ -115,7 +115,8 @@ services:
         required: false
 
   worker:
-    build: .
+    image: ghcr.io/aboutcode-org/scancode.io:v38.1.0-full
+    # Ensure that potential db migrations run first by waiting until "web" is up
     command: wait-for-it --strict --timeout=600 web:8000 -- sh -c "
         ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker
                              --queue-class scancodeio.worker.ScanCodeIOQueue

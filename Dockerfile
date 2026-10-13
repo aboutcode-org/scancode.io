@@ -88,6 +88,10 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 # Add the app dir in the Python path for entry points availability
 ENV PYTHONPATH=$APP_DIR
+# Use the libmagic bundled with typecode: two libmagic providers are installed, and
+# the one used otherwise depends on the order the packages are discovered in.
+ENV TYPECODE_LIBMAGIC_PATH=$APP_DIR/.venv/lib/python3.14/site-packages/typecode_libmagic/lib/libmagic.so
+ENV TYPECODE_LIBMAGIC_DB_PATH=$APP_DIR/.venv/lib/python3.14/site-packages/typecode_libmagic/data/magic.mgc
 
 # OS requirements as per
 # https://scancode-toolkit.readthedocs.io/en/stable/getting-started/installation/index.html#installation-prerequisites
