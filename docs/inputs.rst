@@ -19,6 +19,11 @@ JSON format).
 When uploading through the Web UI, navigate to your project and use the upload
 interface in the "Inputs" panel.
 
+.. note::
+
+    Uploading directories or folders directly is not supported. Please compress
+    directories into an archive (such as ``.zip`` or ``.tar.gz``) before uploading.
+
 For REST API uploads, refer to the :ref:`rest_api` documentation for endpoint details.
 
 .. _inputs_download_url:
