@@ -33,7 +33,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "uv==0.12.24",
+  "uv==0.13.0",
   "setuptools==84.0.0",
   # Django related
   "django==6.1.2",

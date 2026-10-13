@@ -304,9 +304,9 @@ For the Android deploy to develop pipeline, `jadx <https://github.com/skylot/jad
 
         # Ensure that you are in the scancode.io directory
         sudo apt-get install openjdk-21-jre # Install Java 21
-        wget https://github.com/skylot/jadx/releases/download/v1.5.0/jadx-1.5.0.zip # Download jadx v1.5.0
-        unzip -qd jadx-1.5.0 jadx-1.5.0.zip # Extract jadx-1.5.0.zip
-        export PATH=$PATH:`pwd`/jadx-1.5.0/bin/jadx:`pwd`/jadx-1.5.0/lib # add jadx-1.5.0 binary and libraries to your path
+        wget https://github.com/skylot/jadx/releases/download/v1.5.6/jadx-1.5.6.zip # Download jadx v1.5.6
+        unzip -qd jadx-1.5.6 jadx-1.5.6.zip # Extract jadx-1.5.6.zip
+        export PATH=$PATH:`pwd`/jadx-1.5.6/bin # add the jadx-1.5.6 binaries to your path
 
     * On **MacOS** install it using Homebrew::
 
@@ -327,19 +327,10 @@ Clone and Configure
     You can specify the Python version during the ``make dev`` step using the following
     command::
 
-        make dev PYTHON_EXE=python3.11
+        make dev PYTHON_EXE=python3.14
 
     When ``PYTHON_EXE`` is not specified, by default, the ``python3`` executable is
     used.
-
- .. tip::
-    When running M1 based MacOS, you can also install SCIO in x86 mode using rosetta::
-
-        softwareupdate --install-rosetta
-        arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-        arch -x86_64 /usr/local/Homebrew/bin/brew install python@3.12
-        make dev PYTHON_EXE=/usr/local/bin/python3.12
-        (. bin/activate; pip install psycopg[binary])
 
  * Create an environment file::
 

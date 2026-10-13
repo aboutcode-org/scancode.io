@@ -28,7 +28,7 @@ jobs:
           python-version: 3.14
 
       - name: Install pypa/build
-        run: python -m pip install build==1.4.0 --user
+        run: python -m pip install build==1.6.1 --user
 
       - name: Build a binary wheel and a source tarball
         run: python -m build --sdist --wheel --outdir dist/
