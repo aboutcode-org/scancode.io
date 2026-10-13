@@ -70,7 +70,7 @@ jobs:
         run: make check-deploy
 
       - name: Build the documentation
-        run: make docs
+        run: .venv/bin/sphinx-build docs/ docs/_build/
 
       - name: Run tests
         run: .venv/bin/python manage.py test --verbosity=2 --noinput

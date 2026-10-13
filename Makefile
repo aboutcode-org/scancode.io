@@ -170,7 +170,14 @@ check:
 
 docs:
 	rm -rf docs/_build/
-	@${ACTIVATE} sphinx-build docs/ docs/_build/
+	${COMPOSE} run --rm --no-deps --volume ./docs:/opt/scancodeio/docs \
+		--volume ./CHANGELOG.rst:/opt/scancodeio/CHANGELOG.rst:ro web \
+		sh -c "uv sync --frozen --extra dev --inexact && sphinx-build docs/ docs/_build/"
+
+clean:
+	@echo "-> Clean the Python env"
+	rm -rf .venv/ .*cache/ *.egg-info/ build/ dist/
+	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
 
 ########################################################################################
 # Local venv commands (legacy)
@@ -221,11 +228,6 @@ runserver:
 check-deploy:
 	@echo "-> Check Django deployment settings"
 	${VENV_MANAGE} check --deploy
-
-clean:
-	@echo "-> Clean the Python env"
-	rm -rf .venv/ .*cache/ *.egg-info/ build/ dist/
-	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
 
 postgresdb:
 	@echo "-> Configure PostgreSQL database"
