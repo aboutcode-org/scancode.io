@@ -148,10 +148,16 @@ RUN apt-get update \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN python3 -c "import urllib.request, zipfile, io; \
-    zipfile.ZipFile(io.BytesIO(urllib.request.urlopen( \
-    'https://github.com/skylot/jadx/releases/download/v1.5.0/jadx-1.5.0.zip' \
-    ).read())).extractall('/usr/')" \
+# jadx (runs on the OpenJDK above) decompiles the Android .dex files into Java
+# sources for the "android_d2d" pipeline provided by android-inspector.
+ARG JADX_VERSION=1.5.6
+ARG JADX_SHA256=545ea2be9c242511bc145755cf4bda2485ade42966e096f8b4d3da2a230e8974
+RUN python3 -c "import hashlib, io, sys, urllib.request, zipfile; \
+    archive = urllib.request.urlopen( \
+    'https://github.com/skylot/jadx/releases/download/v${JADX_VERSION}/jadx-${JADX_VERSION}.zip' \
+    ).read(); \
+    hashlib.sha256(archive).hexdigest() == '${JADX_SHA256}' or sys.exit('jadx checksum mismatch'); \
+    zipfile.ZipFile(io.BytesIO(archive)).extractall('/usr/')" \
  && chmod +x /usr/bin/jadx
 
 USER $APP_USER

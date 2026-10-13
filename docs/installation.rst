@@ -304,9 +304,9 @@ For the Android deploy to develop pipeline, `jadx <https://github.com/skylot/jad
 
         # Ensure that you are in the scancode.io directory
         sudo apt-get install openjdk-21-jre # Install Java 21
-        wget https://github.com/skylot/jadx/releases/download/v1.5.0/jadx-1.5.0.zip # Download jadx v1.5.0
-        unzip -qd jadx-1.5.0 jadx-1.5.0.zip # Extract jadx-1.5.0.zip
-        export PATH=$PATH:`pwd`/jadx-1.5.0/bin/jadx:`pwd`/jadx-1.5.0/lib # add jadx-1.5.0 binary and libraries to your path
+        wget https://github.com/skylot/jadx/releases/download/v1.5.6/jadx-1.5.6.zip # Download jadx v1.5.6
+        unzip -qd jadx-1.5.6 jadx-1.5.6.zip # Extract jadx-1.5.6.zip
+        export PATH=$PATH:`pwd`/jadx-1.5.6/bin/jadx:`pwd`/jadx-1.5.6/lib # add jadx-1.5.6 binary and libraries to your path
 
     * On **MacOS** install it using Homebrew::
 
