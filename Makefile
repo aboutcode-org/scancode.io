@@ -131,7 +131,7 @@ upgrade:
 		--env UV_CACHE_DIR=/tmp/uv-cache \
 		--volume "$(CURDIR)":/opt/scancodeio \
 		--workdir /opt/scancodeio \
-		ghcr.io/astral-sh/uv:0.12.24-python3.13-trixie-slim \
+		ghcr.io/astral-sh/uv:0.13.0-python3.14-trixie-slim \
 		uv lock $(addprefix --upgrade-package=,$(PACKAGE))
 
 ########################################################################################
