@@ -27,6 +27,12 @@
 IMAGE_NAME=scancodeio
 COMPOSE=docker compose -f docker-compose.yml -f docker-compose.dev.yml
 MANAGE=${COMPOSE} exec web ./manage.py
+UV_DOCKER=docker run --rm \
+	--user "$$(id -u):$$(id -g)" \
+	--env UV_CACHE_DIR=/tmp/uv-cache \
+	--volume "$(CURDIR)":/opt/scancodeio \
+	--workdir /opt/scancodeio \
+	ghcr.io/astral-sh/uv:0.13.0-python3.14-trixie-slim
 # Do not depend on Python to generate the SECRET_KEY
 GET_SECRET_KEY=`head -c50 /dev/urandom | base64 | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
@@ -106,8 +112,8 @@ outdated:
 	uv audit
 
 lock:
-	@echo "-> Regenerate uv.lock from pyproject.toml"
-	uv lock
+	@echo "-> Regenerate uv.lock from pyproject.toml in the uv image"
+	${UV_DOCKER} uv lock
 
 upgrade:
 	@if [ -z "$(PACKAGE)" ]; then \
@@ -121,13 +127,7 @@ upgrade:
 		perl -pi -e 's/"($$ENV{NAME_PATTERN}(\[[^]]*\])?)==[^";]*/"$$1==$$ENV{VERSION}/i' pyproject.toml; \
 	done
 	@echo "-> Lock $(PACKAGE) in the uv image"
-	docker run --rm \
-		--user "$$(id -u):$$(id -g)" \
-		--env UV_CACHE_DIR=/tmp/uv-cache \
-		--volume "$(CURDIR)":/opt/scancodeio \
-		--workdir /opt/scancodeio \
-		ghcr.io/astral-sh/uv:0.13.0-python3.14-trixie-slim \
-		uv lock $(addprefix --upgrade-package=,$(PACKAGE))
+	${UV_DOCKER} uv lock $(addprefix --upgrade-package=,$(PACKAGE))
 
 docker-images:
 	@echo "-> Pull service images"
