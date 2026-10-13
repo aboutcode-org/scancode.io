@@ -24,7 +24,7 @@
 # Stage 1: Build stage
 # ===================================================================
 
-FROM ghcr.io/astral-sh/uv:0.12.24-python3.13-trixie-slim AS builder
+FROM ghcr.io/astral-sh/uv:0.12.24-python3.14-trixie-slim AS builder
 
 # Compile bytecode for faster startup
 ENV UV_COMPILE_BYTECODE=1
@@ -65,7 +65,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Stage 2: Production stage (core)
 # ===================================================================
 
-FROM python:3.13-slim-bookworm AS core
+FROM python:3.14-slim-trixie AS core
 
 LABEL org.opencontainers.image.source="https://github.com/aboutcode-org/scancode.io"
 LABEL org.opencontainers.image.description="ScanCode.io"
@@ -101,9 +101,9 @@ RUN apt-get update \
        libgcrypt20 \
        libpopt0 \
        libzstd1 \
-       libgpgme11 \
+       libgpgme11t64 \
        libdevmapper1.02.1 \
-       libmagic1 \
+       libmagic1t64 \
        git \
        wait-for-it \
        universal-ctags \
@@ -144,7 +144,7 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends \
        libguestfs-tools \
        linux-image-amd64 \
-       openjdk-17-jre-headless \
+       openjdk-21-jre-headless \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
