@@ -27,6 +27,13 @@ services:
     ports:
       # Port 8001 to avoid conflict when running side-by-side with dejacode on 8000
       - "8001:8001"
+    # Override the base healthcheck to target the dev runserver port.
+    healthcheck:
+      test: ["CMD", "wait-for-it", "--timeout=2", "localhost:8001"]
+      interval: 10s
+      timeout: 5s
+      retries: 48
+      start_period: 120s
 
   # Volume mount keeps code in sync. Restart manually with: make restart-worker
   worker:
