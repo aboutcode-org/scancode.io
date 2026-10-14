@@ -62,6 +62,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import DiscoveredPackageScore
+from scanpipe.models import OriginMatch
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
@@ -176,6 +177,13 @@ class ScanPipeModelsTest(TestCase):
         resource = CodebaseResource.objects.create(project=self.project1, path="path")
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
+        OriginMatch.objects.create(
+            project=self.project1,
+            resource=resource,
+            purl="pkg:pypi/six@1.17.0",
+            match_type=OriginMatch.MatchType.FILE,
+            tool="matchcode",
+        )
 
         delete_log = self.project1.delete_related_objects()
         expected = {
@@ -186,6 +194,7 @@ class ScanPipeModelsTest(TestCase):
             "scanpipe.DiscoveredPackage": 1,
             "scanpipe.DiscoveredPackage_codebase_resources": 1,
             "scanpipe.InputSource": 0,
+            "scanpipe.OriginMatch": 1,
             "scanpipe.ProjectMessage": 0,
             "scanpipe.Run": 1,
             "scanpipe.WebhookDelivery": 0,
@@ -3064,6 +3073,41 @@ class ScanPipeModelsTest(TestCase):
         missing = make_resource_file(self.project1, compliance_alert=severities.MISSING)
         self.assertTrue(missing.has_compliance_issue)
 
+    def test_scanpipe_origin_match_queryset_methods(self):
+        resource = make_resource_file(self.project1, path="six.py")
+        directory = make_resource_directory(self.project1, path="vendor")
+        exact_match = OriginMatch.objects.create(
+            project=self.project1,
+            resource=resource,
+            purl="pkg:pypi/six@1.17.0",
+            match_type=OriginMatch.MatchType.FILE,
+            tool="matchcode",
+            similarity=100,
+        )
+        partial_match = OriginMatch.objects.create(
+            project=self.project1,
+            resource=resource,
+            purl="pkg:pypi/six@1.16.0",
+            match_type=OriginMatch.MatchType.SNIPPET,
+            tool="scanoss",
+            similarity=87,
+        )
+        unscored_match = OriginMatch.objects.create(
+            project=self.project1,
+            resource=directory,
+            purl="pkg:npm/ms@2.1.3",
+            match_type=OriginMatch.MatchType.DIRECTORY,
+            tool="matchcode",
+        )
+
+        origin_matches = self.project1.originmatchs.order_by("purl")
+        self.assertQuerySetEqual(
+            origin_matches.for_tool("matchcode"), [unscored_match, exact_match]
+        )
+        self.assertQuerySetEqual(origin_matches.for_tool("scanoss"), [partial_match])
+        self.assertQuerySetEqual(origin_matches.exact_matches(), [exact_match])
+        self.assertQuerySetEqual(origin_matches.partial_matches(), [partial_match])
+
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
     """
@@ -3412,3 +3456,23 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(bad_data["version"], message.details["version"])
         self.assertEqual(resource.path, message.details["resource_path"])
         self.assertIn("in save", message.traceback)
+
+    def test_scanpipe_origin_match_model_unique_origin_match(self):
+        project1 = make_project("Analysis")
+        resource = make_resource_file(project1, path="six.py")
+        origin_match_data = {
+            "project": project1,
+            "resource": resource,
+            "purl": "pkg:pypi/six@1.17.0",
+            "match_type": OriginMatch.MatchType.FILE,
+            "tool": "matchcode",
+            "origin_path": "six-1.17.0/six.py",
+        }
+        OriginMatch.objects.create(**origin_match_data)
+
+        with self.assertRaises(IntegrityError):
+            OriginMatch.objects.create(**origin_match_data)
+
+        other_tool_data = {**origin_match_data, "tool": "scanoss"}
+        OriginMatch.objects.create(**other_tool_data)
+        self.assertEqual(2, resource.origin_matches.count())
