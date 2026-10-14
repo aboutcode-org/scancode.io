@@ -706,6 +706,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.codebaserelations,
             self.discovereddependencies,
             self.discoveredlicenses,
+            self.originmatchs,
             self.codebaseresources,
             self.runs,
         ]
