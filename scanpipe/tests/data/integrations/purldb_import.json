@@ -1,0 +1,31 @@
+{
+    "packages": [
+        {
+            "purl": "pkg:npm/lodash@4.17.21",
+            "type": "npm",
+            "namespace": "",
+            "name": "lodash",
+            "version": "4.17.21",
+            "description": "Lodash modular utilities",
+            "homepage_url": "https://lodash.com/",
+            "download_url": "https://registry.npmjs.com/lodash/-/lodash-4.17.21.tgz",
+            "repository_homepage_url": "https://www.npmjs.com/package/lodash",
+            "declared_license_expression": "mit",
+            "declared_license_expression_spdx": "MIT",
+            "copyright": "Copyright OpenJS Foundation and other contributors",
+            "primary_language": "JavaScript"
+        },
+        {
+            "purl": "pkg:pypi/requests@2.28.0",
+            "type": "pypi",
+            "namespace": "",
+            "name": "requests",
+            "version": "2.28.0",
+            "description": "Python HTTP for Humans",
+            "homepage_url": "https://requests.readthedocs.io",
+            "repository_homepage_url": "https://pypi.org/project/requests/",
+            "declared_license_expression": "apache-2.0",
+            "declared_license_expression_spdx": "Apache-2.0"
+        }
+    ]
+}
