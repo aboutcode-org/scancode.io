@@ -42,6 +42,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import EMPTY_VALUES
+from django.core.validators import MaxValueValidator
 from django.db import models
 from django.db import transaction
 from django.db.models import Case
@@ -5047,3 +5048,96 @@ class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
             details=check.details or [],
             package_score=package_score,
         )
+
+
+class OriginMatchQuerySet(ProjectRelatedQuerySet):
+    def for_tool(self, tool):
+        return self.filter(tool=tool)
+
+    def exact_matches(self):
+        return self.filter(similarity=100)
+
+    def partial_matches(self):
+        return self.filter(similarity__lt=100)
+
+
+class OriginMatch(UUIDPKModel, ProjectRelatedModel, ExtraDataFieldMixin):
+    """A candidate origin package for a resource, as reported by an origin tool."""
+
+    class MatchType(models.TextChoices):
+        PACKAGE = "package"
+        FILE = "file"
+        DIRECTORY = "directory"
+        APPROXIMATE = "approximate"
+        SNIPPET = "snippet"
+
+    resource = models.ForeignKey(
+        CodebaseResource,
+        related_name="origin_matches",
+        on_delete=models.CASCADE,
+        editable=False,
+        help_text=_("The matched file or directory."),
+    )
+    purl = models.CharField(
+        max_length=2048,
+        help_text=_("Package URL (PURL) of the candidate origin package."),
+    )
+    match_type = models.CharField(
+        max_length=20,
+        choices=MatchType.choices,
+        help_text=_(
+            "How the resource matched the origin package: the whole package "
+            "archive, an exact file, a directory, an approximate file, or a snippet."
+        ),
+    )
+    tool = models.CharField(
+        max_length=50,
+        help_text=_("Name of the tool that reported this match."),
+    )
+    tool_version = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text=_("Version of the tool that reported this match."),
+    )
+    origin_path = models.CharField(
+        max_length=2000,
+        blank=True,
+        help_text=_("Path of the matched file in the origin package."),
+    )
+    line_ranges = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_(
+            "Matched line ranges, as a list of mappings with the 'lines' of the "
+            "resource and the corresponding 'origin_lines' of the origin file."
+        ),
+    )
+    similarity = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[MaxValueValidator(100)],
+        help_text=_(
+            "Similarity between the resource and the origin file, from 0 to 100. "
+            "Empty when the tool does not report it."
+        ),
+    )
+
+    objects = OriginMatchQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["resource__path", "-similarity", "purl"]
+        indexes = [
+            models.Index(fields=["purl"]),
+            models.Index(fields=["match_type"]),
+            models.Index(fields=["tool"]),
+            models.Index(fields=["similarity"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["resource", "purl", "match_type", "tool", "origin_path"],
+                name="%(app_label)s_%(class)s_unique_origin_match",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.purl} ({self.match_type} match by {self.tool})"
