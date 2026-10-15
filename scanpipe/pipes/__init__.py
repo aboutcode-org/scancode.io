@@ -577,7 +577,7 @@ def poll_until_success(check, sleep=10, **kwargs):
         time.sleep(sleep)
 
 
-def run_command_safely(command_args):
+def run_command_safely(command_args, env=None):
     """
     Execute the external commands following security best practices.
 
@@ -591,6 +591,8 @@ def run_command_safely(command_args):
     - This does not use the Shell (shell=False) to prevent injection vulnerabilities.
     - The command should be provided as a list of ``command_args`` arguments.
     - Only full paths to executable commands should be provided to avoid any ambiguity.
+    - Secrets go in the optional ``env`` mapping, as the ``command_args`` are
+      included in the error message.
 
     WARNING: If you're incorporating user input into the command, make
     sure to sanitize and validate the input to prevent any malicious commands from
@@ -602,6 +604,7 @@ def run_command_safely(command_args):
         command_args,
         capture_output=True,
         text=True,
+        env=env,
     )
 
     if completed_process.returncode:
