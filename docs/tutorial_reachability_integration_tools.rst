@@ -231,6 +231,6 @@ Run the ``awesome_reachability`` pipeline
             "SqliteAccountInfo",
             "SqliteAccountInfo._create_database"
           ]
-        }]
         }
+      ]
     }

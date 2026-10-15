@@ -30,7 +30,9 @@ class ReachabilityTool(ABC):
     """
     Base class for the analysis tools used by ReachabilityPipeline.
     Uses:
-      Subclasses must implement ``get_availability``, ``run``, and ``parsed_output``.
+        Subclasses must implement ``get_availability`` and ``run``.
+        They may optionally implement ``parsed_output`` to parse the
+        tool's output file, if applicable.
     """
 
     tool_name = ""
@@ -44,7 +46,12 @@ class ReachabilityTool(ABC):
 
     @classmethod
     def run(cls, project, logger=None):
-        """Run the analysis tool."""
+        """
+        Run the analysis tool on the given project and return its output path
+        or store the results directly in an external system.
+        you can use this function in collect_resource_index
+        function to create the resuorce index graph
+        """
         raise NotImplementedError
 
     @classmethod
@@ -53,7 +60,12 @@ class ReachabilityTool(ABC):
         export_output_path,
         logger=None,
     ):
-        """Parse and return the tool results from the output file."""
+        """
+        Parse and return the analysis results from the output file.
+
+        Override this method if the tool generates an output file that
+        requires parsing, such as a JSON file.
+        """
         raise NotImplementedError
 
 
@@ -107,7 +119,18 @@ class ReachabilityPipeline(Pipeline):
         )
 
     def collect_resource_index(self):
-        """Collect the tool-specific resource index of the codebase."""
+        """
+        Collect the resource index, the symbol index of the project resources,
+        possibly by running ``self.reachability_tool.run`` on the project. The
+        tool generates its analysis of the codebase, typically as a large JSON
+        output file, which is then parsed with
+        ``self.reachability_tool.parsed_output``; tools that store their
+        results directly skip the parsing.
+
+        Return the resource index as a dict or JSON, or store it in
+        ``self.resource_indexes``. If the tool does not generate a
+        resource index, return None.
+        """
         raise NotImplementedError
 
     def collect_patch_symbols(self):
@@ -117,7 +140,33 @@ class ReachabilityPipeline(Pipeline):
         )
 
     def collect_and_match_resources(self):
-        """Match resource symbols against patch symbols."""
+        """
+        Match resource symbols against patch symbols,
+        and save one reachability report per matching resource.
+
+        Each report is stored in the resource ``extra_data`` under
+        the ``symbols_reachability`` key, with the following structure::
+
+            {
+                "tool_name": "<tool_name>",
+                "patch": {"vcs_url": ..., "commit_hash": ...},
+                "advisory_uids": [...],
+                "tool_details": [
+                    {
+                        "symbol_name": ...,
+                        "is_defined": ...,
+                        ...
+                        "reachable_from": [...],
+                    },
+                ],
+                "is_reachable": "yes" | "unknown" | "no",
+            }
+
+        Implementations must save reports with
+        ``save_resource_reachability_report`` so that re-running the pipeline
+        replaces the previous report for the same (vcs_url, commit_hash,
+        tool_name)
+        """
         raise NotImplementedError
 
     def generate_advisory_reachability_report(self):
