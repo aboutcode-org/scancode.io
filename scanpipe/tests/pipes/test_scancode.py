@@ -746,3 +746,75 @@ class ScanPipeScancodePipesTest(TestCase):
 
         file1 = project1.codebaseresources.get(path="package/index.js")
         self.assertEqual("package", file1.parent_path)
+
+    def test_scanpipe_scancode_follow_and_resolve_referenced_licenses_resources(self):
+        project1 = Project.objects.create(name="Utility: PurlDB")
+        archive_location = (
+            self.data / "scancode" / "unknown-ref-to-key-file-root.tar.xz"
+        )
+        copy_input(archive_location, project1.codebase_path)
+        scancode.extract_archives(project1.codebase_path)
+        collect_and_create_codebase_resources(project1)
+        scancode.scan_for_files(project1)
+        scancode.scan_for_application_packages(project1, assemble=True)
+        scancode.collect_and_create_license_detections(project1)
+        scancode.follow_and_resolve_referenced_licenses_in_resources(project1)
+        scancode.follow_and_resolve_referenced_licenses_in_packages(project1)
+
+        file1 = project1.codebaseresources.get(
+            path="unknown-ref-to-key-file-root.tar.xz-extract/unknown-ref-to-key-file-root/esprima-compare.js"
+        )
+        self.assertEqual(file1.detected_license_expression, "mit")
+        self.assertIn(
+            "unknown-reference-to-local-file",
+            file1.license_detections[0].get("detection_log"),
+        )
+
+    def test_scanpipe_scancode_follow_and_resolve_referenced_licenses_packages(self):
+        project1 = Project.objects.create(name="Analysis")
+        archive_location = self.data / "scancode" / "flutter_playtabs_bridge.tar.xz"
+        copy_input(archive_location, project1.codebase_path)
+        scancode.extract_archives(project1.codebase_path)
+        collect_and_create_codebase_resources(project1)
+        scancode.scan_for_files(project1)
+        scancode.scan_for_application_packages(project1, assemble=True)
+        scancode.collect_and_create_license_detections(project1)
+        scancode.follow_and_resolve_referenced_licenses_in_resources(project1)
+        scancode.follow_and_resolve_referenced_licenses_in_packages(project1)
+
+        package1 = project1.discoveredpackages.get(name="flutter_paytabs_bridge")
+        self.assertEqual(package1.declared_license_expression, "mit")
+        self.assertIn(
+            "unknown-reference-to-local-file",
+            package1.license_detections[0].get("detection_log"),
+        )
+
+    def test_scanpipe_scancode_package_license_from_manifest_file(self):
+        project1 = Project.objects.create(name="Analysis")
+        archive_location = self.data / "scancode" / "activemq-camel-5.16.8.jar"
+        copy_input(archive_location, project1.codebase_path)
+        scancode.extract_archives(project1.codebase_path)
+        collect_and_create_codebase_resources(project1)
+        scancode.scan_for_files(project1)
+        scancode.scan_for_application_packages(project1)
+        scancode.collect_and_create_license_detections(project1)
+        scancode.follow_and_resolve_referenced_licenses_in_resources(project1)
+        scancode.follow_and_resolve_referenced_licenses_in_packages(project1)
+
+        package1 = project1.discoveredpackages.get(name="activemq-camel")
+        self.assertEqual(package1.declared_license_expression, "apache-2.0")
+
+    def test_scanpipe_scancode_package_license_from_beside_manifest_file(self):
+        project1 = Project.objects.create(name="Analysis")
+        archive_location = self.data / "scancode" / "built_collection-5.1.1.tar.xz"
+        copy_input(archive_location, project1.codebase_path)
+        scancode.extract_archives(project1.codebase_path)
+        collect_and_create_codebase_resources(project1)
+        scancode.scan_for_files(project1)
+        scancode.scan_for_application_packages(project1)
+        scancode.collect_and_create_license_detections(project1)
+        scancode.follow_and_resolve_referenced_licenses_in_resources(project1)
+        scancode.follow_and_resolve_referenced_licenses_in_packages(project1)
+
+        package1 = project1.discoveredpackages.get(name="built_collection")
+        self.assertEqual(package1.declared_license_expression, "bsd-new")

@@ -303,14 +303,43 @@
       "tag": "",
       "extension": ".json",
       "programming_language": "",
-      "detected_license_expression": "",
-      "detected_license_expression_spdx": "",
-      "license_detections": [],
+      "detected_license_expression": "mit",
+      "detected_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 5,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mit_30.RULE",
+              "from_file": null,
+              "start_line": 5,
+              "matched_text": "  \"license\": \"MIT\",",
+              "match_coverage": 100.0,
+              "matched_length": 2,
+              "rule_relevance": 100,
+              "rule_identifier": "mit_30.RULE",
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
+            }
+          ],
+          "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
+        }
+      ],
       "license_clues": [],
-      "percentage_of_license_text": null,
+      "percentage_of_license_text": 3.33,
       "copyrights": [],
       "holders": [],
-      "authors": [],
+      "authors": [
+        {
+          "author": "Sindre Sorhus",
+          "end_line": 8,
+          "start_line": 7
+        }
+      ],
       "package_data": [
         {
           "md5": null,
@@ -409,8 +438,20 @@
           "declared_license_expression_spdx": "MIT"
         }
       ],
-      "emails": [],
-      "urls": [],
+      "emails": [
+        {
+          "email": "sindresorhus@gmail.com",
+          "end_line": 9,
+          "start_line": 9
+        }
+      ],
+      "urls": [
+        {
+          "url": "http://sindresorhus.com/",
+          "end_line": 10,
+          "start_line": 10
+        }
+      ],
       "md5": "c843e88ecb274d5d573c71be330bff8b",
       "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
       "sha256": "522879426298e078881de533b9b3a82fa3bece1336a84bddacf4620008b5d0a3",
