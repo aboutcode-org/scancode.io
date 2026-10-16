@@ -26,6 +26,7 @@ from scanpipe.pipes import d2d_config
 from scanpipe.pipes.maven import check_input_and_return_purl
 from scanpipe.pipes.maven import fetch_and_scan_remote_pom
 from scanpipe.pipes.maven import fetch_inputs
+from scanpipe.pipes.maven import map_shaded_classes_to_maven_packages
 from scanpipe.pipes.maven import update_package_license_from_resource_if_missing
 
 
@@ -57,6 +58,7 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
             cls.run_scan,
             cls.fetch_and_scan_remote_pom,
             cls.load_inventory_from_toolkit_scan,
+            cls.map_shaded_classes_to_maven_packages,
             cls.update_package_license_from_resource_if_missing,
             cls.make_summary_from_scan_results,
         )
@@ -175,6 +177,15 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
                         "resource_path": resource_reference.removeprefix("codebase/")
                     },
                 )
+
+    def map_shaded_classes_to_maven_packages(self):
+        """Attribute shaded Maven classes to their dependency packages."""
+        if self.d2d_enabled:
+            map_shaded_classes_to_maven_packages(
+                project=self.project,
+                purl=self.purl,
+                logger=self.log,
+            )
 
     def update_package_license_from_resource_if_missing(self):
         """
