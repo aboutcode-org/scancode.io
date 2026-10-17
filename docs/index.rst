@@ -49,6 +49,7 @@ Learn via practical step-by-step guides.
 - :ref:`tutorial_cli_end_to_end_scanning_to_dejacode`
 - :ref:`tutorial_analyze_symbols_reachability`
 - :ref:`tutorial_reachability_integration_tools`
+- :ref:`tutorial_cpg_reachability_integration_tools`
 - :ref:`tutorial_web_ui_scan_repo_health`
 
 .. rst-class:: column column2 bottom-left
@@ -121,6 +122,7 @@ Indices and tables
     tutorial_cli_end_to_end_scanning_to_dejacode
     tutorial_analyze_symbols_reachability
     tutorial_reachability_integration_tools
+    tutorial_cpg_reachability_integration_tools
     tutorial_web_ui_scan_repo_health
     scanpipe-concepts
     built-in-pipelines

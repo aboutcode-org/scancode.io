@@ -39,7 +39,7 @@ class CPGTool(ReachabilityTool):
 
     tool_name = "cpg_tool"
     executable = CPG_NEO4J_EXECUTABLE
-    supported_languages = ("Python", "Java")
+    supported_languages = ("Python", "Java", "JavaScript", "C++")
 
     @classmethod
     def get_availability(cls):

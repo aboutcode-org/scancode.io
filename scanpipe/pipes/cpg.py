@@ -21,6 +21,36 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+"""
+Reachability analysis using a Neo4j-backed Code Property Graph (CPG).
+
+The CPG is produced by ``cpggen`` and persisted to Neo4j by the
+``cpg-neo4j`` exporter from Fraunhofer-AISEC/cpg
+(https://fraunhofer-aisec.github.io/cpg/). The graph schema used below
+is the one documented at
+https://fraunhofer-aisec.github.io/cpg/CPG/specs/graph and is generated
+automatically from the in-memory CPG, so the node labels and relationship
+types below are the *full* class names (e.g. ``RecordDeclaration``,
+``FunctionDeclaration``) and *uppercase underscore-separated* edge types
+(e.g. ``RECORD_DECLARATION``, ``INVOKES``).
+
+Before deploying this module against a fresh database, run the helper
+``scripts/introspect_neo4j_schema.py`` against the same Neo4j instance to
+confirm that the labels and edge types enumerated below are the ones
+actually persisted. If you are running an older / renamed CPG export
+that uses short node labels (``Record``, ``Function``, ``Method``,
+``Constructor``), update ``RECORD_LABELS`` / ``METHOD_LABELS`` accordingly.
+
+Recommended Neo4j indexes (created once per database)::
+
+    CREATE CONSTRAINT IF NOT EXISTS FOR (n:MethodDeclaration)
+        REQUIRE elementId(n) IS UNIQUE;
+    CREATE INDEX  IF NOT EXISTS FOR (n:FunctionDeclaration)   ON (n.fullName);
+    CREATE INDEX  IF NOT EXISTS FOR (n:MethodDeclaration)    ON (n.fullName);
+    CREATE INDEX  IF NOT EXISTS FOR (n:RecordDeclaration)    ON (n.fullName);
+    CREATE INDEX  IF NOT EXISTS FOR (n:ConstructorDeclaration) ON (n.fullName);
+"""
+
 from os import environ
 
 import neo4j
@@ -35,36 +65,69 @@ CPG_NEO4J_PORT = environ.get("CPG_NEO4J_PORT", "7687")
 CPG_NEO4J_USER = environ.get("CPG_NEO4J_USER", "neo4j")
 CPG_NEO4J_PASSWORD = environ.get("CPG_NEO4J_PASSWORD", "password")
 
+# Node labels -- full class names persisted by cpg-neo4j (Fraunhofer CPG).
+# If your database uses the legacy short labels (``Record``, ``Function``,
+# ``Method``, ``Constructor``), replace the tuples below with those.
 RECORD_LABELS = (
-    "Record",
-    "Enumeration",
     "RecordDeclaration",
-    "ClassDeclaration",
+    # ``EnumDeclaration`` extends ``RecordDeclaration`` and can hold
+    # constructors / methods (e.g. Java enums with bodies).
     "EnumDeclaration",
 )
 
 METHOD_LABELS = (
-    "Function",
-    "Method",
-    "Constructor",
     "FunctionDeclaration",
     "MethodDeclaration",
     "ConstructorDeclaration",
+    # Operators (e.g. C++ ``operator==``) are callable declarations too.
+    "OperatorDeclaration",
 )
+
 DECLARATION_LABELS = RECORD_LABELS + METHOD_LABELS
 
+# Inter-procedural call edge. ``Call`` nodes (call sites) ``INVOKES`` their
+# callee ``FunctionDeclaration``. Documented in the CPG Call node spec.
 CALL_REL = "INVOKES"
 
+# Structural (AST) edge types that we are willing to follow when expanding
+# the subtree of a target node. These come from the cpg-neo4j graph schema
+# (https://fraunhofer-aisec.github.io/cpg/CPG/specs/graph). Edge types
+# previously listed here but NOT present in the documented schema
+# (``SINGLE_DECLARATION``, ``OPERATOR_BASE``, ``OPERATOR_ARGUMENTS``,
+# ``BRANCHED_BY``) have been removed. ``BODY`` was missing and is required
+# to traverse from a FunctionDeclaration into its body block.
 STRUCTURAL_REL = (
-    "AST|DECLARATIONS|SINGLE_DECLARATION|STATEMENTS"
-    "|METHODS|CONSTRUCTORS"
-    "|PARAMETERS|ARGUMENTS|INITIALIZERS|RECEIVER"
-    "|OPERATOR_BASE|OPERATOR_ARGUMENTS"
-    "|LHS|RHS|KEY|VALUE"
-    "|ARRAY_EXPRESSION|SUBSCRIPT_EXPRESSION|BRANCHED_BY"
+    "AST"
+    "|BODY"
+    "|DECLARATIONS"
+    "|STATEMENTS"
+    "|METHODS"
+    "|CONSTRUCTORS"
+    "|FIELDS"
+    "|PARAMETERS"
+    "|ARGUMENTS"
+    "|INITIALIZER"
+    "|INITIALIZERS"
+    "|RECEIVER"
+    "|LHS|RHS"
+    "|KEY|VALUE"
+    "|ARRAY_EXPRESSION"
+    "|SUBSCRIPT_EXPRESSION"
+    "|INPUT"
+    "|CONDITION"
+    "|THEN_STATEMENT"
+    "|ELSE_STATEMENT"
+    "|RECORD_DECLARATION"
+    "|DEFINES"
 )
 EOG_AND_CALL_REL = f"EOG|{CALL_REL}"
 
+# Visibility values used to exclude private / inaccessible entry points.
+# NOTE: the documented Fraunhofer CPG schema does NOT persist a ``visibility``
+# property on the Node base class -- visibility is normally expressed via
+# ``Modifier`` AST children. If ``n.visibility`` is NULL on your database,
+# the filter below is a no-op; consider replacing it with a Modifier-based
+# check (see fetch_entry_point_ids).
 PRIVATE_VISIBILITIES = ("PROTECTED", "PRIVATE", "PACKAGE", "INTERNAL")
 
 MAX_PATH_LENGTH = 50
@@ -86,8 +149,7 @@ def clean_symbol_name(name):
 def clean_path(path):
     """
     Normalize a file path: backslashes to slashes, strip trailing slashes
-    and the ``file://`` / ``file:`` URI scheme (the cpg exporter emits
-    single-slash ``file:/...`` artifacts).
+    and the ``file://`` / ``file:`` URI scheme
     """
     path = str(path).replace("\\", "/").rstrip("/")
     return path.removeprefix("file://").removeprefix("file:")
@@ -117,8 +179,8 @@ def fetch_declarations(session):
     """
     All non-inferred declaration nodes of the graph, as dicts with the
     node_id, labels, name, full_name, file location (the ``artifact``
-    property: this export has no ``file`` property) and name_delimiter
-    used for symbol matching.
+    property; the schema also lists ``file`` as a fallback) and
+    name_delimiter used for symbol matching.
     """
     query = """
         MATCH (n)
@@ -128,7 +190,7 @@ def fetch_declarations(session):
                labels(n) AS labels,
                n.name AS name,
                n.fullName AS full_name,
-               coalesce(n.artifact, '') AS file,
+               coalesce(n.artifact, n.file, '') AS file,
                n.nameDelimiter AS name_delimiter
     """
     return list(session.run(query, labels=list(DECLARATION_LABELS)))
@@ -138,10 +200,31 @@ def fetch_entry_point_ids(session):
     """
     Traversal roots of the codebase: public method-like declarations never
     invoked anywhere in the graph, as element ids.
+
+    A node qualifies as an entry point when ALL of the following hold:
+      * it is a FunctionDeclaration / MethodDeclaration /
+        ConstructorDeclaration / OperatorDeclaration;
+      * it has a ``BODY`` (i.e. it actually holds executable code -- this
+        excludes abstract methods and interface declarations);
+      * nothing in the graph ``INVOKES`` it (no internal caller);
+      * it is not an inferred stub (``isInferred``);
+      * it is not declared private / protected / package-private.
+
+    The visibility check uses ``n.visibility`` defensively -- if your
+    CPG does not populate that property (the documented schema does not
+    list it as a Node property; visibility is normally stored as ``Modifier``
+    AST children), the check is a no-op and you may want to replace it
+    with::
+
+        AND NOT EXISTS {
+            MATCH (n)-[:AST]->(m:Modifier)
+            WHERE toUpper(m.type) IN ['PRIVATE','PROTECTED','PACKAGE','INTERNAL']
+        }
     """
     query = f"""
         MATCH (n)
         WHERE any(label IN $labels WHERE label IN labels(n))
+          AND (n)-[:BODY]->()
           AND NOT ()-[:{CALL_REL}]->(n)
           AND NOT coalesce(n.isInferred, false)
           AND NOT (toUpper(coalesce(n.visibility, '')) IN $private)
@@ -156,7 +239,18 @@ def fetch_entry_point_ids(session):
 
 
 def fetch_record_member_ids(session, record_id):
-    """Return method-like declarations structurally contained in or linked to the given record."""
+    """
+    Return method-like declarations structurally contained
+    in or linked to the given record.
+
+    Two traversal patterns are used, following the cpg-neo4j schema:
+      * downward AST traversal from the record through ``METHODS``,
+        ``CONSTRUCTORS`` (and any nested ``RECORDS`` / ``STATEMENTS``) to
+        pick up methods declared inside the record body;
+      * the ``RECORD_DECLARATION`` back-edge, picking up methods declared
+        outside the record body that still refer back to it (common in C++,
+        where member definitions live in a separate translation unit).
+    """
     query = f"""
         MATCH (r) WHERE elementId(r) = $record_id
         MATCH (m)
@@ -176,7 +270,13 @@ def fetch_record_member_ids(session, record_id):
 
 
 def fetch_subtree_ids(session, node_ids):
-    """Return the element IDs of the given nodes and their structural descendants."""
+    """
+    Return the element IDs of the given nodes and their structural descendants.
+
+    Includes the nodes themselves (depth 0). ``BODY`` is now part of
+    STRUCTURAL_REL so the traversal can enter a FunctionDeclaration's body
+    block when computing the set of "reachable inside" nodes for a target.
+    """
     query = f"""
         MATCH (t)-[:{STRUCTURAL_REL}*0..{MAX_SUBTREE_DEPTH}]->(d)
         WHERE elementId(t) IN $node_ids
@@ -186,7 +286,14 @@ def fetch_subtree_ids(session, node_ids):
 
 
 def fetch_invoker_ids(session, node_id):
-    """Element ids of the call-expression nodes invoking the given node."""
+    """
+    Element ids of the call-expression nodes invoking the given node.
+
+    ``INVOKES`` edges go from a ``Call`` (call site) to its callee
+    ``FunctionDeclaration``. Returned ids are the call sites, which are
+    added to the hit set so the reachability query can terminate at the
+    call site rather than only at the callee signature itself.
+    """
     query = f"""
         MATCH (invoker)-[:{CALL_REL}]->(t)
         WHERE elementId(t) = $node_id
@@ -197,16 +304,27 @@ def fetch_invoker_ids(session, node_id):
 
 def find_reachability_path(session, entry_ids, hit_ids):
     """
-    Shortest evaluation path from an entry point to any hit_ids node,
-    following EOG edges plus the interprocedural call edges, as the list of
-    node identifiers of the path, or None.
-    Replaces follow_eog_edges_until_hit: the traversal runs inside Neo4j.
+    Shortest evaluation path from any entry point to any hit_ids node,
+    following EOG edges plus the inter-procedural ``INVOKES`` edges, as the
+    list of node identifiers of the path, or None.
+
+    The query binds entry and hit nodes through ``elementId()`` (indexed by
+    default in Neo4j 5+) and uses an explicit depth-bounded variable-length
+    pattern. ``ORDER BY length(path) LIMIT 1`` returns the shortest path
+    found within the depth bound -- this is the most portable form across
+    Neo4j versions; for very large graphs you may switch to ``shortestPath``
+    or GDS ``gds.shortestPath.yens.stream`` once indexes and constraints are
+    in place.
     """
+    if not entry_ids or not hit_ids:
+        return None
+
     query = f"""
+        MATCH (entry) WHERE elementId(entry) IN $entry_ids
+        MATCH (hit)   WHERE elementId(hit)   IN $hit_ids
         MATCH path = (entry)-[:{EOG_AND_CALL_REL}*0..{MAX_PATH_LENGTH}]->(hit)
-        WHERE elementId(entry) IN $entry_ids AND elementId(hit) IN $hit_ids
-        RETURN path
-        ORDER BY length(path)
+        RETURN path, length(path) AS len
+        ORDER BY len
         LIMIT 1
     """
     records = list(session.run(query, entry_ids=list(entry_ids), hit_ids=list(hit_ids)))
@@ -239,11 +357,15 @@ class ResourcePatchMatcher:
     def in_file(self, declaration, file_path):
         """
         Check whether the declaration is in the file matching
-        file_path. Declarations without any file location are not
-        excluded: dropping them would silently lose symbols.
+        file_path.
         """
         file = declaration["file"]
         if not file:
+            # A declaration without a known file is treated as belonging
+            # to every file. This is permissive on purpose so that symbols
+            # whose CPG node was inferred / lacks an ``artifact`` still
+            # match -- but you may want to tighten this if your database
+            # always sets ``artifact``.
             return True
         return paths_match(file, file_path)
 
@@ -341,10 +463,11 @@ class ResourcePatchMatcher:
 
     def reachable_path(self, declaration):
         """
-        Evaluate the path from an entry point to the declaration
+        Evaluate the path from an entry point to the declaration.
 
-        A symbol is reachable when the traversal reaches the declaration itself, a
-        node inside it, or a call site that invokes it.
+        A symbol is reachable when the traversal reaches the declaration
+        itself, a node inside it (its subtree, now including its body),
+        or a call site that invokes it.
         """
         target_ids = {declaration["node_id"]}
         if any(label in RECORD_LABELS for label in declaration["labels"]):
