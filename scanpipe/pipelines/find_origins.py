@@ -21,6 +21,7 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipes import matchcode
 from scanpipe.pipes import scanoss
 
 
@@ -28,10 +29,13 @@ class FindOrigins(Pipeline):
     """
     Find the origin of the codebase files using origin detection tools.
 
-    The candidate origin packages reported by each tool are stored as origin
-    matches, to be combined and reviewed.
+    The candidate origin packages reported by each configured tool are stored as
+    origin matches, to be combined and reviewed. A tool that is not configured is
+    skipped.
 
     Supported tools:
+    - MatchCode.io: the codebase scan, including file and directory
+      fingerprints, is sent to the configured MatchCode.io server.
     - SCANOSS: the codebase files are fingerprinted locally, then their paths,
       checksums, sizes, and fingerprints are sent to the configured SCANOSS
       server. The file contents are not sent.
@@ -42,18 +46,40 @@ class FindOrigins(Pipeline):
 
     @classmethod
     def steps(cls):
-        return (cls.find_scanoss_origin_matches,)
+        return (
+            cls.find_matchcode_origin_matches,
+            cls.find_scanoss_origin_matches,
+        )
 
     @classmethod
     def get_availability(cls):
-        if not scanoss.is_configured():
-            return "SCANOSS is not configured."
+        if not matchcode.is_configured() and not scanoss.is_configured():
+            return "No origin detection tool is configured: MatchCode.io or SCANOSS."
 
-        if not scanoss.get_uvx_location():
-            return "The uvx executable required to run SCANOSS is not available."
+    def find_matchcode_origin_matches(self):
+        """Match the codebase with MatchCode.io and store the origin matches."""
+        if not matchcode.is_configured():
+            self.log("MatchCode.io is not configured, skipping.")
+            return
+
+        match_results = matchcode.match_codebase(self.project)
+        matchcode.save_match_results(self.project, match_results)
+
+        origin_match_count = matchcode.load_matchcode_results(
+            self.project, match_results
+        )
+        self.log(f"{origin_match_count:,d} MatchCode.io origin matches processed.")
 
     def find_scanoss_origin_matches(self):
         """Scan the codebase with SCANOSS and store the reported origin matches."""
+        if not scanoss.is_configured():
+            self.log("SCANOSS is not configured, skipping.")
+            return
+
+        if not scanoss.get_uvx_location():
+            self.log("The uvx executable required by SCANOSS is missing, skipping.")
+            return
+
         results_location = self.project.get_output_file_path("scanoss", "json")
         scanoss.scan_codebase(self.project.codebase_path, results_location)
 
