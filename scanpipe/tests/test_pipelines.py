@@ -23,8 +23,10 @@
 import io
 import json
 import os
+import shutil
 import sys
 import tempfile
+import zipfile
 from contextlib import redirect_stderr
 from pathlib import Path
 from unittest import mock
@@ -949,15 +951,78 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, scancode_file)
 
     @skipIf(sys.platform == "darwin", "Not supported on macOS")
-    def test_scanpipe_scan_maven_package_d2d_shaded_classes(self):
+    @mock.patch(
+        "scanpipe.pipelines.scan_maven_package."
+        "ScanMavenPackage.remove_packages_without_resources"
+    )
+    @mock.patch("scanpipe.pipelines.scan_maven_package.fetch_inputs")
+    def test_scanpipe_scan_maven_package_d2d_shaded_classes(
+        self, mock_fetch_inputs, mock_remove_packages
+    ):
+
         pipeline_name = "scan_maven_package"
         project1 = make_project(name="Analysis")
 
+        # Only run the steps needed to extract resources, run D2D, and map
+        # shaded classes. Skipping run_scan / fetch_and_scan_remote_pom /
+        # load_inventory_from_toolkit_scan / make_summary_from_scan_results
+        # avoids both network calls and the toolkit scan.
         run = project1.add_pipeline(pipeline_name)
+        run.update(
+            selected_steps=[
+                "check_input_and_return_purl",
+                "fetch_inputs",
+                "d2d_check",
+                "collect_input_info",
+                "extract_input",
+                "extract_archives",
+                "maven_d2d_steps",
+                "map_shaded_classes_to_maven_packages",
+                "update_package_license_from_resource_if_missing",
+            ],
+        )
+        run.refresh_from_db()
         pipeline = run.make_pipeline_instance()
 
         download_url = "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
         project1.add_input_source(download_url=download_url)
+
+        tmpdir = tempfile.mkdtemp(prefix="scanpipe-mvn-")
+        self.addCleanup(shutil.rmtree, tmpdir, True)
+
+        src_path = os.path.join(tmpdir, "htrace-core-4.0.0-incubating-sources.jar")
+        bin_path = os.path.join(tmpdir, "htrace-core-4.0.0-incubating.jar")
+
+        with zipfile.ZipFile(src_path, "w") as zf:
+            zf.writestr("Dummy.java", b"public class Dummy {}")
+
+        with zipfile.ZipFile(bin_path, "w") as zf:
+            zf.writestr(
+                "org/apache/htrace/commons/logging/impl/AvalonLogger.class",
+                b"aaaaaaa",
+            )
+            zf.writestr(
+                "org/apache/htrace/fasterxml/jackson/annotation/JsonTypeId.class",
+                b"bbbbbbb",
+            )
+            zf.writestr(
+                "META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
+                (self.data / "maven" / "shaded-pom.xml").read_bytes(),
+            )
+
+        mock_fetch_inputs.return_value = (src_path, bin_path)
+        mock_remove_packages.return_value = None
+
+        make_package(
+            project1,
+            package_url="pkg:maven/commons-logging/commons-logging@1.1.1",
+        )
+        make_package(
+            project1,
+            package_url=(
+                "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0"
+            ),
+        )
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
@@ -967,9 +1032,10 @@ class PipelinesIntegrationTest(TestCase):
         )
 
         shaded_classes = project1.codebaseresources.filter(status=flag.SHADED_CLASS)
-        self.assertTrue(
-            shaded_classes.exists(),
-            "Expected at least one .class resource with status shaded-class",
+        self.assertEqual(
+            2,
+            shaded_classes.count(),
+            "Expected exactly 2 .class resources with status shaded-class",
         )
 
         for resource in shaded_classes:

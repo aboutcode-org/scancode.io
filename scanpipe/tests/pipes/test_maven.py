@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/aboutcode-org/scancode.io
+# http://nexb.com and https://github.com/nexB/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/aboutcode-org/scancode.io for support and download.
+# Visit https://github.com/nexB/scancode.io for support and download.
 
 from pathlib import Path
 from unittest import mock
@@ -34,6 +34,7 @@ from scanpipe.pipes import flag
 from scanpipe.pipes import maven
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.pipes.input import load_inventory_from_toolkit_scan
+from scanpipe.tests import make_dependency
 from scanpipe.tests import make_package
 from scanpipe.tests import make_resource_file
 
@@ -55,19 +56,6 @@ class ScanPipeMavenPipesTest(TestCase):
         target_path.write_text(data_path.read_text())
         return make_resource_file(project, codebase_path)
 
-    def _make_maven_package(self, project, namespace, name, version):
-        """Create a Maven DiscoveredPackage and return it."""
-        purl = f"pkg:maven/{namespace}/{name}@{version}"
-        return make_package(
-            project,
-            package_url=purl,
-            type="maven",
-            namespace=namespace,
-            name=name,
-            version=version,
-            package_uid=purl,
-        )
-
     def _setup_project_with_shaded_classes(self):
         """
         Return a project with htrace-core as the main package and
@@ -78,14 +66,29 @@ class ScanPipeMavenPipesTest(TestCase):
         main_purl = PackageURL.from_string(
             "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
         )
-        self._make_maven_package(
-            project, "org.apache.htrace", "htrace-core", "4.0.0-incubating"
+        make_package(
+            project,
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+            type="maven",
+            namespace="org.apache.htrace",
+            name="htrace-core",
+            version="4.0.0-incubating"
         )
-        commons = self._make_maven_package(
-            project, "commons-logging", "commons-logging", "1.1.1"
+        commons = make_package(
+            project,
+            package_url="pkg:maven/commons-logging/commons-logging@1.1.1",
+            type="maven",
+            namespace="commons-logging",
+            name="commons-logging",
+            version="1.1.1"
         )
-        jackson = self._make_maven_package(
-            project, "com.fasterxml.jackson.core", "jackson-annotations", "2.4.0"
+        jackson = make_package(
+            project,
+            package_url="pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0",
+            type="maven",
+            namespace="com.fasterxml.jackson.core",
+            name="jackson-annotations",
+            version="2.4.0"
         )
         self._add_pom_resource(
             project,
@@ -167,7 +170,7 @@ class ScanPipeMavenPipesTest(TestCase):
         self.assertEqual(result, expected)
 
     def test_scanpipe_maven_update_package_license_from_resource_if_missing(self):
-        project1 = Project.objects.create(name="Analysis-missing-license")
+        project1 = self.project
         input_location = self.data / "maven" / "missing_lic_in_package.json"
         project1.copy_input_from(input_location)
         copy_inputs(project1.inputs(), project1.codebase_path)
@@ -185,7 +188,7 @@ class ScanPipeMavenPipesTest(TestCase):
     def test_scanpipe_maven_update_package_license_from_resource_if_missing_no_change(
         self,
     ):
-        project1 = Project.objects.create(name="Analysis-existing-license")
+        project1 = self.project
         input_location = self.data / "maven" / "lic_in_package.json"
         project1.copy_input_from(input_location)
         copy_inputs(project1.inputs(), project1.codebase_path)
@@ -372,6 +375,10 @@ class ScanPipeMavenPipesTest(TestCase):
             },
         )
 
+    def test_scanpipe_maven_get_maven_shade_relocations_none_pom(self):
+        result = maven.get_maven_shade_relocations(self.project, None)
+        self.assertEqual(result, {})
+
     def test_scanpipe_maven_get_maven_shade_relocations_no_shade_plugin(self):
         pom_resource = self._add_pom_resource(
             self.project, "to/pom.xml", "no-shade-plugin-pom.xml"
@@ -401,14 +408,29 @@ class ScanPipeMavenPipesTest(TestCase):
         main_purl = PackageURL.from_string(
             "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
         )
-        main_package = self._make_maven_package(
-            self.project, "org.apache.htrace", "htrace-core", "4.0.0-incubating"
+        main_package = make_package(
+            self.project,
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+            type="maven",
+            namespace="org.apache.htrace",
+            name="htrace-core",
+            version="4.0.0-incubating"
         )
-        dep_commons = self._make_maven_package(
-            self.project, "commons-logging", "commons-logging", "1.1.1"
+        dep_commons = make_package(
+            self.project,
+            package_url="pkg:maven/commons-logging/commons-logging@1.1.1",
+            type="maven",
+            namespace="commons-logging",
+            name="commons-logging",
+            version="1.1.1"
         )
-        dep_jackson = self._make_maven_package(
-            self.project, "com.fasterxml.jackson.core", "jackson-annotations", "2.4.0"
+        dep_jackson = make_package(
+            self.project,
+            package_url="pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0",
+            type="maven",
+            namespace="com.fasterxml.jackson.core",
+            name="jackson-annotations",
+            version="2.4.0"
         )
         # Non-Maven package should not be returned.
         make_package(
@@ -434,12 +456,22 @@ class ScanPipeMavenPipesTest(TestCase):
         main_purl = PackageURL.from_string(
             "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
         )
-        self._make_maven_package(
-            self.project, "org.apache.htrace", "htrace-core", "4.0.0-incubating"
+        main_package = make_package(
+            self.project,
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+            type="maven",
+            namespace="org.apache.htrace",
+            name="htrace-core",
+            version="4.0.0-incubating"
         )
-        dependency = DiscoveredDependency.objects.create(
+        dependency = make_dependency(
             project=self.project,
+            for_package=main_package,
             dependency_uid="pkg:maven/commons-logging/commons-logging@1.1.1",
+            type="maven",
+            namespace="commons-logging",
+            name="commons-logging",
+            version="1.1.1",
         )
 
         result = maven.get_maven_dependency_packages(self.project, main_purl)
@@ -459,14 +491,25 @@ class ScanPipeMavenPipesTest(TestCase):
         main_purl = PackageURL.from_string(
             "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
         )
-        self._make_maven_package(
-            self.project, "org.apache.htrace", "htrace-core", "4.0.0-incubating"
+        main_package = make_package(
+            self.project,
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+            type="maven",
+            namespace="org.apache.htrace",
+            name="htrace-core",
+            version="4.0.0-incubating"
         )
-        resolved = self._make_maven_package(
-            self.project, "commons-logging", "commons-logging", "1.1.1"
+        resolved = make_package(
+            self.project,
+            package_url="pkg:maven/commons-logging/commons-logging@1.1.1",
+            type="maven",
+            namespace="commons-logging",
+            name="commons-logging",
+            version="1.1.1"
         )
-        DiscoveredDependency.objects.create(
+        make_dependency(
             project=self.project,
+            for_package=main_package,
             dependency_uid="pkg:maven/commons-logging/commons-logging@1.1.1",
             type="maven",
             namespace="commons-logging",
@@ -479,33 +522,6 @@ class ScanPipeMavenPipesTest(TestCase):
 
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0], resolved)
-
-    def test_scanpipe_maven_get_maven_dependency_packages_dedupes_by_name(self):
-        main_purl = PackageURL.from_string(
-            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
-        )
-        self._make_maven_package(
-            self.project, "org.apache.htrace", "htrace-core", "4.0.0-incubating"
-        )
-        # A DiscoveredPackage for jackson-databind...
-        package = self._make_maven_package(
-            self.project, "com.fasterxml.jackson.core", "jackson-databind", "2.4.0"
-        )
-        # An unresolved DiscoveredDependency for the same name.
-        DiscoveredDependency.objects.create(
-            project=self.project,
-            dependency_uid="pkg:maven/com.fasterxml.jackson.core/jackson-databind",
-            type="maven",
-            namespace="com.fasterxml.jackson.core",
-            name="jackson-databind",
-            version="",
-        )
-
-        result = maven.get_maven_dependency_packages(self.project, main_purl)
-
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0], package)
-        self.assertIsInstance(result[0], DiscoveredPackage)
 
     def test_scanpipe_maven_get_java_fqn_from_class_path_simple(self):
         self.assertEqual(
@@ -559,18 +575,16 @@ class ScanPipeMavenPipesTest(TestCase):
 
     def test_scanpipe_maven_apply_shade_relocations_no_boundary(self):
         relocations = {"org.foo": "com.foo"}
-        self.assertEqual(
-            maven.apply_shade_relocations("org.foobar.Class", relocations),
-            "org.foobar.Class",
+        self.assertIsNone(
+            maven.apply_shade_relocations("org.foobar.Class", relocations)
         )
 
     def test_scanpipe_maven_apply_shade_relocations_no_match(self):
         relocations = {
             "org.apache.htrace.commons.logging": "org.apache.commons.logging"
         }
-        self.assertEqual(
-            maven.apply_shade_relocations("org.example.Foo", relocations),
-            "org.example.Foo",
+        self.assertIsNone(
+            maven.apply_shade_relocations("org.example.Foo", relocations)
         )
 
     def test_scanpipe_maven_apply_shade_relocations_longest_pattern_wins(self):
@@ -584,9 +598,8 @@ class ScanPipeMavenPipesTest(TestCase):
         )
 
     def test_scanpipe_maven_apply_shade_relocations_empty(self):
-        self.assertEqual(
-            maven.apply_shade_relocations("org.example.Foo", {}),
-            "org.example.Foo",
+        self.assertIsNone(
+            maven.apply_shade_relocations("org.example.Foo", {})
         )
 
     def test_scanpipe_maven_fuzzy_segment_match(self):
@@ -627,12 +640,17 @@ class ScanPipeMavenPipesTest(TestCase):
             0,
         )
 
-    def test_scanpipe_maven_score_dependency_for_fqn_commons_logging(self):
-        package = self._make_maven_package(
-            self.project, "commons-logging", "commons-logging", "1.1.1"
+    def test_scanpipe_maven_score_dependency_commons_logging(self):
+        package = make_package(
+            self.project,
+            package_url="pkg:maven/commons-logging/commons-logging@1.1.1",
+            type="maven",
+            namespace="commons-logging",
+            name="commons-logging",
+            version="1.1.1"
         )
-        score, signals = maven.score_dependency_for_fqn(
-            "org.apache.commons.logging.impl.AvalonLogger", package
+        score, signals = maven.score_dependency(
+            "org.apache.commons.logging.impl", package
         )
         # group: "commons" + "logging" -> +2
         # artifact: "commons" + "logging" -> +4
@@ -640,15 +658,17 @@ class ScanPipeMavenPipesTest(TestCase):
         self.assertEqual(score, 6)
         self.assertEqual(signals, {"group", "artifact"})
 
-    def test_scanpipe_maven_score_dependency_for_fqn_jackson(self):
-        package = self._make_maven_package(
+    def test_scanpipe_maven_score_dependency_jackson(self):
+        package = make_package(
             self.project,
-            "com.fasterxml.jackson.core",
-            "jackson-annotations",
-            "2.4.0",
+            package_url="pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0",
+            type="maven",
+            namespace="com.fasterxml.jackson.core",
+            name="jackson-annotations",
+            version="2.4.0"
         )
-        score, signals = maven.score_dependency_for_fqn(
-            "com.fasterxml.jackson.annotation.JsonTypeId", package
+        score, signals = maven.score_dependency(
+            "com.fasterxml.jackson.annotation", package
         )
         # group: "com" + "fasterxml" + "jackson" -> +3
         # artifact: "jackson" -> +2
@@ -656,25 +676,37 @@ class ScanPipeMavenPipesTest(TestCase):
         self.assertEqual(score, 8)
         self.assertEqual(signals, {"group", "artifact", "fuzzy"})
 
-    def test_scanpipe_maven_score_dependency_for_fqn_no_package_segments(self):
+    def test_scanpipe_maven_score_dependency_no_package_segments(self):
         # A single-segment FQN (no package, just a class) has no package segments.
-        package = self._make_maven_package(
-            self.project, "commons-logging", "commons-logging", "1.1.1"
+        package = make_package(
+            self.project,
+            package_url="pkg:maven/commons-logging/commons-logging@1.1.1",
+            type="maven",
+            namespace="commons-logging",
+            name="commons-logging",
+            version="1.1.1"
         )
-        self.assertEqual(maven.score_dependency_for_fqn("Foo", package), (0, set()))
+        self.assertEqual(maven.score_dependency("", package), (0, set()))
 
     def test_scanpipe_maven_match_shaded_class_to_package_clear_winner(self):
-        commons = self._make_maven_package(
-            self.project, "commons-logging", "commons-logging", "1.1.1"
-        )
-        jackson = self._make_maven_package(
+        commons = make_package(
             self.project,
-            "com.fasterxml.jackson.core",
-            "jackson-annotations",
-            "2.4.0",
+            package_url="pkg:maven/commons-logging/commons-logging@1.1.1",
+            type="maven",
+            namespace="commons-logging",
+            name="commons-logging",
+            version="1.1.1"
+        )
+        jackson = make_package(
+            self.project,
+            package_url="pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0",
+            type="maven",
+            namespace="com.fasterxml.jackson.core",
+            name="jackson-annotations",
+            version="2.4.0"
         )
         result = maven.match_shaded_class_to_package(
-            "org.apache.commons.logging.impl.AvalonLogger",
+            "org.apache.commons.logging.impl",
             [commons, jackson],
         )
         self.assertIsNotNone(result)
@@ -683,17 +715,43 @@ class ScanPipeMavenPipesTest(TestCase):
         self.assertEqual(score, 6)
         self.assertEqual(signals, {"group", "artifact"})
 
+    def test_scanpipe_maven_match_shaded_class_to_package_below_min_score(self):
+        package = make_package(
+            self.project,
+            package_url="pkg:maven/org.apache.commons/commons-lang3@3.12.0",
+            type="maven",
+            namespace="org.apache.commons",
+            name="commons-lang3",
+            version="3.12.0"
+        )
+        # Yields score 5. MIN is 6.
+        result = maven.match_shaded_class_to_package(
+            "org.apache.commons.io",
+            [package],
+        )
+        self.assertIsNone(result)
+
     def test_scanpipe_maven_match_shaded_class_to_package_tie(self):
         # Two versions of the same dependency score identically.
-        self._make_maven_package(
-            self.project, "commons-logging", "commons-logging", "1.1.1"
+        make_package(
+            self.project,
+            package_url="pkg:maven/commons-logging/commons-logging@1.1.1",
+            type="maven",
+            namespace="commons-logging",
+            name="commons-logging",
+            version="1.1.1"
         )
-        self._make_maven_package(
-            self.project, "commons-logging", "commons-logging", "1.2.0"
+        make_package(
+            self.project,
+            package_url="pkg:maven/commons-logging/commons-logging@1.2.0",
+            type="maven",
+            namespace="commons-logging",
+            name="commons-logging",
+            version="1.2.0"
         )
         packages = list(self.project.discoveredpackages.filter(type="maven"))
         result = maven.match_shaded_class_to_package(
-            "org.apache.commons.logging.impl.AvalonLogger",
+            "org.apache.commons.logging.impl",
             packages,
         )
         self.assertIsNone(result)
@@ -705,7 +763,6 @@ class ScanPipeMavenPipesTest(TestCase):
         original = maven._get_original_fqn(
             "org.apache.htrace.commons.logging.impl.AvalonLogger",
             relocations,
-            main_prefix="org.apache.htrace.",
         )
         self.assertEqual(original, "org.apache.commons.logging.impl.AvalonLogger")
 
@@ -716,7 +773,6 @@ class ScanPipeMavenPipesTest(TestCase):
         original = maven._get_original_fqn(
             "org.apache.hadoop.mapreduce.Job",
             relocations,
-            main_prefix="org.apache.hadoop.",
         )
         self.assertIsNone(original)
 
@@ -724,7 +780,6 @@ class ScanPipeMavenPipesTest(TestCase):
         original = maven._get_original_fqn(
             "org.apache.hadoop.mapreduce.Job",
             {},
-            main_prefix="org.apache.hadoop.",
         )
         self.assertIsNone(original)
 
@@ -732,9 +787,8 @@ class ScanPipeMavenPipesTest(TestCase):
         original = maven._get_original_fqn(
             "org.apache.commons.logging.AvalonLogger",
             {},
-            main_prefix="org.apache.hadoop.",
         )
-        self.assertEqual(original, "org.apache.commons.logging.AvalonLogger")
+        self.assertIsNone(original)
 
     def test_scanpipe_maven_map_shaded_classes_attributions(self):
         project, main_purl, commons, jackson = self._setup_project_with_shaded_classes()
@@ -797,11 +851,16 @@ class ScanPipeMavenPipesTest(TestCase):
         main_purl = PackageURL.from_string(
             "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
         )
-        self._make_maven_package(
-            project, "org.apache.htrace", "htrace-core", "4.0.0-incubating"
+        main_package = make_package(
+            project, package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+            type="maven",
+            namespace="org.apache.htrace",
+            name="htrace-core",
+            version="4.0.0-incubating"
         )
-        DiscoveredDependency.objects.create(
+        make_dependency(
             project=project,
+            for_package=main_package,
             dependency_uid="pkg:maven/commons-logging/commons-logging@1.1.1",
             type="maven",
             namespace="commons-logging",
@@ -836,8 +895,8 @@ class ScanPipeMavenPipesTest(TestCase):
             commons_class.extra_data,
         )
 
-        self.assertEqual(commons_class.discovered_packages.count(), 0)
-        self.assertFalse(
+        self.assertEqual(commons_class.discovered_packages.count(), 1)
+        self.assertTrue(
             project.discoveredpackages.filter(
                 type="maven", name="commons-logging", version="1.1.1"
             ).exists()
@@ -848,14 +907,25 @@ class ScanPipeMavenPipesTest(TestCase):
         main_purl = PackageURL.from_string(
             "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
         )
-        self._make_maven_package(
-            project, "org.apache.htrace", "htrace-core", "4.0.0-incubating"
+        main_package = make_package(
+            project,
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+            type="maven",
+            namespace="org.apache.htrace",
+            name="htrace-core",
+            version="4.0.0-incubating"
         )
-        resolved = self._make_maven_package(
-            project, "commons-logging", "commons-logging", "1.1.1"
+        resolved = make_package(
+            project,
+            package_url="pkg:maven/commons-logging/commons-logging@1.1.1",
+            type="maven",
+            namespace="commons-logging",
+            name="commons-logging",
+            version="1.1.1"
         )
-        DiscoveredDependency.objects.create(
+        make_dependency(
             project=project,
+            for_package=main_package,
             dependency_uid="pkg:maven/commons-logging/commons-logging@1.1.1",
             type="maven",
             namespace="commons-logging",
@@ -908,34 +978,8 @@ class ScanPipeMavenPipesTest(TestCase):
             0,
         )
 
-    def test_scanpipe_maven_map_shaded_classes_dedupes_versions(self):
-        project = self.project
-        main_purl = PackageURL.from_string(
-            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
-        )
-        self._make_maven_package(project, "commons-logging", "commons-logging", "1.1.1")
-        self._make_maven_package(project, "commons-logging", "commons-logging", "1.2.0")
-        self._add_pom_resource(
-            project,
-            "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
-            "shaded-pom.xml",
-        )
-
-        commons_class = make_resource_file(
-            project,
-            "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
-            status=flag.REQUIRES_REVIEW,
-        )
-
-        maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
-
-        commons_class.refresh_from_db()
-        self.assertEqual(commons_class.status, flag.SHADED_CLASS)
-        # Only one of the two versions is attributed.
-        self.assertEqual(commons_class.discovered_packages.count(), 1)
-
     def test_scanpipe_maven_map_shaded_classes_no_dependency_packages(self):
-        project = Project.objects.create(name="No-dependencies-analysis")
+        project = self.project
         main_purl = PackageURL.from_string(
             "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
         )

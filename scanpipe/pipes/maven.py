@@ -21,6 +21,7 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import difflib
+import itertools
 import json
 import logging
 from pathlib import PurePosixPath
@@ -32,6 +33,7 @@ from license_expression import Licensing
 from packageurl import PackageURL
 from packageurl.contrib import purl2url
 
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import fetch
 from scanpipe.pipes import flag
@@ -257,15 +259,11 @@ def get_maven_shade_relocations(project, pom_resource):
     if not pom_resource:
         return relocations
 
-    pom_location = pom_resource.location
-    if not pom_location:
-        return relocations
-
     try:
-        tree = SafeElementTree.parse(pom_location)
+        tree = SafeElementTree.parse(pom_resource.location)
     except (SafeElementTree.ParseError, OSError, ValueError) as exception:
         project.add_error(
-            description=f"Cannot parse POM at {pom_location}: {exception}",
+            description=f"Cannot parse POM at {pom_resource.path}: {exception}",
             model="map_shaded_classes_to_maven_packages",
             details={"resource_path": pom_resource.path},
         )
@@ -285,38 +283,6 @@ def get_maven_shade_relocations(project, pom_resource):
     return relocations
 
 
-def _iter_maven_candidates(project):
-    """
-    Yield Maven "DiscoveredPackage" and "DiscoveredDependency" instances
-    that are candidates for matching shaded classes.
-
-    Resolved dependencies yield their resolved package. Unresolved
-    dependencies yield the dependency itself, with the PURL fields populated
-    in memory from "dependency_uid".
-    """
-    yield from project.discoveredpackages.filter(type="maven")
-
-    for dependency in project.discovereddependencies.all():
-        if dependency.resolved_to_package:
-            package = dependency.resolved_to_package
-            if package.type == "maven":
-                yield package
-            continue
-
-        try:
-            purl = PackageURL.from_string(dependency.dependency_uid)
-        except (ValueError, TypeError):
-            continue
-        if purl.type != "maven":
-            continue
-
-        dependency.type = purl.type
-        dependency.namespace = purl.namespace
-        dependency.name = purl.name
-        dependency.version = purl.version
-        yield dependency
-
-
 def _dedupe_maven_candidates(candidates, main_purl):
     """
     Return "candidates" deduplicated by "namespace" and "name", excluding the
@@ -333,11 +299,6 @@ def _dedupe_maven_candidates(candidates, main_purl):
         namespace = candidate.namespace
         name = candidate.name
         version = candidate.version or ""
-
-        namespace_name = (namespace, name)
-        if namespace_name in seen:
-            continue
-
         if (
             namespace == main_namespace
             and name == main_name
@@ -345,7 +306,11 @@ def _dedupe_maven_candidates(candidates, main_purl):
         ):
             continue
 
-        seen.add(namespace_name)
+        uid = (namespace, name, version)
+        if uid in seen:
+            continue
+
+        seen.add(uid)
         result.append(candidate)
 
     return result
@@ -362,12 +327,13 @@ def get_maven_dependency_packages(project, main_purl):
 
         - ``DiscoveredDependency`` for POM-declared dependencies without a
           corresponding ``DiscoveredPackage``.
-
-    The list is deduplicated by ``namespace`` and ``name`` so the
-    same dependency is not scored twice, which would produce a tie and leave
-    shaded classes unmatched.
     """
-    return _dedupe_maven_candidates(_iter_maven_candidates(project), main_purl)
+    maven_packages = project.discoveredpackages.filter(type="maven")
+    unresolved_dependencies = project.discovereddependencies.unresolved().filter(
+        type="maven"
+    )
+    candidates = itertools.chain(maven_packages, unresolved_dependencies)
+    return _dedupe_maven_candidates(candidates, main_purl)
 
 
 def get_java_fqn_from_class_path(path):
@@ -406,7 +372,7 @@ def apply_shade_relocations(fqn, relocations):
             original_pattern = relocations[shaded_pattern]
             return original_pattern + fqn[len(shaded_pattern) :]
 
-    return fqn
+    return None
 
 
 # The 0.8 is chosen as to accept small plural/singular and one-character
@@ -446,18 +412,18 @@ REQUIRED_MATCH_SIGNALS = {"group", "artifact"}
 #
 # Both "group" and "artifact" signals are required, so scores start at 3
 # (1 group + 1 artifact) and go up by 1 or 2 per extra matching segment.
-# The threshold of 5 rejects 3 and 4, which cover the weak cases where only
-# a single artifact segment matches, or the score relies on one artifact
-# segment plus several generic group segments.
+# The threshold of 6 acts as a high-confidence heuristic. It rejects scores
+# of 3, 4, and 5, which cover weak cases where the score relies heavily on
+# a single artifact segment plus several generic group segments (e.g.,
+# org.apache.commons).
 #
-# Passing 5 requires one of:
-#   - a second matching artifact segment (1 group + 2 artifact = 1 + 4 = 5)
-#   - two extra matching group segments (3 group + 1 artifact = 3 + 2 = 5)
+# Reaching 6 ensures a highly reliable match by requiring one of:
+#   - multiple matching artifact and group segments (2 group + 2 artifact = 2 + 4 = 6)
 #   - a fuzzy match (1 group + 1 artifact + fuzzy = 1 + 2 + 3 = 6)
-
+#
 # The value is designed based on a small sample of shaded JARs. It
 # should be revisited with a larger sample if false positives are observed.
-MIN_MATCH_SCORE = 5
+MIN_MATCH_SCORE = 6
 
 
 def _score_group_segments(group_id, package_segments):
@@ -486,16 +452,13 @@ def _score_fuzzy_segment(artifact_id, package_segments):
     """
     Return 3 if the last segment of "artifact_id" is a fuzzy match for the
     immediate parent package of the FQN, 0 otherwise.
-
-    Returns 0 when either input is missing or when the two segments are not
-    similar enough.
     """
     artifact_last = artifact_id.split("/")[-1]
     fqn_last = package_segments[-1]
     return 3 if _fuzzy_segment_match(artifact_last, fqn_last) else 0
 
 
-def score_dependency_for_fqn(fqn, package):
+def score_dependency(java_package, package):
     """
     Return a tuple (score, signals) to conclude the match result.
 
@@ -518,9 +481,7 @@ def score_dependency_for_fqn(fqn, package):
     group_id = (package.namespace or "").replace(".", "/").replace("-", "/")
     artifact_id = (package.name or "").replace(".", "/").replace("-", "/")
 
-    fqn_segments = fqn.split(".")
-    # Drop the class name and keep the package segments only.
-    package_segments = fqn_segments[:-1]
+    package_segments = java_package.split(".") if java_package else []
 
     if not package_segments:
         return empty_result
@@ -546,7 +507,7 @@ def score_dependency_for_fqn(fqn, package):
     return score, signals
 
 
-def match_shaded_class_to_package(fqn, packages, min_score=MIN_MATCH_SCORE):
+def match_shaded_class_to_package(java_package, packages, min_score=MIN_MATCH_SCORE):
     """
     Return a tuple (package, score, signals) for the best matching package,
     or None.
@@ -559,7 +520,7 @@ def match_shaded_class_to_package(fqn, packages, min_score=MIN_MATCH_SCORE):
     """
     candidates = []
     for package in packages:
-        score, signals = score_dependency_for_fqn(fqn, package)
+        score, signals = score_dependency(java_package, package)
         if not REQUIRED_MATCH_SIGNALS.issubset(signals):
             continue
         if score < min_score:
@@ -582,27 +543,17 @@ def match_shaded_class_to_package(fqn, packages, min_score=MIN_MATCH_SCORE):
     return package, score, signals
 
 
-def _get_original_fqn(fqn, relocations, main_prefix):
+def _get_original_fqn(fqn, relocations):
     """
     Return the original fully qualified class name for a shaded class, or
     None when the class should not be considered for matching.
     """
     if relocations:
-        is_shaded = any(
-            fqn == shaded_pattern or fqn.startswith(f"{shaded_pattern}.")
-            for shaded_pattern in relocations
-        )
-        if not is_shaded:
-            return
         return apply_shade_relocations(fqn, relocations)
 
-    if main_prefix and fqn.startswith(main_prefix):
-        return
-
-    return fqn
 
 
-def _map_shaded_class_resource(resource, relocations, main_prefix, dependency_packages):
+def _map_shaded_class_resource(resource, relocations, dependency_packages, match_cache):
     """
     Try to map a single ".class" resource to a Maven dependency package.
 
@@ -610,19 +561,40 @@ def _map_shaded_class_resource(resource, relocations, main_prefix, dependency_pa
     otherwise.
     """
     fqn = get_java_fqn_from_class_path(resource.path)
-    original_fqn = _get_original_fqn(fqn, relocations, main_prefix)
+    java_package = fqn.rsplit(".", 1)[0] if "." in fqn else ""
 
-    if original_fqn is None:
-        return False
+    if java_package not in match_cache:
+        original_pkg = _get_original_fqn(java_package, relocations)
+        if original_pkg is None:
+            match_cache[java_package] = None
+        else:
+            match_cache[java_package] = match_shaded_class_to_package(
+                original_pkg, dependency_packages
+            )
 
-    match = match_shaded_class_to_package(original_fqn, dependency_packages)
+    match = match_cache[java_package]
     if not match:
         return False
 
-    matched_package, match_score, match_signals = match
-    if isinstance(matched_package, DiscoveredPackage):
-        resource.discovered_packages.add(matched_package)
+    original_fqn = _get_original_fqn(fqn, relocations)
 
+    matched_package, match_score, match_signals = match
+
+    if isinstance(matched_package, DiscoveredDependency):
+        package_data = {
+            "type": matched_package.type,
+            "namespace": matched_package.namespace,
+            "name": matched_package.name,
+            "version": matched_package.version,
+        }
+        created_package = DiscoveredPackage.create_from_data(
+            resource.project, package_data
+        )
+        matched_package.resolved_to_package = created_package
+        matched_package.save()
+        matched_package = created_package
+
+    resource.discovered_packages.add(matched_package)
     resource.update(
         status=flag.SHADED_CLASS,
         extra_data={
@@ -673,14 +645,14 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
 
     main_pom = get_main_maven_pom(project, purl)
     relocations = get_maven_shade_relocations(project, main_pom)
-    main_prefix = f"{purl.namespace}."
 
     mapped_count = 0
     unmatched_count = 0
+    match_cache = {}
 
     for resource in to_classes.iterator(chunk_size=2000):
         if _map_shaded_class_resource(
-            resource, relocations, main_prefix, dependency_packages
+            resource, relocations, dependency_packages, match_cache
         ):
             mapped_count += 1
         else:
