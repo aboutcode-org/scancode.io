@@ -67,7 +67,7 @@ MATCHCODEIO_API_KEY = getattr(settings, "MATCHCODEIO_API_KEY", "")
 if MATCHCODEIO_API_KEY:
     session.headers.update({"Authorization": f"Token {MATCHCODEIO_API_KEY}"})
 
-DEFAULT_TIMEOUT = 60
+DEFAULT_TIMEOUT = 120
 
 
 def is_configured():
